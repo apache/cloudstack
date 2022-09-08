@@ -26,15 +26,15 @@ import org.apache.commons.lang3.StringUtils;
 public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
 
     enum Action {
-        ScaleUp, ScaleDown;
+        SCALEUP, SCALEDOWN;
 
         public static Action fromValue(String action) {
             if (StringUtils.isBlank(action)) {
                 return null;
             } else if (action.equalsIgnoreCase("ScaleUp")) {
-                return ScaleUp;
+                return SCALEUP;
             } else if (action.equalsIgnoreCase("ScaleDown")) {
-                return ScaleDown;
+                return SCALEDOWN;
             } else {
                 throw new IllegalArgumentException("Unexpected AutoScale action : " + action);
             }

@@ -55,7 +55,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
     long counterId = 6L;
     Date date = new Date();
     AutoScaleVmGroupStatisticsVO autoScaleVmGroupStatisticsVO = new AutoScaleVmGroupStatisticsVO(groupId);
-    AutoScaleVmGroupStatisticsVO.State state = AutoScaleVmGroupStatisticsVO.State.Inactive;
+    AutoScaleVmGroupStatisticsVO.State state = AutoScaleVmGroupStatisticsVO.State.INACTIVE;
 
     @Before
     public void setUp() throws Exception {
@@ -124,7 +124,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
         Assert.assertEquals(listAutoScaleVmGroupStatisticsVOMock, result);
 
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.Inactive);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters("createdGT", date);
     }
 
@@ -135,7 +135,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
         Assert.assertEquals(listAutoScaleVmGroupStatisticsVOMock, result);
 
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.Inactive);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("createdGT", date);
     }
 
@@ -147,7 +147,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
 
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", policyId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.Active);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.ACTIVE);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters("createdGT", date);
     }
 
@@ -159,7 +159,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
 
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", policyId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.Active);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.ACTIVE);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("createdGT", date);
     }
 
@@ -197,7 +197,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
         Assert.assertEquals(groupId, (long) result.getResourceId());
         Assert.assertEquals(ResourceTag.ResourceObjectType.AutoScaleVmGroup, result.getResourceType());
         Assert.assertEquals(AutoScaleVmGroupStatisticsVO.INVALID_VALUE, (double) result.getRawValue(), 0);
-        Assert.assertEquals(AutoScaleVmGroupStatisticsVO.State.Inactive, result.getState());
+        Assert.assertEquals(AutoScaleVmGroupStatisticsVO.State.INACTIVE, result.getState());
     }
 
     @Test

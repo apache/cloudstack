@@ -73,7 +73,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         if (afterDate != null) {
             sc.setParameters("createdGT", afterDate);
         }
-        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.Inactive);
+        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
         return listBy(sc);
     }
 
@@ -86,7 +86,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         if (afterDate != null) {
             sc.setParameters("createdGT", afterDate);
         }
-        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.Active);
+        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.ACTIVE);
         return listBy(sc);
     }
 

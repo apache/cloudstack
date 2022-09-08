@@ -173,9 +173,9 @@ public class XenServer56WrapperTest {
     @Test
     public void testGetAutoScaleMetricsCommandForVpc() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceivedBps, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmitBps, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
 
         final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", true, "10.10.10.10", 8080, metrics);
 
@@ -194,11 +194,11 @@ public class XenServer56WrapperTest {
 
         assertEquals(values.size(), 3);
         for (AutoScaleMetricsValue value : values) {
-            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LbAverageConnections)) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmitBps)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
                 assertEquals(value.getValue(), Double.valueOf(vpcStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceivedBps)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
                 assertEquals(value.getValue(), Double.valueOf(vpcStats[1]));
             }
         }
@@ -207,9 +207,9 @@ public class XenServer56WrapperTest {
     @Test
     public void testGetAutoScaleMetricsCommandForNetwork() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceivedBps, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmitBps, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
 
         final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", false, "10.10.10.10", 8080, metrics);
 
@@ -230,11 +230,11 @@ public class XenServer56WrapperTest {
 
         assertEquals(values.size(), 3);
         for (AutoScaleMetricsValue value : values) {
-            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LbAverageConnections)) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmitBps)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
                 assertEquals(value.getValue(), Double.valueOf(networkStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceivedBps)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
                 assertEquals(value.getValue(), Double.valueOf(networkStats[1]));
             }
         }

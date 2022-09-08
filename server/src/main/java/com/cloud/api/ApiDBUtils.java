@@ -1552,7 +1552,7 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
-            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.ScaleUp)) {
+            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                 scaleUpPolicyIds.add(autoScalePolicy.getId());
             } else {
                 scaleDownPolicyIds.add(autoScalePolicy.getId());
@@ -1577,7 +1577,7 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
-            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.ScaleUp)) {
+            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                 scaleUpPolicies.add(autoScalePolicy);
             } else {
                 scaleDownPolicies.add(autoScalePolicy);

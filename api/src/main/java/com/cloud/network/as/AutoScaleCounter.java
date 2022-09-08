@@ -25,11 +25,11 @@ public class AutoScaleCounter {
     public static class AutoScaleCounterType {
         private String _name;
 
-        public static final AutoScaleCounterType Snmp = new AutoScaleCounterType(Counter.Source.snmp.name());
-        public static final AutoScaleCounterType Cpu = new AutoScaleCounterType(Counter.Source.cpu.name());
-        public static final AutoScaleCounterType Memory = new AutoScaleCounterType(Counter.Source.memory.name());
-        public static final AutoScaleCounterType Netscaler = new AutoScaleCounterType(Counter.Source.netscaler.name());
-        public static final AutoScaleCounterType VirtualRouter = new AutoScaleCounterType(Counter.Source.virtualrouter.name());
+        public static final AutoScaleCounterType Snmp = new AutoScaleCounterType(Counter.Source.SNMP.name());
+        public static final AutoScaleCounterType Cpu = new AutoScaleCounterType(Counter.Source.CPU.name());
+        public static final AutoScaleCounterType Memory = new AutoScaleCounterType(Counter.Source.MEMORY.name());
+        public static final AutoScaleCounterType Netscaler = new AutoScaleCounterType(Counter.Source.NETSCALER.name());
+        public static final AutoScaleCounterType VirtualRouter = new AutoScaleCounterType(Counter.Source.VIRTUALROUTER.name());
 
         public AutoScaleCounterType(String name) {
             _name = name;

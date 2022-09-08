@@ -109,8 +109,8 @@ public class AutoScaleVmGroupDaoImplTest {
         PowerMockito.doReturn(null).when(AutoScaleVmGroupDaoImplSpy, "findOneBy", Mockito.any(SearchCriteria.class));
 
         long groupId = 10L;
-        AutoScaleVmGroup.State oldState = AutoScaleVmGroup.State.Enabled;
-        AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.Disabled;
+        AutoScaleVmGroup.State oldState = AutoScaleVmGroup.State.ENABLED;
+        AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.DISABLED;
 
         boolean result = AutoScaleVmGroupDaoImplSpy.updateState(groupId, oldState, newState);
         Assert.assertEquals(false, result);
@@ -127,8 +127,8 @@ public class AutoScaleVmGroupDaoImplTest {
         PowerMockito.doReturn(true).when(AutoScaleVmGroupDaoImplSpy).update(Mockito.anyLong(), Mockito.any(AutoScaleVmGroupVO.class));
 
         long groupId = 10L;
-        AutoScaleVmGroup.State oldState = AutoScaleVmGroup.State.Enabled;
-        AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.Disabled;
+        AutoScaleVmGroup.State oldState = AutoScaleVmGroup.State.ENABLED;
+        AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.DISABLED;
 
         boolean result = AutoScaleVmGroupDaoImplSpy.updateState(groupId, oldState, newState);
         Assert.assertEquals(true, result);

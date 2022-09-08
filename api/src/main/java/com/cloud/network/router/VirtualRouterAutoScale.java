@@ -22,9 +22,9 @@ package com.cloud.network.router;
 public interface VirtualRouterAutoScale {
 
     enum VirtualRouterAutoScaleCounter {
-        NetworkReceivedBps ("virtual.network.received.Bps"),
-        NetworkTransmitBps ("virtual.network.transmit.Bps"),
-        LbAverageConnections ("virtual.network.lb.average.connections");
+        NETWORK_RECEIVED_BPS("virtual.network.received.Bps"),
+        NETWORK_TRANSMIT_BPS("virtual.network.transmit.Bps"),
+        LB_AVERAGE_CONNECTIONS("virtual.network.lb.average.connections");
 
         String _value;
         VirtualRouterAutoScaleCounter(String value) {

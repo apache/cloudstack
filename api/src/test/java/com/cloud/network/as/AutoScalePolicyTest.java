@@ -24,13 +24,13 @@ public class AutoScalePolicyTest {
     @Test
     public void testScaleUpAction() {
         AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("scaleup");
-        Assert.assertEquals(action, AutoScalePolicy.Action.ScaleUp);
+        Assert.assertEquals(action, AutoScalePolicy.Action.SCALEUP);
     }
 
     @Test
     public void testScaleDownAction() {
         AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("scaledown");
-        Assert.assertEquals(action, AutoScalePolicy.Action.ScaleDown);
+        Assert.assertEquals(action, AutoScalePolicy.Action.SCALEDOWN);
     }
 
     @Test

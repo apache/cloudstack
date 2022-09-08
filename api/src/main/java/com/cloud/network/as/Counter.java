@@ -26,14 +26,14 @@ import java.util.List;
 public interface Counter extends InternalIdentity, Identity {
 
     enum Source {
-        netscaler,
-        snmp,
-        cpu,
-        memory,
-        virtualrouter
+        NETSCALER,
+        SNMP,
+        CPU,
+        MEMORY,
+        VIRTUALROUTER
     }
 
-    List<Source> NativeSources = Arrays.asList(Source.cpu, Source.memory);
+    final List<Source> NativeSources = Arrays.asList(Source.CPU, Source.MEMORY);
 
     String getName();
 

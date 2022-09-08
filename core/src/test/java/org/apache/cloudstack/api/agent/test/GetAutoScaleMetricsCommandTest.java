@@ -44,9 +44,9 @@ public class GetAutoScaleMetricsCommandTest {
 
     @Before
     public void setUp() {
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceivedBps, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmitBps, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
     }
 
     @Test

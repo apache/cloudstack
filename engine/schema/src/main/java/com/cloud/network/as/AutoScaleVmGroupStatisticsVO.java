@@ -38,7 +38,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
 
     public enum State {
-        Active, Inactive
+        ACTIVE, INACTIVE
     }
 
     public static final double INVALID_VALUE = -1;
@@ -93,7 +93,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.rawValue = rawValue;
         this.valueType = valueType;
         this.created = created;
-        this.state = State.Active;
+        this.state = State.ACTIVE;
     }
 
     public AutoScaleVmGroupStatisticsVO(long vmGroupId, long policyId, long counterId, Long resourceId, ResourceTag.ResourceObjectType resourceType,
@@ -106,7 +106,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.rawValue = INVALID_VALUE;
         this.valueType = valueType;
         this.created = created;
-        this.state = State.Inactive;
+        this.state = State.INACTIVE;
     }
 
     public AutoScaleVmGroupStatisticsVO(long vmGroupId) {
@@ -118,7 +118,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.rawValue = INVALID_VALUE;
         this.valueType = VirtualRouterAutoScale.AutoScaleValueType.INSTANT;
         this.created = new Date();
-        this.state = State.Inactive;
+        this.state = State.INACTIVE;
     }
 
     @Override

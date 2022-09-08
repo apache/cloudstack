@@ -1196,13 +1196,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         for (VirtualRouterAutoScale.AutoScaleMetrics metrics : cmd.getMetrics()) {
             switch (metrics.getCounter()) {
-                case NetworkReceivedBps:
+                case NETWORK_RECEIVED_BPS:
                     values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, Double.valueOf(bytesReceived)));
                     break;
-                case NetworkTransmitBps:
+                case NETWORK_TRANSMIT_BPS:
                     values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, Double.valueOf(bytesSent)));
                     break;
-                case LbAverageConnections:
+                case LB_AVERAGE_CONNECTIONS:
                     values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(lbConnections)));
                     break;
             }

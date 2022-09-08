@@ -470,8 +470,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         FirewallRule.State backupState = loadBalancer.getState();
 
-        if (vmGroup.getState().equals(AutoScaleVmGroup.State.New)
-                || (loadBalancer.getState() == FirewallRule.State.Active && vmGroup.getState().equals(AutoScaleVmGroup.State.Revoke))) {
+        if (vmGroup.getState().equals(AutoScaleVmGroup.State.NEW)
+                || (loadBalancer.getState() == FirewallRule.State.Active && vmGroup.getState().equals(AutoScaleVmGroup.State.REVOKE))) {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
         }
@@ -493,14 +493,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (success) {
-            if (vmGroup.getState().equals(AutoScaleVmGroup.State.New)) {
+            if (vmGroup.getState().equals(AutoScaleVmGroup.State.NEW)) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         loadBalancer.setState(FirewallRule.State.Active);
                         s_logger.debug("LB rule " + loadBalancer.getId() + " state is set to Active");
                         _lbDao.persist(loadBalancer);
-                        vmGroup.setState(AutoScaleVmGroup.State.Enabled);
+                        vmGroup.setState(AutoScaleVmGroup.State.ENABLED);
                         _autoScaleVmGroupDao.persist(vmGroup);
                         s_logger.debug("LB Auto Scale Vm Group with Id: " + vmGroupid + " is set to Enabled state.");
                     }

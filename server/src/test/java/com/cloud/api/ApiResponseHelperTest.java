@@ -235,7 +235,7 @@ public class ApiResponseHelperTest {
 
     @Test
     public void testAutoScaleVmGroupResponse() {
-        AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.Enabled);
+        AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.ENABLED);
 
         PowerMockito.mockStatic(ApiDBUtils.class);
         when(ApiDBUtils.findAutoScaleVmProfileById(anyLong())).thenReturn(null);
@@ -248,7 +248,7 @@ public class ApiResponseHelperTest {
         assertEquals(5, response.getMinMembers());
         assertEquals(6, response.getMaxMembers());
         assertEquals(8, response.getInterval());
-        assertEquals(AutoScaleVmGroup.State.Enabled.toString(), response.getState());
+        assertEquals(AutoScaleVmGroup.State.ENABLED.toString(), response.getState());
 
         assertNull(response.getNetworkName());
         assertNull(response.getLbProvider());
@@ -259,7 +259,7 @@ public class ApiResponseHelperTest {
 
     @Test
     public void testAutoScaleVmGroupResponseWithNetwork() {
-        AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.Enabled);
+        AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.ENABLED);
 
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 8080, 8081, null, 0L, 0L, 1L, null, null);
         NetworkVO network = new NetworkVO(1L, null, null, null, 2L, 1L, 2L, 3L,
@@ -281,7 +281,7 @@ public class ApiResponseHelperTest {
         assertEquals(5, response.getMinMembers());
         assertEquals(6, response.getMaxMembers());
         assertEquals(8, response.getInterval());
-        assertEquals(AutoScaleVmGroup.State.Enabled.toString(), response.getState());
+        assertEquals(AutoScaleVmGroup.State.ENABLED.toString(), response.getState());
 
         assertEquals("testnetwork", response.getNetworkName());
         assertEquals("VirtualRouter", response.getLbProvider());

@@ -36,17 +36,17 @@ public class VirtualRouterAutoScaleTest {
 
     @Test
     public void testVirtualRouterAutoScaleCounters() {
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NetworkReceivedBps, "virtual.network.received.Bps");
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NetworkTransmitBps, "virtual.network.transmit.Bps");
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.LbAverageConnections, "virtual.network.lb.average.connections");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, "virtual.network.received.Bps");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, "virtual.network.transmit.Bps");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, "virtual.network.lb.average.connections");
         testVirtualRouterAutoScaleCounter(null, "invalid");
     }
 
     @Test
     public void testAutoScaleMetrics() {
-        AutoScaleMetrics metrics = new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4);
+        AutoScaleMetrics metrics = new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4);
 
-        assertEquals(VirtualRouterAutoScaleCounter.LbAverageConnections, metrics.getCounter());
+        assertEquals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, metrics.getCounter());
         assertEquals(1L, (long) metrics.getPolicyId());
         assertEquals(2L, (long) metrics.getConditionId());
         assertEquals(3L, (long) metrics.getCounterId());
@@ -55,7 +55,7 @@ public class VirtualRouterAutoScaleTest {
 
     @Test
     public void testAutoScaleMetricsValue() {
-        AutoScaleMetrics metrics = new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4);
+        AutoScaleMetrics metrics = new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4);
 
         AutoScaleMetricsValue value = new AutoScaleMetricsValue(metrics, AutoScaleValueType.INSTANT, 123.45);
 
