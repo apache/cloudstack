@@ -508,7 +508,7 @@ public class VirtualRouterElementTest {
 
     @Test
     public void verifyAutoScaleCounters() {
-        final List<AutoScaleCounter> counterList = virtualRouterElement.getAutoScaleCounters();
+        final List<AutoScaleCounter> counterList = VirtualRouterElement.getAutoScaleCounters();
         assertEquals(3, counterList.size());
 
         List<String> counterNames = counterList.stream().map(counter -> counter.getName()).collect(Collectors.toList());
