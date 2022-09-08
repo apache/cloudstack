@@ -143,7 +143,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         templates.add(template);
         Mockito.when(quotaEmailTemplateDaoMock.listAllQuotaEmailTemplates(Mockito.anyString())).thenReturn(templates);
 
-        assertTrue(quotaResponseBuilderSpy.listQuotaEmailTemplates(cmd).size() == 1);
+        Assert.assertEquals(1, quotaResponseBuilderSpy.listQuotaEmailTemplates(cmd).size());
     }
 
     @Test

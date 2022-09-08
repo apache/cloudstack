@@ -614,7 +614,7 @@ public class PresetVariableHelper {
 
     protected void loadPresetVariableValueForBackup(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
-        if (usageType != QuotaTypes.BACKUP) {
+        if (usageType != UsageTypes.BACKUP) {
             logNotLoadingMessageInTrace("Backup", usageType);
             return;
         }
