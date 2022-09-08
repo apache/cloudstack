@@ -455,4 +455,15 @@ public class CitrixResourceBaseTest {
         assertEquals(stats.length, 1);
         assertEquals(stats[0], lbStats[0]);
     }
+
+    @Test
+    public void testNetworkUsage() {
+        CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+
+        String result = citrixResourceBaseSpy.networkUsage(connectionMock, null, "get", null);
+        Assert.assertEquals("0:0", result);
+
+        result = citrixResourceBaseSpy.networkUsage(connectionMock, null, "put", null);
+        Assert.assertNull(result);
+    }
 }
