@@ -91,7 +91,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
 
-    static final BigDecimal s_hoursInMonth = BigDecimal.valueOf(30 * 24);
+    static final BigDecimal s_hoursInMonth = BigDecimal.valueOf(DateUtil.HOURS_IN_A_MONTH);
     static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
