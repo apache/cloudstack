@@ -64,7 +64,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected SearchBuilder<VlanVO> ZoneWideNonDedicatedVlanSearch;
     protected SearchBuilder<VlanVO> VlanGatewaysearch;
     protected SearchBuilder<VlanVO> DedicatedVlanSearch;
-    protected SearchBuilder<VlanVO> PhysicalNetworkVlanIp6Search;
+    protected SearchBuilder<VlanVO> ZoneVlanIp6Search;
     protected SearchBuilder<VlanVO> ZoneIp6Search;
     protected SearchBuilder<VlanVO> ZoneVlansSearch;
 
@@ -260,12 +260,12 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         DedicatedVlanSearch.done();
         AccountVlanMapSearch.done();
 
-        PhysicalNetworkVlanIp6Search = createSearchBuilder();
-        PhysicalNetworkVlanIp6Search.and("physicalNetworkId", PhysicalNetworkVlanIp6Search.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
-        PhysicalNetworkVlanIp6Search.and("vlanId", PhysicalNetworkVlanIp6Search.entity().getVlanTag(), SearchCriteria.Op.EQ);
-        PhysicalNetworkVlanIp6Search.and("ip6Gateway", PhysicalNetworkVlanIp6Search.entity().getIp6Gateway(), SearchCriteria.Op.NNULL);
-        PhysicalNetworkVlanIp6Search.and("ip6Cidr", PhysicalNetworkVlanIp6Search.entity().getIp6Cidr(), SearchCriteria.Op.NNULL);
-        PhysicalNetworkVlanIp6Search.done();
+        ZoneVlanIp6Search = createSearchBuilder();
+        ZoneVlanIp6Search.and("zoneId", ZoneVlanIp6Search.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneVlanIp6Search.and("vlanId", ZoneVlanIp6Search.entity().getVlanTag(), SearchCriteria.Op.EQ);
+        ZoneVlanIp6Search.and("ip6Gateway", ZoneVlanIp6Search.entity().getIp6Gateway(), SearchCriteria.Op.NNULL);
+        ZoneVlanIp6Search.and("ip6Cidr", ZoneVlanIp6Search.entity().getIp6Cidr(), SearchCriteria.Op.NNULL);
+        ZoneVlanIp6Search.done();
 
         ZoneIp6Search = createSearchBuilder();
         ZoneIp6Search.and("zoneId", ZoneIp6Search.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -410,9 +410,9 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     }
 
     @Override
-    public List<VlanVO> listIpv6RangeByPhysicalNetworkIdAndVlanId(long physicalNetworkId, String vlanId) {
-        SearchCriteria<VlanVO> sc = PhysicalNetworkVlanIp6Search.create();
-        sc.setParameters("physicalNetworkId", physicalNetworkId);
+    public List<VlanVO> listIpv6RangeByZoneIdAndVlanId(long zoneId, String vlanId) {
+        SearchCriteria<VlanVO> sc = ZoneVlanIp6Search.create();
+        sc.setParameters("zoneId", zoneId);
         if(StringUtils.isNotEmpty(vlanId)) {
             sc.setParameters("vlanId", vlanId);
         }

@@ -328,7 +328,6 @@ export default {
       if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
         params.id = this.resource.zoneid
       }
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
