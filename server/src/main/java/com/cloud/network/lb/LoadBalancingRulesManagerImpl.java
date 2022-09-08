@@ -80,8 +80,6 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.as.AutoScaleCounter;
-import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
@@ -299,23 +297,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 }
             }
         }
-        if (Capability.AutoScaleCounters.getName().equals(capabilityName)) {
-            return getDefaultAutoScaleCounters();
-        }
         return null;
-    }
-
-    private String getDefaultAutoScaleCounters() {
-        AutoScaleCounter counter;
-        final List<AutoScaleCounter> counterList = new ArrayList<>();
-        counter = new AutoScaleCounter(AutoScaleCounterType.Cpu);
-        counterList.add(counter);
-        counter = new AutoScaleCounter(AutoScaleCounterType.Memory);
-        counterList.add(counter);
-        counter = new AutoScaleCounter(AutoScaleCounterType.VirtualRouter);
-        counterList.add(counter);
-        final Gson gson = new Gson();
-        return gson.toJson(counterList);
     }
 
     private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, AutoScaleVmGroup.State currentState, LoadBalancerVO lb) {
