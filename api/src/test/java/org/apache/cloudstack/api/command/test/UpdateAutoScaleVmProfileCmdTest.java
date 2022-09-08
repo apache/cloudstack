@@ -86,7 +86,7 @@ public class UpdateAutoScaleVmProfileCmdTest {
     }
 
     @Test
-    public void verifyCreateAutoScaleVmProfileCmd() {
+    public void verifyUpdateAutoScaleVmProfileCmd() {
         Assert.assertEquals(profileId, updateAutoScaleVmProfileCmd.getId());
         Assert.assertEquals(serviceOfferingId, updateAutoScaleVmProfileCmd.getServiceOfferingId());
         Assert.assertEquals(templateId, updateAutoScaleVmProfileCmd.getTemplateId());

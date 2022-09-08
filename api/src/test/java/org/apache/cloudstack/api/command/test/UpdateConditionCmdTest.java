@@ -55,7 +55,6 @@ public class UpdateConditionCmdTest extends TestCase {
 
     private static final long accountId = 5L;
 
-    @Override
     @Before
     public void setUp() {
 
