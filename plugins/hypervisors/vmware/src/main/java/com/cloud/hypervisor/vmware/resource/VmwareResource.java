@@ -1162,7 +1162,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
 
         String result = callResult.getDetails();
-        if (!callResult.isSuccess()) {
+        if (!Boolean.TRUE.equals(callResult.isSuccess())) {
             s_logger.error(String.format("Unable to get network loadbalancer stats on DomR (%s), domR may not be ready yet. failure due to %s", privateIp, callResult.getDetails()));
             result = null;
         } else if (result == null || result.isEmpty()) {

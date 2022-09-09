@@ -470,7 +470,7 @@ public class VmwareResourceTest {
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
         List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
 
-        assertEquals(values.size(), 3);
+        assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(value.getValue(), Double.valueOf(lbStats[0]));

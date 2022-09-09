@@ -1406,7 +1406,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         } catch (IllegalArgumentException ex) {
             throw new InvalidParameterValueException("The Operator " + opr + " does not exist; Unable to create Condition.");
         }
-        // TODO - Validate threshold
+        if (threshold < 0) {
+            throw new InvalidParameterValueException("The threshold " + threshold + " must be equal to or greater than 0.");
+        }
 
         CounterVO counter = _counterDao.findById(cid);
 
@@ -1541,6 +1543,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             op = Condition.Operator.valueOf(operator);
         } catch (IllegalArgumentException ex) {
             throw new InvalidParameterValueException("The Operator " + operator + " does not exist; Unable to update Condition.");
+        }
+        if (threshold < 0) {
+            throw new InvalidParameterValueException("The threshold " + threshold + " must be equal to or greater than 0.");
         }
 
         // Verify if condition is used in any autoscale vmgroup
