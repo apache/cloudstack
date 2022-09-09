@@ -66,7 +66,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicSecondaryIp;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(ApiDBUtils.class)
 public class ApiResponseHelperTest {
 
     @Mock
@@ -131,6 +130,7 @@ public class ApiResponseHelperTest {
     }
 
     @Test
+    @PrepareForTest(ApiDBUtils.class)
     public void testUsageRecordResponse(){
         //Creating the usageVO object to be passed to the createUsageResponse.
         Long zoneId = null;
@@ -234,6 +234,7 @@ public class ApiResponseHelperTest {
     }
 
     @Test
+    @PrepareForTest(ApiDBUtils.class)
     public void testAutoScaleVmGroupResponse() {
         AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.ENABLED);
 
@@ -258,6 +259,7 @@ public class ApiResponseHelperTest {
     }
 
     @Test
+    @PrepareForTest(ApiDBUtils.class)
     public void testAutoScaleVmGroupResponseWithNetwork() {
         AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.ENABLED);
 

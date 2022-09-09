@@ -30,14 +30,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(LibvirtComputingResource.class)
 public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
 
     @Spy
@@ -55,8 +53,6 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
 
     @Before
     public void init() {
-        PowerMockito.mockStatic(LibvirtComputingResource.class);
-
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
