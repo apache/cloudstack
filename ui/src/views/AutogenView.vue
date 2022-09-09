@@ -64,7 +64,7 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
-                    <template #suffixIcon><filter-outlined /></template>
+                    <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
                       key="all"
@@ -851,8 +851,10 @@ export default {
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listSSHKeyPairs'].includes(this.apiName)) {
-          delete params.id
-          params.name = this.$route.params.id
+          if (!this.$isValidUuid(params.id)) {
+            delete params.id
+            params.name = this.$route.params.id
+          }
         }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false

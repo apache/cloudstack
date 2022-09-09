@@ -78,6 +78,7 @@ env:
              smoke/test_nested_virtualization
              smoke/test_network
              smoke/test_network_acl
+             smoke/test_network_permissions
              smoke/test_nic
              smoke/test_nic_adapter_type
              smoke/test_non_contigiousvlan
@@ -131,7 +132,6 @@ env:
 
     - TESTS="component/test_acl_sharednetwork
              component/test_acl_sharednetwork_deployVM-impersonation
-             component/test_network_permissions
              component/test_user_private_gateway
              component/test_user_shared_network"
 

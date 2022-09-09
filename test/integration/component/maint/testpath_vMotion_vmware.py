@@ -937,7 +937,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 storage_pool = []
         #if storage_scope == "across_cluster":
         if count_host < 2 or count_pool < 2:
-            raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have atleast 2 clusters, \
+            raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have at least 2 clusters, \
             each having min 1 host and 1 vmfs storage pools")
 
         self.debug("---------------This is the test no 1--------------")
@@ -1220,7 +1220,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 pool_local = []
         if scope == "across_cluster":
             if count_host < 2:
-                raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have atleast 2 clusters, each having min 2 hosts ")
+                raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have at least 2 clusters, each having min 2 hosts ")
 
         self.debug("---------------This is the test no 1--------------")
         """
@@ -1449,7 +1449,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             if pool.type == storage_type:
                 zwps_pools.append(pool)
         if len(zwps_pools) < 2:
-            raise self.skipTest("The setup doesn't have enough zone wide primary storages of %s type, we need atleast 2" % storage_type)
+            raise self.skipTest("The setup doesn't have enough zone wide primary storages of %s type, we need at least 2" % storage_type)
 
         count_host = 0
         count_pool = 0
@@ -1470,7 +1470,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 pool_vmfs = []
         #if storage_scope == "across_cluster":
         if count_host < 2 | count_pool < 2:
-            raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have atleast 2 clusters, each having min 1 host and 1 vmfs storage pools")
+            raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have at least 2 clusters, each having min 1 host and 1 vmfs storage pools")
 
         self.debug("---------------This is the test no 1--------------")
         """
@@ -1934,9 +1934,9 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
             elif pool.type == storage_type_nfs:
                 zwps_nfs_pools.append(pool)
         if len(zwps_vmfs_pools) < 1:
-            raise self.skipTest("The setup doesn't have enough zone wide primary storages of %s type, we need atleast 2" % storage_type_vmfs)
+            raise self.skipTest("The setup doesn't have enough zone wide primary storages of %s type, we need at least 2" % storage_type_vmfs)
         if len(zwps_nfs_pools) < 1:
-            raise self.skipTest("The setup doesn't have enough zone wide primary storages of %s type, we need atleast 2" % storage_type_nfs)
+            raise self.skipTest("The setup doesn't have enough zone wide primary storages of %s type, we need at least 2" % storage_type_nfs)
 
         count_host = 0
         count_pool_nfs = 0
@@ -1964,7 +1964,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                 pool_nfs = []
         #if storage_scope == "across_cluster":
         if count_host < 2 or count_pool_vmfs < 2 or count_pool_nfs < 2:
-            raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have atleast 2 clusters, \
+            raise self.skipTest("The setup doesn't have enough pools or enough hosts. To run these tests the setup must have at least 2 clusters, \
             each having min 2 host 2 vmfs storage pools and 2 nfs storage pools")
 
         self.debug("---------------This is the test no 1--------------")

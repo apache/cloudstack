@@ -224,7 +224,7 @@ public class ActionEventUtils {
         eventDescription.put("status", state.toString());
         eventDescription.put("entity", resourceType);
         eventDescription.put("entityuuid", resourceUuid);
-        //Put all the first class entities that are touched during the action. For now atleast put in the vmid.
+        //Put all the first class entities that are touched during the action. For now at least put in the vmid.
         populateFirstClassEntities(eventDescription);
         eventDescription.put("description", description);
 

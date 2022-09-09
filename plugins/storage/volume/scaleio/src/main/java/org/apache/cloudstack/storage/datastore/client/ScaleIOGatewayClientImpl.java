@@ -792,7 +792,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                             long timeElapsedInSecs = (System.currentTimeMillis() - migrationStartTime) / 1000;
                             int timeRemainingInSecs = (int) (timeoutInSecs - timeElapsedInSecs);
                             if (timeRemainingInSecs > (timeoutInSecs / 2)) {
-                                // Try to pause gracefully (continue the migration) if atleast half of the time is remaining
+                                // Try to pause gracefully (continue the migration) if at least half of the time is remaining
                                 pauseVolumeMigration(srcVolumeId, false);
                                 status = waitForVolumeMigrationToComplete(volume.getVtreeId(), timeRemainingInSecs);
                             }

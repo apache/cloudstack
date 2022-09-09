@@ -19,18 +19,22 @@
 
 package org.apache.cloudstack;
 
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.regex.Pattern;
-
+import junit.framework.TestCase;
+import org.apache.cloudstack.saml.SAML2AuthManager;
+import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.saml.SAMLUtils;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Test;
 import org.opensaml.saml2.core.AuthnRequest;
 import org.opensaml.saml2.core.LogoutRequest;
 
-import junit.framework.TestCase;
+import java.net.URI;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.regex.Pattern;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SAMLUtilsTest extends TestCase {
 
@@ -58,6 +62,63 @@ public class SAMLUtilsTest extends TestCase {
         assertEquals(req.getAssertionConsumerServiceURL(), consumerUrl);
         assertEquals(req.getDestination(), idpUrl);
         assertEquals(req.getIssuer().getValue(), spId);
+    }
+
+    @Test
+    public void testBuildAuthnRequestUrlWithoutQueryParam() throws Exception {
+        String urlScheme = "http";
+
+        String spDomain = "sp.domain.example";
+        String spUrl = urlScheme + "://" + spDomain;
+        String spId = "serviceProviderId";
+
+        String idpDomain = "idp.domain.example";
+        String idpUrl = urlScheme + "://" + idpDomain;
+        String idpId = "identityProviderId";
+
+        String authnId = SAMLUtils.generateSecureRandomId();
+
+        SAMLProviderMetadata spMetadata = new SAMLProviderMetadata();
+        spMetadata.setEntityId(spId);
+        spMetadata.setSsoUrl(spUrl);
+
+        SAMLProviderMetadata idpMetadata = new SAMLProviderMetadata();
+        idpMetadata.setSsoUrl(idpUrl);
+        idpMetadata.setEntityId(idpId);
+
+        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+        assertThat(redirectUrl).hasScheme(urlScheme).hasHost(idpDomain).hasParameter("SAMLRequest");
+        assertEquals(urlScheme, redirectUrl.getScheme());
+        assertEquals(idpDomain, redirectUrl.getHost());
+    }
+
+    @Test
+    public void testBuildAuthnRequestUrlWithQueryParam() throws Exception {
+        String urlScheme = "http";
+
+        String spDomain = "sp.domain.example";
+        String spUrl = urlScheme + "://" + spDomain;
+        String spId = "cloudstack";
+
+        String idpDomain = "idp.domain.example";
+        String idpQueryParam = "idpid=CX1298373";
+        String idpUrl = urlScheme + "://" + idpDomain + "?" + idpQueryParam;
+        String idpId = "identityProviderId";
+
+        String authnId = SAMLUtils.generateSecureRandomId();
+
+        SAMLProviderMetadata spMetadata = new SAMLProviderMetadata();
+        spMetadata.setEntityId(spId);
+        spMetadata.setSsoUrl(spUrl);
+
+        SAMLProviderMetadata idpMetadata = new SAMLProviderMetadata();
+        idpMetadata.setSsoUrl(idpUrl);
+        idpMetadata.setEntityId(idpId);
+
+        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+        assertThat(redirectUrl).hasScheme(urlScheme).hasHost(idpDomain).hasParameter("idpid").hasParameter("SAMLRequest");
+        assertEquals(urlScheme, redirectUrl.getScheme());
+        assertEquals(idpDomain, redirectUrl.getHost());
     }
 
     @Test

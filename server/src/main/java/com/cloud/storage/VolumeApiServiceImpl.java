@@ -456,8 +456,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 //using the existing max upload size configuration
                 command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
                 command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
-                command.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
                 command.setAccountId(vol.getAccountId());
+                Account account = _accountDao.findById(vol.getAccountId());
+                if (account.getType().equals(Account.Type.PROJECT)) {
+                    command.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxProjectSecondaryStorage.value());
+                } else {
+                    command.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxAccountSecondaryStorage.value());
+                }
                 Gson gson = new GsonBuilder().create();
                 String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
                 response.setMetadata(metadata);

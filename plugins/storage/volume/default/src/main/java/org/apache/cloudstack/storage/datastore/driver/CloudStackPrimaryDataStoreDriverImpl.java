@@ -41,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -121,6 +122,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     TemplateManager templateManager;
     @Inject
     TemplateDataFactory templateDataFactory;
+    @Inject
+    VolumeDataFactory volFactory;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -379,11 +382,21 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
-        RevertSnapshotCommand cmd = new RevertSnapshotCommand((SnapshotObjectTO)snapshot.getTO(), (SnapshotObjectTO)snapshotOnPrimaryStore.getTO());
+        SnapshotObjectTO dataOnPrimaryStorage = null;
+        if (snapshotOnPrimaryStore != null) {
+            dataOnPrimaryStorage = (SnapshotObjectTO)snapshotOnPrimaryStore.getTO();
+        }
+        RevertSnapshotCommand cmd = new RevertSnapshotCommand((SnapshotObjectTO)snapshot.getTO(), dataOnPrimaryStorage);
 
         CommandResult result = new CommandResult();
         try {
-            EndPoint ep = epSelector.select(snapshotOnPrimaryStore);
+            EndPoint ep = null;
+            if (snapshotOnPrimaryStore != null) {
+                ep = epSelector.select(snapshotOnPrimaryStore);
+            } else {
+                VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+                ep = epSelector.select(volumeInfo);
+            }
             if ( ep == null ){
                 String errMsg = "No remote endpoint to send RevertSnapshotCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);

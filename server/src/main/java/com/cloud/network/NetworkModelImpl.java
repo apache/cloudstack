@@ -1659,7 +1659,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public void checkNetworkPermissions(Account owner, Network network) {
+    public void checkNetworkPermissions(Account caller, Network network) {
         // dahn 20140310: I was thinking of making this an assert but
         //                as we hardly ever test with asserts I think
         //                we better make sure at runtime.
@@ -1672,11 +1672,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                     ", network does not have an owner");
-            if (owner.getType() != Account.Type.PROJECT && networkOwner.getType() == Account.Type.PROJECT) {
-                checkProjectNetworkPermissions(owner, networkOwner, network);
+            if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
+                checkProjectNetworkPermissions(caller, networkOwner, network);
             } else {
-                List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
-                NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), owner.getId());
+                List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
+                NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
                 if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
                     throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                         ", permission denied");
@@ -1684,13 +1684,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
 
         } else {
-            if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                DomainVO ownerDomain = _domainDao.findById(owner.getDomainId());
-                if (ownerDomain == null) {
-                    throw new CloudRuntimeException("cannot check permission on account " + owner.getAccountName() + " whose domain does not exist");
+            if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
+                DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+                if (callerDomain == null) {
+                    throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
                 }
                 throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
-                        ownerDomain.getUuid());
+                        callerDomain.getUuid());
             }
         }
     }
