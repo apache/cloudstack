@@ -156,7 +156,7 @@ public class ExternalLoadBalancerDeviceManagerImplTest {
     @Mock
     VirtualRouterProviderDao _vrProviderDao;
     @Mock
-    LoadBalancingRulesManager _lbRulesManager;
+    LoadBalancingRulesManager lbRulesManager;
 
     @Mock
     LoadBalancingRule rule;

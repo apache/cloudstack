@@ -67,7 +67,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
     }
 
     public Boolean getCleanup() {
-        return cleanup != null ? cleanup : false;
+        return cleanup != null && cleanup;
     }
 
     // ///////////////////////////////////////////////////

@@ -51,7 +51,7 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "Value of the counter e.g. oid in case of snmp.")
     private String value;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Provider of the counter.", since = "4.18.0")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Network provider of the counter.", since = "4.18.0")
     private String provider;
 
     // /////////////////////////////////////////////////

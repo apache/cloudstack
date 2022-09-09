@@ -210,7 +210,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
     @Inject
     NetScalerVMManager _netScalerVMManager;
     @Inject
-    LoadBalancingRulesManager _lbRulesManager;
+    LoadBalancingRulesManager lbRulesManager;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -1129,7 +1129,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
                         false, false, destinations, rule.getStickinessPolicies(), rule.getHealthCheckPolicies(),
                         rule.getLbSslCert(), rule.getLbProtocol());
                 if (rule.isAutoScaleConfig()) {
-                    loadBalancer.setAutoScaleVmGroupTO(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
+                    loadBalancer.setAutoScaleVmGroupTO(lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
                 }
                 loadBalancersToApply.add(loadBalancer);
             }

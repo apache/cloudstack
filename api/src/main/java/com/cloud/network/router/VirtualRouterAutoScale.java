@@ -26,13 +26,13 @@ public interface VirtualRouterAutoScale {
         NETWORK_TRANSMIT_BPS("virtual.network.transmit.Bps"),
         LB_AVERAGE_CONNECTIONS("virtual.network.lb.average.connections");
 
-        String _value;
+        String value;
         VirtualRouterAutoScaleCounter(String value) {
-            _value = value;
+            this.value = value;
         }
 
         String getValue() {
-            return _value;
+            return value;
         }
         public static VirtualRouterAutoScaleCounter fromValue(String value) {
             VirtualRouterAutoScaleCounter[] values = VirtualRouterAutoScaleCounter.values();
@@ -46,7 +46,7 @@ public interface VirtualRouterAutoScale {
 
         @Override
         public String toString() {
-            return _value;
+            return getValue();
         }
     }
 

@@ -37,12 +37,12 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateCondition", description = "Updates a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
+@APICommand(name = UpdateConditionCmd.API_NAME, description = "Updates a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class UpdateConditionCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateConditionCmd.class.getName());
-    private static final String s_name = "updateconditionresponse";
+    public static final Logger LOGGER = Logger.getLogger(UpdateConditionCmd.class.getName());
+    public static final String API_NAME = "updateCondition";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -70,7 +70,7 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
+            LOGGER.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
     }
@@ -98,7 +98,7 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return API_NAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

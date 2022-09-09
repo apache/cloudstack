@@ -215,7 +215,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Inject
     VirtualRouterProviderDao _vrProviderDao;
     @Inject
-    private LoadBalancingRulesManager _lbRulesManager;
+    private LoadBalancingRulesManager lbRulesManager;
 
     private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
@@ -984,7 +984,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 loadBalancer.setSrcIpNetmask(srcIpNetmask);
                 loadBalancer.setSrcIpGateway(srcIpGateway);
                 if (rule.isAutoScaleConfig()) {
-                    loadBalancer.setAutoScaleVmGroupTO(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
+                    loadBalancer.setAutoScaleVmGroupTO(lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
                 }
                 loadBalancersToApply.add(loadBalancer);
             }

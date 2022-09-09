@@ -473,11 +473,11 @@ public class VmwareResourceTest {
         assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
-                assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
+                assertEquals(Double.valueOf(lbStats[0]), value.getValue());
             } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(vpcStats[0]));
+                assertEquals(Double.valueOf(vpcStats[0]), value.getValue());
             } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(vpcStats[1]));
+                assertEquals(Double.valueOf(vpcStats[1]), value.getValue());
             }
         }
     }
@@ -500,14 +500,14 @@ public class VmwareResourceTest {
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
         List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
 
-        assertEquals(values.size(), 3);
+        assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
-                assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
+                assertEquals(Double.valueOf(lbStats[0]), value.getValue());
             } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(networkStats[0]));
+                assertEquals(Double.valueOf(networkStats[0]), value.getValue());
             } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(networkStats[1]));
+                assertEquals(Double.valueOf(networkStats[1]), value.getValue());
             }
         }
     }
