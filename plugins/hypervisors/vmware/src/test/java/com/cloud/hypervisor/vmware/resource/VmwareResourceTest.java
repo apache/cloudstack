@@ -87,7 +87,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CopyCommand.class, DatacenterMO.class, VmwareResource.class})
+@PrepareForTest({CopyCommand.class})
 public class VmwareResourceTest {
 
     private static final String VOLUME_PATH = "XXXXXXXXXXXX";
@@ -419,6 +419,7 @@ public class VmwareResourceTest {
     }
 
     @Test
+    @PrepareForTest({DatacenterMO.class, VmwareResource.class})
     public void testFindVmOnDatacenter() throws Exception {
         when(hyperHost.getHyperHostDatacenter()).thenReturn(mor);
         when(datacenter.getMor()).thenReturn(mor);

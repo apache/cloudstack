@@ -217,7 +217,7 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class, SshHelper.class, LibvirtComputingResource.class})
+@PrepareForTest(value = {MemStat.class, SshHelper.class})
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
@@ -5962,6 +5962,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
     public void testGetHaproxyStatsMethod() throws Exception {
         PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
         doNothing().when(scriptMock).add(Mockito.anyString());
@@ -5982,6 +5983,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
     public void testNetworkUsageMethod1() throws Exception {
         PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
         doNothing().when(scriptMock).add(Mockito.anyString());
@@ -6003,6 +6005,7 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
     public void testNetworkUsageMethod2() throws Exception {
         PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
         doNothing().when(scriptMock).add(Mockito.anyString());
