@@ -22,6 +22,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.utils.db.EntityManager;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
@@ -132,6 +133,7 @@ public class CreateAutoScaleVmProfileCmdTest {
         Assert.assertEquals("autoscalevmprofile", CreateAutoScaleVmProfileCmd.getResultObjectName());
         Assert.assertEquals(EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, createAutoScaleVmProfileCmd.getEventType());
         Assert.assertEquals("creating AutoScale Vm Profile", createAutoScaleVmProfileCmd.getEventDescription());
+        Assert.assertEquals(ApiCommandResourceType.AutoScaleVmProfile, createAutoScaleVmProfileCmd.getApiResourceType());
     }
 
     @Test
