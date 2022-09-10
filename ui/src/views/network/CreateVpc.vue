@@ -89,12 +89,57 @@
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            }"
+            @change="handleVpcOfferingChange" >
             <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id">
               {{ offering.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-row :gutter="12" v-if="selectedVpcOfferingSupportsDns">
+          <a-col :md="12" :lg="12">
+            <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
+              <template #label>
+                <tooltip-label :title="$t('label.dns1')" :tooltip="apiParams.dns1.description"/>
+              </template>
+              <a-input
+                v-model:value="form.dns1"
+                :placeholder="apiParams.dns1.description"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item v-if="'dns2' in apiParams" name="dns2" ref="dns2">
+              <template #label>
+                <tooltip-label :title="$t('label.dns2')" :tooltip="apiParams.dns2.description"/>
+              </template>
+              <a-input
+                v-model:value="form.dns2"
+                :placeholder="apiParams.dns2.description"/>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12" v-if="selectedVpcOfferingSupportsDns">
+          <a-col :md="12" :lg="12">
+            <a-form-item v-if="selectedVpcOffering && selectedVpcOffering.internetprotocol === 'DualStack' && 'ip6dns1' in apiParams" name="ip6dns1" ref="ip6dns1">
+              <template #label>
+                <tooltip-label :title="$t('label.ip6dns1')" :tooltip="apiParams.ip6dns1.description"/>
+              </template>
+              <a-input
+                v-model:value="form.ip6dns1"
+                :placeholder="apiParams.ip6dns1.description"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item v-if="selectedVpcOffering && selectedVpcOffering.internetprotocol === 'DualStack' && 'ip6dns2' in apiParams" name="ip6dns2" ref="ip6dns2">
+              <template #label>
+                <tooltip-label :title="$t('label.ip6dns2')" :tooltip="apiParams.ip6dns2.description"/>
+              </template>
+              <a-input
+                v-model:value="form.ip6dns2"
+                :placeholder="apiParams.ip6dns2.description"/>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="start" ref="start">
           <template #label>
             <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
@@ -127,7 +172,8 @@ export default {
       loadingZone: false,
       loadingOffering: false,
       zones: [],
-      vpcOfferings: []
+      vpcOfferings: [],
+      selectedVpcOffering: {}
     }
   },
   beforeCreate () {
@@ -136,6 +182,16 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+  },
+  computed: {
+    selectedVpcOfferingSupportsDns () {
+      if (this.selectedVpcOffering) {
+        const services = this.selectedVpcOffering?.service || []
+        const dnsServices = services.filter(service => service.name === 'Dns')
+        return dnsServices && dnsServices.length === 1
+      }
+      return false
+    }
   },
   methods: {
     initForm () {
@@ -181,9 +237,22 @@ export default {
       api('listVPCOfferings', { zoneid: this.form.zoneid, state: 'Enabled' }).then((reponse) => {
         this.vpcOfferings = reponse.listvpcofferingsresponse.vpcoffering
         this.form.vpcofferingid = this.vpcOfferings[0].id || ''
+        this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
         this.loadingOffering = false
       })
+    },
+    handleVpcOfferingChange (value) {
+      this.selectedVpcOffering = {}
+      if (!value) {
+        return
+      }
+      for (var offering of this.vpcOfferings) {
+        if (offering.id === value) {
+          this.selectedVpcOffering = offering
+          return
+        }
+      }
     },
     closeAction () {
       this.$emit('close-action')
