@@ -46,6 +46,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import java.util.Arrays;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Entity
@@ -680,7 +681,7 @@ public class HostVO implements Host {
 
     @Override
     public String toString() {
-        return String.format("Host {\"id\": \"%s\", \"name\": \"%s\", \"uuid\": \"%s\", \"type\"=\"%s\"}", id, name, uuid, type);
+        return String.format("Host %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "type"));
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {

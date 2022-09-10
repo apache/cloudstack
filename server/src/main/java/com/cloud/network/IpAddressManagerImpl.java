@@ -1802,7 +1802,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
                                     + " as a part of createVlanIpRange process");
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
-                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null, null, null);
+                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null, null, null,
+                                    null, null, null, null);
                             if (guestNetwork == null) {
                                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                                 throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "
@@ -2210,8 +2211,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setMacAddress(ip.getMacAddress());
                         }
                     }
-                    nic.setIPv4Dns1(dc.getDns1());
-                    nic.setIPv4Dns2(dc.getDns2());
+                    Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+                    nic.setIPv4Dns1(dns.first());
+                    nic.setIPv4Dns2(dns.second());
                 }
 
                 _ipv6Mgr.setNicIp6Address(nic, dc, network);
@@ -2260,8 +2262,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
                         }
                     }
-                    nic.setIPv4Dns1(dc.getDns1());
-                    nic.setIPv4Dns2(dc.getDns2());
+                    Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+                    nic.setIPv4Dns1(dns.first());
+                    nic.setIPv4Dns2(dns.second());
                 }
 
                 _ipv6Mgr.setNicIp6Address(nic, dc, network);

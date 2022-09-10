@@ -1829,6 +1829,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
+            List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
+            s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. Updating the host tags will not affect them.", activeVMs, host));
+
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
             }

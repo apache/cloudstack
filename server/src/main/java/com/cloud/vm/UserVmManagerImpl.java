@@ -1847,20 +1847,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
 
-        // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
-        if (vmInstance != null) {
-            if (vmInstance.getState().equals(State.Stopped)) {
-                upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
-                return true;
-            }
-            if (vmInstance.getState().equals(State.Running)) {
-                return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
+        if (vmInstance == null) {
+            s_logger.error(String.format("VM instance with id [%s] is null, it is not possible to upgrade a null VM.", vmId));
+            return false;
+        }
+
+        if (State.Stopped.equals(vmInstance.getState())) {
+            upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
+            return true;
+        }
+
+        if (State.Running.equals(vmInstance.getState())) {
+            ServiceOfferingVO newServiceOfferingVO = _serviceOfferingDao.findById(newServiceOfferingId);
+            HostVO instanceHost = _hostDao.findById(vmInstance.getHostId());
+            _hostDao.loadHostTags(instanceHost);
+
+            if (!instanceHost.checkHostServiceOfferingTags(newServiceOfferingVO)) {
+                s_logger.error(String.format("Cannot upgrade VM [%s] as the new service offering [%s] does not have the required host tags %s.", vmInstance, newServiceOfferingVO,
+                        instanceHost.getHostTags()));
+                return false;
             }
         }
-        return false;
+        return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
     }
 
     private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
@@ -2042,13 +2053,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         for (final VolumeVO rootVolumeOfVm : vols) {
             DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
+            Long rootDiskSize= null;
+            Long rootDiskSizeBytes = null;
+            if (customParameters.containsKey(ApiConstants.ROOT_DISK_SIZE)) {
+                rootDiskSize = Long.parseLong(customParameters.get(ApiConstants.ROOT_DISK_SIZE));
+                rootDiskSizeBytes = rootDiskSize << 30;
+            }
+            if (currentRootDiskOffering.getId() == newDiskOffering.getId() &&
+                    (!newDiskOffering.isCustomized() || (newDiskOffering.isCustomized() && Objects.equals(rootVolumeOfVm.getSize(), rootDiskSizeBytes)))) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Volume %s is already having disk offering %s", rootVolumeOfVm, newDiskOffering.getUuid()));
+                }
+                continue;
+            }
             HypervisorType hypervisorType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
             if (HypervisorType.Simulator != hypervisorType) {
                 Long minIopsInNewDiskOffering = null;
                 Long maxIopsInNewDiskOffering = null;
                 boolean autoMigrate = false;
                 boolean shrinkOk = false;
-                Long rootDiskSize = null;
                 if (customParameters.containsKey(ApiConstants.MIN_IOPS)) {
                     minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MIN_IOPS));
                 }
@@ -2060,9 +2083,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 if (customParameters.containsKey(ApiConstants.SHRINK_OK)) {
                     shrinkOk = Boolean.parseBoolean(customParameters.get(ApiConstants.SHRINK_OK));
-                }
-                if (customParameters.containsKey(ApiConstants.ROOT_DISK_SIZE)) {
-                    rootDiskSize = Long.parseLong(customParameters.get(ApiConstants.ROOT_DISK_SIZE));
                 }
                 ChangeOfferingForVolumeCmd changeOfferingForVolumeCmd = new ChangeOfferingForVolumeCmd(rootVolumeOfVm.getId(), newDiskOffering.getId(), minIopsInNewDiskOffering, maxIopsInNewDiskOffering, autoMigrate, shrinkOk);
                 if (rootDiskSize != null) {
@@ -3732,7 +3752,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
         Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                 null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null, null,
-                null, null, null);
+                null, null, null, null, null, null, null);
         if (newNetwork != null) {
             defaultNetwork = _networkDao.findById(newNetwork.getId());
         }
@@ -7257,7 +7277,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network",
                                     newAccount.getAccountName() + "-network", null, null, null, false, null, newAccount,
                                     null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
-                                    null, null, true, null, null, null, null, null);
+                                    null, null, true, null, null, null, null, null, null, null, null, null);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).isPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);
