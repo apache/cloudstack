@@ -26,13 +26,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
-
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-
-
 import com.cloud.vm.VMInstanceVO;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import org.apache.cloudstack.backup.BackupOffering;
@@ -43,21 +40,15 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-
 
 public class NetworkerClientTest {
     private final String adminUsername = "administrator";
     private final String adminPassword = "password";
     private final int port = 9399;
     private final String url =  "http://localhost:" + port + "/nwrestapi/v3";
-
     private NetworkerClient client;
-
-
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(port);
 

@@ -379,8 +379,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     return vm;
     }
 
-
-
     @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup) {
 
         VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
