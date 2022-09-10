@@ -92,4 +92,6 @@ public interface VolumeInfo extends DataObject, Volume {
     String getDeployAsIsConfiguration();
 
     public String getvSphereStoragePolicyId();
+
+    Volume getVolume();
 }

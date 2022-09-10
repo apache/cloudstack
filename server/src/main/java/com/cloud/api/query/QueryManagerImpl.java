@@ -123,6 +123,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -2483,6 +2484,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
+        sb.and("instanceTypeNEQ", sb.entity().getInstanceType(), SearchCriteria.Op.NEQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         boolean accountJoinIsDone = false;
         if (permittedAccounts.isEmpty() && domainId != null) {
@@ -2509,6 +2511,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object startDate = cmd.getStartDate();
 
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
+        sc.setParameters("instanceTypeNEQ", AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE);
         if (listProjectResourcesCriteria != null) {
             sc.setParameters("type", Account.Type.PROJECT);
         }
@@ -3316,17 +3319,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
             if (!hostTags.isEmpty()) {
-                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : hostTags) {
-                    sb.and(tag, sb.entity().getHostTag(), Op.FIND_IN_SET);
+                    hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
                 }
-                sb.done();
+                hostTagsSearchBuilder.done();
 
-                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
                 for(String tag : hostTags) {
-                    scc.setParameters(tag, tag);
+                    hostTagsSearchCriteria.setParameters(tag, tag);
                 }
-                sc.addAnd("hostTags", SearchCriteria.Op.SC, scc);
+
+                SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+                finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
+                finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
+
+                sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
             }
         }
 
@@ -4286,7 +4294,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String value = cmd.getValue();
         Long resourceId = null;
 
-        //Validation - 1.1 - resourceId and value cant be null.
+        //Validation - 1.1 - resourceId and value can't be null.
         if (resourceIdStr == null && value == null) {
             throw new InvalidParameterValueException("Insufficient parameters passed for listing by resourceId OR key,value pair. Please check your params and try again.");
         }

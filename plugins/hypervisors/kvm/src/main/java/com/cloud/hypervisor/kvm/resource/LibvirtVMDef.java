@@ -1188,7 +1188,7 @@ public class LibvirtVMDef {
         private String _ipAddr;
         private String _scriptPath;
         private NicModel _model;
-        private Integer _networkRateKBps;
+        private int _networkRateKBps;
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
@@ -1199,9 +1199,25 @@ public class LibvirtVMDef {
         private String _dpdkSourcePort;
         private String _dpdkExtraLines;
         private String _interfaceMode;
+        private String _userIp4Network;
+        private Integer _userIp4Prefix;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
+        }
+
+        public void defUserNet(NicModel model, String macAddr, String ip4Network, Integer ip4Prefix) {
+            _netType = GuestNetType.USER;
+            _macAddr = macAddr;
+            _userIp4Network = ip4Network;
+            _userIp4Prefix = ip4Prefix;
+            _model = model;
+        }
+
+        public void defUserNet(NicModel model, String macAddr) {
+            _netType = GuestNetType.USER;
+            _macAddr = macAddr;
+            _model = model;
         }
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model, Integer networkRateKBps) {
@@ -1385,6 +1401,7 @@ public class LibvirtVMDef {
                 netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort +
                         "' mode='" + _interfaceMode + "'/>\n");
             }
+
             if (_networkName != null) {
                 netBuilder.append("<target dev='" + _networkName + "'/>\n");
             }
@@ -1421,13 +1438,18 @@ public class LibvirtVMDef {
                 netBuilder.append(_dpdkExtraLines);
             }
 
-            if (_netType != GuestNetType.VHOSTUSER) {
+            if (_netType != GuestNetType.VHOSTUSER && _netType != GuestNetType.USER) {
                 netBuilder.append("<link state='" + (_linkStateUp ? "up" : "down") +"'/>\n");
             }
 
             if (_slot  != null) {
                 netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
             }
+
+            if (StringUtils.isNotBlank(_userIp4Network) && _userIp4Prefix != null) {
+                netBuilder.append(String.format("<ip family='ipv4' address='%s' prefix='%s'/>\n", _userIp4Network, _userIp4Prefix));
+            }
+
             return netBuilder.toString();
         }
 

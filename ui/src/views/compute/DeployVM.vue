@@ -1433,6 +1433,7 @@ export default {
           params.id = this.networkId
           apiName = 'listNetworks'
         }
+        if (!apiName) return resolve(zones)
 
         api(apiName, params).then(json => {
           let objectName
@@ -1746,6 +1747,9 @@ export default {
         }
         if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
+          if (values.rootdisksize && values.rootdisksize > 0) {
+            deployVmData.rootdisksize = values.rootdisksize
+          }
         }
         if (this.isCustomizedIOPS) {
           deployVmData['details[0].minIops'] = this.minIops
@@ -1916,7 +1920,7 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        const args = { listall: true, showicon: true }
+        const args = { showicon: true }
         if (zoneId) args.id = zoneId
         api(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
@@ -1948,7 +1952,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -2154,6 +2158,7 @@ export default {
     },
     fetchTemplateNics (template) {
       var nics = []
+      this.nicToNetworkSelection = []
       if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
         var keys = Object.keys(template.deployasisdetails)
         keys = keys.filter(key => key.startsWith('network-'))
@@ -2165,7 +2170,6 @@ export default {
           return a.InstanceID - b.InstanceID
         })
         if (this.options.networks && this.options.networks.length > 0) {
-          this.nicToNetworkSelection = []
           for (var i = 0; i < nics.length; ++i) {
             var nic = nics[i]
             nic.id = nic.InstanceID

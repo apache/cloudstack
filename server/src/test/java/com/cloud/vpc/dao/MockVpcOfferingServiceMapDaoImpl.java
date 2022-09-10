@@ -41,7 +41,7 @@ public class MockVpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOffering
      * @see com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao#areServicesSupportedByNetworkOffering(long, com.cloud.network.Network.Service[])
      */
     @Override
-    public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service[] services) {
+    public boolean areServicesSupportedByVpcOffering(long vpcOfferingId, Service[] services) {
         // TODO Auto-generated method stub
         return false;
     }

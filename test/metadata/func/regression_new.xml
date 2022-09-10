@@ -27,7 +27,7 @@ under the License.
 		internal dns and CIDR are given
 	-->
 	<!--
-		Test case 13: It doesnt contain user_data, size, network_group_list
+		Test case 13: It doesn't contain user_data, size, network_group_list
 	-->
 
 	<!-- Test case #3 - createUser command -->
