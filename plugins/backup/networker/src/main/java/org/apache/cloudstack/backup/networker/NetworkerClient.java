@@ -64,18 +64,12 @@ import java.util.List;
 
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
-
 public class NetworkerClient {
-
-
     private static final Logger LOG = Logger.getLogger(NetworkerClient.class);
-
     private final URI apiURI;
     private final String apiName;
     private final String apiPassword;
-
     private final HttpClient httpClient;
-
 
     public NetworkerClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
 
@@ -356,5 +350,3 @@ public class NetworkerClient {
         return new ArrayList<>();
     }
 }
-
-

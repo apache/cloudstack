@@ -16,13 +16,8 @@
 ## KIND, either express or implied.  See the License for the
 ## specific language governing permissions and limitations
 ## under the License.
-
-
 version=0.9.1
-
-
 OPTIND=1
-
 verb=0
 logDir="/nsr/logs/cloudstack/"
 clusterClient=""
@@ -51,7 +46,6 @@ vercomp(){
        printf -v a %08d $1; printf -v b %08d $3
        test $a "$2" $b
 }
-
 
 usage() {
         echo "
@@ -120,8 +114,6 @@ sanity_checks() {
         log "Environment Sanity Checks successfully passed"
 }
 
-
-
 echo "
 Cloudstack B&R Framework - EMC Networker backup script
 Version $version
@@ -138,6 +130,7 @@ restore_all_volumes() {
                 log "Restore of SAVESET $ssid has been completed"
         fi
 }
+
 restore_volume() {
         log "Preparning restore for volume $volume at destination as  $POOLPATH/$newvolumeUuid"
         cmd="$(recover -R "$destination" -c "$clusterClient" -s "$networkerServer" -a "$POOLPATH/$volume" -iR)"
@@ -229,6 +222,4 @@ elif [[ -n "$ssid" && -z "$newvolumeUuid" ]]; then
         sanity_checks
         restore_all_volumes
 fi
-
-
 exit 0

@@ -14,15 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-
 package org.apache.cloudstack.backup.networker;
 
-
 import org.apache.cloudstack.backup.BackupOffering;
-
 import java.util.Date;
-
 
 public class NetworkerBackupOffering implements BackupOffering {
 
@@ -61,7 +56,7 @@ public class NetworkerBackupOffering implements BackupOffering {
 
     @Override
     public String getProvider() {
-        return "veeam";
+        return "networker";
     }
 
     @Override
@@ -78,5 +73,4 @@ public class NetworkerBackupOffering implements BackupOffering {
     public long getId() {
         return -1;
     }
-
 }

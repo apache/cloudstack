@@ -16,13 +16,8 @@
 ## KIND, either express or implied.  See the License for the
 ## specific language governing permissions and limitations
 ## under the License.
-
-
 version=0.9.1
-
-
 OPTIND=1
-
 verb=0
 logDir="/nsr/logs/cloudstack/"
 snapPrefix="CSBKP_$RANDOM_"
@@ -36,7 +31,6 @@ kvmDUuid=""
 logFile=""
 mediaPool=""
 retentionTime=""
-
 
 log () {
 
@@ -54,6 +48,7 @@ vercomp(){
    printf -v a %08d $1; printf -v b %08d $3
    test $a "$2" $b
 }
+
 usage() {
         echo "
 
@@ -131,7 +126,6 @@ echo "
 Cloudstack B&R Framework - EMC Networker backup script
 Version $version
 "
-
 
 backup_domain() {
 
@@ -264,7 +258,4 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  fi
 
  backup_domain "$kvmDName" "$snapPrefix$kvmDName"
-
-
  exit 0
-
