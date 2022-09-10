@@ -213,7 +213,7 @@ public class ImplicitPlannerTest {
         // Check cluster 2 and 3 are not in the cluster list.
         // Host 6 and 7 should also be in avoid list.
         assertFalse("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
-        assertThat("Found cluster that shouldn't have been present, only cluster 1 should be present",clusterList, everyItem(equalTo(1L)));
+        assertThat("Found cluster that shouldn't have been present, only cluster 1 should be present", clusterList, everyItem(equalTo(1L)));
 
         Set<Long> hostsInAvoidList = avoids.getHostsToAvoid();
         assertFalse("Host 5 shouldn't have be in the avoid list, but it is present", hostsInAvoidList.contains(5L));
@@ -242,7 +242,7 @@ public class ImplicitPlannerTest {
         // Check cluster 1 and 3 are not in the cluster list.
         // Host 5 and 7 should also be in avoid list.
         assertFalse("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
-        assertThat("Found cluster that shouldn't have been present, only cluster 2 should be present",clusterList, everyItem(equalTo(2L)));
+        assertThat("Found cluster that shouldn't have been present, only cluster 2 should be present", clusterList, everyItem(equalTo(2L)));
 
         Set<Long> hostsInAvoidList = avoids.getHostsToAvoid();
         assertFalse("Host 6 shouldn't have be in the avoid list, but it is present", hostsInAvoidList.contains(6L));
@@ -293,7 +293,7 @@ public class ImplicitPlannerTest {
         // Check cluster 1 and 2 are not in the cluster list.
         // Host 5 and 6 should also be in avoid list.
         assertFalse("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
-        assertThat("Found cluster that shouldn't have been present, only cluster 3 should be present",clusterList, everyItem(equalTo(3L)));
+        assertThat("Found cluster that shouldn't have been present, only cluster 3 should be present", clusterList, everyItem(equalTo(3L)));
 
         Set<Long> hostsInAvoidList = avoids.getHostsToAvoid();
         assertFalse("Host 7 shouldn't have be in the avoid list, but it is present", hostsInAvoidList.contains(7L));
