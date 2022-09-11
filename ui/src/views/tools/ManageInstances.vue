@@ -518,7 +518,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {

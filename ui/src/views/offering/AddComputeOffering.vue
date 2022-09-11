@@ -810,7 +810,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -823,11 +822,9 @@ export default {
       })
     },
     fetchStorageTagData () {
-      const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags', params).then(json => {
+      api('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -839,10 +836,8 @@ export default {
       })
     },
     fetchDeploymentPlannerData () {
-      const params = {}
-      params.listAll = true
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners', params).then(json => {
+      api('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })

@@ -17,13 +17,14 @@
 
 package com.cloud.network;
 
-import com.google.common.collect.ImmutableMap;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -39,10 +40,11 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.framework.config.ConfigKey;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * The NetworkModel presents a read-only view into the Network data such as L2 networks,
@@ -322,5 +324,13 @@ public interface NetworkModel {
                                   String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname);
 
     String getValidNetworkCidr(Network guestNetwork);
+
+    Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone);
+
+    Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone);
+
+    void verifyIp4DnsPair(final String ip4Dns1, final String ip4Dns2);
+
+    void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
 
 }
