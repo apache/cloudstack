@@ -627,12 +627,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups");
         }
 
-        // Remove comments (if any)
-        AutoScaleVmGroup group = autoScaleVmGroupDao.findById(id);
-        if (group != null) {
-            annotationDao.removeByEntityType(AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(), group.getUuid());
-        }
-
         boolean success = autoScaleVmProfileDao.remove(id);
         if (success) {
             s_logger.info("Successfully deleted AutoScale Vm Profile with Id: " + id);
@@ -1063,6 +1057,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 return false;
             }
         }
+
+        // Remove comments (if any)
+        annotationDao.removeByEntityType(AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(), autoScaleVmGroupVO.getUuid());
 
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
