@@ -50,6 +50,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -157,8 +158,9 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         }
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        nic.setIPv4Dns1(dc.getDns1());
-        nic.setIPv4Dns2(dc.getDns2());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        nic.setIPv4Dns1(dns.first());
+        nic.setIPv4Dns2(dns.second());
     }
 
     @DB
@@ -240,8 +242,9 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
             }
         });
 
-        nic.setIPv4Dns1(dc.getDns1());
-        nic.setIPv4Dns2(dc.getDns2());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        nic.setIPv4Dns1(dns.first());
+        nic.setIPv4Dns2(dns.second());
     }
 
 }
