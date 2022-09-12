@@ -1433,7 +1433,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long id = cmd.getId();
         String source = cmd.getSource();
         if (source != null) {
-            source = source.toLowerCase();
+            source = source.toUpperCase();
         }
         String providerStr = cmd.getProvider();
         if (providerStr != null) {

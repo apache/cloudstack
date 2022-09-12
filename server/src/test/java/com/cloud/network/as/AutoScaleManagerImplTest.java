@@ -17,8 +17,12 @@
 package com.cloud.network.as;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
 import com.cloud.user.Account;
@@ -28,12 +32,15 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
 import org.junit.Assert;
@@ -55,6 +62,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -89,6 +97,15 @@ public class AutoScaleManagerImplTest {
 
     @Mock
     AutoScalePolicyConditionMapDao autoScalePolicyConditionMapDao;
+
+    @Mock
+    AutoScaleVmGroupPolicyMapDao autoScaleVmGroupPolicyMapDao;
+
+    @Mock
+    AutoScaleVmGroupDao autoScaleVmGroupDao;
+
+    @Mock
+    AutoScaleVmProfileDao autoScaleVmProfileDao;
 
     AccountVO account;
     UserVO user;
@@ -147,6 +164,7 @@ public class AutoScaleManagerImplTest {
 
         when(counterDao.persist(any(CounterVO.class))).thenReturn(counterMock);
         when(counterDao.findById(anyLong())).thenReturn(counterMock);
+        when(conditionDao.findById(any())).thenReturn(conditionMock);
         when(conditionDao.persist(any(ConditionVO.class))).thenReturn(conditionMock);
 
         when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
@@ -202,6 +220,55 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
+    public void testListCounters() {
+        List<CounterVO> countersMock = Arrays.asList(counterMock);
+        when(counterDao.listCounters(any(), any(), any(), any(), any(), any())).thenReturn(countersMock);
+
+        ListCountersCmd cmd = new ListCountersCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, "VirtualRouter");
+
+        List<? extends Counter> counters = autoScaleManagerImplSpy.listCounters(cmd);
+        Assert.assertEquals(countersMock, counters);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListCountersWithInvalidProvider() {
+        ListCountersCmd cmd = new ListCountersCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, INVALID);
+
+        List<? extends Counter> counters = autoScaleManagerImplSpy.listCounters(cmd);
+        Assert.assertNull(counters);
+    }
+
+    @Test
+    public void testDeleteCounter() throws ResourceInUseException {
+        when(counterDao.remove(counterId)).thenReturn(true);
+
+        boolean success = autoScaleManagerImplSpy.deleteCounter(counterId);
+
+        Assert.assertTrue(success);
+        Mockito.verify(counterDao).remove(counterId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteCounterInvalidCounter() throws ResourceInUseException {
+        when(counterDao.findById(counterId)).thenReturn(null);
+
+        boolean success = autoScaleManagerImplSpy.deleteCounter(counterId);
+        Assert.assertFalse(success);
+        Mockito.verify(counterDao, never()).remove(counterId);
+    }
+
+    @Test(expected = ResourceInUseException.class)
+    public void testDeleteCounterWithUsedCounter() throws ResourceInUseException {
+        when(conditionDao.findByCounterId(counterId)).thenReturn(conditionMock);
+
+        boolean success = autoScaleManagerImplSpy.deleteCounter(counterId);
+        Assert.assertFalse(success);
+        Mockito.verify(counterDao, never()).remove(counterId);
+    }
+
+    @Test
     public void testCreateConditionCmd() throws IllegalArgumentException {
         CreateConditionCmd cmd = new CreateConditionCmd();
 
@@ -241,6 +308,117 @@ public class AutoScaleManagerImplTest {
 
         Assert.assertNull(condition);
         Mockito.verify(counterDao, never()).persist(Mockito.any());
+    }
+
+    @Test
+    public void testDeleteCondition() throws ResourceInUseException {
+        when(autoScalePolicyConditionMapDao.isConditionInUse(conditionId)).thenReturn(false);
+        when(conditionDao.remove(conditionId)).thenReturn(true);
+
+        boolean success = autoScaleManagerImplSpy.deleteCondition(conditionId);
+
+        Assert.assertTrue(success);
+        Mockito.verify(conditionDao).remove(conditionId);
+    }
+
+    @Test(expected = ResourceInUseException.class)
+    public void testDeleteConditionWithUsedCondition() throws ResourceInUseException {
+        when(autoScalePolicyConditionMapDao.isConditionInUse(conditionId)).thenReturn(true);
+
+        boolean success = autoScaleManagerImplSpy.deleteCondition(conditionId);
+
+        Assert.assertFalse(success);
+        Mockito.verify(conditionDao, never()).remove(conditionId);
+    }
+
+    @Test
+    public void testUpdateCondition() throws ResourceInUseException {
+        GenericSearchBuilder<AutoScalePolicyConditionMapVO, Long> searchBuilderMock = Mockito.mock(GenericSearchBuilder.class);
+        SearchCriteria<Long> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
+        AutoScalePolicyConditionMapVO autoScalePolicyConditionMapVOMock = Mockito.mock(AutoScalePolicyConditionMapVO.class);
+
+        Mockito.doReturn(searchBuilderMock).when(autoScalePolicyConditionMapDao).createSearchBuilder(any());
+        when(searchBuilderMock.entity()).thenReturn(autoScalePolicyConditionMapVOMock);
+        Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
+        Mockito.doReturn(Arrays.asList()).when(autoScalePolicyConditionMapDao).customSearch(searchCriteriaMock, null);
+
+        when(conditionDao.update(eq(conditionId), any())).thenReturn(true);
+
+        UpdateConditionCmd cmd = new UpdateConditionCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", conditionId);
+        ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
+        ReflectionTestUtils.setField(cmd, "threshold", 100L);
+
+        Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
+
+        Assert.assertEquals(conditionMock, condition);
+        Mockito.verify(conditionDao).update(eq(conditionId), Mockito.any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateConditionWithInvalidOperator() throws ResourceInUseException {
+        UpdateConditionCmd cmd = new UpdateConditionCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", conditionId);
+        ReflectionTestUtils.setField(cmd, "relationalOperator", INVALID);
+        ReflectionTestUtils.setField(cmd, "threshold", 100L);
+
+        Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
+
+        Assert.assertNull(condition);
+        Mockito.verify(conditionDao, never()).update(eq(conditionId), Mockito.any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateConditionWithInvalidThreshold() throws ResourceInUseException {
+        UpdateConditionCmd cmd = new UpdateConditionCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", conditionId);
+        ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
+        ReflectionTestUtils.setField(cmd, "threshold", -1L);
+
+        Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
+
+        Assert.assertNull(condition);
+        Mockito.verify(conditionDao, never()).update(eq(conditionId), Mockito.any());
+    }
+
+    @Test(expected = ResourceInUseException.class)
+    public void testUpdateConditionWithPolicies() throws ResourceInUseException {
+        GenericSearchBuilder<AutoScalePolicyConditionMapVO, Long> genericSearchBuilderMock = Mockito.mock(GenericSearchBuilder.class);
+        SearchCriteria<Long> searchCriteriaLongMock = Mockito.mock(SearchCriteria.class);
+        AutoScalePolicyConditionMapVO autoScalePolicyConditionMapVOMock = Mockito.mock(AutoScalePolicyConditionMapVO.class);
+
+        Mockito.doReturn(genericSearchBuilderMock).when(autoScalePolicyConditionMapDao).createSearchBuilder(Long.class);
+        when(genericSearchBuilderMock.entity()).thenReturn(autoScalePolicyConditionMapVOMock);
+        Mockito.doReturn(searchCriteriaLongMock).when(genericSearchBuilderMock).create();
+        Mockito.doReturn(Arrays.asList(scaleUpPolicyId)).when(autoScalePolicyConditionMapDao).customSearch(searchCriteriaLongMock, null);
+
+        SearchBuilder<AutoScaleVmGroupPolicyMapVO> searchBuilderMock1 = Mockito.mock(SearchBuilder.class);
+        AutoScaleVmGroupPolicyMapVO autoScaleVmGroupPolicyMapVOMock = Mockito.mock(AutoScaleVmGroupPolicyMapVO.class);
+        Mockito.doReturn(searchBuilderMock1).when(autoScaleVmGroupPolicyMapDao).createSearchBuilder();
+        when(searchBuilderMock1.entity()).thenReturn(autoScaleVmGroupPolicyMapVOMock);
+
+        SearchBuilder<AutoScaleVmGroupVO> searchBuilderMock2 = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<AutoScaleVmGroupVO> searchCriteriaMock2 = Mockito.mock(SearchCriteria.class);
+        AutoScaleVmGroupVO autoScaleVmGroupVOMock = Mockito.mock(AutoScaleVmGroupVO.class);
+
+        Mockito.doReturn(searchBuilderMock2).when(autoScaleVmGroupDao).createSearchBuilder();
+        when(searchBuilderMock2.entity()).thenReturn(autoScaleVmGroupVOMock);
+        Mockito.doReturn(searchCriteriaMock2).when(searchBuilderMock2).create();
+        Mockito.doReturn(Arrays.asList(autoScaleVmGroupVOMock)).when(autoScaleVmGroupDao).search(searchCriteriaMock2, null);
+
+        UpdateConditionCmd cmd = new UpdateConditionCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", conditionId);
+        ReflectionTestUtils.setField(cmd, "relationalOperator", String.valueOf(relationalOperator));
+        ReflectionTestUtils.setField(cmd, "threshold", 100L);
+
+        Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
+
+        Assert.assertNull(condition);
+        Mockito.verify(conditionDao, never()).update(eq(conditionId), Mockito.any());
     }
 
     @Test
@@ -305,5 +483,260 @@ public class AutoScaleManagerImplTest {
 
         Assert.assertNull(policy);
         Mockito.verify(asPolicyDao, never()).persist(Mockito.any());
+    }
+
+    @Test
+    public void testCheckValidityAndPersistPolicy() {
+
+    }
+
+    @Test
+    public void testCreateAutoScaleVmProfile() {
+
+    }
+
+    @Test
+    public void testUpdateAutoScaleVmProfile() {
+
+    }
+
+    @Test
+    public void testDeleteAutoScaleVmProfile() {
+
+    }
+
+    @Test
+    public void testCheckValidityAndPersistVmProfile() {
+
+    }
+
+    @Test
+    public void testCheckAutoScaleUser() {
+
+    }
+
+    @Test
+    public void testCreateAutoScaleVmGroup() {
+
+    }
+
+    @Test
+    public void testCheckValidityAndPersistVmProfilGroup() {
+
+    }
+
+    @Test
+    public void testUpdateAutoScaleVmGroup() {
+
+    }
+
+    @Test
+    public void testEnableAutoScaleVmGroup() {
+
+    }
+
+    @Test
+    public void testDisableAutoScaleVmGroup() {
+
+    }
+
+    @Test
+    public void testDeleteAutoScaleVmGroupsByAccount() {
+
+    }
+
+    @Test
+    public void testCleanUpAutoScaleResources() {
+
+    }
+
+    @Test
+    public void testGetDeployParams() {
+
+    }
+
+    @Test
+    public void testCreateNewVM() {
+
+    }
+
+    @Test
+    public void gestGetVmNetworkIds() {
+
+    }
+
+    @Test
+    public void getVmOverrideDiskOfferingId() {
+
+    }
+
+    @Test
+    public void getVmDataDiskSize() {
+
+    }
+
+    @Test
+    public void getVmAffinityGroupId() {
+
+    }
+
+    @Test
+    public void updateVmDetails() {
+
+    }
+
+    @Test
+    public void testDoScaleUp() {
+
+    }
+
+    @Test
+    public void testDoScaleDown() {
+
+    }
+
+    @Test
+    public void checkAllAutoScaleVmGroups() {
+
+    }
+
+    @Test
+    public void checkAutoScaleVmGroup() {
+
+    }
+
+    @Test
+    public void isNative() {
+
+    }
+
+    @Test
+    public void getHostAndVmIdsMap() {
+
+    }
+
+    @Test
+    public void updateHostAndVmIdsMap() {
+
+    }
+
+    @Test
+    public void getPolicyCounters() {
+
+    }
+
+    @Test
+    public void getAutoscaleAction() {
+
+    }
+
+    @Test
+    public void isQuitTimePassForPolicy() {
+
+    }
+
+    @Test
+    public void checkConditionsForPolicy() {
+
+    }
+
+    @Test
+    public void getPairofCounternameAndDuration() {
+
+    }
+
+    @Test
+    public void getNetwork() {
+
+    }
+
+    @Test
+    public void getPublicIpAndPort() {
+
+    }
+
+    @Test
+    public void checkNetScalerAsGroup() {
+
+    }
+
+    @Test
+    public void updateCountersMapWithInstantData() {
+
+    }
+
+    @Test
+    public void updateCountersMapWithAggregatedData() {
+
+    }
+
+    @Test
+    public void monitorVirtualRouterAsGroup() {
+
+    }
+
+    @Test
+    public void checkVirtualRouterAsGroup() {
+
+    }
+
+    @Test
+    public void getVmStatsFromHosts() {
+
+    }
+
+    @Test
+    public void getVmStatsByIdFromHost() {
+
+    }
+
+    @Test
+    public void processVmStatsByIdFromHost() {
+
+    }
+
+    @Test
+    public void getNetworkStatsFromVirtualRouter() {
+
+    }
+
+    @Test
+    public void setGetAutoScaleMetricsCommandMetrics() {
+
+    }
+
+    @Test
+    public void processGetAutoScaleMetricsAnswer() {
+
+    }
+
+    @Test
+    public void updateCountersMap() {
+
+    }
+
+    @Test
+    public void cleanupAsVmGroupStatistics() {
+
+    }
+
+    @Test
+    public void scheduleMonitorTasks() {
+
+    }
+
+    @Test
+    public void cancelMonitorTask() {
+
+    }
+
+    @Test
+    public void checkIfVmActionAllowed() {
+
+    }
+
+    @Test
+    public void destroyVm() {
+
     }
 }
