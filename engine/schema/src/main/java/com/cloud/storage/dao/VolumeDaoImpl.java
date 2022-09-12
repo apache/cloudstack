@@ -241,9 +241,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         if (rootVolumeVoList.size() > 1) {
             logger.warn(String.format("More than one ROOT volume has been found for VM [%s], there is probably an inconsistency in the database.", instanceUuid));
         } else if (rootVolumeVoList.isEmpty()) {
-            CloudRuntimeException exception = new CloudRuntimeException(String.format("No ROOT volume has been found for VM [%s].", instanceUuid));
-            logger.error(exception.getMessage(), exception);
-            throw exception;
+            logger.debug(String.format("No ready ROOT volume has been found for VM [%s].", instanceUuid));
+            return null;
         }
         return rootVolumeVoList.get(0);
     }

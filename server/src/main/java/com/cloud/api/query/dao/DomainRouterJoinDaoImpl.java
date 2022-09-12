@@ -229,8 +229,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         VolumeVO rootVolumeVo = volumeDao.getInstanceRootVolume(router.getId(), router.getUuid());
 
-        routerResponse.setRootVolumeID(rootVolumeVo.getUuid());
-
+        if (rootVolumeVo != null) {
+            routerResponse.setRootVolumeID(rootVolumeVo.getUuid());
+        }
 
         return routerResponse;
     }
