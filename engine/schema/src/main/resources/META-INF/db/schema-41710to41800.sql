@@ -18,7 +18,6 @@
 --;
 -- Schema upgrade from 4.17.1.0 to 4.18.0.0
 --;
-
 -- Enable CPU cap for default system offerings;
 UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
@@ -39,3 +38,14 @@ CREATE TABLE `cloud`.`resource_reservation` (
   `amount` bigint unsigned NOT NULL,
   PRIMARY KEY (`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Alter networks table to add ip6dns1 and ip6dns2
+ALTER TABLE `cloud`.`networks`
+    ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'first IPv6 DNS for the network' AFTER `dns2`,
+    ADD COLUMN `ip6dns2` varchar(255) DEFAULT NULL COMMENT 'second IPv6 DNS for the network' AFTER `ip6dns1`;
+-- Alter vpc table to add dns1, dns2, ip6dns1 and ip6dns2
+ALTER TABLE `cloud`.`vpc`
+    ADD COLUMN `dns1` varchar(255) DEFAULT NULL COMMENT 'first IPv4 DNS for the vpc' AFTER `network_domain`,
+    ADD COLUMN `dns2` varchar(255) DEFAULT NULL COMMENT 'second IPv4 DNS for the vpc' AFTER `dns1`,
+    ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'first IPv6 DNS for the vpc' AFTER `dns2`,
+    ADD COLUMN `ip6dns2` varchar(255) DEFAULT NULL COMMENT 'second IPv6 DNS for the vpc' AFTER `ip6dns1`;

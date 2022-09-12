@@ -59,6 +59,7 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -321,8 +322,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
             nic.setIsolationUri(config.getBroadcastUri());
-            nic.setIPv4Dns1(dc.getDns1());
-            nic.setIPv4Dns2(dc.getDns2());
+            Pair<String, String> dns = _networkModel.getNetworkIp4Dns(config, dc);
+            nic.setIPv4Dns1(dns.first());
+            nic.setIPv4Dns2(dns.second());
             nic.setIPv4Netmask(NetUtils.cidr2Netmask(config.getCidr()));
             long cidrAddress = NetUtils.ip2Long(config.getCidr().split("/")[0]);
             int cidrSize = getGloballyConfiguredCidrSize();
