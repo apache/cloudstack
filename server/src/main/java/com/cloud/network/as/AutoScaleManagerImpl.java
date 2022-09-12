@@ -1898,7 +1898,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         long lbId = asGroup.getLoadBalancerId();
 
         List<LoadBalancerVMMapVO> lbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
-        if ((lbVmMapVos != null) && (lbVmMapVos.size() > 0)) {
+        if (CollectionUtils.isNotEmpty(lbVmMapVos)) {
             for (LoadBalancerVMMapVO LbVmMapVo : lbVmMapVos) {
                 long instanceId = LbVmMapVo.getInstanceId();
                 if (instanceId == vmId) {
@@ -1920,7 +1920,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         long lbId = asGroup.getLoadBalancerId();
         long instanceId = -1;
         List<LoadBalancerVMMapVO> lbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
-        if ((lbVmMapVos != null) && (lbVmMapVos.size() > 0)) {
+        if (CollectionUtils.isNotEmpty(lbVmMapVos)) {
             for (LoadBalancerVMMapVO LbVmMapVo : lbVmMapVos) {
                 instanceId = LbVmMapVo.getInstanceId();
             }
@@ -1969,11 +1969,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 startNewVM(vmId);
                 if (assignLBruleToNewVm(vmId, asGroup)) {
                     // update last_quietTime
-                    List<AutoScaleVmGroupPolicyMapVO> GroupPolicyVOs = autoScaleVmGroupPolicyMapDao
+                    List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao
                         .listByVmGroupId(groupId);
-                    for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
+                    for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
                         AutoScalePolicyVO vo = autoScalePolicyDao
-                            .findById(GroupPolicyVO.getPolicyId());
+                            .findById(groupPolicyVO.getPolicyId());
                         if (vo.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                             vo.setLastQuietTime(new Date());
                             autoScalePolicyDao.persist(vo);
@@ -2019,9 +2019,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             // update group-vm mapping
             autoScaleVmGroupVmMapDao.remove(groupId, vmId);
             // update last_quietTime
-            List<AutoScaleVmGroupPolicyMapVO> GroupPolicyVOs = autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
-            for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
-                AutoScalePolicyVO vo = autoScalePolicyDao.findById(GroupPolicyVO.getPolicyId());
+            List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
+            for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
+                AutoScalePolicyVO vo = autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
                 if (vo.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                     vo.setLastQuietTime(new Date());
                     autoScalePolicyDao.persist(vo);
@@ -2336,8 +2336,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             long vmId = asGroupVmVOs.get(i).getInstanceId();
             VMInstanceVO vmVO = vmInstanceDao.findById(vmId);
             //xe vm-list | grep vmname -B 1 | head -n 1 | awk -F':' '{print $2}'
-            params.put("vmname" + String.valueOf(i + 1), vmVO.getInstanceName());
-            params.put("vmid" + String.valueOf(i + 1), String.valueOf(vmVO.getId()));
+            params.put("vmname" + (i + 1), vmVO.getInstanceName());
+            params.put("vmid" + (i + 1), String.valueOf(vmVO.getId()));
 
         }
         // get random hostid because all vms are in a cluster

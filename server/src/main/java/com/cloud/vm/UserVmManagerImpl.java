@@ -568,7 +568,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected SnapshotHelper snapshotHelper;
 
     @Inject
-    private AutoScaleManager _asManager;
+    private AutoScaleManager autoScaleManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2416,7 +2416,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            _asManager.removeVmFromVmGroup(vm.getId());
+            autoScaleManager.removeVmFromVmGroup(vm.getId());
 
             releaseNetworkResourcesOnExpunge(vm.getId());
 
@@ -3221,7 +3221,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
-        _asManager.checkIfVmActionAllowed(vmId);
+        autoScaleManager.checkIfVmActionAllowed(vmId);
 
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
@@ -3251,7 +3251,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        _asManager.removeVmFromVmGroup(vmId);
+        autoScaleManager.removeVmFromVmGroup(vmId);
 
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
 
@@ -5629,7 +5629,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
-        _asManager.checkIfVmActionAllowed(vmId);
+        autoScaleManager.checkIfVmActionAllowed(vmId);
 
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId, false);
 

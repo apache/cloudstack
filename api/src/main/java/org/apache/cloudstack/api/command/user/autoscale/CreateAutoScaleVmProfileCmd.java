@@ -158,7 +158,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return counterParamList;
     }
 
-    public Map getOtherDeployParams() {
+    public Map<String, HashMap<String, String>> getOtherDeployParams() {
         return otherDeployParams;
     }
 
@@ -186,8 +186,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     private Map<String, String> getOtherDeployParamsMap() {
         Map<String, String> otherDeployParamsMap = new HashMap<>();
         if (MapUtils.isNotEmpty(otherDeployParams)) {
-            for (Object object : otherDeployParams.values()) {
-                HashMap<String, String> paramKVpair = (HashMap<String, String>)object;
+            for (HashMap<String, String> paramKVpair : otherDeployParams.values()) {
                 String paramName = paramKVpair.get("name");
                 String paramValue = paramKVpair.get("value");
                 otherDeployParamsMap.put(paramName,paramValue);

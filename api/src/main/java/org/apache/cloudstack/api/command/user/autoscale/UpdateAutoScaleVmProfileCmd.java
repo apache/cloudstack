@@ -145,7 +145,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
         return templateId;
     }
 
-    public Map getOtherDeployParams() {
+    public Map<String, HashMap<String, String>> getOtherDeployParams() {
         return otherDeployParams;
     }
 
