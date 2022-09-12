@@ -2554,7 +2554,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     protected void processVmStatsByIdFromHost(AutoScaleVmGroupTO groupTO, List<Long> vmIds, Map<Long, VmStatsEntry> vmStatsById, Map<Long, List<CounterTO>> policyCountersMap) {
         Date timestamp = new Date();
         for (Long vmId : vmIds) {
-            VmStatsEntry vmStats = vmStatsById.get(vmId);
+            VmStatsEntry vmStats = vmStatsById == null ? null : vmStatsById.get(vmId);
             for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
                 Long policyId = policyCounters.getKey();
                 List<CounterTO> counters = policyCounters.getValue();
