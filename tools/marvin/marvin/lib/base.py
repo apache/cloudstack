@@ -3240,6 +3240,14 @@ class Network:
             cmd.endipv6 = services["endipv6"]
         if "routeripv6" in services:
             cmd.routeripv6 = services["routeripv6"]
+        if "dns1" in services:
+            cmd.dns1 = services["dns1"]
+        if "dns2" in services:
+            cmd.dns2 = services["dns2"]
+        if "ip6dns1" in services:
+            cmd.ip6dns1 = services["ip6dns1"]
+        if "ip6dns2" in services:
+            cmd.ip6dns2 = services["ip6dns2"]
 
         if accountid:
             cmd.account = accountid

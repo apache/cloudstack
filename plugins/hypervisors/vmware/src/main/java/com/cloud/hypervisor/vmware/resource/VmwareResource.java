@@ -7671,4 +7671,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             s_logger.error(String.format("Failed to log command %s due to: [%s].", cmd.getClass().getSimpleName(), e.getMessage()), e);
         }
     }
+
+    @Override
+    public VmwareStorageProcessor getStorageProcessor() {
+        return _storageProcessor;
+    }
 }

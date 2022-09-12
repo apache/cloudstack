@@ -447,8 +447,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             } else {
                 nic.setFormat(Networks.AddressFormat.Ip6);
             }
-            nic.setIPv6Dns1(dc.getIp6Dns1());
-            nic.setIPv6Dns2(dc.getIp6Dns2());
+            Pair<String, String> dns = networkModel.getNetworkIp6Dns(network, dc);
+            nic.setIPv6Dns1(dns.first());
+            nic.setIPv6Dns2(dns.second());
         }
     }
 
