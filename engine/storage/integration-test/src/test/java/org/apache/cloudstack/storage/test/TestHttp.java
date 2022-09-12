@@ -41,7 +41,7 @@ import junit.framework.Assert;
 public class TestHttp extends AbstractTestNGSpringContextTests {
     @Test
     @Parameters("template-url")
-    public void testHttpclient(String templateUrl) {
+    public void testHttpclient(String templateUrl) throws IOException {
         final HttpHead method = new HttpHead(templateUrl);
         final DefaultHttpClient client = new DefaultHttpClient();
 
@@ -62,20 +62,9 @@ public class TestHttp extends AbstractTestNGSpringContextTests {
 
             output = new BufferedOutputStream(new FileOutputStream(localFile));
             entity.writeTo(output);
-        } catch (final ClientProtocolException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (final IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } finally {
-            try {
-                if (output != null) {
-                    output.close();
-                }
-            } catch (final IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            if (output != null) {
+                output.close();
             }
         }
 
