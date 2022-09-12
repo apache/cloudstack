@@ -472,7 +472,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return vmProfile;
     }
 
-    private void checkAutoScaleUser(Long autoscaleUserId, long accountId) {
+    protected void checkAutoScaleUser(Long autoscaleUserId, long accountId) {
         if (autoscaleUserId == null) {
             throw new InvalidParameterValueException("autoscaleuserid is required but not passed");
         }

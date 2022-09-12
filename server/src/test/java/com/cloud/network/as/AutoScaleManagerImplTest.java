@@ -38,6 +38,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -49,9 +50,12 @@ import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,6 +71,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -119,6 +125,9 @@ public class AutoScaleManagerImplTest {
     @Mock
     AutoScaleVmProfileDao autoScaleVmProfileDao;
 
+    @Mock
+    UserDao userDao;
+
     AccountVO account;
     UserVO user;
 
@@ -162,6 +171,7 @@ public class AutoScaleManagerImplTest {
     private static final String autoScaleUserSecretKey = "cloudstack secret key";
     private static final String vmName = "vm name";
     private static final String networkId = "1111-1111-1116";
+    private static final Long vmProfileId = 23L;
 
     private static final Long vmGroupId = 22L;
     private static final String vmGroupUuid = "2222-2222-1111";
@@ -170,6 +180,8 @@ public class AutoScaleManagerImplTest {
     private static final int memberPort = 8080;
     private static final int interval = 30;
     private static final Long loadBalancerId = 21L;
+
+    private static final Long autoScaleUserId = 24L;
 
     @Mock
     DataCenterVO zoneMock;
@@ -191,6 +203,8 @@ public class AutoScaleManagerImplTest {
     AutoScalePolicyConditionMapVO autoScalePolicyConditionMapVOMock;
     @Mock
     AutoScaleVmGroupPolicyMapVO autoScaleVmGroupPolicyMapVOMock;
+    @Mock
+    UserVO userMock;
 
     @Before
     public void setUp() {
@@ -563,17 +577,120 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void testUpdateAutoScaleVmProfile() {
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(autoScaleVmGroupDao.listByAll(null, vmProfileId)).thenReturn(new ArrayList<>());
+        when(autoScaleVmGroupDao.listByProfile(vmProfileId)).thenReturn(new ArrayList<>());
+        when(autoScaleVmProfileDao.persist(any())).thenReturn(asVmProfileMock);
 
+        when(asVmProfileMock.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(entityManager.findByIdIncludingRemoved(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+
+        UpdateAutoScaleVmProfileCmd cmd = new UpdateAutoScaleVmProfileCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", vmProfileId);
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", templateId);
+
+        AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.updateAutoScaleVmProfile(cmd);
+
+        Assert.assertEquals(asVmProfileMock, vmProfile);
+        Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
     }
 
     @Test
     public void testDeleteAutoScaleVmProfile() {
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(autoScaleVmGroupDao.isProfileInUse(vmProfileId)).thenReturn(false);
+        when(autoScaleVmProfileDao.remove(vmProfileId)).thenReturn(true);
 
+        boolean result = autoScaleManagerImplSpy.deleteAutoScaleVmProfile(vmProfileId);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteAutoScaleVmProfileInUse() {
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(autoScaleVmGroupDao.isProfileInUse(vmProfileId)).thenReturn(true);
+
+        boolean result = autoScaleManagerImplSpy.deleteAutoScaleVmProfile(vmProfileId);
     }
 
     @Test
-    public void testCheckAutoScaleUser() {
+    public void testDeleteAutoScaleVmProfileFail() {
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(autoScaleVmGroupDao.isProfileInUse(vmProfileId)).thenReturn(false);
+        when(autoScaleVmProfileDao.remove(vmProfileId)).thenReturn(false);
 
+        boolean result = autoScaleManagerImplSpy.deleteAutoScaleVmProfile(vmProfileId);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckAutoScaleUserSucceed() throws NoSuchFieldException, IllegalAccessException {
+        when(userDao.findById(any())).thenReturn(userMock);
+        when(userMock.getAccountId()).thenReturn(accountId);
+        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
+        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
+
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(ApiServiceConfiguration.ApiServletPath, "http://10.10.10.10:8080/client/api");
+
+        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckAutoScaleUserFail1() {
+        when(userDao.findById(any())).thenReturn(userMock);
+        when(userMock.getAccountId()).thenReturn(accountId);
+        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
+        when(userMock.getSecretKey()).thenReturn(null);
+
+        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckAutoScaleUserFail2() {
+        when(userDao.findById(any())).thenReturn(userMock);
+        when(userMock.getAccountId()).thenReturn(accountId);
+        when(userMock.getApiKey()).thenReturn(null);
+
+        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckAutoScaleUserFail3() {
+        when(userDao.findById(any())).thenReturn(userMock);
+        when(userMock.getAccountId()).thenReturn(accountId + 1L);
+
+        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckAutoScaleUserFail4() {
+        when(userDao.findById(any())).thenReturn(null);
+
+        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckAutoScaleUserFail5() throws NoSuchFieldException, IllegalAccessException {
+        when(userDao.findById(any())).thenReturn(userMock);
+        when(userMock.getAccountId()).thenReturn(accountId);
+        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
+        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
+
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(ApiServiceConfiguration.ApiServletPath, "http://localhost:8080/client/api");
+
+        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
 
     @Test
