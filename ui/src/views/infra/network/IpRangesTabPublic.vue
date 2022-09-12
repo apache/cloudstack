@@ -242,7 +242,7 @@
         </div>
         <div class="form__item" v-if="!basicGuestNetwork && form.iptype != 'ip6'">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
-          <a-switch @change="handleShowAccountFields" />
+          <a-switch v-model:checked="showAccountFields" @change="handleShowAccountFields" />
         </div>
         <div v-if="showAccountFields && !basicGuestNetwork" style="margin-top: 20px;">
           <div v-html="$t('label.set.reservation.desc')"></div>
@@ -559,12 +559,9 @@ export default {
       this.fetchDomains()
     },
     handleShowAccountFields () {
-      if (this.showAccountFields === false) {
-        this.showAccountFields = true
+      if (this.showAccountFields) {
         this.fetchDomains()
-        return
       }
-      this.showAccountFields = false
     },
     handleOpenAddIpRangeModal () {
       this.initAddIpRangeForm()

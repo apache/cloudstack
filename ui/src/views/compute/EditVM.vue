@@ -254,7 +254,7 @@ export default {
     fetchOsTypes () {
       this.osTypes.loading = true
       this.osTypes.opts = []
-      api('listOsTypes', { listAll: true }).then(json => {
+      api('listOsTypes').then(json => {
         this.osTypes.opts = json.listostypesresponse.ostype || []
       }).catch(error => {
         this.$notifyError(error)

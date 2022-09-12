@@ -167,7 +167,6 @@ export default {
       const params = {
         zoneid: this.resource.zoneid,
         networkid: this.resource.id,
-        listall: true,
         page: this.page,
         pagesize: this.pageSize
       }

@@ -463,7 +463,6 @@ export default {
     fetchZone () {
       const params = {}
       let listZones = []
-      params.listAll = true
       params.showicon = true
       this.allowed = false
 
@@ -508,13 +507,10 @@ export default {
       })
     },
     fetchOsTypes () {
-      const params = {}
-      params.listAll = true
-
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes', params).then(json => {
+      api('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
@@ -731,7 +727,6 @@ export default {
       const params = {}
 
       if (value.includes(this.$t('label.all.zone'))) {
-        params.listAll = true
         this.fetchHyperVisor(params)
         return
       }

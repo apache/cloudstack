@@ -404,7 +404,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -418,7 +417,6 @@ export default {
     },
     fetchStorageTagData () {
       const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       api('listStorageTags', params).then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []

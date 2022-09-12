@@ -223,7 +223,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
 
       this.zoneLoading = true
@@ -241,12 +240,9 @@ export default {
       })
     },
     fetchOsType () {
-      const params = {}
-      params.listAll = true
-
       this.osTypeLoading = true
 
-      api('listOsTypes', params).then(json => {
+      api('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes = this.osTypes.concat(listOsTypes)
       }).finally(() => {
