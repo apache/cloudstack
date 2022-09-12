@@ -80,7 +80,7 @@ public interface VirtualMachineManager extends Manager {
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
 
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
-            "false", "If set to true, it allows the VM's domain to be seen in metadata", true, ConfigKey.Scope.Domain);
+            "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
