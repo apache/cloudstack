@@ -2555,7 +2555,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         IPAddressVO publicIp = _ipAddressDao.findByAssociatedVmId(vmId);
         VirtualMachine vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new CloudRuntimeException("Cannot generate VM instance data, no VM exists by given ID");
+            throw new CloudRuntimeException(String.format("Cannot generate VM instance data, no VM exists by ID: %d", vmId));
         }
 
         final List<String[]> vmData = new ArrayList<String[]>();
