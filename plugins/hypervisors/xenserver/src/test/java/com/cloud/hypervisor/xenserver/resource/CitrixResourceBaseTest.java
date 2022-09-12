@@ -419,12 +419,12 @@ public class CitrixResourceBaseTest {
 
         String args = " -l " + publicIp + " -g";
         ExecutionResult executionResult = new ExecutionResult(true, vpcStats[0] + ":" + vpcStats[1]);
-        doReturn(executionResult).when(citrixResourceBaseSpy).executeInVR(Mockito.eq(privateIp), Mockito.eq("vpc_netusage.sh"), Mockito.eq(args));
+        doReturn(executionResult).when(citrixResourceBaseSpy).executeInVR(privateIp, "vpc_netusage.sh", args);
 
         long[] stats = citrixResourceBaseSpy.getVPCNetworkStats(privateIp, publicIp);
-        assertEquals(stats.length, 2);
-        assertEquals(stats[0], vpcStats[0]);
-        assertEquals(stats[1], vpcStats[1]);
+        assertEquals(2, stats.length);
+        assertEquals(vpcStats[0], stats[0]);
+        assertEquals(vpcStats[1], stats[1]);
     }
 
     @Test
@@ -437,9 +437,9 @@ public class CitrixResourceBaseTest {
                 Mockito.eq(privateIp), Mockito.eq("get"), Mockito.any(), Mockito.eq(publicIp));
 
         long[] stats = citrixResourceBaseSpy.getNetworkStats(connection, privateIp, publicIp);
-        assertEquals(stats.length, 2);
-        assertEquals(stats[0], networkStats[0]);
-        assertEquals(stats[1], networkStats[1]);
+        assertEquals(2, stats.length);
+        assertEquals(networkStats[0], stats[0]);
+        assertEquals(networkStats[1], stats[1]);
     }
 
     @Test
@@ -448,12 +448,12 @@ public class CitrixResourceBaseTest {
 
         String args = publicIp + " " + port;
         ExecutionResult executionResult = new ExecutionResult(true, String.valueOf(lbStats[0]));
-        doReturn(executionResult).when(citrixResourceBaseSpy).executeInVR(Mockito.eq(privateIp), Mockito.eq("get_haproxy_stats.sh"), Mockito.eq(args));
+        doReturn(executionResult).when(citrixResourceBaseSpy).executeInVR(privateIp, "get_haproxy_stats.sh", args);
 
         long[] stats = citrixResourceBaseSpy.getNetworkLbStats(privateIp, publicIp, port);
 
-        assertEquals(stats.length, 1);
-        assertEquals(stats[0], lbStats[0]);
+        assertEquals(1, stats.length);
+        assertEquals(lbStats[0], stats[0]);
     }
 
     @Test

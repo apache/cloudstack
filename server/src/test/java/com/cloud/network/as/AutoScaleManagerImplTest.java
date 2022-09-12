@@ -201,7 +201,6 @@ public class AutoScaleManagerImplTest {
 
         Counter counter = autoScaleManagerImplSpy.createCounter(cmd);
 
-        Assert.assertNull(counter);
         Mockito.verify(counterDao, never()).persist(Mockito.any());
     }
 
@@ -215,7 +214,6 @@ public class AutoScaleManagerImplTest {
 
         Counter counter = autoScaleManagerImplSpy.createCounter(cmd);
 
-        Assert.assertNull(counter);
         Mockito.verify(counterDao, never()).persist(Mockito.any());
     }
 
@@ -237,7 +235,6 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, ApiConstants.PROVIDER, INVALID);
 
         List<? extends Counter> counters = autoScaleManagerImplSpy.listCounters(cmd);
-        Assert.assertNull(counters);
     }
 
     @Test
@@ -292,7 +289,6 @@ public class AutoScaleManagerImplTest {
 
         Condition condition = autoScaleManagerImplSpy.createCondition(cmd);
 
-        Assert.assertNull(condition);
         Mockito.verify(counterDao, never()).persist(Mockito.any());
     }
 
@@ -306,7 +302,6 @@ public class AutoScaleManagerImplTest {
 
         Condition condition = autoScaleManagerImplSpy.createCondition(cmd);
 
-        Assert.assertNull(condition);
         Mockito.verify(counterDao, never()).persist(Mockito.any());
     }
 
@@ -366,7 +361,6 @@ public class AutoScaleManagerImplTest {
 
         Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
 
-        Assert.assertNull(condition);
         Mockito.verify(conditionDao, never()).update(eq(conditionId), Mockito.any());
     }
 
@@ -380,7 +374,6 @@ public class AutoScaleManagerImplTest {
 
         Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
 
-        Assert.assertNull(condition);
         Mockito.verify(conditionDao, never()).update(eq(conditionId), Mockito.any());
     }
 
@@ -417,7 +410,6 @@ public class AutoScaleManagerImplTest {
 
         Condition condition = autoScaleManagerImplSpy.updateCondition(cmd);
 
-        Assert.assertNull(condition);
         Mockito.verify(conditionDao, never()).update(eq(conditionId), Mockito.any());
     }
 
@@ -461,7 +453,6 @@ public class AutoScaleManagerImplTest {
 
         AutoScalePolicy policy = autoScaleManagerImplSpy.createAutoScalePolicy(cmd);
 
-        Assert.assertNull(policy);
         Mockito.verify(asPolicyDao, never()).persist(Mockito.any());
     }
 
@@ -481,7 +472,6 @@ public class AutoScaleManagerImplTest {
 
         AutoScalePolicy policy = autoScaleManagerImplSpy.createAutoScalePolicy(cmd);
 
-        Assert.assertNull(policy);
         Mockito.verify(asPolicyDao, never()).persist(Mockito.any());
     }
 

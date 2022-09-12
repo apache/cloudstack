@@ -34,6 +34,8 @@ public class ConfigKey<T> {
         Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain
     }
 
+    public static String CATEGORY_ADVANCED = "Advanced";
+
     private final String _category;
 
     public String category() {

@@ -559,7 +559,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Long templateId = cmd.getTemplateId();
         Long autoscaleUserId = cmd.getAutoscaleUserId();
-        Map otherDeployParams = cmd.getOtherDeployParams();
+        Map<String, HashMap<String, String>> otherDeployParams = cmd.getOtherDeployParams();
         Map counterParamList = cmd.getCounterParamList();
         String userData = cmd.getUserData();
 
@@ -649,7 +649,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long zoneId = cmd.getZoneId();
         Boolean display = cmd.getDisplay();
 
-        SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<AutoScaleVmProfileVO>(autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId());
+        SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<>(autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmProfileVO> sb = searchWrapper.getSearchBuilder();
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -853,7 +853,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     @Override
     public List<? extends AutoScalePolicy> listAutoScalePolicies(ListAutoScalePoliciesCmd cmd) {
-        SearchWrapper<AutoScalePolicyVO> searchWrapper = new SearchWrapper<AutoScalePolicyVO>(autoScalePolicyDao, AutoScalePolicyVO.class, cmd, cmd.getId());
+        SearchWrapper<AutoScalePolicyVO> searchWrapper = new SearchWrapper<>(autoScalePolicyDao, AutoScalePolicyVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScalePolicyVO> sb = searchWrapper.getSearchBuilder();
         Long id = cmd.getId();
         Long conditionId = cmd.getConditionId();
@@ -1111,7 +1111,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long zoneId = cmd.getZoneId();
         Boolean forDisplay = cmd.getDisplay();
 
-        SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<AutoScaleVmGroupVO>(autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId());
+        SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<>(autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmGroupVO> sb = searchWrapper.getSearchBuilder();
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -1454,7 +1454,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long id = cmd.getId();
         Long counterId = cmd.getCounterId();
         Long policyId = cmd.getPolicyId();
-        SearchWrapper<ConditionVO> searchWrapper = new SearchWrapper<ConditionVO>(conditionDao, ConditionVO.class, cmd, cmd.getId());
+        SearchWrapper<ConditionVO> searchWrapper = new SearchWrapper<>(conditionDao, ConditionVO.class, cmd, cmd.getId());
         SearchBuilder<ConditionVO> sb = searchWrapper.getSearchBuilder();
         if (policyId != null) {
             SearchBuilder<AutoScalePolicyConditionMapVO> asPolicyConditionSearch = autoScalePolicyConditionMapDao.createSearchBuilder();
@@ -1897,9 +1897,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         List<Long> lstVmId = new ArrayList<Long>();
         long lbId = asGroup.getLoadBalancerId();
 
-        List<LoadBalancerVMMapVO> LbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
-        if ((LbVmMapVos != null) && (LbVmMapVos.size() > 0)) {
-            for (LoadBalancerVMMapVO LbVmMapVo : LbVmMapVos) {
+        List<LoadBalancerVMMapVO> lbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
+        if ((lbVmMapVos != null) && (lbVmMapVos.size() > 0)) {
+            for (LoadBalancerVMMapVO LbVmMapVo : lbVmMapVos) {
                 long instanceId = LbVmMapVo.getInstanceId();
                 if (instanceId == vmId) {
                     s_logger.warn("the new VM is already mapped to LB rule. What's wrong?");
@@ -1919,9 +1919,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private long removeLBrule(AutoScaleVmGroupVO asGroup) {
         long lbId = asGroup.getLoadBalancerId();
         long instanceId = -1;
-        List<LoadBalancerVMMapVO> LbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
-        if ((LbVmMapVos != null) && (LbVmMapVos.size() > 0)) {
-            for (LoadBalancerVMMapVO LbVmMapVo : LbVmMapVos) {
+        List<LoadBalancerVMMapVO> lbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
+        if ((lbVmMapVos != null) && (lbVmMapVos.size() > 0)) {
+            for (LoadBalancerVMMapVO LbVmMapVo : lbVmMapVos) {
                 instanceId = LbVmMapVo.getInstanceId();
             }
         }
@@ -2369,7 +2369,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
                             Long counterId = Long.parseLong(counterVm[1]);
                             Long conditionId = Long.parseLong(params.get("con" + counterVm[1]));
-                            //Integer duration = Integer.parseInt(params.get("duration" + counterVm[1]));
                             Long policyId = 0L; // For NetScaler, the policyId is not returned in PerformanceMonitorAnswer
 
                             Double coVal = Double.parseDouble(counterVals[1]);
@@ -2749,21 +2748,21 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     private void scheduleMonitorTask(Long groupId) {
-        ScheduledExecutorService executor = vmGroupMonitorMaps.get(groupId);
-        if (executor == null) {
+        ScheduledExecutorService vmGroupExecutor = vmGroupMonitorMaps.get(groupId);
+        if (vmGroupExecutor == null) {
             AutoScaleVmGroupVO vmGroup = autoScaleVmGroupDao.findById(groupId);
             s_logger.debug("Scheduling monitor task for autoscale vm group " + vmGroup);
-            executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VmGroup-Monitor-" + groupId));
-            executor.scheduleAtFixedRate(new MonitorTask(groupId), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
-            vmGroupMonitorMaps.put(groupId, executor);
+            vmGroupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VmGroup-Monitor-" + groupId));
+            vmGroupExecutor.scheduleAtFixedRate(new MonitorTask(groupId), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
+            vmGroupMonitorMaps.put(groupId, vmGroupExecutor);
         }
     }
 
     private void cancelMonitorTask(Long groupId) {
-        ScheduledExecutorService executor = vmGroupMonitorMaps.get(groupId);
-        if (executor != null) {
+        ScheduledExecutorService vmGroupExecutor = vmGroupMonitorMaps.get(groupId);
+        if (vmGroupExecutor != null) {
             s_logger.debug("Cancelling monitor task for autoscale vm group " + groupId);
-            executor.shutdown();
+            vmGroupExecutor.shutdown();
             vmGroupMonitorMaps.remove(groupId);
         }
     }

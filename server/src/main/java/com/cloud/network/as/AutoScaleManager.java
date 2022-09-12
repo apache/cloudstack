@@ -20,19 +20,19 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface AutoScaleManager extends AutoScaleService {
 
-    ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>("Advanced", Integer.class,
+    ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "autoscale.stats.interval",
             "60000",
             "The interval (in milliseconds) when VM auto scaling statistics are processed to determine and perform scale action. Less than 1 means disabled.",
             false);
 
-    ConfigKey<Integer> AutoScaleStatsCleanupDelay = new ConfigKey<>("Advanced", Integer.class,
+    ConfigKey<Integer> AutoScaleStatsCleanupDelay = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "autoscale.stats.cleanup.delay",
             "86400",
             "Determines how long (in seconds) to wait before actually removing auto scaling statistics from database.",
             false);
 
-    ConfigKey<Integer> AutoScaleStatsWorker = new ConfigKey<>("Advanced", Integer.class,
+    ConfigKey<Integer> AutoScaleStatsWorker = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "autoscale.stats.worker",
             "10",
             "The Number of worker threads to scan the autoscale vm groups.",

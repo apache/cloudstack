@@ -24,13 +24,13 @@ public class AutoScalePolicyTest {
     @Test
     public void testScaleUpAction() {
         AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("scaleup");
-        Assert.assertEquals(action, AutoScalePolicy.Action.SCALEUP);
+        Assert.assertEquals(AutoScalePolicy.Action.SCALEUP, action);
     }
 
     @Test
     public void testScaleDownAction() {
         AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("scaledown");
-        Assert.assertEquals(action, AutoScalePolicy.Action.SCALEDOWN);
+        Assert.assertEquals(AutoScalePolicy.Action.SCALEDOWN, action);
     }
 
     @Test
@@ -51,6 +51,5 @@ public class AutoScalePolicyTest {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidAction() {
         AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("invalid");
-        Assert.assertNull(action);
     }
 }

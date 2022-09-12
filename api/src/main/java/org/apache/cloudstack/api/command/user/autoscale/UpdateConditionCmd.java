@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -98,7 +99,7 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return API_NAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
+        return API_NAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

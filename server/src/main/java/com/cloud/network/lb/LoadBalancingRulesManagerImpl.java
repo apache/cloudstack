@@ -253,9 +253,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject
     AutoScaleVmGroupPolicyMapDao _autoScaleVmGroupPolicyMapDao;
     @Inject
-    AutoScaleVmGroupVmMapDao _autoScaleVmGroupVmMapDao;
+    AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
     @Inject
-    AutoScaleManager _asManager;
+    AutoScaleManager autoScaleManager;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -1412,7 +1412,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (!isAutoScaleVM) {
             for (long instanceId : vmIds) {
-                _asManager.checkIfVmActionAllowed(instanceId);
+                autoScaleManager.checkIfVmActionAllowed(instanceId);
             }
         }
 
@@ -1462,7 +1462,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 List<Long> vmIdsList = new ArrayList<>(vmIdIpMap.keySet());
                 _lb2VmMapDao.remove(loadBalancer.getId(), vmIdsList, null);
                 for (Long instanceId: vmIdsList){
-                    _autoScaleVmGroupVmMapDao.removeByVm(instanceId);
+                    autoScaleVmGroupVmMapDao.removeByVm(instanceId);
                 }
             }
 
