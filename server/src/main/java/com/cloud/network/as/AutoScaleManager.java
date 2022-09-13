@@ -38,6 +38,8 @@ public interface AutoScaleManager extends AutoScaleService {
             "The Number of worker threads to scan the autoscale vm groups.",
             false);
 
+    void checkAutoScaleUser(Long autoscaleUserId, long accountId);
+
     boolean deleteAutoScaleVmGroupsByAccount(Long accountId);
 
     void cleanUpAutoScaleResources(Long accountId);

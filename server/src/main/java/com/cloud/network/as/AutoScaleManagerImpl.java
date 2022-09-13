@@ -472,7 +472,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return vmProfile;
     }
 
-    protected void checkAutoScaleUser(Long autoscaleUserId, long accountId) {
+    @Override
+    public void checkAutoScaleUser(Long autoscaleUserId, long accountId) {
         if (autoscaleUserId == null) {
             throw new InvalidParameterValueException("autoscaleuserid is required but not passed");
         }
@@ -2168,7 +2169,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         hostAndVmIdsMap.put(vmHostId, vmIds);
     }
 
-    private Map<Long, List<CounterTO>> getPolicyCounters(AutoScaleVmGroupTO groupTO) {
+    protected Map<Long, List<CounterTO>> getPolicyCounters(AutoScaleVmGroupTO groupTO) {
         Map<Long, List<CounterTO>> counters = new HashMap<>();
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             List<CounterTO> counterTOs = new ArrayList<>();
@@ -2181,7 +2182,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return counters;
     }
 
-    private AutoScalePolicy.Action getAutoscaleAction(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO) {
+    protected AutoScalePolicy.Action getAutoscaleAction(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO) {
         s_logger.debug("[AutoScale] Getting autoscale action for group : " + groupTO.getId());
 
         Network.Provider provider = getLoadBalancerServiceProvider(groupTO.getLoadBalancerId());
@@ -2245,7 +2246,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return null;
     }
 
-    public List<Pair<String, Integer>> getPairofCounternameAndDuration(AutoScaleVmGroupTO groupTO) {
+    private List<Pair<String, Integer>> getPairofCounternameAndDuration(AutoScaleVmGroupTO groupTO) {
         List<Pair<String, Integer>> result = new ArrayList<>();
 
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
@@ -2277,7 +2278,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return network;
     }
 
-    private Pair<String, Integer> getPublicIpAndPort(Long loadBalancerId) {
+    protected Pair<String, Integer> getPublicIpAndPort(Long loadBalancerId) {
         final LoadBalancerVO loadBalancer = lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             throw new CloudRuntimeException(String.format("Unable to find load balancer with id: %s ", loadBalancerId));
@@ -2391,7 +2392,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void setPerformanceMonitorCommandParams(AutoScaleVmGroupTO groupTO, Map<String, String> params) {
+    protected void setPerformanceMonitorCommandParams(AutoScaleVmGroupTO groupTO, Map<String, String> params) {
         // setup parameters phase: duration and counter
         // list pair [counter, duration]
         List<Pair<String, Integer>> lstPair = getPairofCounternameAndDuration(groupTO);
@@ -2452,7 +2453,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         countersNumberMap.put(key, 1);
     }
 
-    private void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
         // check minimum vm of group
         Integer currentVM = autoScaleVmGroupVmMapDao.countByGroup(asGroup.getId());
         if (currentVM < asGroup.getMinMembers()) {
@@ -2512,7 +2513,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         cleanupAsVmGroupStatistics(groupTO);
     }
 
-    private void getVmStatsFromHosts(AutoScaleVmGroupTO groupTO) {
+    protected void getVmStatsFromHosts(AutoScaleVmGroupTO groupTO) {
         // group vms by host id
         Map<Long, List<Long>> hostAndVmIdsMap = getHostAndVmIdsMap(groupTO);
 
@@ -2576,7 +2577,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void getNetworkStatsFromVirtualRouter(AutoScaleVmGroupTO groupTO) {
+    protected void getNetworkStatsFromVirtualRouter(AutoScaleVmGroupTO groupTO) {
         Network network = getNetwork(groupTO.getLoadBalancerId());
         Pair<String, Integer> publicIpAddr = getPublicIpAndPort(groupTO.getLoadBalancerId());
         List<DomainRouterVO> routers = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);

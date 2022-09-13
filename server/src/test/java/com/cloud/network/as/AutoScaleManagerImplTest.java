@@ -47,6 +47,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -70,6 +71,8 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -112,6 +115,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -200,6 +204,8 @@ public class AutoScaleManagerImplTest {
     AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
     @Mock
     AnnotationDao annotationDao;
+    @Mock
+    LoadBalancingRulesManager lbRulesMgr;
 
     @Mock
     UserVmDao userVmDao;
@@ -260,6 +266,7 @@ public class AutoScaleManagerImplTest {
 
     private static final Long autoScaleUserId = 24L;
     private static final Long ipAddressId = 25L;
+    private static final String ipAddress = "192.168.10.10";
     private static final Long networkId = 26L;
 
     private static final String overrideDiskOfferingUuid = "1111-1111-1117";
@@ -1447,17 +1454,63 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void getHostAndVmIdsMap() {
-        System.out.println("TODO");
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        when(groupTO.getId()).thenReturn(vmGroupId);
+        when(autoScaleVmGroupVmMapDao.listByGroup(vmGroupId)).thenReturn(Arrays.asList(autoScaleVmGroupVmMapVOMock));
+        when(autoScaleVmGroupVmMapVOMock.getInstanceId()).thenReturn(virtualMachineId);
+        when(userVmDao.findById(virtualMachineId)).thenReturn(userVmMock);
+        when(userVmMock.getHostId()).thenReturn(null);
+
+        Map<Long, List<Long>> result = autoScaleManagerImplSpy.getHostAndVmIdsMap(groupTO);
+
+        Assert.assertEquals(1, result.size());
+        List<Long> vmIds = result.get(-1L);
+        Assert.assertNotNull(vmIds);
+        Assert.assertEquals(1, vmIds.size());
+        Assert.assertEquals(virtualMachineId, vmIds.get(0));
     }
 
     @Test
     public void getPolicyCounters() {
-        System.out.println("TODO");
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+        ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO2 = Mockito.mock(CounterTO.class);
+
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+        when(conditionTO1.getCounter()).thenReturn(counterTO1);
+        when(conditionTO2.getCounter()).thenReturn(counterTO2);
+        when(policyTO.getId()).thenReturn(scaleUpPolicyId);
+
+        Map<Long, List<CounterTO>> result = autoScaleManagerImplSpy.getPolicyCounters(groupTO);
+
+        Assert.assertEquals(1, result.size());
+        List<CounterTO> counters = result.get(scaleUpPolicyId);
+        Assert.assertEquals(2, counters.size());
+        Assert.assertTrue(counters.contains(counterTO1));
+        Assert.assertTrue(counters.contains(counterTO2));
     }
 
     @Test
     public void getAutoscaleAction() {
-        System.out.println("TODO");
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+
+        Map<String, Double> countersMap = new HashMap<>();
+        Map<String, Integer> countersNumberMap = new HashMap<>();
+        when(groupTO.getId()).thenReturn(vmGroupId);
+        when(groupTO.getLoadBalancerId()).thenReturn(loadBalancerId);
+        PowerMockito.doReturn(Network.Provider.VirtualRouter).when(autoScaleManagerImplSpy).getLoadBalancerServiceProvider(loadBalancerId);
+        PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).isQuitTimePassForPolicy(policyTO);
+        PowerMockito.doReturn(AutoScalePolicy.Action.SCALEUP).when(autoScaleManagerImplSpy).checkConditionsForPolicy(countersMap, countersNumberMap, policyTO, Network.Provider.VirtualRouter);
+
+        AutoScalePolicy.Action result = autoScaleManagerImplSpy.getAutoscaleAction(countersMap, countersNumberMap, groupTO);
+
+        Assert.assertEquals(AutoScalePolicy.Action.SCALEUP, result);
     }
 
     @Test
@@ -1476,18 +1529,92 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void getPairofCounternameAndDuration() {
-        System.out.println("TODO");
+    public void setPerformanceMonitorCommandParams() {
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+        ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO2 = Mockito.mock(CounterTO.class);
+
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+        when(policyTO.getDuration()).thenReturn(scaleUpPolicyDuration);
+        when(conditionTO1.getCounter()).thenReturn(counterTO1);
+        when(conditionTO2.getCounter()).thenReturn(counterTO2);
+        when(conditionTO1.getId()).thenReturn(conditionId);
+        when(conditionTO2.getId()).thenReturn(conditionId + 1L);
+        when(counterTO1.getName()).thenReturn(counterName + "-1");
+        when(counterTO2.getName()).thenReturn(counterName + "-2");
+
+        Map<String, String> params = new LinkedHashMap<>();
+
+        autoScaleManagerImplSpy.setPerformanceMonitorCommandParams(groupTO, params);
+
+        Assert.assertEquals(7, params.size());
+        Assert.assertEquals("2", params.get("totalCounter"));
+        Assert.assertEquals(String.valueOf(scaleUpPolicyDuration), params.get("duration1"));
+        Assert.assertEquals(String.valueOf(scaleUpPolicyDuration), params.get("duration2"));
+        Assert.assertEquals(counterName + "-1", params.get("counter1"));
+        Assert.assertEquals(counterName + "-2", params.get("counter2"));
+        Assert.assertEquals(String.valueOf(conditionId), params.get("con1"));
+        Assert.assertEquals(String.valueOf(conditionId + 1L), params.get("con2"));
     }
 
     @Test
     public void getNetwork() {
-        System.out.println("TODO");
+        when(lbDao.findById(loadBalancerId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+        when(networkDao.findById(networkId)).thenReturn(networkMock);
+
+        Network result = autoScaleManagerImplSpy.getNetwork(loadBalancerId);
+
+        Assert.assertEquals(networkMock, result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getNetworkFail1() {
+        when(lbDao.findById(loadBalancerId)).thenReturn(null);
+
+        Network result = autoScaleManagerImplSpy.getNetwork(loadBalancerId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getNetworkFail2() {
+        when(lbDao.findById(loadBalancerId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+        when(networkDao.findById(networkId)).thenReturn(null);
+
+        Network result = autoScaleManagerImplSpy.getNetwork(loadBalancerId);
     }
 
     @Test
     public void getPublicIpAndPort() {
-        System.out.println("TODO");
+        when(lbDao.findById(loadBalancerId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getSourceIpAddressId()).thenReturn(ipAddressId);
+        when(ipAddressDao.findById(ipAddressId)).thenReturn(ipAddressMock);
+        when(ipAddressMock.getAddress()).thenReturn(new Ip(ipAddress));
+        when(loadBalancerMock.getSourcePortStart()).thenReturn(memberPort);
+
+        Pair<String, Integer> result = autoScaleManagerImplSpy.getPublicIpAndPort(loadBalancerId);
+
+        Assert.assertEquals(ipAddress, result.first());
+        Assert.assertEquals(memberPort, (long) result.second());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getPublicIpAndPortFail1() {
+        when(lbDao.findById(loadBalancerId)).thenReturn(null);
+        Pair<String, Integer> result = autoScaleManagerImplSpy.getPublicIpAndPort(loadBalancerId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getPublicIpAndPortFail2() {
+        when(lbDao.findById(loadBalancerId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getSourceIpAddressId()).thenReturn(ipAddressId);
+        when(ipAddressDao.findById(ipAddressId)).thenReturn(null);
+
+        Pair<String, Integer> result = autoScaleManagerImplSpy.getPublicIpAndPort(loadBalancerId);
     }
 
     @Test
@@ -1507,7 +1634,36 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void monitorVirtualRouterAsGroup() {
-        System.out.println("TODO");
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+
+        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
+        CounterTO scaleUpCounterTO = Mockito.mock(CounterTO.class);
+        when(scaleUpPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleUpConditionTO));
+        when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
+        when(scaleUpCounterTO.getSource()).thenReturn(Counter.Source.CPU);
+
+        AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
+        CounterTO scaleDownCounterTO = Mockito.mock(CounterTO.class);
+        when(scaleDownPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleDownConditionTO));
+        when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
+        when(scaleDownCounterTO.getSource()).thenReturn(Counter.Source.VIRTUALROUTER);
+
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(scaleUpPolicyTO, scaleDownPolicyTO));
+
+        when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+        when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
+        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(minMembers);
+        when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);
+
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).getVmStatsFromHosts(groupTO);
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).getNetworkStatsFromVirtualRouter(groupTO);
+
+        autoScaleManagerImplSpy.monitorVirtualRouterAsGroup(asVmGroupMock);
+
+        Mockito.verify(autoScaleManagerImplSpy).getVmStatsFromHosts(groupTO);
+        Mockito.verify(autoScaleManagerImplSpy).getNetworkStatsFromVirtualRouter(groupTO);
     }
 
     @Test

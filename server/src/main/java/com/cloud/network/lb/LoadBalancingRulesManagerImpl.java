@@ -146,7 +146,6 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainService;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -341,27 +340,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String csUrl = ApiServiceConfiguration.ApiServletPath.value();
         Network.Provider provider = getLoadBalancerServiceProvider(lb);
         if (Network.Provider.Netscaler.equals(provider)) {
-            Long autoscaleUserId = autoScaleVmProfile.getAutoScaleUserId();
-            if (autoscaleUserId == null) {
-                throw new InvalidParameterValueException("autoscaleUserId is required but not specified");
-            }
-            User user = _userDao.findById(autoscaleUserId);
-            if (user == null) {
-                throw new InvalidParameterValueException("Unable to find user by id " + autoscaleUserId);
-            }
-            apiKey = user.getApiKey();
-            secretKey = user.getSecretKey();
-            if (apiKey == null) {
-                throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
-            }
-
-            if (secretKey == null) {
-                throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
-            }
-
-            if (csUrl == null || csUrl.contains("localhost")) {
-                throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
-            }
+            autoScaleManager.checkAutoScaleUser(autoScaleVmProfile.getAutoScaleUserId(), vmGroup.getAccountId());
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
