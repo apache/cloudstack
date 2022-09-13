@@ -995,7 +995,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return vmGroup.getLoadBalancerId() != null;
     }
 
-    private boolean configureAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {
+    protected boolean configureAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {
         AutoScaleVmGroup vmGroup = autoScaleVmGroupDao.findById(vmGroupid);
 
         if (isLoadBalancerBasedAutoScaleVmGroup(vmGroup)) {
@@ -2292,7 +2292,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return new Pair<>(ipAddress.getAddress().addr(), loadBalancer.getSourcePortStart());
     }
 
-    private Network.Provider getLoadBalancerServiceProvider(Long loadBalancerId) {
+    protected Network.Provider getLoadBalancerServiceProvider(Long loadBalancerId) {
         final LoadBalancerVO loadBalancer = lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             throw new CloudRuntimeException(String.format("Unable to find load balancer with id: %s ", loadBalancerId));
@@ -2744,7 +2744,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void scheduleMonitorTask(Long groupId) {
+    protected void scheduleMonitorTask(Long groupId) {
         ScheduledExecutorService vmGroupExecutor = vmGroupMonitorMaps.get(groupId);
         if (vmGroupExecutor == null) {
             AutoScaleVmGroupVO vmGroup = autoScaleVmGroupDao.findById(groupId);
@@ -2755,7 +2755,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void cancelMonitorTask(Long groupId) {
+    protected void cancelMonitorTask(Long groupId) {
         ScheduledExecutorService vmGroupExecutor = vmGroupMonitorMaps.get(groupId);
         if (vmGroupExecutor != null) {
             s_logger.debug("Cancelling monitor task for autoscale vm group " + groupId);
