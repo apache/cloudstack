@@ -592,10 +592,10 @@ public class Ipv6ServiceImplTest {
 
     @Test
     public void testCheckNetworkIpv6UpgradeForNoIpv6Vlan() {
-        final long physicalNetworkId = 1L;
+        final long zoneId = 1L;
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(DataCenterGuestIpv6PrefixVO.class)));
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        Mockito.when(network.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(network.getVpcId()).thenReturn(null);
         Mockito.when(ipAddressDao.listByAssociatedNetwork(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(IPAddressVO.class)));
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
@@ -610,16 +610,16 @@ public class Ipv6ServiceImplTest {
 
     @Test
     public void testCheckNetworkIpv6UpgradeForNetwork() {
-        final long physicalNetworkId = 1L;
+        final long zoneId = 1L;
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(DataCenterGuestIpv6PrefixVO.class)));
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        Mockito.when(network.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(network.getVpcId()).thenReturn(null);
         Mockito.when(ipAddressDao.listByAssociatedNetwork(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(IPAddressVO.class)));
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
         Mockito.when(vlanVO.getVlanTag()).thenReturn(vlan);
         Mockito.when(vlanDao.findById(Mockito.anyLong())).thenReturn(vlanVO);
-        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(physicalNetworkId, vlan)).thenReturn(List.of(vlanVO));
+        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(zoneId, vlan)).thenReturn(List.of(vlanVO));
         try {
             ipv6Service.checkNetworkIpv6Upgrade(network);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
