@@ -1644,7 +1644,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return true;
     }
 
-    private Map<String, String> getDeployParams (String otherDeployParams) {
+    protected Map<String, String> getDeployParams (String otherDeployParams) {
         Map<String, String> deployParams = new HashMap<>();
         if (StringUtils.isNotBlank(otherDeployParams)) {
             for (String param : otherDeployParams.split("&")) {
@@ -1656,7 +1656,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return deployParams;
     }
 
-    private long createNewVM(AutoScaleVmGroupVO asGroup) {
+    protected long createNewVM(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmProfileVO profileVo = autoScaleVmProfileDao.findById(asGroup.getProfileId());
         long templateId = profileVo.getTemplateId();
         long serviceOfferingId = profileVo.getServiceOfferingId();
@@ -2265,7 +2265,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return result;
     }
 
-    private Network getNetwork(Long loadBalancerId) {
+    protected Network getNetwork(Long loadBalancerId) {
         final LoadBalancerVO loadBalancer = lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             throw new CloudRuntimeException(String.format("Unable to find load balancer with id: %s ", loadBalancerId));
@@ -2811,7 +2811,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         autoScaleVmGroupVmMapDao.removeByVm(vmId);
     }
 
-    private void destroyVm(Long vmId) {
+    protected void destroyVm(Long vmId) {
         try {
             UserVmVO vm = userVmDao.findById(vmId);
             if (vm != null) {

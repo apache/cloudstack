@@ -25,7 +25,9 @@ import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -34,6 +36,7 @@ import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupStatisticsDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
@@ -45,6 +48,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -53,6 +57,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
@@ -64,8 +69,12 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmService;
+import com.cloud.vm.UserVmVO;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
@@ -133,6 +142,12 @@ public class AutoScaleManagerImplTest {
     AccountManager accountManager;
 
     @Mock
+    AccountService accountService;
+
+    @Mock
+    UserVmService userVmService;
+
+    @Mock
     EntityManager entityManager;
 
     @Mock
@@ -170,6 +185,10 @@ public class AutoScaleManagerImplTest {
     SSHKeyPairDao sshKeyPairDao;
     @Mock
     AffinityGroupDao affinityGroupDao;
+    @Mock
+    AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
+    @Mock
+    AnnotationDao annotationDao;
 
     AccountVO account;
     UserVO user;
@@ -236,13 +255,18 @@ public class AutoScaleManagerImplTest {
     private static final Long dataDiskSize = 29L;
     private static final Long rootDiskSize = 30L;
     private static final Long affinityGroupId = 31L;
+    private static final Long virtualMachineId = 32L;
 
     @Mock
     DataCenterVO zoneMock;
     @Mock
     ServiceOfferingVO serviceOfferingMock;
     @Mock
+    DiskOfferingVO diskOfferingMock;
+    @Mock
     VMTemplateVO templateMock;
+    @Mock
+    NetworkVO networkMock;
     @Mock
     CounterVO counterMock;
     @Mock
@@ -986,23 +1010,178 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void testDeleteAutoScaleVmGroupsByAccount() {
+    public void testDeleteAutoScaleVmGroupsByAccount() throws ResourceUnavailableException {
+        when(autoScaleVmGroupDao.listByAccount(accountId)).thenReturn(Arrays.asList(asVmGroupMock));
+        when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+        when(asVmGroupMock.getUuid()).thenReturn(vmGroupUuid);
+        when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
+        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(1);
+        AutoScaleVmGroupVmMapVO autoScaleVmGroupVmMapVO = Mockito.mock(AutoScaleVmGroupVmMapVO.class);
+        when(autoScaleVmGroupVmMapDao.listByGroup(vmGroupId)).thenReturn(Arrays.asList(autoScaleVmGroupVmMapVO));
+        when(autoScaleVmGroupVmMapVO.getInstanceId()).thenReturn(virtualMachineId);
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).destroyVm(virtualMachineId);
+        PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).configureAutoScaleVmGroup(vmGroupId, AutoScaleVmGroup.State.ENABLED);
+        when(autoScaleVmGroupDao.remove(vmGroupId)).thenReturn(true);
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).cancelMonitorTask(vmGroupId);
+        when(autoScaleVmGroupPolicyMapDao.removeByGroupId(vmGroupId)).thenReturn(true);
+        when(autoScaleVmGroupVmMapDao.removeByGroup(vmGroupId)).thenReturn(true);
+        when(asGroupStatisticsDao.removeByGroupId(vmGroupId)).thenReturn(true);
 
+        boolean result = autoScaleManagerImplSpy.deleteAutoScaleVmGroupsByAccount(accountId);
+
+        Assert.assertTrue(result);
+
+        Mockito.verify(autoScaleManagerImplSpy).destroyVm(virtualMachineId);
+        Mockito.verify(autoScaleManagerImplSpy).configureAutoScaleVmGroup(vmGroupId, AutoScaleVmGroup.State.ENABLED);
+        Mockito.verify(annotationDao).removeByEntityType(AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(), vmGroupUuid);
+        Mockito.verify(autoScaleManagerImplSpy).cancelMonitorTask(vmGroupId);
     }
 
     @Test
     public void testCleanUpAutoScaleResources() {
+        when(autoScaleVmProfileDao.removeByAccountId(accountId)).thenReturn(1);
+        when(asPolicyDao.removeByAccountId(accountId)).thenReturn(2);
+        when(conditionDao.removeByAccountId(accountId)).thenReturn(3);
 
+        autoScaleManagerImplSpy.cleanUpAutoScaleResources(accountId);
+
+        Mockito.verify(autoScaleVmProfileDao).removeByAccountId(accountId);
+        Mockito.verify(asPolicyDao).removeByAccountId(accountId);
+        Mockito.verify(conditionDao).removeByAccountId(accountId);
     }
 
     @Test
     public void testGetDeployParams() {
+        String otherDeployParamsString = String.format("networkid=%s&diskofferingid=%s", networkUuid, diskOfferingUuid);
 
+        Map<String, String> deployParams = autoScaleManagerImplSpy.getDeployParams(otherDeployParamsString);
+
+        Assert.assertEquals(2, deployParams.size());
+        Assert.assertEquals(networkUuid, deployParams.get("networkid"));
+        Assert.assertEquals(diskOfferingUuid, deployParams.get("diskofferingid"));
     }
 
     @Test
-    public void testCreateNewVM() {
+    public void testCreateNewVM1() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
+        when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
 
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
+        when(asVmProfileMock.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(asVmProfileMock.getAccountId()).thenReturn(accountId);
+        when(asVmProfileMock.getZoneId()).thenReturn(zoneId);
+        when(asVmProfileMock.getOtherDeployParams()).thenReturn("");
+
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(serviceOfferingMock.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(entityManager.findById(DiskOffering.class, diskOfferingId)).thenReturn(diskOfferingMock);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(zoneMock.isLocalStorageEnabled()).thenReturn(false);
+        when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
+
+        PowerMockito.doReturn(networkMock).when(autoScaleManagerImplSpy).getNetwork(loadBalancerId);
+        when(networkMock.getId()).thenReturn(networkId);
+
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(virtualMachineId);
+        when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        when(userVmService.createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any())).thenReturn(userVm);
+
+        long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
+
+        Assert.assertEquals((long) virtualMachineId, result);
+
+        Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any());
+    }
+
+    @Test
+    public void testCreateNewVM2() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
+        when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
+        when(asVmProfileMock.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(asVmProfileMock.getAccountId()).thenReturn(accountId);
+        when(asVmProfileMock.getZoneId()).thenReturn(zoneId);
+        when(asVmProfileMock.getOtherDeployParams()).thenReturn("");
+
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(serviceOfferingMock.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(entityManager.findById(DiskOffering.class, diskOfferingId)).thenReturn(diskOfferingMock);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(zoneMock.isLocalStorageEnabled()).thenReturn(false);
+        when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
+
+        PowerMockito.doReturn(networkMock).when(autoScaleManagerImplSpy).getNetwork(loadBalancerId);
+        when(networkMock.getId()).thenReturn(networkId);
+
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(virtualMachineId);
+        when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        when(zoneMock.isSecurityGroupEnabled()).thenReturn(true);
+        when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVm);
+
+        long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
+
+        Assert.assertEquals((long) virtualMachineId, result);
+
+        Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(true), any(), any());
+    }
+
+    @Test
+    public void testCreateNewVM3() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
+        when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
+        when(asVmProfileMock.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(asVmProfileMock.getAccountId()).thenReturn(accountId);
+        when(asVmProfileMock.getZoneId()).thenReturn(zoneId);
+        when(asVmProfileMock.getOtherDeployParams()).thenReturn("");
+
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(serviceOfferingMock.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(entityManager.findById(DiskOffering.class, diskOfferingId)).thenReturn(diskOfferingMock);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(zoneMock.isLocalStorageEnabled()).thenReturn(false);
+        when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
+
+        PowerMockito.doReturn(networkMock).when(autoScaleManagerImplSpy).getNetwork(loadBalancerId);
+        when(networkMock.getId()).thenReturn(networkId);
+
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(virtualMachineId);
+        when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        when(zoneMock.isSecurityGroupEnabled()).thenReturn(false);
+        when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVm);
+
+        long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
+
+        Assert.assertEquals((long) virtualMachineId, result);
+
+        Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any(), any());
     }
 
     @Test
@@ -1103,7 +1282,14 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void updateVmDetails() {
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("rootdisksize", String.valueOf(rootDiskSize));
 
+        Map<String, String> customParameters = new HashMap<>();
+        autoScaleManagerImplSpy.updateVmDetails(deployParams, customParameters);
+
+        Assert.assertEquals(1, customParameters.size());
+        Assert.assertEquals(String.valueOf(rootDiskSize), customParameters.get("rootdisksize"));
     }
 
     @Test
