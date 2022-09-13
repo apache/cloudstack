@@ -1623,6 +1623,21 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
+    public void checkVirtualRouterAsGroup() {
+        System.out.println("TODO");
+    }
+
+    @Test
+    public void updateCountersMap() {
+        System.out.println("TODO");
+    }
+
+    @Test
+    public void updateCountersMapPerCondition() {
+        System.out.println("TODO");
+    }
+
+    @Test
     public void updateCountersMapWithInstantData() {
         System.out.println("TODO");
     }
@@ -1667,11 +1682,6 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void checkVirtualRouterAsGroup() {
-        System.out.println("TODO");
-    }
-
-    @Test
     public void getVmStatsFromHosts() {
         System.out.println("TODO");
     }
@@ -1698,11 +1708,6 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void processGetAutoScaleMetricsAnswer() {
-        System.out.println("TODO");
-    }
-
-    @Test
-    public void updateCountersMap() {
         System.out.println("TODO");
     }
 

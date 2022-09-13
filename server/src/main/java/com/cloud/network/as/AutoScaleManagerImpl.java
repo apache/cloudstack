@@ -2660,62 +2660,67 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 return false;
             }
             for (ConditionTO conditionTO : policyTO.getConditions()) {
-                Long conditionId = conditionTO.getId();
-                CounterTO counter = conditionTO.getCounter();
-                List<AutoScaleVmGroupStatisticsVO> stats = asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(groupTO.getId(), policyTO.getId(), counter.getId(), afterDate);
-                if (CollectionUtils.isEmpty(stats)) {
-                    continue;
-                }
-                s_logger.debug(String.format("Updating countersMap with %d stats", stats.size()));
-                Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords = new HashMap<>();
-                List<String> incorrectRecords = new ArrayList<>();
-                for (AutoScaleVmGroupStatisticsVO stat : stats) {
-                    if (AutoScaleValueType.INSTANT.equals(stat.getValueType())) {
-                        updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counter.getId(), conditionId, policyTO.getId(), stat.getRawValue());
-                    } else if (AutoScaleValueType.AGGREGATED.equals(stat.getValueType())) {
-                        String key = stat.getCounterId() + "-" + stat.getResourceId();
-                        if (incorrectRecords.contains(key)) {
-                            continue;
-                        }
-                        if (!aggregatedRecords.containsKey(key)) {
-                            List<AutoScaleVmGroupStatisticsVO> aggregatedRecordList = new ArrayList<>();
-                            aggregatedRecordList.add(stat);
-                            aggregatedRecords.put(key, aggregatedRecordList);
-                            continue;
-                        }
-                        List<AutoScaleVmGroupStatisticsVO> aggregatedRecordList = aggregatedRecords.get(key);
-                        AutoScaleVmGroupStatisticsVO lastRecord = aggregatedRecordList.get(aggregatedRecordList.size() - 1);
-                        if (stat.getCreated().after(lastRecord.getCreated())) {
-                            if (stat.getRawValue() >= lastRecord.getRawValue()) {
-                                aggregatedRecordList.add(stat);
-                            } else {
-                                s_logger.info("The new raw value is less than the previous raw value, which means the data is incorrect. The key is " + key);
-                                aggregatedRecords.remove(key);
-                                incorrectRecords.add(key);
-                            }
-                        }
-                    }
-                }
-                if (MapUtils.isNotEmpty(aggregatedRecords)) {
-                    s_logger.debug("Processing aggregated data");
-                    for (Map.Entry<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecord : aggregatedRecords.entrySet()) {
-                        String recordKey = aggregatedRecord.getKey();
-                        Long counterId = Long.valueOf(recordKey.split("-")[0]);
-                        List<AutoScaleVmGroupStatisticsVO> records = aggregatedRecord.getValue();
-                        if (records.size() <= 1) {
-                            s_logger.info(String.format("Ignoring aggregated records, conditionId = %s, counterId = %s", conditionId, counterId));
-                            continue;
-                        }
-                        AutoScaleVmGroupStatisticsVO firstRecord = records.get(0);
-                        AutoScaleVmGroupStatisticsVO lastRecord = records.get(records.size() - 1);
-                        Double coVal = (lastRecord.getRawValue() - firstRecord.getRawValue()) * 1000 / (lastRecord.getCreated().getTime() - firstRecord.getCreated().getTime());
-                        updateCountersMapWithAggregatedData(countersMap, countersNumberMap, counterId, conditionId, policyTO.getId(), coVal);
-                    }
-                }
+                updateCountersMapPerCondition(groupTO, policyTO, conditionTO, afterDate, countersMap, countersNumberMap);
             }
         }
         s_logger.debug("DONE Updating countersMap for as group: " + groupTO.getId());
         return true;
+    }
+
+    private void updateCountersMapPerCondition(AutoScaleVmGroupTO groupTO, AutoScalePolicyTO policyTO, ConditionTO conditionTO, Date afterDate,
+                                                  Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
+        Long conditionId = conditionTO.getId();
+        CounterTO counter = conditionTO.getCounter();
+        List<AutoScaleVmGroupStatisticsVO> stats = asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(groupTO.getId(), policyTO.getId(), counter.getId(), afterDate);
+        if (CollectionUtils.isEmpty(stats)) {
+            return;
+        }
+        s_logger.debug(String.format("Updating countersMap with %d stats", stats.size()));
+        Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords = new HashMap<>();
+        List<String> incorrectRecords = new ArrayList<>();
+        for (AutoScaleVmGroupStatisticsVO stat : stats) {
+            if (AutoScaleValueType.INSTANT.equals(stat.getValueType())) {
+                updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counter.getId(), conditionId, policyTO.getId(), stat.getRawValue());
+            } else if (AutoScaleValueType.AGGREGATED.equals(stat.getValueType())) {
+                String key = stat.getCounterId() + "-" + stat.getResourceId();
+                if (incorrectRecords.contains(key)) {
+                    continue;
+                }
+                if (!aggregatedRecords.containsKey(key)) {
+                    List<AutoScaleVmGroupStatisticsVO> aggregatedRecordList = new ArrayList<>();
+                    aggregatedRecordList.add(stat);
+                    aggregatedRecords.put(key, aggregatedRecordList);
+                    continue;
+                }
+                List<AutoScaleVmGroupStatisticsVO> aggregatedRecordList = aggregatedRecords.get(key);
+                AutoScaleVmGroupStatisticsVO lastRecord = aggregatedRecordList.get(aggregatedRecordList.size() - 1);
+                if (stat.getCreated().after(lastRecord.getCreated())) {
+                    if (stat.getRawValue() >= lastRecord.getRawValue()) {
+                        aggregatedRecordList.add(stat);
+                    } else {
+                        s_logger.info("The new raw value is less than the previous raw value, which means the data is incorrect. The key is " + key);
+                        aggregatedRecords.remove(key);
+                        incorrectRecords.add(key);
+                    }
+                }
+            }
+        }
+        if (MapUtils.isNotEmpty(aggregatedRecords)) {
+            s_logger.debug("Processing aggregated data");
+            for (Map.Entry<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecord : aggregatedRecords.entrySet()) {
+                String recordKey = aggregatedRecord.getKey();
+                Long counterId = Long.valueOf(recordKey.split("-")[0]);
+                List<AutoScaleVmGroupStatisticsVO> records = aggregatedRecord.getValue();
+                if (records.size() <= 1) {
+                    s_logger.info(String.format("Ignoring aggregated records, conditionId = %s, counterId = %s", conditionId, counterId));
+                    continue;
+                }
+                AutoScaleVmGroupStatisticsVO firstRecord = records.get(0);
+                AutoScaleVmGroupStatisticsVO lastRecord = records.get(records.size() - 1);
+                Double coVal = (lastRecord.getRawValue() - firstRecord.getRawValue()) * 1000 / (lastRecord.getCreated().getTime() - firstRecord.getCreated().getTime());
+                updateCountersMapWithAggregatedData(countersMap, countersNumberMap, counterId, conditionId, policyTO.getId(), coVal);
+            }
+        }
     }
 
     private String generateKeyFromPolicyAndConditionAndCounter(Long policyId, Long conditionId, Long counterId) {
