@@ -51,6 +51,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -101,8 +102,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Override
     public ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress) {
         try {
-            if (accountManager == null || virtualMachineManager == null || managementServer == null) {
-                return new ConsoleEndpoint(false, null,"Console service is not ready");
+            if (ObjectUtils.anyNull(accountManager, virtualMachineManager, managementServer)) {
+                return new ConsoleEndpoint(false, null, "Console service is not ready");
             }
 
             if (keysManager.getHashKey() == null) {
@@ -139,7 +140,9 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             String sessionUuid = UUID.randomUUID().toString();
             return generateAccessEndpoint(vmId, sessionUuid, extraSecurityToken, clientAddress);
         } catch (Exception e) {
-            s_logger.error("Unexepected exception in ConsoleAccessManager", e);
+            String errorMsg = String.format("Unexepected exception in ConsoleAccessManager - vmId: %s, clientAddress: %s",
+                    vmId, clientAddress);
+            s_logger.error(errorMsg, e);
             return new ConsoleEndpoint(false, null, "Server Internal Error: " + e.getMessage());
         }
     }
@@ -168,13 +171,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 } catch (PermissionDeniedException ex) {
                     if (accountManager.isNormalUser(account.getId())) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
+                            s_logger.debug("VM access is denied for VM ID " + vm.getUuid() + ". VM owner account " +
+                                    vm.getAccountId() + " does not match the account id in session " +
                                     account.getId() + " and caller is a normal user");
                         }
                     } else if ((accountManager.isDomainAdmin(account.getId())
                             || account.getType() == Account.Type.READ_ONLY_ADMIN) && s_logger.isDebugEnabled()) {
-                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
-                                + " does not match the account id in session " + account.getId() + " and the domain-admin caller does not manage the target domain");
+                        s_logger.debug("VM access is denied for VM ID " + vm.getUuid() + ". VM owner account " +
+                                vm.getAccountId() + " does not match the account id in session " +
+                                account.getId() + " and the domain-admin caller does not manage the target domain");
                     }
                     return false;
                 }

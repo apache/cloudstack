@@ -25,7 +25,7 @@ public interface ConsoleAccessManager extends Manager, Configurable {
 
     ConfigKey<Boolean> ConsoleProxyExtraSecurityValidationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
             "consoleproxy.extra.security.validation.enabled", "false",
-            "Enable/disable extra security validation for console proxy using an extra token", true);
+            "Enable/disable extra security validation for console proxy using an extra token.", true);
 
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 

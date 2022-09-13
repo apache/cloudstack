@@ -2872,7 +2872,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.error(errorMsg, e);
             return new Pair<>(false, errorMsg);
         }
-        return new Pair<>(answer != null && answer.getResult(), answer != null ? answer.getDetails() : "null answer");
+        boolean result = false;
+        String details = "null answer";
+
+        if (answer != null) {
+            result = answer.getResult();
+            details = answer.getDetails();
+        }
+        return new Pair<>(result, details);
     }
 
     @Override

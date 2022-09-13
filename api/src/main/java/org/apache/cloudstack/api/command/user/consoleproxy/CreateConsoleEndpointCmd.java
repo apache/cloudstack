@@ -101,7 +101,7 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
 
     private String getParameterBase(String paramKey) {
         Map<String, String> params = getFullUrlParams();
-        return MapUtils.isNotEmpty(params) && params.containsKey(paramKey) ? params.get(paramKey) : null;
+        return MapUtils.isNotEmpty(params) ? params.get(paramKey) : null;
     }
 
     private String getClientAddress() {
