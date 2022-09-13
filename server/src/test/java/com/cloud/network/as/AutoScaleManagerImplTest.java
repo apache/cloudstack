@@ -16,6 +16,11 @@
 // under the License.
 package com.cloud.network.as;
 
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
+import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.dc.DataCenter;
@@ -37,22 +42,30 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
@@ -93,6 +106,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.never;
@@ -148,6 +162,14 @@ public class AutoScaleManagerImplTest {
     LoadBalancerVMMapDao lb2VmMapDao;
     @Mock
     AutoScaleVmGroupStatisticsDao asGroupStatisticsDao;
+    @Mock
+    NetworkDao networkDao;
+    @Mock
+    DiskOfferingDao diskOfferingDao;
+    @Mock
+    SSHKeyPairDao sshKeyPairDao;
+    @Mock
+    AffinityGroupDao affinityGroupDao;
 
     AccountVO account;
     UserVO user;
@@ -206,6 +228,15 @@ public class AutoScaleManagerImplTest {
     private static final Long autoScaleUserId = 24L;
     private static final Long ipAddressId = 25L;
     private static final Long networkId = 26L;
+
+    private static final String overrideDiskOfferingUuid = "1111-1111-1117";
+    private static final Long overrideDiskOfferingId = 27L;
+    private static final String diskOfferingUuid = "1111-1111-1117";
+    private static final Long diskOfferingId = 28L;
+    private static final Long dataDiskSize = 29L;
+    private static final Long rootDiskSize = 30L;
+    private static final Long affinityGroupId = 31L;
+
     @Mock
     DataCenterVO zoneMock;
     @Mock
@@ -975,23 +1006,99 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void gestGetVmNetworkIds() {
+    public void getVmNetworkIds1() {
+        NetworkVO networkMock = Mockito.mock(NetworkVO.class);
+        when(networkDao.findByUuid(networkUuid)).thenReturn(networkMock);
+        when(networkMock.getId()).thenReturn(networkId);
 
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("networkids", networkUuid);
+
+        List<Long> result = autoScaleManagerImplSpy.getVmNetworkIds(deployParams, networkId);
+        Assert.assertEquals(1, result.size());
+    }
+
+    @Test
+    public void getVmNetworkIds2() {
+        NetworkVO networkMock = Mockito.mock(NetworkVO.class);
+        when(networkDao.findByUuid(networkUuid)).thenReturn(networkMock);
+        when(networkMock.getId()).thenReturn(networkId);
+
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("networkids", networkUuid);
+
+        List<Long> result = autoScaleManagerImplSpy.getVmNetworkIds(deployParams, networkId + 1L);
+        Assert.assertEquals(2, result.size());
     }
 
     @Test
     public void getVmOverrideDiskOfferingId() {
+        DiskOfferingVO diskOfferingMock = Mockito.mock(DiskOfferingVO.class);
+        when(diskOfferingDao.findByUuid(overrideDiskOfferingUuid)).thenReturn(diskOfferingMock);
+        when(diskOfferingMock.getId()).thenReturn(overrideDiskOfferingId);
 
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("overridediskofferingid", overrideDiskOfferingUuid);
+
+        Long result = autoScaleManagerImplSpy.getVmOverrideDiskOfferingId(deployParams);
+
+        Assert.assertEquals(overrideDiskOfferingId, result);
+    }
+
+    @Test
+    public void getVmDiskOfferingId() {
+        DiskOfferingVO diskOfferingMock = Mockito.mock(DiskOfferingVO.class);
+        when(diskOfferingDao.findByUuid(diskOfferingUuid)).thenReturn(diskOfferingMock);
+        when(diskOfferingMock.getId()).thenReturn(diskOfferingId);
+
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("diskofferingid", diskOfferingUuid);
+
+        Long result = autoScaleManagerImplSpy.getVmDiskOfferingId(deployParams);
+
+        Assert.assertEquals(diskOfferingId, result);
     }
 
     @Test
     public void getVmDataDiskSize() {
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("disksize", String.valueOf(dataDiskSize));
 
+        Long result = autoScaleManagerImplSpy.getVmDataDiskSize(deployParams);
+
+        Assert.assertEquals(dataDiskSize, result);
+    }
+
+    @Test
+    public void getVmSshKeyPairs1() {
+        SSHKeyPairVO keypair1 = Mockito.mock(SSHKeyPairVO.class);
+        SSHKeyPairVO keypair2 = Mockito.mock(SSHKeyPairVO.class);
+        when(sshKeyPairDao.findByName(anyLong(), anyLong(), anyString())).thenReturn(keypair1).thenReturn(keypair2);
+        when(keypair1.getName()).thenReturn("name1");
+        when(keypair2.getName()).thenReturn("name2");
+
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("keypairs", "keypair1,keypair2");
+
+        List<String> result = autoScaleManagerImplSpy.getVmSshKeyPairs(deployParams, account);
+
+        Assert.assertEquals(2, result.size());
     }
 
     @Test
     public void getVmAffinityGroupId() {
+        AffinityGroupVO affintyGroup1 = Mockito.mock(AffinityGroupVO.class);
+        AffinityGroupVO affintyGroup2 = Mockito.mock(AffinityGroupVO.class);
+        when(affinityGroupDao.findByUuid(anyString())).thenReturn(affintyGroup1).thenReturn(affintyGroup2);
+        when(affintyGroup1.getId()).thenReturn(affinityGroupId);
+        when(affintyGroup2.getId()).thenReturn(affinityGroupId + 1L);
 
+        Map<String, String> deployParams = new HashMap<>();
+        deployParams.put("affinitygroupids", "affinitygroup1,affinitygroup2");
+
+        List<Long> result = autoScaleManagerImplSpy.getVmAffinityGroupId(deployParams);
+
+        Assert.assertEquals(2, result.size());
     }
 
     @Test
@@ -1020,8 +1127,71 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void isNative() {
+    public void isNativeTrue() {
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO = Mockito.mock(CounterTO.class);
+        AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
 
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+        when(conditionTO.getCounter()).thenReturn(counterTO);
+        when(counterTO.getSource()).thenReturn(Counter.Source.CPU);
+
+        boolean result = autoScaleManagerImplSpy.isNative(groupTO);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isNativeFalse() {
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO = Mockito.mock(CounterTO.class);
+        AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+        when(conditionTO.getCounter()).thenReturn(counterTO);
+        when(counterTO.getSource()).thenReturn(Counter.Source.VIRTUALROUTER);
+
+        boolean result = autoScaleManagerImplSpy.isNative(groupTO);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void hasSourceVirtualRouterTrue() {
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO = Mockito.mock(CounterTO.class);
+        AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+        when(conditionTO.getCounter()).thenReturn(counterTO);
+        when(counterTO.getSource()).thenReturn(Counter.Source.VIRTUALROUTER);
+
+        boolean result = autoScaleManagerImplSpy.hasSourceVirtualRouter(groupTO);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void hasSourceVirtualRouterFalse() {
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+        CounterTO counterTO = Mockito.mock(CounterTO.class);
+        AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+
+        when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+        when(conditionTO.getCounter()).thenReturn(counterTO);
+        when(counterTO.getSource()).thenReturn(Counter.Source.CPU);
+
+        boolean result = autoScaleManagerImplSpy.hasSourceVirtualRouter(groupTO);
+        Assert.assertFalse(result);
     }
 
     @Test
@@ -1046,7 +1216,12 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void isQuitTimePassForPolicy() {
+        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
 
+        when(policyTO.getQuietTime()).thenReturn(60);
+
+        boolean result = autoScaleManagerImplSpy.isQuitTimePassForPolicy(policyTO);
+        Assert.assertTrue(result);
     }
 
     @Test

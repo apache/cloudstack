@@ -2122,7 +2122,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private boolean isNative(AutoScaleVmGroupTO groupTO) {
+    protected boolean isNative(AutoScaleVmGroupTO groupTO) {
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 CounterTO counterTO = conditionTO.getCounter();
@@ -2134,7 +2134,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return false;
     }
 
-    private boolean hasSourceVirtualRouter(AutoScaleVmGroupTO groupTO) {
+    protected boolean hasSourceVirtualRouter(AutoScaleVmGroupTO groupTO) {
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 CounterTO counterTO = conditionTO.getCounter();
@@ -2205,10 +2205,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             lastQuiettime = policyTO.getLastQuietTime().getTime();
         }
         long currentTime = (new Date()).getTime();
-        if ((currentTime - lastQuiettime) >= quietTime) {
-            return true;
-        }
-        return false;
+        return (currentTime - lastQuiettime) >= quietTime;
     }
 
     protected AutoScalePolicy.Action checkConditionsForPolicy(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScalePolicyTO policyTO, Network.Provider provider) {

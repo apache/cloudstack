@@ -1531,7 +1531,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // Reapply all lbs that had the vm assigned
         if (lbsToReconfigure != null) {
             for (Map.Entry<Long, List<Long>> lb : lbsToReconfigure.entrySet()) {
-                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue(), false, new HashMap<Long, List<String>>(), false)) {
+                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue(), false, new HashMap<>(), false)) {
                     success = false;
                 }
             }
