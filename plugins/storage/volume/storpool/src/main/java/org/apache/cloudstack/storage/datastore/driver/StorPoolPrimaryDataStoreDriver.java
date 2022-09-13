@@ -629,33 +629,26 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 final String name = vinfo.getUuid();
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(vinfo.getDataStore().getUuid(), vinfo.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
 
-                Long snapshotSize = StorPoolUtil.snapshotSize(parentName, conn);
-                if (snapshotSize == null) {
-                    err = String.format("Snapshot=%s does not exist on StorPool. Will recreate it first on primary", parentName);
-                    vmTemplatePoolDao.remove(templStoragePoolVO.getId());
+                Long snapshotSize = templStoragePoolVO.getTemplateSize();
+                long size = vinfo.getSize();
+                if (size < snapshotSize) {
+                    StorPoolUtil.spLog(String.format("provided size is too small for snapshot. Provided %d, snapshot %d. Using snapshot size", size, snapshotSize));
+                    size = snapshotSize;
                 }
-                if (err == null) {
-                    long size = vinfo.getSize();
-                    if( size < snapshotSize )
-                    {
-                        StorPoolUtil.spLog(String.format("provided size is too small for snapshot. Provided %d, snapshot %d. Using snapshot size", size, snapshotSize));
-                        size = snapshotSize;
-                    }
-                    StorPoolUtil.spLog(String.format("volume size is: %d", size));
-                    Long vmId = vinfo.getInstanceId();
-                    SpApiResponse resp = StorPoolUtil.volumeCreate(name, parentName, size, getVMInstanceUUID(vmId),
-                            getVcPolicyTag(vmId), "volume", vinfo.getMaxIops(), conn);
-                    if (resp.getError() == null) {
-                        updateStoragePool(dstData.getDataStore().getId(), vinfo.getSize());
+                StorPoolUtil.spLog(String.format("volume size is: %d", size));
+                Long vmId = vinfo.getInstanceId();
+                SpApiResponse resp = StorPoolUtil.volumeCreate(name, parentName, size, getVMInstanceUUID(vmId),
+                        getVcPolicyTag(vmId), "volume", vinfo.getMaxIops(), conn);
+                if (resp.getError() == null) {
+                    updateStoragePool(dstData.getDataStore().getId(), vinfo.getSize());
 
-                        VolumeObjectTO to = (VolumeObjectTO) vinfo.getTO();
-                        to.setSize(vinfo.getSize());
-                        to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
+                    VolumeObjectTO to = (VolumeObjectTO) vinfo.getTO();
+                    to.setSize(vinfo.getSize());
+                    to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
 
-                        answer = new CopyCmdAnswer(to);
-                    } else {
-                        err = String.format("Could not create Storpool volume %s. Error: %s", name, resp.getError());
-                    }
+                    answer = new CopyCmdAnswer(to);
+                } else {
+                    err = String.format("Could not create Storpool volume %s. Error: %s", name, resp.getError());
                 }
             } else if (srcType == DataObjectType.VOLUME && dstType == DataObjectType.VOLUME) {
                 StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriver.copyAsync src Data Store=%s", srcData.getDataStore().getDriver());
