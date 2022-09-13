@@ -2297,7 +2297,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return lbRulesMgr.getLoadBalancerServiceProvider(loadBalancer);
     }
 
-    private void checkNetScalerAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void checkNetScalerAsGroup(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmGroupTO groupTO = lbRulesMgr.toAutoScaleVmGroupTO(asGroup);
 
         if (!isNative(groupTO)) {
@@ -2485,7 +2485,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void checkVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void checkVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmGroupTO groupTO = lbRulesMgr.toAutoScaleVmGroupTO(asGroup);
 
         Map<String, Double> countersMap = new HashMap<>();
@@ -2721,7 +2721,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return policyId + "-" + conditionId + "-" + counterId;
     }
 
-    private void cleanupAsVmGroupStatistics(AutoScaleVmGroupTO groupTO) {
+    protected void cleanupAsVmGroupStatistics(AutoScaleVmGroupTO groupTO) {
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             Integer cleanupDelay = AutoScaleStatsCleanupDelay.value();
             Integer duration = policyTO.getDuration();
@@ -2732,7 +2732,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void scheduleMonitorTasks() {
+    protected void scheduleMonitorTasks() {
         List<AutoScaleVmGroupVO> vmGroups = autoScaleVmGroupDao.listAll();
         for (AutoScaleVmGroupVO vmGroup : vmGroups) {
             if (vmGroup.getState().equals(AutoScaleVmGroup.State.ENABLED)) {
