@@ -17,7 +17,6 @@
 package com.cloud.storage.dao;
 
 import com.cloud.storage.VolumeVO;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -66,10 +65,10 @@ public class VolumeDaoImplTest {
         Assert.assertEquals(volumeVoMock, actualVo);
     }
 
-    @Test (expected = CloudRuntimeException.class)
+    @Test
     public void getInstanceRootVolumeTestReturningNoVolumes() {
         List<VolumeVO> volumeVOList = new ArrayList<>();
         Mockito.doReturn(volumeVOList).when(volumeDaoSpy).findRootVolumesByInstance(1234);
-        volumeDaoSpy.getInstanceRootVolume(1234, "test-uuid");
+        Assert.assertNull(volumeDaoSpy.getInstanceRootVolume(1234, "test-uuid"));
     }
 }
