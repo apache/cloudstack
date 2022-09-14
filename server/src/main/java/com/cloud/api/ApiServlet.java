@@ -41,8 +41,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -324,6 +326,7 @@ public class ApiServlet extends HttpServlet {
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[]{req.getMethod()});
                 setProjectContext(params);
+                setClientAddressForConsoleEndpointAccess(command, params, req);
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
@@ -353,6 +356,15 @@ public class ApiServlet extends HttpServlet {
             }
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
+        }
+    }
+
+    protected void setClientAddressForConsoleEndpointAccess(String command, Map<String, Object[]> params, HttpServletRequest req) throws UnknownHostException {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(command) &&
+                command.equalsIgnoreCase(CreateConsoleEndpointCmd.APINAME)) {
+            InetAddress addr = getClientAddress(req);
+            String clientAddress = addr != null ? addr.getHostAddress() : null;
+            params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] {clientAddress});
         }
     }
 

@@ -17,9 +17,8 @@
 
 <template>
   <a
-    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis"
-    :href="server + '/console?cmd=access&vm=' + resource.id"
-    target="_blank">
+    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
+    @click="consoleUrl">
     <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state)" >
       <code-outlined />
     </a-button>
@@ -28,6 +27,9 @@
 
 <script>
 import { SERVER_MANAGER } from '@/store/mutation-types'
+import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { uuid } from 'vue-uuid'
 
 export default {
   name: 'Console',
@@ -39,6 +41,48 @@ export default {
     size: {
       type: String,
       default: 'small'
+    }
+  },
+  data () {
+    return {
+      url: '',
+      tokenValidationEnabled: false
+    }
+  },
+  components: {
+    TooltipLabel
+  },
+  beforeCreate () {
+    this.form = this.$form.createForm(this)
+  },
+  mounted () {
+    this.verifyExtraValidationEnabled()
+  },
+  methods: {
+    verifyExtraValidationEnabled () {
+      api('listConfigurations', { name: 'consoleproxy.extra.security.validation.enabled' }).then(json => {
+        this.tokenValidationEnabled = json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value === 'true'
+      })
+    },
+    consoleUrl () {
+      const params = {}
+      if (this.tokenValidationEnabled) {
+        params.token = uuid.v4()
+      }
+      params.virtualmachineid = this.resource.id
+      api('createConsoleEndpoint', params).then(json => {
+        this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
+        if (json.createconsoleendpointresponse.consoleendpoint.success) {
+          window.open(this.url, '_blank')
+        } else {
+          this.$notification.error({
+            message: this.$t('error.execute.api.failed') + ' ' + 'createConsoleEndpoint',
+            description: json.createconsoleendpointresponse.consoleendpoint.details
+          })
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     }
   },
   computed: {
