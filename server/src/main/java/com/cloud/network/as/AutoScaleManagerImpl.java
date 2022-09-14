@@ -2650,7 +2650,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private boolean updateCountersMap(AutoScaleVmGroupTO groupTO, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
+    protected boolean updateCountersMap(AutoScaleVmGroupTO groupTO, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
         s_logger.debug("Updating countersMap for as group: " + groupTO.getId());
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
