@@ -36,6 +36,8 @@ public class ConfigKey<T> {
 
     public static final String CATEGORY_ADVANCED = "Advanced";
 
+    public static final String CATEGORY_ALERT = "Alert";
+
     private final String _category;
 
     public String category() {
