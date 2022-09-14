@@ -44,6 +44,8 @@ from marvin.lib.base import (Account,
                              NetworkOffering,
                              PublicIPAddress,
                              LoadBalancerRule,
+                             VPC,
+                             VpcOffering,
                              SSHKeyPair)
 
 from marvin.lib.common import (get_domain,
@@ -627,19 +629,19 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         scale_down_policy = policies[0]
 
-        new_condition_1 = Autoscale.createCondition(
+        new_condition_1 = AutoScaleCondition.create(
             self.regular_user_apiclient,
             counterid=self.counter_network_received_id,
             relationaloperator="GE",
             threshold=0
         )
-        new_condition_2 = Autoscale.createCondition(
+        new_condition_2 = AutoScaleCondition.create(
             self.regular_user_apiclient,
             counterid=self.counter_network_transmit_id,
             relationaloperator="GE",
             threshold=0
         )
-        new_condition_3 = Autoscale.createCondition(
+        new_condition_3 = AutoScaleCondition.create(
             self.regular_user_apiclient,
             counterid=self.counter_lb_connection_id,
             relationaloperator="GE",
@@ -862,3 +864,173 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         VirtualMachine.delete(vm, self.regular_user_apiclient, expunge=False)
         VirtualMachine.delete(vm, self.apiclient, expunge=True)
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_07_autoscaling_vmgroup_on_vpc_network(self):
+        """ Testing VM autoscaling on vpc network """
+        self.logger.debug("=== Running test_07_autoscaling_vmgroup_on_vpc_network ===")
+
+        # Create vpc offering
+        networkOffering = NetworkOffering.list(
+            self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
+        self.assertTrue(networkOffering is not None and len(
+            networkOffering) > 0, "No VPC based network offering")
+
+        vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering")
+        self.assertTrue(vpcOffering is not None and len(
+            vpcOffering) > 0, "No VPC offerings found")
+
+        self.services["vpc"] = {}
+        self.services["vpc"]["name"] = "test-vpc"
+        self.services["vpc"]["displaytext"] = "test-vpc"
+        self.services["vpc"]["cidr"] = "192.168.0.0/22"
+
+        self.services["vpc_network"] = {}
+        self.services["vpc_network"]["name"] = "test-vpc-network"
+        self.services["vpc_network"]["displaytext"] = "test-vpc-network"
+        self.services["vpc_network"]["netmask"] = "255.255.255.0"
+        self.services["vpc_network"]["gateway"] = "192.168.0.1"
+
+        # Create vpc
+        vpc = VPC.create(
+            self.regular_user_apiclient,
+            self.services["vpc"],
+            vpcofferingid=vpcOffering[0].id,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(vpc)
+
+        # Create vpc network
+        self.services["network"]["name"] = "Test Network Isolated - VPC"
+        vpc_network = Network.create(
+            self.regular_user_apiclient,
+            self.services["vpc_network"],
+            networkofferingid=networkOffering[0].id,
+            vpcid=vpc.id,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(vpc_network)
+
+        # Acquire Public IP and create LoadBalancer rule for vpc
+        public_ip_address_vpc = PublicIPAddress.create(
+            self.regular_user_apiclient,
+            services=self.services["network"],
+            vpcid=vpc.id,
+            networkid=vpc_network.id
+        )
+
+        load_balancer_rule_vpc = LoadBalancerRule.create(
+            self.regular_user_apiclient,
+            self.services["lbrule"],
+            ipaddressid=public_ip_address_vpc.ipaddress.id,
+            networkid=vpc_network.id
+        )
+        self.cleanup.append(load_balancer_rule_vpc)
+
+        # Create AS conditions for vpc
+        scale_up_condition_1 = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            counterid = self.counter_cpu_id,
+            relationaloperator = "GE",
+            threshold = 1
+        )
+        scale_up_condition_2 = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            counterid = self.counter_memory_id,
+            relationaloperator = "LE",
+            threshold = 100
+        )
+        scale_up_condition_3 = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            counterid=self.counter_network_received_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        scale_up_condition_4 = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            counterid=self.counter_network_transmit_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        scale_up_condition_5 = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            counterid=self.counter_lb_connection_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+
+        scale_down_condition_vpc = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            counterid = self.counter_memory_id,
+            relationaloperator = "LE",
+            threshold = 100
+        )
+
+        self.cleanup.append(scale_up_condition_1)
+        self.cleanup.append(scale_up_condition_2)
+        self.cleanup.append(scale_up_condition_3)
+        self.cleanup.append(scale_up_condition_4)
+        self.cleanup.append(scale_up_condition_5)
+        self.cleanup.append(scale_down_condition_vpc)
+
+        # Create AS policies for vpc
+        scale_up_policy_vpc = AutoScalePolicy.create(
+            self.regular_user_apiclient,
+            action='ScaleUp',
+            conditionids=','.join([scale_up_condition_1.id, scale_up_condition_2.id, scale_up_condition_3.id,
+                                   scale_up_condition_4.id, scale_up_condition_5.id]),
+            duration=DEFAULT_DURATION
+        )
+
+        scale_down_policy_vpc = AutoScalePolicy.create(
+            self.regular_user_apiclient,
+            action='ScaleDown',
+            conditionids=scale_down_condition_vpc.id,
+            duration=DEFAULT_DURATION
+        )
+
+        self.cleanup.append(scale_up_policy_vpc)
+        self.cleanup.append(scale_down_policy_vpc)
+
+        # Create AS VM Profile for vpc
+        autoscaling_vmprofile_vpc = AutoScaleVmProfile.create(
+            self.regular_user_apiclient,
+            serviceofferingid=self.service_offering.id,
+            zoneid=self.zone.id,
+            templateid=self.template.id,
+            destroyvmgraceperiod=DEFAULT_DESTROY_VM_GRACE_PERIOD
+        )
+
+        self.cleanup.append(autoscaling_vmprofile_vpc)
+
+        # Create AS VM Group for vpc
+        autoscaling_vmgroup_vpc = AutoScaleVmGroup.create(
+            self.regular_user_apiclient,
+            name=NAME_PREFIX + format(datetime.datetime.now(), '%Y%m%d-%H%M%S'),
+            lbruleid=load_balancer_rule_vpc.id,
+            minmembers=MIN_MEMBER,
+            maxmembers=MAX_MEMBER,
+            scaledownpolicyids=scale_down_policy_vpc.id,
+            scaleuppolicyids=scale_up_policy_vpc.id,
+            vmprofileid=autoscaling_vmprofile_vpc.id,
+            interval=DEFAULT_INTERVAL
+        )
+
+        self.excluded_vm_ids = []
+        # VM count increases from 0 to MIN_MEMBER
+        sleeptime = int(int(self.check_interval)/1000) * 2
+        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MIN_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
+
+        # VM count increases from MIN_MEMBER to MAX_MEMBER
+        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
+
+        autoscaling_vmgroup_vpc.disable(self.regular_user_apiclient)
+        autoscaling_vmgroup_vpc.enable(self.regular_user_apiclient)
+
+        self.delete_vmgroup(autoscaling_vmgroup_vpc, self.regular_user_apiclient, cleanup=False, expected=False)
+        self.delete_vmgroup(autoscaling_vmgroup_vpc, self.regular_user_apiclient, cleanup=True, expected=True)
