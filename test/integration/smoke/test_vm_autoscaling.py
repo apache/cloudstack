@@ -193,13 +193,26 @@ class TestVmAutoScaling(cloudstackTestCase):
                 cls.counter_cpu_id = counter.id
             elif counter.source == 'MEMORY':
                 cls.counter_memory_id = counter.id
+            elif counter.source == 'VIRTUALROUTER' and counter.value == 'virtual.network.received.Bps':
+                cls.counter_network_received_id = counter.id
+            elif counter.source == 'VIRTUALROUTER' and counter.value == 'virtual.network.transmit.Bps':
+                cls.counter_network_transmit_id = counter.id
+            elif counter.source == 'VIRTUALROUTER' and counter.value == 'virtual.network.lb.average.connections':
+                cls.counter_lb_connection_id = counter.id
 
         # 10. Create AS conditions
-        cls.scale_up_condition = AutoScaleCondition.create(
+        cls.scale_up_condition_cpu = AutoScaleCondition.create(
             cls.regular_user_apiclient,
             counterid = cls.counter_cpu_id,
             relationaloperator = "GE",
             threshold = 1
+        )
+
+        cls.scale_up_condition_memory = AutoScaleCondition.create(
+            cls.regular_user_apiclient,
+            counterid = cls.counter_memory_id,
+            relationaloperator = "LE",
+            threshold = 100
         )
 
         cls.scale_down_condition = AutoScaleCondition.create(
@@ -209,14 +222,15 @@ class TestVmAutoScaling(cloudstackTestCase):
             threshold = 100
         )
 
-        cls._cleanup.append(cls.scale_up_condition)
+        cls._cleanup.append(cls.scale_up_condition_cpu)
+        cls._cleanup.append(cls.scale_up_condition_memory)
         cls._cleanup.append(cls.scale_down_condition)
 
         # 11. Create AS policies
         cls.scale_up_policy = AutoScalePolicy.create(
             cls.regular_user_apiclient,
             action='ScaleUp',
-            conditionids=cls.scale_up_condition.id,
+            conditionids=','.join([cls.scale_up_condition_cpu.id, cls.scale_up_condition_memory.id]),
             duration=DEFAULT_DURATION
         )
 
@@ -341,6 +355,15 @@ class TestVmAutoScaling(cloudstackTestCase):
             True,
             "List virtual machines should return a valid list"
         )
+
+        new_vm_ids = []
+        for vm in vms:
+            new_vm_ids.append(vm.id)
+        for vm_id in self.excluded_vm_ids:
+            if vm_id not in new_vm_ids:
+                self.logger.debug("VM (id: %s) is not found in VM group" % vm_id)
+                self.excluded_vm_ids.remove(vm_id)
+
         self.assertEqual(
             len(vms),
             vmCount,
@@ -349,12 +372,11 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         for vm in vms:
             if vm.id not in self.excluded_vm_ids:
+                self.excluded_vm_ids.append(vm.id)
                 self.logger.debug("==== Verifying profiles of new VM %s (%s) ====" % (vm.name, vm.id))
                 self.verifyVmProfile(vm, autoscalevmprofileid, networkid, projectid)
 
     def verifyVmProfile(self, vm, autoscalevmprofileid, networkid=None, projectid=None):
-        self.excluded_vm_ids.append(vm.id)
-
         datadisksizeInBytes = None
         diskofferingid = None
         rootdisksizeInBytes = None
@@ -443,7 +465,7 @@ class TestVmAutoScaling(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_scale_up_verify(self):
         """ Verify scale up of AutoScaling VM Group """
-        self.logger.debug("test_01_scale_up_verify")
+        self.logger.debug("=== Running test_01_scale_up_verify ===")
 
         # VM count increases from 0 to MIN_MEMBER
         sleeptime = int(int(self.check_interval)/1000) * 2
@@ -461,7 +483,7 @@ class TestVmAutoScaling(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_update_vmprofile_and_vmgroup(self):
         """ Verify update of AutoScaling VM Group and VM Profile"""
-        self.logger.debug("test_02_update_vmprofile_and_vmgroup")
+        self.logger.debug("=== Running test_02_update_vmprofile_and_vmgroup ===")
 
         vmprofiles_list = AutoScaleVmProfile.list(
             self.regular_user_apiclient,
@@ -548,7 +570,7 @@ class TestVmAutoScaling(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="false")
     def test_03_scale_down_verify(self):
         """ Verify scale down of AutoScaling VM Group """
-        self.logger.debug("test_03_scale_down_verify")
+        self.logger.debug("=== Running test_03_scale_down_verify ===")
 
         self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
 
@@ -605,23 +627,29 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         scale_down_policy = policies[0]
 
-        for condition in conditions:
-            if condition.counterid == self.counter_memory_id:
-                new_condition = Autoscale.createCondition(
-                    self.regular_user_apiclient,
-                    counterid=self.counter_memory_id,
-                    relationaloperator="LT",
-                    threshold=101
-                )
-                Autoscale.updateAutoscalePolicy(
-                    self.regular_user_apiclient,
-                    id=scale_down_policy.id,
-                    conditionids=new_condition.id
-                )
-                Autoscale.deleteCondition(
-                    self.regular_user_apiclient,
-                    id=condition.id
-                )
+        new_condition_1 = Autoscale.createCondition(
+            self.regular_user_apiclient,
+            counterid=self.counter_network_received_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        new_condition_2 = Autoscale.createCondition(
+            self.regular_user_apiclient,
+            counterid=self.counter_network_transmit_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        new_condition_3 = Autoscale.createCondition(
+            self.regular_user_apiclient,
+            counterid=self.counter_lb_connection_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        Autoscale.updateAutoscalePolicy(
+            self.regular_user_apiclient,
+            id=scale_down_policy.id,
+            conditionids=','.join([new_condition_1.id, new_condition_2.id, new_condition_3.id])
+        )
 
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
@@ -632,9 +660,9 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.verifyVmCountAndProfiles(MIN_MEMBER+1)
 
     @attr(tags=["advanced"], required_hardware="false")
-    def test_04_remove_vm_and_vmgroup(self):
-        """ Verify removal of AutoScaling VM Group and VM"""
-        self.logger.debug("test_04_remove_vm_and_vmgroup")
+    def test_04_remove_vm_in_vmgroup(self):
+        """ Verify removal of VM in AutoScaling VM Group"""
+        self.logger.debug("=== Running test_04_remove_vm_in_vmgroup ===")
 
         vms = VirtualMachine.list(
             self.regular_user_apiclient,
@@ -668,12 +696,18 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_05_remove_vmgroup(self):
+        """ Verify removal of AutoScaling VM Group"""
+        self.logger.debug("=== Running test_05_remove_vmgroup ===")
+
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=True, expected=True)
 
     @attr(tags=["advanced"], required_hardware="false")
-    def test_05_autoscaling_vmgroup_on_project_network(self):
+    def test_06_autoscaling_vmgroup_on_project_network(self):
         """ Testing VM autoscaling on project network """
+        self.logger.debug("=== Running test_06_autoscaling_vmgroup_on_project_network ===")
 
         # Create project
         project = Project.create(
@@ -771,6 +805,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             interval=DEFAULT_INTERVAL
         )
 
+        self.excluded_vm_ids = []
         # VM count increases from 0 to MIN_MEMBER
         sleeptime = int(int(self.check_interval)/1000) * 2
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
