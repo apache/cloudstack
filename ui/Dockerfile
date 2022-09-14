@@ -17,7 +17,7 @@
 
 # Build example: docker build -t <name> .
 
-FROM node:lts-stretch AS build
+FROM node:14-bullseye AS build
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
 LABEL Description="Apache CloudStack UI; Modern role-base progressive UI for Apache CloudStack"
