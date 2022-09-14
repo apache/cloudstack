@@ -50,10 +50,12 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.network.rules.LoadBalancer;
@@ -88,6 +90,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
@@ -204,7 +207,7 @@ public class AutoScaleManagerImplTest {
     @Mock
     IPAddressDao ipAddressDao;
     @Mock
-    LoadBalancerVMMapDao lb2VmMapDao;
+    LoadBalancerVMMapDao lbVmMapDao;
     @Mock
     AutoScaleVmGroupStatisticsDao asGroupStatisticsDao;
     @Mock
@@ -231,6 +234,8 @@ public class AutoScaleManagerImplTest {
     AgentManager agentMgr;
     @Mock
     UserVmDao userVmDao;
+    @Mock
+    LoadBalancingRulesService loadBalancingRulesService;
 
     AccountVO account;
     UserVO user;
@@ -350,6 +355,8 @@ public class AutoScaleManagerImplTest {
     HostVO hostMock;
     @Mock
     DomainRouterVO domainRouterMock;
+    @Mock
+    LoadBalancerVMMapVO loadBalancerVMMapMock;
 
     @Before
     public void setUp() {
@@ -861,7 +868,7 @@ public class AutoScaleManagerImplTest {
         when(ipAddressMock.getDataCenterId()).thenReturn(zoneId);
         when(loadBalancerMock.getId()).thenReturn(loadBalancerId);
         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)).thenReturn(false);
-        when(lb2VmMapDao.isVmAttachedToLoadBalancer(loadBalancerId)).thenReturn(false);
+        when(lbVmMapDao.isVmAttachedToLoadBalancer(loadBalancerId)).thenReturn(false);
 
         SearchBuilder<AutoScalePolicyVO> searchBuilderMock = Mockito.mock(SearchBuilder.class);
         SearchCriteria<AutoScalePolicyVO> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
@@ -1349,13 +1356,56 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void testDoScaleUp() {
-        System.out.println("TODO");
+    public void testDoScaleUp() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
+        when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+        when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
+        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(maxMembers - 1);
+        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+
+        when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
+        when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.SCALING, AutoScaleVmGroup.State.ENABLED)).thenReturn(true);
+        PowerMockito.doReturn(virtualMachineId).when(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVm = Mockito.mock(Pair.class);
+        when(userVmMgr.startVirtualMachine(virtualMachineId, null, null, null)).thenReturn(startVm);
+
+        when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+        when(lbVmMapDao.listByLoadBalancerId(loadBalancerId)).thenReturn(Arrays.asList(loadBalancerVMMapMock));
+        when(loadBalancerVMMapMock.getInstanceId()).thenReturn(virtualMachineId + 1);
+
+        when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), eq(true))).thenReturn(true);
+
+        autoScaleManagerImplSpy.doScaleUp(vmGroupId, 1);
+
+        Mockito.verify(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
+        Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), eq(true));
     }
 
     @Test
     public void testDoScaleDown() {
-        System.out.println("TODO");
+        when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
+        when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+
+        when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
+        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(minMembers + 1);
+        when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+
+        when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
+        when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.SCALING, AutoScaleVmGroup.State.ENABLED)).thenReturn(true);
+
+        when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+        when(lbVmMapDao.listByLoadBalancerId(loadBalancerId)).thenReturn(Arrays.asList(loadBalancerVMMapMock));
+        when(loadBalancerVMMapMock.getInstanceId()).thenReturn(virtualMachineId);
+
+        when(loadBalancingRulesService.removeFromLoadBalancer(anyLong(), any(), any(), eq(true))).thenReturn(true);
+
+        when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
+        when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+        when(asVmProfileMock.getDestroyVmGraceperiod()).thenReturn(destroyVmGraceperiod);
+
+        autoScaleManagerImplSpy.doScaleDown(vmGroupId);
+
+        Mockito.verify(loadBalancingRulesService).removeFromLoadBalancer(anyLong(), any(), any(), eq(true));
     }
 
     @Test
@@ -1743,8 +1793,35 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void checkVirtualRouterAsGroup() {
-        System.out.println("TODO");
+    public void checkVirtualRouterAsGroupAndScaleUp() {
+        when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);
+
+        PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).updateCountersMap(any(), any(), any());
+        PowerMockito.doReturn(AutoScalePolicy.Action.SCALEUP).when(autoScaleManagerImplSpy).getAutoscaleAction(any(), any(), any());
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).doScaleUp(vmGroupId, 1);
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).cleanupAsVmGroupStatistics(groupTO);
+
+        autoScaleManagerImplSpy.checkVirtualRouterAsGroup(asVmGroupMock);
+
+        Mockito.verify(autoScaleManagerImplSpy).doScaleUp(vmGroupId, 1);
+    }
+
+    @Test
+    public void checkVirtualRouterAsGroupAndScaleDown() {
+        when(asVmGroupMock.getId()).thenReturn(vmGroupId);
+        AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+        when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);
+
+        PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).updateCountersMap(any(), any(), any());
+        PowerMockito.doReturn(AutoScalePolicy.Action.SCALEDOWN).when(autoScaleManagerImplSpy).getAutoscaleAction(any(), any(), any());
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).doScaleDown(vmGroupId);
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).cleanupAsVmGroupStatistics(groupTO);
+
+        autoScaleManagerImplSpy.checkVirtualRouterAsGroup(asVmGroupMock);
+
+        Mockito.verify(autoScaleManagerImplSpy).doScaleDown(vmGroupId);
     }
 
     @Test

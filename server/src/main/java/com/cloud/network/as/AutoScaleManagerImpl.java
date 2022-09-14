@@ -209,8 +209,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Inject
     ConditionDao conditionDao;
     @Inject
-    LoadBalancerVMMapDao lb2VmMapDao;
-    @Inject
     LoadBalancerDao lbDao;
     @Inject
     AutoScaleVmProfileDao autoScaleVmProfileDao;
@@ -965,7 +963,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("an AutoScaleVmGroup is already attached to the lb rule, the existing vm group has to be first deleted");
         }
 
-        if (lb2VmMapDao.isVmAttachedToLoadBalancer(loadBalancer.getId())) {
+        if (lbVmMapDao.isVmAttachedToLoadBalancer(loadBalancer.getId())) {
             throw new InvalidParameterValueException(
                 "there are Vms already bound to the specified LoadBalancing Rule. User bound Vms and AutoScaled Vm Group cannot co-exist on a Load Balancing Rule");
         }
