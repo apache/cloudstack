@@ -2602,12 +2602,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
         }
     }
-
-    private List<AutoScaleMetrics> setGetAutoScaleMetricsCommandMetrics(AutoScaleVmGroupTO groupTO) {
+    protected List<AutoScaleMetrics> setGetAutoScaleMetricsCommandMetrics(AutoScaleVmGroupTO groupTO) {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 CounterTO counter = conditionTO.getCounter();
+
                 String provider = counter.getProvider();
                 if (! Network.Provider.VirtualRouter.getName().equals(provider) && ! Network.Provider.VPCVirtualRouter.getName().equals(provider)) {
                     continue;
@@ -2622,7 +2622,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return metrics;
     }
 
-    private void processGetAutoScaleMetricsAnswer(AutoScaleVmGroupTO groupTO, List<AutoScaleMetricsValue> values, Long routerId) {
+    protected void processGetAutoScaleMetricsAnswer(AutoScaleVmGroupTO groupTO, List<AutoScaleMetricsValue> values, Long routerId) {
         Date timestamp = new Date();
         Map<Long, List<CounterTO>> policyCountersMap = getPolicyCounters(groupTO);
         for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {

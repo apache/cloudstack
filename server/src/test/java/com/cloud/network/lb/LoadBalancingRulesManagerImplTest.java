@@ -100,7 +100,5 @@ public class LoadBalancingRulesManagerImplTest{
         when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(new ArrayList<>());
 
         Network.Provider provider = lbr.getLoadBalancerServiceProvider(loadBalancerMock);
-
-        Assert.assertNull(provider);
     }
 }
