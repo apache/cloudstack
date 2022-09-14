@@ -2703,6 +2703,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 }
             }
         }
+
+        updateCountersMapByAggratedRecords(countersMap, countersNumberMap, aggregatedRecords, conditionId, policyTO.getId());
+    }
+
+    public void updateCountersMapByAggratedRecords(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap,
+                                                    Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords,
+                                                    Long conditionId, Long policyId) {
         if (MapUtils.isNotEmpty(aggregatedRecords)) {
             s_logger.debug("Processing aggregated data");
             for (Map.Entry<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecord : aggregatedRecords.entrySet()) {
@@ -2716,7 +2723,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 AutoScaleVmGroupStatisticsVO firstRecord = records.get(0);
                 AutoScaleVmGroupStatisticsVO lastRecord = records.get(records.size() - 1);
                 Double coVal = (lastRecord.getRawValue() - firstRecord.getRawValue()) * 1000 / (lastRecord.getCreated().getTime() - firstRecord.getCreated().getTime());
-                updateCountersMapWithAggregatedData(countersMap, countersNumberMap, counterId, conditionId, policyTO.getId(), coVal);
+                updateCountersMapWithAggregatedData(countersMap, countersNumberMap, counterId, conditionId, policyId, coVal);
             }
         }
     }
