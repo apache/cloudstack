@@ -52,7 +52,11 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     DetailVO findDetail(long hostId, String name);
 
+    Pair<Boolean, String> setConsoleAccessForVm(long vmId, String sessionUuid);
+
     String getConsoleAccessUrlRoot(long vmId);
+
+    String getConsoleAccessAddress(long vmId);
 
     GuestOSVO getGuestOs(Long guestOsId);
 

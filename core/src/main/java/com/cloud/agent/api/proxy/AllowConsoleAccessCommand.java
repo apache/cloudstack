@@ -16,19 +16,22 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+package com.cloud.agent.api.proxy;
 
-package com.cloud.info;
+public class AllowConsoleAccessCommand extends ProxyCommand {
 
-public class ConsoleProxyConnectionInfo {
-    public int id;
-    public String host;
-    public int port;
-    public String tag;
-    public long createTime;
-    public long lastUsedTime;
-    protected String sessionUuid;
+    private String sessionUuid;
 
-    public ConsoleProxyConnectionInfo() {
+    public AllowConsoleAccessCommand() {
+    }
+
+    public AllowConsoleAccessCommand(String sessionUuid) {
+        this.sessionUuid = sessionUuid;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
     public String getSessionUuid() {

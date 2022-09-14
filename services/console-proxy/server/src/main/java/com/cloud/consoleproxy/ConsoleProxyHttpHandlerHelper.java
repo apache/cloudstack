@@ -51,7 +51,6 @@ public class ConsoleProxyHttpHandlerHelper {
 
             ConsoleProxyClientParam param = encryptor.decryptObject(ConsoleProxyClientParam.class, map.get("token"));
 
-            // make sure we get information from token only
             guardUserInput(map);
             if (param != null) {
                 if (param.getClientHostAddress() != null) {
@@ -96,12 +95,23 @@ public class ConsoleProxyHttpHandlerHelper {
                 if (param.getWebsocketUrl() != null) {
                     map.put("websocketUrl", param.getWebsocketUrl());
                 }
+                if (param.getSessionUuid() != null) {
+                    map.put("sessionUuid", param.getSessionUuid());
+                }
+                if (param.getExtraSecurityToken() != null) {
+                    map.put("extraSecurityToken", param.getExtraSecurityToken());
+                }
             } else {
                 s_logger.error("Unable to decode token");
             }
         } else {
             // we no longer accept information from parameter other than token
             guardUserInput(map);
+        }
+
+        if (map.containsKey("extra")) {
+            s_logger.debug(String.format("Found extra parameter: %s for client security validation check " +
+                    "on the VNC server", map.get("extra")));
         }
 
         return map;
