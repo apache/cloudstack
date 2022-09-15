@@ -2032,16 +2032,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             AutoScaleVmProfileVO asProfile = autoScaleVmProfileDao.findById(profileId);
             Integer destroyVmGracePeriod = asProfile.getDestroyVmGraceperiod();
             if (destroyVmGracePeriod >= 0) {
-                executor.schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
+                executor.schedule(() -> {
+                    try {
 
-                            userVmMgr.destroyVm(vmId, false);
+                        userVmMgr.destroyVm(vmId, false);
 
-                        } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
-                            s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
-                        }
+                    } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
+                        s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
                     }
                 }, destroyVmGracePeriod, TimeUnit.SECONDS);
             }

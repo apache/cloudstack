@@ -119,6 +119,15 @@ public class CreateAutoScaleVmProfileCmdTest {
         Assert.assertEquals(projectId, createAutoScaleVmProfileCmd.getProjectId());
         Assert.assertEquals(accountName, createAutoScaleVmProfileCmd.getAccountName());
 
+        Assert.assertEquals("autoscalevmprofileresponse", createAutoScaleVmProfileCmd.getCommandName());
+        Assert.assertEquals("autoscalevmprofile", CreateAutoScaleVmProfileCmd.getResultObjectName());
+        Assert.assertEquals(EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, createAutoScaleVmProfileCmd.getEventType());
+        Assert.assertEquals("creating AutoScale Vm Profile", createAutoScaleVmProfileCmd.getEventDescription());
+        Assert.assertEquals(ApiCommandResourceType.AutoScaleVmProfile, createAutoScaleVmProfileCmd.getApiResourceType());
+    }
+
+    @Test
+    public void verifyCreateAutoScaleVmProfileCmdParams() {
         HashMap<String, String> deployParamMap = createAutoScaleVmProfileCmd.getDeployParamMap();
         Assert.assertEquals(otherDeployParams.size() + 4, deployParamMap.size());
         Assert.assertEquals("deployVirtualMachine", deployParamMap.get("command"));
@@ -128,12 +137,6 @@ public class CreateAutoScaleVmProfileCmdTest {
         Assert.assertEquals("10", deployParamMap.get("rootdisksize"));
         Assert.assertEquals("2222-3333-4444", deployParamMap.get("diskofferingid"));
         Assert.assertEquals("20", deployParamMap.get("size"));
-
-        Assert.assertEquals("autoscalevmprofileresponse", createAutoScaleVmProfileCmd.getCommandName());
-        Assert.assertEquals("autoscalevmprofile", CreateAutoScaleVmProfileCmd.getResultObjectName());
-        Assert.assertEquals(EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, createAutoScaleVmProfileCmd.getEventType());
-        Assert.assertEquals("creating AutoScale Vm Profile", createAutoScaleVmProfileCmd.getEventDescription());
-        Assert.assertEquals(ApiCommandResourceType.AutoScaleVmProfile, createAutoScaleVmProfileCmd.getApiResourceType());
     }
 
     @Test
