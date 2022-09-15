@@ -92,10 +92,7 @@ INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, creat
 
 -- Update autoscale_vmgroups to new state
 
-UPDATE `cloud`.`autoscale_vmgroups` SET state='NEW' WHERE state='new';
-UPDATE `cloud`.`autoscale_vmgroups` SET state='ENABLED' WHERE state='enabled';
-UPDATE `cloud`.`autoscale_vmgroups` SET state='DISABLED' WHERE state='disabled';
-UPDATE `cloud`.`autoscale_vmgroups` SET state='REVOKE' WHERE state='revoke';
+UPDATE `cloud`.`autoscale_vmgroups` SET state= UPPER(state);
 
 -- Update autoscale_vmgroups so records will not be removed when LB rule is removed
 
