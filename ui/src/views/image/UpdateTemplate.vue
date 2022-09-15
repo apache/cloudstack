@@ -196,7 +196,6 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
-        rootDiskController: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
       const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']

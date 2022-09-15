@@ -1,0 +1,12 @@
+interface {{ GUEST_INTERFACE }}
+{
+    AdvSendAdvert on;
+    MinRtrAdvInterval 5;
+    MaxRtrAdvInterval 15;
+    prefix {{ IPV6_CIDR }}
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+    };
+{{ RDNSS_CONFIG }}
+};

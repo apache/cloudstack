@@ -33,6 +33,10 @@ public interface Event extends ControlledEntity, Identity, InternalIdentity {
 
     String getDescription();
 
+    Long getResourceId();
+
+    String getResourceType();
+
     Date getCreateDate();
 
     long getUserId();

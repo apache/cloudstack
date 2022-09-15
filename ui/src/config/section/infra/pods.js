@@ -16,6 +16,8 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+
 export default {
   name: 'pod',
   title: 'label.pods',
@@ -39,6 +41,11 @@ export default {
   }, {
     name: 'resources',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Resources.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Pod',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))

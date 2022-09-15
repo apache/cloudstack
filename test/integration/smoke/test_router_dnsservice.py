@@ -272,5 +272,5 @@ class TestRouterDnsService(cloudstackTestCase):
                         "VR DNS should serve requests from guest network, ping for %s successful." % VM1_NAME)
         self.assertTrue(VM2_NAME in result2 and "10.1.1.1" in result2,
                         "VR DNS should serve requests from guest network, ping for %s successful." % VM2_NAME)
-        
+
         return

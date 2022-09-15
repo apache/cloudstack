@@ -67,11 +67,9 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'Breadcrumb',
-  components: { RenderIcon },
   props: {
     resource: {
       type: Object,

@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -41,6 +42,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offering.DiskOffering;
@@ -101,6 +103,38 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     protected DomainChecker() {
         super();
     }
+
+    /**
+     *
+     * public template can be used by other accounts in:
+     *
+     *  1. the same domain
+     *  2. in sub-domains
+     *  3. domain admin of parent domains
+     *
+     *  In addition to those, everyone can access the public templates in domains that set "share.public.templates.with.other.domains" config to true.
+     *
+     * @param template template object
+     * @param owner owner of the template
+     * @param caller who wants to access to the template
+     */
+
+    private void checkPublicTemplateAccess(VirtualMachineTemplate template, Account owner, Account caller){
+        if (!QueryService.SharePublicTemplatesWithOtherDomains.valueIn(owner.getDomainId()) ||
+                caller.getDomainId() == owner.getDomainId() ||
+                _domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+            return;
+        }
+
+        if (caller.getType() == Account.Type.NORMAL || caller.getType() == Account.Type.PROJECT) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+        } else if (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
+            if (!_domainDao.isChildDomain(caller.getDomainId(), owner.getDomainId())) {
+                throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+            }
+        }
+    }
+
 
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
@@ -167,12 +201,18 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
                         }
                     }
+                } else if (caller.getType() != Account.Type.ADMIN) {
+                    checkPublicTemplateAccess(template, owner, caller);
                 }
             }
 
             return true;
         } else if (entity instanceof Network && accessType != null && accessType == AccessType.UseEntry) {
             _networkMgr.checkNetworkPermissions(caller, (Network)entity);
+        } else if (entity instanceof Network && accessType != null && accessType == AccessType.OperateEntry) {
+            _networkMgr.checkNetworkOperatePermissions(caller, (Network)entity);
+        } else if (entity instanceof VirtualRouter) {
+            _networkMgr.checkRouterPermissions(caller, (VirtualRouter)entity);
         } else if (entity instanceof AffinityGroup) {
             return false;
         } else {

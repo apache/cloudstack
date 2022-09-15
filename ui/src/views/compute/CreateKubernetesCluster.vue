@@ -137,7 +137,7 @@
           </template>
           <a-switch v-model:checked="form.haenable" />
         </a-form-item>
-        <a-form-item v-if="form.haenable">
+        <a-form-item v-if="form.haenable" name="controlnodes" ref="controlnodes">
           <template #label>
             <tooltip-label :title="$t('label.controlnodes')" :tooltip="apiParams.controlnodes.description"/>
           </template>
@@ -145,7 +145,7 @@
             v-model:value="form.controlnodes"
             :placeholder="apiParams.controlnodes.description"/>
         </a-form-item>
-        <a-form-item v-if="form.haenable">
+        <a-form-item v-if="form.haenable" name="externalloadbalanceripaddress" ref="externalloadbalanceripaddress">
           <template #label>
             <tooltip-label :title="$t('label.externalloadbalanceripaddress')" :tooltip="apiParams.externalloadbalanceripaddress.description"/>
           </template>
@@ -226,11 +226,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateKubernetesCluster',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -339,7 +341,9 @@ export default {
       params.showicon = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
         if (this.arrayHasItems(this.zones)) {
@@ -446,7 +450,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         const params = {
           name: values.name,

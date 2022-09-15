@@ -26,6 +26,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -93,7 +94,7 @@ public abstract class VsmResponse {
 
     protected void initialize() {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             docFactory.setNamespaceAware(true);
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             _docResponse = docBuilder.parse(new InputSource(new StringReader(_xmlResponse)));
@@ -210,7 +211,7 @@ public abstract class VsmResponse {
     // Helper routine to check for the response received.
     protected void printResponse() {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             DOMImplementationLS ls = (DOMImplementationLS)docBuilder.getDOMImplementation();
             LSSerializer lss = ls.createLSSerializer();

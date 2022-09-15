@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
@@ -38,16 +37,11 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru {
     private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
     @Inject
     GuestOSDao _guestOsDao;
-    @Inject
-    HostDao _hostDao;
-    @Inject
-    VMInstanceDao _vmDao;
 
     protected BareMetalGuru() {
         super();
@@ -62,7 +56,7 @@ public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru 
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
 
-        VMInstanceVO vo = _vmDao.findById(vm.getId());
+        VMInstanceVO vo = virtualMachineDao.findById(vm.getId());
         if (vo.getLastHostId() == null) {
             to.setBootArgs(BaremetalManager.DO_PXE);
         }

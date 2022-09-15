@@ -119,6 +119,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
     protected SearchBuilder<HostVO> HostTypeCountSearch;
+    protected SearchBuilder<HostVO> ResponsibleMsCountSearch;
     protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
@@ -178,6 +179,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostTypeCountSearch = createSearchBuilder();
         HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
         HostTypeCountSearch.done();
+
+        ResponsibleMsCountSearch = createSearchBuilder();
+        ResponsibleMsCountSearch.and("managementServerId", ResponsibleMsCountSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ResponsibleMsCountSearch.done();
 
         HostTypeZoneCountSearch = createSearchBuilder();
         HostTypeZoneCountSearch.and("type", HostTypeZoneCountSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -1285,6 +1290,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+
+    @Override
+    public int countByMs(long msid) {
+        SearchCriteria<HostVO> sc = ResponsibleMsCountSearch.create();
+        sc.setParameters("managementServerId", msid);
+        return getCount(sc);
     }
 
     @Override

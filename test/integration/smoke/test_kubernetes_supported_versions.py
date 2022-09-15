@@ -45,7 +45,7 @@ class TestKubernetesSupportedVersion(cloudstackTestCase):
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
-        cls.kubernetes_version_iso_url = 'http://download.cloudstack.org/cks/setup-1.16.3.iso'
+        cls.kubernetes_version_iso_url = 'http://download.cloudstack.org/cks/setup-1.24.0.iso'
 
         cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient,
                                                                     name="cloud.kubernetes.service.enabled")[0].value

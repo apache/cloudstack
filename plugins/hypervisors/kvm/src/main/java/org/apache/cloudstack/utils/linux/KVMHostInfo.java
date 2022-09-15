@@ -16,21 +16,33 @@
 // under the License.
 package org.apache.cloudstack.utils.linux;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
-import com.cloud.utils.script.Script;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
 
@@ -44,9 +56,10 @@ public class KVMHostInfo {
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
-    private static String cpuInfoMaxFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
+    private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
 
-    public KVMHostInfo(long reservedMemory, long overCommitMemory) {
+    public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed) {
+        this.cpuSpeed = manualSpeed;
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
         this.getHostInfoFromLibvirt();
@@ -81,7 +94,7 @@ public class KVMHostInfo {
         return this.capabilities;
     }
 
-    protected static long getCpuSpeed(final NodeInfo nodeInfo) {
+    protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
         long speed = 0L;
         speed = getCpuSpeedFromCommandLscpu();
         if(speed > 0L) {
@@ -89,6 +102,11 @@ public class KVMHostInfo {
         }
 
         speed = getCpuSpeedFromFile();
+        if(speed > 0L) {
+            return speed;
+        }
+
+        speed = getCpuSpeedFromHostCapabilities(cpabilities);
         if(speed > 0L) {
             return speed;
         }
@@ -113,22 +131,55 @@ public class KVMHostInfo {
     }
 
     private static long getCpuSpeedFromFile() {
-        LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoMaxFreqFileName));
-        try (Reader reader = new FileReader(cpuInfoMaxFreqFileName)) {
-            Long cpuInfoMaxFreq = Long.parseLong(IOUtils.toString(reader).trim());
-            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
-            return cpuInfoMaxFreq / 1000;
+        LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
+        try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
+            Long cpuInfoFreq = Long.parseLong(IOUtils.toString(reader).trim());
+            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000));
+            return cpuInfoFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoMaxFreqFileName), e);
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
             return 0L;
         }
+    }
+
+    protected static long getCpuSpeedFromHostCapabilities(final String capabilities) {
+        LOGGER.info("Fetching CPU speed from \"host capabilities\"");
+        long speed = 0L;
+        try {
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            Document doc = docBuilder.parse(new InputSource(new StringReader(capabilities)));
+            Element rootElement = doc.getDocumentElement();
+            NodeList nodes = rootElement.getElementsByTagName("cpu");
+            Node node = nodes.item(0);
+            nodes = ((Element)node).getElementsByTagName("counter");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                node = nodes.item(i);
+                NamedNodeMap attributes = node.getAttributes();
+                Node nameNode = attributes.getNamedItem("name");
+                Node freqNode = attributes.getNamedItem("frequency");
+                if (nameNode != null && "tsc".equals(nameNode.getNodeValue()) && freqNode != null && StringUtils.isNotEmpty(freqNode.getNodeValue())) {
+                    speed = Long.parseLong(freqNode.getNodeValue()) / 1000000;
+                    LOGGER.info(String.format("Retrieved value [%s] from \"host capabilities\". This corresponds to a CPU speed of [%s] MHz.", freqNode.getNodeValue(), speed));
+                }
+            }
+        } catch (Exception ex) {
+            LOGGER.error("Unable to fetch CPU speed from \"host capabilities\"", ex);
+            speed = 0L;
+        }
+        return speed;
     }
 
     private void getHostInfoFromLibvirt() {
         try {
             final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
-            this.cpuSpeed = getCpuSpeed(hosts);
+            final String capabilities = conn.getCapabilities();
+            if (this.cpuSpeed == 0) {
+                this.cpuSpeed = getCpuSpeed(capabilities, hosts);
+            } else {
+                LOGGER.debug(String.format("Using existing configured CPU frequency %s", this.cpuSpeed));
+            }
 
             /*
              * Some CPUs report a single socket and multiple NUMA cells.
@@ -141,7 +192,7 @@ public class KVMHostInfo {
             this.cpus = hosts.cpus;
 
             final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
-            parser.parseCapabilitiesXML(conn.getCapabilities());
+            parser.parseCapabilitiesXML(capabilities);
             final ArrayList<String> oss = parser.getGuestOsType();
             for (final String s : oss) {
                 /*

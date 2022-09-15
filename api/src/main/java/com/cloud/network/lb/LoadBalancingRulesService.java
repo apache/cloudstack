@@ -54,6 +54,10 @@ public interface LoadBalancingRulesService {
         Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientAddressCapacityException;
 
+    LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
+            Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay, List<String> cidrList) throws NetworkRuleConflictException,
+            InsufficientAddressCapacityException;
+
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
 
     boolean deleteLoadBalancerRule(long lbRuleId, boolean apply);
@@ -65,7 +69,7 @@ public interface LoadBalancingRulesService {
      * @param cmd
      *            the command specifying the stickiness method name, params (name,value pairs), policy name and
      *            description.
-     * @return the newly created stickiness policy if successfull, null otherwise
+     * @return the newly created stickiness policy if successful, null otherwise
      * @thows NetworkRuleConflictException
      */
     public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws NetworkRuleConflictException;
@@ -81,7 +85,7 @@ public interface LoadBalancingRulesService {
      * @param cmd
      *            the command specifying the stickiness method name, params
      *            (name,value pairs), policy name and description.
-     * @return the newly created stickiness policy if successfull, null
+     * @return the newly created stickiness policy if successful, null
      *         otherwise
      * @thows NetworkRuleConflictException
      */

@@ -83,6 +83,10 @@ public class FirewallResponse extends BaseResponse {
     @Param(description = "the cidr list to forward traffic to. Multiple entries are separated by a single comma character (,).")
     private String destCidr;
 
+    @SerializedName(ApiConstants.TRAFFIC_TYPE)
+    @Param(description = "the traffic type for the firewall rule", since = "4.17.0")
+    private String trafficType;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -137,5 +141,9 @@ public class FirewallResponse extends BaseResponse {
 
     public void setDestCidr(String cidrList){
         this.destCidr = cidrList;
+    }
+
+    public void setTrafficType(String trafficType) {
+        this.trafficType = trafficType;
     }
 }

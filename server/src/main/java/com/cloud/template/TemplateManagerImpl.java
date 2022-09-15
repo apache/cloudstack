@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -66,8 +67,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -115,7 +114,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.configuration.Config;
@@ -209,6 +207,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -300,6 +299,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private EndPointSelector selector;
 
+    @Inject
+    protected SnapshotHelper snapshotHelper;
+
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
         if (type == HypervisorType.BareMetal) {
@@ -324,6 +326,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = adapter.create(profile);
 
         if (template != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create ISO");
@@ -350,6 +353,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = adapter.create(profile);
 
         if (template != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create a template");
@@ -376,8 +380,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
             String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+            String protocol = VolumeApiService.UseHttpsToUpload.value() ? "https" : "http";
 
-            String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID());
+            String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID(), protocol);
             response.setPostURL(new URL(url));
 
             // set the post url, this is used in the monitoring thread to determine the SSVM
@@ -1613,6 +1618,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         SnapshotVO snapshot = null;
         VolumeVO volume = null;
         Account caller = CallContext.current().getCallingAccount();
+        boolean kvmSnapshotOnlyInPrimaryStorage = false;
+        SnapshotInfo snapInfo = null;
 
         try {
             TemplateInfo tmplInfo = _tmplFactory.getTemplate(templateId, DataStoreRole.Image);
@@ -1631,26 +1638,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             AsyncCallFuture<TemplateApiResult> future = null;
 
             if (snapshotId != null) {
-                DataStoreRole dataStoreRole = ApiResponseHelper.getDataStoreRole(snapshot, _snapshotStoreDao, _dataStoreMgr);
+                DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
 
-                SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
-
-                if (dataStoreRole == DataStoreRole.Image) {
-                    if (snapInfo == null) {
-                        snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-                        if(snapInfo == null) {
-                            throw new CloudRuntimeException("Cannot find snapshot "+snapshotId);
-                        }
-                        // We need to copy the snapshot onto secondary.
-                        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
-                        snapshotStrategy.backupSnapshot(snapInfo);
-
-                        // Attempt to grab it again.
-                        snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
-                        if(snapInfo == null) {
-                            throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + " on secondary and could not create backup");
-                        }
-                    }
+                snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+                if (dataStoreRole == DataStoreRole.Image || kvmSnapshotOnlyInPrimaryStorage) {
+                    snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
                     _accountMgr.checkAccess(caller, null, true, snapInfo);
                     DataStore snapStore = snapInfo.getDataStore();
 
@@ -1733,6 +1726,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 });
 
+            }
+
+            if (snapshotId != null) {
+                snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
             }
         }
 
@@ -1940,6 +1937,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (template != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create a template");
@@ -2031,11 +2029,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_UPDATE, eventDescription = "updating iso", async = false)
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
         return updateTemplateOrIso(cmd);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_UPDATE, eventDescription = "updating template", async = false)
     public VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) {
         return updateTemplateOrIso(cmd);
     }

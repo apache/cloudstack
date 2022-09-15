@@ -297,8 +297,9 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         Vpc copyOfVpc;
         long copyOfVpcId;
         try {
-            copyOfVpc = _vpcService.createVpc(vpc.getZoneId(), vpcOfferingId, vpc.getAccountId(), vpc.getName(), vpc.getDisplayText(), vpc.getCidr(),
-                                              vpc.getNetworkDomain(), vpc.isDisplay());
+            copyOfVpc = _vpcService.createVpc(vpc.getZoneId(), vpcOfferingId, vpc.getAccountId(), vpc.getName(),
+                    vpc.getDisplayText(), vpc.getCidr(), vpc.getNetworkDomain(), vpc.getIp4Dns1(), vpc.getIp4Dns2(),
+                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay());
             copyOfVpcId = copyOfVpc.getId();
             //on resume of migration the uuid will be swapped already. So the copy will have the value of the original vpcid.
             _resourceTagDao.persist(new ResourceTagVO(MIGRATION, Long.toString(vpcId), vpc.getAccountId(), vpc.getDomainId(), copyOfVpcId, ResourceTag.ResourceObjectType.Vpc, null, vpc.getUuid()));
@@ -582,10 +583,9 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
         //For each nic in the old network check if the nic belongs to a guest vm and migrate it to the new network.
         for (NicVO originalNic : nics) {
-            if (originalNic.getVmType() != VirtualMachine.Type.User) {
+            if (!VirtualMachine.Type.User.equals(originalNic.getVmType())) {
                 continue;
             }
-
             Transaction.execute((TransactionCallback<Boolean>)
                                             (status) -> migrateNicsInDB(originalNic, networkInNewPhysicalNet, dc, context));
         }

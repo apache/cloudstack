@@ -52,6 +52,8 @@
         <property name="services" value="#{apiCommandsRegistry.registered}" />
     </bean>
 
+    <bean id="passwordPolicies" class="com.cloud.user.PasswordPolicyImpl" />
+
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
         <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"
@@ -107,6 +109,8 @@
             value="#{consoleProxyAllocatorsRegistry.registered}" />
     </bean>
 
+    <bean id="consoleAccessManagerImpl" class="org.apache.cloudstack.consoleproxy.ConsoleAccessManagerImpl" />
+
     <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
 
     <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
@@ -138,6 +142,8 @@
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
     </bean>
+
+    <bean id="ipv6ServiceImpl" class="com.cloud.network.Ipv6ServiceImpl" />
 
     <bean id="uUIDManagerImpl" class="com.cloud.uuididentity.UUIDManagerImpl" />
 
@@ -195,6 +201,8 @@
     <bean id="templateManagerImpl" class="com.cloud.template.TemplateManagerImpl">
         <property name="templateAdapters" value="#{templateAdapterRegistry.registered}" />
     </bean>
+
+    <bean id="snapshotHelper" class="org.apache.cloudstack.snapshot.SnapshotHelper" />
 
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />

@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -44,7 +45,6 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
@@ -108,10 +108,17 @@ public class StoragePoolMonitor implements Listener {
                 List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), HypervisorType.Any);
                 pools.addAll(zoneStoragePoolsByAnyHypervisor);
 
+                // get the zone wide disabled pools list if global setting is true.
+                if (StorageManager.MountDisabledStoragePool.value()) {
+                    pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), null, null, ScopeType.ZONE));
+                }
+
+                // get the cluster wide disabled pool list
+                if (StorageManager.MountDisabledStoragePool.valueIn(host.getClusterId())) {
+                    pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER));
+                }
+
                 for (StoragePoolVO pool : pools) {
-                    if (pool.getStatus() != StoragePoolStatus.Up) {
-                        continue;
-                    }
                     if (!pool.isShared()) {
                         continue;
                     }

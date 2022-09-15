@@ -265,7 +265,7 @@ public enum Config {
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
-            Integer.class,
+            Boolean.class,
             "network.disable.rpfilter",
             "true",
             "disable rp_filter on Domain Router VM public interfaces.",
@@ -446,7 +446,7 @@ public enum Config {
     ConsoleProxyDisableRpFilter(
             "Console Proxy",
             AgentManager.class,
-            Integer.class,
+            Boolean.class,
             "consoleproxy.disable.rpfilter",
             "true",
             "disable rp_filter on console proxy VM public interface",
@@ -984,7 +984,7 @@ public enum Config {
             Integer.class,
             "incorrect.login.attempts.allowed",
             "5",
-            "Incorrect login attempts allowed before the user is disabled",
+            "Incorrect login attempts allowed before the user is disabled (when value > 0). If value <=0 users are not disabled after failed login attempts",
             null),
     // Ovm
     OvmPublicNetwork("Hidden", ManagementServer.class, String.class, "ovm.public.network.device", null, "Specify the public bridge on host for public network", null),
@@ -1086,14 +1086,6 @@ public enum Config {
             "vmware.use.dvswitch",
             "false",
             "Enable/Disable Nexus/Vmware dvSwitch in VMware environment",
-            null),
-    VmwareCreateFullClone(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "vmware.create.full.clone",
-            "true",
-            "If set to true, creates guest VMs as full clones on ESX",
             null),
     VmwareServiceConsole(
             "Advanced",
@@ -1361,14 +1353,6 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
-    DefaultMaxAccountSecondaryStorage(
-            "Account Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.account.secondary.storage",
-            "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an account",
-            null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1496,14 +1480,6 @@ public enum Config {
             "max.project.primary.storage",
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an project",
-            null),
-    DefaultMaxProjectSecondaryStorage(
-            "Project Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.project.secondary.storage",
-            "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an project",
             null),
 
     ProjectInviteRequired(

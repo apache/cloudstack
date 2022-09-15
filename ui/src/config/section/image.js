@@ -70,6 +70,12 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
       },
       {
+        name: 'events',
+        resourceType: 'Template',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
@@ -204,6 +210,12 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/image/IsoZones.vue')))
       },
       {
+        name: 'events',
+        resourceType: 'Iso',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
@@ -311,7 +323,7 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

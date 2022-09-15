@@ -20,6 +20,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -72,7 +73,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for guest VMs, CloudStack allocates IPs to guest VMs only from this CIDR")
     private String guestVmCidr;
 
-    @Parameter(name =ApiConstants.Update_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "if true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
+    @Parameter(name =ApiConstants.UPDATE_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "if true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
     private Boolean updateInSequence;
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
@@ -82,6 +83,18 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Parameter(name= ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Setting this to true will cause a forced network update,", authorized = {RoleType.Admin})
     private Boolean forced;
+
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network. Empty string will update the first IPv4 DNS with the value from the zone", since = "4.18.0")
+    private String ip4Dns1;
+
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the network. Empty string will update the second IPv4 DNS with the value from the zone", since = "4.18.0")
+    private String ip4Dns2;
+
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the network. Empty string will update the first IPv6 DNS with the value from the zone", since = "4.18.0")
+    private String ip6Dns1;
+
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network. Empty string will update the second IPv6 DNS with the value from the zone", since = "4.18.0")
+    private String ip6Dns2;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -135,6 +148,23 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         }
         return forced;
     }
+
+    public String getIp4Dns1() {
+        return ip4Dns1;
+    }
+
+    public String getIp4Dns2() {
+        return ip4Dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -213,5 +243,15 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         if (getCustomId() != null) {
             _uuidMgr.checkUuid(getCustomId(), Network.class);
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Network;
     }
 }

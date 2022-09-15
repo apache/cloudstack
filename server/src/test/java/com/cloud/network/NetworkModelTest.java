@@ -31,34 +31,49 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import junit.framework.Assert;
-
+import org.apache.cloudstack.network.NetworkPermissionVO;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.user.Account;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.net.Ip;
-import com.cloud.network.Network.Provider;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.network.dao.NetworkDomainVO;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
+
+import junit.framework.Assert;
 
 public class NetworkModelTest {
 
@@ -85,6 +100,20 @@ public class NetworkModelTest {
     private PhysicalNetworkVO physicalNetworkZone2;
     @Mock
     private PhysicalNetworkServiceProviderVO providerVO;
+    @Mock
+    private AccountDao accountDao;
+    @Mock
+    private NetworkDao networkDao;
+    @Mock
+    private NetworkPermissionDao networkPermissionDao;
+    @Mock
+    private NetworkDomainDao networkDomainDao;
+    @Mock
+    private DomainManager domainManager;
+    @Mock
+    private DomainDao domainDao;
+    @Mock
+    private ProjectDao projectDao;
 
     private static final long ZONE_1_ID = 1L;
     private static final long ZONE_2_ID = 2L;
@@ -263,4 +292,116 @@ public class NetworkModelTest {
         networkModel.checkIp6Parameters(null, null, IPV6_GATEWAY,IPV6_CIDR);
     }
 
+    @Test
+    public void testCheckNetworkPermissions() {
+        long accountId = 1L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(accountId);
+        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(network.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(caller);
+        when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(List.of(network));
+        when(networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId())).thenReturn(mock(NetworkPermissionVO.class));
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckNetworkPermissionsNullNetwork() {
+        AccountVO caller = mock(AccountVO.class);
+        NetworkVO network = null;
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckNetworkPermissionsNoOwner() {
+        long accountId = 1L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(accountId);
+        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(network.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(null);
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckNetworkPermissionsNoPermission() {
+        long accountId = 1L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(accountId);
+        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(network.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(caller);
+        when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(null);
+        when(networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId())).thenReturn(null);
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test
+    public void testCheckNetworkPermissionsSharedNetwork() {
+        long id = 1L;
+        long subDomainId = 2L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(id);
+        when(caller.getDomainId()).thenReturn(id);
+        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+        when(network.getId()).thenReturn(id);
+        when(networkDao.findById(network.getId())).thenReturn(network);
+        NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+        when(networkDomainVO.getDomainId()).thenReturn(id);
+        when(networkDomainDao.getDomainNetworkMapByNetworkId(id)).thenReturn(networkDomainVO);
+        networkModel.checkNetworkPermissions(caller, network);
+        when(caller.getDomainId()).thenReturn(subDomainId);
+        networkDomainVO.subdomainAccess = Boolean.TRUE;
+        when(domainManager.getDomainParentIds(subDomainId)).thenReturn(Set.of(id));
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckNetworkPermissionsSharedNetworkNoSubDomainAccess() {
+        long id = 1L;
+        long subDomainId = 2L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(id);
+        when(caller.getDomainId()).thenReturn(subDomainId);
+        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+        when(network.getId()).thenReturn(id);
+        when(networkDao.findById(network.getId())).thenReturn(network);
+        when(domainDao.findById(caller.getDomainId())).thenReturn(mock(DomainVO.class));
+        NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+        when(networkDomainVO.getDomainId()).thenReturn(id);
+        networkDomainVO.subdomainAccess = Boolean.FALSE;
+        when(networkDomainDao.getDomainNetworkMapByNetworkId(id)).thenReturn(networkDomainVO);
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckNetworkPermissionsSharedNetworkNotSubDomain() {
+        long id = 1L;
+        long subDomainId = 2L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(id);
+        when(caller.getDomainId()).thenReturn(subDomainId);
+        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+        when(network.getId()).thenReturn(id);
+        when(networkDao.findById(network.getId())).thenReturn(network);
+        when(domainDao.findById(caller.getDomainId())).thenReturn(mock(DomainVO.class));
+        NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+        when(networkDomainVO.getDomainId()).thenReturn(id);
+        networkDomainVO.subdomainAccess = Boolean.TRUE;
+        when(networkDomainDao.getDomainNetworkMapByNetworkId(id)).thenReturn(networkDomainVO);
+        when(domainManager.getDomainParentIds(subDomainId)).thenReturn(Set.of(0L));
+        networkModel.checkNetworkPermissions(caller, network);
+    }
 }

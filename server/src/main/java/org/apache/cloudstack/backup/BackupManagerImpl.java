@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
@@ -65,6 +66,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDispatcher;
@@ -111,7 +114,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
@@ -633,9 +635,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vmFromBackup);
 
-        Pair<String, String> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
-        String hostIp = restoreInfo.first();
-        String datastoreUuid = restoreInfo.second();
+        Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
+        HostVO host = restoreInfo.first();
+        StoragePoolVO datastore = restoreInfo.second();
 
         LOG.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
                 " (with external ID " + backup.getExternalId() + ") and attach it to VM: " + vm.getUuid());
@@ -646,15 +648,45 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        Pair<Boolean, String> result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostIp, datastoreUuid);
-        if (!result.first()) {
-            throw new CloudRuntimeException("Error restoring volume " + backedUpVolumeUuid);
+        LOG.debug(String.format("Trying to restore volume using host private IP address: [%s].", host.getPrivateIpAddress()));
+
+        String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
+        String[] datastoresPossibleValues = {datastore.getUuid(), datastore.getName()};
+
+        Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues);
+
+        if (BooleanUtils.isFalse(result.first())) {
+            throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
+                    backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
         if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumeList(),
-                            backedUpVolumeUuid, vm, datastoreUuid, backup)) {
-            throw new CloudRuntimeException("Error attaching volume " + backedUpVolumeUuid + " to VM " + vm.getUuid());
+                            backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
+            throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s]." + backedUpVolumeUuid, vm.getUuid()));
         }
         return true;
+    }
+
+    protected Pair<Boolean, String> restoreBackedUpVolume(final String backedUpVolumeUuid, final BackupVO backup, BackupProvider backupProvider, String[] hostPossibleValues,
+            String[] datastoresPossibleValues) {
+        Pair<Boolean, String> result = new  Pair<>(false, "");
+        for (String hostData : hostPossibleValues) {
+            for (String datastoreData : datastoresPossibleValues) {
+                LOG.debug(String.format("Trying to restore volume [UUID: %s], using host [%s] and datastore [%s].",
+                        backedUpVolumeUuid, hostData, datastoreData));
+
+                try {
+                    result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostData, datastoreData);
+
+                    if (BooleanUtils.isTrue(result.first())) {
+                        return result;
+                    }
+                } catch (Exception e) {
+                    LOG.debug(String.format("Failed to restore volume [UUID: %s], using host [%s] and datastore [%s] due to: [%s].",
+                            backedUpVolumeUuid, hostData, datastoreData, e.getMessage()), e);
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -693,21 +725,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     /**
      * Get the pair: hostIp, datastoreUuid in which to restore the volume, based on the VM to be attached information
      */
-    private Pair<String, String> getRestoreVolumeHostAndDatastore(VMInstanceVO vm) {
+    private Pair<HostVO, StoragePoolVO> getRestoreVolumeHostAndDatastore(VMInstanceVO vm) {
         List<VolumeVO> rootVmVolume = volumeDao.findIncludingRemovedByInstanceAndType(vm.getId(), Volume.Type.ROOT);
         Long poolId = rootVmVolume.get(0).getPoolId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
-        String datastoreUuid = storagePoolVO.getUuid();
-        String hostIp = vm.getHostId() == null ?
-                            getHostIp(storagePoolVO) :
-                            hostDao.findById(vm.getHostId()).getPrivateIpAddress();
-        return new Pair<>(hostIp, datastoreUuid);
+        HostVO hostVO = vm.getHostId() == null ?
+                            getFirstHostFromStoragePool(storagePoolVO) :
+                            hostDao.findById(vm.getHostId());
+        return new Pair<>(hostVO, storagePoolVO);
     }
 
     /**
-     * Find a host IP from storage pool access
+     * Find a host from storage pool access
      */
-    private String getHostIp(StoragePoolVO storagePoolVO) {
+    private HostVO getFirstHostFromStoragePool(StoragePoolVO storagePoolVO) {
         List<HostVO> hosts = null;
         if (storagePoolVO.getScope().equals(ScopeType.CLUSTER)) {
             hosts = hostDao.findByClusterId(storagePoolVO.getClusterId());
@@ -715,8 +746,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         } else if (storagePoolVO.getScope().equals(ScopeType.ZONE)) {
             hosts = hostDao.findByDataCenterId(storagePoolVO.getDataCenterId());
         }
-        return hosts.get(0).getPrivateIpAddress();
+        return hosts.get(0);
     }
+
 
     /**
      * Attach volume to VM
@@ -944,7 +976,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 tmpBackupScheduleVO = backupScheduleDao.acquireInLockTable(backupScheduleId);
 
                 final Long eventId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(),
-                        EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(), true, 0);
+                        EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
+                        vmId, ApiCommandResourceType.VirtualMachine.toString(),
+                        true, 0);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmId);
                 params.put("ctxUserId", "1");
@@ -959,7 +993,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), CreateBackupCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), vmId,
-                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
+                        cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
                 job.setDispatcher(asyncJobDispatcher.getName());
 
                 final long jobId = asyncJobManager.submitAsyncJob(job);
@@ -1081,14 +1115,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Long id = updateBackupOfferingCmd.getId();
         String name = updateBackupOfferingCmd.getName();
         String description = updateBackupOfferingCmd.getDescription();
+        Boolean allowUserDrivenBackups = updateBackupOfferingCmd.getAllowUserDrivenBackups();
 
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(id);
         if (backupOfferingVO == null) {
             throw new InvalidParameterValueException(String.format("Unable to find Backup Offering with id: [%s].", id));
         }
-
-        LOG.debug(String.format("Trying to update Backup Offering [id: %s, name: %s, description: %s] to [name: %s, description: %s].",
-                backupOfferingVO.getUuid(), backupOfferingVO.getName(), backupOfferingVO.getDescription(), name, description));
+        LOG.debug(String.format("Trying to update Backup Offering %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backupOfferingVO,"uuid", "name",
+                        "description", "userDrivenBackupAllowed"), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this,"name", "description", "allowUserDrivenBackups")));
 
         BackupOfferingVO offering = backupOfferingDao.createForUpdate(id);
         List<String> fields = new ArrayList<>();
@@ -1102,13 +1136,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             fields.add("description: " + description);
         }
 
+
+        if (allowUserDrivenBackups != null){
+            offering.setUserDrivenBackupAllowed(allowUserDrivenBackups);
+            fields.add("allowUserDrivenBackups: " + allowUserDrivenBackups);
+        }
+
         if (!backupOfferingDao.update(id, offering)) {
             LOG.warn(String.format("Couldn't update Backup offering [id: %s] with [%s].", id, String.join(", ", fields)));
         }
 
         BackupOfferingVO response = backupOfferingDao.findById(id);
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "externalId")));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
     }
 

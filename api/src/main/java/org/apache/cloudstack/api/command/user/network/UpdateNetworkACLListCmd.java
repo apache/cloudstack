@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -110,5 +111,15 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAcl;
     }
 }

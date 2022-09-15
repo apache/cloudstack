@@ -623,7 +623,7 @@ public class NetScalerControlCenterResource implements ServerResource {
             }
 
         } catch (Exception e) {
-            s_logger.error("Failed to get bytes sent and recived statistics due to " + e);
+            s_logger.error("Failed to get bytes sent and received statistics due to " + e);
             throw new ExecutionException(e.getMessage());
         }
 

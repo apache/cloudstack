@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -133,5 +134,15 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return "Creating Network ACL with ID: " + getEntityUuid();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getEntityId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAcl;
     }
 }

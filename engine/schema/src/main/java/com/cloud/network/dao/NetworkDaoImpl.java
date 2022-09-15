@@ -420,6 +420,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
+    public List<NetworkVO> getAllPersistentNetworksFromZone(long dataCenterId) {
+        Object[] guestTypes = {"Isolated", "L2"};
+        final SearchCriteria<NetworkVO> sc = PersistentNetworkSearch.create();
+        sc.setParameters("guestType", guestTypes);
+        sc.setParameters("dc", dataCenterId);
+        sc.setJoinParameters("persistent", "persistent", true);
+        return search(sc, null);
+    }
+
+    @Override
     public String getNextAvailableMacAddress(final long networkConfigId, Integer zoneMacIdentifier) {
         final SequenceFetcher fetch = SequenceFetcher.getInstance();
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
@@ -562,7 +572,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     public List<NetworkVO> listByPhysicalNetworkTrafficType(final long physicalNetworkId, final TrafficType trafficType) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("physicalNetwork", physicalNetworkId);
         return listBy(sc);
     }
 

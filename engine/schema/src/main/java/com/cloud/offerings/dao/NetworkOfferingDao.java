@@ -26,6 +26,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * NetworkOfferingDao deals with searches and operations done on the
@@ -69,4 +70,10 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      * Create default L2 network offerings
      */
     void persistDefaultL2NetworkOfferings();
+
+    NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId);
+
+    NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId, NetUtils.InternetProtocol defaultProtocol);
+
+    boolean isIpv6Supported(long offeringId);
 }

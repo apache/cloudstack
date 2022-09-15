@@ -1139,7 +1139,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             return new File(destFile.getAbsolutePath());
         } catch (IOException e) {
-            s_logger.debug("Faild to get url:" + url + ", due to " + e.toString());
+            s_logger.debug("Failed to get url: " + url + ", due to " + e.toString());
             throw new CloudRuntimeException(e);
         }
     }
@@ -3275,12 +3275,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 "accountTemplateDirSize: " + accountTemplateDirSize + " accountSnapshotDirSize: " + accountSnapshotDirSize + " accountVolumeDirSize: " + accountVolumeDirSize);
 
         int accountDirSizeInGB = getSizeInGB(accountTemplateDirSize + accountSnapshotDirSize + accountVolumeDirSize);
-        int defaultMaxAccountSecondaryStorageInGB = Integer.parseInt(cmd.getDefaultMaxAccountSecondaryStorage());
+        long defaultMaxSecondaryStorageInGB = cmd.getDefaultMaxSecondaryStorageInGB();
 
-        if (defaultMaxAccountSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
-            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
+        if (defaultMaxSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxSecondaryStorageInGB) {
+            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxSecondaryStorageInGB: " + defaultMaxSecondaryStorageInGB + " contentLengthInGB:"
                     + contentLengthInGB); // extra attention
-            String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
+            String errorMessage = "Maximum number of resources of type secondary_storage for account/project has exceeded";
             updateStateMapWithError(cmd.getEntityUUID(), errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }

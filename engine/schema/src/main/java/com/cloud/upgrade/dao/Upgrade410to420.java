@@ -443,7 +443,7 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void addIndexForAlert(Connection conn) {
-        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some won't.)
         List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index i_alert__last_sent if it exists");
         indexList.add("last_sent"); // in 4.1, we created this index that is not in convention.
@@ -719,7 +719,7 @@ public class Upgrade410to420 implements DbUpgrade {
                         dcList = new ArrayList<String>();
                         count = 0L;
                         // Legacy zone term is meant only for VMware
-                        // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
+                        // Legacy zone is a zone with at least 2 clusters & with multiple DCs or VCs
                         clusters = clustersQuery.executeQuery();
                         if (!clusters.next()) {
                             continue; // Ignore the zone without any clusters

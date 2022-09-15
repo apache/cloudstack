@@ -62,7 +62,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
@@ -72,6 +71,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -225,7 +225,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             DataStoreTO dataStoreTO = dataTO.getDataStore();
             if (dataStoreTO != null && dataStoreTO instanceof PrimaryDataStoreTO){
                 PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
-                primaryDataStoreTO.setFullCloneFlag(CapacityManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
+                primaryDataStoreTO.setFullCloneFlag(StorageManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
                 StoragePool pool = storageManager.getStoragePool(primaryDataStoreTO.getId());
                 primaryDataStoreTO.setDiskProvisioningStrictnessFlag(storageManager.DiskProvisioningStrictness.valueIn(pool.getDataCenterId()));
             }
@@ -291,6 +291,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volObj.getTO()), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
+
             Answer answer = null;
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -582,6 +583,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
+        options.put(BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(BackupSnapshotAfterTakingSnapshot.value()));
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {

@@ -35,7 +35,7 @@
           :name="field.key"
           :ref="field.key"
           :label="$t(field.title)"
-          v-if="isDisplayInput(field.display)"
+          v-if="isDisplayInput(field)"
           v-bind="formItemLayout"
           :has-feedback="field.switch ? false : true">
           <a-select
@@ -61,12 +61,37 @@
             v-model:checked="form[field.key]"
             v-focus="index === 0"
           />
+          <a-checkbox
+            v-else-if="field.checkbox"
+            v-model:checked="form[field.key]"
+            v-focus="index === 0">
+          </a-checkbox>
           <a-input
             v-else-if="field.password"
             type="password"
             v-model:value="form[field.key]"
             v-focus="index === 0"
           />
+          <a-radio-group
+            v-else-if="field.radioGroup"
+            v-model:value="form[field.key]"
+            buttonStyle="solid">
+            <span
+              style="margin-right: 5px;"
+               v-for="(radioItem, idx) in field.radioOption"
+              :key="idx">
+              <a-radio-button
+                :value="radioItem.value"
+                v-if="isDisplayItem(radioItem.condition)">
+                {{ $t(radioItem.label) }}
+              </a-radio-button>
+            </span>
+            <a-alert style="margin-top: 5px" type="warning" v-if="field.alert && isDisplayItem(field.alert.display)">
+              <template #message>
+                <span v-html="$t(field.alert.message)" />
+              </template>
+            </a-alert>
+          </a-radio-group>
           <a-input
             v-else
             v-model:value="form[field.key]"
@@ -118,6 +143,11 @@ export default {
   created () {
     this.initForm()
   },
+  computed: {
+    hypervisor () {
+      return this.prefillContent?.hypervisor || null
+    }
+  },
   mounted () {
     this.fillValue()
   },
@@ -137,6 +167,11 @@ export default {
         const fieldsChanged = toRaw(changedFields)
         this.$emit('fieldsChanged', fieldsChanged)
       }
+    },
+    'prefillContent.provider' (val) {
+      if (['SolidFire', 'PowerFlex'].includes(val)) {
+        this.form.primaryStorageProtocol = 'custom'
+      }
     }
   },
   methods: {
@@ -148,17 +183,17 @@ export default {
     fillValue () {
       this.fields.forEach(field => {
         this.setRules(field)
-        const fieldExists = this.isDisplayInput(field.display)
+        const fieldExists = this.isDisplayInput(field)
         if (!fieldExists) {
           return
         }
-        if (field.key === 'agentUserName' && !this.getPrefilled(field.key)) {
+        if (field.key === 'agentUserName' && !this.getPrefilled(field)) {
           this.form[field.key] = 'Oracle'
         } else {
-          if (field.switch) {
+          if (field.switch || field.checkbox) {
             this.form[field.key] = this.isChecked(field)
           } else {
-            this.form[field.key] = this.getPrefilled(field.key)
+            this.form[field.key] = this.getPrefilled(field)
           }
         }
       })
@@ -179,8 +214,11 @@ export default {
         })
       }
     },
-    getPrefilled (key) {
-      return this.prefillContent?.[key] || null
+    getPrefilled (field) {
+      if (field.key === 'authmethod' && this.hypervisor !== 'KVM') {
+        return field.value || field.defaultValue || 'password'
+      }
+      return this.prefillContent?.[field.key] || field.value || field.defaultValue || null
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -207,7 +245,11 @@ export default {
         return Promise.resolve()
       }
     },
-    isDisplayInput (conditions) {
+    isDisplayInput (field) {
+      if (!field.display && !field.hidden) {
+        return true
+      }
+      const conditions = field.display || field.hidden
       if (!conditions || Object.keys(conditions).length === 0) {
         return true
       }
@@ -218,10 +260,19 @@ export default {
           const fieldVal = this.form[key]
             ? this.form[key]
             : (this.prefillContent?.[key] || null)
-          if (Array.isArray(condition) && !condition.includes(fieldVal)) {
-            isShow = false
-          } else if (!Array.isArray(condition) && fieldVal !== condition) {
-            isShow = false
+
+          if (field.hidden) {
+            if (Array.isArray(condition) && condition.includes(fieldVal)) {
+              isShow = false
+            } else if (!Array.isArray(condition) && fieldVal === condition) {
+              isShow = false
+            }
+          } else if (field.display) {
+            if (Array.isArray(condition) && !condition.includes(fieldVal)) {
+              isShow = false
+            } else if (!Array.isArray(condition) && fieldVal !== condition) {
+              isShow = false
+            }
           }
         }
       })
@@ -236,6 +287,27 @@ export default {
         return false
       }
       return true
+    },
+    isDisplayItem (conditions) {
+      if (!conditions || Object.keys(conditions).length === 0) {
+        return true
+      }
+      let isShow = true
+      Object.keys(conditions).forEach(key => {
+        if (!isShow) return false
+
+        const condition = conditions[key]
+        const fieldVal = this.form[key]
+          ? this.form[key]
+          : (this.prefillContent?.[key] || null)
+        if (Array.isArray(condition) && !condition.includes(fieldVal)) {
+          isShow = false
+        } else if (!Array.isArray(condition) && fieldVal !== condition) {
+          isShow = false
+        }
+      })
+
+      return isShow
     }
   }
 }

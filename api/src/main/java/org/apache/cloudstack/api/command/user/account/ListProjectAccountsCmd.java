@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.account;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -99,5 +100,10 @@ public class ListProjectAccountsCmd extends BaseListCmd {
         response.setResponseName(getCommandName());
 
         this.setResponseObject(response);
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

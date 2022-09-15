@@ -357,7 +357,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
         if (volumeStore != null) {
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
-                String msg = "Volume: " + volume.getName() + " is currently being uploaded; cant' delete it.";
+                String msg = "Volume: " + volume.getName() + " is currently being uploaded; can't delete it.";
                 s_logger.debug(msg);
                 result.setSuccess(false);
                 result.setResult(msg);

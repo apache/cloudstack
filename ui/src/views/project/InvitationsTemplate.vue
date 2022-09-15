@@ -44,7 +44,6 @@
               <tooltip-button
                 tooltipPlacement="top"
                 :tooltip="$t('label.accept.project.invitation')"
-                type="success"
                 icon="check-outlined"
                 size="small"
                 @onClick="onShowConfirmAcceptInvitation(record)"/>
@@ -247,12 +246,24 @@ export default {
       params.accept = state
 
       api('updateProjectInvitation', params).then(json => {
-        const hasJobId = this.checkForAddAsyncJob(json, title, record.project)
-
-        if (hasJobId) {
-          this.fetchData()
-          this.$emit('refresh-data')
-        }
+        this.$pollJob({
+          jobId: json.updateprojectinvitationresponse.jobid,
+          title,
+          description: record.project,
+          successMethod: () => {
+            this.fetchData()
+            this.$emit('refresh-data')
+          },
+          errorMethod: () => {
+            this.fetchData()
+            this.$emit('refresh-data')
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchData()
+            this.$emit('refresh-data')
+          }
+        })
       }).catch(error => {
         // show error
         this.$notifyError(error)

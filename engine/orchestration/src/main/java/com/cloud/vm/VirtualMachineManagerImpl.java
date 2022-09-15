@@ -552,7 +552,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceExpunge(vm);
     }
 
-    private boolean expungeCommandCanBypassHostMaintenance(VirtualMachine vm) {
+    private boolean isValidSystemVMType(VirtualMachine vm) {
         return VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType()) ||
                 VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
     }
@@ -604,7 +604,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             final Commands cmds = new Commands(Command.OnError.Stop);
 
             for (final Command volumeExpungeCommand : volumeExpungeCommands) {
-                volumeExpungeCommand.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
+                volumeExpungeCommand.setBypassHostMaintenance(isValidSystemVMType(vm));
                 cmds.addCommand(volumeExpungeCommand);
             }
 
@@ -690,7 +690,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         for (final Command command : cmdList) {
-            command.setBypassHostMaintenance(expungeCommandCanBypassHostMaintenance(vm));
+            command.setBypassHostMaintenance(isValidSystemVMType(vm));
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("Adding expunge command [%s] for VM [%s]", command.toString(), vm.toString()));
             }
@@ -1192,8 +1192,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
                     Commands cmds = new Commands(Command.OnError.Stop);
+                    final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
+                    final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+                    ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
 
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
+                    StartCommand command = new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType()));
+                    cmds.addCommand(command);
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -1247,12 +1251,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             final Host vmHost = _hostDao.findById(destHostId);
                             if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
                                     VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
-                                final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
                                 for (int retries = 3; retries > 0; retries--) {
                                     try {
-                                        setupAgentSecurity(vmHost, sshAccessDetails, vm);
+                                        final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
+                                                new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+                                        final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
+                                        if (!result) {
+                                            s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+                                        }
                                         return;
-                                    } catch (final AgentUnavailableException | OperationTimedoutException e) {
+                                    } catch (final Exception e) {
                                         s_logger.error("Retrying after catching exception while trying to secure agent for systemvm id=" + vm.getId(), e);
                                     }
                                 }
@@ -1549,8 +1557,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             case LXC:
                 return false;
             case VMware:
-                final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
-                return fullClone;
+                return StorageManager.shouldExecuteInSequenceOnVmware();
             default:
                 return ExecuteInSequence.value();
         }

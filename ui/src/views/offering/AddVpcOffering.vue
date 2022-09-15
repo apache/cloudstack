@@ -42,6 +42,31 @@
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
+        <a-form-item name="internetprotocol" ref="internetprotocol">
+          <template #label>
+            <tooltip-label :title="$t('label.internetprotocol')" :tooltip="apiParams.internetprotocol.description"/>
+          </template>
+          <span v-if="!ipv6NetworkOfferingEnabled || internetProtocolValue!=='ipv4'">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="ipv6NetworkOfferingEnabled ? $t('message.offering.internet.protocol.warning') : $t('message.offering.ipv6.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
+          <a-radio-group
+            v-model:value="form.internetprotocol"
+            :disabled="!ipv6NetworkOfferingEnabled"
+            buttonStyle="solid"
+            @change="e => { internetProtocolValue = e.target.value }" >
+            <a-radio-button value="ipv4">
+              {{ $t('label.ip.v4') }}
+            </a-radio-button>
+            <a-radio-button value="dualstack">
+              {{ $t('label.ip.v4.v6') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-form-item>
           <template #label>
             <tooltip-label :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
@@ -138,12 +163,14 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddVpcOffering',
+  mixins: [mixinForm],
   components: {
     CheckBoxSelectPair,
     ResourceIcon,
@@ -154,6 +181,7 @@ export default {
       selectedDomains: [],
       selectedZones: [],
       isConserveMode: true,
+      internetProtocolValue: 'ipv4',
       domains: [],
       domainLoading: false,
       zones: [],
@@ -163,7 +191,8 @@ export default {
       supportedServiceLoading: false,
       connectivityServiceChecked: false,
       sourceNatServiceChecked: false,
-      selectedServiceProviderMap: {}
+      selectedServiceProviderMap: {},
+      ipv6NetworkOfferingEnabled: false
     }
   },
   beforeCreate () {
@@ -185,7 +214,8 @@ export default {
       this.form = reactive({
         regionlevelvpc: true,
         distributedrouter: true,
-        ispublic: true
+        ispublic: true,
+        internetprotocol: this.internetProtocolValue
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
@@ -206,9 +236,18 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
       this.fetchSupportedServiceData()
+      this.fetchIpv6NetworkOfferingConfiguration()
     },
     isAdmin () {
       return isAdmin()
+    },
+    fetchIpv6NetworkOfferingConfiguration () {
+      this.ipv6NetworkOfferingEnabled = false
+      var params = { name: 'ipv6.offering.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.ipv6NetworkOfferingEnabled = value === 'true'
+      })
     },
     fetchDomainData () {
       const params = {}
@@ -225,7 +264,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -333,7 +371,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {}
         params.name = values.name
         params.displaytext = values.displaytext
@@ -362,6 +401,9 @@ export default {
         }
         if (zoneId) {
           params.zoneid = zoneId
+        }
+        if (values.internetprotocol) {
+          params.internetprotocol = values.internetprotocol
         }
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)

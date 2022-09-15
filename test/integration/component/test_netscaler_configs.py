@@ -128,7 +128,7 @@ class _NetScalerAddBase(_NetScalerBase):
                                                  cls.api_client,
                                                  zoneid=cls.zone.id
                                                  )
-        assert isinstance(physical_networks, list), "There should be atleast one physical network for advanced zone"
+        assert isinstance(physical_networks, list), "There should be at least one physical network for advanced zone"
         cls.physical_network = physical_networks[0]
 
         # Check if a NetScaler network service provider exists - if not add one
@@ -1146,10 +1146,10 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
         """
 
         # Validate the following
-        # 1. Configure Netscaler for load balancing. 
+        # 1. Configure Netscaler for load balancing.
         # 2. Create a Network offering with LB services provided by Netscaler
         #    and all other services by VR.
-        # 3.Create a new account/user. 
+        # 3.Create a new account/user.
         # 4. Deploy the first VM using a network from the above created
         #    Network offering.
         # In Netscaler:
@@ -1268,10 +1268,10 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
         """
 
         # Validate the following
-        # 1. Configure Netscaler for load balancing. 
+        # 1. Configure Netscaler for load balancing.
         # 2. Create a Network offering with LB services provided by Netscaler
         #    and all other services by VR.
-        # 3.Create a new account/user. 
+        # 3.Create a new account/user.
         # 4. Deploy the first VM using a network from the above created
         #    Network offering.
         # In Netscaler:
@@ -2031,7 +2031,7 @@ class TestServiceProvider(_NetScalerDeployVMBase):
         """
 
         # Validate the following
-        # 1. Configure Netscaler for load balancing. 
+        # 1. Configure Netscaler for load balancing.
         # 2. Create a Network offering. Do not enable the network offering
         # 3. Try to create a network with this network offering.
         # 4. Network creation should fail
@@ -2077,7 +2077,7 @@ class TestServiceProvider(_NetScalerDeployVMBase):
         """
 
         # Validate the following
-        # 1. Configure Netscaler for load balancing. 
+        # 1. Configure Netscaler for load balancing.
         # 2. Disable the service provider. Create a Network offering.
         # 3. Try to create a network. Network creation should fail
 
@@ -2110,7 +2110,7 @@ class TestServiceProvider(_NetScalerDeployVMBase):
         """
 
         # Validate the following
-        # 1. Configure Netscaler for load balancing. 
+        # 1. Configure Netscaler for load balancing.
         # 2. Create a Network offering. Create instances and acquire public Ip
         # 3. Disabled service provider and again try to create LB rules
         # 4.Deploy VM should fail
@@ -2274,10 +2274,10 @@ class TestDeleteNetscaler(_NetScalerDeployVMBase):
         """
 
         # Validate the following
-        # 1. Configure Netscaler for load balancing. 
+        # 1. Configure Netscaler for load balancing.
         # 2. Create a Network offering with LB services provided by Netscaler
         #    and all other services by VR.
-        # 3.Create a new account/user. 
+        # 3.Create a new account/user.
         # 4. Deploy the first VM using a network from the above created
         #    Network offering.
         # 5. Attempt to delete Netscaler load balancer from zone.

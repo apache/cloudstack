@@ -78,10 +78,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateSnapshotWizard',
+  mixins: [mixinForm],
   components: {
     TooltipLabel
   },
@@ -129,7 +131,8 @@ export default {
 
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         const params = {}
         params.volumeid = values.volumeid
         params.name = values.name

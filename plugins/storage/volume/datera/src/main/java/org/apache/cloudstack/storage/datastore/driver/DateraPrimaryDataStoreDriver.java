@@ -1536,6 +1536,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     /**
      * Revert snapshot for a volume
+     *
      * @param snapshotInfo           Information about volume snapshot
      * @param snapshotOnPrimaryStore Not used
      * @throws CloudRuntimeException
@@ -1859,5 +1860,23 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
         return true;
+    }
+
+    @Override
+    public boolean isVmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVmInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean isVmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
     }
 }

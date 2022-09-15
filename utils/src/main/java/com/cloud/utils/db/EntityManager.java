@@ -76,6 +76,8 @@ public interface EntityManager {
 
     public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id);
 
+    public <T> boolean validEntityType(Class<T> entityType);
+
     public static final String MESSAGE_REMOVE_ENTITY_EVENT = "Message.RemoveEntity.Event";
 
     public static final String MESSAGE_GRANT_ENTITY_EVENT = "Message.GrantEntity.Event";

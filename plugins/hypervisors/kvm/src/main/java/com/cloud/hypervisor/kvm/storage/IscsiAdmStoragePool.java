@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -170,4 +172,15 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     public boolean supportsConfigDriveIso() {
         return false;
     }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("path", getLocalPath()).toString();
+    }
+
 }

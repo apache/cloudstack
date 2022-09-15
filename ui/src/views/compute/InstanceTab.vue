@@ -25,6 +25,9 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.statistics')" key="stats">
+        <StatsTab :resource="resource"/>
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
         <usb-outlined />
         <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
@@ -115,7 +118,7 @@
             >
               <tooltip-button
                 tooltipPlacement="bottom"
-                :tooltip="$t('label.action.delete.nic')"
+                :tooltip="$t('label.action.remove.nic')"
                 :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
                 type="primary"
                 :danger="true"
@@ -150,6 +153,9 @@
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="dataResource" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
@@ -356,6 +362,8 @@ import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import Status from '@/components/widgets/Status'
 import DetailsTab from '@/components/view/DetailsTab'
+import StatsTab from '@/components/view/StatsTab'
+import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
@@ -368,6 +376,8 @@ export default {
   components: {
     ResourceLayout,
     DetailsTab,
+    StatsTab,
+    EventsTab,
     DetailSettings,
     NicsTable,
     Status,

@@ -211,7 +211,7 @@ CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which nicira nvp device is added',
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this nicira nvp device',
   `device_name` varchar(255) NOT NULL COMMENT 'name of the nicira nvp device',
-  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external nicira nvp device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id corresponding to the external nicira nvp device',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_external_nicira_nvp_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_nicira_nvp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE

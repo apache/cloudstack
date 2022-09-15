@@ -19,6 +19,8 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
@@ -35,6 +37,7 @@ import com.cloud.utils.Pair;
 
 public interface VpcService {
 
+    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException;
     /**
      * Persists VPC record in the database
      *
@@ -49,7 +52,8 @@ public interface VpcService {
      * @return
      * @throws ResourceAllocationException TODO
      */
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain,
+                         String dns1, String dns2, String ip6Dns1, String ip6Dns2, Boolean displayVpc)
             throws ResourceAllocationException;
 
     /**
@@ -136,7 +140,7 @@ public interface VpcService {
      */
     boolean restartVpc(RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    boolean restartVpc(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartVpc(Long networkId, boolean cleanup, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Returns a Private gateway found in the VPC by id
@@ -165,8 +169,7 @@ public interface VpcService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId,
-            Long networkOfferingId, Boolean isSoruceNat, Long aclId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
+    public PrivateGateway createVpcPrivateGateway(CreatePrivateGatewayCmd command) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * Applies VPC private gateway on the backend, so it becomes functional

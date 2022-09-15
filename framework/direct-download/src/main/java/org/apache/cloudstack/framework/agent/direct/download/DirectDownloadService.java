@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.framework.agent.direct.download;
 
+import com.cloud.utils.Pair;
+
 public interface DirectDownloadService {
 
     /**
@@ -25,14 +27,9 @@ public interface DirectDownloadService {
     void downloadTemplate(long templateId, long poolId, long hostId);
 
     /**
-     * Upload client certificate to each running host
-     */
-    boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId, Long hostId);
-
-    /**
      * Upload a stored certificate on database with id 'certificateId' to host with id 'hostId'
      */
-    boolean uploadCertificate(long certificateId, long hostId);
+    Pair<Boolean, String> provisionCertificate(long certificateId, long hostId);
 
     /**
      * Sync the stored certificates to host with id 'hostId'

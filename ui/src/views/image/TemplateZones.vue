@@ -176,7 +176,7 @@
           style="overflow-y: auto">
         </a-table>
         <a-spin :spinning="deleteLoading">
-          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
+          <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
             <a-switch v-model:checked="forcedDelete" v-focus="true"></a-switch>
           </a-form-item>
           <div :span="24" class="action-button">
@@ -459,10 +459,9 @@ export default {
           successMethod: result => {
             if (singleZone) {
               const isResourcePage = (this.$route.params && this.$route.params.id)
-              if (isResourcePage) {
-                if (this.selectedItems.length === 0 && !this.showGroupActionModal) {
-                  this.$router.push({ path: '/template' })
-                }
+              const isSameResource = isResourcePage && this.$route.params.id === result.jobinstanceid
+              if (isResourcePage && isSameResource && this.selectedItems.length === 0 && !this.showGroupActionModal) {
+                this.$router.push({ path: '/template' })
               }
             } else {
               if (this.selectedItems.length === 0) {
@@ -499,7 +498,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { listall: true, showicon: true }).then(json => {
+      api('listZones', { showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {

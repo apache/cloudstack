@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -133,5 +134,15 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         if (getCustomId() != null) {
             _uuidMgr.checkUuid(getCustomId(), Vpc.class);
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Vpc;
     }
 }

@@ -228,7 +228,7 @@ export default {
         dataView: true,
         popup: true,
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-        args: ['name', 'description']
+        args: ['name', 'description', 'allowuserdrivenbackups']
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',
@@ -247,9 +247,8 @@ export default {
       icon: 'wifi-outlined',
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
-      params: { isrecursive: 'true' },
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       tabs: [
         {
@@ -339,10 +338,9 @@ export default {
       icon: 'deployment-unit-outlined',
       docHelp: 'plugins/nuage-plugin.html?#vpc-offerings',
       permission: ['listVPCOfferings', 'listInfrastructure'],
-      params: { isrecursive: 'true' },
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

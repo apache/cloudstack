@@ -174,7 +174,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo,
-                                            Storage.StoragePoolType type)
+                                            Storage.StoragePoolType type, Map<String, String> details)
     {
         s_logger.debug(String.format(
             "Linstor createStoragePool: name: '%s', host: '%s', path: %s, userinfo: %s", name, host, path, userInfo));
@@ -429,18 +429,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(
-        KVMPhysicalDisk snapshot,
-        String snapshotName,
-        String name,
-        KVMStoragePool destPool,
-        int timeout)
-    {
-        s_logger.debug("Linstor: createDiskFromSnapshot");
-        return null;
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool)
     {
         s_logger.debug("Linstor: refresh");
@@ -448,8 +436,12 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean createFolder(String uuid, String path)
-    {
+    public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
     }
 

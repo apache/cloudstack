@@ -111,6 +111,9 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "gc")
     private boolean checkForGc;
 
+    @Column(name = "security_group_id")
+    private Long securityGroupId;
+
     @Override
     public long getId() {
         return id;
@@ -337,6 +340,14 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     public void setMaxSize(Long maxSize) {
         this.maxSize = maxSize;
+    }
+
+    public void setSecurityGroupId(Long securityGroupId) {
+        this.securityGroupId = securityGroupId;
+    }
+
+    public Long getSecurityGroupId() {
+        return securityGroupId;
     }
 
     public KubernetesClusterVO() {

@@ -105,14 +105,14 @@
             </a-select>
           </a-form-item>
           <a-form-item
-            ref="vlanid"
-            name="vlanid"
+            ref="vlan"
+            name="vlan"
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             </template>
             <a-input
-             v-model:value="form.vlanid"
+             v-model:value="form.vlan"
               :placeholder="apiParams.vlan.description"/>
           </a-form-item>
           <a-form-item
@@ -167,6 +167,68 @@
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
+            <template #label>
+              <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+            </template>
+            <a-input
+              v-model:value="form.startip"
+              :placeholder="apiParams.startip.description"/>
+          </a-form-item>
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="endip" ref="endip">
+            <template #label>
+              <tooltip-label :title="$t('label.endip')" :tooltip="apiParams.endip.description"/>
+            </template>
+            <a-input
+              v-model:value="form.endip"
+              :placeholder="apiParams.endip.description"/>
+          </a-form-item>
+          <div v-if="selectedNetworkOfferingSupportsDns">
+            <a-row :gutter="12">
+              <a-col :md="12" :lg="12">
+                <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
+                  <template #label>
+                    <tooltip-label :title="$t('label.dns1')" :tooltip="apiParams.dns1.description"/>
+                  </template>
+                  <a-input
+                    v-model:value="form.dns1"
+                    :placeholder="apiParams.dns1.description"/>
+                </a-form-item>
+              </a-col>
+              <a-col :md="12" :lg="12">
+                <a-form-item v-if="'dns2' in apiParams" name="dns2" ref="dns2">
+                  <template #label>
+                    <tooltip-label :title="$t('label.dns2')" :tooltip="apiParams.dns2.description"/>
+                  </template>
+                  <a-input
+                    v-model:value="form.dns2"
+                    :placeholder="apiParams.dns2.description"/>
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="12">
+              <a-col :md="12" :lg="12">
+                <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.internetprotocol === 'DualStack' && 'ip6dns1' in apiParams" name="ip6dns1" ref="ip6dns1">
+                  <template #label>
+                    <tooltip-label :title="$t('label.ip6dns1')" :tooltip="apiParams.ip6dns1.description"/>
+                  </template>
+                  <a-input
+                    v-model:value="form.ip6dns1"
+                    :placeholder="apiParams.ip6dns1.description"/>
+                </a-form-item>
+              </a-col>
+              <a-col :md="12" :lg="12">
+                <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.internetprotocol === 'DualStack' && 'ip6dns2' in apiParams" name="ip6dns2" ref="ip6dns2">
+                  <template #label>
+                    <tooltip-label :title="$t('label.ip6dns2')" :tooltip="apiParams.ip6dns2.description"/>
+                  </template>
+                  <a-input
+                    v-model:value="form.ip6dns2"
+                    :placeholder="apiParams.ip6dns2.description"/>
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </div>
           <a-form-item
             ref="networkdomain"
             name="networkdomain"
@@ -214,11 +276,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateIsolatedNetworkForm',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -276,6 +340,16 @@ export default {
     this.initForm()
     this.fetchData()
   },
+  computed: {
+    selectedNetworkOfferingSupportsDns () {
+      if (this.selectedNetworkOffering) {
+        const services = this.selectedNetworkOffering?.service || []
+        const dnsServices = services.filter(service => service.name === 'Dns')
+        return dnsServices && dnsServices.length === 1
+      }
+      return false
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -310,7 +384,6 @@ export default {
       if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
         params.id = this.resource.zoneid
       }
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -358,15 +431,19 @@ export default {
       } else { // from guest network section
         var params = {}
         this.networkOfferingLoading = true
-        api('listVPCs', params).then(json => {
-          const listVPCs = json.listvpcsresponse.vpc
-          var vpcAvailable = this.arrayHasItems(listVPCs)
-          if (vpcAvailable === false) {
-            this.fetchNetworkOfferingData(false)
-          } else {
-            this.fetchNetworkOfferingData()
-          }
-        })
+        if ('listVPCs' in this.$store.getters.apis) {
+          api('listVPCs', params).then(json => {
+            const listVPCs = json.listvpcsresponse.vpc
+            var vpcAvailable = this.arrayHasItems(listVPCs)
+            if (vpcAvailable === false) {
+              this.fetchNetworkOfferingData(false)
+            } else {
+              this.fetchNetworkOfferingData()
+            }
+          })
+        } else {
+          this.fetchNetworkOfferingData(false)
+        }
       }
     },
     fetchNetworkOfferingData (forVpc) {
@@ -427,7 +504,8 @@ export default {
     handleSubmit () {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -435,23 +513,11 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        if (this.isValidTextValueForKey(values, 'gateway')) {
-          params.gateway = values.gateway
-        }
-        if (this.isValidTextValueForKey(values, 'netmask')) {
-          params.netmask = values.netmask
-        }
-        if (this.isValidTextValueForKey(values, 'externalid')) {
-          params.externalid = values.externalid
-        }
-        if (this.isValidTextValueForKey(values, 'vpcid')) {
-          params.vpcid = this.selectedVpc.id
-        }
-        if (this.isValidTextValueForKey(values, 'vlanid')) {
-          params.vlan = values.vlanid
-        }
-        if (this.isValidTextValueForKey(values, 'networkdomain')) {
-          params.networkdomain = values.networkdomain
+        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        for (var field of usefulFields) {
+          if (this.isValidTextValueForKey(values, field)) {
+            params[field] = values[field]
+          }
         }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
