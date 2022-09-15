@@ -52,6 +52,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -112,6 +113,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -360,7 +362,7 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
+public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 
     /**
@@ -553,6 +555,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper nwHelper;
+    @Inject
+    ReservationDao reservationDao;
+    @Inject
+    ResourceLimitService resourceLimitService;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -3870,304 +3876,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _volumeService.validateVolumeSizeInBytes(size);
             volumesSize += size;
         }
-        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
-        }
-
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
-
-        // verify security group ids
-        if (securityGroupIdList != null) {
-            for (Long securityGroupId : securityGroupIdList) {
-                SecurityGroup sg = _securityGroupDao.findById(securityGroupId);
-                if (sg == null) {
-                    throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
-                } else {
-                    // verify permissions
-                    _accountMgr.checkAccess(caller, null, true, owner, sg);
-                }
-            }
-        }
-
-        if (datadiskTemplateToDiskOfferringMap != null && !datadiskTemplateToDiskOfferringMap.isEmpty()) {
-            for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : datadiskTemplateToDiskOfferringMap.entrySet()) {
-                VMTemplateVO dataDiskTemplate = _templateDao.findById(datadiskTemplateToDiskOffering.getKey());
-                DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
-
-                if (dataDiskTemplate == null
-                        || (!dataDiskTemplate.getTemplateType().equals(TemplateType.DATADISK)) && (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
-                    throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
-                }
-                long dataDiskTemplateId = datadiskTemplateToDiskOffering.getKey();
-                if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
-                    throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template" + dataDiskTemplateId
-                            + " doesn't belong to template " + template.getId());
-                }
-                if (dataDiskOffering == null) {
-                    throw new InvalidParameterValueException("Invalid disk offering id " + datadiskTemplateToDiskOffering.getValue().getId() +
-                            " specified for datadisk template " + dataDiskTemplateId);
-                }
-                if (dataDiskOffering.isCustomized()) {
-                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
-                            dataDiskTemplateId + ". Custom Disk offerings are not supported for Datadisk templates");
-                }
-                if (dataDiskOffering.getDiskSize() < dataDiskTemplate.getSize()) {
-                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
-                            dataDiskTemplateId + ". Disk offering size should be greater than or equal to the template size");
-                }
-                _templateDao.loadDetails(dataDiskTemplate);
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, 1);
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, dataDiskOffering.getDiskSize());
-            }
-        }
-
-        // check that the affinity groups exist
-        if (affinityGroupIdList != null) {
-            for (Long affinityGroupId : affinityGroupIdList) {
-                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
-                if (ag == null) {
-                    throw new InvalidParameterValueException("Unable to find affinity group " + ag);
-                } else if (!_affinityGroupService.isAffinityGroupProcessorAvailable(ag.getType())) {
-                    throw new InvalidParameterValueException("Affinity group type is not supported for group: " + ag + " ,type: " + ag.getType()
-                    + " , Please try again after removing the affinity group");
-                } else {
-                    // verify permissions
-                    if (ag.getAclType() == ACLType.Domain) {
-                        _accountMgr.checkAccess(caller, null, false, owner, ag);
-                        // Root admin has access to both VM and AG by default,
-                        // but
-                        // make sure the owner of these entities is same
-                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
-                            if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
-                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
-                            }
-                        }
-                    } else {
-                        _accountMgr.checkAccess(caller, null, true, owner, ag);
-                        // Root admin has access to both VM and AG by default,
-                        // but
-                        // make sure the owner of these entities is same
-                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
-                            if (ag.getAccountId() != owner.getAccountId()) {
-                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (hypervisorType != HypervisorType.BareMetal) {
-            // check if we have available pools for vm deployment
-            long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
-            if (availablePools < 1) {
-                throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
-            }
-        }
-
-        if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(type)) {
-            throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
-        }
-        List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
-        if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
-            throw new InvalidParameterValueException("The template " + template.getId() + " is not available for use");
-        }
-
-        if (isIso && !template.isBootable()) {
-            throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
-        }
-
-        // Check templates permissions
-        _accountMgr.checkAccess(owner, AccessType.UseEntry, false, template);
-
-        // check if the user data is correct
-        userData = validateUserData(userData, httpmethod);
-
-        // Find an SSH public key corresponding to the key pair name, if one is
-        // given
-        String sshPublicKey = null;
-        if (sshKeyPair != null && !sshKeyPair.equals("")) {
-            SSHKeyPair pair = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
-            if (pair == null) {
-                throw new InvalidParameterValueException("A key pair with name '" + sshKeyPair + "' was not found.");
-            }
-
-            sshPublicKey = pair.getPublicKey();
-        }
-
-        LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
-
-        short defaultNetworkNumber = 0;
-        boolean securityGroupEnabled = false;
-        int networkIndex = 0;
-        for (NetworkVO network : networkList) {
-            if ((network.getDataCenterId() != zone.getId())) {
-                if (!network.isStrechedL2Network()) {
-                    throw new InvalidParameterValueException("Network id=" + network.getId() +
-                            " doesn't belong to zone " + zone.getId());
-                }
-
-                NetworkOffering ntwkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-                Long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), ntwkOffering.getTags(), ntwkOffering.getTrafficType());
-
-                String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Connectivity);
-                if (!_networkModel.isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
-                    throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
-                            " streched to the zone, as we could not find a valid physical network");
-                }
-            }
-
-            //relax the check if the caller is admin account
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
-                        && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
-                    throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
-                }
-            }
-
-            IpAddresses requestedIpPair = null;
-            if (requestedIps != null && !requestedIps.isEmpty()) {
-                requestedIpPair = requestedIps.get(network.getId());
-            }
-
-            if (requestedIpPair == null) {
-                requestedIpPair = new IpAddresses(null, null);
-            } else {
-                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair);
-            }
-
-            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
-            profile.setOrderIndex(networkIndex);
-            if (defaultNetworkNumber == 0) {
-                defaultNetworkNumber++;
-                // if user requested specific ip for default network, add it
-                if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
-                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
-                    profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
-                } else if (defaultIps.getMacAddress() != null) {
-                    profile = new NicProfile(null, null, defaultIps.getMacAddress());
-                }
-
-                profile.setDefaultNic(true);
-                if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
-                    if ((userData != null) && (!userData.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
-                    }
-
-                    if ((sshPublicKey != null) && (!sshPublicKey.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
-                    }
-
-                    if (template.isEnablePassword()) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
-                    }
-                }
-            }
-
-            if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
-                securityGroupEnabled = true;
-            }
-            List<NicProfile> profiles = networkNicMap.get(network.getUuid());
-            if (CollectionUtils.isEmpty(profiles)) {
-                profiles = new ArrayList<>();
-            }
-            profiles.add(profile);
-            networkNicMap.put(network.getUuid(), profiles);
-            networkIndex++;
-        }
-
-        if (securityGroupIdList != null && !securityGroupIdList.isEmpty() && !securityGroupEnabled) {
-            throw new InvalidParameterValueException("Unable to deploy vm with security groups as SecurityGroup service is not enabled for the vm's network");
-        }
-
-        // Verify network information - network default network has to be set;
-        // and vm can't have more than one default network
-        // This is a part of business logic because default network is required
-        // by Agent Manager in order to configure default
-        // gateway for the vm
-        if (defaultNetworkNumber == 0) {
-            throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
-        } else if (defaultNetworkNumber > 1) {
-            throw new InvalidParameterValueException("Only 1 default network per vm is supported");
-        }
-
-        long id = _vmDao.getNextInSequence(Long.class, "id");
-
-        if (hostName != null) {
-            // Check is hostName is RFC compliant
-            checkNameForRFCCompliance(hostName);
-        }
-
-        String instanceName = null;
-        String instanceSuffix = _instance;
-        String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
-        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
-            if (StringUtils.isNotEmpty(hostName)) {
-                instanceSuffix = hostName;
-            }
-            if (hostName == null) {
-                if (displayName != null) {
-                    hostName = displayName;
-                } else {
-                    hostName = generateHostName(uuidName);
-                }
-            }
-            // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
-            // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
-            VMInstanceVO vmByHostName = _vmInstanceDao.findVMByHostNameInZone(hostName, zone.getId());
-            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
-                throw new InvalidParameterValueException("There already exists a VM by the name: " + hostName + ".");
-            }
-        } else {
-            if (hostName == null) {
-                //Generate name using uuid and instance.name global config
-                hostName = generateHostName(uuidName);
-            }
-        }
-
-        if (hostName != null) {
-            // Check is hostName is RFC compliant
-            checkNameForRFCCompliance(hostName);
-        }
-        instanceName = VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
-        if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && !instanceSuffix.equals(_instance)) {
-            customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, instanceName);
-        }
-
-        // Check if VM with instanceName already exists.
-        VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
-        if (vmObj != null && vmObj.getState() != VirtualMachine.State.Expunging) {
-            throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
-        }
-
-        checkIfHostNameUniqueInNtwkDomain(hostName, networkList);
-
-        long userId = CallContext.current().getCallingUserId();
-        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-            List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
-            if (!userVOs.isEmpty()) {
-                userId =  userVOs.get(0).getId();
-            }
-        }
-
-        dynamicScalingEnabled = dynamicScalingEnabled && checkIfDynamicScalingCanBeEnabled(null, offering, template, zone.getId());
-
-        UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,
-                isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dhcpOptionMap,
-                datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, type);
-
-        // Assign instance to the group
-        try {
-            if (group != null) {
-                boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
-                if (!addToGroup) {
-                    throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
-                }
-            }
-        } catch (Exception ex) {
-            throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
-        }
+        UserVm vm = getCheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPair, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, type, template, hypervisorType, accountId, offering, isIso, volumesSize);
 
         _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
 
@@ -4177,6 +3886,330 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
         return vm;
+    }
+
+    private UserVm getCheckedUserVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, String sshKeyPair, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
+        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, 1l, reservationDao, resourceLimitService);
+                 CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
+                 CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+                 ) {
+                return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPair, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, volumesSize);
+            } catch (ResourceAllocationException | CloudRuntimeException  e) {
+                throw e;
+            } catch (Exception e) {
+                s_logger.error("error during resource reservation and allocation", e);
+                throw new CloudRuntimeException(e);
+            }
+
+        } else {
+            return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPair, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, volumesSize);
+        }
+    }
+
+    private UserVm getUncheckedUserVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, String sshKeyPair, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
+        try (CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1l : 2), reservationDao, resourceLimitService);
+             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, volumesSize, reservationDao, resourceLimitService)) {
+
+            // verify security group ids
+            if (securityGroupIdList != null) {
+                for (Long securityGroupId : securityGroupIdList) {
+                    SecurityGroup sg = _securityGroupDao.findById(securityGroupId);
+                    if (sg == null) {
+                        throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
+                    } else {
+                        // verify permissions
+                        _accountMgr.checkAccess(caller, null, true, owner, sg);
+                    }
+                }
+            }
+
+            if (datadiskTemplateToDiskOfferringMap != null && !datadiskTemplateToDiskOfferringMap.isEmpty()) {
+                for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : datadiskTemplateToDiskOfferringMap.entrySet()) {
+                    VMTemplateVO dataDiskTemplate = _templateDao.findById(datadiskTemplateToDiskOffering.getKey());
+                    DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
+
+                    if (dataDiskTemplate == null
+                            || (!dataDiskTemplate.getTemplateType().equals(TemplateType.DATADISK)) && (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
+                        throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
+                    }
+                    long dataDiskTemplateId = datadiskTemplateToDiskOffering.getKey();
+                    if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
+                        throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template" + dataDiskTemplateId
+                                + " doesn't belong to template " + template.getId());
+                    }
+                    if (dataDiskOffering == null) {
+                        throw new InvalidParameterValueException("Invalid disk offering id " + datadiskTemplateToDiskOffering.getValue().getId() +
+                                " specified for datadisk template " + dataDiskTemplateId);
+                    }
+                    if (dataDiskOffering.isCustomized()) {
+                        throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
+                                dataDiskTemplateId + ". Custom Disk offerings are not supported for Datadisk templates");
+                    }
+                    if (dataDiskOffering.getDiskSize() < dataDiskTemplate.getSize()) {
+                        throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
+                                dataDiskTemplateId + ". Disk offering size should be greater than or equal to the template size");
+                    }
+                    _templateDao.loadDetails(dataDiskTemplate);
+                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, 1);
+                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, dataDiskOffering.getDiskSize());
+                }
+            }
+
+            // check that the affinity groups exist
+            if (affinityGroupIdList != null) {
+                for (Long affinityGroupId : affinityGroupIdList) {
+                    AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
+                    if (ag == null) {
+                        throw new InvalidParameterValueException("Unable to find affinity group " + ag);
+                    } else if (!_affinityGroupService.isAffinityGroupProcessorAvailable(ag.getType())) {
+                        throw new InvalidParameterValueException("Affinity group type is not supported for group: " + ag + " ,vmType: " + ag.getType()
+                                + " , Please try again after removing the affinity group");
+                    } else {
+                        // verify permissions
+                        if (ag.getAclType() == ACLType.Domain) {
+                            _accountMgr.checkAccess(caller, null, false, owner, ag);
+                            // Root admin has access to both VM and AG by default,
+                            // but
+                            // make sure the owner of these entities is same
+                            if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                                if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
+                                    throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
+                                }
+                            }
+                        } else {
+                            _accountMgr.checkAccess(caller, null, true, owner, ag);
+                            // Root admin has access to both VM and AG by default,
+                            // but
+                            // make sure the owner of these entities is same
+                            if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                                if (ag.getAccountId() != owner.getAccountId()) {
+                                    throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (hypervisorType != HypervisorType.BareMetal) {
+                // check if we have available pools for vm deployment
+                long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
+                if (availablePools < 1) {
+                    throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
+                }
+            }
+
+            if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(vmType)) {
+                throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
+            }
+            List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
+            if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
+                throw new InvalidParameterValueException("The template " + template.getId() + " is not available for use");
+            }
+
+            if (isIso && !template.isBootable()) {
+                throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
+            }
+
+            // Check templates permissions
+            _accountMgr.checkAccess(owner, AccessType.UseEntry, false, template);
+
+            // check if the user data is correct
+            userData = validateUserData(userData, httpmethod);
+
+            // Find an SSH public key corresponding to the key pair name, if one is
+            // given
+            String sshPublicKey = null;
+            if (sshKeyPair != null && !sshKeyPair.equals("")) {
+                SSHKeyPair pair = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
+                if (pair == null) {
+                    throw new InvalidParameterValueException("A key pair with name '" + sshKeyPair + "' was not found.");
+                }
+
+                sshPublicKey = pair.getPublicKey();
+            }
+
+            LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
+
+            short defaultNetworkNumber = 0;
+            boolean securityGroupEnabled = false;
+            int networkIndex = 0;
+            for (NetworkVO network : networkList) {
+                if ((network.getDataCenterId() != zone.getId())) {
+                    if (!network.isStrechedL2Network()) {
+                        throw new InvalidParameterValueException("Network id=" + network.getId() +
+                                " doesn't belong to zone " + zone.getId());
+                    }
+
+                    NetworkOffering ntwkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                    Long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), ntwkOffering.getTags(), ntwkOffering.getTrafficType());
+
+                    String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Connectivity);
+                    if (!_networkModel.isProviderEnabledInPhysicalNetwork(physicalNetworkId, provider)) {
+                        throw new InvalidParameterValueException("Network in which is VM getting deployed could not be" +
+                                " streched to the zone, as we could not find a valid physical network");
+                    }
+                }
+
+                //relax the check if the caller is admin account
+                if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                            && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
+                        throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
+                    }
+                }
+
+                IpAddresses requestedIpPair = null;
+                if (requestedIps != null && !requestedIps.isEmpty()) {
+                    requestedIpPair = requestedIps.get(network.getId());
+                }
+
+                if (requestedIpPair == null) {
+                    requestedIpPair = new IpAddresses(null, null);
+                } else {
+                    _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair);
+                }
+
+                NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
+                profile.setOrderIndex(networkIndex);
+                if (defaultNetworkNumber == 0) {
+                    defaultNetworkNumber++;
+                    // if user requested specific ip for default network, add it
+                    if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
+                        _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
+                        profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                    } else if (defaultIps.getMacAddress() != null) {
+                        profile = new NicProfile(null, null, defaultIps.getMacAddress());
+                    }
+
+                    profile.setDefaultNic(true);
+                    if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
+                        if ((userData != null) && (!userData.isEmpty())) {
+                            throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                        }
+
+                        if ((sshPublicKey != null) && (!sshPublicKey.isEmpty())) {
+                            throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                        }
+
+                        if (template.isEnablePassword()) {
+                            throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                        }
+                    }
+                }
+
+                if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+                    securityGroupEnabled = true;
+                }
+                List<NicProfile> profiles = networkNicMap.get(network.getUuid());
+                if (CollectionUtils.isEmpty(profiles)) {
+                    profiles = new ArrayList<>();
+                }
+                profiles.add(profile);
+                networkNicMap.put(network.getUuid(), profiles);
+                networkIndex++;
+            }
+
+            if (securityGroupIdList != null && !securityGroupIdList.isEmpty() && !securityGroupEnabled) {
+                throw new InvalidParameterValueException("Unable to deploy vm with security groups as SecurityGroup service is not enabled for the vm's network");
+            }
+
+            // Verify network information - network default network has to be set;
+            // and vm can't have more than one default network
+            // This is a part of business logic because default network is required
+            // by Agent Manager in order to configure default
+            // gateway for the vm
+            if (defaultNetworkNumber == 0) {
+                throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
+            } else if (defaultNetworkNumber > 1) {
+                throw new InvalidParameterValueException("Only 1 default network per vm is supported");
+            }
+
+            long id = _vmDao.getNextInSequence(Long.class, "id");
+
+            if (hostName != null) {
+                // Check is hostName is RFC compliant
+                checkNameForRFCCompliance(hostName);
+            }
+
+            String instanceName = null;
+            String instanceSuffix = _instance;
+            String uuidName = _uuidMgr.generateUuid(UserVm.class, customId);
+            if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType)) {
+                if (StringUtils.isNotEmpty(hostName)) {
+                    instanceSuffix = hostName;
+                }
+                if (hostName == null) {
+                    if (displayName != null) {
+                        hostName = displayName;
+                    } else {
+                        hostName = generateHostName(uuidName);
+                    }
+                }
+                // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
+                // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
+                VMInstanceVO vmByHostName = _vmInstanceDao.findVMByHostNameInZone(hostName, zone.getId());
+                if (vmByHostName != null && vmByHostName.getState() != State.Expunging) {
+                    throw new InvalidParameterValueException("There already exists a VM by the name: " + hostName + ".");
+                }
+            } else {
+                if (hostName == null) {
+                    //Generate name using uuid and instance.name global config
+                    hostName = generateHostName(uuidName);
+                }
+            }
+
+            if (hostName != null) {
+                // Check is hostName is RFC compliant
+                checkNameForRFCCompliance(hostName);
+            }
+            instanceName = VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
+            if (_instanceNameFlag && HypervisorType.VMware.equals(hypervisorType) && !instanceSuffix.equals(_instance)) {
+                customParameters.put(VmDetailConstants.NAME_ON_HYPERVISOR, instanceName);
+            }
+
+            // Check if VM with instanceName already exists.
+            VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
+            if (vmObj != null && vmObj.getState() != State.Expunging) {
+                throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
+            }
+
+            checkIfHostNameUniqueInNtwkDomain(hostName, networkList);
+
+            long userId = CallContext.current().getCallingUserId();
+            if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+                List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+                if (!userVOs.isEmpty()) {
+                    userId = userVOs.get(0).getId();
+                }
+            }
+
+            dynamicScalingEnabled = dynamicScalingEnabled && checkIfDynamicScalingCanBeEnabled(null, offering, template, zone.getId());
+
+            UserVm vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,
+                    isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dhcpOptionMap,
+                    datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType);
+            // Assign instance to the group
+            try {
+                if (group != null) {
+                    boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
+                    if (!addToGroup) {
+                        throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
+                    }
+                }
+            } catch (Exception ex) {
+                throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
+            }
+
+            return vm;
+
+        } catch (ResourceAllocationException | CloudRuntimeException  e) {
+            throw e;
+        } catch (Exception e) {
+            s_logger.error("error during resource reservation and allocation", e);
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override

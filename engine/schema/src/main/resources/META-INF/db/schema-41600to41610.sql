@@ -387,3 +387,15 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `disk_offering`.`state`='Active'
     GROUP BY
         `service_offering`.`id`;
+
+-- savely add resources in parallel
+-- PR#5984 Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`resource_reservation`;
+CREATE TABLE `cloud`.`resource_reservation` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `resource_type` varchar(255) NOT NULL,
+  `amount` bigint unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
