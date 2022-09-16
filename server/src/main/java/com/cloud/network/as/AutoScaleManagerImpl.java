@@ -2349,27 +2349,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 HashMap<String, Double> countersMap = new HashMap<>();
                 HashMap<String, Integer> countersNumberMap = new HashMap<>();
 
-                // extract data
-                String[] counterElements = result.split(",");
-                if ((counterElements != null) && (counterElements.length > 0)) {
-                    for (String string : counterElements) {
-                        try {
-                            String[] counterVals = string.split(":");
-                            String[] counterVm = counterVals[0].split("\\.");
-
-                            Long counterId = Long.parseLong(counterVm[1]);
-                            Long conditionId = Long.parseLong(params.get("con" + counterVm[1]));
-                            Long policyId = 0L; // For NetScaler, the policyId is not returned in PerformanceMonitorAnswer
-
-                            Double coVal = Double.parseDouble(counterVals[1]);
-
-                            updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counterId, conditionId, policyId, coVal);
-
-                        } catch (Exception e) {
-                            s_logger.error("Cannot process PerformanceMonitorAnswer due to Exception: ", e);
-                        }
-                    }
-                }
+                processPerformanceMonitorAnswer(countersMap, countersNumberMap, groupTO, params, result);
 
                 AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, groupTO);
                 if (scaleAction != null) {
@@ -2405,6 +2385,31 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             params.put("con" + totalCounter, strCounterNames.split(",")[1]);
         }
         params.put("totalCounter", String.valueOf(totalCounter));
+    }
+
+    protected void processPerformanceMonitorAnswer(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap,
+                                                 AutoScaleVmGroupTO groupTO, Map<String, String> params, String details) {
+        // extract data
+        String[] counterElements = details.split(",");
+        if ((counterElements != null) && (counterElements.length > 0)) {
+            for (String string : counterElements) {
+                try {
+                    String[] counterVals = string.split(":");
+                    String[] counterVm = counterVals[0].split("\\.");
+
+                    Long counterId = Long.parseLong(counterVm[1]);
+                    Long conditionId = Long.parseLong(params.get("con" + counterVm[1]));
+                    Long policyId = 0L; // For NetScaler, the policyId is not returned in PerformanceMonitorAnswer
+
+                    Double coVal = Double.parseDouble(counterVals[1]);
+
+                    updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counterId, conditionId, policyId, coVal);
+
+                } catch (Exception e) {
+                    s_logger.error("Cannot process PerformanceMonitorAnswer due to Exception: ", e);
+                }
+            }
+        }
     }
 
     protected void updateCountersMapWithInstantData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO, Long counterId, Long conditionId, Long policyId, Double coVal) {
