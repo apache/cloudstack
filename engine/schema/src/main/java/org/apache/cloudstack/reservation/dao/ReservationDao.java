@@ -16,24 +16,13 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+package org.apache.cloudstack.reservation.dao;
 
-package com.cloud.storage.template;
+import com.cloud.configuration.Resource;
+import org.apache.cloudstack.reservation.ReservationVO;
+import com.cloud.utils.db.GenericDao;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-
-import org.junit.Test;
-
-
-public class LocalTemplateDownloaderTest {
-
-    @Test
-    public void localTemplateDownloaderTest() throws Exception {
-        String url = new File("pom.xml").toURI().toURL().toString();
-        TemplateDownloader td = new LocalTemplateDownloader(null, url, System.getProperty("java.io.tmpdir"), TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
-        long bytes = td.download(true, null);
-        assertTrue("Failed download", bytes > 0);
-    }
-
+public interface ReservationDao extends GenericDao<ReservationVO, Long> {
+    long getAccountReservation(Long account, Resource.ResourceType resourceType);
+    long getDomainReservation(Long domain, Resource.ResourceType resourceType);
 }

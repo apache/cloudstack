@@ -28,7 +28,6 @@
 <script>
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import { api } from '@/api'
-import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { uuid } from 'vue-uuid'
 
 export default {
@@ -49,19 +48,13 @@ export default {
       tokenValidationEnabled: false
     }
   },
-  components: {
-    TooltipLabel
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
-  mounted () {
+  created () {
     this.verifyExtraValidationEnabled()
   },
   methods: {
     verifyExtraValidationEnabled () {
       api('listConfigurations', { name: 'consoleproxy.extra.security.validation.enabled' }).then(json => {
-        this.tokenValidationEnabled = json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value === 'true'
+        this.tokenValidationEnabled = json?.listconfigurationsresponse?.configuration && json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
       })
     },
     consoleUrl () {
