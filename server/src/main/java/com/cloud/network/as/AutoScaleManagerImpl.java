@@ -2378,11 +2378,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             String strCounterNames = pair.first();
             Integer duration = pair.second();
 
-            lstCounter[i] = strCounterNames.split(",")[0];
+            lstCounter[i] = strCounterNames.split(",")[0];  // counter name
             totalCounter++;
             params.put("duration" + totalCounter, duration.toString());
             params.put("counter" + totalCounter, lstCounter[i]);
-            params.put("con" + totalCounter, strCounterNames.split(",")[1]);
+            params.put("con" + totalCounter, strCounterNames.split(",")[1]);    // condition id
         }
         params.put("totalCounter", String.valueOf(totalCounter));
     }
@@ -2398,7 +2398,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     String[] counterVm = counterVals[0].split("\\.");
 
                     Long counterId = Long.parseLong(counterVm[1]);
-                    Long conditionId = Long.parseLong(params.get("con" + counterVm[1]));
+
+                    Long conditionId = Long.parseLong(params.get("con" + counterVm[0]));
+
                     Long policyId = 0L; // For NetScaler, the policyId is not returned in PerformanceMonitorAnswer
 
                     Double coVal = Double.parseDouble(counterVals[1]);
