@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tungsten.api.response.TlsDataResponse;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -57,6 +58,9 @@ public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
             TlsDataResponse tlsDataResponse = new TlsDataResponse();
             tlsDataResponse.setCrt(Base64.encodeBase64String(lbSslCert.getCert().getBytes()));
             tlsDataResponse.setKey(Base64.encodeBase64String(lbSslCert.getKey().getBytes()));
+            tlsDataResponse.setChain(
+                lbSslCert.getChain() != null ? Base64.encodeBase64String(lbSslCert.getChain().getBytes()) :
+                    StringUtils.EMPTY);
             tlsDataResponse.setResponseName(getCommandName());
             tlsDataResponse.setObjectName("data");
             setResponseObject(tlsDataResponse);

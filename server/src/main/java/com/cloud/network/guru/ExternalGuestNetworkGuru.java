@@ -17,6 +17,15 @@
 package com.cloud.network.guru;
 
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
@@ -27,9 +36,12 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
@@ -47,21 +59,18 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.List;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
@@ -104,7 +113,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
 
-        if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity) || offering.isForTungsten()) {
+        if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity)) {
             return null;
         }
 
@@ -115,13 +124,27 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
+        if (userSpecified == null) {
+            return config;
+        }
+        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
+                    (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
+            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
+        }
+        if (userSpecified.getIp6Cidr() != null) {
+            config.setIp6Cidr(userSpecified.getIp6Cidr());
+            config.setIp6Gateway(userSpecified.getIp6Gateway());
+        }
+        if (userSpecified.getRouterIpv6() != null) {
+            config.setRouterIpv6(userSpecified.getRouterIpv6());
+        }
 
         return config;
     }
 
     @Override
     public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapacityException {
+        throws InsufficientVirtualNetworkCapacityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
 
         if (_networkModel.areServicesSupportedInNetwork(config.getId(), Network.Service.Connectivity)) {
@@ -134,15 +157,15 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
         DataCenter zone = dest.getDataCenter();
         NetworkVO implemented =
-                new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
-                        config.getDataCenterId(), config.getPhysicalNetworkId(), offering.isRedundantRouter());
+            new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
+                config.getDataCenterId(), config.getPhysicalNetworkId(), offering.isRedundantRouter());
 
         // Get a vlan tag
         int vlanTag;
         if (config.getBroadcastUri() == null) {
             String vnet =
-                    _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId(),
-                            UseSystemGuestVlans.valueIn(config.getAccountId()));
+                _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId(),
+                    UseSystemGuestVlans.valueIn(config.getAccountId()));
 
             try {
                 // when supporting more types of networks this need to become
@@ -154,7 +177,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanTag));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO,
-                    EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
+                EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), config.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             vlanTag = Integer.parseInt(BroadcastDomainType.getValue(config.getBroadcastUri()));
             implemented.setBroadcastUri(config.getBroadcastUri());
@@ -245,7 +268,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
-            InsufficientAddressCapacityException {
+        InsufficientAddressCapacityException {
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
@@ -261,6 +284,17 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             profile.setIPv4Netmask(null);
         }
 
+        if (config.getVpcId() == null && vm.getType() == VirtualMachine.Type.DomainRouter) {
+            boolean isPublicNetwork = _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VirtualRouter);
+            if (!isPublicNetwork) {
+                Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
+                if (placeholderNic == null) {
+                    s_logger.debug("Saving placeholder nic with ip4 address " + profile.getIPv4Address() +
+                            " and ipv6 address " + profile.getIPv6Address() + " for the network " + config);
+                    _networkMgr.savePlaceholderNic(config, profile.getIPv4Address(), profile.getIPv6Address(), VirtualMachine.Type.DomainRouter);
+                }
+            }
+        }
         return profile;
     }
 
@@ -280,7 +314,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
 
         DataCenter dc = _dcDao.findById(config.getDataCenterId());
@@ -288,8 +322,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId())) {
             nic.setBroadcastUri(config.getBroadcastUri());
             nic.setIsolationUri(config.getBroadcastUri());
-            nic.setIPv4Dns1(dc.getDns1());
-            nic.setIPv4Dns2(dc.getDns2());
+            Pair<String, String> dns = _networkModel.getNetworkIp4Dns(config, dc);
+            nic.setIPv4Dns1(dns.first());
+            nic.setIPv4Dns2(dns.second());
             nic.setIPv4Netmask(NetUtils.cidr2Netmask(config.getCidr()));
             long cidrAddress = NetUtils.ip2Long(config.getCidr().split("/")[0]);
             int cidrSize = getGloballyConfiguredCidrSize();

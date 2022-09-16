@@ -21,6 +21,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.network.Network;
+import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.vm.VMInstanceVO;
 import org.apache.cloudstack.api.BaseResponse;
@@ -39,6 +40,7 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricRuleRes
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricServiceGroupResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagTypeResponse;
+import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorVO;
 import org.apache.cloudstack.network.tungsten.model.RoutingPolicyPrefix;
 import org.apache.cloudstack.network.tungsten.model.RoutingPolicyThenTerm;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
@@ -47,6 +49,8 @@ import java.util.List;
 
 public interface TungstenService {
     String getTungstenProjectFqn(Network network);
+
+    List<TungstenProviderVO> getTungstenProviders();
 
     boolean createPublicNetwork(long zoneId);
 
@@ -158,10 +162,10 @@ public interface TungstenService {
         final List<String> vmUuids, final List<String> nicUuids, final String policyUuid, final String applicationPolicySetUuid, final String tagUuid);
 
     TungstenFabricNetworkRouteTableResponse createTungstenFabricNetworkRouteTable(final long zoneId,
-        final String networkRouteTableName);
+        final String projectFqn, final String networkRouteTableName);
 
     TungstenFabricInterfaceRouteTableResponse createTungstenFabricInterfaceRouteTable(final long zoneId,
-        final String interfaceRouteTableName);
+        final String projectFqn, final String interfaceRouteTableName);
 
     TungstenFabricNetworkStaticRouteResponse addTungstenFabricNetworkStaticRoute(final long zoneId,
         final String networkRouteTableUuid, final String routePrefix, final String routeNextHop,
@@ -207,7 +211,7 @@ public interface TungstenService {
     List<TungstenFabricRoutingPolicyResponse> listTungstenFabricRoutingPolicies(final long zoneId,
         final String routingPolicyUuid, final String networkUuid, final boolean isAttachedToNetwork);
 
-    TungstenFabricRoutingPolicyResponse createTungstenRoutingPolicy(final long zoneId,
+    TungstenFabricRoutingPolicyResponse createTungstenRoutingPolicy(final long zoneId, final String projectFqn,
         final String routingPolicyName);
 
     TungstenFabricRoutingPolicyTermResponse addRoutingPolicyTerm(final long zoneId, String routingPolicyUuid,
@@ -249,7 +253,20 @@ public interface TungstenService {
 
     List<String> listConnectedNetworkFromLogicalRouter(final long zoneId, final String logicalRouterUuid);
 
+    TungstenFabricLBHealthMonitorVO updateTungstenFabricLBHealthMonitor(final long lbId, final String type, final int retry, final int timeout, final int interval, final String httpMethod, final String expectedCode, final String urlPath);
+
+    boolean applyLBHealthMonitor(final long lbId);
+
+    List<BaseResponse> listTungstenFabricLBHealthMonitor(final long lbId);
+
     String MESSAGE_APPLY_NETWORK_POLICY_EVENT = "Message.ApplyNetworkPolicy.Event";
-    String MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT =
-        "Message.SyncTungstenDnWithDomainsAndProjects" + ".Event";
+    String MESSAGE_SYNC_TUNGSTEN_DB_WITH_DOMAINS_AND_PROJECTS_EVENT = "Message.SyncTungstenDnWithDomainsAndProjects.Event";
+
+    enum MonitorType {
+        PING, TCP, HTTP
+    }
+
+    enum HttpType {
+        GET, HEAD
+    }
 }

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ObjectReference;
@@ -42,13 +43,23 @@ public class TungstenFabricPolicyResponse extends BaseResponse {
     @Param(description = "list Tungsten-Fabric policy network name")
     private List<TungstenFabricNetworkResponse> networks;
 
-    public TungstenFabricPolicyResponse(String uuid, String name) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricPolicyResponse(String uuid, String name, DataCenter zone) {
         this.uuid = uuid;
         this.name = name;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("policy");
     }
 
-    public TungstenFabricPolicyResponse(NetworkPolicy networkPolicy) {
+    public TungstenFabricPolicyResponse(NetworkPolicy networkPolicy, DataCenter zone) {
         this.uuid = networkPolicy.getUuid();
         this.name = networkPolicy.getName();
         List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
@@ -61,18 +72,22 @@ public class TungstenFabricPolicyResponse extends BaseResponse {
             }
         }
         this.networks = networks;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("policy");
     }
 
-    public TungstenFabricPolicyResponse(TungstenNetworkPolicy tungstenNetworkPolicy) {
+    public TungstenFabricPolicyResponse(TungstenNetworkPolicy tungstenNetworkPolicy, DataCenter zone) {
         this.uuid = tungstenNetworkPolicy.getNetworkPolicy().getUuid();
         this.name = tungstenNetworkPolicy.getNetworkPolicy().getName();
         List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
         List<VirtualNetwork> virtualNetworkList = tungstenNetworkPolicy.getVirtualNetworkList();
         for(VirtualNetwork virtualNetwork : virtualNetworkList) {
-            networks.add(new TungstenFabricNetworkResponse(virtualNetwork));
+            networks.add(new TungstenFabricNetworkResponse(virtualNetwork, zone));
         }
         this.networks = networks;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("policy");
     }
 
@@ -100,4 +115,19 @@ public class TungstenFabricPolicyResponse extends BaseResponse {
         this.name = name;
     }
 
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
+    }
 }

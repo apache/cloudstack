@@ -34,6 +34,8 @@ listen stats :$2
 EOF
 container=$(docker ps | grep contrail-vrouter-agent | awk '{print $1}')
 netns=$(ls /var/run/netns | grep $1)
+dev=$(docker exec $container ip netns exec $netns ls /sys/class/net | grep gw)
+docker exec $container ip netns exec $netns ip route add default dev $dev
 docker exec $container ip netns exec $netns haproxy -D -f /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.conf \
 -p /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.pid -sf $(cat /var/lib/contrail/loadbalancer/haproxy/$1/haproxy.pid) &>/dev/null
 fi

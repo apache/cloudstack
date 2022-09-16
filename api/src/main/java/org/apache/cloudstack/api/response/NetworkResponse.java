@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Network;
@@ -32,7 +33,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
-public class NetworkResponse extends BaseResponse implements ControlledEntityResponse {
+public class NetworkResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the network")
@@ -119,11 +120,11 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     private String broadcastUri;
 
     @SerializedName(ApiConstants.DNS1)
-    @Param(description = "the first DNS for the network")
+    @Param(description = "the first IPv4 DNS for the network")
     private String dns1;
 
     @SerializedName(ApiConstants.DNS2)
-    @Param(description = "the second DNS for the network")
+    @Param(description = "the second IPv4 DNS for the network")
     private String dns2;
 
     @SerializedName(ApiConstants.TYPE)
@@ -190,6 +191,18 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "VPC the network belongs to")
     private String vpcId;
 
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
+    private String vpcName;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
+    @Param(description = "the ID of the Network associated with this network")
+    private String associatedNetworkId;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
+    @Param(description = "the name of the Network associated with this network")
+    private String associatedNetworkName;
+
     @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
     @Param(description = "Tungsten-Fabric virtual router the network belongs to")
     private String tungstenVirtualRouterUuid;
@@ -226,6 +239,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "ACL Id associated with the VPC network")
     private String aclId;
 
+    @SerializedName(ApiConstants.ACL_NAME)
+    @Param(description = "ACL name associated with the VPC network")
+    private String aclName;
+
     @SerializedName(ApiConstants.STRECHED_L2_SUBNET)
     @Param(description = "true if network can span multiple zones", since = "4.4")
     private Boolean strechedL2Subnet;
@@ -242,6 +259,48 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this network was created", since = "4.16.0")
+    private Date created;
+
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
+
+    @SerializedName((ApiConstants.EGRESS_DEFAULT_POLICY))
+    @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
+    private Boolean egressDefaultPolicy;
+
+    @SerializedName(ApiConstants.INTERNET_PROTOCOL)
+    @Param(description = "The internet protocol of network offering")
+    private String internetProtocol;
+
+    @SerializedName(ApiConstants.IPV6_ROUTING)
+    @Param(description = "The routing mode of network offering", since = "4.17.0")
+    private String ipv6Routing;
+
+    @SerializedName(ApiConstants.IPV6_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    private Set<Ipv6RouteResponse> ipv6Routes;
+
+    @SerializedName(ApiConstants.IP6_DNS1)
+    @Param(description = "the first IPv6 DNS for the network", since = "4.18.0")
+    private String ipv6Dns1;
+
+    @SerializedName(ApiConstants.IP6_DNS2)
+    @Param(description = "the second IPv6 DNS for the network", since = "4.18.0")
+    private String ipv6Dns2;
+
+    public NetworkResponse() {}
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -252,6 +311,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setName(String name) {
@@ -411,6 +474,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.vpcId = vpcId;
     }
 
+    public String getVpcId() {
+        return vpcId;
+    }
+
     public void setCanUseForDeploy(Boolean canUseForDeploy) {
         this.canUseForDeploy = canUseForDeploy;
     }
@@ -443,6 +510,14 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.aclId = aclId;
     }
 
+    public String getAclName() {
+        return aclName;
+    }
+
+    public void setAclName(String aclName) {
+        this.aclName = aclName;
+    }
+
     public void setStrechedL2Subnet(Boolean strechedL2Subnet) {
         this.strechedL2Subnet = strechedL2Subnet;
     }
@@ -469,5 +544,74 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setTungstenVirtualRouterUuid(String tungstenVirtualRouterUuid) {
         this.tungstenVirtualRouterUuid = tungstenVirtualRouterUuid;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
+    }
+
+    public void setAssociatedNetworkId(String associatedNetworkId) {
+        this.associatedNetworkId = associatedNetworkId;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(final Long bytesSent) {
+        this.bytesSent = bytesSent;
+    }
+
+    public boolean getEgressDefaultPolicy() {
+        return egressDefaultPolicy;
+    }
+
+    public void setEgressDefaultPolicy(Boolean egressDefaultPolicy) {
+        this.egressDefaultPolicy = egressDefaultPolicy;
+    }
+
+    public void setInternetProtocol(String internetProtocol) {
+        this.internetProtocol = internetProtocol;
+    }
+
+    public void setIpv6Routing(String ipv6Routing) {
+        this.ipv6Routing = ipv6Routing;
+    }
+
+    public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
+        this.ipv6Routes = ipv6Routes;
+    }
+
+    public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
+        this.ipv6Routes.add(ipv6Route);
+    }
+
+    public void setIpv6Dns1(String ipv6Dns1) {
+        this.ipv6Dns1 = ipv6Dns1;
+    }
+
+    public void setIpv6Dns2(String ipv6Dns2) {
+        this.ipv6Dns2 = ipv6Dns2;
     }
 }

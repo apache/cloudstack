@@ -324,7 +324,7 @@ public class TungstenResourceTest {
         TungstenCommand command = new CreateTungstenVirtualMachineCommand("projectFqn",
             "e8281cd6-9078-4db1-9f47-e52f679e03d1", "5a27fad7-a8ca-4919-bfc3-cad26374b26a", "vmName",
             "fe832e34-1bbb-4f0b-9ced-0e7ae2218598", 1L, "192.168.100.1", "fd00::1", "1e:00:d2:00:00:06", "guest",
-            "guest", "10.1.1.100");
+            "guest", "10.1.1.100", "10.1.1.1", true);
         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
         VirtualMachine virtualMachine = mock(VirtualMachine.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -334,7 +334,7 @@ public class TungstenResourceTest {
         when(tungstenApi.getTungstenObject(eq(VirtualNetwork.class), anyString())).thenReturn(virtualNetwork);
         when(tungstenApi.createTungstenVirtualMachine(anyString(), anyString())).thenReturn(virtualMachine);
         when(tungstenApi.createTungstenVmInterface(anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString())).thenReturn(virtualMachineInterface);
+            anyString(), anyString(), anyBoolean())).thenReturn(virtualMachineInterface);
         when(tungstenApi.createTungstenInstanceIp(anyString(), anyString(), anyString(), anyString())).thenReturn(
             instanceIp);
         when(TungstenVRouterApi.addTungstenVrouterPort(anyString(), anyString(), any(Port.class))).thenReturn(true);
@@ -1393,9 +1393,9 @@ public class TungstenResourceTest {
 
     @Test
     public void executeRequestCreateTungstenNetworkRouteTableCommandTest() {
-        TungstenCommand command = new CreateTungstenNetworkRouteTableCommand("NetworkRouteTableName");
+        TungstenCommand command = new CreateTungstenNetworkRouteTableCommand(null, "NetworkRouteTableName");
         RouteTable routeTable = mock(RouteTable.class);
-        when(tungstenApi.createNetworkRouteTable(anyString(), anyString())).thenReturn(routeTable);
+        when(tungstenApi.createNetworkRouteTable(anyString(), anyString(), anyString())).thenReturn(routeTable);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
         assertNotNull(answer.getApiObjectBase());
@@ -1403,9 +1403,9 @@ public class TungstenResourceTest {
 
     @Test
     public void executeRequestCreateTungstenInterfaceRouteTableCommandTest() {
-        TungstenCommand command = new CreateTungstenInterfaceRouteTableCommand("interfaceRouteTableName");
+        TungstenCommand command = new CreateTungstenInterfaceRouteTableCommand(null, "interfaceRouteTableName");
         InterfaceRouteTable interfaceRouteTable = mock(InterfaceRouteTable.class);
-        when(tungstenApi.createInterfaceRouteTable(anyString(), anyString())).thenReturn(interfaceRouteTable);
+        when(tungstenApi.createInterfaceRouteTable(anyString(), anyString(), anyString())).thenReturn(interfaceRouteTable);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
         assertNotNull(answer.getApiObjectBase());
@@ -1669,9 +1669,9 @@ public class TungstenResourceTest {
 
     @Test
     public void executeRequestCreateTungstenRoutingPolicyCommandTest() {
-        TungstenCommand command = new CreateTungstenRoutingPolicyCommand("RoutingPolicyName");
+        TungstenCommand command = new CreateTungstenRoutingPolicyCommand("projectFqn", "RoutingPolicyName");
         RoutingPolicy routingPolicy = mock(RoutingPolicy.class);
-        when(tungstenApi.createRoutingPolicy(anyString())).thenReturn(routingPolicy);
+        when(tungstenApi.createRoutingPolicy(anyString(), anyString())).thenReturn(routingPolicy);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
         assertNotNull(answer.getApiObjectBase());

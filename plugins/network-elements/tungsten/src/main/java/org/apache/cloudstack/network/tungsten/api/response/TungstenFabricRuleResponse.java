@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.AddressType;
@@ -88,7 +89,15 @@ public class TungstenFabricRuleResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric policy destination end port")
     private int destEndPort;
 
-    public TungstenFabricRuleResponse(String policyUuid, PolicyRuleType policyRuleType) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricRuleResponse(String policyUuid, PolicyRuleType policyRuleType, DataCenter zone) {
         this.uuid = policyRuleType.getRuleUuid();
         this.policyUuid = policyUuid;
         this.action = policyRuleType.getActionList().getSimpleAction();
@@ -125,6 +134,8 @@ public class TungstenFabricRuleResponse extends BaseResponse {
             this.destStartPort = destPortList.get(0).getStartPort();
             this.destEndPort = destPortList.get(0).getEndPort();
         }
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
 
         this.setObjectName("rule");
     }
@@ -247,5 +258,21 @@ public class TungstenFabricRuleResponse extends BaseResponse {
 
     public void setDestEndPort(final int destEndPort) {
         this.destEndPort = destEndPort;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

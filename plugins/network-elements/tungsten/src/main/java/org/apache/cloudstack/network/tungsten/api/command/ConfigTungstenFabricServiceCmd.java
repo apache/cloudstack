@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -107,6 +108,16 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                     NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
                         Network.Service.Connectivity, Network.Provider.Tungsten);
                     networkServiceMapDao.persist(managementNetworkServiceMapVO);
+
+                    List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
+                    for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
+                        if (networkOffering.getTrafficType() == Networks.TrafficType.Management){
+                            NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
+                                new NetworkOfferingServiceMapVO(
+                                    networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
+                            networkOfferingServiceMapDao.persist(publicNetworkOfferingServiceMapVO);
+                        }
+                    }
                 }
             });
         } else {
@@ -127,7 +138,7 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                         Map<Network.Service, Network.Provider> tungstenServiceProvider = new HashMap<>();
                         tungstenServiceProvider.put(Network.Service.Dhcp, Network.Provider.Tungsten);
                         tungstenServiceProvider.put(Network.Service.Dns, Network.Provider.Tungsten);
-                        tungstenServiceProvider.put(Network.Service.UserData, Network.Provider.Tungsten);
+                        //tungstenServiceProvider.put(Network.Service.UserData, Network.Provider.ConfigDrive);
                         tungstenServiceProvider.put(Network.Service.SourceNat, Network.Provider.Tungsten);
                         tungstenServiceProvider.put(Network.Service.StaticNat, Network.Provider.Tungsten);
                         tungstenServiceProvider.put(Network.Service.Connectivity, Network.Provider.Tungsten);
@@ -156,6 +167,17 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                     NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
                         Network.Service.Connectivity, Network.Provider.Tungsten);
                     networkServiceMapDao.persist(managementNetworkServiceMapVO);
+
+                    List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
+                    for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
+                        if (networkOffering.getTrafficType() == Networks.TrafficType.Public
+                            || networkOffering.getTrafficType() == Networks.TrafficType.Management){
+                            NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
+                                new NetworkOfferingServiceMapVO(
+                                networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
+                            networkOfferingServiceMapDao.persist(publicNetworkOfferingServiceMapVO);
+                        }
+                    }
                 }
             });
         }

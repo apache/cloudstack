@@ -19,12 +19,18 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import java.util.UUID;
 
 public class CreateTungstenInterfaceRouteTableCommand extends TungstenCommand {
+    private final String projectFqn;
     private final String uuid;
     private final String name;
 
-    public CreateTungstenInterfaceRouteTableCommand(String name) {
+    public CreateTungstenInterfaceRouteTableCommand(String projectFqn, String name) {
+        this.projectFqn = projectFqn;
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
+    }
+
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getUuid() {

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ApiPropertyBase;
@@ -41,7 +42,15 @@ public class TungstenFabricInterfaceRouteTableResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric vms name")
     private List<TungstenFabricVmResponse> vms;
 
-    public TungstenFabricInterfaceRouteTableResponse(InterfaceRouteTable interfaceRouteTable) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricInterfaceRouteTableResponse(InterfaceRouteTable interfaceRouteTable, DataCenter zone) {
         this.uuid = interfaceRouteTable.getUuid();
         this.name = interfaceRouteTable.getName();
         List<TungstenFabricVmResponse> vms = new ArrayList<>();
@@ -54,6 +63,8 @@ public class TungstenFabricInterfaceRouteTableResponse extends BaseResponse {
             }
         }
         this.vms = vms;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("interfaceroutetable");
     }
 
@@ -79,5 +90,21 @@ public class TungstenFabricInterfaceRouteTableResponse extends BaseResponse {
 
     public void setVms(List<TungstenFabricVmResponse> vms) {
         this.vms = vms;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

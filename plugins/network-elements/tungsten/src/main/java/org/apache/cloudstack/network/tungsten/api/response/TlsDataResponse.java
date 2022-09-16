@@ -32,6 +32,10 @@ public class TlsDataResponse extends BaseResponse {
     @Param(description = "key")
     private String key;
 
+    @SerializedName("chain")
+    @Param(description = "chain")
+    private String chain;
+
     public String getCrt() {
         return crt;
     }
@@ -46,5 +50,13 @@ public class TlsDataResponse extends BaseResponse {
 
     public void setKey(final String key) {
         this.key = key;
+    }
+
+    public String getChain() {
+        return chain;
+    }
+
+    public void setChain(final String chain) {
+        this.chain = chain;
     }
 }

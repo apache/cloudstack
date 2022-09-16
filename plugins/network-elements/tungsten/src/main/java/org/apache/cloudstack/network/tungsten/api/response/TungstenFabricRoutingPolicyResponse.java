@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import net.juniper.tungsten.api.ApiPropertyBase;
+import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.types.PolicyTermType;
 import net.juniper.tungsten.api.types.RoutingPolicy;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,21 +39,47 @@ public class TungstenFabricRoutingPolicyResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric routing policy name")
     private String name;
 
+    @SerializedName(ApiConstants.NETWORK)
+    @Param(description = "list Tungsten-Fabric policy network name")
+    private List<TungstenFabricNetworkResponse> networks;
+
     @SerializedName(ApiConstants.TUNGSTEN_ROUTING_POLICY_TERM)
     @Param(description = "Tungsten-Fabric routing policy terms", responseObject = TungstenFabricRoutingPolicyTermResponse.class)
     private List<TungstenFabricRoutingPolicyTermResponse> terms;
 
-    public TungstenFabricRoutingPolicyResponse(RoutingPolicy routingPolicy) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricRoutingPolicyResponse(RoutingPolicy routingPolicy, DataCenter zone) {
         List<TungstenFabricRoutingPolicyTermResponse> terms = new ArrayList<>();
         if(routingPolicy.getEntries() != null && routingPolicy.getEntries().getTerm() != null) {
             for (PolicyTermType item : routingPolicy.getEntries().getTerm()) {
-                TungstenFabricRoutingPolicyTermResponse routingPolicyTermResponse = new TungstenFabricRoutingPolicyTermResponse(item);
+                TungstenFabricRoutingPolicyTermResponse routingPolicyTermResponse = new TungstenFabricRoutingPolicyTermResponse(item,zone);
                 terms.add(routingPolicyTermResponse);
             }
         }
         this.name = routingPolicy.getName();
         this.uuid = routingPolicy.getUuid();
         this.terms = terms;
+        List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
+        List<ObjectReference<ApiPropertyBase>> objectReferenceList = routingPolicy.getVirtualNetworkBackRefs();
+        if (objectReferenceList != null) {
+            for (ObjectReference<ApiPropertyBase> objectReference : objectReferenceList) {
+                TungstenFabricNetworkResponse tungstenFabricNetworkResponse = new TungstenFabricNetworkResponse(
+                    objectReference.getUuid(),
+                    objectReference.getReferredName().get(objectReference.getReferredName().size() - 1)
+                );
+                networks.add(tungstenFabricNetworkResponse);
+            }
+        }
+        this.networks = networks;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("routingpolicy");
     }
 
@@ -76,5 +105,29 @@ public class TungstenFabricRoutingPolicyResponse extends BaseResponse {
 
     public void setTerms(List<TungstenFabricRoutingPolicyTermResponse> terms) {
         this.terms = terms;
+    }
+
+    public List<TungstenFabricNetworkResponse> getNetworks() {
+        return networks;
+    }
+
+    public void setNetworks(final List<TungstenFabricNetworkResponse> networks) {
+        this.networks = networks;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

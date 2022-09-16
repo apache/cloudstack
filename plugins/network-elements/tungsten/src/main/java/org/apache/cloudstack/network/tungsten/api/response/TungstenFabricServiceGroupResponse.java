@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.ServiceGroup;
@@ -43,18 +44,30 @@ public class TungstenFabricServiceGroupResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric service group end port")
     private int endPort;
 
-    public TungstenFabricServiceGroupResponse(String uuid, String name) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricServiceGroupResponse(String uuid, String name, DataCenter zone) {
         this.uuid = uuid;
         this.name = name;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("servicegroup");
     }
 
-    public TungstenFabricServiceGroupResponse(ServiceGroup serviceGroup) {
+    public TungstenFabricServiceGroupResponse(ServiceGroup serviceGroup, DataCenter zone) {
         this.uuid = serviceGroup.getUuid();
         this.name = serviceGroup.getName();
         this.protocol = serviceGroup.getFirewallServiceList().getFirewallService().get(0).getProtocol();
         this.startPort = serviceGroup.getFirewallServiceList().getFirewallService().get(0).getDstPorts().getStartPort();
         this.endPort = serviceGroup.getFirewallServiceList().getFirewallService().get(0).getDstPorts().getEndPort();
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("servicegroup");
     }
 
@@ -74,4 +87,43 @@ public class TungstenFabricServiceGroupResponse extends BaseResponse {
         this.name = name;
     }
 
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(final String protocol) {
+        this.protocol = protocol;
+    }
+
+    public int getStartPort() {
+        return startPort;
+    }
+
+    public void setStartPort(final int startPort) {
+        this.startPort = startPort;
+    }
+
+    public int getEndPort() {
+        return endPort;
+    }
+
+    public void setEndPort(final int endPort) {
+        this.endPort = endPort;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
+    }
 }

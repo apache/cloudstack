@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -68,21 +70,21 @@ public class RemoveTungstenFabricInterfaceStaticRouteCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return null;
+        return EventTypes.EVENT_TUNGSTEN_REMOVE_STATIC_ROUTE;
     }
 
     @Override
     public String getEventDescription() {
-        return null;
+        return "Remove Tungsten-Fabric interface static route";
     }
 
     @Override
     public String getCommandName() {
-        return null;
+        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

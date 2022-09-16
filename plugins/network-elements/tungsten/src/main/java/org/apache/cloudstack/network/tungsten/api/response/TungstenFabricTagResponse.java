@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ApiPropertyBase;
@@ -57,15 +58,27 @@ public class TungstenFabricTagResponse extends BaseResponse {
     @Param(description = "list Tungsten-Fabric policy")
     private List<TungstenFabricPolicyResponse> policys;
 
-    public TungstenFabricTagResponse(String uuid, String name) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricTagResponse(String uuid, String name, DataCenter zone) {
         this.uuid = uuid;
         this.name = name;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("tag");
     }
 
-    public TungstenFabricTagResponse(Tag tag) {
+    public TungstenFabricTagResponse(Tag tag, DataCenter zone) {
         this.uuid = tag.getUuid();
         this.name = tag.getName();
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("tag");
         List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
         List<ObjectReference<ApiPropertyBase>> networkReferenceList = tag.getVirtualNetworkBackRefs();
@@ -94,7 +107,7 @@ public class TungstenFabricTagResponse extends BaseResponse {
         if (nicReferenceList != null) {
             for (ObjectReference<ApiPropertyBase> nic : nicReferenceList) {
                 TungstenFabricNicResponse tungstenFabricNicResponse = new TungstenFabricNicResponse(nic.getUuid(),
-                    nic.getReferredName().get(nic.getReferredName().size() - 1));
+                    nic.getReferredName().get(nic.getReferredName().size() - 1), zone);
                 nics.add(tungstenFabricNicResponse);
             }
         }
@@ -105,40 +118,42 @@ public class TungstenFabricTagResponse extends BaseResponse {
         if (policyReferenceList != null) {
             for (ObjectReference<ApiPropertyBase> policy : policyReferenceList) {
                 TungstenFabricPolicyResponse tungstenFabricPolicyResponse = new TungstenFabricPolicyResponse(
-                    policy.getUuid(), policy.getReferredName().get(policy.getReferredName().size() - 1));
+                    policy.getUuid(), policy.getReferredName().get(policy.getReferredName().size() - 1), zone);
                 policys.add(tungstenFabricPolicyResponse);
             }
         }
         this.policys = policys;
     }
 
-    public TungstenFabricTagResponse(TungstenTag tungstenTag) {
+    public TungstenFabricTagResponse(TungstenTag tungstenTag, DataCenter zone) {
         this.uuid = tungstenTag.getTag().getUuid();
         this.name = tungstenTag.getTag().getName();
         this.setObjectName("tag");
         List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
         for (VirtualNetwork virtualNetwork : tungstenTag.getVirtualNetworkList()) {
-            networks.add(new TungstenFabricNetworkResponse(virtualNetwork));
+            networks.add(new TungstenFabricNetworkResponse(virtualNetwork, zone));
         }
         this.networks = networks;
 
         List<TungstenFabricVmResponse> vms = new ArrayList<>();
         for (VirtualMachine virtualMachine : tungstenTag.getVirtualMachineList()) {
-            vms.add(new TungstenFabricVmResponse(virtualMachine));
+            vms.add(new TungstenFabricVmResponse(virtualMachine, zone));
         }
         this.vms = vms;
 
         List<TungstenFabricNicResponse> nics = new ArrayList<>();
         for (VirtualMachineInterface virtualMachineInterface : tungstenTag.getVirtualMachineInterfaceList()) {
-            nics.add(new TungstenFabricNicResponse(virtualMachineInterface));
+            nics.add(new TungstenFabricNicResponse(virtualMachineInterface, zone));
         }
         this.nics = nics;
 
         List<TungstenFabricPolicyResponse> policys = new ArrayList<>();
         for (NetworkPolicy networkPolicy : tungstenTag.getNetworkPolicyList()) {
-            policys.add(new TungstenFabricPolicyResponse(networkPolicy));
+            policys.add(new TungstenFabricPolicyResponse(networkPolicy, zone));
         }
         this.policys = policys;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
     }
 
     public String getUuid() {
@@ -179,5 +194,29 @@ public class TungstenFabricTagResponse extends BaseResponse {
 
     public void setPolicys(final List<TungstenFabricPolicyResponse> policys) {
         this.policys = policys;
+    }
+
+    public List<TungstenFabricVmResponse> getVms() {
+        return vms;
+    }
+
+    public void setVms(final List<TungstenFabricVmResponse> vms) {
+        this.vms = vms;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

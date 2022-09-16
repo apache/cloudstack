@@ -53,7 +53,7 @@ public class CreateTungstenFabricRoutingPolicyCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        TungstenFabricRoutingPolicyResponse routingPolicyResponse = tungstenService.createTungstenRoutingPolicy(zoneId, name);
+        TungstenFabricRoutingPolicyResponse routingPolicyResponse = tungstenService.createTungstenRoutingPolicy(zoneId, null, name);
         if (routingPolicyResponse == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Tungsten-Fabric routing policy");
         } else {

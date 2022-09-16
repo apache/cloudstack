@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
@@ -61,14 +62,14 @@ public class TungstenFabricUtilsTest {
         assertEquals(tungstenAnswer, tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void sendTungstenCommandWithNullTungstenProvider() {
         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
 
         tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void sendTungstenCommandWithNullAnswer() {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
@@ -78,7 +79,7 @@ public class TungstenFabricUtilsTest {
         tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void sendTungstenCommandWithFalseAnswer() {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
@@ -87,6 +88,7 @@ public class TungstenFabricUtilsTest {
         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
         when(agentMgr.easySend(anyLong(), any(TungstenCommand.class))).thenReturn(tungstenAnswer);
         when(tungstenAnswer.getResult()).thenReturn(false);
+        when(tungstenAnswer.getDetails()).thenReturn("");
 
         tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong());
     }

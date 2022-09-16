@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.cloud.utils.TungstenUtils;
 import com.google.gson.annotations.SerializedName;
@@ -25,7 +26,7 @@ import net.juniper.tungsten.api.types.FirewallRule;
 import net.juniper.tungsten.api.types.FirewallRuleEndpointType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -78,13 +79,23 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric firewall rule tag type")
     private String tagType;
 
-    public TungstenFabricFirewallRuleResponse(String uuid, String name) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricFirewallRuleResponse(String uuid, String name, DataCenter zone) {
         this.uuid = uuid;
         this.name = name;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("firewallrule");
     }
 
-    public TungstenFabricFirewallRuleResponse(FirewallRule firewallRule) {
+    public TungstenFabricFirewallRuleResponse(FirewallRule firewallRule, DataCenter zone) {
         this.uuid = firewallRule.getUuid();
         this.name = firewallRule.getName();
         this.action = firewallRule.getActionList().getSimpleAction();
@@ -140,6 +151,8 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
         if (firewallRule.getMatchTags() != null && firewallRule.getMatchTags().getTagList().size() > 0) {
             this.tagType = firewallRule.getMatchTags().getTagList().get(0);
         }
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
 
         this.setObjectName("firewallrule");
     }
@@ -238,5 +251,21 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
 
     public void setDestNetwork(final String destNetwork) {
         this.destNetwork = destNetwork;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

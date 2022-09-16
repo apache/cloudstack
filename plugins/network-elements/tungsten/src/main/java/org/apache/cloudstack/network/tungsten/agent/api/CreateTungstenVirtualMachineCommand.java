@@ -29,10 +29,12 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
     private final String vmType;
     private final String trafficType;
     private final String host;
+    private final String gateway;
+    private final boolean isDefaultNic;
 
     public CreateTungstenVirtualMachineCommand(final String projectFqn, final String vnUuid, final String vmUuid,
         final String vmName, final String nicUuid, final long nicId, final String ip, final String ipv6, final String mac,
-        final String vmType, final String trafficType, final String host) {
+        final String vmType, final String trafficType, final String host, final String gateway, final boolean isDefaultNic) {
         this.projectFqn = projectFqn;
         this.vnUuid = vnUuid;
         this.vmUuid = vmUuid;
@@ -45,6 +47,8 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
         this.vmType = vmType;
         this.trafficType = trafficType;
         this.host = host;
+        this.gateway = gateway;
+        this.isDefaultNic = isDefaultNic;
     }
 
     public String getProjectFqn() {
@@ -93,5 +97,13 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
 
     public String getHost() {
         return host;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public boolean isDefaultNic() {
+        return isDefaultNic;
     }
 }

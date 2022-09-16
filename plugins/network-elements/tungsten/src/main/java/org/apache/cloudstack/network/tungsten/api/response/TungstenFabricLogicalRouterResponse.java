@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.VirtualNetwork;
@@ -39,14 +40,24 @@ public class TungstenFabricLogicalRouterResponse extends BaseResponse {
     @Param(description = "list Tungsten-Fabric policy network name")
     private List<TungstenFabricNetworkResponse> networks;
 
-    public TungstenFabricLogicalRouterResponse(TungstenLogicalRouter tungstenLogicalRouter) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricLogicalRouterResponse(TungstenLogicalRouter tungstenLogicalRouter, DataCenter zone) {
         this.uuid = tungstenLogicalRouter.getLogicalRouter().getUuid();
         this.name = tungstenLogicalRouter.getLogicalRouter().getDisplayName();
         List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
         for (VirtualNetwork virtualNetwork : tungstenLogicalRouter.getVirtualNetworkList()) {
-            networks.add(new TungstenFabricNetworkResponse(virtualNetwork));
+            networks.add(new TungstenFabricNetworkResponse(virtualNetwork, zone));
         }
         this.networks = networks;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("logicalrouter");
     }
 
@@ -72,5 +83,21 @@ public class TungstenFabricLogicalRouterResponse extends BaseResponse {
 
     public void setNetworks(final List<TungstenFabricNetworkResponse> networks) {
         this.networks = networks;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

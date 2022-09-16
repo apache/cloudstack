@@ -16,6 +16,11 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.List;
+
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.utils.db.DB;
@@ -23,9 +28,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @DB()
@@ -76,13 +78,6 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("serviceProvderType", providerType);
         return findOneBy(sc);
-    }
-
-    @Override
-    public List<PhysicalNetworkServiceProviderVO> listByProviderName(String providerType) {
-        SearchCriteria<PhysicalNetworkServiceProviderVO> sc = physicalNetworkServiceProviderSearch.create();
-        sc.setParameters("serviceProvderType", providerType);
-        return search(sc, null);
     }
 
     @Override

@@ -64,10 +64,12 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import org.apache.cloudstack.network.tungsten.agent.api.ClearTungstenNetworkGatewayCommand;
@@ -145,6 +147,8 @@ public class TungstenGuestNetworkGuruTest {
     @Mock
     TungstenProviderDao tungstenProviderDao;
     @Mock
+    NicDao nicDao;
+    @Mock
     AgentManager agentMgr;
 
     TungstenGuestNetworkGuru guru;
@@ -153,10 +157,11 @@ public class TungstenGuestNetworkGuruTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         guru = new TungstenGuestNetworkGuru();
-        Whitebox.setInternalState(guru, "_ntwkOfferingSrvcDao", ntwkOfferingSrvcDao);
         Whitebox.setInternalState(guru, "_physicalNetworkDao", physicalNetworkDao);
         Whitebox.setInternalState(guru, "_dcDao", dcDao);
         Whitebox.setInternalState(guru, "_networkModel", networkModel);
+        Whitebox.setInternalState(guru, "_nicDao", nicDao);
+        guru.networkOfferingServiceMapDao = ntwkOfferingSrvcDao;
         guru.tungstenFabricUtils = tungstenFabricUtils;
         guru.tungstenService = tungstenService;
         guru.accountDao = accountDao;
@@ -234,11 +239,16 @@ public class TungstenGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final NicProfile nicProfile = mock(NicProfile.class);
         final VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+        final NicVO nicVO = mock(NicVO.class);
 
         when(network.getDataCenterId()).thenReturn(1L);
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.User);
+        when(nicDao.listByVmId(anyLong())).thenReturn(Arrays.asList(nicVO));
 
         guru.deallocate(network, nicProfile, virtualMachineProfile);
         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong());
+        verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong());
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -246,9 +256,13 @@ public class TungstenGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final NicProfile nicProfile = mock(NicProfile.class);
         final VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+        final NicVO nicVO = mock(NicVO.class);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenThrow(
             new IllegalArgumentException());
+        when(nicDao.listByVmId(anyLong())).thenReturn(Arrays.asList(nicVO));
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.User);
 
         guru.deallocate(network, nicProfile, virtualMachineProfile);
     }
@@ -381,15 +395,12 @@ public class TungstenGuestNetworkGuruTest {
     public void testRelease() {
         final NicProfile nic = mock(NicProfile.class);
         final VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
-        final NetworkVO network = mock(NetworkVO.class);
         final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         final HostVO host = mock(HostVO.class);
 
         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
         when(hostDao.findById(anyLong())).thenReturn(host);
-        when(networkDao.findById(anyLong())).thenReturn(network);
-        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(ipAddressDao.findByAssociatedVmId(anyLong())).thenReturn(ipAddressVO);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(new NetworkVO());
         when(
@@ -398,15 +409,10 @@ public class TungstenGuestNetworkGuruTest {
         when(
             tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(
             new TungstenAnswer(new TungstenCommand(), true, ""));
-        when(
-            tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(
-            new TungstenAnswer(new TungstenCommand(), true, ""));
         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
 
         guru.release(nic, vm, "test");
         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
-            anyLong());
-        verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class),
             anyLong());
     }
 

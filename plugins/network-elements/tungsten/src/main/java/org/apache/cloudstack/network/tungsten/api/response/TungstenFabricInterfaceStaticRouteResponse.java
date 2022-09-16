@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.RouteType;
@@ -31,8 +32,18 @@ public class TungstenFabricInterfaceStaticRouteResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric network static route communities")
     private String communities;
 
-    public TungstenFabricInterfaceStaticRouteResponse(RouteType routeType) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricInterfaceStaticRouteResponse(RouteType routeType, DataCenter zone) {
         this.routePrefix = routeType.getPrefix();
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("interfacestaticroute");
         if (routeType.getCommunityAttributes() != null &&
                 !routeType.getCommunityAttributes().getCommunityAttribute().isEmpty() &&
@@ -61,5 +72,21 @@ public class TungstenFabricInterfaceStaticRouteResponse extends BaseResponse {
 
     public void setCommunities(String communities) {
         this.communities = communities;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

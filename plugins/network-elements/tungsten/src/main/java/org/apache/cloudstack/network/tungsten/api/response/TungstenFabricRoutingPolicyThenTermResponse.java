@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.ActionAsPathType;
@@ -54,14 +55,29 @@ public class TungstenFabricRoutingPolicyThenTermResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric routing policy term asPath")
     private String asPath;
 
-    public TungstenFabricRoutingPolicyThenTermResponse(ActionUpdateType actionUpdateType, String action) {
-        this.addCommunity = actionUpdateType.getCommunity() == null ? null : getActionCommunities(actionUpdateType.getCommunity().getAdd());
-        this.setCommunity = actionUpdateType.getCommunity() == null ? null : getActionCommunities(actionUpdateType.getCommunity().getSet());
-        this.removeCommunity = actionUpdateType.getCommunity() == null ? null : getActionCommunities(actionUpdateType.getCommunity().getRemove());
-        this.localPreference = actionUpdateType.getLocalPref() == null ? null : actionUpdateType.getLocalPref().toString();
-        this.med = actionUpdateType.getMed() == null ? null : actionUpdateType.getMed().toString();
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricRoutingPolicyThenTermResponse(ActionUpdateType actionUpdateType, String action, DataCenter zone) {
+        if (actionUpdateType != null) {
+            this.addCommunity = actionUpdateType.getCommunity() == null ? null :
+                getActionCommunities(actionUpdateType.getCommunity().getAdd());
+            this.setCommunity = actionUpdateType.getCommunity() == null ? null :
+                getActionCommunities(actionUpdateType.getCommunity().getSet());
+            this.removeCommunity = actionUpdateType.getCommunity() == null ? null :
+                getActionCommunities(actionUpdateType.getCommunity().getRemove());
+            this.localPreference = actionUpdateType.getLocalPref() == null ? null : actionUpdateType.getLocalPref().toString();
+            this.med = actionUpdateType.getMed() == null ? null : actionUpdateType.getMed().toString();
+            this.asPath = getAsnList(actionUpdateType.getAsPath());
+        }
         this.action = action;
-        this.asPath = getAsnList(actionUpdateType.getAsPath());
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
     }
 
     public String getAddCommunity() {
@@ -118,6 +134,22 @@ public class TungstenFabricRoutingPolicyThenTermResponse extends BaseResponse {
 
     public void setAsPath(String asPath) {
         this.asPath = asPath;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 
     private String getActionCommunities(CommunityListType communityListType) {

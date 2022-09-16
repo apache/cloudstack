@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.Networks;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
@@ -77,6 +76,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
@@ -175,7 +175,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     @Inject
     NicSecondaryIpDao _nicSecIpDao;
     @Inject
-    MessageBus _messageBus;
+    MessageBus messageBus;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -821,7 +821,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
-        _messageBus.publish(_name, MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, newRules);
+        messageBus.publish(_name, MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, newRules);
 
         try {
             final ArrayList<Long> affectedVms = new ArrayList<Long>();
@@ -909,7 +909,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         if(result) {
-            _messageBus.publish(_name, MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, rule);
+            messageBus.publish(_name, MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, rule);
         }
 
         return result;
@@ -939,12 +939,11 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (group == null) {
             group = new SecurityGroupVO(name, description, domainId, accountId);
             group = _securityGroupDao.persist(group);
-            _messageBus.publish(_name, SecurityGroupService.MESSAGE_CREATE_TUNGSTEN_SECURITY_GROUP_EVENT,
-                    PublishScope.LOCAL, group);
             s_logger.debug("Created security group " + group + " for account id=" + accountId);
         } else {
             s_logger.debug("Returning existing security group " + group + " for account id=" + accountId);
         }
+
         return group;
     }
 
@@ -1264,7 +1263,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         });
 
         if(result) {
-            _messageBus.publish(_name, MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, group);
+            messageBus.publish(_name, MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, group);
         }
         return result;
     }

@@ -763,6 +763,9 @@ class DeployDataCenters(object):
                     if "TF" in pnet.isolationmethods:
                         self.isTungstenZone = True
                         self.configureTungstenService(zoneId, phynetwrk.id, zone.tungstenprovider)
+                        if zone.securitygroupenabled:
+                            self.enableTungstenProvider(zoneId, phynetwrk.id)
+
                 if zone.networktype == "Basic":
                     listnetworkoffering =\
                         listNetworkOfferings.listNetworkOfferingsCmd()
@@ -950,9 +953,18 @@ class DeployDataCenters(object):
             configTFServiceCmd.physicalnetworkid = physicalNetworkId
             self.__apiClient.configTungstenFabricService(configTFServiceCmd)
         except Exception as e:
-            print "\nException Occurred when config tungsten fabric service :%s" % GetDetailExceptionInfo(e)
+            print("\nException Occurred when config tungsten fabric service :%s" % GetDetailExceptionInfo(e))
             self.__tcRunLogger.exception("====Config Tungsten Fabric Service Failed===")
             self.__cleanAndExit()
+
+    def enableTungstenProvider(self, zoneId, physicalNetworkId):
+        provider = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+        provider.name = "Tungsten"
+        provider.physicalnetworkid = physicalNetworkId
+        provider.state = "Disabled"
+        providerres = self.__apiClient.listNetworkServiceProviders(provider)
+        if providerres and len(providerres) == 1:
+            self.enableProvider(providerres[0].id)
 
     def createTungstenManagementNetwork(self, podId):
         try:
@@ -960,7 +972,7 @@ class DeployDataCenters(object):
             createTFManagementNetworkCmd.podid = podId
             self.__apiClient.createTungstenFabricManagementNetwork(createTFManagementNetworkCmd)
         except Exception as e:
-            print "\nException Occurred when create tungsten fabric management network :%s" % GetDetailExceptionInfo(e)
+            print("\nException Occurred when create tungsten fabric management network :%s" % GetDetailExceptionInfo(e))
             self.__tcRunLogger.exception("====Create Tungsten Fabric Management Failed===")
             self.__cleanAndExit()
 
@@ -970,7 +982,7 @@ class DeployDataCenters(object):
             createTFPublicNetworkCmd.zoneid = zoneId
             self.__apiClient.createTungstenFabricPublicNetwork(createTFPublicNetworkCmd)
         except Exception as e:
-            print "\nException Occurred when create tungsten fabric public network :%s" % GetDetailExceptionInfo(e)
+            print("\nException Occurred when create tungsten fabric public network :%s" % GetDetailExceptionInfo(e))
             self.__tcRunLogger.exception("====Create Tungsten Fabric Public Failed===")
             self.__cleanAndExit()
 

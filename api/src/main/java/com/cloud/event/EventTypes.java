@@ -214,6 +214,7 @@ public class EventTypes {
     public static final String EVENT_TUNGSTEN_REMOVE_ROUTING_POLICY_TERM = "TUNGSTEN.RM.POLICY.TERM";
     public static final String EVENT_TUNGSTEN_ADD_ROUTING_POLICY_TO_NETWORK = "TUNSGTEN.ROUTING.POLICY.TO.NET";
     public static final String EVENT_TUNGSTEN_REMOVE_ROUTING_POLICY_FROM_NETWORK = "TUNGSTEN.RM.RP.FROM.NET";
+    public static final String EVENT_TUNGSTEN_UPDATE_LB_HEALTH_MONITOR = "TUNGSTEN.UPDATE.LB.HM";
 
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";

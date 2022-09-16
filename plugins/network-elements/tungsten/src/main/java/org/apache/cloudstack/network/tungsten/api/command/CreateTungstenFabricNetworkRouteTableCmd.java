@@ -55,7 +55,7 @@ public class CreateTungstenFabricNetworkRouteTableCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         TungstenFabricNetworkRouteTableResponse tungstenFabricNetworkRouteTableRespone =
-                tungstenService.createTungstenFabricNetworkRouteTable(zoneId, tungstenNetworkRouteTableName);
+                tungstenService.createTungstenFabricNetworkRouteTable(zoneId, null, tungstenNetworkRouteTableName);
         if(tungstenFabricNetworkRouteTableRespone == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Tungsten-Fabric network route table");
         } else {

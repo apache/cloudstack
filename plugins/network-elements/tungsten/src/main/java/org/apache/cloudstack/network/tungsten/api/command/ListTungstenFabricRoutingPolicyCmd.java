@@ -21,11 +21,15 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.TungstenProvider;
+import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -35,6 +39,8 @@ import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = ListTungstenFabricRoutingPolicyCmd.APINAME, description = "list Tungsten-Fabric routing policy",
@@ -47,7 +53,7 @@ public class ListTungstenFabricRoutingPolicyCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.TUNGSTEN_ROUTING_POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric routing policy")
@@ -61,10 +67,18 @@ public class ListTungstenFabricRoutingPolicyCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<TungstenFabricRoutingPolicyResponse> routingPolicyResponses = tungstenService.listTungstenFabricRoutingPolicies(
-                zoneId, routingPolicyUuid, networkUuid, isAttachedToNetwork);
-        ListResponse<TungstenFabricRoutingPolicyResponse> listResponse = new ListResponse<>();
-        listResponse.setResponses(routingPolicyResponses);
+        List<BaseResponse> baseResponseList = new ArrayList<>();
+        if (zoneId != null) {
+            baseResponseList.addAll(tungstenService.listTungstenFabricRoutingPolicies(zoneId, routingPolicyUuid, networkUuid, isAttachedToNetwork));
+        } else {
+            List<TungstenProviderVO> tungstenProviderVOList = tungstenService.getTungstenProviders();
+            for (TungstenProvider tungstenProvider : tungstenProviderVOList) {
+                baseResponseList.addAll(tungstenService.listTungstenFabricRoutingPolicies(tungstenProvider.getZoneId(), routingPolicyUuid, networkUuid, isAttachedToNetwork));
+            }
+        }
+        List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
+        ListResponse<BaseResponse> listResponse = new ListResponse<>();
+        listResponse.setResponses(pagingList);
         listResponse.setResponseName(getCommandName());
         setResponseObject(listResponse);
     }

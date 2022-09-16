@@ -38,4 +38,5 @@
         <property name="name" value="TungstenElement"/>
     </bean>
     <bean id="tungstenService" class="org.apache.cloudstack.network.tungsten.service.TungstenServiceImpl"/>
+    <bean id="tungstenHealthMonitorDaoImpl" class="org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorDaoImpl"/>
 </beans>

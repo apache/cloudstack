@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ApiPropertyBase;
@@ -45,7 +46,15 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
     @Param(description = "list Tungsten-Fabric tag")
     private List<TungstenFabricTagResponse> tags;
 
-    public TungstenFabricApplicationPolicySetResponse(ApplicationPolicySet applicationPolicySet) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricApplicationPolicySetResponse(ApplicationPolicySet applicationPolicySet, DataCenter zone) {
         this.uuid = applicationPolicySet.getUuid();
         this.name = applicationPolicySet.getName();
         List<TungstenFabricTagResponse> tags = new ArrayList<>();
@@ -54,7 +63,7 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
             for (ObjectReference<ApiPropertyBase> objectReference : objectReferenceTagList) {
                 TungstenFabricTagResponse tungstenFabricTagResponse = new TungstenFabricTagResponse(
                     objectReference.getUuid(),
-                    objectReference.getReferredName().get(objectReference.getReferredName().size() - 1));
+                    objectReference.getReferredName().get(objectReference.getReferredName().size() - 1), zone);
                 tags.add(tungstenFabricTagResponse);
             }
         }
@@ -67,11 +76,13 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
                 TungstenFabricFirewallPolicyResponse tungstenFabricFirewallPolicyResponse =
                     new TungstenFabricFirewallPolicyResponse(
                     objectReference.getUuid(),
-                    objectReference.getReferredName().get(objectReference.getReferredName().size() - 1));
+                    objectReference.getReferredName().get(objectReference.getReferredName().size() - 1), zone);
                 firewallPolicys.add(tungstenFabricFirewallPolicyResponse);
             }
         }
         this.firewallPolicys = firewallPolicys;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("applicationpolicyset");
     }
 
@@ -107,4 +118,19 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
         this.name = name;
     }
 
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
+    }
 }

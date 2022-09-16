@@ -21,6 +21,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.TungstenProvider;
+import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.APICommand;
@@ -36,6 +38,7 @@ import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricService
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -50,7 +53,7 @@ public class ListTungstenFabricServiceGroupCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric service group")
@@ -59,7 +62,15 @@ public class ListTungstenFabricServiceGroupCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        List<BaseResponse> baseResponseList = tungstenService.listTungstenServiceGroup(zoneId, serviceGroupUuid);
+        List<BaseResponse> baseResponseList = new ArrayList<>();
+        if (zoneId != null) {
+            baseResponseList.addAll(tungstenService.listTungstenServiceGroup(zoneId, serviceGroupUuid));
+        } else {
+            List<TungstenProviderVO> tungstenProviderVOList = tungstenService.getTungstenProviders();
+            for (TungstenProvider tungstenProvider : tungstenProviderVOList) {
+                baseResponseList.addAll(tungstenService.listTungstenServiceGroup(tungstenProvider.getZoneId(), serviceGroupUuid));
+            }
+        }
         List<BaseResponse> pagingList = StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<BaseResponse> listResponse = new ListResponse<>();
         listResponse.setResponses(pagingList);

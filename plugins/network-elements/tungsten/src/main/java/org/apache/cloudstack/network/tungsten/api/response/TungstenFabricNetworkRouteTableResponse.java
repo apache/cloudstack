@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.ApiPropertyBase;
@@ -41,13 +42,23 @@ public class TungstenFabricNetworkRouteTableResponse extends BaseResponse {
     @Param(description = "list Tungsten-Fabric networks name")
     private List<TungstenFabricNetworkResponse> networks;
 
-    public TungstenFabricNetworkRouteTableResponse(String uuid, String name) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricNetworkRouteTableResponse(String uuid, String name, DataCenter zone) {
         this.uuid = uuid;
         this.name = name;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("routetable");
     }
 
-    public TungstenFabricNetworkRouteTableResponse(RouteTable routeTable) {
+    public TungstenFabricNetworkRouteTableResponse(RouteTable routeTable, DataCenter zone) {
         this.uuid = routeTable.getUuid();
         this.name = routeTable.getName();
         List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
@@ -60,6 +71,8 @@ public class TungstenFabricNetworkRouteTableResponse extends BaseResponse {
             }
         }
         this.networks = networks;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("routetable");
     }
 
@@ -85,5 +98,21 @@ public class TungstenFabricNetworkRouteTableResponse extends BaseResponse {
 
     public void setNetworks(List<TungstenFabricNetworkResponse> networks) {
         this.networks = networks;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

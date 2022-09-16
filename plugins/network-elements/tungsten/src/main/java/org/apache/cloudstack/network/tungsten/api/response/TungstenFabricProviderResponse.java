@@ -38,6 +38,14 @@ public class TungstenFabricProviderResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric provider zone id")
     private long zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    @SerializedName("securitygroupsenabled")
+    @Param(description = "true if security groups support is enabled, false otherwise")
+    private boolean securityGroupsEnabled;
+
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_HOSTNAME)
     @Param(description = "Tungsten-Fabric provider hostname")
     private String hostname;
@@ -64,6 +72,22 @@ public class TungstenFabricProviderResponse extends BaseResponse {
 
     public void setZoneId(final long zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
+    }
+
+    public boolean isSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public void setSecurityGroupsEnabled(final boolean securityGroupsEnabled) {
+        this.securityGroupsEnabled = securityGroupsEnabled;
     }
 
     public String getHostname() {

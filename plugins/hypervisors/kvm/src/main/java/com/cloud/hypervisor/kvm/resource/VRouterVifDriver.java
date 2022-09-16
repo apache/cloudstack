@@ -80,7 +80,7 @@ public class VRouterVifDriver extends VifDriverBase {
     }
 
     @Override
-    public void unplug(final LibvirtVMDef.InterfaceDef iface) {
+    public void unplug(final LibvirtVMDef.InterfaceDef iface, boolean deleteBr) {
         final String tapDeviceName = TungstenUtils.getTapName(iface.getMacAddress());
         final String script = deleteTapDeviceScript;
 
@@ -109,5 +109,9 @@ public class VRouterVifDriver extends VifDriverBase {
     public boolean isExistingBridge(String bridgeName) {
         File f = new File("/sys/devices/virtual/net/" + bridgeName);
         return f.exists();
+    }
+
+    @Override
+    public void deleteBr(NicTO nic) {
     }
 }

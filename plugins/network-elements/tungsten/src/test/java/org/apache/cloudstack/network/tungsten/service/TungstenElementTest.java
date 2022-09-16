@@ -54,6 +54,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.TungstenGuestNetworkIpAddressVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerCertMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
@@ -109,9 +110,12 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfac
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
+import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerHealthMonitorCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerListenerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerMemberCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerPoolCommand;
+import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorDao;
+import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorVO;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -172,6 +176,10 @@ public class TungstenElementTest {
     NetworkDao networkDao;
     @Mock
     TungstenService tungstenService;
+    @Mock
+    TungstenFabricLBHealthMonitorDao tungstenFabricLBHealthMonitorDao;
+    @Mock
+    LoadBalancerCertMapDao loadBalancerCertMapDao;
 
     TungstenElement tungstenElement;
 
@@ -202,6 +210,8 @@ public class TungstenElementTest {
         tungstenElement.networkDetailsDao = networkDetailsDao;
         tungstenElement.networkDao = networkDao;
         tungstenElement.physicalNetworkTrafficTypeDao = physicalNetworkTrafficTypeDao;
+        tungstenElement.tungstenFabricLBHealthMonitorDao = tungstenFabricLBHealthMonitorDao;
+        tungstenElement.loadBalancerCertMapDao = loadBalancerCertMapDao;
 
         mockStatic(ApiDBUtils.class);
         mockStatic(EncryptionUtil.class);
@@ -331,12 +341,14 @@ public class TungstenElementTest {
         List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = Arrays.asList(loadBalancerVMMapVO);
         List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = Arrays.asList(lbStickinessPolicy);
         List<LoadBalancerVO> loadBalancerVOList = Arrays.asList(loadBalancerVO);
+        TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerMemberAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerListenerAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer updateTungstenHealthMonitorAnswer = mock(TungstenAnswer.class);
         LoadBalancingRule.LbSslCert lbSslCert = mock(LoadBalancingRule.LbSslCert.class);
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
         List<Pair<String, String>> pairList = Arrays.asList(new Pair<>("cookieName", "cookieValue"));
@@ -345,6 +357,7 @@ public class TungstenElementTest {
         when(caller.getApiKey()).thenReturn("apikey");
         when(caller.getSecretKey()).thenReturn("secreatekey");
         when(lbStickinessPolicy.getParams()).thenReturn(pairList);
+        when(loadBalancingRule1.getId()).thenReturn(1L);
         when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Add);
         when(loadBalancingRule1.getAlgorithm()).thenReturn("roundrobin");
         when(loadBalancingRule1.getSourcePortStart()).thenReturn(443);
@@ -369,10 +382,13 @@ public class TungstenElementTest {
         when(updateTungstenLoadBalancerPoolAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadBalancerMemberAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadBalancerListenerAnswer.getResult()).thenReturn(true);
+        when(updateTungstenHealthMonitorAnswer.getResult()).thenReturn(true);
         when(configDao.getValue(eq(Config.NetworkLBHaproxyStatsVisbility.key()))).thenReturn("enabled");
-        when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(true);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(EncryptionUtil.generateSignature(anyString(), anyString())).thenReturn("generatedString");
+        when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+        when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
 
         assertTrue(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
     }
@@ -395,10 +411,13 @@ public class TungstenElementTest {
         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerMemberAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer updateTungstenHealthMonitorAnswer = mock(TungstenAnswer.class);
         List<Pair<String, String>> pairList = Arrays.asList(new Pair<>("cookieName", "cookieValue"));
+        TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
 
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
         when(lbStickinessPolicy.getParams()).thenReturn(pairList);
+        when(loadBalancingRule1.getId()).thenReturn(1L);
         when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Add);
         when(loadBalancingRule1.getAlgorithm()).thenReturn("roundrobin");
         when(loadBalancingRule1.getSourcePortStart()).thenReturn(80);
@@ -419,8 +438,11 @@ public class TungstenElementTest {
         when(updateTungstenLoadBalancerPoolAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadBalancerMemberAnswer.getResult()).thenReturn(true);
         when(configDao.getValue(eq(Config.NetworkLBHaproxyStatsVisbility.key()))).thenReturn("disabled");
-        when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(false);
+        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(false);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
+        when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+        when(updateTungstenHealthMonitorAnswer.getResult()).thenReturn(true);
+        when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
 
         assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
     }
@@ -449,9 +471,10 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
         when(deleteTungstenLoadBalancerListenerAnswer.getResult()).thenReturn(true);
         when(deleteTungstenLoadBalancerCommand.getResult()).thenReturn(true);
-        when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(false);
+        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(false);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList1);
         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
+        when(tungstenGuestNetworkIpAddressDao.remove(anyLong())).thenReturn(false);
 
         assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
     }
@@ -481,7 +504,7 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
         when(deleteTungstenLoadBalancerListenerAnswer.getResult()).thenReturn(true);
         when(deleteTungstenLoadBalancerCommand.getResult()).thenReturn(true);
-        when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(true);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
 

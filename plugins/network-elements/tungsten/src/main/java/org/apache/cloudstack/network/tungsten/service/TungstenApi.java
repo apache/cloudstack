@@ -27,7 +27,6 @@ import net.juniper.tungsten.api.ObjectReference;
 import net.juniper.tungsten.api.Status;
 import net.juniper.tungsten.api.types.ActionAsPathType;
 import net.juniper.tungsten.api.types.ActionCommunityType;
-import net.juniper.tungsten.api.types.ActionExtCommunityType;
 import net.juniper.tungsten.api.types.ActionListType;
 import net.juniper.tungsten.api.types.ActionUpdateType;
 import net.juniper.tungsten.api.types.AddressGroup;
@@ -37,6 +36,8 @@ import net.juniper.tungsten.api.types.AsListType;
 import net.juniper.tungsten.api.types.CommunityAttributes;
 import net.juniper.tungsten.api.types.CommunityListType;
 import net.juniper.tungsten.api.types.ConfigRoot;
+import net.juniper.tungsten.api.types.DhcpOptionType;
+import net.juniper.tungsten.api.types.DhcpOptionsListType;
 import net.juniper.tungsten.api.types.Domain;
 import net.juniper.tungsten.api.types.FatFlowProtocols;
 import net.juniper.tungsten.api.types.FirewallPolicy;
@@ -126,7 +127,7 @@ public class TungstenApi {
     };
 
     public static final String TUNGSTEN_DEFAULT_DOMAIN = "default-domain";
-    public static final String TUNGSTEN_DEFAULT_PROJECT = "default-project";
+    public static final String TUNGSTEN_DEFAULT_PROJECT = "admin";
     public static final String TUNGSTEN_DEFAULT_IPAM = "default-network-ipam";
     public static final String TUNGSTEN_DEFAULT_POLICY_MANAGEMENT = "default-policy-management";
     public static final String TUNGSTEN_GLOBAL_SYSTEM_CONFIG = "default-global-system-config";
@@ -237,7 +238,7 @@ public class TungstenApi {
     }
 
     public VirtualMachineInterface createTungstenVmInterface(String nicUuid, String nicName, String mac,
-        String virtualNetworkUuid, String virtualMachineUuid, String projectUuid) {
+        String virtualNetworkUuid, String virtualMachineUuid, String projectUuid, String gateway, boolean defaultNic) {
         VirtualNetwork virtualNetwork = null;
         VirtualMachine virtualMachine = null;
         Project project = null;
@@ -261,6 +262,11 @@ public class TungstenApi {
             MacAddressesType macAddressesType = new MacAddressesType();
             macAddressesType.addMacAddress(mac);
             virtualMachineInterface.setMacAddresses(macAddressesType);
+            if (defaultNic) {
+                DhcpOptionsListType dhcpOptionsListType = new DhcpOptionsListType();
+                dhcpOptionsListType.addDhcpOption(new DhcpOptionType("3", gateway));
+                virtualMachineInterface.setDhcpOptionList(dhcpOptionsListType);
+            }
             Status status = apiConnector.create(virtualMachineInterface);
             status.ifFailure(errorHandler);
             return (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
@@ -469,7 +475,7 @@ public class TungstenApi {
             virtualMachineInterface.setParent(project);
             virtualMachineInterface.setVirtualNetwork(virtualNetwork);
             //add this when tungsten support cloudstack
-            //virtualMachineInterface.setDeviceOwner("CS:LOADBALANCER");
+            virtualMachineInterface.setDeviceOwner("CS:LOADBALANCER");
             virtualMachineInterface.setPortSecurityEnabled(false);
             Status status = apiConnector.create(virtualMachineInterface);
             status.ifFailure(errorHandler);
@@ -556,6 +562,9 @@ public class TungstenApi {
             VirtualNetwork virtualNetwork = (VirtualNetwork) apiConnector.findById(VirtualNetwork.class, networkUuid);
             FloatingIpPool fip = (FloatingIpPool) apiConnector.find(FloatingIpPool.class, virtualNetwork, fipName);
             FloatingIp floatingIp = (FloatingIp) apiConnector.find(FloatingIp.class, fip, name);
+            if (floatingIp == null) {
+                return true;
+            }
             floatingIp.clearVirtualMachineInterface();
             floatingIp.setFixedIpAddress(null);
             Status status = apiConnector.update(floatingIp);
@@ -1002,6 +1011,30 @@ public class TungstenApi {
             loadbalancerListenerType.setProtocol(protocol);
             loadbalancerListenerType.setDefaultTlsContainer(url);
             Status status = apiConnector.update(loadbalancerListener);
+            status.ifFailure(errorHandler);
+            return status.isSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean updateLoadBalancerHealthMonitor(String projectUuid, String healthMonitorName, String type,
+        int retry, int timeout, int interval, String httpMethod, String expectedCode, String urlPath) {
+        try {
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
+            LoadbalancerHealthmonitor loadbalancerHealthmonitor = (LoadbalancerHealthmonitor) apiConnector.find(
+                LoadbalancerHealthmonitor.class, project, healthMonitorName);
+            LoadbalancerHealthmonitorType loadbalancerHealthmonitorType = new LoadbalancerHealthmonitorType();
+            loadbalancerHealthmonitorType.setMonitorType(type);
+            loadbalancerHealthmonitorType.setMaxRetries(retry);
+            loadbalancerHealthmonitorType.setTimeout(timeout);
+            loadbalancerHealthmonitorType.setDelay(interval);
+            loadbalancerHealthmonitorType.setHttpMethod(httpMethod);
+            loadbalancerHealthmonitorType.setExpectedCodes(expectedCode);
+            loadbalancerHealthmonitorType.setUrlPath(urlPath);
+            loadbalancerHealthmonitorType.setAdminState(true);
+            loadbalancerHealthmonitor.setProperties(loadbalancerHealthmonitorType);
+            Status status = apiConnector.update(loadbalancerHealthmonitor);
             status.ifFailure(errorHandler);
             return status.isSuccess();
         } catch (IOException e) {
@@ -2020,11 +2053,7 @@ public class TungstenApi {
         IpamSubnetType ipamSubnetType = new IpamSubnetType();
         ipamSubnetType.setSubnetName(subnetName);
         ipamSubnetType.setSubnet(new SubnetType(ipPrefix, ipPrefixLen));
-
-        if (gateway != null) {
-            ipamSubnetType.setDefaultGateway(gateway);
-        }
-
+        ipamSubnetType.setDefaultGateway(gateway != null ? gateway : TungstenUtils.ALL_IP4_PREFIX);
         ipamSubnetType.setEnableDhcp(dhcpEnable);
         ipamSubnetType.setAddrFromStart(ipFromStart);
         ipamSubnetType.setDnsServerAddress(dnsServer);
@@ -2263,7 +2292,7 @@ public class TungstenApi {
             VirtualMachineInterface vmi = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 nicUuid);
             if (vmi == null) {
-                return false;
+                return true;
             }
 
             for (String securityGroupUuid : securityGroupUuidList) {
@@ -2399,9 +2428,11 @@ public class TungstenApi {
         }
     }
 
-    public RouteTable createNetworkRouteTable(String networkRouteTableName, String networkRouteTableUuid) {
+    public RouteTable createNetworkRouteTable(String networkRouteTableName, String networkRouteTableUuid, String projectUuid) {
         try {
+            Project project = (Project) apiConnector.findById(Project.class, projectUuid);
             RouteTable routeTable = new RouteTable();
+            routeTable.setParent(project);
             routeTable.setUuid(networkRouteTableUuid);
             routeTable.setName(networkRouteTableName);
             routeTable.setDisplayName(networkRouteTableName);
@@ -2417,9 +2448,11 @@ public class TungstenApi {
         }
     }
 
-    public InterfaceRouteTable createInterfaceRouteTable(String interfaceRouteTableName, String interfaceRouteTableUuid) {
+    public InterfaceRouteTable createInterfaceRouteTable(String interfaceRouteTableName, String interfaceRouteTableUuid, String projectUuid) {
         try {
+            Project project = (Project) apiConnector.findById(Project.class, projectUuid);
             InterfaceRouteTable interfaceRouteTable = new InterfaceRouteTable();
+            interfaceRouteTable.setParent(project);
             interfaceRouteTable.setUuid(interfaceRouteTableUuid);
             interfaceRouteTable.setName(interfaceRouteTableName);
             interfaceRouteTable.setDisplayName(interfaceRouteTableName);
@@ -2935,9 +2968,11 @@ public class TungstenApi {
         }
     }
 
-    public RoutingPolicy createRoutingPolicy(String name) {
+    public RoutingPolicy createRoutingPolicy(String projectUuid, String name) {
         try {
+            Project project = (Project) getTungstenObject(Project.class, projectUuid);
             RoutingPolicy routingPolicy = new RoutingPolicy();
+            routingPolicy.setParent(project);
             routingPolicy.setName(name);
             routingPolicy.setDisplayName(name);
             routingPolicy.setEntries(new PolicyStatementType());
@@ -3055,10 +3090,8 @@ public class TungstenApi {
     }
 
     private TermActionListType createRoutingPolicyThenTerm(List<RoutingPolicyThenTerm> routingPolicyThenTerms) {
-        TermActionListType termActionListType = new TermActionListType(
-                new ActionUpdateType(new ActionAsPathType(new AsListType()),
-                        new ActionCommunityType(new CommunityListType(), new CommunityListType(), new CommunityListType()),
-                        new ActionExtCommunityType()));
+        TermActionListType termActionListType = new TermActionListType();
+        ActionUpdateType actionUpdateType = new ActionUpdateType();
         for(RoutingPolicyThenTerm item : routingPolicyThenTerms) {
             if(item.getTermType() != null) {
                 switch (item.getTermType()) {
@@ -3066,22 +3099,44 @@ public class TungstenApi {
                         termActionListType.setAction(item.getTermAction());
                         break;
                     case "med":
-                        termActionListType.getUpdate().setMed(Integer.parseInt(item.getTermValue()));
+                        actionUpdateType.setMed(Integer.parseInt(item.getTermValue()));
+                        termActionListType.setUpdate(actionUpdateType);
                         break;
                     case "local-preference":
-                        termActionListType.getUpdate().setLocalPref(Integer.parseInt(item.getTermValue()));
+                        actionUpdateType.setLocalPref(Integer.parseInt(item.getTermValue()));
+                        termActionListType.setUpdate(actionUpdateType);
                         break;
                     case "as-path":
-                        termActionListType.getUpdate().getAsPath().getExpand().addAsn(Integer.parseInt(item.getTermValue()));
+                        AsListType asListType = new AsListType();
+                        asListType.addAsn(Integer.parseInt(item.getTermValue()));
+                        ActionAsPathType actionAsPathType = new ActionAsPathType();
+                        actionAsPathType.setExpand(asListType);
+                        actionUpdateType.setAsPath(actionAsPathType);
+                        termActionListType.setUpdate(actionUpdateType);
                         break;
                     case "add community":
-                        termActionListType.getUpdate().getCommunity().getAdd().addCommunity(item.getTermValue());
+                        CommunityListType communityListType = new CommunityListType();
+                        communityListType.addCommunity(item.getTermValue());
+                        ActionCommunityType actionCommunityType = new ActionCommunityType();
+                        actionCommunityType.setAdd(communityListType);
+                        actionUpdateType.setCommunity(actionCommunityType);
+                        termActionListType.setUpdate(actionUpdateType);
                         break;
                     case "set community":
-                        termActionListType.getUpdate().getCommunity().getSet().addCommunity(item.getTermValue());
+                        CommunityListType communityListType1 = new CommunityListType();
+                        communityListType1.addCommunity(item.getTermValue());
+                        ActionCommunityType actionCommunityType1 = new ActionCommunityType();
+                        actionCommunityType1.setSet(communityListType1);
+                        actionUpdateType.setCommunity(actionCommunityType1);
+                        termActionListType.setUpdate(actionUpdateType);
                         break;
                     case "remove community":
-                        termActionListType.getUpdate().getCommunity().getRemove().addCommunity(item.getTermValue());
+                        CommunityListType communityListType2 = new CommunityListType();
+                        communityListType2.addCommunity(item.getTermValue());
+                        ActionCommunityType actionCommunityType2 = new ActionCommunityType();
+                        actionCommunityType2.setRemove(communityListType2);
+                        actionUpdateType.setCommunity(actionCommunityType2);
+                        termActionListType.setUpdate(actionUpdateType);
                         break;
                 }
             }

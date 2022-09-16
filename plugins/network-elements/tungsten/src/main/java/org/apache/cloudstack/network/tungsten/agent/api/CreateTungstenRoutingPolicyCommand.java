@@ -17,10 +17,16 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 public class CreateTungstenRoutingPolicyCommand extends TungstenCommand {
+    private final String projectFqn;
     private final String routingPolicyName;
 
-    public CreateTungstenRoutingPolicyCommand(String routingPolicyName) {
+    public CreateTungstenRoutingPolicyCommand(final String projectFqn, String routingPolicyName) {
+        this.projectFqn = projectFqn;
         this.routingPolicyName = routingPolicyName;
+    }
+
+    public String getProjectFqn() {
+        return projectFqn;
     }
 
     public String getRoutingPolicyName() {

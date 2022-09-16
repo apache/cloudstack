@@ -16,16 +16,14 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.utils.db.GenericDao;
-
 import java.util.List;
+
+import com.cloud.utils.db.GenericDao;
 
 public interface PhysicalNetworkServiceProviderDao extends GenericDao<PhysicalNetworkServiceProviderVO, Long> {
     List<PhysicalNetworkServiceProviderVO> listBy(long physicalNetworkId);
 
     PhysicalNetworkServiceProviderVO findByServiceProvider(long physicalNetworkId, String providerType);
-
-    List<PhysicalNetworkServiceProviderVO> listByProviderName(String providerType);
 
     void deleteProviders(long physicalNetworkId);
 

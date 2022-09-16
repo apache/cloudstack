@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.RouteType;
@@ -39,17 +40,29 @@ public class TungstenFabricNetworkStaticRouteResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric network static route communities")
     private String communities;
 
-    public TungstenFabricNetworkStaticRouteResponse(String routePrefix, String routeNextHop, String routeNextHopType) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricNetworkStaticRouteResponse(String routePrefix, String routeNextHop, String routeNextHopType, DataCenter zone) {
         this.routePrefix = routePrefix;
         this.routeNextHop = routeNextHop;
         this.routeNextHopType = routeNextHopType;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("networkstaticroute");
     }
 
-    public TungstenFabricNetworkStaticRouteResponse(RouteType routeType) {
+    public TungstenFabricNetworkStaticRouteResponse(RouteType routeType, DataCenter zone) {
         this.routePrefix = routeType.getPrefix();
         this.routeNextHop = routeType.getNextHop();
         this.routeNextHopType = routeType.getNextHopType();
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("networkstaticroute");
         if (routeType.getCommunityAttributes() != null &&
                 !routeType.getCommunityAttributes().getCommunityAttribute().isEmpty() &&
@@ -86,5 +99,29 @@ public class TungstenFabricNetworkStaticRouteResponse extends BaseResponse {
 
     public void setRouteNextHopType(String routeNextHopType) {
         this.routeNextHopType = routeNextHopType;
+    }
+
+    public String getCommunities() {
+        return communities;
+    }
+
+    public void setCommunities(final String communities) {
+        this.communities = communities;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }

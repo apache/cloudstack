@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.response;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
@@ -31,15 +32,27 @@ public class TungstenFabricNicResponse extends BaseResponse {
     @Param(description = "Tungsten-Fabric nic name")
     private String name;
 
-    public TungstenFabricNicResponse(String uuid, String name) {
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Tungsten-Fabric provider zone id")
+    private long zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "Tungsten-Fabric provider zone name")
+    private String zoneName;
+
+    public TungstenFabricNicResponse(String uuid, String name, DataCenter zone) {
         this.uuid = uuid;
         this.name = name;
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("nic");
     }
 
-    public TungstenFabricNicResponse(VirtualMachineInterface virtualMachineInterface) {
+    public TungstenFabricNicResponse(VirtualMachineInterface virtualMachineInterface, DataCenter zone) {
         this.uuid = virtualMachineInterface.getUuid();
         this.name = virtualMachineInterface.getName();
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
         this.setObjectName("nic");
     }
 
@@ -57,5 +70,21 @@ public class TungstenFabricNicResponse extends BaseResponse {
 
     public void setName(final String name) {
         this.name = name;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(final long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(final String zoneName) {
+        this.zoneName = zoneName;
     }
 }
