@@ -19,7 +19,7 @@
 
 package com.cloud.utils;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -100,5 +100,70 @@ public class UriUtilsTest {
         Assert.assertFalse(UriUtils.checkVlanUriOverlap("10-30,45,50,12,31", "32"));
         Assert.assertFalse(UriUtils.checkVlanUriOverlap("10,22,111", "12"));
         Assert.assertFalse(UriUtils.checkVlanUriOverlap("100-200", "30-40,50,201-250"));
+    }
+
+    private void testGetUriInfoInternal(String url, String host) {
+        UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
+
+        Assert.assertEquals(host, uriInfo.getStorageHost());
+        Assert.assertEquals(url, uriInfo.toString());
+    }
+
+    @Test
+    public void testGetRbdUriInfo() {
+        String url0 = "rbd://user:password@host1,host2,host3:3300/pool/volume2";
+        String url1 = "rbd://user:password@host1,host2,host3:3300/pool";
+        String url2 = "rbd://user:password@host1,host2,host3/pool";
+        String url3 = "rbd://host1,host2,host3:3300/pool";
+        String url4 = "rbd://host1,host2,host3/pool";
+        String url5 = "rbd://user:password@host1,host2,host3";
+        String url6 = "rbd://host1,host2,host3:3300";
+        String url7 = "rbd://host1,host2,host3";
+        String url8 = "rbd://user@host1,host2,host3";
+
+        String host = "host1,host2,host3";
+
+        testGetUriInfoInternal(url0, host);
+        testGetUriInfoInternal(url1, host);
+        testGetUriInfoInternal(url2, host);
+        testGetUriInfoInternal(url3, host);
+        testGetUriInfoInternal(url4, host);
+        testGetUriInfoInternal(url5, host);
+        testGetUriInfoInternal(url6, host);
+        testGetUriInfoInternal(url7, host);
+        testGetUriInfoInternal(url8, host);
+    }
+
+    @Test
+    public void testGetUriInfo() {
+        String url0 = "nfs://user:password@host:3300/pool/volume2";
+        String url1 = "cifs://user:password@host:3300/pool";
+        String url2 = "file://user:password@host/pool";
+        String url3 = "sharedMountPoint://host:3300/pool";
+        String url4 = "clvm://host/pool";
+        String url5 = "PreSetup://user@host";
+        String url6 = "DatastoreCluster://host:3300";
+        String url7 = "iscsi://host";
+        String url8 = "iso://user@host:3300/pool/volume2";
+        String url9 = "vmfs://user@host:3300/pool";
+        String url10 = "ocfs2://user@host/pool";
+        String url11 = "gluster://host:3300/pool";
+        String url12 = "rbd://user:password@host:3300/pool/volume2";
+
+        String host = "host";
+
+        testGetUriInfoInternal(url0, host);
+        testGetUriInfoInternal(url1, host);
+        testGetUriInfoInternal(url2, host);
+        testGetUriInfoInternal(url3, host);
+        testGetUriInfoInternal(url4, host);
+        testGetUriInfoInternal(url5, host);
+        testGetUriInfoInternal(url6, host);
+        testGetUriInfoInternal(url7, host);
+        testGetUriInfoInternal(url8, host);
+        testGetUriInfoInternal(url9, host);
+        testGetUriInfoInternal(url10, host);
+        testGetUriInfoInternal(url11, host);
+        testGetUriInfoInternal(url12, host);
     }
 }
