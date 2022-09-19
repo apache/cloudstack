@@ -43,7 +43,7 @@ public class AutoScaleManagerTest {
         Assert.assertEquals("Advanced", config.category());
         Assert.assertEquals(Integer.class, config.type());
         Assert.assertEquals("autoscale.stats.cleanup.delay", config.key());
-        Assert.assertEquals("86400", config.defaultValue());
+        Assert.assertEquals("21600", config.defaultValue());
         Assert.assertFalse(config.isDynamic());
     }
 
