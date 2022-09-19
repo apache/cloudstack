@@ -6709,24 +6709,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             ListIterator<NetworkOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 NetworkOfferingJoinVO offering = it.next();
-                if (StringUtils.isNotEmpty(offering.getDomainId())) {
-                    boolean toRemove = false;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (caller.getType() != Account.Type.ADMIN &&
-                                !_domainDao.isChildDomain(dId, caller.getDomainId())) {
-                            toRemove = true;
-                            break;
-                        }
-                        if (domainId != null && !_domainDao.isChildDomain(dId, domainId)) {
-                            toRemove = true;
-                            break;
-                        }
+                if (StringUtils.isEmpty(offering.getDomainId())) {
+                    continue;
+                }
+                boolean toRemove = true;
+                String[] domainIdsArray = offering.getDomainId().split(",");
+                for (String domainIdString : domainIdsArray) {
+                    Long dId = Long.valueOf(domainIdString.trim());
+                    if (caller.getType() != Account.Type.ADMIN &&
+                            _domainDao.isChildDomain(dId, caller.getDomainId())) {
+                        toRemove = false;
+                        break;
                     }
-                    if (toRemove) {
-                        it.remove();
+                    if (domainId != null && _domainDao.isChildDomain(dId, domainId)) {
+                        toRemove = false;
+                        break;
                     }
+                }
+                if (toRemove) {
+                    it.remove();
                 }
             }
         }
