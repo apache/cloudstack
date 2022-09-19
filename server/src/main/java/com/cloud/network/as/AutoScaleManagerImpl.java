@@ -2526,24 +2526,27 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Long hostId = hostAndVmIds.getKey();
             List<Long> vmIds = hostAndVmIds.getValue();
 
-            Map<Long, VmStatsEntry> vmStatsById = getVmStatsByIdFromHost(hostId, vmIds);
-
-            processVmStatsByIdFromHost(groupTO, vmIds, vmStatsById, policyCountersMap);
+            if (!DEFAULT_HOST_ID.equals(hostId)) {
+                Map<Long, VmStatsEntry> vmStatsById = getVmStatsByIdFromHost(hostId, vmIds);
+                processVmStatsByIdFromHost(groupTO, vmIds, vmStatsById, policyCountersMap);
+            }
         }
     }
 
     protected Map<Long, VmStatsEntry> getVmStatsByIdFromHost(Long hostId, List<Long> vmIds) {
         Map<Long, VmStatsEntry> vmStatsById = new HashMap<>();
-        if (!DEFAULT_HOST_ID.equals(hostId)) {
-            HostVO host = hostDao.findById(hostId);
-            try {
-                vmStatsById = userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
-                if (MapUtils.isEmpty(vmStatsById)) {
-                    s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
-                }
-            } catch (Exception e) {
-                s_logger.debug("Failed to get VM stats from host : " + host.getName());
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.debug("Failed to get VM stats from non-existing host : " + hostId);
+            return vmStatsById;
+        }
+        try {
+            vmStatsById = userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
+            if (MapUtils.isEmpty(vmStatsById)) {
+                s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
             }
+        } catch (Exception e) {
+            s_logger.debug("Failed to get VM stats from host : " + host.getName());
         }
         return vmStatsById;
     }
