@@ -62,6 +62,7 @@
     "vue-router": "^4.0.14",
     "vue-web-storage": "^6.1.0",
     "vue3-clipboard": "^1.0.0",
+    "vue-uuid": "^3.0.0",
     "vuedraggable": "^4.0.3",
     "vuex": "^4.0.0-0"
   },

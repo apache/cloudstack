@@ -47,6 +47,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DomainVlanMapVO;
@@ -365,6 +366,7 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
+import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventTypesCmd;
@@ -2848,6 +2850,49 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public Pair<Boolean, String> setConsoleAccessForVm(long vmId, String sessionUuid) {
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            return new Pair<>(false, "Cannot find a VM with id = " + vmId);
+        }
+        final ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterId(), vmId);
+        if (proxy == null) {
+            return new Pair<>(false, "Cannot find a console proxy for the VM " + vmId);
+        }
+        AllowConsoleAccessCommand cmd = new AllowConsoleAccessCommand(sessionUuid);
+        HostVO hostVO = _hostDao.findByTypeNameAndZoneId(vm.getDataCenterId(), proxy.getProxyName(), Type.ConsoleProxy);
+        if (hostVO == null) {
+            return new Pair<>(false, "Cannot find a console proxy agent for CPVM with name " + proxy.getProxyName());
+        }
+        Answer answer;
+        try {
+            answer = _agentMgr.send(hostVO.getId(), cmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errorMsg = "Could not send allow session command to CPVM: " + e.getMessage();
+            s_logger.error(errorMsg, e);
+            return new Pair<>(false, errorMsg);
+        }
+        boolean result = false;
+        String details = "null answer";
+
+        if (answer != null) {
+            result = answer.getResult();
+            details = answer.getDetails();
+        }
+        return new Pair<>(result, details);
+    }
+
+    @Override
+    public String getConsoleAccessAddress(long vmId) {
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm != null) {
+            final ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterId(), vmId);
+            return proxy != null ? proxy.getProxyAddress() : null;
+        }
+        return null;
+    }
+
+    @Override
     public Pair<String, Integer> getVncPort(final VirtualMachine vm) {
         if (vm.getHostId() == null) {
             s_logger.warn("VM " + vm.getHostName() + " does not have host, return -1 for its VNC port");
@@ -3625,6 +3670,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
+        cmdList.add(CreateConsoleEndpointCmd.class);
         return cmdList;
     }
 

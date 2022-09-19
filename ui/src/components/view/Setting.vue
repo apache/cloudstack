@@ -70,7 +70,7 @@
               <a-input
                 :disabled="layoutMode === 'dark'"
                 type="color"
-                v-model:value="navBgColorPick"
+                v-model:value="navTextColorPick"
                 @blur="(e) => updateSetting('@navigation-text-color', e.target.value)" />
             </div>
           </div>
@@ -254,6 +254,7 @@ export default {
       this.downloadObjectAsJson(this.uiSettings)
     },
     resetSetting () {
+      this.uiSettings = {}
       this.layoutMode = 'light'
       this.colorPick = this.originalSetting['@primary-color']
       this.navBgColorPick = this.originalSetting['@navigation-background-color']
