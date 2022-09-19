@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <a-alert type="info" v-if="resource.state !== 'Disabled'">
+      <a-alert type="info" v-if="resource.state !== 'DISABLED'">
         <template #message>
         <div
           v-html="$t('message.autoscale.loadbalancer.update')" />
@@ -57,7 +57,7 @@
               </div>
               <div>{{ ip }}</div>
               <tooltip-button
-                :disabled='record.autoscalevmgroup && record.autoscalevmgroup.state != "Disabled"'
+                :disabled='record.autoscalevmgroup && record.autoscalevmgroup.state != "DISABLED"'
                 :tooltip="$t('label.remove.vm.from.lb')"
                 type="primary"
                 :danger="true"

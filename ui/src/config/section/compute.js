@@ -574,7 +574,7 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-          show: (record) => { return record.state === 'Disabled' }
+          show: (record) => { return record.state === 'DISABLED' }
         },
         {
           api: 'disableAutoScaleVmGroup',
@@ -585,7 +585,7 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-          show: (record) => { return ['Enabled', 'Scaling'].includes(record.state) }
+          show: (record) => { return ['ENABLED', 'SCALING'].includes(record.state) }
         },
         {
           api: 'updateAutoScaleVmGroup',
@@ -594,7 +594,7 @@ export default {
           dataView: true,
           args: (record, store) => {
             var args = ['name']
-            if (record.state === 'Disabled') {
+            if (record.state === 'DISABLED') {
               args.push('maxmembers')
               args.push('minmembers')
               args.push('interval')

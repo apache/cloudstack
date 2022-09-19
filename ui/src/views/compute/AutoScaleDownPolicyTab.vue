@@ -18,7 +18,7 @@
 <template>
   <div>
     <div>
-      <a-alert type="info" v-if="resource.state !== 'Disabled'">
+      <a-alert type="info" v-if="resource.state !== 'DISABLED'">
         <template #message>
           <div
             v-html="$t('message.autoscale.policies.update')" />
@@ -44,7 +44,7 @@
             {{ scalepolicy.id }}
           </a-select-option>
         </a-select>
-        <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addPolicyModalVisible = true" :disabled="!('createAutoScalePolicy' in $store.getters.apis) || resource.state !== 'Disabled'">
+        <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addPolicyModalVisible = true" :disabled="!('createAutoScalePolicy' in $store.getters.apis) || resource.state !== 'DISABLED'">
           <template #icon><plus-outlined /></template>
           {{ $t('label.add.policy') }}
         </a-button>
@@ -54,7 +54,7 @@
           :okText="$t('label.yes')"
           :cancelText="$t('label.no')"
         >
-          <a-button style="margin-left: 10px" ref="submit" type="primary" :danger="true" :disabled="!('updateAutoScaleVmGroup' in $store.getters.apis) || resource.state !== 'Disabled'">
+          <a-button style="margin-left: 10px" ref="submit" type="primary" :danger="true" :disabled="!('updateAutoScaleVmGroup' in $store.getters.apis) || resource.state !== 'DISABLED'">
             <template #icon><delete-outlined /></template>
             {{ $t('label.remove.policy') }}
           </a-button>
@@ -74,7 +74,7 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.action') }}</div>
-          <a-button ref="submit" :disabled="!('updateAutoScalePolicy' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="updateAutoScalePolicy(null, null)">
+          <a-button ref="submit" :disabled="!('updateAutoScalePolicy' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="updateAutoScalePolicy(null, null)">
             <template #icon><edit-outlined /></template>
             {{ $t('label.edit') }}
           </a-button>
@@ -106,12 +106,12 @@
       <template #actions="{ record }">
         <tooltip-button
           :tooltip="$t('label.edit')"
-          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
+          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
           icon="edit-outlined"
           @onClick="() => openUpdateConditionModal(record)" />
         <tooltip-button
           :tooltip="$t('label.delete')"
-          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
+          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
           type="primary"
           :danger="true"
           icon="delete-outlined"
@@ -163,7 +163,7 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.action') }}</div>
-          <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="addConditionToPolicy">
+          <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="addConditionToPolicy">
             <template #icon><plus-outlined /></template>
             {{ $t('label.add.condition') }}
           </a-button>
