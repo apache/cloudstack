@@ -66,6 +66,12 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     protected SelectType _selectType;
     T _entity;
 
+    /**
+     * Constructor used only for testing.
+     */
+    protected SearchBase() {
+    }
+
     SearchBase(final Class<T> entityType, final Class<K> resultType) {
         init(entityType, resultType);
     }

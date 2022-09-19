@@ -18,7 +18,9 @@ package com.cloud.utils.db;
 
 import java.util.UUID;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchCriteria.Op;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * GenericSearchBuilder is used to build a search based on a VO object.  It
@@ -63,8 +65,44 @@ import com.cloud.utils.db.SearchCriteria.Op;
  * @param <K> Result object that should contain the results.
  */
 public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<T, K>, T, K> {
+
     protected GenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         super(entityType, resultType);
+    }
+
+    /**
+     * Constructor used only for testing.
+     */
+    protected GenericSearchBuilder() {
+        super();
+    }
+
+    /**
+     * Adds n AND conditions according to the pairs of string and operation passed as parameter.
+     */
+    public GenericSearchBuilder<T, K> addAndConditions(Pair<String, Op>... fieldsAndOperations) {
+        if (ArrayUtils.isNotEmpty(fieldsAndOperations)) {
+            for (Pair<String, SearchCriteria.Op> fieldsAndOperation : fieldsAndOperations) {
+                if (fieldsAndOperation == null) {
+                    continue;
+                }
+
+                this.and(fieldsAndOperation.first(), fieldsAndOperation.second());
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Adds an AND condition to the SearchBuilder.<br/><br/>
+     * Facade to {@link GenericSearchBuilder#and(String, Object, Op)} without passing the second parameter due to it is not used in the method.
+     *
+     * @param name param name you will use later to set the values in this search condition.
+     * @param op operation to apply to the field.
+     * @return this
+     */
+    public GenericSearchBuilder<T, K> and(String name, Op op) {
+        return and(name, null, op);
     }
 
     /**
