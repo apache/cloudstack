@@ -1909,7 +1909,7 @@ public class AutoScaleManagerImplTest {
 
         when(groupTO.getPolicies()).thenReturn(Arrays.asList(scaleUpPolicyTO, scaleDownPolicyTO));
 
-        when(asGroupStatisticsDao.listInactiveByVmGroup(eq(vmGroupId), any()))
+        when(asGroupStatisticsDao.listDummyRecordsByVmGroup(eq(vmGroupId), any()))
                 .thenReturn(new ArrayList<>())
                 .thenReturn(new ArrayList<>());
 
@@ -1955,8 +1955,12 @@ public class AutoScaleManagerImplTest {
 
         when(groupTO.getPolicies()).thenReturn(Arrays.asList(scaleUpPolicyTO));
 
-        when(asGroupStatisticsDao.listInactiveByVmGroup(eq(vmGroupId), any()))
+        when(asGroupStatisticsDao.listDummyRecordsByVmGroup(eq(vmGroupId), any()))
                 .thenReturn(new ArrayList<>())
+                .thenReturn(new ArrayList<>());
+        when(asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(eq(vmGroupId), eq(scaleUpPolicyId), any()))
+                .thenReturn(new ArrayList<>());
+        when(asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(eq(vmGroupId), eq(scaleDownPolicyId), any()))
                 .thenReturn(new ArrayList<>());
 
         List<AutoScaleVmGroupStatisticsVO> stats = new ArrayList<>();

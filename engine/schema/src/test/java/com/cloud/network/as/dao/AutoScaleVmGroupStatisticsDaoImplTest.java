@@ -118,23 +118,49 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
     }
 
     @Test
-    public void testListInactiveByVmGroup1() {
-        List<AutoScaleVmGroupStatisticsVO> result = AutoScaleVmGroupStatisticsDaoImplSpy.listInactiveByVmGroup(groupId, null);
+    public void testListDummyRecordsByVmGroup1() {
+        List<AutoScaleVmGroupStatisticsVO> result = AutoScaleVmGroupStatisticsDaoImplSpy.listDummyRecordsByVmGroup(groupId, null);
 
         Assert.assertEquals(listAutoScaleVmGroupStatisticsVOMock, result);
 
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", AutoScaleVmGroupStatisticsVO.DUMMY_ID);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters("createdGT", date);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters(Mockito.eq("createdGT"), Mockito.any());
     }
 
     @Test
-    public void testListInactiveByVmGroup2() {
-        List<AutoScaleVmGroupStatisticsVO>  result = AutoScaleVmGroupStatisticsDaoImplSpy.listInactiveByVmGroup(groupId, date);
+    public void testListDummyRecordsByVmGroup2() {
+        List<AutoScaleVmGroupStatisticsVO>  result = AutoScaleVmGroupStatisticsDaoImplSpy.listDummyRecordsByVmGroup(groupId, date);
 
         Assert.assertEquals(listAutoScaleVmGroupStatisticsVOMock, result);
 
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", AutoScaleVmGroupStatisticsVO.DUMMY_ID);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("createdGT", date);
+    }
+
+    @Test
+    public void testListInactiveByVmGroupAndPolicy1() {
+        List<AutoScaleVmGroupStatisticsVO> result = AutoScaleVmGroupStatisticsDaoImplSpy.listInactiveByVmGroupAndPolicy(groupId, policyId, null);
+
+        Assert.assertEquals(listAutoScaleVmGroupStatisticsVOMock, result);
+
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", policyId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters(Mockito.eq("createdGT"), Mockito.any());
+    }
+
+    @Test
+    public void testListInactiveByVmGroupAndPolicy2() {
+        List<AutoScaleVmGroupStatisticsVO> result = AutoScaleVmGroupStatisticsDaoImplSpy.listInactiveByVmGroupAndPolicy(groupId, policyId, date);
+
+        Assert.assertEquals(listAutoScaleVmGroupStatisticsVOMock, result);
+
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", policyId);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("state", AutoScaleVmGroupStatisticsVO.State.INACTIVE);
         Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("createdGT", date);
     }

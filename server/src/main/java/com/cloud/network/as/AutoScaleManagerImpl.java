@@ -2656,9 +2656,14 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         s_logger.debug("Updating countersMap for as group: " + groupTO.getId());
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
-            List<AutoScaleVmGroupStatisticsVO> inactiveStats = asGroupStatisticsDao.listInactiveByVmGroup(groupTO.getId(), afterDate);
+            List<AutoScaleVmGroupStatisticsVO> dummyStats = asGroupStatisticsDao.listDummyRecordsByVmGroup(groupTO.getId(), afterDate);
+            if (CollectionUtils.isNotEmpty(dummyStats)) {
+                s_logger.error(String.format("There are %d dummy statistics in as group %d, skipping this round of check", dummyStats.size(), groupTO.getId()));
+                return false;
+            }
+            List<AutoScaleVmGroupStatisticsVO> inactiveStats = asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(groupTO.getId(), policyTO.getId(), afterDate);
             if (CollectionUtils.isNotEmpty(inactiveStats)) {
-                s_logger.error(String.format("There are %d Inactive statistics in as group %d, skipping this round of check", inactiveStats.size(), groupTO.getId()));
+                s_logger.error(String.format("There are %d Inactive statistics in as group %d and policy %s, skipping this round of check", inactiveStats.size(), groupTO.getId(), policyTO.getId()));
                 return false;
             }
             for (ConditionTO conditionTO : policyTO.getConditions()) {
