@@ -587,7 +587,7 @@ SET     description = "Use SSL method used to encrypt copy traffic between zones
 generating links for external access."
 WHERE   name = 'secstorage.encrypt.copy';
 
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `for_tungsten` int(1) unsigned DEFAULT '0' COMMENT 'is tungsten enabled for the resource';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_tungsten', 'int(1) unsigned DEFAULT "0" COMMENT "is tungsten enabled for the resource"');
 
 -- Network offering with multi-domains and multi-zones
 DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
@@ -653,8 +653,7 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `network_offerings`.`id`;
 
 
-DROP TABLE IF EXISTS `cloud`.`tungsten_providers`;
-CREATE TABLE `cloud`.`tungsten_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_providers` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
   `uuid` varchar(40),
@@ -671,8 +670,7 @@ CREATE TABLE `cloud`.`tungsten_providers` (
   CONSTRAINT `uc_tungsten_providers__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `cloud`.`tungsten_guest_network_ip_address`;
-CREATE TABLE `cloud`.`tungsten_guest_network_ip_address` (
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_guest_network_ip_address` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
   `public_ip_address` varchar(15) COMMENT 'ip public_ip_address',
@@ -682,8 +680,7 @@ CREATE TABLE `cloud`.`tungsten_guest_network_ip_address` (
   CONSTRAINT `fk_tungsten_guest_network_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `cloud`.`tungsten_security_group_rule`;
-CREATE TABLE `cloud`.`tungsten_security_group_rule` (
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_security_group_rule` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'rule uuid',
   `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
@@ -696,8 +693,7 @@ CREATE TABLE `cloud`.`tungsten_security_group_rule` (
   CONSTRAINT `fk_tungsten_security_group_rule__security_group_id` FOREIGN KEY (`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `cloud`.`tungsten_lb_health_monitor`;
-CREATE TABLE `cloud`.`tungsten_lb_health_monitor` (
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_lb_health_monitor` (
   `id` bigint unsigned NOT NULL auto_increment,
   `uuid` varchar(40),
   `load_balancer_id` bigint unsigned NOT NULL,
