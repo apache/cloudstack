@@ -52,6 +52,15 @@ import com.cloud.utils.db.UpdateBuilder;
 @Component
 public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
     private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreDaoImpl.class);
+    private static final String STORE_ID = "store_id";
+    private static final String STORE_ROLE = "store_role";
+    private static final String STATE = "state";
+    private static final String REF_CNT = "ref_cnt";
+    private static final String ID = "id";
+    private static final String UPDATED_COUNT = "updatedCount";
+    private static final String SNAPSHOT_ID = "snapshot_id";
+    private static final String VOLUME_ID = "volume_id";
+    private static final String CREATED = "created";
     private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeStateSearch;
@@ -82,17 +91,17 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        Pair<String, SearchCriteria.Op> storeIdEq = new Pair<>("store_id", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> storeRoleEq = new Pair<>("store_role", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> stateEq = new Pair<>("state", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> stateNeq = new Pair<>("state", SearchCriteria.Op.NEQ);
-        Pair<String, SearchCriteria.Op> stateIn = new Pair<>("state", SearchCriteria.Op.IN);
-        Pair<String, SearchCriteria.Op> refCntNeq = new Pair<>("ref_cnt", SearchCriteria.Op.NEQ);
-        Pair<String, SearchCriteria.Op> idEq = new Pair<>("id", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> updateCountEq = new Pair<>("updatedCount", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> snapshotIdEq = new Pair<>("snapshot_id", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> volumeIdEq = new Pair<>("volume_id", SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> createdBetween = new Pair<>("created", SearchCriteria.Op.BETWEEN);
+        Pair<String, SearchCriteria.Op> storeIdEq = new Pair<>(STORE_ID, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> storeRoleEq = new Pair<>(STORE_ROLE, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> stateEq = new Pair<>(STATE, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> stateNeq = new Pair<>(STATE, SearchCriteria.Op.NEQ);
+        Pair<String, SearchCriteria.Op> stateIn = new Pair<>(STATE, SearchCriteria.Op.IN);
+        Pair<String, SearchCriteria.Op> refCntNeq = new Pair<>(REF_CNT, SearchCriteria.Op.NEQ);
+        Pair<String, SearchCriteria.Op> idEq = new Pair<>(ID, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> updateCountEq = new Pair<>(UPDATED_COUNT, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> snapshotIdEq = new Pair<>(SNAPSHOT_ID, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> volumeIdEq = new Pair<>(VOLUME_ID, SearchCriteria.Op.EQ);
+        Pair<String, SearchCriteria.Op> createdBetween = new Pair<>(CREATED, SearchCriteria.Op.BETWEEN);
 
         storeSearch = createSearchBuilder();
         storeSearch.addAndConditions(storeIdEq, storeRoleEq, stateNeq);
@@ -164,14 +173,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         Date oldUpdatedTime = dataObj.getUpdated();
 
         SearchCriteria<SnapshotDataStoreVO> sc = updateStateSearch.create();
-        sc.setParameters("id", dataObj.getId());
-        sc.setParameters("state", currentState);
-        sc.setParameters("updatedCount", dataObj.getUpdatedCount());
+        sc.setParameters(ID, dataObj.getId());
+        sc.setParameters(STATE, currentState);
+        sc.setParameters(UPDATED_COUNT, dataObj.getUpdatedCount());
 
         dataObj.incrUpdatedCount();
 
         UpdateBuilder builder = getUpdateBuilder(dataObj);
-        builder.set(dataObj, "state", nextState);
+        builder.set(dataObj, STATE, nextState);
         builder.set(dataObj, "updated", new Date());
 
         if (update(dataObj, sc) > 0) {
@@ -196,41 +205,41 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_id", id);
-        sc.setParameters("store_role", role);
-        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
+        sc.setParameters(STORE_ID, id);
+        sc.setParameters(STORE_ROLE, role);
+        sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Destroyed);
         return listBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> listByStoreIdAndState(long id, ObjectInDataStoreStateMachine.State state) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeStateSearch.create();
-        sc.setParameters("store_id", id);
-        sc.setParameters("state", state);
+        sc.setParameters(STORE_ID, id);
+        sc.setParameters(STATE, state);
         return listBy(sc);
     }
 
     @Override
     public void deletePrimaryRecordsForStore(long id, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_id", id);
-        sc.setParameters("store_role", role);
+        sc.setParameters(STORE_ID, id);
+        sc.setParameters(STORE_ROLE, role);
         remove(sc);
     }
 
     @Override
     public void deleteSnapshotRecordsOnPrimary() {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_role", DataStoreRole.Primary);
+        sc.setParameters(STORE_ROLE, DataStoreRole.Primary);
         remove(sc);
     }
 
     @Override
     public SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
-        sc.setParameters("store_id", storeId);
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("store_role", role);
+        sc.setParameters(STORE_ID, storeId);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, role);
         return findOneBy(sc);
     }
 
@@ -275,12 +284,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         }
 
         SearchCriteria<SnapshotDataStoreVO> sc = parentSnapshotSearch.create();
-        sc.setParameters("volume_id", volumeId);
-        sc.setParameters("store_role", role.toString());
-        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready.name());
-        sc.setParameters("store_id", storeId);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STORE_ROLE, role.toString());
+        sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
+        sc.setParameters(STORE_ID, storeId);
 
-        List<SnapshotDataStoreVO> snapshotList = listBy(sc, new Filter(SnapshotDataStoreVO.class, "created", false, null, null));
+        List<SnapshotDataStoreVO> snapshotList = listBy(sc, new Filter(SnapshotDataStoreVO.class, CREATED, false, null, null));
         if (CollectionUtils.isNotEmpty(snapshotList)) {
             return snapshotList.get(0);
         }
@@ -290,65 +299,65 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
-        sc.setParameters("state", State.Ready);
+        sc.setParameters(STATE, State.Ready);
         return findOneBy(sc);
     }
 
     @Override
     public SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
-        sc.setParameters("state", State.Migrating);
+        sc.setParameters(STATE, State.Migrating);
         return findOneBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
-        sc.setParameters("volume_id", volumeId);
-        sc.setParameters("store_role", role);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STORE_ROLE, role);
         return listBy(sc);
     }
 
     @Override
     public SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
-        sc.setParameters("volume_id", volumeId);
-        sc.setParameters("store_role", role);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STORE_ROLE, role);
         return findOneBy(sc);
     }
 
     @Override
     public SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("volume_id", volumeId);
-        sc.setParameters("store_role", role);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STORE_ROLE, role);
         return findOneBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotIdSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
         return listBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> listDestroyed(long id) {
         SearchCriteria<SnapshotDataStoreVO> sc = destroyedSearch.create();
-        sc.setParameters("store_id", id);
-        sc.setParameters("store_role", DataStoreRole.Image);
-        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
+        sc.setParameters(STORE_ID, id);
+        sc.setParameters(STORE_ROLE, DataStoreRole.Image);
+        sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Destroyed);
         return listBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> listActiveOnCache(long id) {
         SearchCriteria<SnapshotDataStoreVO> sc = cacheSearch.create();
-        sc.setParameters("store_id", id);
-        sc.setParameters("store_role", DataStoreRole.ImageCache);
-        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Destroyed);
-        sc.setParameters("ref_cnt", 0);
+        sc.setParameters(STORE_ID, id);
+        sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
+        sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Destroyed);
+        sc.setParameters(REF_CNT, 0);
         return listBy(sc);
     }
 
@@ -358,7 +367,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public void duplicateCacheRecordsOnRegionStore(long storeId) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
-        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snapshots = listBy(sc);
 
@@ -398,24 +407,24 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public SnapshotDataStoreVO findReadyOnCache(long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("store_role", DataStoreRole.ImageCache);
-        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
+        sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready);
         return findOneIncludingRemovedBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> listOnCache(long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
         return search(sc, null);
     }
 
     @Override
     public void updateStoreRoleToCache(long storeId) {
         SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
-        sc.setParameters("store_id", storeId);
+        sc.setParameters(STORE_ID, storeId);
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snaps = listBy(sc);
         if (snaps != null) {
@@ -431,7 +440,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public void updateVolumeIds(long oldVolId, long newVolId) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeIdSearch.create();
-        sc.setParameters("volume_id", oldVolId);
+        sc.setParameters(VOLUME_ID, oldVolId);
         SnapshotDataStoreVO snapshot = createForUpdate();
         snapshot.setVolumeId(newVolId);
         UpdateBuilder ub = getUpdateBuilder(snapshot);
@@ -441,23 +450,23 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states) {
         SearchCriteria<SnapshotDataStoreVO> sc = stateSearch.create();
-        sc.setParameters("state", (Object[])states);
+        sc.setParameters(STATE, (Object[])states);
         return listBy(sc, null);
     }
 
     @Override
     public List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end) {
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotCreatedSearch.create();
-        sc.setParameters("store_id", storeId);
+        sc.setParameters(STORE_ID, storeId);
         if (start != null && end != null) {
-            sc.setParameters("created", start, end);
+            sc.setParameters(CREATED, start, end);
         }
         return search(sc, null);
     }
 
     public SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
-        sc.setParameters("state", State.Destroyed);
+        sc.setParameters(STATE, State.Destroyed);
         return findOneBy(sc);
     }
 
@@ -467,14 +476,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
      */
     protected SearchCriteria<SnapshotDataStoreVO> createSearchCriteriaBySnapshotIdAndStoreRole(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
-        sc.setParameters("snapshot_id", snapshotId);
-        sc.setParameters("store_role", role);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, role);
         return sc;
     }
 
     protected boolean isSnapshotChainingRequired(long volumeId) {
         SearchCriteria<SnapshotVO> sc = snapshotVOSearch.create();
-        sc.setParameters("volume_id", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
 
         SnapshotVO snapshot = snapshotDao.findOneBy(sc);
 
@@ -490,8 +499,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId) {
         SearchCriteria<SnapshotDataStoreVO> sc = volumeIdAndStateReadySearch.create();
-        sc.setParameters("volume_id", volumeId);
-        sc.setParameters("state", State.Ready);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STATE, State.Ready);
         return listBy(sc);
     }
 }
