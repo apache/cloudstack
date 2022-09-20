@@ -444,8 +444,9 @@
                 <template #description>
                   <a-divider/>
                   <div class="form">
-                    <strong>{{ $t('label.scaleup.policy') }} </strong>
+                    <strong>{{ $t('label.scaleup.policy') }} &nbsp;&nbsp;&nbsp;</strong>
                     <a-select
+                      style="width: 320px"
                       v-model:value="selectedScaleUpPolicyId"
                       @change="fetchScaleUpConditions()"
                       :placeholder="$t('label.scaleup.policy')"
@@ -464,26 +465,34 @@
                       <template #icon><plus-outlined /></template>
                       {{ $t('label.add.policy') }}
                     </a-button>
-                    <a-button style="margin-left: 10px" ref="submit" type="primary" @click="removeScaleUpPolicy">
+                    <a-button style="margin-left: 10px" ref="submit" type="primary" @click="removeScaleUpPolicy" :danger="true" >
                       <template #icon><delete-outlined /></template>
                       {{ $t('label.remove.policy') }}
                     </a-button>
                   </div>
                   <div class="form">
                     <a-form-item name="scaleupduration" ref="scaleupduration">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                      <template #label>
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.duration')" :tooltip="createAutoScalePolicyApiParams.duration.description"/>
+                      </template>
                       <a-input v-model:value="selectedScaleUpPolicy.scaleupduration" type="number"></a-input>
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </a-form-item>
                     <a-form-item name="scaleupquiettime" ref="scaleupquiettime">
-                      <div class="form__label">{{ $t('label.quiettime') }}</div>
+                      <template #label>
+                        <tooltip-label :title="$t('label.quiettime')" :tooltip="createAutoScalePolicyApiParams.quiettime.description"/>
+                      </template>
                       <a-input v-model:value="selectedScaleUpPolicy.scaleupquiettime" type="number"></a-input>
                     </a-form-item>
                   </div>
                   <a-divider/>
                   <div class="form">
                     <div class="form__item" ref="newScaleUpConditionCounterId">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
+                      <div class="form__label">
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+                      </div>
                       <a-select
                         style="width: 100%"
                         showSearch
@@ -500,7 +509,10 @@
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </div>
                     <div class="form__item" ref="newScaleUpConditionRelationalOperator">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</div>
+                      <div class="form__label">
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.relationaloperator')" :tooltip="createConditionApiParams.relationaloperator.description"/>
+                      </div>
                       <a-select
                         v-model:value="newScaleUpCondition.relationaloperator"
                         style="width: 100%;"
@@ -517,7 +529,10 @@
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </div>
                     <div class="form__item" ref="newScaleUpConditionThreshold">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+                      <div class="form__label">
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+                      </div>
                       <a-input v-model:value="newScaleUpCondition.threshold" type="number"></a-input>
                       <span class="error-text">{{ $t('label.invalid.number') }}</span>
                     </div>
@@ -564,8 +579,9 @@
                 <template #description>
                   <a-divider/>
                   <div class="form">
-                    <strong>{{ $t('label.scaledown.policy') }} </strong>
+                    <strong>{{ $t('label.scaledown.policy') }} &nbsp;&nbsp;&nbsp;</strong>
                     <a-select
+                      style="width: 320px"
                       v-model:value="selectedScaleDownPolicyId"
                       @change="fetchScaleDownConditions()"
                       :placeholder="$t('label.scaledown.policy')"
@@ -584,26 +600,34 @@
                       <template #icon><plus-outlined /></template>
                       {{ $t('label.add.policy') }}
                     </a-button>
-                    <a-button style="margin-left: 10px" ref="submit" type="primary" @click="removeScaleDownPolicy">
+                    <a-button style="margin-left: 10px" ref="submit" type="primary" @click="removeScaleDownPolicy" :danger="true" >
                       <template #icon><delete-outlined /></template>
                       {{ $t('label.remove.policy') }}
                     </a-button>
                   </div>
                   <div class="form">
                     <a-form-item name="scaledownduration" ref="scaledownduration">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                      <template #label>
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.duration')" :tooltip="createAutoScalePolicyApiParams.duration.description"/>
+                      </template>
                       <a-input v-model:value="selectedScaleDownPolicy.scaledownduration" type="number"></a-input>
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </a-form-item>
                     <a-form-item name="scaledownquiettime" ref="scaledownquiettime">
-                      <div class="form__label">{{ $t('label.quiettime') }}</div>
+                      <template #label>
+                        <tooltip-label :title="$t('label.quiettime')" :tooltip="createAutoScalePolicyApiParams.quiettime.description"/>
+                      </template>
                       <a-input v-model:value="selectedScaleDownPolicy.scaledownquiettime" type="number"></a-input>
                     </a-form-item>
                   </div>
                   <a-divider/>
                   <div class="form">
                     <div class="form__item" ref="newScaleDownConditionCounterId">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
+                      <div class="form__label">
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+                      </div>
                       <a-select
                         style="width: 100%"
                         showSearch
@@ -620,7 +644,10 @@
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </div>
                     <div class="form__item" ref="newScaleDownConditionRelationalOperator">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</div>
+                      <div class="form__label">
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.relationaloperator')" :tooltip="createConditionApiParams.relationaloperator.description"/>
+                      </div>
                       <a-select
                         v-model:value="newScaleDownCondition.relationaloperator"
                         style="width: 100%;"
@@ -637,7 +664,10 @@
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </div>
                     <div class="form__item" ref="newScaleDownConditionThreshold">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+                      <div class="form__label">
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+                      </div>
                       <a-input v-model:value="newScaleDownCondition.threshold" type="number"></a-input>
                       <span class="error-text">{{ $t('label.invalid.number') }}</span>
                     </div>
@@ -710,7 +740,10 @@
                         @select-affinity-group-item="($event) => updateAffinityGroups($event)"
                         @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')" name="userdata" ref="userdata">
+                    <a-form-item name="userdata" ref="userdata">
+                      <template #label>
+                        <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+                      </template>
                       <a-textarea
                         v-model:value="form.userdata">
                       </a-textarea>
@@ -723,10 +756,16 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
                   <div style="margin-top: 15px">
-                    <a-form-item :label="$t('label.name')" name="name" ref="name">
+                    <a-form-item name="name" ref="name">
+                      <template #label>
+                        <tooltip-label :title="$t('label.name')" :tooltip="createAutoScaleVmGroupApiParams.name.description"/>
+                      </template>
                       <a-input v-model:value="form.name"></a-input>
                     </a-form-item>
-                    <a-form-item :label="$t('label.user')" name="autoscaleuserid" ref="autoscaleuserid" v-if="this.selectedLbProdiver === 'Netscaler'">
+                    <a-form-item name="autoscaleuserid" ref="autoscaleuserid" v-if="this.selectedLbProdiver === 'Netscaler'">
+                      <template #label>
+                        <tooltip-label :title="$t('label.user')" :tooltip="createAutoScaleVmProfileApiParams.autoscaleuserid.description"/>
+                      </template>
                       <a-select
                         style="width: 100%"
                         showSearch
@@ -741,16 +780,28 @@
                         </a-select-option>
                       </a-select>
                     </a-form-item>
-                    <a-form-item :label="$t('label.destroyvmgraceperiod')" name="destroyvmgraceperiod" ref="destroyvmgraceperiod">
+                    <a-form-item name="destroyvmgraceperiod" ref="destroyvmgraceperiod">
+                      <template #label>
+                        <tooltip-label :title="$t('label.destroyvmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.destroyvmgraceperiod.description"/>
+                      </template>
                       <a-input v-model:value="form.destroyvmgraceperiod" type="number"></a-input>
                     </a-form-item>
-                    <a-form-item :label="$t('label.maxmembers')" name="maxmembers" ref="maxmembers">
+                    <a-form-item name="maxmembers" ref="maxmembers">
+                      <template #label>
+                        <tooltip-label :title="$t('label.maxmembers')" :tooltip="createAutoScaleVmGroupApiParams.maxmembers.description"/>
+                      </template>
                       <a-input v-model:value="form.maxmembers" type="number"></a-input>
                     </a-form-item>
-                    <a-form-item :label="$t('label.minmembers')" name="minmembers" ref="minmembers">
+                    <a-form-item name="minmembers" ref="minmembers">
+                      <template #label>
+                        <tooltip-label :title="$t('label.minmembers')" :tooltip="createAutoScaleVmGroupApiParams.minmembers.description"/>
+                      </template>
                       <a-input v-model:value="form.minmembers" type="number"></a-input>
                     </a-form-item>
-                    <a-form-item :label="$t('label.interval')" name="interval" ref="interval">
+                    <a-form-item name="interval" ref="interval">
+                      <template #label>
+                        <tooltip-label :title="$t('label.interval')" :tooltip="createAutoScaleVmGroupApiParams.interval.description"/>
+                      </template>
                       <a-input v-model:value="form.interval" type="number"></a-input>
                     </a-form-item>
                   </div>
@@ -1347,6 +1398,28 @@ export default {
     if (oldValue && newValue && oldValue.id !== newValue.id) {
       this.dynamicscalingenabled = this.isDynamicallyScalable()
     }
+  },
+  beforeCreate () {
+    this.createConditionApi = this.$store.getters.apis.createCondition || {}
+    this.createConditionApiParams = {}
+    this.createConditionApi.params.forEach(param => {
+      this.createConditionApiParams[param.name] = param
+    })
+    this.createAutoScalePolicyApi = this.$store.getters.apis.createAutoScalePolicy || {}
+    this.createAutoScalePolicyApiParams = {}
+    this.createAutoScalePolicyApi.params.forEach(param => {
+      this.createAutoScalePolicyApiParams[param.name] = param
+    })
+    this.createAutoScaleVmGroupApi = this.$store.getters.apis.createAutoScaleVmGroup || {}
+    this.createAutoScaleVmGroupApiParams = {}
+    this.createAutoScaleVmGroupApi.params.forEach(param => {
+      this.createAutoScaleVmGroupApiParams[param.name] = param
+    })
+    this.createAutoScaleVmProfileApi = this.$store.getters.apis.createAutoScaleVmProfile || {}
+    this.createAutoScaleVmProfileApiParams = {}
+    this.createAutoScaleVmProfileApi.params.forEach(param => {
+      this.createAutoScaleVmProfileApiParams[param.name] = param
+    })
   },
   created () {
     this.initForm()

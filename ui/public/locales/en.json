@@ -876,6 +876,7 @@
 "label.interval": "Polling interval (in sec)",
 "label.intervaltype": "Interval type",
 "label.introduction.to.cloudstack": "Introduction to CloudStack™",
+"label.invalid.number": "Invalid number",
 "label.invitations": "Invitations",
 "label.invite": "Invite",
 "label.ip": "IP address",
