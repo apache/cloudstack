@@ -47,19 +47,25 @@
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.destroyvmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.destroyvmgraceperiod.description"/>
+          </div>
           {{ destroyvmgraceperiod }}
         </div>
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.template') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.templatename')" :tooltip="createAutoScaleVmProfileApiParams.templateid.description"/>
+          </div>
           {{ getTemplateName(templateid) }}
         </div>
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="createAutoScaleVmProfileApiParams.serviceofferingid.description"/>
+          </div>
           {{ getServiceOfferingName(serviceofferingid) }}
         </div>
       </div>
@@ -74,7 +80,9 @@
 
       <a-divider/>
       <div class="title">
-        {{ $t('label.params') }}
+        <div class="form__label">
+          <tooltip-label :title="$t('label.params')" :tooltip="createAutoScaleVmProfileApiParams.otherdeployparams.description"/>
+        </div>
       </div>
       <div class="form" v-ctrl-enter="addParam">
         <div class="form__item" ref="newParamName">
@@ -170,13 +178,17 @@
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.destroyvmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.destroyvmgraceperiod.description"/>
+          </div>
           <a-input v-model:value="destroyvmgraceperiod" type="number"></a-input>
         </div>
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.templatename') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.templatename')" :tooltip="createAutoScaleVmProfileApiParams.templateid.description"/>
+          </div>
           <a-select
             style="width: 100%"
             showSearch
@@ -194,7 +206,9 @@
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="createAutoScaleVmProfileApiParams.serviceofferingid.description"/>
+          </div>
           <a-select
             style="width: 100%"
             showSearch
@@ -212,7 +226,9 @@
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.userdata') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+          </div>
           <a-textarea v-model:value="userdata">
           </a-textarea>
         </div>
@@ -229,12 +245,14 @@
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'conditionsTab',
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -278,6 +296,13 @@ export default {
         }
       ]
     }
+  },
+  beforeCreate () {
+    this.createAutoScaleVmProfileApi = this.$store.getters.apis.createAutoScaleVmProfile || {}
+    this.createAutoScaleVmProfileApiParams = {}
+    this.createAutoScaleVmProfileApi.params.forEach(param => {
+      this.createAutoScaleVmProfileApiParams[param.name] = param
+    })
   },
   created () {
     this.fetchInitData()
