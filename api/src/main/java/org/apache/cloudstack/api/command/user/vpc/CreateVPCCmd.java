@@ -100,6 +100,18 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
     private Integer publicMtu;
 
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the VPC", since = "4.18.0")
+    private String ip4Dns1;
+
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the VPC", since = "4.18.0")
+    private String ip4Dns2;
+
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the VPC", since = "4.18.0")
+    private String ip6Dns1;
+
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the VPC", since = "4.18.0")
+    private String ip6Dns2;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -140,6 +152,22 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
         return publicMtu != null ? publicMtu : NetworkService.DEFAULT_MTU;
     }
 
+    public String getIp4Dns1() {
+        return ip4Dns1;
+    }
+
+    public String getIp4Dns2() {
+        return ip4Dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
+
     public boolean isStart() {
         if (start != null) {
             return start;
@@ -153,7 +181,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr(), getNetworkDomain(), getDisplayVpc(), getPublicMtu());
+        Vpc vpc = _vpcService.createVpc(this);
         if (vpc != null) {
             setEntityId(vpc.getId());
             setEntityUuid(vpc.getUuid());

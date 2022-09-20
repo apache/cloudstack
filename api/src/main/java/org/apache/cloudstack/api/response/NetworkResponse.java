@@ -120,11 +120,11 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String broadcastUri;
 
     @SerializedName(ApiConstants.DNS1)
-    @Param(description = "the first DNS for the network")
+    @Param(description = "the first IPv4 DNS for the network")
     private String dns1;
 
     @SerializedName(ApiConstants.DNS2)
-    @Param(description = "the second DNS for the network")
+    @Param(description = "the second IPv4 DNS for the network")
     private String dns2;
 
     @SerializedName(ApiConstants.TYPE)
@@ -294,6 +294,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.PRIVATE_MTU)
     @Param(description = "MTU configured on the network VR's private interfaces")
     private Integer privateMtu;
+
+    @SerializedName(ApiConstants.IP6_DNS1)
+    @Param(description = "the first IPv6 DNS for the network", since = "4.18.0")
+    private String ipv6Dns1;
+
+    @SerializedName(ApiConstants.IP6_DNS2)
+    @Param(description = "the second IPv6 DNS for the network", since = "4.18.0")
+    private String ipv6Dns2;
 
     public NetworkResponse() {}
 
@@ -609,5 +617,13 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setPrivateMtu(Integer privateMtu) {
         this.privateMtu = privateMtu;
+    }
+
+    public void setIpv6Dns1(String ipv6Dns1) {
+        this.ipv6Dns1 = ipv6Dns1;
+    }
+
+    public void setIpv6Dns2(String ipv6Dns2) {
+        this.ipv6Dns2 = ipv6Dns2;
     }
 }

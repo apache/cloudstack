@@ -483,6 +483,14 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     String getRouterIpv6();
 
+    String getDns1();
+
+    String getDns2();
+
+    String getIp6Dns1();
+
+    String getIp6Dns2();
+
     Date getCreated();
 
     Integer getPublicMtu();

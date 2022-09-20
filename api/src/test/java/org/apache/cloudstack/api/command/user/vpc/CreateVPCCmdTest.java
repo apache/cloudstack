@@ -145,13 +145,9 @@ public class CreateVPCCmdTest extends TestCase {
         ReflectionTestUtils.setField(cmd, "publicMtu", 1450);
         Mockito.when(_accountService.finalyzeAccountId(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(1L);
         Mockito.when(cmd.getEntityOwnerId()).thenReturn(1L);
-        Mockito.when(_vpcService.createVpc(Mockito.any(Long.class), Mockito.any(Long.class), Mockito.any(Long.class),
-                Mockito.any(String.class), Mockito.any(String.class), Mockito.any(String.class),
-                Mockito.any(String.class), Mockito.any(Boolean.class), Mockito.any(Integer.class))).thenReturn(vpc);
+        Mockito.when(_vpcService.createVpc(Mockito.any(CreateVPCCmd.class))).thenReturn(vpc);
         cmd.create();
-        Mockito.verify(_vpcService, Mockito.times(1)).createVpc(Mockito.anyLong(),
-                Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+        Mockito.verify(_vpcService, Mockito.times(1)).createVpc(Mockito.any(CreateVPCCmd.class));
     }
 
     public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {

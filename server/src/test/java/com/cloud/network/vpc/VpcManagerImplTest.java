@@ -37,10 +37,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 
 import com.cloud.alert.AlertManager;
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.context.CallContext;
@@ -55,13 +55,15 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.reflect.Whitebox;
 
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -96,6 +98,9 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserVO;
 import com.cloud.utils.net.NetUtils;
 
 public class VpcManagerImplTest {
@@ -108,6 +113,14 @@ public class VpcManagerImplTest {
     NetworkOrchestrationService networkMgr;
     @Mock
     AccountManager accountManager;
+    @Mock
+    ResourceLimitService resourceLimitService;
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
+    @Mock
+    DataCenterDao dataCenterDao;
+    @Mock
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
     VpcManagerImpl manager;
     @Mock
     EntityManager entityMgr;
@@ -134,12 +147,38 @@ public class VpcManagerImplTest {
     @Mock
     AlertManager alertManager;
 
+    public static final long ACCOUNT_ID = 1;
+    private AccountVO account;
+    private UserVO user;
+
+    private static final String IP4_GATEWAY = "10.0.16.1";
+    private static final String IP4_NETMASK = "255.255.255.0";
+    private static final String IP6_GATEWAY = "fd17:ac56:1234:2000::1";
+    private static final String IP6_CIDR = "fd17:ac56:1234:2000::/64";
+
+    final String[] ip4Dns = {"5.5.5.5", "6.6.6.6"};
+    final String[] ip6Dns = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
+    final String ip4Cidr = "172.16.0.0/22";
+    final Long zoneId = 1L;
+    final Long vpcOfferingId = 1L;
+    final Long vpcOwnerId = 1L;
+    final String vpcName = "Test-VPC";
+    final String vpcDomain = "domain";
+
+    private void registerCallContext() {
+        account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        account.setId(ACCOUNT_ID);
+        user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+                UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+    }
+
     @Before
     public void setup()
     {
         MockitoAnnotations.initMocks(this);
         manager = new VpcManagerImpl();
-        manager._vpcOffSvcMapDao = vpcOffSvcMapDao;
+        manager._vpcOffSvcMapDao = vpcOfferingServiceMapDao;
         manager.vpcDao = vpcDao;
         manager._ntwkMgr = networkMgr;
         manager._accountMgr = accountManager;
@@ -154,7 +193,11 @@ public class VpcManagerImplTest {
         manager._vlanDao = vlanDao;
         manager.nicDao = nicDao;
         manager.alertManager = alertManager;
+        manager._resourceLimitMgr = resourceLimitService;
+        manager._vpcOffDao = vpcOfferingDao;
+        manager._dcDao = dataCenterDao;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+        registerCallContext();
     }
 
     @After
@@ -297,11 +340,13 @@ public class VpcManagerImplTest {
         manager.createVpcGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
                 "10.10.10.0/24", null, null, accountMock, null, physicalNetwork,
                 1L, null, null, 1L, null, accountMock,
-                true, null, null, null, new Pair<>(1000, 1000));
-        Mockito.verify(networkMgr, times(1)).createGuestNetwork(anyLong(), anyString(), anyString(), nullable(String.class),
-                nullable(String.class), nullable(String.class), anyBoolean(), nullable(String.class), any(Account.class), nullable(Long.class), any(PhysicalNetwork.class),
-                anyLong(), nullable(ControlledEntity.ACLType.class), nullable(Boolean.class), nullable(Long.class), nullable(String.class), nullable(String.class),
-                anyBoolean(), nullable(String.class), nullable(Network.PVlanType.class), nullable(String.class), nullable(String.class), nullable(String.class), any(Pair.class));
+                true, null, null, null, null, null, null, null, new Pair<>(1000, 1000));
+
+        Mockito.verify(networkMgr, times(1)).createGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
+                "10.10.10.0/24", null, false, "cs1cloud.internal", accountMock, null,
+                physicalNetwork, zoneId, null, null, 1L, null, null,
+                true, null, null, null, null,
+                null, null, null, null, null, new Pair<>(1000, 1000));
     }
 
     @Test
@@ -374,5 +419,48 @@ public class VpcManagerImplTest {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
         manager.createVpcOffering(cmd);
+    }
+
+    private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {
+        Mockito.when(accountManager.getAccount(vpcOwnerId)).thenReturn(account);
+        VpcOfferingVO vpcOfferingVO = Mockito.mock(VpcOfferingVO.class);
+        Mockito.when(vpcOfferingVO.getId()).thenReturn(vpcOfferingId);
+        Mockito.when(vpcOfferingVO.getState()).thenReturn(VpcOffering.State.Enabled);
+        Mockito.when(vpcOfferingDao.findById(vpcOfferingId)).thenReturn(vpcOfferingVO);
+        DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dataCenterVO.getId()).thenReturn(zoneId);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
+        Mockito.doNothing().when(accountManager).checkAccess(account, vpcOfferingVO, dataCenterVO);
+        Mockito.when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpcOfferingId, new Service[]{Service.Dns})).thenReturn(supportDnsService);
+        Mockito.when(vpcOfferingDao.isIpv6Supported(vpcOfferingId)).thenReturn(isIpv6);
+        try {
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("checkResourceLimit failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateVpcDnsOfferingServiceFailure() {
+        mockVpcDnsResources(false, false);
+        try {
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
+                    ip4Dns[0], null, null, null, true, 1500);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateVpcDnsIpv6OfferingFailure() {
+        mockVpcDnsResources(true, false);
+        try {
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
+                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
     }
 }

@@ -166,6 +166,18 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "MTU to be configured on the network VR's private interface(s)", since = "4.18.0")
     private Integer privateMtu;
 
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network", since = "4.18.0")
+    private String ip4Dns1;
+
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the network", since = "4.18.0")
+    private String ip4Dns2;
+
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the network", since = "4.18.0")
+    private String ip6Dns1;
+
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
+    private String ip6Dns2;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -341,6 +353,21 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Integer getPrivateMtu() {
         return privateMtu != null ? privateMtu : NetworkService.DEFAULT_MTU;
+    }
+    public String getIp4Dns1() {
+        return ip4Dns1;
+    }
+
+    public String getIp4Dns2() {
+        return ip4Dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
     }
 
     /////////////////////////////////////////////////////

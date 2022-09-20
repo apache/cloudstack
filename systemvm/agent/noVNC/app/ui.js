@@ -157,6 +157,7 @@ const UI = {
             }
         }
 
+        UI.initSetting('extra', window.location.extra)
         /* Populate the controls if defaults are provided in the URL */
         UI.initSetting('host', window.location.hostname);
         UI.initSetting('port', port);
@@ -997,7 +998,8 @@ const UI = {
         const host = UI.getSetting('host');
         const port = UI.getSetting('port');
         const path = UI.getSetting('path');
-        const token = UI.getSetting('token')
+        const token = UI.getSetting('token');
+        const extra = UI.getSetting('extra');
 
         if (typeof password === 'undefined') {
             password = WebUtil.getConfigVar('password');
@@ -1030,6 +1032,10 @@ const UI = {
         }
         url += '/' + path;
         url += '?token=' + token;
+
+        if (extra) {
+            url += '&extra=' + extra
+        }
 
         UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
                          { shared: UI.getSetting('shared'),
@@ -1116,14 +1122,13 @@ const UI = {
         UI.connected = false;
 
         UI.rfb = undefined;
-
         if (!e.detail.clean) {
             UI.updateVisualState('disconnected');
             if (wasConnected) {
                 UI.showStatus(_("Something went wrong, connection is closed"),
                               'error');
             } else {
-                UI.showStatus(_("Failed to connect to server"), 'error');
+                UI.showStatus(_("Failed to connect to server / access token has expired"), 'error');
             }
         } else if (UI.getSetting('reconnect', false) === true && !UI.inhibitReconnect) {
             UI.updateVisualState('reconnecting');

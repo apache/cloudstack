@@ -142,10 +142,7 @@ export default {
   methods: {
     fetchData (callback) {
       this.tabLoading = true
-      const params = {
-        [this.scopeKey]: this.resource.id,
-        listAll: true
-      }
+      const params = { [this.scopeKey]: this.resource.id }
       if (this.filter) {
         params.keyword = this.filter
       }

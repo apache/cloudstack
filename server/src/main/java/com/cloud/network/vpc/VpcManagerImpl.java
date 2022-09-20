@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCm
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
@@ -59,6 +60,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -283,6 +285,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         hTypes.add(HypervisorType.LXC);
         hTypes.add(HypervisorType.Hyperv);
         hTypes.add(HypervisorType.Ovm3);
+    }
+
+    private void checkVpcDns(VpcOffering vpcOffering, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
+        if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2) && !areServicesSupportedByVpcOffering(vpcOffering.getId(), Service.Dns)) {
+            throw new InvalidParameterValueException("DNS can not be specified for VPCs with offering that do not support DNS service");
+        }
+        if (!_vpcOffDao.isIpv6Supported(vpcOffering.getId()) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("IPv6 DNS can be specified for IPv6 enabled VPC");
+        }
+        _ntwkModel.verifyIp4DnsPair(ip4Dns1, ip4Dns2);
+        _ntwkModel.verifyIp6DnsPair(ip6Dns1, ip6Dns2);
     }
 
     @Override
@@ -812,7 +825,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean areServicesSupportedByVpcOffering(final long vpcOffId, final Service... services) {
-        return _vpcOffSvcMapDao.areServicesSupportedByNetworkOffering(vpcOffId, services);
+        return _vpcOffSvcMapDao.areServicesSupportedByVpcOffering(vpcOffId, services);
     }
 
     @Override
@@ -992,9 +1005,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
-    public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final
-    String displayText, final String cidr, String networkDomain,
-                         final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
+    public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
+            final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1004,9 +1016,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // check resource limit
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.vpc);
 
+        // Validate zone
+        final DataCenter zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by id specified");
+        }
+
         // Validate vpc offering
         final VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
-        _accountMgr.checkAccess(owner, vpcOff, _dcDao.findById(zoneId));
+        _accountMgr.checkAccess(owner, vpcOff, zone);
         if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled + " state by specified id");
             if (vpcOff == null) {
@@ -1020,12 +1038,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
-        }
-
-        // Validate zone
-        final DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Can't find zone by id specified");
         }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
@@ -1062,12 +1074,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             publicMtu = NetworkService.MINIMUM_MTU;
         }
 
+        checkVpcDns(vpcOff, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
-                vpcOff.isRedundantRouter());
-        vpc.setPublicMtu(publicMtu);
+                vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+            vpc.setPublicMtu(publicMtu);
 
         return createVpc(displayVpc, vpc);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
+    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
+        return createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
+            cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu());
     }
 
     @DB
@@ -2819,8 +2841,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @Override
     public Network createVpcGuestNetwork(final long ntwkOffId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId,
-                                         String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
-                                         final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException,
+            String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
+            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException,
             ResourceAllocationException {
 
         final Vpc vpc = getActiveVpc(vpcId);
@@ -2845,7 +2867,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, vrIfaceMTUs);
+                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);
