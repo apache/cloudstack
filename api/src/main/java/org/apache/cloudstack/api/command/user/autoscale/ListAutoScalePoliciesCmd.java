@@ -46,6 +46,9 @@ public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResources
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the autoscale policy")
     private Long id;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale policy", since = "4.18.0")
+    private String name;
+
     @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "the ID of the condition of the policy")
     private Long conditionId;
 
@@ -63,6 +66,10 @@ public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResources
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getConditionId() {

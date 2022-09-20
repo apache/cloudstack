@@ -79,6 +79,9 @@ UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id)
 -- Add column 'user_data' to 'autoscale_vmprofiles' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmprofiles', 'user_data', 'TEXT(32768) AFTER `counter_params`');
 
+-- Add column 'name' to 'autoscale_policies' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_policies', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale policy" AFTER `uuid`');
+
 -- Add column 'provider' and update values
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.counter', 'provider', 'VARCHAR(255) NOT NULL COMMENT "Network provider name" AFTER `uuid`');
 UPDATE `cloud`.`counter` SET provider = 'Netscaler' WHERE `provider` IS NULL OR `provider` = '';

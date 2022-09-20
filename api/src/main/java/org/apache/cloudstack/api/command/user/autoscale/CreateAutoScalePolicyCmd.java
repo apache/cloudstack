@@ -51,6 +51,12 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the autoscale policy",
+            since = "4.18.0")
+    private String name;
+
     @Parameter(name = ApiConstants.ACTION,
                type = CommandType.STRING,
                required = true,
@@ -82,6 +88,10 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
 
     private Long conditionDomainId;
     private Long conditionAccountId;
+
+    public String getName() {
+        return name;
+    }
 
     public int getDuration() {
         return duration;

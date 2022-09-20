@@ -3358,6 +3358,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AutoScalePolicyResponse createAutoScalePolicyResponse(AutoScalePolicy policy) {
         AutoScalePolicyResponse response = new AutoScalePolicyResponse();
         response.setId(policy.getUuid());
+        response.setName(policy.getName());
         response.setDuration(policy.getDuration());
         response.setQuietTime(policy.getQuietTime());
         response.setAction(policy.getAction().toString());

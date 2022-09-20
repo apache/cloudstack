@@ -49,6 +49,12 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the autoscale policy",
+            since = "4.18.0")
+    private String name;
+
     @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration for which the conditions have to be true before action is taken")
     private Integer duration;
 
@@ -91,6 +97,10 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Integer getDuration() {

@@ -756,7 +756,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("action is invalid. Supported actions are: " + Arrays.toString(AutoScalePolicy.Action.values()));
         }
 
-        AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, null, scaleAction);
+        AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getName(), cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, null, scaleAction);
 
         policyVO = checkValidityAndPersist(policyVO, cmd.getConditionIds());
         s_logger.info("Successfully created AutoScale Policy with Id: " + policyVO.getId());
@@ -849,6 +849,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         SearchWrapper<AutoScalePolicyVO> searchWrapper = new SearchWrapper<>(autoScalePolicyDao, AutoScalePolicyVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScalePolicyVO> sb = searchWrapper.getSearchBuilder();
         Long id = cmd.getId();
+        String name = cmd.getName();
         Long conditionId = cmd.getConditionId();
         String action = cmd.getAction();
         Long vmGroupId = cmd.getVmGroupId();
@@ -863,6 +864,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("action", sb.entity().getAction(), SearchCriteria.Op.EQ);
 
         if (conditionId != null) {
@@ -881,6 +883,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
         }
 
         if (scaleAction != null) {
@@ -902,10 +908,15 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEPOLICY_UPDATE, eventDescription = "updating autoscale policy")
     public AutoScalePolicy updateAutoScalePolicy(UpdateAutoScalePolicyCmd cmd) {
         Long policyId = cmd.getId();
+        String name = cmd.getName();
         Integer duration = cmd.getDuration();
         Integer quietTime = cmd.getQuietTime();
         List<Long> conditionIds = cmd.getConditionIds();
         AutoScalePolicyVO policy = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Policy", policyId, autoScalePolicyDao);
+
+        if (name != null) {
+            policy.setName(name);
+        }
 
         if (duration != null) {
             policy.setDuration(duration);
