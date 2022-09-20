@@ -251,3 +251,14 @@ DELETE role_perm
 FROM role_permissions role_perm
 INNER JOIN roles ON role_perm.role_id = roles.id
 WHERE roles.role_type != 'Admin' AND roles.is_default = 1 AND role_perm.rule = 'migrateVolume';
+
+-- Create table to persist volume stats.
+DROP TABLE IF EXISTS `cloud`.`volume_stats`;
+CREATE TABLE `cloud`.`volume_stats` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `volume_id` bigint unsigned NOT NULL,
+    `mgmt_server_id` bigint unsigned NOT NULL,
+    `timestamp` datetime NOT NULL,
+    `volume_stats_data` text NOT NULL,
+    PRIMARY KEY(`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

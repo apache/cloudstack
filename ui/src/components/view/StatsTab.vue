@@ -71,7 +71,7 @@
     </div>
     <div v-if="loaded">
       <div v-if="chartLabels.length > 0">
-        <a-row class="chart-row">
+        <a-row class="chart-row" v-if="resourceIsVirtualMachine">
           <a-col>
             <strong>CPU</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.cpu.usage')" @click="onClickShowResourceInfoModal('CPU')"/>
@@ -84,7 +84,7 @@
             />
           </a-col>
         </a-row>
-        <a-row class="chart-row">
+        <a-row class="chart-row" v-if="resourceIsVirtualMachine">
           <a-col>
             <strong>{{ $t('label.memory') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.memory.usage')" @click="onClickShowResourceInfoModal('MEM')"/>
@@ -153,7 +153,7 @@
             />
           </a-col>
         </a-row>
-        <a-row class="chart-row">
+        <a-row class="chart-row" v-if="diskStatsAvailable">
           <a-col>
             <strong>{{ $t('label.disk') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.disk.usage')" @click="onClickShowResourceInfoModal('DISK')"/>
@@ -203,7 +203,7 @@
             />
           </a-col>
         </a-row>
-        <a-row class="chart-row">
+        <a-row class="chart-row" v-if="resourceIsVirtualMachine">
           <a-col>
             <strong>{{ $t('label.network') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.network.usage')" @click="onClickShowResourceInfoModal('NET')"/>
@@ -333,18 +333,30 @@ export default {
     this.fetchData()
   },
   computed: {
-    usebrowsertimezone: function () {
+    usebrowsertimezone () {
       return this.$store.getters.usebrowsertimezone
     },
-    statsRetentionTime: function () {
+    statsRetentionTime () {
+      if (this.resourceType === 'Volume') {
+        return this.$store.getters.features.instancesdisksstatsretentiontime
+      }
       return this.$store.getters.features.instancesstatsretentiontime
     },
-    resourceStatsApi: function () {
-      var api = 'listVirtualMachinesUsageHistory'
-      if (['SystemVm', 'DomainRouter'].includes(this.resourceType)) {
-        api = 'listSystemVmsUsageHistory'
+    resourceStatsApi () {
+      switch (this.resourceType) {
+        case 'SystemVm':
+        case 'DomainRouter':
+          return 'listSystemVmsUsageHistory'
+        case 'Volume':
+          return 'listVolumesUsageHistory'
       }
-      return api
+      return 'listVirtualMachinesUsageHistory'
+    },
+    resourceIsVirtualMachine () {
+      return ['VirtualMachine', 'SystemVm', 'DomainRouter'].includes(this.resourceType)
+    },
+    diskStatsAvailable () {
+      return ['VirtualMachine', 'SystemVm', 'DomainRouter', 'Volume'].includes(this.resourceType)
     }
   },
   watch: {
@@ -529,61 +541,69 @@ export default {
         const currentLabel = ts.split('T')[0] + ' ' + ts.split('T')[1].split('-')[0]
         this.chartLabels.push(currentLabel)
 
-        cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.split('%')[0] })
+        if (this.resourceIsVirtualMachine) {
+          cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.split('%')[0] })
 
-        element.memoryusedkbs = element.memorykbs - element.memoryintfreekbs
-        memFreeLinePercent.data.push({ timestamp: currentLabel, stat: this.calculateMemoryPercentage(false, element.memorykbs, element.memoryintfreekbs) })
-        memUsedLinePercent.data.push({ timestamp: currentLabel, stat: this.calculateMemoryPercentage(true, element.memorykbs, element.memoryintfreekbs) })
-        memAllocatedLineInMB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memorykbs, 1) })
-        memFreeLineInMB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryintfreekbs, 1) })
-        memUsedLineInMB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryusedkbs, 1) })
-        memAllocatedLineInGB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memorykbs, 2) })
-        memFreeLineInGB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryintfreekbs, 2) })
-        memUsedLineInGB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryusedkbs, 2) })
+          element.memoryusedkbs = element.memorykbs - element.memoryintfreekbs
+          memFreeLinePercent.data.push({ timestamp: currentLabel, stat: this.calculateMemoryPercentage(false, element.memorykbs, element.memoryintfreekbs) })
+          memUsedLinePercent.data.push({ timestamp: currentLabel, stat: this.calculateMemoryPercentage(true, element.memorykbs, element.memoryintfreekbs) })
+          memAllocatedLineInMB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memorykbs, 1) })
+          memFreeLineInMB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryintfreekbs, 1) })
+          memUsedLineInMB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryusedkbs, 1) })
+          memAllocatedLineInGB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memorykbs, 2) })
+          memFreeLineInGB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryintfreekbs, 2) })
+          memUsedLineInGB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.memoryusedkbs, 2) })
 
-        netDownloadLineInKiB.data.push({ timestamp: currentLabel, stat: element.networkkbsread })
-        netUploadLineInKiB.data.push({ timestamp: currentLabel, stat: element.networkkbswrite })
-        netDownloadLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbsread, 1) })
-        netUploadLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbswrite, 1) })
-        netDownloadLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbsread, 2) })
-        netUploadLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbswrite, 2) })
+          netDownloadLineInKiB.data.push({ timestamp: currentLabel, stat: element.networkkbsread })
+          netUploadLineInKiB.data.push({ timestamp: currentLabel, stat: element.networkkbswrite })
+          netDownloadLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbsread, 1) })
+          netUploadLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbswrite, 1) })
+          netDownloadLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbsread, 2) })
+          netUploadLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.networkkbswrite, 2) })
+        }
 
-        diskReadLineInKiB.data.push({ timestamp: currentLabel, stat: element.diskkbsread })
-        diskWriteLineInKiB.data.push({ timestamp: currentLabel, stat: element.diskkbswrite })
-        diskReadLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbsread, 1) })
-        diskWriteLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbswrite, 1) })
-        diskReadLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbsread, 2) })
-        diskWriteLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbswrite, 2) })
-        diskIopsLine.data.push({ timestamp: currentLabel, stat: element.diskiopstotal })
+        if (this.diskStatsAvailable) {
+          diskReadLineInKiB.data.push({ timestamp: currentLabel, stat: element.diskkbsread })
+          diskWriteLineInKiB.data.push({ timestamp: currentLabel, stat: element.diskkbswrite })
+          diskReadLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbsread, 1) })
+          diskWriteLineInMiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbswrite, 1) })
+          diskReadLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbsread, 2) })
+          diskWriteLineInGiB.data.push({ timestamp: currentLabel, stat: this.convertByteBasedUnitOfMeasure(element.diskkbswrite, 2) })
+          diskIopsLine.data.push({ timestamp: currentLabel, stat: element.diskiopstotal })
+        }
       }
 
-      this.resourceUsageHistory.cpu.push(cpuLine)
+      if (this.resourceIsVirtualMachine) {
+        this.resourceUsageHistory.cpu.push(cpuLine)
 
-      this.resourceUsageHistory.memory.percentage.free.push(memFreeLinePercent)
-      this.resourceUsageHistory.memory.percentage.used.push(memUsedLinePercent)
-      this.resourceUsageHistory.memory.rawData.free.inMB.push(memFreeLineInMB)
-      this.resourceUsageHistory.memory.rawData.free.inMB.push(memAllocatedLineInMB)
-      this.resourceUsageHistory.memory.rawData.used.inMB.push(memUsedLineInMB)
-      this.resourceUsageHistory.memory.rawData.used.inMB.push(memAllocatedLineInMB)
-      this.resourceUsageHistory.memory.rawData.free.inGB.push(memFreeLineInGB)
-      this.resourceUsageHistory.memory.rawData.free.inGB.push(memAllocatedLineInGB)
-      this.resourceUsageHistory.memory.rawData.used.inGB.push(memUsedLineInGB)
-      this.resourceUsageHistory.memory.rawData.used.inGB.push(memAllocatedLineInGB)
+        this.resourceUsageHistory.memory.percentage.free.push(memFreeLinePercent)
+        this.resourceUsageHistory.memory.percentage.used.push(memUsedLinePercent)
+        this.resourceUsageHistory.memory.rawData.free.inMB.push(memFreeLineInMB)
+        this.resourceUsageHistory.memory.rawData.free.inMB.push(memAllocatedLineInMB)
+        this.resourceUsageHistory.memory.rawData.used.inMB.push(memUsedLineInMB)
+        this.resourceUsageHistory.memory.rawData.used.inMB.push(memAllocatedLineInMB)
+        this.resourceUsageHistory.memory.rawData.free.inGB.push(memFreeLineInGB)
+        this.resourceUsageHistory.memory.rawData.free.inGB.push(memAllocatedLineInGB)
+        this.resourceUsageHistory.memory.rawData.used.inGB.push(memUsedLineInGB)
+        this.resourceUsageHistory.memory.rawData.used.inGB.push(memAllocatedLineInGB)
 
-      this.resourceUsageHistory.network.inKiB.push(netDownloadLineInKiB)
-      this.resourceUsageHistory.network.inKiB.push(netUploadLineInKiB)
-      this.resourceUsageHistory.network.inMiB.push(netDownloadLineInMiB)
-      this.resourceUsageHistory.network.inMiB.push(netUploadLineInMiB)
-      this.resourceUsageHistory.network.inGiB.push(netDownloadLineInGiB)
-      this.resourceUsageHistory.network.inGiB.push(netUploadLineInGiB)
+        this.resourceUsageHistory.network.inKiB.push(netDownloadLineInKiB)
+        this.resourceUsageHistory.network.inKiB.push(netUploadLineInKiB)
+        this.resourceUsageHistory.network.inMiB.push(netDownloadLineInMiB)
+        this.resourceUsageHistory.network.inMiB.push(netUploadLineInMiB)
+        this.resourceUsageHistory.network.inGiB.push(netDownloadLineInGiB)
+        this.resourceUsageHistory.network.inGiB.push(netUploadLineInGiB)
+      }
 
-      this.resourceUsageHistory.disk.readAndWrite.inKiB.push(diskReadLineInKiB)
-      this.resourceUsageHistory.disk.readAndWrite.inKiB.push(diskWriteLineInKiB)
-      this.resourceUsageHistory.disk.readAndWrite.inMiB.push(diskReadLineInMiB)
-      this.resourceUsageHistory.disk.readAndWrite.inMiB.push(diskWriteLineInMiB)
-      this.resourceUsageHistory.disk.readAndWrite.inGiB.push(diskReadLineInGiB)
-      this.resourceUsageHistory.disk.readAndWrite.inGiB.push(diskWriteLineInGiB)
-      this.resourceUsageHistory.disk.iops.push(diskIopsLine)
+      if (this.diskStatsAvailable) {
+        this.resourceUsageHistory.disk.readAndWrite.inKiB.push(diskReadLineInKiB)
+        this.resourceUsageHistory.disk.readAndWrite.inKiB.push(diskWriteLineInKiB)
+        this.resourceUsageHistory.disk.readAndWrite.inMiB.push(diskReadLineInMiB)
+        this.resourceUsageHistory.disk.readAndWrite.inMiB.push(diskWriteLineInMiB)
+        this.resourceUsageHistory.disk.readAndWrite.inGiB.push(diskReadLineInGiB)
+        this.resourceUsageHistory.disk.readAndWrite.inGiB.push(diskWriteLineInGiB)
+        this.resourceUsageHistory.disk.iops.push(diskIopsLine)
+      }
 
       this.loaded = true
     },

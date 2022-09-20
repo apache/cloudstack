@@ -288,7 +288,7 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(fakeVmId1).when(userVmVOMock).getId();
         Mockito.doReturn(Arrays.asList(userVmVOMock)).when(expectedVmListAndCounterMock).first();
         Mockito.doReturn(null).when(vmStatsMapMock).get(Mockito.any());
-        Mockito.doReturn(null).when(spy).createStatsResponse(Mockito.any());
+        Mockito.doReturn(null).when(spy).createStatsResponse(Mockito.anyListOf(VmStatsVO.class));
 
         ListResponse<VmMetricsStatsResponse> result = spy.createVmMetricsStatsResponse(
                 expectedVmListAndCounterMock.first(), vmStatsMapMock);

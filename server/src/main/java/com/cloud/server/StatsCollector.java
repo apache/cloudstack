@@ -140,8 +140,10 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
+import com.cloud.storage.VolumeStatsVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeStatsDao;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
@@ -303,6 +305,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected static ConfigKey<Boolean> vmStatsCollectUserVMOnly = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.user.vm.only", "true",
             "When set to 'false' stats for system VMs will be collected otherwise stats collection will be done only for user VMs", true);
 
+    protected static ConfigKey<Boolean> vmDiskStatsRetentionEnabled = new ConfigKey<>("Advanced", Boolean.class, "vm.disk.stats.retention.enabled", "false",
+            "The maximum time (in minutes) for keeping Volume stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
+
+    protected static ConfigKey<Integer> vmDiskStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.max.retention.time", "1440",
+            "The maximum time (in minutes) for keeping Volume stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
+
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new Gson();
@@ -322,6 +330,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected VmStatsDao vmStatsDao;
     @Inject
     private VolumeDao _volsDao;
+    @Inject
+    protected VolumeStatsDao volumeStatsDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -513,6 +523,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
+
+        _executor.scheduleWithFixedDelay(new VolumeStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
         scheduleCollection(MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL, new ManagementServerCollector(), 1L);
         scheduleCollection(DATABASE_SERVER_STATUS_COLLECTION_INTERVAL, new DbCollector(), 0L);
@@ -1278,6 +1290,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
+    class VolumeStatsCleaner extends ManagedContextRunnable{
+        protected void runInContext() {
+            cleanUpVolumeStats();
+        }
+    }
+
     /**
      * Gets the latest or the accumulation of the stats collected from a given VM.
      *
@@ -1403,6 +1421,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             //Check for ownership
             //msHost in UP state with min id should run the job
             ManagementServerHostVO msHost = managementServerHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+            boolean persistVolumeStats = vmDiskStatsRetentionEnabled.value();
             if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
                 LOGGER.debug("Skipping collect vm disk stats from hosts");
                 return;
@@ -1415,6 +1434,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             List<HostVO> hosts = _hostDao.search(sc, null);
 
             for (HostVO host : hosts) {
+                Date timestamp = new Date();
                 try {
                     Transaction.execute(new TransactionCallbackNoReturn() {
                         @Override
@@ -1440,6 +1460,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         break;
 
                                     VolumeVO volume = volumes.get(0);
+
+                                    if (persistVolumeStats) {
+                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, timestamp);
+                                    }
                                     VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
 
@@ -2177,6 +2201,19 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     /**
+     * Persists VM disk stats in the database.
+     * @param statsForCurrentIteration the metrics stats data to persist.
+     * @param timestamp the time that will be stamped.
+     */
+    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, Date timestamp) {
+        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, gson.toJson(statsForCurrentIteration));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("Recording volume stats: [%s].", volumeStatsVO));
+        }
+        volumeStatsDao.persist(volumeStatsVO);
+    }
+
+    /**
      * Removes the oldest VM stats records according to the global
      * parameter {@code vm.stats.max.retention.time}.
      */
@@ -2191,6 +2228,25 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
         vmStatsDao.removeAllByTimestampLessThan(limit);
+    }
+
+    /**
+     * Removes the oldest Volume stats records according to the global
+     * parameter {@code vm.disk.stats.max.retention.time}.
+     */
+    protected void cleanUpVolumeStats() {
+        Integer maxRetentionTime = vmDiskStatsMaxRetentionTime.value();
+        if (maxRetentionTime <= 0) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("Skipping Volume stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
+                        vmDiskStatsMaxRetentionTime.scope(), vmDiskStatsMaxRetentionTime.toString()));
+            }
+            return;
+        }
+        LOGGER.trace("Removing older Volume stats records.");
+        Date now = new Date();
+        Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
+        volumeStatsDao.removeAllByTimestampLessThan(limit);
     }
 
     /**
@@ -2346,7 +2402,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
-            vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly,
+            vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
                 VM_STATS_INCREMENT_METRICS_IN_MEMORY,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,

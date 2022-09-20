@@ -69,6 +69,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'statistics',
+          resourceType: 'Volume',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+          show: (record) => { return store.getters.features.instancesdisksstatsretentionenabled && record.vmstate === 'Running' }
+        },
+        {
           name: 'events',
           resourceType: 'Volume',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
