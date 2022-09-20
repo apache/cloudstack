@@ -201,7 +201,7 @@ class TestNetworkManagement(cloudstackTestCase):
             # 4. No exception should be thrown as multiple networks with same name can be created
             # 5. Now update the global setting allow.duplicate.networkname to false
             # 6. Try to create another shared network with same name in the same account
-            # 7. Exception should be thrown as network with same name cant be created in the same account
+            # 7. Exception should be thrown as network with same name can't be created in the same account
         :return:
         """
         # Update the global setting to true

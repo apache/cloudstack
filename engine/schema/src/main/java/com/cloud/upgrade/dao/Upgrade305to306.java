@@ -76,7 +76,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
 
     private void addIndexForAlert(Connection conn) {
 
-        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some won't.)
         List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index i_alert__last_sent if it exists");
         indexList.add("i_alert__last_sent");
@@ -115,7 +115,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
 
     private void addIndexForHostDetails(Connection conn) {
 
-        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some won't.)
         List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index fk_host_details__host_id if it exists");
         indexList.add("fk_host_details__host_id");

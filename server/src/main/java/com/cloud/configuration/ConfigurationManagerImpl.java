@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -118,6 +119,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -239,6 +241,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -459,7 +462,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
             "Maximum IOPS write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<Boolean> ADD_HOST_ON_SERVICE_RESTART_KVM = new ConfigKey<Boolean>(Boolean.class, "add.host.on.service.restart.kvm", "Advanced", "true",
-            "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it wont be added back even after service restart",
+            "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it won't be added back even after service restart",
             true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
@@ -3900,7 +3903,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 for (StoragePoolVO storagePoolVO : pools) {
                     List<String> tagsOnPool = storagePoolTagDao.getStoragePoolTags(storagePoolVO.getId());
                     if (CollectionUtils.isEmpty(tagsOnPool) || !tagsOnPool.containsAll(listOfTags)) {
-                        throw new InvalidParameterValueException(String.format("There are active volumes using offering [%s], and the pools [%s] don't have the new tags", diskOffering.getId(), pools));
+                        DiskOfferingVO offeringToRetrieveInfo = _diskOfferingDao.findById(diskOffering.getId());
+                        List<VolumeVO> volumes = _volumeDao.findByDiskOfferingId(diskOffering.getId());
+                        String listOfVolumesNamesAndUuid = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumes, "name", "uuid");
+                        String diskOfferingInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offeringToRetrieveInfo, "name", "uuid");
+                        String poolInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(storagePoolVO, "name", "uuid");
+                        throw new InvalidParameterValueException(String.format("There are active volumes using the disk offering %s, and the pool %s doesn't have the new tags. " +
+                                "The following volumes are using the mentioned disk offering %s. Please first add the new tags to the mentioned storage pools before adding them" +
+                                " to the disk offering.", diskOfferingInfo, poolInfo, listOfVolumesNamesAndUuid));
                     }
                 }
             }
@@ -4640,7 +4650,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 if (!StringUtils.isAllEmpty(ipv6Range, vlan.getIp6Range())) {
                     String r1 = StringUtils.isEmpty(ipv6Range) ? NetUtils.getIpv6RangeFromCidr(vlanIp6Cidr) : ipv6Range;
-                    String r2 = StringUtils.isEmpty(vlan.getIp6Range()) ? NetUtils.getIpv6RangeFromCidr(vlanIp6Cidr) : vlan.getIp6Range();
+                    String r2 = StringUtils.isEmpty(vlan.getIp6Range()) ? NetUtils.getIpv6RangeFromCidr(vlan.getIp6Cidr()) : vlan.getIp6Range();
                     if(NetUtils.isIp6RangeOverlap(r1, r2)) {
                         throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range.",
                                 vlan.getVlanTag()));

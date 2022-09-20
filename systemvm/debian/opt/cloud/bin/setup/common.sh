@@ -882,6 +882,12 @@ parse_cmd_line() {
         privatekey)
           export PRIVATEKEY=$VALUE
           ;;
+        useHttpsToUpload)
+          export USEHTTPS=$VALUE
+          ;;
+        vncport)
+          export VNCPORT=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}

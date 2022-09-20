@@ -388,7 +388,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             s_logger.debug("Received URISyntaxException for url" +downloadUrl);
         }
 
-        // If ssvm doesnt exist then find any ssvm in the zone.
+        // If ssvm doesn't exist then find any ssvm in the zone.
         s_logger.debug("Coudn't find ssvm for url" +downloadUrl);
         return findEndpointForImageStorage(store);
     }

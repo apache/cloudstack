@@ -1647,7 +1647,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     // this volume since allocation_state is disabled.
                     // - remove any suitable pools found for other volumes.
                     // All volumes should get suitable pools under this cluster;
-                    // else we cant use this cluster.
+                    // else we can't use this cluster.
                     suitableVolumeStoragePools.clear();
                     break;
                 }
@@ -1698,7 +1698,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 // No suitable storage pools found under this cluster for this
                 // volume. - remove any suitable pools found for other volumes.
                 // All volumes should get suitable pools under this cluster;
-                // else we cant use this cluster.
+                // else we can't use this cluster.
                 suitableVolumeStoragePools.clear();
                 break;
             }
