@@ -2046,9 +2046,10 @@ export default {
         })
       })
     },
-    createScalePolicy (action, conditionIds, duration, quiettime) {
+    createScalePolicy (action, name, conditionIds, duration, quiettime) {
       return new Promise((resolve, reject) => {
         const params = {
+          name: name,
           action: action,
           duration: duration,
           quiettime: quiettime,
@@ -2318,7 +2319,7 @@ export default {
           this.setStepStatus(STATUS_FINISH)
           this.currentStep++
           this.addStepDetail('message.creating.autoscale.scaleup.policy', 'createScaleUpPolicy', policy.name)
-          const scaleUpPolicy = await this.createScalePolicy('ScaleUp', scaleUpConditionIds.join(','), policy.scaleupduration, policy.scaleupquiettime)
+          const scaleUpPolicy = await this.createScalePolicy('ScaleUp', policy.name, scaleUpConditionIds.join(','), policy.scaleupduration, policy.scaleupquiettime)
           scaleUpPolicyIds.push(scaleUpPolicy.id)
         }
 
@@ -2336,7 +2337,7 @@ export default {
           this.setStepStatus(STATUS_FINISH)
           this.currentStep++
           this.addStepDetail('message.creating.autoscale.scaledown.policy', 'createScaleDownPolicy', policy.name)
-          const scaleDownPolicy = await this.createScalePolicy('ScaleDown', scaleDownConditionIds.join(','), policy.scaledownduration, policy.scaledownquiettime)
+          const scaleDownPolicy = await this.createScalePolicy('ScaleDown', policy.name, scaleDownConditionIds.join(','), policy.scaledownduration, policy.scaledownquiettime)
           scaleDownPolicyIds.push(scaleDownPolicy.id)
         }
 

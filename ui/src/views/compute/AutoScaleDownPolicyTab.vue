@@ -29,6 +29,7 @@
       <div class="form">
         <strong>{{ $t('label.scaledown.policy') }} </strong>
         <a-select
+          style="width: 320px"
           v-model:value="selectedPolicyId"
           @change="switchPolicy()"
           :placeholder="$t('label.scaledown.policy')"
@@ -41,7 +42,7 @@
             v-for="(scalepolicy, index) in this.policies"
             :value="scalepolicy.id"
             :key="index">
-            {{ scalepolicy.id }}
+            {{ scalepolicy.name || scalepolicy.id }}
           </a-select-option>
         </a-select>
         <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addPolicyModalVisible = true" :disabled="!('createAutoScalePolicy' in $store.getters.apis) || resource.state !== 'DISABLED'">
@@ -65,6 +66,10 @@
       <a-divider/>
       <div class="form">
         <div class="form__item">
+          <div class="form__label">{{ $t('label.name') }}</div>
+          <a-input v-model:value="policy.name"></a-input>
+        </div>
+        <div class="form__item">
           <div class="form__label">{{ $t('label.duration') }}</div>
           <a-input v-model:value="policy.duration" type="number"></a-input>
         </div>
@@ -76,7 +81,7 @@
           <div class="form__label">{{ $t('label.action') }}</div>
           <a-button ref="submit" :disabled="!('updateAutoScalePolicy' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="updateAutoScalePolicy(null, null)">
             <template #icon><edit-outlined /></template>
-            {{ $t('label.edit') }}
+            {{ $t('label.apply') }}
           </a-button>
         </div>
       </div>
@@ -226,6 +231,10 @@
 
       <div class="update-condition">
         <div class="update-condition__item">
+          <div class="update-condition__label">{{ $t('label.name') }}</div>
+          <a-input v-model:value="newPolicy.name" v-focus="true"></a-input>
+        </div>
+        <div class="update-condition__item">
           <div class="update-condition__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
           <a-input v-model:value="newPolicy.duration" type="number"></a-input>
         </div>
@@ -242,7 +251,6 @@
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            v-focus="true"
             v-model:value="newPolicy.counterid">
             <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
               {{ counter.name }}
@@ -315,7 +323,7 @@ export default {
       addPolicyModalVisible: null,
       newPolicy: {
         duration: null,
-        quiettime: null,
+        quiettime: 300,
         counterid: null,
         relationaloperator: null,
         threshold: null
@@ -386,6 +394,7 @@ export default {
           const networkid = response.listloadbalancerrulesresponse?.loadbalancerrule?.[0]?.networkid
           api('listNetworks', {
             listAll: true,
+            projectid: this.resource.projectid,
             id: networkid
           }).then(response => {
             const services = response.listnetworksresponse?.network?.[0]?.service
@@ -623,6 +632,7 @@ export default {
       })
 
       const newPolicy = await this.createAutoScalePolicy({
+        name: this.newPolicy.name,
         conditionids: newCondition.id,
         duration: this.newPolicy.duration,
         quiettime: this.newPolicy.quiettime,
@@ -684,6 +694,7 @@ export default {
       return new Promise((resolve, reject) => {
         api('updateAutoScalePolicy', {
           id: this.policy.id,
+          name: this.policy.name,
           duration: this.policy.duration,
           quiettime: this.policy.quiettime,
           conditionids: newConditionIds
