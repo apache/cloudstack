@@ -27,7 +27,7 @@
 
       <a-divider/>
       <div class="form">
-        <strong>{{ $t('label.scaleup.policy') }} </strong>
+        <strong>{{ $t('label.scaleup.policy') }} &nbsp;&nbsp;&nbsp;</strong>
         <a-select
           style="width: 320px"
           v-model:value="selectedPolicyId"
@@ -66,15 +66,23 @@
       <a-divider/>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.name') }}</div>
+          <div class="form__label">
+            <tooltip-label :title="$t('label.name')" :tooltip="createAutoScalePolicyApiParams.name.description"/>
+          </div>
           <a-input v-model:value="policy.name"></a-input>
         </div>
         <div class="form__item">
-          <div class="form__label">{{ $t('label.duration') }}</div>
+          <div class="form__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.duration')" :tooltip="createAutoScalePolicyApiParams.duration.description"/>
+          </div>
           <a-input v-model:value="policy.duration" type="number"></a-input>
         </div>
         <div class="form__item">
-          <div class="form__label">{{ $t('label.quiettime') }}</div>
+          <div class="form__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.quiettime')" :tooltip="createAutoScalePolicyApiParams.quiettime.description"/>
+          </div>
           <a-input v-model:value="policy.quiettime" type="number"></a-input>
         </div>
         <div class="form__item">
@@ -89,7 +97,9 @@
 
     <a-divider/>
     <div class="title">
-      {{ $t('label.conditions') }}
+      <div class="form__label">
+        <tooltip-label :title="$t('label.conditions')" :tooltip="createAutoScalePolicyApiParams.conditionids.description"/>
+      </div>
     </div>
     <a-table
       size="small"
@@ -128,7 +138,10 @@
       <a-divider/>
       <div class="form" v-ctrl-enter="addConditionToPolicy">
         <div class="form__item" ref="newConditionCounterId">
-          <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
+          <div class="form__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+          </div>
           <a-select
             style="width: 100%"
             showSearch
@@ -145,7 +158,10 @@
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newConditionRelationalOperator">
-          <div class="form__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</div>
+          <div class="form__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.relationaloperator')" :tooltip="createConditionApiParams.relationaloperator.description"/>
+          </div>
           <a-select
             v-model:value="newCondition.relationaloperator"
             style="width: 100%;"
@@ -162,7 +178,10 @@
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newConditionThreshold">
-          <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+          <div class="form__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+          </div>
           <a-input v-model:value="newCondition.threshold" type="number"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
@@ -194,7 +213,10 @@
           {{ updateConditionDetails.countername }}
         </div>
         <div class="update-condition__item">
-          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</p>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.relationaloperator')" :tooltip="createConditionApiParams.relationaloperator.description"/>
+          </div>
           <a-select
             v-model:value="updateConditionDetails.relationaloperator"
             showSearch
@@ -210,7 +232,10 @@
           </a-select>
         </div>
         <div class="update-condition__item">
-          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</p>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+          </div>
           <a-input v-focus="true" v-model:value="updateConditionDetails.threshold" type="number" />
         </div>
         <div :span="24" class="action-button">
@@ -231,19 +256,30 @@
 
       <div class="update-condition">
         <div class="update-condition__item">
-          <div class="update-condition__label">{{ $t('label.name') }}</div>
+          <div class="update-condition__label">
+            <tooltip-label :title="$t('label.name')" :tooltip="createAutoScalePolicyApiParams.name.description"/>
+          </div>
           <a-input v-model:value="newPolicy.name" v-focus="true"></a-input>
         </div>
         <div class="update-condition__item">
-          <div class="update-condition__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.duration')" :tooltip="createAutoScalePolicyApiParams.duration.description"/>
+          </div>
           <a-input v-model:value="newPolicy.duration" type="number"></a-input>
         </div>
         <div class="update-condition__item">
-          <div class="update-condition__label">{{ $t('label.quiettime') }}</div>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.quiettime')" :tooltip="createAutoScalePolicyApiParams.quiettime.description"/>
+          </div>
           <a-input v-model:value="newPolicy.quiettime" type="number"></a-input>
         </div>
         <div class="update-condition__item">
-          <div class="update-condition__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+          </div>
           <a-select
             style="width: 100%"
             showSearch
@@ -258,7 +294,10 @@
           </a-select>
         </div>
         <div class="update-condition__item">
-          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</p>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.relationaloperator')" :tooltip="createConditionApiParams.relationaloperator.description"/>
+          </div>
           <a-select
             v-model:value="newPolicy.relationaloperator"
             showSearch
@@ -274,7 +313,10 @@
           </a-select>
         </div>
         <div class="update-condition__item">
-          <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+          <div class="update-condition__label">
+            <span class="form__required">*</span>
+            <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+          </div>
           <a-input v-model:value="newPolicy.threshold" type="number"></a-input>
         </div>
       </div>
@@ -291,12 +333,14 @@
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'conditionsTab',
   components: {
     Status,
-    TooltipButton
+    TooltipButton,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -356,6 +400,18 @@ export default {
         }
       ]
     }
+  },
+  beforeCreate () {
+    this.createConditionApi = this.$store.getters.apis.createCondition || {}
+    this.createConditionApiParams = {}
+    this.createConditionApi.params.forEach(param => {
+      this.createConditionApiParams[param.name] = param
+    })
+    this.createAutoScalePolicyApi = this.$store.getters.apis.createAutoScalePolicy || {}
+    this.createAutoScalePolicyApiParams = {}
+    this.createAutoScalePolicyApi.params.forEach(param => {
+      this.createAutoScalePolicyApiParams[param.name] = param
+    })
   },
   created () {
     this.fetchInitData()
