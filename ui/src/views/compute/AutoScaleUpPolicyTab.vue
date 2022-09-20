@@ -315,7 +315,7 @@ export default {
       addPolicyModalVisible: null,
       newPolicy: {
         duration: null,
-        quiettime: null,
+        quiettime: 300,
         counterid: null,
         relationaloperator: null,
         threshold: null

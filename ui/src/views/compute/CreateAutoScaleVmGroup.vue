@@ -1667,7 +1667,7 @@ export default {
         id: this.scaleUpCounter,
         name: 'ScaleUpPolicy-' + this.scaleUpCounter,
         scaleupduration: null,
-        scaleupquiettime: null,
+        scaleupquiettime: 300,
         conditions: []
       }
       this.scaleUpPolicies.push(newScaleUpPolicy)
@@ -1689,7 +1689,7 @@ export default {
         id: this.scaleDownCounter,
         name: 'ScaleDownPolicy-' + this.scaleDownCounter,
         scaledownduration: null,
-        scaledownquiettime: null,
+        scaledownquiettime: 300,
         conditions: []
       }
       this.scaleDownPolicies.push(newScaleDownPolicy)
