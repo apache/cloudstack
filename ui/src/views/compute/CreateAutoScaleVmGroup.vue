@@ -2793,7 +2793,7 @@ export default {
   }
 </style>
 
-<style lang="less">
+<style lang="less" scoped>
   @import url('../../style/index');
 
   .ant-table-selection-column {
