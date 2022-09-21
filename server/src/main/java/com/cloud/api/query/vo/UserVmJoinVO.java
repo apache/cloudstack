@@ -799,7 +799,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return poolUuid;
     }
 
-    public String getVolume_uuid() {
+    public String getVolumeUuid() {
         return volumeUuid;
     }
 

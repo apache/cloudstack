@@ -341,11 +341,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     String autoScaleVmGroupName;
 
     public UserVmResponse() {
-        securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
+        securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
-        tags = new LinkedHashSet<ResourceTagResponse>();
-        tagIds = new LinkedHashSet<Long>();
-        affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
+        tags = new LinkedHashSet<>();
+        tagIds = new LinkedHashSet<>();
+        affinityGroupList = new LinkedHashSet<>();
     }
 
     public void setHypervisor(String hypervisor) {

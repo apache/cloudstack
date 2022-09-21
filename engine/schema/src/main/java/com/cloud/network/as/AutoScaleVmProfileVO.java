@@ -180,7 +180,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         if (counterParams != null) {
             String[] params = counterParams.split("[=&]");
             for (int i = 0; i < (params.length - 1); i = i + 2) {
-                paramsList.add(new Pair<String, String>(params[i], params[i + 1]));
+                paramsList.add(new Pair<>(params[i], params[i + 1]));
             }
         }
         return paramsList;

@@ -132,7 +132,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     }
 
     public void setOtherDeployParams(List<Pair<String, String>> otherDeployParams) {
-        this.otherDeployParams = new HashMap<String, String>();
+        this.otherDeployParams = new HashMap<>();
         for (Pair<String, String> paramKV : otherDeployParams) {
             String key = paramKV.first();
             String value = paramKV.second();
@@ -141,7 +141,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     }
 
     public void setCounterParams(List<Pair<String, String>> counterParams) {
-        this.counterParams = new HashMap<String, String>();
+        this.counterParams = new HashMap<>();
         for (Pair<String, String> paramKV : counterParams) {
             String key = paramKV.first();
             String value = paramKV.second();
