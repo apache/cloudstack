@@ -25,6 +25,7 @@ import datetime
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import stopVirtualMachine
 
 from marvin.lib.base import (Account,
                              Autoscale,
@@ -662,7 +663,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.verifyVmCountAndProfiles(MIN_MEMBER+1)
 
     @attr(tags=["advanced"], required_hardware="false")
-    def test_04_remove_vm_in_vmgroup(self):
+    def test_04_stop_remove_vm_in_vmgroup(self):
         """ Verify removal of VM in AutoScaling VM Group"""
         self.logger.debug("=== Running test_04_remove_vm_in_vmgroup ===")
 
@@ -684,12 +685,29 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         vm = vms[0]
         try:
+            cmd = stopVirtualMachine.stopVirtualMachineCmd()
+            cmd.id = vm.id
+            cmd.forced = True
+            self.apiclient.stopVirtualMachine(cmd)
+            self.fail("VM should not be stopped when VM Group is not Disabled")
+        except Exception as ex:
+            pass
+
+        try:
             VirtualMachine.delete(vm, self.regular_user_apiclient, expunge=False)
             self.fail("VM should not be destroyed when VM Group is not Disabled")
         except Exception as ex:
             pass
 
         self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
+
+        try:
+            cmd = stopVirtualMachine.stopVirtualMachineCmd()
+            cmd.id = vm.id
+            cmd.forced = True
+            self.apiclient.stopVirtualMachine(cmd)
+        except Exception as ex:
+            self.fail("VM should be stopped when VM Group is Disabled")
 
         try:
             VirtualMachine.delete(vm, self.regular_user_apiclient, expunge=False)
