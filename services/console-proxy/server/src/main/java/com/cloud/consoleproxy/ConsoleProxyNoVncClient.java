@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.consoleproxy.vnc.NoVncClient;
@@ -80,9 +82,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     }
 
     public void sendClientFrame(Frame f) throws IOException {
-        byte[] data = new byte[f.getPayloadLength()];
-        f.getPayload().get(data);
-        client.write(data);
+        client.writeFrame(f);
     }
 
     @Override
@@ -113,6 +113,14 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = client.isVncOverWebSocketConnectionAlive();
+                        } else if (!client.isVncOverTunnel()) {
+                            byte[] bytesArr;
+                            int nextBytes = client.getNextBytes();
+                            bytesArr = new byte[nextBytes];
+                            client.readBytes(bytesArr, nextBytes);
+                            if (nextBytes > 0) {
+                                session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
+                            }
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
@@ -127,7 +135,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     }
                     connectionAlive = false;
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    s_logger.error("Error on VNC client", e);
                 }
             }
 
@@ -137,16 +145,78 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
 
     /**
      * Authenticate to VNC server when not using websockets
+     *
+     * Since we are supporting the 3.8 version of the RFB protocol, there are changes on the stages:
+     * 1. Handshake:
+     *    1.a. Protocol version
+     *    1.b. Security types
+     * 2. Security types
+     * 3. Initialisation
+     *
+     * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#7protocol-messages
      * @throws IOException
      */
     private void authenticateToVNCServer() throws IOException {
-        if (!client.isVncOverWebSocketConnection()) {
+        if (client.isVncOverWebSocketConnection()) {
+            return;
+        }
+
+        if (client.isVncOverTunnel()) {
             String ver = client.handshake();
             session.getRemote().sendBytes(ByteBuffer.wrap(ver.getBytes(), 0, ver.length()));
 
-            byte[] b = client.authenticate(getClientHostPassword());
+            byte[] b = client.authenticateTunnel(getClientHostPassword());
             session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, 4));
+        } else {
+            ByteBuffer verStr = client.handshakeProtocolVersion();
+            sendMessageToVNCClient(verStr.array(), 12);
+
+            int secType = client.handshakeSecurityType();
+            byte[] numberTypesToClient = new byte[] { 1, (byte) secType };
+            sendMessageToVNCClient(numberTypesToClient, 2);
+
+            client.processHandshakeSecurityType(secType, getClientHostPassword(),
+                    getClientHostAddress(), getClientHostPort());
+
+            byte[] securityResultToClient = new byte[] { 0, 0, 0, 0 };
+            sendMessageToVNCClient(securityResultToClient, 4);
+            client.setWaitForNoVnc(true);
+
+            while (client.isWaitForNoVnc()) {
+                s_logger.debug("Waiting");
+            }
+
+            String serverName = String.format("%s %s", clientParam.getClientDisplayName(),
+                    client.isTLSConnectionEstablished() ? "(TLS backend)" : "");
+            byte[] bytesServerInit = rewriteServerNameInServerInit(client.readServerInit(), serverName);
+            s_logger.info(String.format("Server init message is %s (%s)", Arrays.toString(bytesServerInit), new String(bytesServerInit)));
+            session.getRemote().sendBytes(ByteBuffer.wrap(bytesServerInit));
+            client.setWaitForNoVnc(true);
+            while (client.isWaitForNoVnc()) {
+                s_logger.debug("Waiting");
+            }
+            s_logger.info("Authenticated successfully");
         }
+    }
+
+    /**
+     * Send a message to the noVNC client
+     */
+    private void sendMessageToVNCClient(byte[] arr, int length) {
+        try {
+            session.getRemote().sendBytes(ByteBuffer.wrap(arr, 0, length));
+        } catch (IOException e) {
+            s_logger.error("Error sending a message to the noVNC client", e);
+        }
+    }
+
+    protected static byte[] rewriteServerNameInServerInit(byte[] serverInitBytes, String serverName) {
+        byte[] serverNameBytes = serverName.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer serverInitBuffer = ByteBuffer.allocate(24 + serverNameBytes.length);
+        serverInitBuffer.put(serverInitBytes, 0, 20);
+        serverInitBuffer.putInt(serverNameBytes.length);
+        serverInitBuffer.put(serverNameBytes);
+        return serverInitBuffer.array();
     }
 
     /**

@@ -455,6 +455,9 @@ const UI = {
         if (typeof statusType === 'undefined') {
             statusType = 'normal';
         }
+        if (UI.getSetting('encrypt')) {
+            statusType = 'encrypted';
+        }
 
         // Don't overwrite more severe visible statuses and never
         // errors. Only shows the first error.
@@ -471,15 +474,23 @@ const UI = {
         clearTimeout(UI.statusTimeout);
 
         switch (statusType) {
+            case 'encrypted':
+                statusElem.classList.remove("noVNC_status_warn");
+                statusElem.classList.remove("noVNC_status_normal");
+                statusElem.classList.remove("noVNC_status_error");
+                statusElem.classList.add("noVNC_status_tls_success");
+                break;
             case 'error':
                 statusElem.classList.remove("noVNC_status_warn");
                 statusElem.classList.remove("noVNC_status_normal");
+                statusElem.classList.remove("noVNC_status_tls_success");
                 statusElem.classList.add("noVNC_status_error");
                 break;
             case 'warning':
             case 'warn':
                 statusElem.classList.remove("noVNC_status_error");
                 statusElem.classList.remove("noVNC_status_normal");
+                statusElem.classList.remove("noVNC_status_tls_success");
                 statusElem.classList.add("noVNC_status_warn");
                 break;
             case 'normal':
@@ -487,6 +498,7 @@ const UI = {
             default:
                 statusElem.classList.remove("noVNC_status_error");
                 statusElem.classList.remove("noVNC_status_warn");
+                statusElem.classList.remove("noVNC_status_tls_success");
                 statusElem.classList.add("noVNC_status_normal");
                 break;
         }
@@ -500,7 +512,7 @@ const UI = {
         }
 
         // Error messages do not timeout
-        if (statusType !== 'error') {
+        if (statusType !== 'error' && UI.getSetting('encrypt') === false) {
             UI.statusTimeout = window.setTimeout(UI.hideStatus, time);
         }
     },
@@ -1101,7 +1113,7 @@ const UI = {
 
         let msg;
         if (UI.getSetting('encrypt')) {
-            msg = _("Connected");
+            msg = _("Connected (encrypted) to ") + UI.desktopName;
         } else {
             msg = _("Connected")
         }
@@ -1662,6 +1674,10 @@ const UI = {
         UI.desktopName = e.detail.name;
         // Display the desktop name in the document title
         document.title = e.detail.name + " - " + PAGE_TITLE;
+        if (e.detail.name.includes('(TLS backend)')) {
+            UI.forceSetting('encrypt', true);
+            UI.enableSetting('encrypt');
+        }
     },
 
     bell(e) {

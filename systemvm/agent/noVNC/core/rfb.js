@@ -1634,7 +1634,10 @@ export default class RFB extends EventTargetMixin {
 
     _negotiateAuthentication() {
         switch (this._rfbAuthScheme) {
+            // Let CloudStack handle the authentication (RFB 3.8 requires the client to select the auth scheme)
             case 1:  // no auth
+            case 2:  // VNC authentication
+            case 19: // VeNCrypt Security Type
                 if (this._rfbVersion >= 3.8) {
                     this._rfbInitState = 'SecurityResult';
                     return true;
@@ -1645,14 +1648,8 @@ export default class RFB extends EventTargetMixin {
             case 22:  // XVP auth
                 return this._negotiateXvpAuth();
 
-            case 2:  // VNC authentication
-                return this._negotiateStdVNCAuth();
-
             case 16:  // TightVNC Security Type
                 return this._negotiateTightAuth();
-
-            case 19:  // VeNCrypt Security Type
-                return this._negotiateVeNCryptAuth();
 
             case 129:  // TightVNC UNIX Security Type
                 return this._negotiateTightUnixAuth();
