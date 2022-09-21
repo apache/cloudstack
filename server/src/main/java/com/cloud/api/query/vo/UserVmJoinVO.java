@@ -401,6 +401,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
 
     public UserVmJoinVO() {
+        // Empty constructor
     }
 
     @Override
@@ -514,10 +515,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getInstanceName() {
         return instanceName;
-    }
-
-    public long getGuestOSId() {
-        return guestOsId;
     }
 
     public String getGuestOsUuid() {

@@ -100,8 +100,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, Map otherDeployParamsMap, Map counterParamList,
-            String userData, Integer destroyVmGraceperiod, Long autoscaleUserId) {
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId,
+                                Map<String, HashMap<String, String>> otherDeployParamsMap, Map counterParamList,
+                                String userData, Integer destroyVmGraceperiod, Long autoscaleUserId) {
         uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
@@ -112,6 +113,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         if (destroyVmGraceperiod != null) {
             this.destroyVmGraceperiod = destroyVmGraceperiod;
         }
+        this.userData = userData;
         setCounterParamsForUpdate(counterParamList);
         setOtherDeployParamsForUpdate(otherDeployParamsMap);
     }
@@ -146,11 +148,11 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     @Override
     public List<Pair<String, String>> getOtherDeployParamsList() {
-        List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> paramsList = new ArrayList<>();
         if (otherDeployParams != null) {
             String[] params = otherDeployParams.split("[=&]");
             for (int i = 0; i < (params.length - 1); i = i + 2) {
-                paramsList.add(new Pair<String, String>(params[i], params[i + 1]));
+                paramsList.add(new Pair<>(params[i], params[i + 1]));
             }
         }
         return paramsList;
@@ -160,11 +162,10 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         this.otherDeployParams = otherDeployParams;
     }
 
-    public void setOtherDeployParamsForUpdate(Map otherDeployParamsMap) {
+    public void setOtherDeployParamsForUpdate(Map<String, HashMap<String, String>> otherDeployParamsMap) {
         if (MapUtils.isNotEmpty(otherDeployParamsMap)) {
             List<String> params = new ArrayList<>();
-            for (Object object : otherDeployParamsMap.values()) {
-                HashMap<String, String> paramKVpair = (HashMap<String, String>)object;
+            for (HashMap<String, String> paramKVpair : otherDeployParamsMap.values()) {
                 String paramName = paramKVpair.get("name");
                 String paramValue = paramKVpair.get("value");
                 params.add(paramName + "=" + paramValue);
@@ -175,7 +176,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     @Override
     public List<Pair<String, String>> getCounterParams() {
-        List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> paramsList = new ArrayList<>();
         if (counterParams != null) {
             String[] params = counterParams.split("[=&]");
             for (int i = 0; i < (params.length - 1); i = i + 2) {
@@ -186,7 +187,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     public void setCounterParams(String counterParam) {
-        counterParams = counterParam;
+        this.counterParams = counterParam;
     }
 
     public void setCounterParamsForUpdate(Map counterParamList) {

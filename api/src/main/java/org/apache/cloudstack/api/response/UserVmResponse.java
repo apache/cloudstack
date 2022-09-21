@@ -329,15 +329,15 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long bytesSent;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
-    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0")
     ResourceIconResponse resourceIconResponse;
 
     @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_ID)
-    @Param(description = "ID of AutoScale VM group", since = "4.16.0.0")
+    @Param(description = "ID of AutoScale VM group", since = "4.18.0")
     String autoScaleVmGroupId;
 
     @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_NAME)
-    @Param(description = "Name of AutoScale VM group", since = "4.16.0.0")
+    @Param(description = "Name of AutoScale VM group", since = "4.18.0")
     String autoScaleVmGroupName;
 
     public UserVmResponse() {

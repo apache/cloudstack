@@ -128,7 +128,7 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     private Date created;
 
     public AutoScaleVmGroupResponse() {
-
+        // Empty constructor
     }
 
     @Override

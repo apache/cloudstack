@@ -148,10 +148,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public boolean isDisplay() {
-        if(display == null)
-            return true;
-        else
-            return display;
+        return display == null || display;
     }
 
     public Map getCounterParamList() {

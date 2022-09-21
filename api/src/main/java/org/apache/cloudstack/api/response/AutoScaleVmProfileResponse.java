@@ -107,6 +107,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Boolean forDisplay;
 
     public AutoScaleVmProfileResponse() {
+        // Empty constructor
     }
 
     @Override
