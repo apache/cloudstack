@@ -25,10 +25,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -49,12 +51,18 @@ public class AutoScaleVmGroupDaoImplTest {
     @Mock
     AutoScaleVmGroupVO autoScaleVmGroupVOMock;
 
+    @Spy
+    AutoScaleVmGroupDaoImpl AutoScaleVmGroupDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupDaoImpl());
+
+    @Before
+    public void setUp() {
+        AutoScaleVmGroupDaoImplSpy.AllFieldsSearch = searchBuilderAutoScaleVmGroupVOMock;
+        Mockito.doReturn(searchCriteriaAutoScaleVmGroupVOMock).when(searchBuilderAutoScaleVmGroupVOMock).create();
+    }
+
     @Test
     public void testListByLoadBalancer() throws Exception {
-        AutoScaleVmGroupDaoImpl AutoScaleVmGroupDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupDaoImpl());
-
-        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy).createSearchCriteria();
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).setParameters(Mockito.anyString(), Mockito.any());
         PowerMockito.doReturn(listAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class));
 
         long loadBalancerId = 100L;
@@ -63,15 +71,12 @@ public class AutoScaleVmGroupDaoImplTest {
 
         Assert.assertEquals(listAutoScaleVmGroupVOMock, result);
 
-        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock).addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock).setParameters("loadBalancerId", loadBalancerId);
     }
 
     @Test
     public void testListByProfile() throws Exception {
-        AutoScaleVmGroupDaoImpl AutoScaleVmGroupDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupDaoImpl());
-
-        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy).createSearchCriteria();
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).setParameters(Mockito.anyString(), Mockito.any());
         PowerMockito.doReturn(listAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class));
 
         long profileId = 101L;
@@ -80,15 +85,12 @@ public class AutoScaleVmGroupDaoImplTest {
 
         Assert.assertEquals(listAutoScaleVmGroupVOMock, result);
 
-        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock).addAnd("profileId", SearchCriteria.Op.EQ, profileId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock).setParameters("profileId", profileId);
     }
 
     @Test
     public void testListByAccount() throws Exception {
-        AutoScaleVmGroupDaoImpl AutoScaleVmGroupDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupDaoImpl());
-
-        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy).createSearchCriteria();
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).setParameters(Mockito.anyString(), Mockito.any());
         PowerMockito.doReturn(listAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class));
 
         long accountId = 102L;
@@ -97,15 +99,12 @@ public class AutoScaleVmGroupDaoImplTest {
 
         Assert.assertEquals(listAutoScaleVmGroupVOMock, result);
 
-        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock).addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock).setParameters("accountId", accountId);
     }
 
     @Test
     public void testUpdateState1() throws Exception {
-        AutoScaleVmGroupDaoImpl AutoScaleVmGroupDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupDaoImpl());
-
-        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy).createSearchCriteria();
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).setParameters(Mockito.anyString(), Mockito.any());
         PowerMockito.doReturn(null).when(AutoScaleVmGroupDaoImplSpy, "findOneBy", Mockito.any(SearchCriteria.class));
 
         long groupId = 10L;
@@ -113,15 +112,12 @@ public class AutoScaleVmGroupDaoImplTest {
         AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.DISABLED;
 
         boolean result = AutoScaleVmGroupDaoImplSpy.updateState(groupId, oldState, newState);
-        Assert.assertEquals(false, result);
+        Assert.assertFalse(result);
     }
 
     @Test
     public void testUpdateState2() throws Exception {
-        AutoScaleVmGroupDaoImpl AutoScaleVmGroupDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupDaoImpl());
-
-        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy).createSearchCriteria();
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVOMock).setParameters(Mockito.anyString(), Mockito.any());
         PowerMockito.doReturn(autoScaleVmGroupVOMock).when(AutoScaleVmGroupDaoImplSpy, "findOneBy", Mockito.any(SearchCriteria.class));
         Mockito.doNothing().when(autoScaleVmGroupVOMock).setState(Mockito.any(AutoScaleVmGroup.State.class));
         PowerMockito.doReturn(true).when(AutoScaleVmGroupDaoImplSpy).update(Mockito.anyLong(), Mockito.any(AutoScaleVmGroupVO.class));
@@ -131,10 +127,10 @@ public class AutoScaleVmGroupDaoImplTest {
         AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.DISABLED;
 
         boolean result = AutoScaleVmGroupDaoImplSpy.updateState(groupId, oldState, newState);
-        Assert.assertEquals(true, result);
+        Assert.assertTrue(result);
 
-        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock, Mockito.times(1)).addAnd("id", SearchCriteria.Op.EQ, groupId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock, Mockito.times(1)).addAnd("state", SearchCriteria.Op.EQ, oldState);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock, Mockito.times(1)).setParameters("id", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVOMock, Mockito.times(1)).setParameters("state", oldState);
         Mockito.verify(autoScaleVmGroupVOMock, Mockito.times(1)).setState(newState);
         Mockito.verify(AutoScaleVmGroupDaoImplSpy, Mockito.times(1)).update(groupId, autoScaleVmGroupVOMock);
     }

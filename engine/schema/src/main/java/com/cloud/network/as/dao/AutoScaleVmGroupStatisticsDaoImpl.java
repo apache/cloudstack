@@ -44,6 +44,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         groupAndCounterSearch.and("createdLT", groupAndCounterSearch.entity().getCreated(), Op.LT);
         groupAndCounterSearch.and("createdGT", groupAndCounterSearch.entity().getCreated(), Op.GT);
         groupAndCounterSearch.and("state", groupAndCounterSearch.entity().getState(), Op.EQ);
+        groupAndCounterSearch.and("stateNEQ", groupAndCounterSearch.entity().getState(), Op.NEQ);
         groupAndCounterSearch.done();
     }
 
@@ -105,14 +106,14 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
 
     @Override
     public void updateStateByGroup(Long groupId, Long policyId, AutoScaleVmGroupStatisticsVO.State state) {
-        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = createSearchCriteria();
+        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         if (groupId != null) {
-            sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, groupId);
+            sc.setParameters("vmGroupId", groupId);
         }
         if (policyId != null) {
-            sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
+            sc.setParameters("policyId", policyId);
         }
-        sc.addAnd("state", SearchCriteria.Op.NEQ, state);
+        sc.setParameters("stateNEQ", state);
 
         AutoScaleVmGroupStatisticsVO vo = createForUpdate();
         vo.setState(state);

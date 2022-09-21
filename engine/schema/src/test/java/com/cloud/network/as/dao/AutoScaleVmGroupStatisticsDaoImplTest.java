@@ -59,13 +59,10 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
 
     @Before
     public void setUp() throws Exception {
-        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupStatisticsVOMock).when(AutoScaleVmGroupStatisticsDaoImplSpy).createSearchCriteria();
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupStatisticsVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
-        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters(Mockito.anyString(), Mockito.any());
-
         AutoScaleVmGroupStatisticsDaoImplSpy.groupAndCounterSearch = searchBuilderAutoScaleVmGroupStatisticsVOMock;
         PowerMockito.doReturn(searchBuilderAutoScaleVmGroupStatisticsVOMock).when(AutoScaleVmGroupStatisticsDaoImplSpy).createSearchBuilder();
         Mockito.doReturn(searchCriteriaAutoScaleVmGroupStatisticsVOMock).when(searchBuilderAutoScaleVmGroupStatisticsVOMock).create();
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters(Mockito.anyString(), Mockito.any());
 
         PowerMockito.doReturn(listAutoScaleVmGroupStatisticsVOMock).when(AutoScaleVmGroupStatisticsDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class));
 
@@ -193,9 +190,9 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
     public void testUpdateStateByGroup1() {
         AutoScaleVmGroupStatisticsDaoImplSpy.updateStateByGroup(groupId, policyId, state);
 
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).addAnd("vmGroupId", SearchCriteria.Op.EQ, groupId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).addAnd("policyId", SearchCriteria.Op.EQ, policyId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).addAnd("state", SearchCriteria.Op.NEQ, state);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("policyId", policyId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("stateNEQ", state);
         Mockito.verify(AutoScaleVmGroupStatisticsDaoImplSpy).update(autoScaleVmGroupStatisticsVO, searchCriteriaAutoScaleVmGroupStatisticsVOMock);
 
         Assert.assertEquals(state, autoScaleVmGroupStatisticsVO.getState());
@@ -205,9 +202,9 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
     public void testUpdateStateByGroup2() {
         AutoScaleVmGroupStatisticsDaoImplSpy.updateStateByGroup(null, null, state);
 
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).addAnd("vmGroupId", SearchCriteria.Op.EQ, groupId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).addAnd("policyId", SearchCriteria.Op.EQ, policyId);
-        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).addAnd("state", SearchCriteria.Op.NEQ, state);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock, Mockito.never()).setParameters("policyId", policyId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("stateNEQ", state);
         Mockito.verify(AutoScaleVmGroupStatisticsDaoImplSpy).update(autoScaleVmGroupStatisticsVO, searchCriteriaAutoScaleVmGroupStatisticsVOMock);
 
         Assert.assertEquals(state, autoScaleVmGroupStatisticsVO.getState());
@@ -222,7 +219,7 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
         Assert.assertEquals(AutoScaleVmGroupStatisticsVO.DUMMY_ID, result.getCounterId());
         Assert.assertEquals(groupId, (long) result.getResourceId());
         Assert.assertEquals(ResourceTag.ResourceObjectType.AutoScaleVmGroup, result.getResourceType());
-        Assert.assertEquals(AutoScaleVmGroupStatisticsVO.INVALID_VALUE, (double) result.getRawValue(), 0);
+        Assert.assertEquals(AutoScaleVmGroupStatisticsVO.INVALID_VALUE, result.getRawValue(), 0);
         Assert.assertEquals(AutoScaleVmGroupStatisticsVO.State.INACTIVE, result.getState());
     }
 

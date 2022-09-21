@@ -22,6 +22,8 @@ import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface AutoScaleVmGroupVmMapDao extends GenericDao<AutoScaleVmGroupVmMapVO, Long> {
+    int countAvailableVmsByGroup(long vmGroupId);
+
     public Integer countByGroup(long vmGroupId);
 
     public List<AutoScaleVmGroupVmMapVO> listByGroup(long vmGroupId);
