@@ -63,14 +63,15 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Idempotent RENAME COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_RENAME_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_RENAME_COLUMN` (
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_CHANGE_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_CHANGE_COLUMN` (
     IN in_table_name VARCHAR(200)
 , IN in_column_name VARCHAR(200)
 , IN in_column_new_name VARCHAR(200)
+, IN in_column_new_definition VARCHAR(1000)
 )
 BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'RENAME COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', 'TO'); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Idempotent ADD UNIQUE KEY
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
@@ -129,7 +130,7 @@ ALTER TABLE `cloud`.`autoscale_vmprofiles` MODIFY COLUMN `autoscale_user_id` big
 
 -- Update autoscale_vmprofiles to rename destroy_vm_grace_period
 
-CALL `cloud`.`IDEMPOTENT_RENAME_COLUMN`('cloud.autoscale_vmprofiles', 'destroy_vm_grace_period', 'expunge_vm_grace_period');
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.autoscale_vmprofiles', 'destroy_vm_grace_period', 'expunge_vm_grace_period', 'int unsigned COMMENT "the time allowed for existing connections to get closed before a vm is expunged"');
 
 -- Create table for VM autoscaling historic data
 
