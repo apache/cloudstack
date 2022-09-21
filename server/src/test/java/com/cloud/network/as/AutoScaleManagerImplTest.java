@@ -281,7 +281,7 @@ public class AutoScaleManagerImplTest {
     private static final String accountName = "test-user";
     private static final Map<String, HashMap<String, String>> otherDeployParams = new HashMap<>();
     private static final Map<String, HashMap<String, String>> counterParamList = new HashMap<>();
-    private static final Integer destroyVmGraceperiod = 33;
+    private static final Integer expungeVmGracePeriod = 33;
     private static final String cloudStackApiUrl = "cloudstack url";
     private static final String autoScaleUserApiKey = "cloudstack api key";
     private static final String autoScaleUserSecretKey = "cloudstack secret key";
@@ -723,7 +723,7 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
         ReflectionTestUtils.setField(cmd, "templateId", templateId);
-        ReflectionTestUtils.setField(cmd, "destroyVmGraceperiod", destroyVmGraceperiod);
+        ReflectionTestUtils.setField(cmd, "expungeVmGracePeriod", expungeVmGracePeriod);
         ReflectionTestUtils.setField(cmd, "otherDeployParams", otherDeployParams);
         ReflectionTestUtils.setField(cmd, "counterParamList", counterParamList);
 
@@ -1408,7 +1408,7 @@ public class AutoScaleManagerImplTest {
 
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
-        when(asVmProfileMock.getDestroyVmGraceperiod()).thenReturn(destroyVmGraceperiod);
+        when(asVmProfileMock.getExpungeVmGracePeriod()).thenReturn(expungeVmGracePeriod);
 
         autoScaleManagerImplSpy.doScaleDown(vmGroupId);
 

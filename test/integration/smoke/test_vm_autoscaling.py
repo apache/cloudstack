@@ -55,7 +55,7 @@ from marvin.lib.common import (get_domain,
 
 MIN_MEMBER = 1
 MAX_MEMBER = 2
-DEFAULT_DESTROY_VM_GRACE_PERIOD = 60
+DEFAULT_EXPUNGE_VM_GRACE_PERIOD = 60
 DEFAULT_DURATION = 120
 DEFAULT_INTERVAL = 30
 NAME_PREFIX = "AS-VmGroup-"
@@ -260,7 +260,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             zoneid=cls.zone.id,
             templateid=cls.template.id,
-            destroyvmgraceperiod=DEFAULT_DESTROY_VM_GRACE_PERIOD,
+            expungevmgraceperiod=DEFAULT_EXPUNGE_VM_GRACE_PERIOD,
             otherdeployparams=cls.otherdeployparams
         )
 
@@ -517,7 +517,7 @@ class TestVmAutoScaling(cloudstackTestCase):
                 self.regular_user_apiclient,
                 id = self.autoscaling_vmprofile.id,
                 serviceofferingid = self.service_offering_new.id,
-                destroyvmgraceperiod = DEFAULT_DESTROY_VM_GRACE_PERIOD + 1,
+                expungevmgraceperiod = DEFAULT_EXPUNGE_VM_GRACE_PERIOD + 1,
                 otherdeployparams = otherdeployparams_new
             )
             self.fail("Autoscale VM Profile should not be updatable when VM Group is not Disabled")
@@ -544,7 +544,7 @@ class TestVmAutoScaling(cloudstackTestCase):
                 self.regular_user_apiclient,
                 id = self.autoscaling_vmprofile.id,
                 serviceofferingid = self.service_offering_new.id,
-                destroyvmgraceperiod = DEFAULT_DESTROY_VM_GRACE_PERIOD + 1,
+                expungevmgraceperiod = DEFAULT_EXPUNGE_VM_GRACE_PERIOD + 1,
                 otherdeployparams = otherdeployparams_new
             )
         except Exception as ex:
@@ -808,7 +808,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
             templateid=self.template.id,
-            destroyvmgraceperiod=DEFAULT_DESTROY_VM_GRACE_PERIOD,
+            expungevmgraceperiod=DEFAULT_EXPUNGE_VM_GRACE_PERIOD,
             projectid = project.id
         )
 
@@ -1016,7 +1016,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             zoneid=self.zone.id,
             templateid=self.template.id,
-            destroyvmgraceperiod=DEFAULT_DESTROY_VM_GRACE_PERIOD
+            expungevmgraceperiod=DEFAULT_EXPUNGE_VM_GRACE_PERIOD
         )
 
         self.cleanup.append(autoscaling_vmprofile_vpc)

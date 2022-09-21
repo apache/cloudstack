@@ -78,8 +78,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Column(name = "other_deploy_params", updatable = true, length = 1024)
     private String otherDeployParams;
 
-    @Column(name = "destroy_vm_grace_period", updatable = true)
-    private Integer destroyVmGraceperiod = NetUtils.DEFAULT_AUTOSCALE_VM_DESTROY_TIME;
+    @Column(name = "expunge_vm_grace_period", updatable = true)
+    private Integer expungeVmGracePeriod = NetUtils.DEFAULT_AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD;
 
     @Column(name = "counter_params", updatable = true)
     private String counterParams;
@@ -102,7 +102,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId,
                                 Map<String, HashMap<String, String>> otherDeployParamsMap, Map counterParamList,
-                                String userData, Integer destroyVmGraceperiod, Long autoscaleUserId) {
+                                String userData, Integer expungeVmGracePeriod, Long autoscaleUserId) {
         uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
@@ -110,8 +110,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         this.serviceOfferingId = serviceOfferingId;
         this.templateId = templateId;
         this.autoscaleUserId = autoscaleUserId;
-        if (destroyVmGraceperiod != null) {
-            this.destroyVmGraceperiod = destroyVmGraceperiod;
+        if (expungeVmGracePeriod != null) {
+            this.expungeVmGracePeriod = expungeVmGracePeriod;
         }
         this.userData = userData;
         setCounterParamsForUpdate(counterParamList);
@@ -254,12 +254,12 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     @Override
-    public Integer getDestroyVmGraceperiod() {
-        return destroyVmGraceperiod;
+    public Integer getExpungeVmGracePeriod() {
+        return expungeVmGracePeriod;
     }
 
-    public void setDestroyVmGraceperiod(Integer destroyVmGraceperiod) {
-        this.destroyVmGraceperiod = destroyVmGraceperiod;
+    public void setExpungeVmGracePeriod(Integer expungeVmGracePeriod) {
+        this.expungeVmGracePeriod = expungeVmGracePeriod;
     }
 
     @Override

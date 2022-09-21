@@ -66,7 +66,7 @@ public class LoadBalancerTOTest {
     private static final String templateId = "1111-1111-1115";
     private static final String otherDeployParams = "otherDeployParams";
     private static final List<Pair<String, String>> counterParamList = new ArrayList<>();
-    private static final Integer destroyVmGraceperiod = 33;
+    private static final Integer expungeVmGracePeriod = 33;
     private static final String cloudStackApiUrl = "cloudstack url";
     private static final String autoScaleUserApiKey = "cloudstack api key";
     private static final String autoScaleUserSecretKey = "cloudstack secret key";
@@ -95,7 +95,7 @@ public class LoadBalancerTOTest {
                 Arrays.asList(new LoadBalancerTO.ConditionTO[]{ condition }), false);
         vmProfile = new LoadBalancerTO.AutoScaleVmProfileTO(zoneId, domainId, cloudStackApiUrl, autoScaleUserApiKey,
                 autoScaleUserSecretKey, serviceOfferingId, templateId, vmName, networkId, otherDeployParams,
-                counterParamList, destroyVmGraceperiod);
+                counterParamList, expungeVmGracePeriod);
         vmGroup = new LoadBalancerTO.AutoScaleVmGroupTO(vmGroupId, vmGroupUuid, minMembers, maxMembers, memberPort,
                 interval, Arrays.asList(new LoadBalancerTO.AutoScalePolicyTO[]{ scaleUpPolicy, scaleDownPolicy }),
                 vmProfile, state, currentState, loadBalancerId);
@@ -149,7 +149,7 @@ public class LoadBalancerTOTest {
         Assert.assertEquals(serviceOfferingId, vmProfile.getServiceOfferingId());
         Assert.assertEquals(otherDeployParams, vmProfile.getOtherDeployParams());
         Assert.assertEquals(counterParamList, vmProfile.getCounterParamList());
-        Assert.assertEquals(destroyVmGraceperiod, vmProfile.getDestroyVmGraceperiod());
+        Assert.assertEquals(expungeVmGracePeriod, vmProfile.getExpungeVmGracePeriod());
         Assert.assertEquals(cloudStackApiUrl, vmProfile.getCloudStackApiUrl());
         Assert.assertEquals(autoScaleUserApiKey, vmProfile.getAutoScaleUserApiKey());
         Assert.assertEquals(autoScaleUserSecretKey, vmProfile.getAutoScaleUserSecretKey());

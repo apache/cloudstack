@@ -49,7 +49,7 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, 
 
     List<Pair<String, String>> getCounterParams();
 
-    public Integer getDestroyVmGraceperiod();
+    public Integer getExpungeVmGracePeriod();
 
     public Long getAutoScaleUserId();
 

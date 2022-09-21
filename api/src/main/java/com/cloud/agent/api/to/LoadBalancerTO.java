@@ -496,7 +496,7 @@ public class LoadBalancerTO {
         private final String templateId;
         private final String otherDeployParams;
         private final List<Pair<String, String>> counterParamList;
-        private final Integer destroyVmGraceperiod;
+        private final Integer expungeVmGracePeriod;
         private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
@@ -505,14 +505,14 @@ public class LoadBalancerTO {
 
         public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey,
                 String serviceOfferingId, String templateId, String vmName, String networkId, String otherDeployParams, List<Pair<String, String>> counterParamList,
-                Integer destroyVmGraceperiod) {
+                Integer expungeVmGracePeriod) {
             this.zoneId = zoneId;
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
             this.templateId = templateId;
             this.otherDeployParams = otherDeployParams;
             this.counterParamList = counterParamList;
-            this.destroyVmGraceperiod = destroyVmGraceperiod;
+            this.expungeVmGracePeriod = expungeVmGracePeriod;
             this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
@@ -544,8 +544,8 @@ public class LoadBalancerTO {
             return counterParamList;
         }
 
-        public Integer getDestroyVmGraceperiod() {
-            return destroyVmGraceperiod;
+        public Integer getExpungeVmGracePeriod() {
+            return expungeVmGracePeriod;
         }
 
         public String getCloudStackApiUrl() {

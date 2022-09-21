@@ -57,9 +57,9 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Map<String, String> otherDeployParams;
 
     /* Parameters related to destroying a virtual machine */
-    @SerializedName(ApiConstants.AUTOSCALE_VM_DESTROY_TIME)
+    @SerializedName(ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD)
     @Param(description = "the time allowed for existing connections to get closed before a vm is destroyed")
-    private Integer destroyVmGraceperiod;
+    private Integer expungeVmGracePeriod;
 
     /* Parameters related to a running virtual machine - monitoring aspects */
     @SerializedName(ApiConstants.COUNTERPARAM_LIST)
@@ -182,8 +182,8 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.autoscaleUserId = autoscaleUserId;
     }
 
-    public void setDestroyVmGraceperiod(Integer destroyVmGraceperiod) {
-        this.destroyVmGraceperiod = destroyVmGraceperiod;
+    public void setExpungeVmGracePeriod(Integer expungeVmGracePeriod) {
+        this.expungeVmGracePeriod = expungeVmGracePeriod;
     }
 
     public void setCsUrl(String csUrl) {

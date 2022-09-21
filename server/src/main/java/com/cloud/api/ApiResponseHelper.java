@@ -3342,7 +3342,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setUserData(profile.getUserData());
         response.setOtherDeployParams(profile.getOtherDeployParamsList());
         response.setCounterParams(profile.getCounterParams());
-        response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
+        response.setExpungeVmGracePeriod(profile.getExpungeVmGracePeriod());
         User user = ApiDBUtils.findUserById(profile.getAutoScaleUserId());
         if (user != null) {
             response.setAutoscaleUserId(user.getUuid());

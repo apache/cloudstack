@@ -62,6 +62,16 @@ CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
 BEGIN
     DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
+-- Idempotent RENAME COLUMN
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_RENAME_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_RENAME_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_new_name VARCHAR(200)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'RENAME COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', 'TO'); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
 -- Idempotent ADD UNIQUE KEY
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
 CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY` (
@@ -116,6 +126,10 @@ ALTER TABLE `cloud`.`autoscale_vmgroups` DROP FOREIGN KEY `fk_autoscale_vmgroup_
 -- Update autoscale_vmprofiles to make autoscale_user_id optional
 
 ALTER TABLE `cloud`.`autoscale_vmprofiles` MODIFY COLUMN `autoscale_user_id` bigint unsigned;
+
+-- Update autoscale_vmprofiles to rename destroy_vm_grace_period
+
+CALL `cloud`.`IDEMPOTENT_RENAME_COLUMN`('cloud.autoscale_vmprofiles', 'destroy_vm_grace_period', 'expunge_vm_grace_period');
 
 -- Create table for VM autoscaling historic data
 

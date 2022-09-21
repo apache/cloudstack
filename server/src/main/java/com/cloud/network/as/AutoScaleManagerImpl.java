@@ -418,7 +418,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     protected AutoScaleVmProfileVO checkValidityAndPersist(AutoScaleVmProfileVO vmProfile, boolean isNew) {
         long templateId = vmProfile.getTemplateId();
         Long autoscaleUserId = vmProfile.getAutoScaleUserId();
-        int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
+        int expungeVmGracePeriod = vmProfile.getExpungeVmGracePeriod();
 
         Long serviceOfferingId = vmProfile.getServiceOfferingId();
         if (serviceOfferingId != null) {
@@ -437,8 +437,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("Unable to use the given template.");
         }
 
-        if (destroyVmGraceperiod < 0) {
-            throw new InvalidParameterValueException("Destroy Vm Grace Period cannot be less than 0.");
+        if (expungeVmGracePeriod < 0) {
+            throw new InvalidParameterValueException("Expunge Vm Grace Period cannot be less than 0.");
         }
 
         if (!isNew) {
@@ -535,7 +535,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         AutoScaleVmProfileVO profileVO =
             new AutoScaleVmProfileVO(cmd.getZoneId(), owner.getDomainId(), owner.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
-                cmd.getCounterParamList(), cmd.getUserData(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
+                cmd.getCounterParamList(), cmd.getUserData(), cmd.getExpungeVmGracePeriod(), autoscaleUserId);
 
         if (cmd.getDisplay() != null) {
             profileVO.setDisplay(cmd.getDisplay());
@@ -562,11 +562,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Map counterParamList = cmd.getCounterParamList();
         String userData = cmd.getUserData();
 
-        Integer destroyVmGraceperiod = cmd.getDestroyVmGraceperiod();
+        Integer expungeVmGracePeriod = cmd.getExpungeVmGracePeriod();
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, autoScaleVmProfileDao);
 
-        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null || destroyVmGraceperiod != null || userData != null);
+        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null || expungeVmGracePeriod != null || userData != null);
 
         if (serviceOfferingId != null) {
             vmProfile.setServiceOfferingId(serviceOfferingId);
@@ -592,8 +592,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             vmProfile.setUserData(userData);
         }
 
-        if (destroyVmGraceperiod != null) {
-            vmProfile.setDestroyVmGraceperiod(destroyVmGraceperiod);
+        if (expungeVmGracePeriod != null) {
+            vmProfile.setExpungeVmGracePeriod(expungeVmGracePeriod);
         }
 
         if (cmd.getCustomId() != null) {
@@ -2039,10 +2039,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             // Add an Inactive-dummy record to statistics table
             createInactiveDummyRecord(asGroup.getId());
 
-            // get destroyvmgrace param
+            // get expungeVmGracePeriod param
             AutoScaleVmProfileVO asProfile = autoScaleVmProfileDao.findById(profileId);
-            Integer destroyVmGracePeriod = asProfile.getDestroyVmGraceperiod();
-            if (destroyVmGracePeriod >= 0) {
+            Integer expungeVmGracePeriod = asProfile.getExpungeVmGracePeriod();
+            if (expungeVmGracePeriod >= 0) {
                 executor.schedule(() -> {
                     try {
 
@@ -2051,7 +2051,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
                         s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
                     }
-                }, destroyVmGracePeriod, TimeUnit.SECONDS);
+                }, expungeVmGracePeriod, TimeUnit.SECONDS);
             }
         } else {
             s_logger.error("Can not remove LB rule for the VM being destroyed. Do nothing more.");

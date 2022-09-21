@@ -55,7 +55,7 @@ public class CreateAutoScaleVmProfileCmdTest {
     private static final Long serviceOfferingId = 2L;
     private static final Long templateId = 3L;
     private static final String userData = "This is userdata";
-    private static final int destroyVmGraceperiod = 30;
+    private static final int expungeVmGracePeriod = 30;
     private static final Long autoscaleUserId = 4L;
     final Map<String, Object> otherDeployParams = new HashMap<>();
     final Map<String, Object> counterParamList = new HashMap<>();
@@ -88,7 +88,7 @@ public class CreateAutoScaleVmProfileCmdTest {
         ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"serviceOfferingId", serviceOfferingId);
         ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"templateId", templateId);
         ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"userData", userData);
-        ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"destroyVmGraceperiod", destroyVmGraceperiod);
+        ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"expungeVmGracePeriod", expungeVmGracePeriod);
         ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"autoscaleUserId", autoscaleUserId);
         ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"otherDeployParams", otherDeployParams);
         ReflectionTestUtils.setField(createAutoScaleVmProfileCmd,"counterParamList", counterParamList);
@@ -100,7 +100,7 @@ public class CreateAutoScaleVmProfileCmdTest {
 
         response = new AutoScaleVmProfileResponse();
         response.setUserData(userData);
-        response.setDestroyVmGraceperiod(destroyVmGraceperiod);
+        response.setExpungeVmGracePeriod(expungeVmGracePeriod);
     }
 
     @Test
@@ -112,7 +112,7 @@ public class CreateAutoScaleVmProfileCmdTest {
         Assert.assertTrue(createAutoScaleVmProfileCmd.isDisplay());
         Assert.assertEquals(userData, createAutoScaleVmProfileCmd.getUserData());
         Assert.assertEquals(autoscaleUserId, createAutoScaleVmProfileCmd.getAutoscaleUserId());
-        Assert.assertEquals(destroyVmGraceperiod, (long) createAutoScaleVmProfileCmd.getDestroyVmGraceperiod());
+        Assert.assertEquals(expungeVmGracePeriod, (long) createAutoScaleVmProfileCmd.getExpungeVmGracePeriod());
         Assert.assertEquals(counterParamList, createAutoScaleVmProfileCmd.getCounterParamList());
         Assert.assertEquals(otherDeployParams, createAutoScaleVmProfileCmd.getOtherDeployParams());
         Assert.assertEquals(domainId, createAutoScaleVmProfileCmd.getDomainId());
@@ -160,7 +160,7 @@ public class CreateAutoScaleVmProfileCmdTest {
         AutoScaleVmProfileResponse autoScaleVmProfileResponse = (AutoScaleVmProfileResponse) createAutoScaleVmProfileCmd.getResponseObject();
         Assert.assertEquals(createAutoScaleVmProfileCmd.getCommandName(), autoScaleVmProfileResponse.getResponseName());
         Assert.assertEquals(userData, ReflectionTestUtils.getField(autoScaleVmProfileResponse, "userData"));
-        Assert.assertEquals(destroyVmGraceperiod, (int) ReflectionTestUtils.getField(autoScaleVmProfileResponse, "destroyVmGraceperiod"));
+        Assert.assertEquals(expungeVmGracePeriod, (int) ReflectionTestUtils.getField(autoScaleVmProfileResponse, "expungeVmGracePeriod"));
     }
 
     @Test(expected = ServerApiException.class)

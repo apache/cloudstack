@@ -725,7 +725,7 @@ public class ApiConstants {
     public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
     public static final String MIN_MEMBERS = "minmembers";
     public static final String MAX_MEMBERS = "maxmembers";
-    public static final String AUTOSCALE_VM_DESTROY_TIME = "destroyvmgraceperiod";
+    public static final String AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD = "expungevmgraceperiod";
     public static final String VMPROFILE_ID = "vmprofileid";
     public static final String VMGROUP_ID = "vmgroupid";
     public static final String CS_URL = "csurl";

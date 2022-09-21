@@ -2211,7 +2211,7 @@ class Autoscale:
 
     @classmethod
     def createAutoscaleVmProfile(cls, apiclient, serviceofferingid, zoneid, templateid,
-                                 autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None,
+                                 autoscaleuserid=None, expungevmgraceperiod=None, counterparam=None,
                                  otherdeployparams=None, userdata=None):
         """creates Autoscale VM Profile."""
 
@@ -2222,8 +2222,8 @@ class Autoscale:
         if autoscaleuserid:
             cmd.autoscaleuserid = autoscaleuserid
 
-        if destroyvmgraceperiod:
-            cmd.destroyvmgraceperiod = destroyvmgraceperiod
+        if expungevmgraceperiod:
+            cmd.expungevmgraceperiod = expungevmgraceperiod
 
         if counterparam:
             for name, value in list(counterparam.items()):
@@ -2438,7 +2438,7 @@ class AutoScaleVmProfile:
 
     @classmethod
     def create(cls, apiclient, serviceofferingid, zoneid, templateid,
-                                 autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None,
+                                 autoscaleuserid=None, expungevmgraceperiod=None, counterparam=None,
                                  otherdeployparams=None, userdata=None, projectid=None):
         """creates Autoscale VM Profile."""
 
@@ -2449,8 +2449,8 @@ class AutoScaleVmProfile:
         if autoscaleuserid:
             cmd.autoscaleuserid = autoscaleuserid
 
-        if destroyvmgraceperiod:
-            cmd.destroyvmgraceperiod = destroyvmgraceperiod
+        if expungevmgraceperiod:
+            cmd.expungevmgraceperiod = expungevmgraceperiod
 
         if counterparam:
             for name, value in list(counterparam.items()):

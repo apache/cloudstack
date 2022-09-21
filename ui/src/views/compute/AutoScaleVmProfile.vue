@@ -48,9 +48,9 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.destroyvmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.destroyvmgraceperiod.description"/>
+            <tooltip-label :title="$t('label.expungevmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.expungevmgraceperiod.description"/>
           </div>
-          {{ destroyvmgraceperiod }}
+          {{ expungevmgraceperiod }}
         </div>
       </div>
       <div class="form">
@@ -179,9 +179,9 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.destroyvmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.destroyvmgraceperiod.description"/>
+            <tooltip-label :title="$t('label.expungevmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.expungevmgraceperiod.description"/>
           </div>
-          <a-input v-model:value="destroyvmgraceperiod" type="number"></a-input>
+          <a-input v-model:value="expungevmgraceperiod" type="number"></a-input>
         </div>
       </div>
       <div class="form">
@@ -267,7 +267,7 @@ export default {
       editProfileModalVisible: false,
       profileid: null,
       autoscaleuserid: null,
-      destroyvmgraceperiod: null,
+      expungevmgraceperiod: null,
       templateid: null,
       serviceofferingid: null,
       userdata: null,
@@ -371,7 +371,7 @@ export default {
       }).then(response => {
         this.profileid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.id
         this.autoscaleuserid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.autoscaleuserid
-        this.destroyvmgraceperiod = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.destroyvmgraceperiod
+        this.expungevmgraceperiod = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.expungevmgraceperiod
         this.serviceofferingid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.serviceofferingid
         this.templateid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.templateid
         this.userdata = this.decodeUserData(decodeURIComponent(response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdata || ''))
@@ -502,7 +502,7 @@ export default {
     updateAutoScaleVmProfile () {
       const params = {
         id: this.profileid,
-        destroyvmgraceperiod: this.destroyvmgraceperiod,
+        expungevmgraceperiod: this.expungevmgraceperiod,
         serviceofferingid: this.serviceofferingid,
         templateid: this.templateid
       }

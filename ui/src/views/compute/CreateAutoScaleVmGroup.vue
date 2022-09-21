@@ -780,11 +780,11 @@
                         </a-select-option>
                       </a-select>
                     </a-form-item>
-                    <a-form-item name="destroyvmgraceperiod" ref="destroyvmgraceperiod">
+                    <a-form-item name="expungevmgraceperiod" ref="expungevmgraceperiod">
                       <template #label>
-                        <tooltip-label :title="$t('label.destroyvmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.destroyvmgraceperiod.description"/>
+                        <tooltip-label :title="$t('label.expungevmgraceperiod')" :tooltip="createAutoScaleVmProfileApiParams.expungevmgraceperiod.description"/>
                       </template>
-                      <a-input v-model:value="form.destroyvmgraceperiod" type="number"></a-input>
+                      <a-input v-model:value="form.expungevmgraceperiod" type="number"></a-input>
                     </a-form-item>
                     <a-form-item name="maxmembers" ref="maxmembers">
                       <template #label>
@@ -1490,7 +1490,7 @@ export default {
         autoscaleuserid: [
           { required: true, message: `${this.$t('message.error.select')}` }
         ],
-        destroyvmgraceperiod: [
+        expungevmgraceperiod: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
@@ -2008,7 +2008,7 @@ export default {
 
       return new Promise((resolve, reject) => {
         const params = {
-          destroyvmgraceperiod: createVmGroupData.destroyvmgraceperiod,
+          expungevmgraceperiod: createVmGroupData.expungevmgraceperiod,
           serviceofferingid: createVmGroupData.serviceofferingid,
           templateid: createVmGroupData.templateid,
           userdata: createVmGroupData.userdata,
@@ -2367,7 +2367,7 @@ export default {
 
         // vm profile details
         createVmGroupData.autoscaleuserid = values.autoscaleuserid
-        createVmGroupData.destroyvmgraceperiod = values.destroyvmgraceperiod
+        createVmGroupData.expungevmgraceperiod = values.expungevmgraceperiod
 
         createVmGroupData = Object.fromEntries(
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))

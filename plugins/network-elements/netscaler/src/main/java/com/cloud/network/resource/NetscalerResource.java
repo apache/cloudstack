@@ -3087,7 +3087,7 @@ public class NetscalerResource implements ServerResource {
 
             final com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction scaleDownAction =
                     new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
-            final Integer destroyVmGracePeriod = profileTO.getDestroyVmGraceperiod();
+            final Integer expungeVmGracePeriod = profileTO.getExpungeVmGracePeriod();
             try {
                 scaleDownAction.set_name(scaleDownActionName);
                 scaleDownAction.set_type("SCALE_DOWN"); // TODO: will this be called de-provision?
@@ -3097,7 +3097,7 @@ public class NetscalerResource implements ServerResource {
                 scaleDownAction.set_quiettime(scaleDownQuietTime);
                 final String scaleDownParameters = "command=destroyVirtualMachine" + "&" + "lbruleid=" + loadBalancerTO.getUuid();
                 scaleDownAction.set_parameters(scaleDownParameters);
-                scaleDownAction.set_vmdestroygraceperiod(destroyVmGracePeriod);
+                scaleDownAction.set_vmdestroygraceperiod(expungeVmGracePeriod);
                 autoscaleaction.add(_netscalerService, scaleDownAction);
             } catch (final Exception e) {
                 // Ignore Exception on cleanup

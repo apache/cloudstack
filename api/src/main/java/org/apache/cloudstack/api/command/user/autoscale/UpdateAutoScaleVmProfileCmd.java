@@ -74,10 +74,10 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
                description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME,
+    @Parameter(name = ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD,
                type = CommandType.INTEGER,
                description = "the time allowed for existing connections to get closed before a vm is destroyed")
-    private Integer destroyVmGraceperiod;
+    private Integer expungeVmGracePeriod;
 
     @Parameter(name = ApiConstants.COUNTERPARAM_LIST,
                type = CommandType.MAP,
@@ -161,8 +161,8 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
         return autoscaleUserId;
     }
 
-    public Integer getDestroyVmGraceperiod() {
-        return destroyVmGraceperiod;
+    public Integer getExpungeVmGracePeriod() {
+        return expungeVmGracePeriod;
     }
 
     public Boolean getDisplay() {

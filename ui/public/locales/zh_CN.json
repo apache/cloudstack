@@ -899,7 +899,7 @@
   "label.destroy": "\u9500\u6BC1",
   "label.destroy.kubernetes.cluster": "\u6467\u6BC1 Kubernetes \u96C6\u7FA4",
   "label.destroy.router": "\u9500\u6BC1\u8DEF\u7531\u5668",
-  "label.destroyvmgraceperiod": "\u9500\u6BC1\u865A\u62DF\u673A\u5BBD\u9650\u671F",
+  "label.expungevmgraceperiod": "\u9500\u6BC1\u865A\u62DF\u673A\u5BBD\u9650\u671F",
   "label.detaching.disk": "\u6B63\u5728\u53D6\u6D88\u9644\u52A0\u78C1\u76D8",
   "label.details": "\u8BE6\u7EC6\u4FE1\u606F",
   "label.deviceid": "\u8BBE\u5907\u6807\u8BC6\u7801",
