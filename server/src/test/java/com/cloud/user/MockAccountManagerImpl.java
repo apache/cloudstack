@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.springframework.stereotype.Component;
 
@@ -431,6 +432,16 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public Map<String, String> getKeys(Long userId) {
+        return null;
+    }
+
+    @Override
+    public List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders() {
+        return null;
+    }
+
+    @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
         return null;
     }
 
