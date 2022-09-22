@@ -116,7 +116,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.resourceId = vmGroupId;
         this.resourceType = ResourceTag.ResourceObjectType.AutoScaleVmGroup;
         this.rawValue = INVALID_VALUE;
-        this.valueType = VirtualRouterAutoScale.AutoScaleValueType.INSTANT;
+        this.valueType = VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM_GROUP;
         this.created = new Date();
         this.state = State.INACTIVE;
     }

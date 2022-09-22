@@ -46,8 +46,8 @@ public class GetAutoScaleMetricsAnswerTest {
     @Before
     public void setUp() {
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
 
         command = new GetAutoScaleMetricsCommand(privateIp, true, publicIP, port, metrics);
     }
@@ -75,17 +75,17 @@ public class GetAutoScaleMetricsAnswerTest {
         assertTrue(answer.getResult());
         assertEquals(0, answer.getValues().size());
 
-        answer.addValue(new AutoScaleMetricsValue(metrics.get(0), VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(1)));
+        answer.addValue(new AutoScaleMetricsValue(metrics.get(0), VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, Double.valueOf(1)));
         assertEquals(1, answer.getValues().size());
         assertEquals(metrics.get(0), answer.getValues().get(0).getMetrics());
         assertEquals(Double.valueOf(1), answer.getValues().get(0).getValue());
 
-        answer.addValue(new AutoScaleMetricsValue(metrics.get(1), VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(2)));
+        answer.addValue(new AutoScaleMetricsValue(metrics.get(1), VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, Double.valueOf(2)));
         assertEquals(2, answer.getValues().size());
         assertEquals(metrics.get(1), answer.getValues().get(1).getMetrics());
         assertEquals(Double.valueOf(2), answer.getValues().get(1).getValue());
 
-        answer.addValue(new AutoScaleMetricsValue(metrics.get(2), VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(3)));
+        answer.addValue(new AutoScaleMetricsValue(metrics.get(2), VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, Double.valueOf(3)));
         assertEquals(3, answer.getValues().size());
         assertEquals(metrics.get(2), answer.getValues().get(2).getMetrics());
         assertEquals(Double.valueOf(3), answer.getValues().get(2).getValue());

@@ -62,6 +62,8 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouterAutoScale;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleValueType;
+import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -1367,7 +1369,7 @@ public class AutoScaleManagerImplTest {
         when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
         when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
-        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(maxMembers - 1);
+        when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(maxMembers - 1);
         when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
 
         when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
@@ -1394,7 +1396,7 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
 
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
-        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(minMembers + 1);
+        when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(minMembers + 1);
         when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
 
         when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
@@ -1801,7 +1803,7 @@ public class AutoScaleManagerImplTest {
         when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);
         PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).isNative(groupTO);
 
-        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(minMembers);
+        when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(minMembers);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
 
         when(autoScaleVmGroupVmMapDao.listByGroup(vmGroupId)).thenReturn(Arrays.asList(autoScaleVmGroupVmMapVOMock));
@@ -1844,8 +1846,8 @@ public class AutoScaleManagerImplTest {
 
         autoScaleManagerImplSpy.processPerformanceMonitorAnswer(countersMap, countersNumberMap, groupTO, params, details);
 
-        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleUpCounterId), eq(scaleUpConditionId), eq(0L), eq(value1));
-        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleDownCounterId), eq(scaleDownConditionId), eq(0L), eq(value2));
+        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleUpCounterId), eq(scaleUpConditionId), eq(0L), eq(value1), eq(AutoScaleValueType.INSTANT_VM));
+        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleDownCounterId), eq(scaleDownConditionId), eq(0L), eq(value2), eq(AutoScaleValueType.INSTANT_VM));
     }
 
     @Test
@@ -1916,17 +1918,17 @@ public class AutoScaleManagerImplTest {
         List<AutoScaleVmGroupStatisticsVO> stats = new ArrayList<>();
         Date timestamp = new Date();
         stats.add(new AutoScaleVmGroupStatisticsVO(vmGroupId, scaleUpPolicyId, scaleUpCounterId, virtualMachineId, ResourceTag.ResourceObjectType.UserVm,
-                (double) 1, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
+                (double) 1, AutoScaleValueType.INSTANT_VM, timestamp));
         stats.add(new AutoScaleVmGroupStatisticsVO(vmGroupId, scaleUpPolicyId, scaleUpCounterId, virtualMachineId, ResourceTag.ResourceObjectType.UserVm,
-                (double) 2, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
+                (double) 2, AutoScaleValueType.INSTANT_VM, timestamp));
         stats.add(new AutoScaleVmGroupStatisticsVO(vmGroupId, scaleUpPolicyId, scaleUpCounterId, virtualMachineId, ResourceTag.ResourceObjectType.UserVm,
-                (double) 3, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
+                (double) 3, AutoScaleValueType.INSTANT_VM, timestamp));
 
         when(asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(eq(vmGroupId), eq(scaleUpPolicyId), eq(scaleUpCounterId), any())).thenReturn(stats);
         when(asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(eq(vmGroupId), eq(scaleDownPolicyId), eq(scaleDownCounterId), any())).thenReturn(stats);
 
         PowerMockito.doNothing().when(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), any(),
-                any(), any(), any(), any());
+                any(), any(), any(), any(), any());
 
         Map<String, Double> countersMap = new HashMap<>();
         Map<String, Integer> countersNumberMap = new HashMap<>();
@@ -1934,7 +1936,7 @@ public class AutoScaleManagerImplTest {
         autoScaleManagerImplSpy.updateCountersMap(groupTO, countersMap, countersNumberMap);
 
         Mockito.verify(autoScaleManagerImplSpy, times(6)).updateCountersMapWithInstantData(any(), any(), any(),
-                any(), any(), any(), any());
+                any(), any(), any(), any(), any());
     }
 
     @Test
@@ -1966,24 +1968,23 @@ public class AutoScaleManagerImplTest {
         List<AutoScaleVmGroupStatisticsVO> stats = new ArrayList<>();
         Date timestamp = new Date();
         stats.add(new AutoScaleVmGroupStatisticsVO(vmGroupId, scaleUpPolicyId, scaleUpCounterId, domainRouterId, ResourceTag.ResourceObjectType.DomainRouter,
-                (double) 11, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, timestamp));
+                (double) 11, AutoScaleValueType.AGGREGATED_VM_GROUP, timestamp));
         stats.add(new AutoScaleVmGroupStatisticsVO(vmGroupId, scaleUpPolicyId, scaleUpCounterId, domainRouterId, ResourceTag.ResourceObjectType.DomainRouter,
-                (double) 31, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, new Date(timestamp.getTime() + 10 * 1000)));
+                (double) 31, AutoScaleValueType.AGGREGATED_VM_GROUP, new Date(timestamp.getTime() + 10 * 1000)));
         stats.add(new AutoScaleVmGroupStatisticsVO(vmGroupId, scaleUpPolicyId, scaleUpCounterId, domainRouterId, ResourceTag.ResourceObjectType.DomainRouter,
-                (double) 51, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, new Date(timestamp.getTime() + 20 * 1000)));
+                (double) 51, AutoScaleValueType.AGGREGATED_VM_GROUP, new Date(timestamp.getTime() + 20 * 1000)));
 
         when(asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(eq(vmGroupId), eq(scaleUpPolicyId), eq(scaleUpCounterId), any())).thenReturn(stats);
+        when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(1);
 
-        PowerMockito.doNothing().when(autoScaleManagerImplSpy).updateCountersMapWithAggregatedData(any(), any(), any(),
-                any(), any(), any());
+        PowerMockito.doNothing().when(autoScaleManagerImplSpy).updateCountersMapWithProcessedData(any(), any(), any(), any());
 
         Map<String, Double> countersMap = new HashMap<>();
         Map<String, Integer> countersNumberMap = new HashMap<>();
 
         autoScaleManagerImplSpy.updateCountersMap(groupTO, countersMap, countersNumberMap);
 
-        Mockito.verify(autoScaleManagerImplSpy, times(1)).updateCountersMapWithAggregatedData(any(), any(), any(),
-                any(), any(), eq((double) 2)); // average per second
+        Mockito.verify(autoScaleManagerImplSpy, times(1)).updateCountersMapWithProcessedData(any(), any(), any(), eq((double) 2)); // average per second
     }
 
     @Test
@@ -2008,7 +2009,7 @@ public class AutoScaleManagerImplTest {
 
         double value = 512;
         autoScaleManagerImplSpy.updateCountersMapWithInstantData(countersMap, countersNumberMap,
-                groupTO, counterId, conditionId, scaleUpPolicyId, value);
+                groupTO, counterId, conditionId, scaleUpPolicyId, value, AutoScaleValueType.INSTANT_VM);
 
         Assert.assertEquals(1, countersMap.size());
         Assert.assertEquals(1, countersNumberMap.size());
@@ -2034,7 +2035,7 @@ public class AutoScaleManagerImplTest {
 
         double value = 0.5;
         autoScaleManagerImplSpy.updateCountersMapWithInstantData(countersMap, countersNumberMap,
-                groupTO, counterId, conditionId, scaleUpPolicyId, value);
+                groupTO, counterId, conditionId, scaleUpPolicyId, value, AutoScaleValueType.INSTANT_VM);
 
         Assert.assertEquals(1, countersMap.size());
         Assert.assertEquals(1, countersNumberMap.size());
@@ -2044,7 +2045,7 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void updateCountersMapWithAggregatedData() {
+    public void updateCountersMapWithProcessedData() {
         Map<String, Double> countersMap = new HashMap<>();
         Map<String, Integer> countersNumberMap = new HashMap<>();
 
@@ -2054,14 +2055,13 @@ public class AutoScaleManagerImplTest {
 
         double value = 20;
 
-        autoScaleManagerImplSpy.updateCountersMapWithAggregatedData(countersMap, countersNumberMap,
-                counterId, conditionId, scaleUpPolicyId, value);
+        autoScaleManagerImplSpy.updateCountersMapWithProcessedData(countersMap, countersNumberMap, key, value);
 
         Assert.assertEquals(1, countersMap.size());
         Assert.assertEquals(1, countersNumberMap.size());
 
-        Assert.assertEquals(20, (double) countersMap.get(key), 0);
-        Assert.assertEquals(1, (long) countersNumberMap.get(key));
+        Assert.assertEquals(30, (double) countersMap.get(key), 0);
+        Assert.assertEquals(2, (long) countersNumberMap.get(key));
     }
 
     @Test
@@ -2086,7 +2086,7 @@ public class AutoScaleManagerImplTest {
 
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
-        when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(minMembers);
+        when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(minMembers);
         when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);
 
         PowerMockito.doNothing().when(autoScaleManagerImplSpy).getVmStatsFromHosts(groupTO);
@@ -2236,7 +2236,7 @@ public class AutoScaleManagerImplTest {
         when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
         when(scaleUpCounterTO.getSource()).thenReturn(Counter.Source.CPU);
         when(scaleUpCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
-        when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS.toString());
+        when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS.toString());
 
         AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
         ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
@@ -2246,15 +2246,15 @@ public class AutoScaleManagerImplTest {
         when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
         when(scaleDownCounterTO.getSource()).thenReturn(Counter.Source.VIRTUALROUTER);
         when(scaleDownCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
-        when(scaleDownCounterTO.getValue()).thenReturn(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS.toString());
+        when(scaleDownCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS.toString());
 
         when(groupTO.getPolicies()).thenReturn(Arrays.asList(scaleUpPolicyTO, scaleDownPolicyTO));
 
         List<VirtualRouterAutoScale.AutoScaleMetrics> result = autoScaleManagerImplSpy.setGetAutoScaleMetricsCommandMetrics(groupTO);
 
         Assert.assertEquals(2, result.size());
-        Assert.assertEquals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, result.get(0).getCounter());
-        Assert.assertEquals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, result.get(1).getCounter());
+        Assert.assertEquals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, result.get(0).getCounter());
+        Assert.assertEquals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, result.get(1).getCounter());
     }
 
     @Test
@@ -2274,13 +2274,13 @@ public class AutoScaleManagerImplTest {
         when(scaleDownCounter.getId()).thenReturn(counterId);
 
         List<VirtualRouterAutoScale.AutoScaleMetrics> metrics = new ArrayList<>();
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, scaleUpPolicyId, 2L, counterId, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, scaleUpPolicyId, 2L, counterId, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, scaleDownPolicyId, 2L, counterId, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, scaleUpPolicyId, 2L, counterId, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, scaleUpPolicyId, 2L, counterId, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, scaleDownPolicyId, 2L, counterId, 4));
         List<VirtualRouterAutoScale.AutoScaleMetricsValue> values = new ArrayList<>();
-        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(0), VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(1)));
-        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(1), VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(2)));
-        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(2), VirtualRouterAutoScale.AutoScaleValueType.INSTANT, Double.valueOf(3)));
+        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(0), AutoScaleValueType.INSTANT_VM, Double.valueOf(1)));
+        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(1), AutoScaleValueType.INSTANT_VM, Double.valueOf(2)));
+        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(2), AutoScaleValueType.INSTANT_VM, Double.valueOf(3)));
 
         autoScaleManagerImplSpy.processGetAutoScaleMetricsAnswer(groupTO, values, domainRouterId);
 

@@ -130,8 +130,8 @@ public class XcpServerWrapperTest {
     public void testGetAutoScaleMetricsCommandForVpc() {
         List<VirtualRouterAutoScale.AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
 
         final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", true, "10.10.10.10", 8080, metrics);
 
@@ -152,9 +152,9 @@ public class XcpServerWrapperTest {
         for (VirtualRouterAutoScale.AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(vpcStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(vpcStats[1]), value.getValue());
             }
         }
@@ -164,8 +164,8 @@ public class XcpServerWrapperTest {
     public void testGetAutoScaleMetricsCommandForNetwork() {
         List<VirtualRouterAutoScale.AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
 
         final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", false, "10.10.10.10", 8080, metrics);
 
@@ -188,9 +188,9 @@ public class XcpServerWrapperTest {
         for (VirtualRouterAutoScale.AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(networkStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(networkStats[1]), value.getValue());
             }
         }

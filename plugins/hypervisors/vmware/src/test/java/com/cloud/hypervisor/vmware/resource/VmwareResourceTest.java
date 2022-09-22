@@ -456,8 +456,8 @@ public class VmwareResourceTest {
     public void testGetAutoScaleMetricsCommandForVpc() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
 
         GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, metrics);
 
@@ -474,9 +474,9 @@ public class VmwareResourceTest {
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(vpcStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(vpcStats[1]), value.getValue());
             }
         }
@@ -486,8 +486,8 @@ public class VmwareResourceTest {
     public void testGetAutoScaleMetricsCommandForNetwork() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
 
         GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", false, "10.10.10.10", 8080, metrics);
 
@@ -504,9 +504,9 @@ public class VmwareResourceTest {
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(networkStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
                 assertEquals(Double.valueOf(networkStats[1]), value.getValue());
             }
         }

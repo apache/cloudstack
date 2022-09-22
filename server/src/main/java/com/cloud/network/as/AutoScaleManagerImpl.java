@@ -1635,7 +1635,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private boolean checkConditionUp(AutoScaleVmGroupVO asGroup, Integer numVm) {
         // check maximum
-        Integer currentVM = autoScaleVmGroupVmMapDao.countByGroup(asGroup.getId());
+        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
         Integer maxVm = asGroup.getMaxMembers();
         if (currentVM + numVm > maxVm) {
             s_logger.warn("number of VM will greater than the maximum in this group if scaling up, so do nothing more");
@@ -1645,7 +1645,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     private boolean checkConditionDown(AutoScaleVmGroupVO asGroup) {
-        Integer currentVM = autoScaleVmGroupVmMapDao.countByGroup(asGroup.getId());
+        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
         Integer minVm = asGroup.getMinMembers();
         if (currentVM - 1 < minVm) {
             s_logger.warn("number of VM will less than the minimum in this group if scaling down, so do nothing more");
@@ -2228,7 +2228,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
             Double sum = countersMap.get(key);
             Integer number = countersNumberMap.get(key);
-            s_logger.debug(String.format("policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), sum, number));
+            s_logger.debug(String.format("Checking policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), sum, number));
             if (number == null || number == 0) {
                 bValid = false;
                 break;
@@ -2311,7 +2311,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             return;
         }
         // check minimum vm of group
-        Integer currentVM = autoScaleVmGroupVmMapDao.countByGroup(asGroup.getId());
+        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
         if (currentVM < asGroup.getMinMembers()) {
             doScaleUp(asGroup.getId(), asGroup.getMinMembers() - currentVM);
             return;
@@ -2416,7 +2416,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
                     Double coVal = Double.parseDouble(counterVals[1]);
 
-                    updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counterId, conditionId, policyId, coVal);
+                    updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counterId, conditionId, policyId, coVal, AutoScaleValueType.INSTANT_VM);
 
                 } catch (Exception e) {
                     s_logger.error("Cannot process PerformanceMonitorAnswer due to Exception: ", e);
@@ -2425,13 +2425,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    protected void updateCountersMapWithInstantData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO, Long counterId, Long conditionId, Long policyId, Double coVal) {
+    protected void updateCountersMapWithInstantData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO,
+                                                    Long counterId, Long conditionId, Long policyId, Double coVal, AutoScaleValueType valueType) {
         // Summary of all counter by counterId key
         String key = generateKeyFromPolicyAndConditionAndCounter(policyId, conditionId, counterId);
-
-        /* initialize if data is not set */
-        countersMap.computeIfAbsent(key, k -> Double.valueOf(0));
-        countersNumberMap.computeIfAbsent(key, k -> 0);
 
         CounterVO counter = counterDao.findById(counterId);
         if (counter == null) {
@@ -2450,25 +2447,31 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             coVal = coVal * 100;
         }
 
+        if (AutoScaleValueType.INSTANT_VM_GROUP.equals(valueType)) {
+            Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(groupTO.getId());
+            if (currentVM == 0) {
+                s_logger.debug(String.format("Skipping updating countersMap for group %s and policy %s and counter %s due to no VMs", groupTO.getId(), policyId, counterId));
+                return;
+            }
+            coVal = coVal / currentVM;
+        }
+
+        updateCountersMapWithProcessedData(countersMap, countersNumberMap, key, coVal);
+    }
+
+    protected void updateCountersMapWithProcessedData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, String key, Double coVal) {
+        /* initialize if data is not set */
+        countersMap.computeIfAbsent(key, k -> Double.valueOf(0));
+        countersNumberMap.computeIfAbsent(key, k -> 0);
+
         // update data entry
         countersMap.put(key, countersMap.get(key) + coVal);
         countersNumberMap.put(key, countersNumberMap.get(key) + 1);
     }
 
-    protected void updateCountersMapWithAggregatedData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, Long counterId, Long conditionId, Long policyId, Double coVal) {
-        // Summary of all counter by counterId key
-        String key = generateKeyFromPolicyAndConditionAndCounter(policyId, conditionId, counterId);
-        CounterVO counter = counterDao.findById(counterId);
-        if (counter == null) {
-            return;
-        }
-        countersMap.put(key, coVal);
-        countersNumberMap.put(key, 1);
-    }
-
     protected void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
         // check minimum vm of group
-        Integer currentVM = autoScaleVmGroupVmMapDao.countByGroup(asGroup.getId());
+        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
         if (currentVM < asGroup.getMinMembers()) {
             doScaleUp(asGroup.getId(), asGroup.getMinMembers() - currentVM);
             return;
@@ -2583,10 +2586,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     }
                     if (counterValue == null) {
                         asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
-                                AutoScaleValueType.INSTANT, timestamp));
+                                AutoScaleValueType.INSTANT_VM, timestamp));
                     } else {
                         asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
-                                counterValue, AutoScaleValueType.INSTANT, timestamp));
+                                counterValue, AutoScaleValueType.INSTANT_VM, timestamp));
                     }
                 }
             }
@@ -2660,7 +2663,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 }
                 if (!found) {
                     asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), routerId,
-                            ResourceTag.ResourceObjectType.DomainRouter, AutoScaleValueType.INSTANT, timestamp));
+                            ResourceTag.ResourceObjectType.DomainRouter, AutoScaleValueType.INSTANT_VM, timestamp));
                 }
             }
         }
@@ -2694,15 +2697,16 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         CounterTO counter = conditionTO.getCounter();
         List<AutoScaleVmGroupStatisticsVO> stats = asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(groupTO.getId(), policyTO.getId(), counter.getId(), afterDate);
         if (CollectionUtils.isEmpty(stats)) {
+            s_logger.debug(String.format("Skipping updating countersMap for group %s and policy %s and counter %s due to no stats", groupTO.getId(), policyTO.getId(), counter.getId()));
             return;
         }
-        s_logger.debug(String.format("Updating countersMap with %d stats", stats.size()));
+        s_logger.debug(String.format("Updating countersMap with %d stats for group %s and policy %s and counter %s", stats.size(), groupTO.getId(), policyTO.getId(), counter.getId()));
         Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords = new HashMap<>();
         List<String> incorrectRecords = new ArrayList<>();
         for (AutoScaleVmGroupStatisticsVO stat : stats) {
-            if (AutoScaleValueType.INSTANT.equals(stat.getValueType())) {
-                updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counter.getId(), conditionId, policyTO.getId(), stat.getRawValue());
-            } else if (AutoScaleValueType.AGGREGATED.equals(stat.getValueType())) {
+            if (Arrays.asList(AutoScaleValueType.INSTANT_VM, AutoScaleValueType.INSTANT_VM_GROUP).contains(stat.getValueType())) {
+                updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counter.getId(), conditionId, policyTO.getId(), stat.getRawValue(), stat.getValueType());
+            } else if (Arrays.asList(AutoScaleValueType.AGGREGATED_VM, AutoScaleValueType.AGGREGATED_VM_GROUP).contains(stat.getValueType())) {
                 String key = stat.getCounterId() + "-" + stat.getResourceId();
                 if (incorrectRecords.contains(key)) {
                     continue;
@@ -2727,12 +2731,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
         }
 
-        updateCountersMapByAggratedRecords(countersMap, countersNumberMap, aggregatedRecords, conditionId, policyTO.getId());
+        updateCountersMapByAggregatedRecords(countersMap, countersNumberMap, aggregatedRecords, conditionId, policyTO.getId(), groupTO.getId());
     }
 
-    public void updateCountersMapByAggratedRecords(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap,
-                                                    Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords,
-                                                    Long conditionId, Long policyId) {
+    public void updateCountersMapByAggregatedRecords(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap,
+                                                     Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords,
+                                                     Long conditionId, Long policyId, Long groupId) {
         if (MapUtils.isNotEmpty(aggregatedRecords)) {
             s_logger.debug("Processing aggregated data");
             for (Map.Entry<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecord : aggregatedRecords.entrySet()) {
@@ -2746,7 +2750,16 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 AutoScaleVmGroupStatisticsVO firstRecord = records.get(0);
                 AutoScaleVmGroupStatisticsVO lastRecord = records.get(records.size() - 1);
                 Double coVal = (lastRecord.getRawValue() - firstRecord.getRawValue()) * 1000 / (lastRecord.getCreated().getTime() - firstRecord.getCreated().getTime());
-                updateCountersMapWithAggregatedData(countersMap, countersNumberMap, counterId, conditionId, policyId, coVal);
+                if (AutoScaleValueType.AGGREGATED_VM_GROUP.equals(firstRecord.getValueType())) {
+                    Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(groupId);
+                    if (currentVM == 0) {
+                        s_logger.debug(String.format("Skipping updating countersMap for group %s and policy %s and counter %s due to no VMs", groupId, policyId, counterId));
+                        return;
+                    }
+                    coVal = coVal / currentVM;
+                }
+                String key = generateKeyFromPolicyAndConditionAndCounter(policyId, conditionId, counterId);
+                updateCountersMapWithProcessedData(countersMap, countersNumberMap, key, coVal);
             }
         }
     }

@@ -38,8 +38,8 @@ public class VirtualRouterAutoScaleTest {
 
     @Test
     public void testVirtualRouterAutoScaleCounters() {
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_BPS, "virtual.network.received.Bps");
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_BPS, "virtual.network.transmit.Bps");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, "virtual.network.received.average.Bps");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, "virtual.network.transmit.average.Bps");
         testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, "virtual.network.lb.average.connections");
         testVirtualRouterAutoScaleCounter(null, "invalid");
     }
@@ -59,10 +59,10 @@ public class VirtualRouterAutoScaleTest {
     public void testAutoScaleMetricsValue() {
         AutoScaleMetrics metrics = new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4);
 
-        AutoScaleMetricsValue value = new AutoScaleMetricsValue(metrics, AutoScaleValueType.INSTANT, 123.45);
+        AutoScaleMetricsValue value = new AutoScaleMetricsValue(metrics, AutoScaleValueType.INSTANT_VM, 123.45);
 
         assertEquals(metrics, value.getMetrics());
-        assertEquals(AutoScaleValueType.INSTANT, value.getType());
+        assertEquals(AutoScaleValueType.INSTANT_VM, value.getType());
         assertEquals(123.45, (double) value.getValue(), 0);
     }
 }
