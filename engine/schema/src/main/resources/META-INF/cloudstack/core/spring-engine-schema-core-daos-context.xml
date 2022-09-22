@@ -175,6 +175,7 @@
   <bean id="projectJoinDaoImpl" class="com.cloud.api.query.dao.ProjectJoinDaoImpl" />
   <bean id="regionDaoImpl" class="org.apache.cloudstack.region.dao.RegionDaoImpl" />
   <bean id="remoteAccessVpnDaoImpl" class="com.cloud.network.dao.RemoteAccessVpnDaoImpl" />
+  <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
   <bean id="resourceCountDaoImpl" class="com.cloud.configuration.dao.ResourceCountDaoImpl" />
   <bean id="resourceIconDaoImpl" class="com.cloud.resource.icon.dao.ResourceIconDaoImpl" />
   <bean id="resourceLimitDaoImpl" class="com.cloud.configuration.dao.ResourceLimitDaoImpl" />
