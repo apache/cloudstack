@@ -441,6 +441,7 @@ pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-
 pip3 install urllib3
 
 /usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now haveged > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
@@ -498,9 +499,10 @@ if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
 fi
 cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
 mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
-/sbin/service libvirtd restart
-/sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
-/sbin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
+/usr/bin/systemctl restart libvirtd
+/usr/bin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
+/usr/bin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
 
 # if saved configs from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
