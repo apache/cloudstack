@@ -88,7 +88,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD,
                type = CommandType.INTEGER,
-               description = "the time allowed for existing connections to get closed before a vm is destroyed")
+               description = "the time allowed for existing connections to get closed before a vm is expunged")
     private Integer expungeVmGracePeriod;
 
     @Parameter(name = ApiConstants.COUNTERPARAM_LIST,
