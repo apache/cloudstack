@@ -70,15 +70,20 @@ public interface NetworkModel {
     String PUBLIC_KEYS_FILE = "public-keys";
     String CLOUD_IDENTIFIER_FILE = "cloud-identifier";
     String HYPERVISOR_HOST_NAME_FILE = "hypervisor-host-name";
+    String CLOUD_DOMAIN_FILE = "cloud-domain";
+    String CLOUD_DOMAIN_ID_FILE = "cloud-domain-id";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
-    ImmutableMap<String, String> openStackFileMapping = ImmutableMap.of(
-            AVAILABILITY_ZONE_FILE, "availability_zone",
-            LOCAL_HOSTNAME_FILE, "hostname",
-            VM_ID_FILE, "uuid",
-            PUBLIC_HOSTNAME_FILE, "name"
-    );
+    ImmutableMap<String, String> openStackFileMapping = ImmutableMap.<String, String>builder()
+            .put(AVAILABILITY_ZONE_FILE, "availability_zone")
+            .put(LOCAL_HOSTNAME_FILE, "hostname")
+            .put(VM_ID_FILE, "uuid")
+            .put(PUBLIC_HOSTNAME_FILE, "name")
+            .put(CLOUD_DOMAIN_FILE, CLOUD_DOMAIN_FILE)
+            .put(CLOUD_DOMAIN_ID_FILE, CLOUD_DOMAIN_ID_FILE)
+            .put(HYPERVISOR_HOST_NAME_FILE, HYPERVISOR_HOST_NAME_FILE)
+            .build();
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",
             "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
