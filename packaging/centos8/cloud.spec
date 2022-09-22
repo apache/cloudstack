@@ -78,6 +78,7 @@ Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
+Requires: haveged
 Requires: python3-pip
 Requires: python3-setuptools
 Requires: libgcrypt > 1.8.3
@@ -110,6 +111,8 @@ Requires: perl
 Requires: python3-libvirt
 Requires: qemu-img
 Requires: qemu-kvm
+Requires: cryptsetup
+Requires: rng-tools
 Requires: libgcrypt > 1.8.3
 Provides: cloud-agent
 Group: System Environment/Libraries

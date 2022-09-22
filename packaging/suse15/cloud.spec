@@ -78,6 +78,7 @@ Requires: mkisofs
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: qemu-tools
+Requires: haveged
 Requires: python3-pip
 Requires: python3-setuptools
 Requires: libgcrypt20
@@ -111,6 +112,8 @@ Requires: ipset
 Requires: perl
 Requires: python3-libvirt-python
 Requires: qemu-kvm
+Requires: cryptsetup
+Requires: rng-tools
 Requires: libgcrypt20
 Requires: qemu-tools
 Provides: cloud-agent
