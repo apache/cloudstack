@@ -2340,4 +2340,15 @@ public class HypervisorHostHelper {
         }
         return hardwareVersion;
     }
+
+    public static VirtualMachineMO findVmOnHypervisorHostOrPeer(VmwareHypervisorHost hypervisorHost, String vmName) throws Exception {
+        VirtualMachineMO vmMo = hypervisorHost.findVmOnHyperHost(vmName);
+        if (vmMo == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Unable to find the VM on host %s, try within datacenter", hypervisorHost.getHyperHostName()));
+            }
+            vmMo = hypervisorHost.findVmOnPeerHyperHost(vmName);
+        }
+        return vmMo;
+    }
 }

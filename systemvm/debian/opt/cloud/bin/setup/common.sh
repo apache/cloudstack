@@ -885,6 +885,9 @@ parse_cmd_line() {
         useHttpsToUpload)
           export USEHTTPS=$VALUE
           ;;
+        vncport)
+          export VNCPORT=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
