@@ -71,7 +71,7 @@ CREATE PROCEDURE `cloud`.`IDEMPOTENT_CHANGE_COLUMN` (
 , IN in_column_new_definition VARCHAR(1000)
 )
 BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+    DECLARE CONTINUE HANDLER FOR 1054 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Idempotent ADD UNIQUE KEY
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
@@ -82,6 +82,15 @@ CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY` (
 )
 BEGIN
     DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD UNIQUE KEY ', in_key_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent DROP FOREIGN KEY
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
+    IN in_table_name VARCHAR(200)
+, IN in_foreign_key_name VARCHAR(200)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Add column 'name' to 'autoscale_vmgroups' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
@@ -122,7 +131,7 @@ UPDATE `cloud`.`autoscale_vmgroups` SET state= UPPER(state);
 
 -- Update autoscale_vmgroups so records will not be removed when LB rule is removed
 
-ALTER TABLE `cloud`.`autoscale_vmgroups` DROP FOREIGN KEY `fk_autoscale_vmgroup__load_balancer_id`;
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.autoscale_vmgroups', 'fk_autoscale_vmgroup__load_balancer_id');
 
 -- Update autoscale_vmprofiles to make autoscale_user_id optional
 
@@ -152,7 +161,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (
   INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Update user vm view to include autoscalie vm group id
+-- Update user vm view to include autoscale vm group id
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE
     VIEW `user_vm_view` AS
