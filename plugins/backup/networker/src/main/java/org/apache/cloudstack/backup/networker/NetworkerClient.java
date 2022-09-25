@@ -313,7 +313,7 @@ public class NetworkerClient {
                         backupsTaken.add(backup.getId());
                     }
                 } catch (ParseException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Failed to parse EMC Networker backup retention time:  "+ e);
                 }
             }
             return backupsTaken;

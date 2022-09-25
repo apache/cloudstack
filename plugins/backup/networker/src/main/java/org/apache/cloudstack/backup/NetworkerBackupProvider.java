@@ -366,7 +366,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                   " -s " + networkerServer +
                   " -S " + SSID;
 
-        if (NetworkerClientVerboseLogs.value())
+        if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
              command = command + " -v ";
 
         Date restoreJobStart = new Date();
@@ -449,7 +449,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 " -p " + dataStore.getLocalPath() +
                 " -a " + volume.getUuid();
 
-        if (NetworkerClientVerboseLogs.value())
+        if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
             command = command + " -v ";
 
         Date restoreJobStart = new Date();
@@ -502,7 +502,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 " -c " + clusterName +
                 " -u " + vm.getUuid() +
                 " -t " + vm.getName();
-        if (NetworkerClientVerboseLogs.value())
+        if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
             command = command + " -v ";
 
         LOG.debug("Starting backup for VM ID " + vm.getUuid() + " on Networker provider");
