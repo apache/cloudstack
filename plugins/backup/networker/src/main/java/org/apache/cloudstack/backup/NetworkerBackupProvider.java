@@ -20,6 +20,11 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
@@ -46,7 +51,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Date;
 import java.util.Objects;
-
+import java.util.UUID;
 
 
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
@@ -85,6 +90,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private ClusterDao clusterDao;
+
+    @Inject
+    private VolumeDao volumeDao;
+
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri = null;
@@ -157,7 +168,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return clusterDao.findById(host.getClusterId()).getName();
     }
 
-    protected Ternary<String, String, String> getRunningVMHyperisorCredentials(HostVO host) {
+    protected Ternary<String, String, String> getKVMHyperisorCredentials(HostVO host) {
 
         String username = null;
         String password = null;
@@ -176,7 +187,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return new Ternary<>(username, password, privateKey);
     }
 
-    private String executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
+    private boolean executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
 
         SSHCmdHelper.SSHCmdResult result = new SSHCmdHelper.SSHCmdResult(-1, null, null);
 
@@ -196,7 +207,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException("BACKUP SCRIPT FAILED", e);
         }
 
-        return result.toString();
+        return true;
     }
 
     private NetworkerClient getClient(final Long zoneId) {
@@ -260,15 +271,124 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
         LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
+        String networkerServer;
+        HostVO hostVO;
 
-        return true;
+        final Long zoneId = backup.getZoneId();
+        final String externalBackupId = backup.getExternalId();
+        final org.apache.cloudstack.backup.networker.api.Backup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
+        final String SSID = networkerBackup.getShortId();
+
+        if ( SSID.isEmpty() ) {
+            LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
+            return false;
+        }
+
+        // Find where the VM was last running
+        hostVO = getLastVMHypervisorHost(vm);
+        // Get credentials for that host
+        Ternary<String, String, String> credentials = getKVMHyperisorCredentials(hostVO);
+        LOG.debug("The SSID was reported successfully " + externalBackupId);
+        try {
+            networkerServer = getUrlDomain(NetworkerUrl.value());
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
+            }
+        String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh" +
+                  " -s " + networkerServer +
+                  " -S " + SSID;
+
+        if (NetworkerClientVerboseLogs.value() == true)
+             command = command + " -v ";
+
+        Date restoreJobStart = new Date();
+        LOG.debug("Starting Restore for VM ID " + vm.getUuid() + " and SSID" + SSID + " at " + restoreJobStart.toString());
+
+
+        if ( executeBackupCommand(hostVO, credentials.first(), credentials.second(), credentials.third(), command) ) {
+            Date restoreJobEnd = new Date();
+            LOG.debug("Restore Job for SSID " + SSID + " completed successfully at " + restoreJobEnd.toString());
+            return true;
+        } else {
+            LOG.debug("Restore Job for SSID " + SSID + " failed!");
+            return false;
+        }
     }
 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
         LOG.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
 
-        return null;
+        String networkerServer;
+        VolumeVO volume = volumeDao.findByUuid(volumeUuid);
+        StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
+
+        HostVO hostVO = hostDao.findByIp(hostIp);
+
+        final Long zoneId = backup.getZoneId();
+        final String externalBackupId = backup.getExternalId();
+        final org.apache.cloudstack.backup.networker.api.Backup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
+        final String SSID = networkerBackup.getShortId();
+        final String clusterName = networkerBackup.getClientHostname();
+        final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
+
+
+
+        if ( SSID.isEmpty() ) {
+            LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
+            return null;
+        }
+
+        Ternary<String, String, String> credentials = getKVMHyperisorCredentials(hostVO);
+        LOG.debug("The SSID was reported successfully " + externalBackupId);
+        try {
+            networkerServer = getUrlDomain(NetworkerUrl.value());
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
+        }
+
+        VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
+                backup.getDomainId(), backup.getAccountId(), 0, null,
+                backup.getSize(), null, null, null);
+
+        restoredVolume.setName("RV-"+volume.getName());
+        restoredVolume.setProvisioningType(volume.getProvisioningType());
+        restoredVolume.setUpdated(new Date());
+        restoredVolume.setUuid(UUID.randomUUID().toString());
+        restoredVolume.setRemoved(null);
+        restoredVolume.setDisplayVolume(true);
+        restoredVolume.setPoolId(volume.getPoolId());
+        restoredVolume.setPath(restoredVolume.getUuid());
+        restoredVolume.setState(Volume.State.Creating);
+        try {
+            volumeDao.persist(restoredVolume);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
+        }
+
+        String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh" +
+                " -s " + networkerServer +
+                " -c " + clusterName +
+                " -d " + destinationNetworkerClient +
+                " -n " + restoredVolume.getUuid() +
+                " -p " + dataStore.getLocalPath() +
+                " -a " + volume.getUuid();
+
+        if (NetworkerClientVerboseLogs.value() == true)
+            command = command + " -v ";
+
+        Date restoreJobStart = new Date();
+        LOG.debug("Starting Restore for Volume UUID " + volume.getUuid() + " and SSID" + SSID + " at " + restoreJobStart.toString());
+
+        if ( executeBackupCommand(hostVO, credentials.first(), credentials.second(), credentials.third(), command) ) {
+            Date restoreJobEnd = new Date();
+            LOG.debug("Restore Job for SSID " + SSID + " completed successfully at " + restoreJobEnd.toString());
+            return new Pair<>(true,restoredVolume.getUuid());
+        } else {
+            volumeDao.expunge(restoredVolume.getId());
+            LOG.debug("Restore Job for SSID " + SSID + " failed!");
+            return null;
+        }
     }
 
     @Override
@@ -302,7 +422,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         // Find where the VM is currently running
         HostVO hostVO = getRunningVMHypervisorHost(vm);
         // Get credentials for that host
-        Ternary<String, String, String> credentials = getRunningVMHyperisorCredentials(hostVO);
+        Ternary<String, String, String> credentials = getKVMHyperisorCredentials(hostVO);
 
         // Get Cluster
         clusterName = getVMHypervisorCluster(hostVO);

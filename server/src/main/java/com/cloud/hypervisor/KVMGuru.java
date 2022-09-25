@@ -22,27 +22,38 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -54,8 +65,15 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
+    HostDao _hostDao;
+    @Inject
     DpdkHelper dpdkHelper;
-
+     @Inject
+    VMInstanceDao _instanceDao;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -87,7 +105,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
         if (to.getLimitCpuUse()) {
             VirtualMachine vm = vmProfile.getVirtualMachine();
-            HostVO host = hostDao.findById(vm.getHostId());
+            HostVO host = _hostDao.findById(vm.getHostId());
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
@@ -120,7 +138,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         VirtualMachine virtualMachine = vm.getVirtualMachine();
         Long hostId = virtualMachine.getHostId();
-        HostVO host = hostId == null ? null : hostDao.findById(hostId);
+        HostVO host = hostId == null ? null : _hostDao.findById(hostId);
 
         // Determine the VM's OS description
         configureVmOsDescription(virtualMachine, to, host);
@@ -200,7 +218,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Long lastHostId = virtualMachine.getLastHostId();
         s_logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
-        HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
+        HostVO lastHost = lastHostId == null ? null : _hostDao.findById(lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
@@ -297,4 +315,50 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         return null;
     }
 
+
+    @Override
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
+        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
+
+        VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
+        if (vm.getRemoved() != null) {
+            vm.setState(VirtualMachine.State.Stopped);
+            vm.setPowerState(VirtualMachine.PowerState.PowerOff);
+            _instanceDao.update(vm.getId(), vm);
+            _instanceDao.unremove(vm.getId());
+        }
+        for (final VolumeVO volume : _volumeDao.findIncludingRemovedByInstanceAndType(vm.getId(), null)) {
+            volume.setState(Volume.State.Ready);
+            volume.setAttached(new Date());
+            _volumeDao.update(volume.getId(), volume);
+            _volumeDao.unremove(volume.getId());
+        }
+
+        return vm;
+    }
+
+
+
+    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup)
+            throws Exception {
+
+        VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
+        List<VolumeVO> devices = _volumeDao.findIncludingRemovedByInstanceAndType(targetVM.getId(), null);
+        VolumeVO restoredVolume = _volumeDao.findByUuid(location);
+        Integer deviceId = devices.size();
+
+
+        if (restoredVolume != null) {
+            restoredVolume.setState(Volume.State.Ready);
+            _volumeDao.update(restoredVolume.getId(), restoredVolume);
+            try {
+                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), deviceId);
+                return true;
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e);
+            }
+        }
+        return false;
+    }
 }
