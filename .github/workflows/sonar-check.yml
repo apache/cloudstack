@@ -23,6 +23,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+  pull-requests: write # for sonar to comment on pull-request
+
 jobs:
   build:
     name: JaCoCo Coverage
