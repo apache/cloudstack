@@ -34,6 +34,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -2555,6 +2557,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final String zoneName = dcVo.getName();
 
         IPAddressVO publicIp = _ipAddressDao.findByAssociatedVmId(vmId);
+        VirtualMachine vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("Cannot generate VM instance data, no VM exists by ID: %d", vmId));
+        }
 
         final List<String[]> vmData = new ArrayList<String[]>();
 
@@ -2623,6 +2629,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             vmData.add(new String[]{PASSWORD_DIR, PASSWORD_FILE, password});
         }
         vmData.add(new String[]{METATDATA_DIR, HYPERVISOR_HOST_NAME_FILE, hostname});
+
+        Domain domain = _domainDao.findById(vm.getDomainId());
+        if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
+            s_logger.debug("Adding domain info to cloud metadata");
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_FILE, domain.getName()});
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_ID_FILE, domain.getUuid()});
+        }
+
         return vmData;
     }
 
