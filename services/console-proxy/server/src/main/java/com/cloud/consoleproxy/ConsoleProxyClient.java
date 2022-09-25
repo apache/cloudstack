@@ -78,4 +78,6 @@ public interface ConsoleProxyClient {
     void initClient(ConsoleProxyClientParam param);
 
     void closeClient();
+
+    String getSessionUuid();
 }

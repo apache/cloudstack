@@ -174,7 +174,7 @@ public class ConnectionConcierge {
 
             Connection conn = TransactionLegacy.getStandaloneConnection();
             if (conn == null) {
-                return "Unable to get anotehr db connection";
+                return "Unable to get another db connection";
             }
 
             concierge.reset(conn);
@@ -198,9 +198,13 @@ public class ConnectionConcierge {
                 protected void runInContext() {
                     s_logger.trace("connection concierge keep alive task");
                     for (Map.Entry<String, ConnectionConcierge> entry : _conns.entrySet()) {
+                        String name = entry.getKey();
                         ConnectionConcierge concierge = entry.getValue();
                         if (concierge.keepAlive()) {
-                            testValidity(entry.getKey(), entry.getValue().conn());
+                            if (testValidity(name, concierge.conn()) != null) {
+                                s_logger.info("Resetting DB connection " + name);
+                                resetConnection(name);
+                            }
                         }
                     }
                 }

@@ -27,6 +27,18 @@ WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm'
 ALTER TABLE `cloud`.`load_balancing_rules`
 ADD cidr_list VARCHAR(4096);
 
+-- savely add resources in parallel
+-- PR#5984 Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`resource_reservation`;
+CREATE TABLE `cloud`.`resource_reservation` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `resource_type` varchar(255) NOT NULL,
+  `amount` bigint unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Alter networks table to add ip6dns1 and ip6dns2
 ALTER TABLE `cloud`.`networks`
     ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'first IPv6 DNS for the network' AFTER `dns2`,
