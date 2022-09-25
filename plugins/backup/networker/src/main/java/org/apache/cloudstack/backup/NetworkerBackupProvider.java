@@ -49,8 +49,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.xml.utils.URI;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
-
-
 import javax.inject.Inject;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -65,8 +63,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
@@ -561,6 +557,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         }
         return metrics;
     }
+
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         final Long zoneId = vm.getDataCenterId();

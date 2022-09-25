@@ -244,7 +244,6 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  # Perform Initial sanity checks
  sanity_checks
 
-
  target_name=$(virsh domname "$kvmDUuid")
  target_uuid=$(virsh domuuid "$kvmDName")
 
