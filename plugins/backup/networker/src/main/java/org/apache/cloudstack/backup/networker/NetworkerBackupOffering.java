@@ -18,7 +18,6 @@ package org.apache.cloudstack.backup.networker;
 
 import org.apache.cloudstack.backup.BackupOffering;
 import java.util.Date;
-
 public class NetworkerBackupOffering implements BackupOffering {
 
     private String name;
