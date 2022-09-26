@@ -123,6 +123,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'EditVM',
@@ -176,7 +177,8 @@ export default {
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id)
+        securitygroupids: this.resource.securitygroup.map(x => x.id),
+        userdata: ''
       })
       this.rules = reactive({})
     },
@@ -188,6 +190,7 @@ export default {
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchDynamicScalingVmConfig()
+      this.fetchUserData()
     },
     fetchZoneDetails () {
       api('listZones', {
@@ -281,13 +284,15 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
+    fetchUserData () {
+      const params = {
+        id: this.resource.id,
+        userdata: true
+      }
 
-      return reversedValue
+      api('listVirtualMachines', params).then(json => {
+        this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+      })
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -312,7 +317,7 @@ export default {
           params.group = values.group
         }
         if (values.userdata && values.userdata.length > 0) {
-          params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+          params.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
         }
         this.loading = true
 
