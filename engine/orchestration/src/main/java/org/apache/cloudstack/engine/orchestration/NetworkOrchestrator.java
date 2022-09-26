@@ -2616,7 +2616,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 throw new InvalidParameterValueException("The VLAN tag for isolated PVLAN " + isolatedPvlan + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
-            if (!UuidUtils.validateUUID(vlanId)) {
+            if (!UuidUtils.isUuid(vlanId)) {
                 // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
                 if (!hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff, isPrivateNetwork)) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
@@ -2779,7 +2779,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (vlanIdFinal != null) {
                     if (isolatedPvlan == null) {
                         URI uri = null;
-                        if (UuidUtils.validateUUID(vlanIdFinal)) {
+                        if (UuidUtils.isUuid(vlanIdFinal)) {
                             //Logical router's UUID provided as VLAN_ID
                             userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
                         } else {
