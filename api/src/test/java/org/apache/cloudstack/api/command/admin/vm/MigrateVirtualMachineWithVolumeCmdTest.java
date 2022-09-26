@@ -93,7 +93,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("Either %s or %s  must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO);
+            String expected = String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO);
             Assert.assertEquals(expected , e.getMessage());
         }
     }
