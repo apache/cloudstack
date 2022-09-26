@@ -25,15 +25,20 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.veeam.api.RestoreSession;
+import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -57,7 +62,7 @@ public class VeeamClientTest {
                         .withStatus(201)
                         .withHeader("X-RestSvcSessionId", "some-session-auth-id")
                         .withBody("")));
-        client = new VeeamClient("http://localhost:9399/api/", adminUsername, adminPassword, true, 60);
+        client = new VeeamClient("http://localhost:9399/api/", adminUsername, adminPassword, true, 60, 600);
         mockClient = Mockito.mock(VeeamClient.class);
         Mockito.when(mockClient.getRepositoryNameFromJob(Mockito.anyString())).thenCallRealMethod();
     }
@@ -138,5 +143,23 @@ public class VeeamClientTest {
         Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
         String repositoryNameFromJob = mockClient.getRepositoryNameFromJob(backupName);
         Assert.assertEquals("test", repositoryNameFromJob);
+    }
+
+    @Test
+    public void checkIfRestoreSessionFinishedTestTimeoutException() throws IOException {
+        try {
+            ReflectionTestUtils.setField(mockClient, "restoreTimeout", 10);
+            RestoreSession restoreSession = Mockito.mock(RestoreSession.class);
+            HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+            Mockito.when(mockClient.get(Mockito.anyString())).thenReturn(httpResponse);
+            Mockito.when(mockClient.parseRestoreSessionResponse(httpResponse)).thenReturn(restoreSession);
+            Mockito.when(restoreSession.getResult()).thenReturn("No Success");
+            Mockito.when(mockClient.checkIfRestoreSessionFinished(Mockito.eq("RestoreTest"), Mockito.eq("any"))).thenCallRealMethod();
+            mockClient.checkIfRestoreSessionFinished("RestoreTest", "any");
+            fail();
+        } catch (Exception e) {
+            Assert.assertEquals("Related job type: RestoreTest was not successful", e.getMessage());
+        }
+        Mockito.verify(mockClient, times(10)).get(Mockito.anyString());
     }
 }

@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.SharedMountPoint)
+@StorageAdaptorInfo(storagePoolType=StoragePoolType.StorPool)
 public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static void SP_LOG(String fmt, Object... args) {
         try (PrintWriter spLogFile = new PrintWriter(new BufferedWriter(new FileWriter("/var/log/cloudstack/agent/storpool-agent.log", true)))) {
@@ -57,7 +57,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
         SP_LOG("StorpooolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
         StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);

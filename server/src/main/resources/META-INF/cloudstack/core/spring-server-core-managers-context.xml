@@ -52,6 +52,8 @@
         <property name="services" value="#{apiCommandsRegistry.registered}" />
     </bean>
 
+    <bean id="passwordPolicies" class="com.cloud.user.PasswordPolicyImpl" />
+
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
         <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"

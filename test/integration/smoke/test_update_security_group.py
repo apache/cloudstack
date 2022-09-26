@@ -296,7 +296,7 @@ class TestUpdateSecurityGroup(cloudstackTestCase):
         #
         # 1. Create a security group
         # 2. Update the security group and change its name to "default"
-        # 3. Exception should be thrown as "default" name cant be used
+        # 3. Exception should be thrown as "default" name can't be used
 
         security_group = SecurityGroup.create(
             self.apiclient,

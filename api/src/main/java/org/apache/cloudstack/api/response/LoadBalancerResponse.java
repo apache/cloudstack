@@ -64,7 +64,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String networkId;
 
     @SerializedName(ApiConstants.CIDR_LIST)
-    @Param(description = "the cidr list to forward traffic from. Multiple entries are separated by a single comma character (,).")
+    @Param(description = "the CIDR list to allow traffic, all other CIDRs will be blocked. Multiple entries must be separated by a single comma character (,).")
     private String cidrList;
 
     @SerializedName(ApiConstants.ACCOUNT)
