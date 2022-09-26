@@ -1284,6 +1284,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (final VolumeVO rootVolumeOfVm : vols) {
             DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
 
+            if (currentRootDiskOffering.getDiskSize() == 0 && newRootDiskOffering.getDiskSize() == 0) {
+                s_logger.debug("This change of service offering doesn't involve custom root disk sizes, skipping volume resize for volume: " + rootVolumeOfVm);
+                continue;
+            }
+
             ResizeVolumeCmd resizeVolumeCmd = prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, newRootDiskOffering);
 
             if (rootVolumeOfVm.getDiskOfferingId() != newRootDiskOffering.getId()) {
