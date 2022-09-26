@@ -1213,6 +1213,11 @@ class TestVolumeList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
+    """
+    Root Admins have access to system VMs root volumes, in these tests, for each VM created
+    a domain router is created, therefore, the number of volumes in the response is doubled.
+    """
+
     ## ROOT Admin - Test cases  with listall=false
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
@@ -1227,7 +1232,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, listall="false")
         self.debug("List as ROOT Admin - listall=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1252,7 +1257,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, listall="false", isrecursive="true")
         self.debug("List as ROOT Admin  - listall=false,isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1277,7 +1282,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, listall="false", isrecursive="false")
         self.debug("List as ROOT Admin  - listall=false,isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1304,7 +1309,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient)
         self.debug("List as ROOT Admin  %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1329,7 +1334,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, isrecursive="true")
         self.debug("List as ROOT Admin - isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1354,7 +1359,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, isrecursive="false")
         self.debug("List as ROOT Admin passing domainId - isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1381,7 +1386,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as ROOT Admin passing domainId  - listall=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 6,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1408,7 +1413,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="true", isrecursive="true")
         self.debug("List as ROOT Admin passing domainId  - listall=true,isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 4,
+        self.assertEqual(len(volumeList) == 8,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1436,7 +1441,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="true", isrecursive="false")
         self.debug("List as ROOT Admin passing domainId  - listall=true,isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 6,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1465,7 +1470,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="false")
         self.debug("List as ROOT Admin passing domainId  - listall=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 6,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1492,7 +1497,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="false", isrecursive="true")
         self.debug("List as ROOT Admin passing domainId  - listall=false,isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 4,
+        self.assertEqual(len(volumeList) == 8,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1520,7 +1525,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="false", isrecursive="false")
         self.debug("List as ROOT Admin passing domainId  - listall=false,isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 6,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1549,7 +1554,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id)
         self.debug("List as ROOT Admin passing domainId  - %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 6,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1576,7 +1581,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, isrecursive="true")
         self.debug("List as ROOT Admin passing domainId  - isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 4,
+        self.assertEqual(len(volumeList) == 8,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1604,7 +1609,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, isrecursive="false")
         self.debug("List as ROOT Admin passing domainId  - isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 6,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1633,7 +1638,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, listall="true")
         self.debug("List as ROOT Admin passing domainId and accountId - listall=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1658,7 +1663,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, listall="true", isrecursive="true")
         self.debug("List as ROOT Admin passing domainId and accountId - listall=true,isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1683,7 +1688,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, listall="true", isrecursive="false")
         self.debug("List as ROOT Admin passing domainId and accountId - listall=true,isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1710,7 +1715,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, listall="false")
         self.debug("List as ROOT Admin passing domainId and accountId - listall=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1735,7 +1740,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, listall="false", isrecursive="true")
         self.debug("List as ROOT Admin passing domainId and accountId - listall=false,isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1760,7 +1765,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, listall="false", isrecursive="false")
         self.debug("List as ROOT Admin passing domainId and accountId - listall=false,isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1787,7 +1792,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id)
         self.debug("List as ROOT Admin passing domainId and accountId -  %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1812,7 +1817,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, isrecursive="true")
         self.debug("List as ROOT Admin passing domainId and accountId - isrecursive=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1837,7 +1842,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, account=self.account_d11.user[0].username, domainid=self.domain_11.id, isrecursive="false")
         self.debug("List as ROOT Admin passing domainId and accountId - isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 1,
+        self.assertEqual(len(volumeList) == 2,
                          True,
                          "Number of items in list response check failed!!")
 

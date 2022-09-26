@@ -31,7 +31,7 @@
         <barcode-outlined /> {{ vm.isoid }}
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.volumes')" key="volumes">
-        <VolumesTab :resource="vm" :items="volumes" :loading="loading" />
+        <volumes-tab :resource="vm" :items="volumes" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <a-button

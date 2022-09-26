@@ -788,6 +788,8 @@ class TestTemplateUsage(cloudstackTestCase):
                                    type='ROOT',
                                    listall=True
                                    )
+            volumes = [volume for volume in volumes if volume.vmtype == "User"]
+
             if isinstance(list_volume, list):
                 cls.volume = list_volume[0]
             else:
@@ -1394,6 +1396,8 @@ class TestSnapshotUsage(cloudstackTestCase):
                             type='ROOT',
                             listall=True
                             )
+        volumes = [volume for volume in volumes if volume.vmtype == "User"]
+
         self.assertEqual(
                          isinstance(volumes, list),
                          True,

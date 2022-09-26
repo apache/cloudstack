@@ -153,7 +153,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         if (hostId == null && MapUtils.isEmpty(migrateVolumeTo)) {
-            throw new InvalidParameterValueException(String.format("Either %s or %s  must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO));
+            throw new InvalidParameterValueException(String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO));
         }
 
         VirtualMachine userVm = _userVmService.getVm(getVirtualMachineId());
