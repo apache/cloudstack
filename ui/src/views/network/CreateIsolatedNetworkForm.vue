@@ -104,7 +104,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-row :gutter="12">
+          <a-row :gutter="12" v-if="setMTU">
             <a-col :md="12" :lg="12">
               <a-form-item
                 ref="publicmtu"
@@ -353,7 +353,8 @@ export default {
       publicMtuMax: 1500,
       minMTU: 68,
       errorPublicMtu: '',
-      errorPrivateMtu: ''
+      errorPrivateMtu: '',
+      setMTU: false
     }
   },
   watch: {
@@ -399,11 +400,20 @@ export default {
         vpcid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
-    async fetchData () {
+    fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      await this.fetchPrivateMtuForZone()
-      await this.fetchPublicMtuForZone()
+      this.allowSettingMTU()
+      this.fetchPrivateMtuForZone()
+      this.fetchPublicMtuForZone()
+    },
+    allowSettingMTU () {
+      api('listConfigurations', {
+        name: 'allow.end.users.to.specify.vm.mtu',
+        zoneid: this.selectedZone.id
+      }).then(json => {
+        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
+      })
     },
     fetchPrivateMtuForZone () {
       api('listConfigurations', {
@@ -455,11 +465,12 @@ export default {
         }
       })
     },
-    async handleZoneChange (zone) {
+    handleZoneChange (zone) {
       this.selectedZone = zone
       this.updateVPCCheckAndFetchNetworkOfferingData()
-      await this.fetchPrivateMtuForZone()
-      await this.fetchPublicMtuForZone()
+      this.allowSettingMTU()
+      this.fetchPrivateMtuForZone()
+      this.fetchPublicMtuForZone()
     },
     fetchDomainData () {
       const params = {}

@@ -196,6 +196,7 @@
             </a-select>
           </a-form-item>
           <a-form-item
+            v-if="setMTU"
             ref="privatemtu"
             name="privatemtu">
             <template #label>
@@ -468,7 +469,8 @@ export default {
           vpc: ['Netscaler']
         }
       },
-      publicLBExists: false
+      publicLBExists: false,
+      setMTU: false
     }
   },
   created () {
@@ -504,6 +506,8 @@ export default {
     },
     fetchData () {
       this.networks = this.resource.network
+      this.allowSettingMTU()
+      this.fetchPrivateMtuForZone()
       if (!this.networks || this.networks.length === 0) {
         return
       }
@@ -512,7 +516,15 @@ export default {
         this.fetchVMs(network.id)
       }
       this.publicLBNetworkExists()
-      this.fetchPrivateMtuForZone()
+    },
+    allowSettingMTU () {
+      api('listConfigurations', {
+        name: 'allow.end.users.to.specify.vm.mtu',
+        zoneid: this.resource.zoneid
+      }).then(json => {
+        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
+        console.log(this.setMTU)
+      })
     },
     fetchPrivateMtuForZone () {
       api('listConfigurations', {

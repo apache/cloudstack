@@ -43,7 +43,8 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
-        <a-row :gutter="12" v-if="resource.type !== 'L2'">
+        <div v-if="setMTU">
+          <a-row :gutter="12" v-if="resource.type !== 'L2'">
             <a-col :md="12" :lg="12">
               <a-form-item
                 ref="privatemtu"
@@ -78,6 +79,7 @@
               </a-form-item>
             </a-col>
           </a-row>
+        </div>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -235,7 +237,8 @@ export default {
       publicMtuMax: 1500,
       minMTU: 68,
       errorPrivateMtu: '',
-      errorPublicMtu: ''
+      errorPublicMtu: '',
+      setMTU: false
     }
   },
   beforeCreate () {
@@ -289,16 +292,25 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }]
       })
     },
-    async fetchData () {
+    fetchData () {
       this.fetchNetworkOfferingData()
-      await this.fetchPrivateMtuForZone()
-      await this.fetchPublicMtuForZone()
+      this.allowSettingMTU()
+      this.fetchPrivateMtuForZone()
+      this.fetchPublicMtuForZone()
     },
     isAdmin () {
       return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
+    },
+    allowSettingMTU () {
+      api('listConfigurations', {
+        name: 'allow.end.users.to.specify.vm.mtu',
+        zoneid: this.resource.zoneid
+      }).then(json => {
+        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
+      })
     },
     fetchPrivateMtuForZone () {
       api('listConfigurations', {

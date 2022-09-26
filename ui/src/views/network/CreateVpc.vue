@@ -96,19 +96,21 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item
-          ref="publicmtu"
-          name="publicmtu">
-          <template #label>
-            <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
-          </template>
-          <a-input-number
-            style="width: 100%;"
-            v-model:value="form.publicmtu"
-            :placeholder="apiParams.publicmtu.description"
-            @change="updateMtu()"/>
-            <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
-        </a-form-item>
+        <div v-if="setMTU">
+          <a-form-item
+            ref="publicmtu"
+            name="publicmtu">
+            <template #label>
+              <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+            </template>
+            <a-input-number
+              style="width: 100%;"
+              v-model:value="form.publicmtu"
+              :placeholder="apiParams.publicmtu.description"
+              @change="updateMtu()"/>
+              <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
+          </a-form-item>
+        </div>
         <a-row :gutter="12" v-if="selectedVpcOfferingSupportsDns">
           <a-col :md="12" :lg="12">
             <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
@@ -184,6 +186,8 @@ export default {
       loading: false,
       loadingZone: false,
       loadingOffering: false,
+      setMTU: false,
+      zoneid: '',
       zones: [],
       vpcOfferings: [],
       publicMtuMax: 1500,
@@ -198,6 +202,7 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+    console.log(this.setMTU)
   },
   computed: {
     selectedVpcOfferingSupportsDns () {
@@ -226,6 +231,14 @@ export default {
     async fetchData () {
       this.fetchZones()
       await this.fetchPublicMtuForZone()
+    },
+    allowSettingMTU () {
+      api('listConfigurations', {
+        name: 'allow.end.users.to.specify.vm.mtu',
+        zoneid: this.form.zoneid
+      }).then(json => {
+        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
+      })
     },
     fetchPublicMtuForZone () {
       api('listConfigurations', {
@@ -256,6 +269,7 @@ export default {
         return
       }
       this.fetchOfferings()
+      this.allowSettingMTU()
       this.fetchPublicMtuForZone()
     },
     fetchOfferings () {

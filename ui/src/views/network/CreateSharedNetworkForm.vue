@@ -243,7 +243,7 @@
               <template #message>{{ $t('message.shared.network.offering.warning') }}</template>
             </a-alert>
           </a-form-item>
-          <a-row :gutter="12">
+          <a-row :gutter="12" v-if="setMTU">
             <a-col :md="12" :lg="12">
               <a-form-item
                 ref="publicmtu"
@@ -544,6 +544,7 @@ export default {
       privateMtuMax: 1500,
       publicMtuMax: 1500,
       minMTU: 68,
+      setMTU: false,
       errorPublicMtu: '',
       errorPrivateMtu: ''
     }
@@ -598,7 +599,7 @@ export default {
         projectid: [{ type: 'number', required: true, message: this.$t('message.error.select') }]
       })
     },
-    async fetchData () {
+    fetchData () {
       if (this.isObjectEmpty(this.zone)) {
         this.fetchZoneData()
       } else {
@@ -607,8 +608,9 @@ export default {
       if (this.scopeType !== 'all') {
         this.handleScopeTypeChange(this.scopeType)
       }
-      await this.fetchPrivateMtuForZone()
-      await this.fetchPublicMtuForZone()
+      this.allowSettingMTU()
+      this.fetchPrivateMtuForZone()
+      this.fetchPublicMtuForZone()
     },
     isAdmin () {
       return isAdmin()
@@ -630,6 +632,14 @@ export default {
     },
     isValidTextValueForKey (obj, key) {
       return this.isValidValueForKey(obj, key) && String(obj[key]).length > 0
+    },
+    allowSettingMTU () {
+      api('listConfigurations', {
+        name: 'allow.end.users.to.specify.vm.mtu',
+        zoneid: this.selectedZone.id
+      }).then(json => {
+        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
+      })
     },
     fetchPrivateMtuForZone () {
       api('listConfigurations', {
@@ -678,15 +688,16 @@ export default {
         })
       }
     },
-    async handleZoneChange (zone) {
+    handleZoneChange (zone) {
       this.selectedZone = zone
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
         this.fetchNetworkOfferingData()
       }
-      await this.fetchPrivateMtuForZone()
-      await this.fetchPublicMtuForZone()
+      this.allowSettingMTU()
+      this.fetchPrivateMtuForZone()
+      this.fetchPublicMtuForZone()
     },
     fetchPhysicalNetworkData () {
       this.formSelectedPhysicalNetwork = {}
