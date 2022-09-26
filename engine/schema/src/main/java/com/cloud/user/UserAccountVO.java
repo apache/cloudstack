@@ -109,6 +109,12 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Column(name = "external_entity", length = 65535)
     private String externalEntity = null;
 
+    @Column(name = "is_2fa_enabled")
+    boolean is2faEnabled;
+
+    @Column(name = "key_for_2fa")
+    private String keyFor2fa;
+
     public UserAccountVO() {
     }
 
@@ -310,5 +316,21 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     public void setExternalEntity(String externalEntity) {
         this.externalEntity = externalEntity;
+    }
+
+    public boolean is2faEnabled() {
+        return is2faEnabled;
+    }
+
+    public void set2faEnabled(boolean is2faEnabled) {
+        this.is2faEnabled = is2faEnabled;
+    }
+
+    public String getKeyFor2fa() {
+        return keyFor2fa;
+    }
+
+    public void setKeyFor2fa(String keyFor2fa) {
+        this.keyFor2fa = keyFor2fa;
     }
 }

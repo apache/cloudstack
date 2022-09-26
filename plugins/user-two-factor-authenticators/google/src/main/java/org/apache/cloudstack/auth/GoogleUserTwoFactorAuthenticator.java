@@ -38,7 +38,7 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
     @Override
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException {
         // TODO: in future get userAccount specific 2FA key
-        String expectedCode = get2FACode(get2FAKey());
+        String expectedCode = get2FACode(get2FAKey(userAccount));
         if (expectedCode.equals(code)) {
             s_logger.info("2FA matches user's input");
             return;
@@ -46,8 +46,9 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
         throw new CloudAuthenticationException("two-factor authentication has failed for the user");
     }
 
-    public static String get2FAKey() {
-        return "7t4gabg72liipmq7n43lt3cw66fel4iz";
+    public static String get2FAKey(UserAccount userAccount) {
+        return userAccount.getKeyFor2fa();
+        //return "7t4gabg72liipmq7n43lt3cw66fel4iz";
         /*
         This logic can be replaced on per-user-account basis
         where the key is generated to show the user one-time QR code,

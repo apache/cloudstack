@@ -67,4 +67,13 @@ public interface UserAccount extends InternalIdentity {
     public String getExternalEntity();
 
     public void setExternalEntity(String entity);
+
+    public boolean is2faEnabled();
+
+    public void set2faEnabled(boolean is2faEnabled);
+
+    public String getKeyFor2fa();
+
+    public void setKeyFor2fa(String keyFor2fa);
+
 }
