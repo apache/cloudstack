@@ -1748,7 +1748,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         String name = cmd.getTemplateName();
         if ((name == null) || (name.length() > 255)) {
-            throw new InvalidParameterValueException("Template name cannot be null and should be less than 32 characters");
+            throw new InvalidParameterValueException("Template name cannot be null and should be less than 255 characters");
         }
 
         if (cmd.getTemplateTag() != null) {
