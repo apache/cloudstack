@@ -35,11 +35,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -75,6 +72,8 @@ import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
@@ -87,7 +86,9 @@ import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
@@ -162,6 +163,8 @@ public class VolumeApiServiceImplTest {
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+    @Mock
+    private DiskOfferingDao _diskOfferingDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -273,6 +276,7 @@ public class VolumeApiServiceImplTest {
 
             VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(volumeDaoMock.findById(6L)).thenReturn(correctRootVolumeVO);
+            when(volumeDaoMock.getHypervisorType(6L)).thenReturn(HypervisorType.XenServer);
 
             // managed root volume
             VolumeInfo managedVolume = Mockito.mock(VolumeInfo.class);
@@ -292,7 +296,7 @@ public class VolumeApiServiceImplTest {
             when(userVmDaoMock.findById(4L)).thenReturn(vmHavingRootVolume);
             List<VolumeVO> vols = new ArrayList<VolumeVO>();
             vols.add(new VolumeVO());
-            when(volumeDaoMock.findByInstanceAndDeviceId(4L, 0L)).thenReturn(vols);
+            lenient().when(volumeDaoMock.findByInstanceAndDeviceId(4L, 0L)).thenReturn(vols);
 
             // volume in uploaded state
             VolumeInfo uploadedVolume = Mockito.mock(VolumeInfo.class);
@@ -310,6 +314,27 @@ public class VolumeApiServiceImplTest {
             upVolume.setState(Volume.State.Uploaded);
             when(volumeDaoMock.findById(8L)).thenReturn(upVolume);
 
+            UserVmVO kvmVm = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.KVM, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
+            kvmVm.setState(State.Running);
+            kvmVm.setDataCenterId(1L);
+            when(userVmDaoMock.findById(4L)).thenReturn(kvmVm);
+
+            VolumeVO volumeOfKvmVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 4L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
+            volumeOfKvmVm.setPoolId(1L);
+            lenient().when(volumeDaoMock.findById(9L)).thenReturn(volumeOfKvmVm);
+            lenient().when(volumeDaoMock.getHypervisorType(9L)).thenReturn(HypervisorType.KVM);
+
+            VolumeVO dataVolumeVO = new VolumeVO("data", 1L, 1L, 1L, 1L, 2L, "data", "data", Storage.ProvisioningType.THIN, 1, null, null, "data", Type.DATADISK);
+            lenient().when(volumeDaoMock.findById(10L)).thenReturn(dataVolumeVO);
+
+            VolumeInfo dataVolume = Mockito.mock(VolumeInfo.class);
+            when(dataVolume.getId()).thenReturn(10L);
+            when(dataVolume.getDataCenterId()).thenReturn(1L);
+            when(dataVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+            when(dataVolume.getInstanceId()).thenReturn(null);
+            when(dataVolume.getState()).thenReturn(Volume.State.Allocated);
+            when(volumeDataFactoryMock.getVolume(10L)).thenReturn(dataVolume);
+
             // helper dao methods mock
             when(_vmSnapshotDao.findByVm(any(Long.class))).thenReturn(new ArrayList<VMSnapshotVO>());
             when(_vmInstanceDao.findById(any(Long.class))).thenReturn(stoppedVm);
@@ -322,6 +347,10 @@ public class VolumeApiServiceImplTest {
         } finally {
             txn.close("runVolumeDaoImplTest");
         }
+
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(diskOffering.getEncrypt()).thenReturn(false);
+        when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
 
         // helper methods mock
         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
@@ -414,6 +443,25 @@ public class VolumeApiServiceImplTest {
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
         volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L);
+    }
+
+    // Negative test - attach data volume, to the vm on non-kvm hypervisor
+    @Test(expected = InvalidParameterValueException.class)
+    public void attachDiskWithEncryptEnabledOfferingonNonKVM() throws NoSuchFieldException, IllegalAccessException {
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(diskOffering.getEncrypt()).thenReturn(true);
+        when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L);
+    }
+
+    // Positive test - attach data volume, to the vm on kvm hypervisor
+    @Test
+    public void attachDiskWithEncryptEnabledOfferingOnKVM() throws NoSuchFieldException, IllegalAccessException {
+        thrown.expect(NullPointerException.class);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(diskOffering.getEncrypt()).thenReturn(true);
+        when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
+        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L);
     }
 
     // volume not Ready

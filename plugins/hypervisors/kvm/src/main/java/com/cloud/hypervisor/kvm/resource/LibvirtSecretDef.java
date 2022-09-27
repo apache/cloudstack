@@ -55,9 +55,13 @@ public class LibvirtSecretDef {
         return _ephemeral;
     }
 
+    public void setEphemeral(boolean ephemeral) { _ephemeral = ephemeral; }
+
     public boolean getPrivate() {
         return _private;
     }
+
+    public void setPrivate(boolean isPrivate) { _private = isPrivate; }
 
     public String getUuid() {
         return _uuid;

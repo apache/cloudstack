@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.allocator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
-        LOGGER.debug("ZoneWideStoragePoolAllocator to find storage pool");
+        logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
             return null;
@@ -58,18 +59,14 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         if (LOGGER.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
-            List<StoragePoolVO> disabledPools = storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), null, null, ScopeType.ZONE);
-            if (disabledPools != null && !disabledPools.isEmpty()) {
-                for (StoragePoolVO pool : disabledPools) {
-                    LOGGER.trace("Ignoring pool " + pool + " as it is in disabled state.");
-                }
-            }
+            logDisabledStoragePools(plan.getDataCenterId(), null, null, ScopeType.ZONE);
         }
 
         List<StoragePool> suitablePools = new ArrayList<>();
 
         List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
         if (storagePools == null) {
+            LOGGER.debug(String.format("Could not find any zone wide storage pool that matched with any of the following tags [%s].", Arrays.toString(dskCh.getTags())));
             storagePools = new ArrayList<>();
         }
 
@@ -97,6 +94,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
             StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
+                LOGGER.trace(String.format("Found suitable local storage pool [%s], adding to list.", storage));
                 suitablePools.add(storagePool);
             } else {
                 if (canAddStoragePoolToAvoidSet(storage)) {
@@ -104,6 +102,8 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
             }
         }
+        LOGGER.debug(String.format("ZoneWideStoragePoolAllocator is returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
+
         return suitablePools;
     }
 

@@ -332,6 +332,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
+    private String userData;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
@@ -602,6 +606,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getServiceState() {
         return serviceState;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public void setIsDynamicallyScalable(Boolean isDynamicallyScalable) {
@@ -951,5 +959,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
     }
 }

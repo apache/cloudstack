@@ -46,7 +46,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
-        s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
+        logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
             return null;
@@ -63,40 +63,34 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             // clusterId == null here because it will break ClusterWide primary
             // storage volume operation where
             // only podId is passed into this call.
+            s_logger.debug("ClusterScopeStoragePoolAllocator is returning null since the pod ID is null. This may be a zone wide storage.");
             return null;
         }
         if (dskCh.getTags() != null && dskCh.getTags().length != 0) {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()) +
-                    ". Disabled pools will be ignored.");
+            s_logger.debug(String.format("Looking for pools in dc [%s], pod [%s], cluster [%s], and having tags [%s]. Disabled pools will be ignored.", dcId, podId, clusterId,
+                    Arrays.toString(dskCh.getTags())));
         } else {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + ". Disabled pools will be ignored.");
+            s_logger.debug(String.format("Looking for pools in dc [%s], pod [%s] and cluster [%s]. Disabled pools will be ignored.", dcId, podId, clusterId));
         }
 
         if (s_logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
-            List<StoragePoolVO> disabledPools = storagePoolDao.findDisabledPoolsByScope(dcId, podId, clusterId, ScopeType.CLUSTER);
-            if (disabledPools != null && !disabledPools.isEmpty()) {
-                for (StoragePoolVO pool : disabledPools) {
-                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
-                }
-            }
+            logDisabledStoragePools(dcId, podId, clusterId, ScopeType.CLUSTER);
         }
 
         List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
-        s_logger.debug("Found pools matching tags: " + pools);
+        s_logger.debug(String.format("Found pools [%s] that match with tags [%s].", pools, Arrays.toString(dskCh.getTags())));
 
         // add remaining pools in cluster, that did not match tags, to avoid set
         List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
-            s_logger.debug("Adding pool " + pool + " to avoid set since it did not match tags");
+            s_logger.trace(String.format("Adding pool [%s] to the 'avoid' set since it did not match any tags.", pool));
             avoid.addPool(pool.getId());
         }
 
         if (pools.size() == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No storage pools available for " + ServiceOffering.StorageType.shared.toString() + " volume allocation, returning");
-            }
+            s_logger.debug(String.format("No storage pools available for [%s] volume allocation.", ServiceOffering.StorageType.shared));
             return suitablePools;
         }
 
@@ -106,15 +100,14 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
             StoragePool storagePool = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
+                s_logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
                 suitablePools.add(storagePool);
             } else {
                 avoid.addPool(pool.getId());
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("ClusterScopeStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
-        }
+        s_logger.debug(String.format("ClusterScopeStoragePoolAllocator is returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
 
         return suitablePools;
     }

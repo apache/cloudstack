@@ -70,12 +70,12 @@ public class ScaleIOStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        return null;
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        return this.storageAdaptor.createPhysicalDisk(volumeUuid, this, format, provisioningType, size, passphrase);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         return null;
     }
 
