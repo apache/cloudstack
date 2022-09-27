@@ -245,3 +245,9 @@ ALTER TABLE `cloud`.`vpc`
     ADD COLUMN `dns2` varchar(255) DEFAULT NULL COMMENT 'second IPv4 DNS for the vpc' AFTER `dns1`,
     ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'first IPv6 DNS for the vpc' AFTER `dns2`,
     ADD COLUMN `ip6dns2` varchar(255) DEFAULT NULL COMMENT 'second IPv6 DNS for the vpc' AFTER `ip6dns1`;
+
+-- Fix migrateVolume permissions #6224.
+DELETE role_perm
+FROM role_permissions role_perm
+INNER JOIN roles ON role_perm.role_id = roles.id
+WHERE roles.role_type != 'Admin' AND roles.is_default = 1 AND role_perm.rule = 'migrateVolume';
