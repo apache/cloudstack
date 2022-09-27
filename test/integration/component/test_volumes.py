@@ -1216,6 +1216,8 @@ class TestVolumes(cloudstackTestCase):
             vol is not None, "volume creation fails in domain %s as user %s" %
             (dom.name, domuser.name))
 
+        time.sleep(180)
+
         listed_vol = Volume.list(domapiclient, id=vol.id)
         self.assertTrue(
             listed_vol is not None and isinstance(
