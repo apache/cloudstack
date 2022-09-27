@@ -262,13 +262,19 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
-
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName() + " ,poolId: " + pool.getId());
         }
         if (avoid.shouldAvoid(pool)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("StoragePool is in avoid set, skipping this pool");
+            }
+            return false;
+        }
+
+        if (dskCh.requiresEncryption() && !pool.getPoolType().supportsEncryption()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Storage pool type '%s' doesn't support encryption required for volume, skipping this pool", pool.getPoolType()));
             }
             return false;
         }

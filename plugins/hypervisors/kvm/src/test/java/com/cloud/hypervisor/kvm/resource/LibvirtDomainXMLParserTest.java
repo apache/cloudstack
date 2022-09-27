@@ -29,6 +29,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 import junit.framework.TestCase;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -50,6 +51,10 @@ public class LibvirtDomainXMLParserTest extends TestCase {
 
         String diskLabel ="vda";
         String diskPath = "/var/lib/libvirt/images/my-test-image.qcow2";
+
+        String diskLabel2 ="vdb";
+        String diskPath2 = "/var/lib/libvirt/images/my-test-image2.qcow2";
+        String secretUuid = "5644d664-a238-3a9b-811c-961f609d29f4";
 
         String xml = "<domain type='kvm' id='10'>" +
                      "<name>s-2970-VM</name>" +
@@ -86,6 +91,16 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<target dev='" + diskLabel + "' bus='" + diskBus.toString() + "'/>" +
                      "<alias name='virtio-disk0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>" +
+                     "</disk>" +
+                     "<disk type='" + diskType.toString() + "' device='" + deviceType.toString() + "'>" +
+                     "<driver name='qemu' type='" + diskFormat.toString() + "' cache='" + diskCache.toString() + "'/>" +
+                     "<source file='" + diskPath2 + "'/>" +
+                     "<target dev='" + diskLabel2 +"' bus='" + diskBus.toString() + "'/>" +
+                     "<alias name='virtio-disk1'/>" +
+                     "<encryption format='luks'>" +
+                     "<secret type='passphrase' uuid='" + secretUuid + "'/>" +
+                     "</encryption>" +
+                     "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>" +
                      "</disk>" +
                      "<disk type='file' device='cdrom'>" +
                      "<driver name='qemu' type='raw' cache='none'/>" +
@@ -199,6 +214,11 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(diskType, disks.get(diskId).getDiskType());
         assertEquals(deviceType, disks.get(diskId).getDeviceType());
         assertEquals(diskFormat, disks.get(diskId).getDiskFormatType());
+
+        DiskDef.LibvirtDiskEncryptDetails encryptDetails = disks.get(1).getLibvirtDiskEncryptDetails();
+        assertNotNull(encryptDetails);
+        assertEquals(QemuObject.EncryptFormat.LUKS, encryptDetails.getEncryptFormat());
+        assertEquals(secretUuid, encryptDetails.getPassphraseUuid());
 
         List<ChannelDef> channels = parser.getChannels();
         for (int i = 0; i < channels.size(); i++) {

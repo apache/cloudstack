@@ -382,6 +382,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("updateTime", AllFieldsSearch.entity().getUpdated(), SearchCriteria.Op.LT);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
+        AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -670,15 +671,24 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> listVolumesByPassphraseId(long passphraseId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("passphraseId", passphraseId);
+        return listBy(sc);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
+        s_logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
             _tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
+
         txn.commit();
         return result;
     }

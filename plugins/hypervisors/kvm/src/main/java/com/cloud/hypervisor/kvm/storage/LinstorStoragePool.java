@@ -19,8 +19,9 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.qemu.QemuImg;
+
+import com.cloud.storage.Storage;
 
 public class LinstorStoragePool implements KVMStoragePool {
     private final String _uuid;
@@ -42,15 +43,15 @@ public class LinstorStoragePool implements KVMStoragePool {
 
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, QemuImg.PhysicalDiskFormat format,
-                                              Storage.ProvisioningType provisioningType, long size)
+                                              Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
-        return _storageAdaptor.createPhysicalDisk(name, this, format, provisioningType, size);
+        return _storageAdaptor.createPhysicalDisk(name, this, format, provisioningType, size, passphrase);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size)
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
-        return _storageAdaptor.createPhysicalDisk(volumeUuid,this, getDefaultFormat(), provisioningType, size);
+        return _storageAdaptor.createPhysicalDisk(volumeUuid,this, getDefaultFormat(), provisioningType, size, passphrase);
     }
 
     @Override
