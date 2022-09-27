@@ -18,7 +18,6 @@ package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -45,6 +44,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -122,7 +122,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller) {
+    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
+            Account caller) {
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null) {
@@ -345,6 +346,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 resp.setAccountName(userVm.getAccountName());
                 userVmResponse.addAffinityGroup(resp);
             }
+        }
+
+        if (BooleanUtils.isTrue(showUserData)) {
+            userVmResponse.setUserData(userVm.getUserData());
         }
 
         // set resource details map

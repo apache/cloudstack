@@ -340,6 +340,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Name of AutoScale VM group", since = "4.18.0")
     String autoScaleVmGroupName;
 
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
+    private String userData;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
@@ -610,6 +614,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getServiceState() {
         return serviceState;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public void setIsDynamicallyScalable(Boolean isDynamicallyScalable) {
@@ -975,5 +983,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getAutoScaleVmGroupName() {
         return autoScaleVmGroupName;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
     }
 }

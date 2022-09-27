@@ -43,9 +43,12 @@ from marvin.lib.common import (get_domain,
                                find_storage_pool_type,
                                get_pod,
                                list_disk_offering)
-from marvin.lib.utils import checkVolumeSize
+from marvin.lib.utils import (cleanup_resources, checkVolumeSize)
 from marvin.lib.utils import (format_volume_to_ext3,
                               wait_until)
+from marvin.sshClient import SshClient
+import xml.etree.ElementTree as ET
+from lxml import etree
 
 from nose.plugins.attrib import attr
 
@@ -1034,3 +1037,555 @@ class TestVolumes(cloudstackTestCase):
             "Offering name did not match with the new one "
         )
         return
+
+
+class TestVolumeEncryption(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestVolumeEncryption, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        cls._cleanup = []
+
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() not in ['kvm']:
+            # Volume Encryption currently supported for KVM hypervisor
+            cls.unsupportedHypervisor = True
+            return
+
+        # Get Zone and Domain
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+
+        cls.services['mode'] = cls.zone.networktype
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["domainid"] = cls.domain.id
+        cls.services["zoneid"] = cls.zone.id
+
+        # Get template
+        template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor
+        )
+        if template == FAILED:
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+
+        cls.services["template"] = template.id
+        cls.services["diskname"] = cls.services["volume"]["diskname"]
+
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
+        # Create Account
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
+
+        # Create Service Offering
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
+        cls._cleanup.append(cls.service_offering)
+
+        # Create Service Offering with encryptRoot true
+        cls.service_offering_encrypt = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"],
+            name="Small Encrypted Instance",
+            encryptroot=True
+        )
+        cls._cleanup.append(cls.service_offering_encrypt)
+
+        # Create Disk Offering
+        cls.disk_offering = DiskOffering.create(
+            cls.apiclient,
+            cls.services["disk_offering"]
+        )
+        cls._cleanup.append(cls.disk_offering)
+
+        # Create Disk Offering with encrypt true
+        cls.disk_offering_encrypt = DiskOffering.create(
+            cls.apiclient,
+            cls.services["disk_offering"],
+            name="Encrypted",
+            encrypt=True
+        )
+        cls._cleanup.append(cls.disk_offering_encrypt)
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test as volume encryption is not supported for hypervisor %s" % self.hypervisor)
+
+        if not self.does_host_with_encryption_support_exists():
+            self.skipTest("Skipping test as no host exists with volume encryption support")
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "smoke", "diskencrypt"], required_hardware="true")
+    def test_01_root_volume_encryption(self):
+        """Test Root Volume Encryption
+
+        # Validate the following
+        # 1. Create VM using the service offering with encryptroot true
+        # 2. Verify VM created and Root Volume
+        # 3. Create Data Volume using the disk offering with encrypt false
+        # 4. Verify Data Volume
+        """
+
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_encrypt.id,
+            mode=self.services["mode"]
+        )
+        self.cleanup.append(virtual_machine)
+        self.debug("Created VM with ID: %s" % virtual_machine.id)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+            vm_response.id,
+            virtual_machine.id,
+            "Check virtual machine id in listVirtualMachines"
+        )
+        self.assertEqual(
+            vm_response.state,
+            'Running',
+            msg="VM is not in Running state"
+        )
+
+        self.check_volume_encryption(virtual_machine, 1)
+
+        volume = Volume.create(
+            self.apiclient,
+            self.services,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=self.disk_offering.id
+        )
+        self.debug("Created a volume with ID: %s" % volume.id)
+
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id)
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+
+        self.debug("Attaching volume (ID: %s) to VM (ID: %s)" % (volume.id, virtual_machine.id))
+
+        virtual_machine.attach_volume(
+            self.apiclient,
+            volume
+        )
+
+        try:
+            ssh = virtual_machine.get_ssh_client()
+            self.debug("Rebooting VM %s" % virtual_machine.id)
+            ssh.execute("reboot")
+        except Exception as e:
+            self.fail("SSH access failed for VM %s - %s" % (virtual_machine.ipaddress, e))
+
+        # Poll listVM to ensure VM is started properly
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+
+            # Ensure that VM is in running state
+            list_vm_response = VirtualMachine.list(
+                self.apiclient,
+                id=virtual_machine.id
+            )
+
+            if isinstance(list_vm_response, list):
+                vm = list_vm_response[0]
+                if vm.state == 'Running':
+                    self.debug("VM state: %s" % vm.state)
+                    break
+
+            if timeout == 0:
+                raise Exception(
+                    "Failed to start VM (ID: %s) " % vm.id)
+            timeout = timeout - 1
+
+        vol_sz = str(list_volume_response[0].size)
+        ssh = virtual_machine.get_ssh_client(
+            reconnect=True
+        )
+
+        # Get the updated volume information
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id)
+
+        volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+        self.debug(" Using KVM volume_name: %s" % (volume_name))
+        ret = checkVolumeSize(ssh_handle=ssh, volume_name=volume_name, size_to_verify=vol_sz)
+        self.debug(" Volume Size Expected %s  Actual :%s" % (vol_sz, ret[1]))
+        virtual_machine.detach_volume(self.apiclient, volume)
+        self.assertEqual(ret[0], SUCCESS, "Check if promised disk size actually available")
+        time.sleep(self.services["sleep"])
+
+    @attr(tags=["advanced", "smoke", "diskencrypt"], required_hardware="true")
+    def test_02_data_volume_encryption(self):
+        """Test Data Volume Encryption
+
+        # Validate the following
+        # 1. Create VM using the service offering with encryptroot false
+        # 2. Verify VM created and Root Volume
+        # 3. Create Data Volume using the disk offering with encrypt true
+        # 4. Verify Data Volume
+        """
+
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            mode=self.services["mode"]
+        )
+        self.cleanup.append(virtual_machine)
+        self.debug("Created VM with ID: %s" % virtual_machine.id)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+            vm_response.id,
+            virtual_machine.id,
+            "Check virtual machine id in listVirtualMachines"
+        )
+        self.assertEqual(
+            vm_response.state,
+            'Running',
+            msg="VM is not in Running state"
+        )
+
+        volume = Volume.create(
+            self.apiclient,
+            self.services,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=self.disk_offering_encrypt.id
+        )
+        self.debug("Created a volume with ID: %s" % volume.id)
+
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id)
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+
+        self.debug("Attaching volume (ID: %s) to VM (ID: %s)" % (volume.id, virtual_machine.id))
+
+        virtual_machine.attach_volume(
+            self.apiclient,
+            volume
+        )
+
+        try:
+            ssh = virtual_machine.get_ssh_client()
+            self.debug("Rebooting VM %s" % virtual_machine.id)
+            ssh.execute("reboot")
+        except Exception as e:
+            self.fail("SSH access failed for VM %s - %s" % (virtual_machine.ipaddress, e))
+
+        # Poll listVM to ensure VM is started properly
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+
+            # Ensure that VM is in running state
+            list_vm_response = VirtualMachine.list(
+                self.apiclient,
+                id=virtual_machine.id
+            )
+
+            if isinstance(list_vm_response, list):
+                vm = list_vm_response[0]
+                if vm.state == 'Running':
+                    self.debug("VM state: %s" % vm.state)
+                    break
+
+            if timeout == 0:
+                raise Exception(
+                    "Failed to start VM (ID: %s) " % vm.id)
+            timeout = timeout - 1
+
+        vol_sz = str(list_volume_response[0].size)
+        ssh = virtual_machine.get_ssh_client(
+            reconnect=True
+        )
+
+        # Get the updated volume information
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id)
+
+        volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+        self.debug(" Using KVM volume_name: %s" % (volume_name))
+        ret = checkVolumeSize(ssh_handle=ssh, volume_name=volume_name, size_to_verify=vol_sz)
+        self.debug(" Volume Size Expected %s  Actual :%s" % (vol_sz, ret[1]))
+
+        self.check_volume_encryption(virtual_machine, 1)
+
+        virtual_machine.detach_volume(self.apiclient, volume)
+        self.assertEqual(ret[0], SUCCESS, "Check if promised disk size actually available")
+        time.sleep(self.services["sleep"])
+
+    @attr(tags=["advanced", "smoke", "diskencrypt"], required_hardware="true")
+    def test_03_root_and_data_volume_encryption(self):
+        """Test Root and Data Volumes Encryption
+
+        # Validate the following
+        # 1. Create VM using the service offering with encryptroot true
+        # 2. Verify VM created and Root Volume
+        # 3. Create Data Volume using the disk offering with encrypt true
+        # 4. Verify Data Volume
+        """
+
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering_encrypt.id,
+            diskofferingid=self.disk_offering_encrypt.id,
+            mode=self.services["mode"]
+        )
+        self.cleanup.append(virtual_machine)
+        self.debug("Created VM with ID: %s" % virtual_machine.id)
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+            vm_response.id,
+            virtual_machine.id,
+            "Check virtual machine id in listVirtualMachines"
+        )
+        self.assertEqual(
+            vm_response.state,
+            'Running',
+            msg="VM is not in Running state"
+        )
+
+        self.check_volume_encryption(virtual_machine, 2)
+
+        volume = Volume.create(
+            self.apiclient,
+            self.services,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=self.disk_offering_encrypt.id
+        )
+        self.debug("Created a volume with ID: %s" % volume.id)
+
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id)
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+
+        self.debug("Attaching volume (ID: %s) to VM (ID: %s)" % (volume.id, virtual_machine.id))
+
+        virtual_machine.attach_volume(
+            self.apiclient,
+            volume
+        )
+
+        try:
+            ssh = virtual_machine.get_ssh_client()
+            self.debug("Rebooting VM %s" % virtual_machine.id)
+            ssh.execute("reboot")
+        except Exception as e:
+            self.fail("SSH access failed for VM %s - %s" % (virtual_machine.ipaddress, e))
+
+        # Poll listVM to ensure VM is started properly
+        timeout = self.services["timeout"]
+        while True:
+            time.sleep(self.services["sleep"])
+
+            # Ensure that VM is in running state
+            list_vm_response = VirtualMachine.list(
+                self.apiclient,
+                id=virtual_machine.id
+            )
+
+            if isinstance(list_vm_response, list):
+                vm = list_vm_response[0]
+                if vm.state == 'Running':
+                    self.debug("VM state: %s" % vm.state)
+                    break
+
+            if timeout == 0:
+                raise Exception(
+                    "Failed to start VM (ID: %s) " % vm.id)
+            timeout = timeout - 1
+
+        vol_sz = str(list_volume_response[0].size)
+        ssh = virtual_machine.get_ssh_client(
+            reconnect=True
+        )
+
+        # Get the updated volume information
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id)
+
+        volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
+        self.debug(" Using KVM volume_name: %s" % (volume_name))
+        ret = checkVolumeSize(ssh_handle=ssh, volume_name=volume_name, size_to_verify=vol_sz)
+        self.debug(" Volume Size Expected %s  Actual :%s" % (vol_sz, ret[1]))
+
+        self.check_volume_encryption(virtual_machine, 3)
+
+        virtual_machine.detach_volume(self.apiclient, volume)
+        self.assertEqual(ret[0], SUCCESS, "Check if promised disk size actually available")
+        time.sleep(self.services["sleep"])
+
+    def does_host_with_encryption_support_exists(self):
+        hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor='KVM',
+            state='Up')
+
+        for host in hosts:
+            if host.encryptionsupported:
+                return True
+
+        return False
+
+    def check_volume_encryption(self, virtual_machine, volumes_count):
+        hosts = Host.list(self.apiclient, id=virtual_machine.hostid)
+        if len(hosts) != 1:
+            assert False, "Could not find host with id " + virtual_machine.hostid
+
+        host = hosts[0]
+        instance_name = virtual_machine.instancename
+
+        self.assertIsNotNone(host, "Host should not be None")
+        self.assertIsNotNone(instance_name, "Instance name should not be None")
+
+        ssh_client = SshClient(
+            host=host.ipaddress,
+            port=22,
+            user=self.hostConfig['username'],
+            passwd=self.hostConfig['password'])
+
+        virsh_cmd = 'virsh dumpxml %s' % instance_name
+        xml_res = ssh_client.execute(virsh_cmd)
+        xml_as_str = ''.join(xml_res)
+        parser = etree.XMLParser(remove_blank_text=True)
+        virshxml_root = ET.fromstring(xml_as_str, parser=parser)
+
+        encryption_format = virshxml_root.findall(".devices/disk/encryption[@format='luks']")
+        self.assertIsNotNone(encryption_format, "The volume encryption format is not luks")
+        self.assertEqual(
+            len(encryption_format),
+            volumes_count,
+            "Check the number of volumes encrypted with luks format"
+        )
+
+        secret_type = virshxml_root.findall(".devices/disk/encryption/secret[@type='passphrase']")
+        self.assertIsNotNone(secret_type, "The volume encryption secret type is not passphrase")
+        self.assertEqual(
+            len(secret_type),
+            volumes_count,
+            "Check the number of encrypted volumes with passphrase secret type"
+        )

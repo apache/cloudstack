@@ -109,6 +109,9 @@ public class ApiConstants {
     public static final String CUSTOM_JOB_ID = "customjobid";
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
+    public static final String ENCRYPT = "encrypt";
+    public static final String ENCRYPT_ROOT = "encryptroot";
+    public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";

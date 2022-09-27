@@ -61,20 +61,16 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
-        s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
+        logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && !dskCh.useLocalStorage()) {
+            s_logger.debug("LocalStoragePoolAllocator is returning null since the disk profile does not use local storage and bypassStorageTypeCheck is false.");
             return null;
         }
 
         if (s_logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
-            List<StoragePoolVO> disabledPools = storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
-            if (disabledPools != null && !disabledPools.isEmpty()) {
-                for (StoragePoolVO pool : disabledPools) {
-                    s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
-                }
-            }
+            logDisabledStoragePools(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
         }
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
@@ -86,7 +82,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
-                        s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
+                        s_logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
                         suitablePools.add(storagePool);
                     } else {
                         avoid.addPool(pool.getId());
@@ -100,6 +96,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         } else {
             if (plan.getPodId() == null) {
                 // zone wide primary storage deployment
+                s_logger.debug("LocalStoragePoolAllocator is returning null since both the host ID and pod ID are null. That means this should be a zone wide primary storage deployment.");
                 return null;
             }
             List<StoragePoolVO> availablePools =
@@ -116,18 +113,14 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
             }
 
-            // add remaining pools in cluster, that did not match tags, to avoid
-            // set
+            // add remaining pools in cluster to the 'avoid' set which did not match tags
             List<StoragePoolVO> allPools = storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null);
             allPools.removeAll(availablePools);
             for (StoragePoolVO pool : allPools) {
                 avoid.addPool(pool.getId());
             }
         }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("LocalStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
-        }
+        s_logger.debug(String.format("LocalStoragePoolAllocator returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
 
         return suitablePools;
     }

@@ -83,6 +83,12 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.15")
     private Integer cpuSpeed;
 
+    @Parameter(name = ApiConstants.ENCRYPT_ROOT,
+        type = CommandType.BOOLEAN,
+        description = "listed offerings support root disk encryption",
+        since = "4.18")
+    private Boolean encryptRoot;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -122,6 +128,8 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     public Integer getCpuSpeed() {
         return cpuSpeed;
     }
+
+    public Boolean getEncryptRoot() { return encryptRoot; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

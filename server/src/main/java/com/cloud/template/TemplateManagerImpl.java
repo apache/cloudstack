@@ -1802,6 +1802,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             // check permissions
             _accountMgr.checkAccess(caller, null, true, volume);
 
+            // Don't support creating templates from encrypted volumes (yet)
+            if (volume.getPassphraseId() != null) {
+                throw new UnsupportedOperationException("Cannot create templates from encrypted volumes");
+            }
+
             // If private template is created from Volume, check that the volume
             // will not be active when the private template is
             // created
@@ -1824,6 +1829,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             // Volume could be removed so find including removed to record source template id.
             volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+
+            // Don't support creating templates from encrypted volumes (yet)
+            if (volume != null && volume.getPassphraseId() != null) {
+                throw new UnsupportedOperationException("Cannot create templates from snapshots of encrypted volumes");
+            }
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
