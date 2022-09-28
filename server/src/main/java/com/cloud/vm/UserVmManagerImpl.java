@@ -1260,6 +1260,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentCpu = currentServiceOffering.getCpu();
         int currentMemory = currentServiceOffering.getRamSize();
 
+        if (currentServiceOffering.getEncrypt() != newServiceOffering.getEncrypt()) {
+            throw new UnsupportedOperationException(("Cannot change volume encryption type via offering change"));
+        }
+
         Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             if (newCpu > currentCpu) {
