@@ -194,7 +194,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             }
             return guestOsId;
         } else {
-            throw new CloudRuntimeException(String.format("Did not find a guest OS (%s) with type \"%s\" and minimal hyperviser hardware version %s.", guestOsDescription, guestOsType, minimumHardwareVersion));
+            throw new CloudRuntimeException(String.format("Did not find a guest OS (%s) with type \"%s\" and minimal hypervisor hardware version %s.", guestOsDescription, guestOsType, minimumHardwareVersion));
         }
     }
 
