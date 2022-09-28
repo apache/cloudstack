@@ -74,43 +74,42 @@ public class UsageSanityChecker {
                 pstmt.setInt(1, lastId);
                 pstmt.setInt(2, maxId);
             }
-            try(ResultSet rs = pstmt.executeQuery();) {
-                if (rs.next() && (rs.getInt(1) > 0)) {
-                    errors.append(String.format("Error: Found %s %s\n", rs.getInt(1), checkCase.itemName));
-                    checkOk = false;
-                }
-            }catch (Exception e)
-            {
-                s_logger.error("checkItemCountByPstmt:Exception:"+e.getMessage());
-                throw new CloudRuntimeException("checkItemCountByPstmt:Exception:"+e.getMessage(),e);
-            }
+            checkOk = isCheckOkForPstmt(checkCase, checkOk, pstmt);
         }
         catch (Exception e)
         {
-            s_logger.error("checkItemCountByPstmt:Exception:"+e.getMessage());
-            throw new CloudRuntimeException("checkItemCountByPstmt:Exception:"+e.getMessage(),e);
+            throwPreparedStatementExcecutionException("preparing statement", checkCase.sqlTemplate, e);
         }
         return checkOk;
     }
 
+    private boolean isCheckOkForPstmt(CheckCase checkCase, boolean checkOk, PreparedStatement pstmt) {
+        try(ResultSet rs = pstmt.executeQuery();) {
+            if (rs.next() && (rs.getInt(1) > 0)) {
+                errors.append(String.format("Error: Found %s %s\n", rs.getInt(1), checkCase.itemName));
+                checkOk = false;
+            }
+        }catch (Exception e)
+        {
+            throwPreparedStatementExcecutionException("check is failing", pstmt.toString(), e);
+        }
+        return checkOk;
+    }
+
+    private static void throwPreparedStatementExcecutionException(String msgPrefix, String stmt, Exception e) {
+        String msg = String.format("%s for prepared statement \"%s\" reason: %s", msgPrefix, stmt, e.getMessage());
+        s_logger.error(msg);
+        throw new CloudRuntimeException(msg, e);
+    }
+
     protected void checkMaxUsage() throws SQLException {
         int aggregationRange = DEFAULT_AGGREGATION_RANGE;
-        try (PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT value FROM `cloud`.`configuration` where name = 'usage.stats.job.aggregation.range'");)
+        String sql = "SELECT value FROM `cloud`.`configuration` where name = 'usage.stats.job.aggregation.range'";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);)
         {
-            try(ResultSet rs = pstmt.executeQuery();) {
-               if (rs.next()) {
-                    aggregationRange = rs.getInt(1);
-                } else {
-                    s_logger.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
-                }
-            }catch (SQLException e) {
-                s_logger.error("checkMaxUsage:Exception:"+e.getMessage());
-                throw new CloudRuntimeException("checkMaxUsage:Exception:"+e.getMessage());
-            }
+            aggregationRange = getAggregationRange(aggregationRange, pstmt);
         } catch (SQLException e) {
-            s_logger.error("checkMaxUsage:Exception:"+e.getMessage());
-            throw new CloudRuntimeException("checkMaxUsage:Exception:"+e.getMessage());
+            throwPreparedStatementExcecutionException("preparing atatement", sql, e);
         }
         int aggregationHours = aggregationRange / 60;
 
@@ -118,6 +117,21 @@ public class UsageSanityChecker {
                 + aggregationHours,
                 "usage records with raw_usage > " + aggregationHours,
                 lastCheckId);
+    }
+
+    private static int getAggregationRange(int aggregationRange, PreparedStatement pstmt) {
+        try(ResultSet rs = pstmt.executeQuery();) {
+           if (rs.next()) {
+                aggregationRange = rs.getInt(1);
+            } else {
+               if (s_logger.isDebugEnabled()) {
+                   s_logger.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
+               }
+            }
+        }catch (SQLException e) {
+            throwPreparedStatementExcecutionException("retrieval aggregate value is failing", pstmt.toString(), e);
+        }
+        return aggregationRange;
     }
 
     protected void checkVmUsage() {
@@ -170,6 +184,9 @@ public class UsageSanityChecker {
     }
 
     protected void readLastCheckId(){
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("reading last checked id for sanity check");
+        }
         try(BufferedReader reader = new BufferedReader(new FileReader(lastCheckFile));) {
             String lastIdText = null;
             lastId = -1;
@@ -177,7 +194,11 @@ public class UsageSanityChecker {
                 lastId = Integer.parseInt(lastIdText);
             }
         } catch (Exception e) {
-            s_logger.error("readLastCheckId:Exception:"+e.getMessage(),e);
+            String msg = String.format("error reading the LastCheckId reason:", e.getMessage());
+            s_logger.error(msg);
+            s_logger.debug(msg, e);
+        } finally {
+            s_logger.info(String.format("using %d as last checked id to start from in sanity check", lastId));
         }
     }
 
@@ -196,12 +217,13 @@ public class UsageSanityChecker {
     }
 
     protected void updateNewMaxId() {
+        s_logger.info(String.format("writing %d as the new last id checked", maxId));
         try (FileWriter fstream = new FileWriter(lastCheckFile);
-        BufferedWriter out = new BufferedWriter(fstream);
+             BufferedWriter out = new BufferedWriter(fstream);
         ){
             out.write("" + maxId);
         } catch (IOException e) {
-            s_logger.error("updateNewMaxId:Exception:"+e.getMessage());
+            s_logger.error(String.format("Exception writing the last checked id: %d reason: %s", maxId, e.getMessage()));
             // Error while writing last check id
         }
     }
