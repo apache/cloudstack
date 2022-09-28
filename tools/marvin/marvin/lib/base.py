@@ -3904,7 +3904,7 @@ class PhysicalNetwork:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, zoneid, domainid=None):
+    def create(cls, apiclient, services, zoneid, domainid=None, isolationmethods=None):
         """Create physical network"""
         cmd = createPhysicalNetwork.createPhysicalNetworkCmd()
 
@@ -3912,6 +3912,8 @@ class PhysicalNetwork:
         cmd.zoneid = zoneid
         if domainid:
             cmd.domainid = domainid
+        if isolationmethods:
+            cmd.isolationmethods = isolationmethods
         return PhysicalNetwork(apiclient.createPhysicalNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -5546,6 +5548,12 @@ class TrafficType:
 
     def __init__(self, items):
         self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, **kwargs):
+        cmd = addTrafficType.addTrafficTypeCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.addTrafficType(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
