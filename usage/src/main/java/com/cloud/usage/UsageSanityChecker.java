@@ -71,8 +71,12 @@ public class UsageSanityChecker {
          */
         try (PreparedStatement pstmt = conn.prepareStatement(checkCase.sqlTemplate)) {
             if(checkCase.checkId) {
-                pstmt.setInt(1, lastId);
-                pstmt.setInt(2, maxId);
+                if (lastId > 0) {
+                    pstmt.setInt(1, lastId);
+                }
+                if (maxId > lastId) {
+                    pstmt.setInt(2, maxId);
+                }
             }
             checkOk = isCheckOkForPstmt(checkCase, checkOk, pstmt);
         }
