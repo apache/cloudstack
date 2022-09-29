@@ -48,7 +48,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
 
     @Override
     public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
-        s_logger.debug("GarbageCollectingStoragePoolAllocator looking for storage pool");
+        logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
         if (!_storagePoolCleanupEnabled) {
             s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
             return null;

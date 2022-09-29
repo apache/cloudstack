@@ -20,7 +20,10 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.to.StorageFilerTO;
+
+import java.util.Arrays;
 
 public class ResizeVolumeCommand extends Command {
     private String path;
@@ -35,6 +38,10 @@ public class ResizeVolumeCommand extends Command {
     private boolean managed;
     private String iScsiName;
 
+    @LogLevel(LogLevel.Log4jLevel.Off)
+    private byte[] passphrase;
+    private String encryptFormat;
+
     protected ResizeVolumeCommand() {
     }
 
@@ -46,6 +53,13 @@ public class ResizeVolumeCommand extends Command {
         this.shrinkOk = shrinkOk;
         this.vmInstance = vmInstance;
         this.managed = false;
+    }
+
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
+                               String chainInfo, byte[] passphrase, String encryptFormat) {
+        this(path, pool, currentSize, newSize, shrinkOk, vmInstance, chainInfo);
+        this.passphrase = passphrase;
+        this.encryptFormat = encryptFormat;
     }
 
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance, String chainInfo) {
@@ -88,6 +102,16 @@ public class ResizeVolumeCommand extends Command {
     public String get_iScsiName() {return iScsiName; }
 
     public String getChainInfo() {return chainInfo; }
+
+    public String getEncryptFormat() { return encryptFormat; }
+
+    public byte[] getPassphrase() { return passphrase; }
+
+    public void clearPassphrase() {
+        if (this.passphrase != null) {
+            Arrays.fill(this.passphrase, (byte) 0);
+        }
+    }
 
     /**
      * {@inheritDoc}

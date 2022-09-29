@@ -38,6 +38,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.StorageUtil;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
+import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -232,6 +234,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private SecondaryStorageVmDao secondaryStorageVmDao;
     @Inject
     VolumeApiService _volumeApiService;
+    @Inject
+    PassphraseDao passphraseDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -271,7 +275,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // Find a destination storage pool with the specified criteria
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volumeInfo.getDiskOfferingId());
         DiskProfile dskCh = new DiskProfile(volumeInfo.getId(), volumeInfo.getVolumeType(), volumeInfo.getName(), diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getTagsArray(),
-                diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null);
+                diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null, (diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null));
+
         dskCh.setHyperType(dataDiskHyperType);
         storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
 
@@ -305,6 +310,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
         newVol.setFormat(oldVol.getFormat());
+
+        if (oldVol.getPassphraseId() != null) {
+            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO());
+            passphrase.clearPassphrase();
+            newVol.setPassphraseId(passphrase.getId());
+        }
+
         return _volsDao.persist(newVol);
     }
 
@@ -359,10 +371,21 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     s_logger.trace(String.format("we have a preferred pool: %b", storagePool.isPresent()));
                 }
 
-                return (storagePool.isPresent()) ? (StoragePool) this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary) :
-                    (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
+                StoragePool storage;
+                if (storagePool.isPresent()) {
+                    storage = (StoragePool)this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary);
+                    s_logger.debug(String.format("VM [%s] has a preferred storage pool [%s]. Volume Orchestrator found this storage using Storage Pool Allocator [%s] and will"
+                            + " use it.", vm, storage, allocator));
+                } else {
+                    storage = (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
+                    s_logger.debug(String.format("VM [%s] does not have a preferred storage pool or it cannot be used. Volume Orchestrator will use the available Storage Pool"
+                            + " [%s], which was discovered using Storage Pool Allocator [%s].", vm, storage, allocator));
+                }
+                return storage;
             }
+            s_logger.debug(String.format("Could not find any available Storage Pool using Storage Pool Allocator [%s].", allocator));
         }
+        s_logger.info("Volume Orchestrator could not find any available Storage Pool.");
         return null;
     }
 
@@ -446,6 +469,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         Pair<Pod, Long> pod = null;
 
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
+        if (diskOffering.getEncrypt()) {
+            VolumeVO vol = (VolumeVO) volume;
+            volume = setPassphraseForVolumeEncryption(vol);
+        }
         DataCenter dc = _entityMgr.findById(DataCenter.class, volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
 
@@ -570,21 +597,21 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     protected DiskProfile createDiskCharacteristics(VolumeInfo volumeInfo, VirtualMachineTemplate template, DataCenter dc, DiskOffering diskOffering) {
+        boolean requiresEncryption = diskOffering.getEncrypt() || volumeInfo.getPassphraseId() != null;
         if (volumeInfo.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             String templateToString = getReflectOnlySelectedFields(template);
             String zoneToString = getReflectOnlySelectedFields(dc);
-
             TemplateDataStoreVO ss = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dc.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
             if (ss == null) {
                 throw new CloudRuntimeException(String.format("Template [%s] has not been completely downloaded to the zone [%s].",
                         templateToString, zoneToString));
             }
-
             return new DiskProfile(volumeInfo.getId(), volumeInfo.getVolumeType(), volumeInfo.getName(), diskOffering.getId(), ss.getSize(), diskOffering.getTagsArray(), diskOffering.isUseLocalStorage(),
-                    diskOffering.isRecreatable(), Storage.ImageFormat.ISO != template.getFormat() ? template.getId() : null);
+                    diskOffering.isRecreatable(), Storage.ImageFormat.ISO != template.getFormat() ? template.getId() : null, requiresEncryption);
         } else {
             return new DiskProfile(volumeInfo.getId(), volumeInfo.getVolumeType(), volumeInfo.getName(), diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getTagsArray(),
-                    diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null);
+                    diskOffering.isUseLocalStorage(), diskOffering.isRecreatable(), null, requiresEncryption);
+
         }
     }
 
@@ -642,8 +669,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             storageMgr.setDiskProfileThrottling(dskCh, null, diskOffering);
         }
 
-        if (diskOffering != null && diskOffering.isCustomized()) {
-            dskCh.setSize(size);
+        if (diskOffering != null) {
+            if (diskOffering.isCustomized()) {
+                dskCh.setSize(size);
+            }
+
+            if (diskOffering.getEncrypt()) {
+                VolumeVO vol = _volsDao.findById(volumeInfo.getId());
+                setPassphraseForVolumeEncryption(vol);
+                volumeInfo = volFactory.getVolume(volumeInfo.getId());
+            }
         }
 
         dskCh.setHyperType(hyperType);
@@ -686,7 +721,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         throw new CloudRuntimeException(msg);
                     }
                 }
-
                 return result.getVolume();
             } catch (InterruptedException | ExecutionException e) {
                 String msg = String.format("Failed to create volume [%s] due to [%s].", volumeToString, e.getMessage());
@@ -1587,6 +1621,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             destPool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         }
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
+            DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, vol.getDiskOfferingId());
+            if (diskOffering.getEncrypt()) {
+                vol = setPassphraseForVolumeEncryption(vol);
+            }
             newVol = vol;
         } else {
             newVol = switchVolume(vol, vm);
@@ -1702,6 +1740,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         return new Pair<VolumeVO, DataStore>(newVol, destPool);
+    }
+
+    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
+        if (volume.getPassphraseId() != null) {
+            return volume;
+        }
+        s_logger.debug("Creating passphrase for the volume: " + volume.getName());
+        long startTime = System.currentTimeMillis();
+        PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO());
+        passphrase.clearPassphrase();
+        volume.setPassphraseId(passphrase.getId());
+        long finishTime = System.currentTimeMillis();
+        s_logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
+        return _volsDao.persist(volume);
     }
 
     @Override
