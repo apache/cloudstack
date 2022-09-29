@@ -1748,7 +1748,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         String name = cmd.getTemplateName();
         if ((org.apache.commons.lang3.StringUtils.isBlank(name)
-                || (name.length() > VirtualMachineTemplate.MAXIMUM_TEMPLATE_NAME_LENGTH)) {
+                || (name.length() > VirtualMachineTemplate.MAXIMUM_TEMPLATE_NAME_LENGTH))) {
             throw new InvalidParameterValueException(String.format("Template name cannot be null and cannot be more %s characters", VirtualMachineTemplate.MAXIMUM_TEMPLATE_NAME_LENGTH));
         }
 
