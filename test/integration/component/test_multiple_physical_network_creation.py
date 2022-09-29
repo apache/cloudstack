@@ -71,18 +71,17 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
                 cls.services["l2-network"],
                 zoneid=cls.zone.id
             )
+            cls._cleanup.append(cls.physical_network)
 
             cls.physical_network_2 = PhysicalNetwork.create(
                 cls.apiclient,
                 cls.services["l2-network"],
                 zoneid=cls.zone.id
             )
+            cls._cleanup.append(cls.physical_network_2)
         except Exception as e:
             cls.tearDownClass()
             raise unittest.SkipTest(e)
-
-        cls._cleanup.append(cls.physical_network)
-        cls._cleanup.append(cls.physical_network_2)
 
         cls.kvmnetworklabel=None
         try:
@@ -128,7 +127,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
                 allocationstate="Enabled"
             )
             # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            super(TestMulipleNetworkCreation, cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -140,12 +139,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestMulipleNetworkCreation, self).tearDown()
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_add_traffictype_for_untagged_networks(self):
@@ -227,6 +221,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
             isolationmethods="VLAN",
             zoneid=self.zone.id
         )
+        self.cleanup.append(self.physical_network_3)
 
         # Enable the network
         self.physical_network_3.update(
@@ -267,12 +262,14 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
             domainid=self.domain.id
             #physicalnetworkid=self.physical_network_3.id
         )
+        self.cleanup.append(self.shared_network)
 
         # Create small service offering
         self.service_offering = ServiceOffering.create(
             self.apiclient,
             self.testdata["service_offerings"]["small"]
         )
+        self.cleanup.append(self.service_offering)
 
         #4. Create virtual machine
         self.testdata["virtual_machine"]["zoneid"] = self.zone.id
@@ -284,6 +281,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=self.shared_network.id
         )
+        self.cleanup.append(self.virtual_machine)
 
         list_vms = VirtualMachine.list(
             self.apiclient,
