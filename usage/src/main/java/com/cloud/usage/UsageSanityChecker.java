@@ -51,7 +51,7 @@ public class UsageSanityChecker {
 
     protected void reset() {
         errors = new StringBuilder();
-        checkCases = new ArrayList<CheckCase>();
+        checkCases = new ArrayList<>();
     }
 
     protected boolean checkItemCountByPstmt() throws SQLException {
@@ -69,8 +69,8 @@ public class UsageSanityChecker {
         /*
          * Check for item usage records which are created after it is removed
          */
-        try (PreparedStatement pstmt = conn.prepareStatement(checkCase.sqlTemplate)) {
-            if(checkCase.checkId) {
+        try (PreparedStatement pstmt = conn.prepareStatement(checkCase.getSqlTemplate())) {
+            if(checkCase.isCheckId()) {
                 if (lastId > 0) {
                     pstmt.setInt(1, lastId);
                 }
@@ -82,7 +82,7 @@ public class UsageSanityChecker {
         }
         catch (Exception e)
         {
-            throwPreparedStatementExcecutionException("preparing statement", checkCase.sqlTemplate, e);
+            throwPreparedStatementExcecutionException("preparing statement", checkCase.getSqlTemplate(), e);
         }
         return checkOk;
     }
@@ -90,7 +90,7 @@ public class UsageSanityChecker {
     private boolean isCheckOkForPstmt(CheckCase checkCase, boolean checkOk, PreparedStatement pstmt) {
         try(ResultSet rs = pstmt.executeQuery();) {
             if (rs.next() && (rs.getInt(1) > 0)) {
-                errors.append(String.format("Error: Found %s %s\n", rs.getInt(1), checkCase.itemName));
+                errors.append(String.format("Error: Found %s %s%n", rs.getInt(1), checkCase.getItemName()));
                 checkOk = false;
             }
         }catch (Exception e)
@@ -194,11 +194,11 @@ public class UsageSanityChecker {
         try(BufferedReader reader = new BufferedReader(new FileReader(lastCheckFile));) {
             String lastIdText = null;
             lastId = -1;
-            if ((reader != null) && (lastIdText = reader.readLine()) != null) {
+            if ((lastIdText = reader.readLine()) != null) {
                 lastId = Integer.parseInt(lastIdText);
             }
         } catch (Exception e) {
-            String msg = String.format("error reading the LastCheckId reason:", e.getMessage());
+            String msg = String.format("error reading the LastCheckId reason: %s", e.getMessage());
             s_logger.error(msg);
             s_logger.debug(msg, e);
         } finally {
@@ -264,13 +264,13 @@ public class UsageSanityChecker {
         return TransactionLegacy.getStandaloneConnection();
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         UsageSanityChecker usc = new UsageSanityChecker();
         String sanityErrors;
         try {
             sanityErrors = usc.runSanityCheck();
             if (sanityErrors.length() > 0) {
-                s_logger.error(sanityErrors.toString());
+                s_logger.error(sanityErrors);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -292,19 +292,43 @@ public class UsageSanityChecker {
  * encapsulating what change for each specific case
  */
 class CheckCase {
-    public String sqlTemplate;
-    public String itemName;
-    public boolean checkId = false;
+    public String getSqlTemplate() {
+        return this.sqlTemplate;
+    }
+
+    public void setSqlTemplate(final String sqlTemplate) {
+        this.sqlTemplate = sqlTemplate;
+    }
+
+    public String getItemName() {
+        return this.itemName;
+    }
+
+    public void setItemName(final String itemName) {
+        this.itemName = itemName;
+    }
+
+    public boolean isCheckId() {
+        return this.checkId;
+    }
+
+    public void setCheckId(final boolean checkId) {
+        this.checkId = checkId;
+    }
+
+    private String sqlTemplate;
+    private String itemName;
+    private boolean checkId = false;
 
     public CheckCase(String sqlTemplate, String itemName, String lastCheckId) {
-        checkId = true;
-        this.sqlTemplate = sqlTemplate + lastCheckId;
-        this.itemName = itemName;
+        setCheckId(true);
+        setSqlTemplate(sqlTemplate + lastCheckId);
+        setItemName(itemName);
     }
 
     public CheckCase(String sqlTemplate, String itemName) {
         checkId = false;
-        this.sqlTemplate = sqlTemplate;
-        this.itemName = itemName;
+        setSqlTemplate(sqlTemplate);
+        setItemName(itemName);
     }
 }
