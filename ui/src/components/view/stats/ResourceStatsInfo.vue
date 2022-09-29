@@ -56,7 +56,7 @@ export default {
         {
           resourceType: 'CPU',
           messageList: [
-            this.$t('message.cpu.usage.info'),
+            this.$t('message.cpu.usage.info')
           ]
         },
         {
