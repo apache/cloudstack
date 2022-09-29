@@ -86,7 +86,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.AUTO_SELECT,
             since = "4.18.0",
             type = CommandType.BOOLEAN,
-            description = "Automatically select a destination host for a running instance, if hostId and storageId are not specified. false by default")
+            description = "Automatically select a destination host for a running instance, if hostId is not specified. false by default")
     private Boolean autoSelect;
 
     /////////////////////////////////////////////////////
