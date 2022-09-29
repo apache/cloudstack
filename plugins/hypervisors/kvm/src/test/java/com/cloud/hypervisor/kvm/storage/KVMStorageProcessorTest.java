@@ -93,6 +93,9 @@ public class KVMStorageProcessorTest {
 
     @Mock
     LibvirtDomainXMLParser libvirtDomainXMLParserMock;
+    @Mock
+    LibvirtVMDef.DiskDef diskDefMock;
+
 
     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
     private static final long templateSize = 80000L;
@@ -378,32 +381,36 @@ public class KVMStorageProcessorTest {
         Assert.assertFalse(storageProcessorSpy.checkDetachSucess("path", domainMock));
     }
 
+    private void attachOrDetachDeviceTest (boolean attach, String vmName, LibvirtVMDef.DiskDef xml) throws LibvirtException, InternalErrorException {
+        storageProcessorSpy.attachOrDetachDevice(connectMock, attach, vmName, xml);
+    }
     @PrepareForTest(KVMStorageProcessor.class)
-    private String attachOrDetachDeviceTest (boolean attach, String vmName, String xml) throws LibvirtException, InternalErrorException {
-        return storageProcessorSpy.attachOrDetachDevice(connectMock, attach, vmName, xml);
+    private void attachOrDetachDeviceTest (boolean attach, String vmName, LibvirtVMDef.DiskDef xml, long waitDetachDevice) throws LibvirtException, InternalErrorException {
+        storageProcessorSpy.attachOrDetachDevice(connectMock, attach, vmName, xml, waitDetachDevice);
     }
 
     @Test (expected = LibvirtException.class)
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestThrowLibvirtException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName(Mockito.anyString())).thenThrow(LibvirtException.class);
-        attachOrDetachDeviceTest(true, "vmName", "xml");
+        attachOrDetachDeviceTest(true, "vmName", diskDefMock);
     }
 
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestAttachSuccess() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
-        String result = attachOrDetachDeviceTest(true, "vmName", "xml");
+        attachOrDetachDeviceTest(true, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).attachDevice(Mockito.anyString());
-        Assert.assertNull(result);
     }
 
     @Test (expected = LibvirtException.class)
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestAttachThrowLibvirtException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
+        Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
+        Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         Mockito.doThrow(LibvirtException.class).when(domainMock).attachDevice(Mockito.anyString());
-        attachOrDetachDeviceTest(true, "vmName", "xml");
+        attachOrDetachDeviceTest(true, "vmName", diskDefMock);
     }
 
     @Test (expected = LibvirtException.class)
@@ -411,27 +418,28 @@ public class KVMStorageProcessorTest {
     public void attachOrDetachDeviceTestDetachThrowLibvirtException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
         Mockito.doThrow(LibvirtException.class).when(domainMock).detachDevice(Mockito.anyString());
-        attachOrDetachDeviceTest(false, "vmName", "xml");
+        attachOrDetachDeviceTest(false, "vmName", diskDefMock);
     }
 
     @Test
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachSuccess() throws LibvirtException, InternalErrorException {
-        storageProcessorSpy.waitDetachDevice = 1000l;
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
         PowerMockito.doReturn(true).when(storageProcessorSpy).checkDetachSucess(Mockito.anyString(), Mockito.any(Domain.class));
-        String result = attachOrDetachDeviceTest( false, "vmName", "xml");
+        Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
+        Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
+        attachOrDetachDeviceTest( false, "vmName", diskDefMock, 10000);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
-        Assert.assertNull(result);
     }
 
     @Test (expected = InternalErrorException.class)
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachThrowInternalErrorException() throws LibvirtException, InternalErrorException {
-        storageProcessorSpy.waitDetachDevice = 1000l;
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
         PowerMockito.doReturn(false).when(storageProcessorSpy).checkDetachSucess(Mockito.anyString(), Mockito.any(Domain.class));
-        String result = attachOrDetachDeviceTest( false, "vmName", "xml");
+        Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
+        Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
+        attachOrDetachDeviceTest( false, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
     }
 }

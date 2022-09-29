@@ -54,14 +54,6 @@ public class AgentProperties{
      */
     public static final Property<Boolean> ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM = new Property<Boolean>("enable.manually.setting.cpu.topology.on.kvm.vm", true);
 
-    /**
-     * Time (in milliseconds) to wait before assuming the VM was unable to detach a volume after the hypervisor sends the detach command.<br>
-     * This property is for KVM only.
-     * Data type: Long.<br>
-     * Default value: <code>10000l</code>
-     */
-    public static final Property<Long> WAIT_DETACH_DEVICE = new Property<Long>("wait.detach.device", 10000l);
-
     public static class Property <T>{
         private final String name;
         private final T defaultValue;
