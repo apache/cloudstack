@@ -51,7 +51,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -277,6 +276,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
@@ -6265,22 +6265,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
-        boolean usesLocalStorage = false;
-
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
-        for (VolumeVO vol : volumes) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            if (diskOffering.isUseLocalStorage()) {
-                usesLocalStorage = true;
-                break;
-            }
-            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
-            if (storagePool.isLocal()) {
-                usesLocalStorage = true;
-                break;
-            }
-        }
-        return usesLocalStorage;
+        return isVmVolumesUsingLocalStorage(volumes);
     }
 
     @Override
@@ -6339,7 +6325,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DeployDestination dest = null;
         if (destinationHost == null) {
-            dest = chooseVmMigrationDestination(vm, srcHost);
+            dest = chooseVmMigrationDestination(vm, srcHost, null);
         } else {
             dest = checkVmMigrationDestination(vm, srcHost, destinationHost);
         }
@@ -6354,7 +6340,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return findMigratedVm(vm.getId(), vm.getType());
     }
 
-    private DeployDestination chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost) {
+    private DeployDestination chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost, Long poolId) {
         vm.setLastHostId(null); // Last host does not have higher priority in vm migration
         final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
@@ -6362,12 +6348,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final Host host = _hostDao.findById(srcHostId);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
-        final DataCenterDeployment plan = _itMgr.getMigrationDeployment(vm, host, null, excludes);
+        final DataCenterDeployment plan = _itMgr.getMigrationDeployment(vm, host, poolId, excludes);
         try {
             return _planningMgr.planDeployment(profile, plan, excludes, null);
         } catch (final AffinityConflictException e2) {
-            s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
-            throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
+            s_logger.warn("Unable to create deployment, affinity rules associated to the VM conflict", e2);
+            throw new CloudRuntimeException("Unable to create deployment, affinity rules associated to the VM conflict");
         } catch (final InsufficientServerCapacityException e3) {
             throw new CloudRuntimeException("Unable to find a server to migrate the vm to");
         }
@@ -6662,8 +6648,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return implicitPlannerUsed;
     }
 
-    private boolean isVmVolumesOnZoneWideStore(VMInstanceVO vm) {
-        final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
+    private boolean isVmVolumesUsingLocalStorage(final List<VolumeVO> volumes) {
+        if (CollectionUtils.isEmpty(volumes)) {
+            return false;
+        }
+        for (Volume volume : volumes) {
+            if (volume == null || volume.getPoolId() == null) {
+                return false;
+            }
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (pool == null || !ScopeType.ZONE.equals(pool.getScope())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isVmVolumesOnZoneWideStore(final List<VolumeVO> volumes) {
         if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }
@@ -6685,6 +6686,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (srcHost == null) {
             throw new InvalidParameterValueException("Cannot migrate VM, host with ID: " + srcHostId + " for VM not found");
+        }
+
+        if (destinationHost == null) {
+            return new Pair<>(srcHost, null);
         }
 
         // Check if source and destination hosts are valid and migrating to same host
@@ -6850,8 +6855,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Pair<Host, Host> sourceDestinationHosts = getHostsForMigrateVmWithStorage(vm, destinationHost);
         Host srcHost = sourceDestinationHosts.first();
 
-        if (!isVMUsingLocalStorage(vm) && MapUtils.isEmpty(volumeToPool)
-                && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(vm))){
+        final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
+        if (!isVmVolumesUsingLocalStorage(volumes) && MapUtils.isEmpty(volumeToPool) && destinationHost != null
+                && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(volumes))) {
             // If volumes do not have to be migrated
             // call migrateVirtualMachine for non-user VMs else throw exception
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
@@ -6862,6 +6868,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Map<Long, Long> volToPoolObjectMap = getVolumePoolMappingForMigrateVmWithStorage(vm, volumeToPool);
+
+        if (destinationHost == null) {
+            Long poolId = null;
+            if (MapUtils.isNotEmpty(volToPoolObjectMap)) {
+                poolId = new ArrayList<>(volToPoolObjectMap.values()).get(0);
+            }
+            DeployDestination deployDestination = chooseVmMigrationDestination(vm, srcHost, poolId);
+            if (deployDestination == null) {
+                throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
+            }
+            destinationHost = deployDestination.getHost();
+        }
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 

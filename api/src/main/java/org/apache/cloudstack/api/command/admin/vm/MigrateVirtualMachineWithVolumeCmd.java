@@ -83,6 +83,12 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                "<1b331390-59f2-4796-9993-bf11c6e76225>&migrateto[2].pool=<41fdb564-9d3b-447d-88ed-7628f7640cbc>")
     private Map migrateVolumeTo;
 
+    @Parameter(name = ApiConstants.AUTO_SELECT,
+            since = "4.18.0",
+            type = CommandType.BOOLEAN,
+            description = "Automatically select a destination host for a running instance, if hostId and storageId are not specified. false by default")
+    private Boolean autoSelect;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -160,21 +166,26 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
         }
 
-        if (!VirtualMachine.State.Running.equals(userVm.getState()) && hostId != null) {
+        if (!VirtualMachine.State.Running.equals(userVm.getState()) && (hostId != null || Boolean.TRUE.equals(autoSelect))) {
             throw new InvalidParameterValueException(String.format("VM ID: %s is not in Running state to migrate it to new host", userVm.getUuid()));
         }
 
-        if (!VirtualMachine.State.Stopped.equals(userVm.getState()) && hostId == null) {
-            throw new InvalidParameterValueException(String.format("VM ID: %s is not in Stopped state to migrate, use %s parameter to migrate it to a new host", userVm.getUuid(), ApiConstants.HOST_ID));
+        if (!VirtualMachine.State.Stopped.equals(userVm.getState()) && hostId == null && Boolean.FALSE.equals(autoSelect)) {
+            throw new InvalidParameterValueException(String.format("VM ID: %s is not in Stopped state to migrate, use %s or %s parameter to migrate it to a new host",
+                    userVm.getUuid(), ApiConstants.HOST_ID,ApiConstants.AUTO_SELECT));
         }
 
         try {
             VirtualMachine migratedVm = null;
-            if (hostId != null) {
-                Host destinationHost = _resourceService.getHost(getHostId());
-                // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
-                if (destinationHost == null) {
-                    throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id =" + getHostId());
+
+            if (getHostId() != null || Boolean.TRUE.equals(autoSelect)) {
+                Host destinationHost = null;
+                if (Boolean.FALSE.equals(autoSelect)) {
+                    destinationHost = _resourceService.getHost(getHostId());
+                    // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
+                    if (destinationHost == null) {
+                        throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id =" + getHostId());
+                    }
                 }
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
             } else if (MapUtils.isNotEmpty(migrateVolumeTo)) {
