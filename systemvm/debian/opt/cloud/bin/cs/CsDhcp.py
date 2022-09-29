@@ -112,8 +112,6 @@ class CsDhcp(CsDataBag):
                 dns_list = [x for x in gn.get_dns() if x]
                 if self.config.is_dhcp() and not self.config.use_extdns():
                     guest_ip = self.config.address().get_guest_ip()
-                    logging.info("PEARL - mtu: %s" % i['mtu'])
-                    logging.info(json.dumps(self.config.address()))
                     if guest_ip and guest_ip in dns_list and ip not in dns_list:
                         # Replace the default guest IP in VR with the ip in additional IP ranges, if shared network has multiple IP ranges.
                         dns_list.remove(guest_ip)
