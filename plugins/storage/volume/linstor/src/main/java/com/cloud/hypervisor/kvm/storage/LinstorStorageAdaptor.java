@@ -311,11 +311,11 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public boolean disconnectPhysicalDiskByPath(String localPath)
     {
         // get first storage pool from the map, as we don't know any better:
-        if (!MapStorageUuidToStoragePool.isEmpty())
+        Optional<KVMStoragePool> optFirstPool = MapStorageUuidToStoragePool.values().stream().findFirst();
+        if (optFirstPool.isPresent())
         {
             s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
-            String firstKey = MapStorageUuidToStoragePool.keySet().stream().findFirst().get();
-            final KVMStoragePool pool = MapStorageUuidToStoragePool.get(firstKey);
+            final KVMStoragePool pool = optFirstPool.get();
 
             s_logger.debug("Linstor: Using storpool: " + pool.getUuid());
             final DevelopersApi api = getLinstorAPI(pool);
