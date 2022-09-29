@@ -30,6 +30,8 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 public interface VirtualMachineTemplate extends ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachineTemplate.State> {
+    int MAXIMUM_TEMPLATE_NAME_LENGTH = 255;
+
     enum State {
         Active,
         Inactive,
