@@ -45,12 +45,11 @@
                                 <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
                                   <a-radio :value="zoneItem.id">
                                     <div>
-                                      <img
+                                      <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :src="getImg(zoneItem.icon.base64image)"
-                                        style="marginTop: -30px; marginLeft: 60px"
-                                        width="36px"
-                                        height="36px" />
+                                        :image="zoneItem.icon.base64image"
+                                        size="36"
+                                        style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
                                     </div>
                                   </a-radio>
@@ -701,6 +700,7 @@ import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
+import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'Wizard',
@@ -1434,6 +1434,7 @@ export default {
           params.id = this.networkId
           apiName = 'listNetworks'
         }
+        if (!apiName) return resolve(zones)
 
         api(apiName, params).then(json => {
           let objectName
@@ -1486,9 +1487,6 @@ export default {
       return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
         'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
         'minmemory' in serviceOffering.serviceofferingdetails
-    },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     updateOverrideRootDiskShowParam (val) {
       if (val) {
@@ -1711,7 +1709,7 @@ export default {
         }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+          deployVmData.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
@@ -1750,6 +1748,9 @@ export default {
         }
         if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
+          if (values.rootdisksize && values.rootdisksize > 0) {
+            deployVmData.rootdisksize = values.rootdisksize
+          }
         }
         if (this.isCustomizedIOPS) {
           deployVmData['details[0].minIops'] = this.minIops
@@ -1920,7 +1921,7 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        const args = { listall: true, showicon: true }
+        const args = { showicon: true }
         if (zoneId) args.id = zoneId
         api(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
@@ -1952,7 +1953,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -2148,16 +2149,9 @@ export default {
         this.fetchAllIsos()
       }
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
-    },
     fetchTemplateNics (template) {
       var nics = []
+      this.nicToNetworkSelection = []
       if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
         var keys = Object.keys(template.deployasisdetails)
         keys = keys.filter(key => key.startsWith('network-'))
@@ -2169,7 +2163,6 @@ export default {
           return a.InstanceID - b.InstanceID
         })
         if (this.options.networks && this.options.networks.length > 0) {
-          this.nicToNetworkSelection = []
           for (var i = 0; i < nics.length; ++i) {
             var nic = nics[i]
             nic.id = nic.InstanceID

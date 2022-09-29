@@ -139,6 +139,7 @@
             <groupId>org.zapodot</groupId>
             <artifactId>embedded-ldap-junit</artifactId>
             <version>${zapdot.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid</groupId>

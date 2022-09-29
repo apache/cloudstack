@@ -162,12 +162,10 @@ export default {
               jobId,
               title,
               description: values.volumeid,
-              successMethod: result => {
-                this.closeAction()
-              },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
+            this.closeAction()
           }
         }).catch(error => {
           this.$notifyError(error)

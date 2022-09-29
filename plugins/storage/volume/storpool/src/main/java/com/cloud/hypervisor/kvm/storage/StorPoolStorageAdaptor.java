@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.SharedMountPoint)
+@StorageAdaptorInfo(storagePoolType=StoragePoolType.StorPool)
 public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static void SP_LOG(String fmt, Object... args) {
         try (PrintWriter spLogFile = new PrintWriter(new BufferedWriter(new FileWriter("/var/log/cloudstack/agent/storpool-agent.log", true)))) {
@@ -57,7 +57,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
         SP_LOG("StorpooolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
         StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);
@@ -276,7 +276,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
     // The following do not apply for StorpoolStorageAdaptor?
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         SP_LOG("StorpooolStorageAdaptor.createPhysicalDisk: uuid=%s, pool=%s, format=%s, size=%d", volumeUuid, pool, format, size);
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
@@ -317,7 +317,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format,
-            ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
+            ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         SP_LOG("StorpooolStorageAdaptor.createDiskFromTemplate: template=%s, name=%s, fmt=%s, ptype=%s, size=%d, dst_pool=%s, to=%d",
             template, name, format, provisioningType, size, destPool.getUuid(), timeout);
         throw new UnsupportedOperationException("Creating a disk from a template is not yet supported for this configuration.");
@@ -327,6 +327,11 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool) {
         SP_LOG("StorpooolStorageAdaptor.createTemplateFromDisk: disk=%s, name=%s, fmt=%s, size=%d, dst_pool=%s", disk, name, format, size, destPool.getUuid());
         throw new UnsupportedOperationException("Creating a template from a disk is not yet supported for this configuration.");
+    }
+
+    @Override
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] sourcePassphrase, byte[] destPassphrase, ProvisioningType provisioningType) {
+        return copyPhysicalDisk(disk, name, destPool, timeout);
     }
 
     @Override
@@ -361,7 +366,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name,
-            PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+            PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         SP_LOG("StorpooolStorageAdaptor.createDiskFromTemplateBacking: template=%s, name=%s, dst_pool=%s", template,
                 name, destPool.getUuid());
         throw new UnsupportedOperationException(

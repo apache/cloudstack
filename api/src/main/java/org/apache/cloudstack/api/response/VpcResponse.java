@@ -136,6 +136,22 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6RouteResponse> ipv6Routes;
 
+    @SerializedName(ApiConstants.DNS1)
+    @Param(description = "the first IPv4 DNS for the VPC")
+    private String dns1;
+
+    @SerializedName(ApiConstants.DNS2)
+    @Param(description = "the second IPv4 DNS for the VPC")
+    private String dns2;
+
+    @SerializedName(ApiConstants.IP6_DNS1)
+    @Param(description = "the first IPv6 DNS for the VPC", since = "4.18.0")
+    private String ipv6Dns1;
+
+    @SerializedName(ApiConstants.IP6_DNS2)
+    @Param(description = "the second IPv6 DNS for the VPC", since = "4.18.0")
+    private String ipv6Dns2;
+
     public void setId(final String id) {
         this.id = id;
     }
@@ -252,5 +268,25 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
         this.ipv6Routes = ipv6Routes;
+    }
+
+    public Set<Ipv6RouteResponse> getIpv6Routes() {
+        return ipv6Routes;
+    }
+
+    public void setDns1(String dns1) {
+        this.dns1 = dns1;
+    }
+
+    public void setDns2(String dns2) {
+        this.dns2 = dns2;
+    }
+
+    public void setIpv6Dns1(String ipv6Dns1) {
+        this.ipv6Dns1 = ipv6Dns1;
+    }
+
+    public void setIpv6Dns2(String ipv6Dns2) {
+        this.ipv6Dns2 = ipv6Dns2;
     }
 }

@@ -3240,6 +3240,14 @@ class Network:
             cmd.endipv6 = services["endipv6"]
         if "routeripv6" in services:
             cmd.routeripv6 = services["routeripv6"]
+        if "dns1" in services:
+            cmd.dns1 = services["dns1"]
+        if "dns2" in services:
+            cmd.dns2 = services["dns2"]
+        if "ip6dns1" in services:
+            cmd.ip6dns1 = services["ip6dns1"]
+        if "ip6dns2" in services:
+            cmd.ip6dns2 = services["ip6dns2"]
 
         if accountid:
             cmd.account = accountid
@@ -3292,6 +3300,14 @@ class Network:
         cmd.resume = resume
         return (apiclient.migrateNetwork(cmd))
 
+    def replaceACLList(self, apiclient, aclid, gatewayid=None):
+        cmd = replaceNetworkACLList.replaceNetworkACLListCmd()
+        cmd.networkid = self.id
+        cmd.aclid = aclid
+        if gatewayid:
+            cmd.gatewayid = gatewayid
+        return (apiclient.replaceNetworkACLList(cmd))
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all Networks matching criteria"""
@@ -3328,6 +3344,11 @@ class NetworkACL:
                 cmd.icmpcode = -1
         elif protocol:
             cmd.protocol = protocol
+
+        if "icmptype" in services:
+            cmd.icmptype = services["icmptype"]
+        if "icmpcode" in services:
+            cmd.icmpcode = services["icmpcode"]
 
         if "startport" in services:
             cmd.startport = services["startport"]

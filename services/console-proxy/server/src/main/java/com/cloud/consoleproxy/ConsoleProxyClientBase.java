@@ -55,6 +55,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     protected boolean framebufferResized = false;
     protected int resizedFramebufferWidth;
     protected int resizedFramebufferHeight;
+    protected String sessionUuid;
 
     public ConsoleProxyClientBase() {
         tracker = new TileTracker();
@@ -421,5 +422,10 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         this.clientParam = clientParam;
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(ConsoleProxy.getEncryptorPassword());
         this.clientToken = encryptor.encryptObject(ConsoleProxyClientParam.class, clientParam);
+    }
+
+    @Override
+    public String getSessionUuid() {
+        return sessionUuid;
     }
 }

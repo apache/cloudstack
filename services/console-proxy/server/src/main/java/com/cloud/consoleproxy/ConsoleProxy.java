@@ -26,9 +26,11 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -76,6 +78,12 @@ public class ConsoleProxy {
 
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
+
+    static Set<String> allowedSessions = new HashSet<>();
+
+    public static void addAllowedSession(String sessionUuid) {
+        allowedSessions.add(sessionUuid);
+    }
 
     private static void configLog4j() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -178,6 +186,29 @@ public class ConsoleProxy {
         authResult.setHost(param.getClientHostAddress());
         authResult.setPort(param.getClientHostPort());
 
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(param.getExtraSecurityToken())) {
+            String extraToken = param.getExtraSecurityToken();
+            String clientProvidedToken = param.getClientProvidedExtraSecurityToken();
+            s_logger.debug(String.format("Extra security validation for the console access, provided %s " +
+                    "to validate against %s", clientProvidedToken, extraToken));
+
+            if (!extraToken.equals(clientProvidedToken)) {
+                s_logger.error("The provided extra token does not match the expected value for this console endpoint");
+                authResult.setSuccess(false);
+                return authResult;
+            }
+        }
+
+        String sessionUuid = param.getSessionUuid();
+        if (allowedSessions.contains(sessionUuid)) {
+            s_logger.debug("Acquiring the session " + sessionUuid + " not available for future use");
+            allowedSessions.remove(sessionUuid);
+        } else {
+            s_logger.info("Session " + sessionUuid + " has already been used, cannot connect");
+            authResult.setSuccess(false);
+            return authResult;
+        }
+
         String websocketUrl = param.getWebsocketUrl();
         if (StringUtils.isNotBlank(websocketUrl)) {
             return authResult;
@@ -192,7 +223,7 @@ public class ConsoleProxy {
             try {
                 result =
                         authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
-                                param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
+                                param.getClientHostPassword(), param.getTicket(), reauthentication, param.getSessionUuid());
             } catch (IllegalAccessException e) {
                 s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
                 authResult.setSuccess(false);
@@ -266,7 +297,8 @@ public class ConsoleProxy {
         try {
             final ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> contextClazz = loader.loadClass("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
-            authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class, String.class, String.class, String.class, Boolean.class);
+            authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class,
+                    String.class, String.class, String.class, Boolean.class, String.class);
             reportMethod = contextClazz.getDeclaredMethod("reportLoadInfo", String.class);
             ensureRouteMethod = contextClazz.getDeclaredMethod("ensureRoute", String.class);
         } catch (SecurityException e) {
@@ -371,9 +403,10 @@ public class ConsoleProxy {
     }
 
     private static ConsoleProxyNoVNCServer getNoVNCServer() {
-        if (httpListenPort == 443)
-            return new ConsoleProxyNoVNCServer(ksBits, ksPassword);
-        return new ConsoleProxyNoVNCServer();
+        int vncPort = ConsoleProxyNoVNCServer.getVNCPort();
+        return vncPort == ConsoleProxyNoVNCServer.WSS_PORT ?
+                new ConsoleProxyNoVNCServer(ksBits, ksPassword) :
+                new ConsoleProxyNoVNCServer();
     }
 
     private static void startupHttpCmdPort() {

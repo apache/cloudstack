@@ -30,6 +30,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -106,9 +107,6 @@ public class NetworkVO implements Network {
     @Column(name = "redundant")
     boolean redundant;
 
-    @Column(name = "dns1")
-    String dns1;
-
     @Column(name = "domain_id")
     long domainId;
 
@@ -125,8 +123,17 @@ public class NetworkVO implements Network {
     @Column(name = "guru_data", length = 1024)
     String guruData;
 
+    @Column(name = "dns1")
+    String dns1;
+
     @Column(name = "dns2")
     String dns2;
+
+    @Column(name = "ip6Dns1")
+    String ip6Dns1;
+
+    @Column(name = "ip6Dns2")
+    String ip6Dns2;
 
     @Column(name = "network_domain")
     String networkDomain;
@@ -255,6 +262,18 @@ public class NetworkVO implements Network {
         uuid = UUID.randomUUID().toString();
         ip6Gateway = that.getIp6Gateway();
         ip6Cidr = that.getIp6Cidr();
+        if (StringUtils.isNotBlank(that.getDns1())) {
+            this.dns1 = that.getDns1();
+        }
+        if (StringUtils.isNotBlank(that.getDns2())) {
+            this.dns2 = that.getDns2();
+        }
+        if (StringUtils.isNotBlank(that.getIp6Dns1())) {
+            this.ip6Dns1 = that.getIp6Dns1();
+        }
+        if (StringUtils.isNotBlank(that.getIp6Dns2())) {
+            this.ip6Dns2 = that.getIp6Dns2();
+        }
         this.externalId = externalId;
     }
 
@@ -471,6 +490,7 @@ public class NetworkVO implements Network {
         return dataCenterId;
     }
 
+    @Override
     public String getDns1() {
         return dns1;
     }
@@ -479,12 +499,31 @@ public class NetworkVO implements Network {
         dns1 = dns;
     }
 
+    @Override
     public String getDns2() {
         return dns2;
     }
 
     public void setDns2(String dns) {
         dns2 = dns;
+    }
+
+    @Override
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
+
+    @Override
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
+
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
     }
 
     @Override
