@@ -18,6 +18,10 @@ package com.cloud.hypervisor.kvm.storage;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KVMPhysicalDisk {
     private String path;
@@ -29,10 +33,7 @@ public class KVMPhysicalDisk {
         String rbdOpts;
 
         rbdOpts = "rbd:" + image;
-        rbdOpts += ":mon_host=" + monHost;
-        if (monPort > 0) {
-            rbdOpts += "\\:" + monPort;
-        }
+        rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
             rbdOpts += ":auth_supported=none";
@@ -46,6 +47,18 @@ public class KVMPhysicalDisk {
         rbdOpts += ":client_mount_timeout=30";
 
         return rbdOpts;
+    }
+
+    private static String composeOptionForMonHosts(String monHost, int monPort) {
+        List<String> hosts = new ArrayList<>();
+        for (String host : monHost.split(",")) {
+            if (monPort > 0) {
+                hosts.add(host + "\\:" + monPort);
+            } else {
+                hosts.add(host);
+            }
+        }
+        return StringUtils.join(hosts, "\\;");
     }
 
     private PhysicalDiskFormat format;
