@@ -32,7 +32,7 @@ public class QemuImageOptions {
     private static final String DRIVER = "driver";
 
     private QemuImg.PhysicalDiskFormat format;
-    private static final List supportedFormats = Arrays.asList(QemuImg.PhysicalDiskFormat.QCOW2, QemuImg.PhysicalDiskFormat.LUKS);
+    private static final List<QemuImg.PhysicalDiskFormat> supportedFormats = Arrays.asList(QemuImg.PhysicalDiskFormat.QCOW2, QemuImg.PhysicalDiskFormat.LUKS);
 
     public QemuImageOptions(String filePath) {
         params.put(FILENAME_PARAM_KEY, filePath);
