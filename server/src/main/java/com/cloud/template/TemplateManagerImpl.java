@@ -1749,8 +1749,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _accountMgr.checkAccess(caller, null, true, templateOwner);
 
         String name = cmd.getTemplateName();
-        if ((name == null) || (name.length() > 32)) {
-            throw new InvalidParameterValueException("Template name cannot be null and should be less than 32 characters");
+        if ((org.apache.commons.lang3.StringUtils.isBlank(name)
+                || (name.length() > VirtualMachineTemplate.MAXIMUM_TEMPLATE_NAME_LENGTH))) {
+            throw new InvalidParameterValueException(String.format("Template name cannot be null and cannot be more %s characters", VirtualMachineTemplate.MAXIMUM_TEMPLATE_NAME_LENGTH));
         }
 
         if (cmd.getTemplateTag() != null) {
