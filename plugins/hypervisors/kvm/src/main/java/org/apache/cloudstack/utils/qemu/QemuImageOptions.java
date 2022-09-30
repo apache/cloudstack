@@ -61,10 +61,7 @@ public class QemuImageOptions {
                 params.put(LUKS_KEY_SECRET_PARAM_KEY, secretName);
             }
         }
-        if (format != null) {
-            params.put(DRIVER, format.toString());
-            this.format = format;
-        }
+        setFormat(format);
     }
 
     public void setFormat(QemuImg.PhysicalDiskFormat format) {
