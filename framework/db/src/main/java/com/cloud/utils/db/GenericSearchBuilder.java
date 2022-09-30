@@ -63,7 +63,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
  * @param <K> Result object that should contain the results.
  */
 public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<T, K>, T, K> {
-
     protected GenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         super(entityType, resultType);
     }
