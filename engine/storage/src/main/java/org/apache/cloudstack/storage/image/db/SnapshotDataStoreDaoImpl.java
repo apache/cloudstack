@@ -26,7 +26,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -91,76 +90,89 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        Pair<String, SearchCriteria.Op> storeIdEq = new Pair<>(STORE_ID, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> storeRoleEq = new Pair<>(STORE_ROLE, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> stateEq = new Pair<>(STATE, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> stateNeq = new Pair<>(STATE, SearchCriteria.Op.NEQ);
-        Pair<String, SearchCriteria.Op> stateIn = new Pair<>(STATE, SearchCriteria.Op.IN);
-        Pair<String, SearchCriteria.Op> refCntNeq = new Pair<>(REF_CNT, SearchCriteria.Op.NEQ);
-        Pair<String, SearchCriteria.Op> idEq = new Pair<>(ID, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> updateCountEq = new Pair<>(UPDATED_COUNT, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> snapshotIdEq = new Pair<>(SNAPSHOT_ID, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> volumeIdEq = new Pair<>(VOLUME_ID, SearchCriteria.Op.EQ);
-        Pair<String, SearchCriteria.Op> createdBetween = new Pair<>(CREATED, SearchCriteria.Op.BETWEEN);
-
+        // Note that snapshot_store_ref stores snapshots on primary as well as
+        // those on secondary, so we need to
+        // use (store_id, store_role) to search
         storeSearch = createSearchBuilder();
-        storeSearch.addAndConditions(storeIdEq, storeRoleEq, stateNeq);
+        storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeSearch.and("state", storeSearch.entity().getState(), SearchCriteria.Op.NEQ);
         storeSearch.done();
 
         storeStateSearch = createSearchBuilder();
-        storeStateSearch.addAndConditions(storeIdEq, stateEq);
+        storeStateSearch.and("store_id", storeStateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeStateSearch.and("state", storeStateSearch.entity().getState(), SearchCriteria.Op.EQ);
         storeStateSearch.done();
 
         destroyedSearch = createSearchBuilder();
-        destroyedSearch.addAndConditions(storeIdEq, storeRoleEq, stateEq);
+        destroyedSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        destroyedSearch.and("store_role", destroyedSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        destroyedSearch.and("state", destroyedSearch.entity().getState(), SearchCriteria.Op.EQ);
         destroyedSearch.done();
 
         cacheSearch = createSearchBuilder();
-        cacheSearch.addAndConditions(storeIdEq, storeRoleEq, stateNeq, refCntNeq);
+        cacheSearch.and("store_id", cacheSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        cacheSearch.and("store_role", cacheSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        cacheSearch.and("state", cacheSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        cacheSearch.and("ref_cnt", cacheSearch.entity().getRefCnt(), SearchCriteria.Op.NEQ);
         cacheSearch.done();
 
-        updateStateSearch = createSearchBuilder();
-        updateStateSearch.addAndConditions(idEq, stateEq, updateCountEq);
+        updateStateSearch = this.createSearchBuilder();
+        updateStateSearch.and("id", updateStateSearch.entity().getId(), SearchCriteria.Op.EQ);
+        updateStateSearch.and("state", updateStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), SearchCriteria.Op.EQ);
         updateStateSearch.done();
 
         snapshotSearch = createSearchBuilder();
-        snapshotSearch.addAndConditions(snapshotIdEq, storeRoleEq, stateEq);
+        snapshotSearch.and("snapshot_id", snapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        snapshotSearch.and("store_role", snapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        snapshotSearch.and("state", snapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         snapshotSearch.done();
 
         storeSnapshotSearch = createSearchBuilder();
-        storeSnapshotSearch.addAndConditions(snapshotIdEq, storeIdEq, storeRoleEq, stateEq);
+        storeSnapshotSearch.and("snapshot_id", storeSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("store_role", storeSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("state", storeSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.done();
 
         snapshotIdSearch = createSearchBuilder();
-        snapshotIdSearch.addAndConditions(snapshotIdEq);
+        snapshotIdSearch.and("snapshot_id", snapshotIdSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         snapshotIdSearch.done();
 
         volumeIdSearch = createSearchBuilder();
-        volumeIdSearch.addAndConditions(volumeIdEq);
+        volumeIdSearch.and("volume_id", volumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeIdSearch.done();
 
         volumeSearch = createSearchBuilder();
-        volumeSearch.addAndConditions(volumeIdEq, storeRoleEq, snapshotIdEq);
+        volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeSearch.and("store_role", volumeSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        volumeSearch.and("snapshot_id", volumeSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         volumeSearch.done();
 
         volumeIdAndStateReadySearch = createSearchBuilder();
-        volumeIdAndStateReadySearch.addAndConditions(volumeIdEq, stateEq);
+        volumeIdAndStateReadySearch.and("volume_id", volumeIdAndStateReadySearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeIdAndStateReadySearch.and("state", volumeIdAndStateReadySearch.entity().getState(), SearchCriteria.Op.EQ);
         volumeIdAndStateReadySearch.done();
 
         stateSearch = createSearchBuilder();
-        stateSearch.addAndConditions(stateIn);
+        stateSearch.and("state", stateSearch.entity().getState(), SearchCriteria.Op.IN);
         stateSearch.done();
 
         parentSnapshotSearch = createSearchBuilder();
-        parentSnapshotSearch.addAndConditions(volumeIdEq, storeIdEq, storeRoleEq, stateEq);
+        parentSnapshotSearch.and("volume_id", parentSnapshotSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.and("store_id", parentSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.and("store_role", parentSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.and("state", parentSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         parentSnapshotSearch.done();
 
         snapshotVOSearch = snapshotDao.createSearchBuilder();
-        snapshotVOSearch.addAndConditions(volumeIdEq);
+        snapshotVOSearch.and("volume_id", snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         snapshotVOSearch.done();
 
         snapshotCreatedSearch = createSearchBuilder();
-        snapshotCreatedSearch.addAndConditions(storeIdEq, createdBetween);
+        snapshotCreatedSearch.and("store_id", snapshotCreatedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        snapshotCreatedSearch.and("created",  snapshotCreatedSearch.entity().getCreated(), SearchCriteria.Op.BETWEEN);
         snapshotCreatedSearch.done();
 
         return true;
