@@ -60,21 +60,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final String SNAPSHOT_ID = "snapshot_id";
     private static final String VOLUME_ID = "volume_id";
     private static final String CREATED = "created";
-    private SearchBuilder<SnapshotDataStoreVO> updateStateSearch;
-    private SearchBuilder<SnapshotDataStoreVO> storeSearch;
-    private SearchBuilder<SnapshotDataStoreVO> storeStateSearch;
-    private SearchBuilder<SnapshotDataStoreVO> destroyedSearch;
-    private SearchBuilder<SnapshotDataStoreVO> cacheSearch;
-    private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
-    private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
-    private SearchBuilder<SnapshotDataStoreVO> volumeIdSearch;
-    private SearchBuilder<SnapshotDataStoreVO> volumeIdAndStateReadySearch;
-    private SearchBuilder<SnapshotDataStoreVO> volumeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
-    private SearchBuilder<SnapshotDataStoreVO> parentSnapshotSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
-    protected SearchBuilder<SnapshotDataStoreVO> snapshotSearch;
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
 
@@ -90,89 +80,49 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        // Note that snapshot_store_ref stores snapshots on primary as well as
-        // those on secondary, so we need to
-        // use (store_id, store_role) to search
-        storeSearch = createSearchBuilder();
-        storeSearch.and("store_id", storeSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeSearch.and("store_role", storeSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        storeSearch.and("state", storeSearch.entity().getState(), SearchCriteria.Op.NEQ);
-        storeSearch.done();
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq = createSearchBuilder();
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(STORE_ID, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(STORE_ROLE, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getRole(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(STATE, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getState(), SearchCriteria.Op.NEQ);
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(REF_CNT searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getRefCnt(), SearchCriteria.Op.NEQ);
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.done();
 
-        storeStateSearch = createSearchBuilder();
-        storeStateSearch.and("store_id", storeStateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeStateSearch.and("state", storeStateSearch.entity().getState(), SearchCriteria.Op.EQ);
-        storeStateSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq = createSearchBuilder();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(STORE_ID,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getDataStoreId(), SearchCriteria.Op.EQ);
 
-        destroyedSearch = createSearchBuilder();
-        destroyedSearch.and("store_id", destroyedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        destroyedSearch.and("store_role", destroyedSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        destroyedSearch.and("state", destroyedSearch.entity().getState(), SearchCriteria.Op.EQ);
-        destroyedSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(STATE,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getState(), SearchCriteria.Op.EQ);
 
-        cacheSearch = createSearchBuilder();
-        cacheSearch.and("store_id", cacheSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        cacheSearch.and("store_role", cacheSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        cacheSearch.and("state", cacheSearch.entity().getState(), SearchCriteria.Op.NEQ);
-        cacheSearch.and("ref_cnt", cacheSearch.entity().getRefCnt(), SearchCriteria.Op.NEQ);
-        cacheSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(STORE_ROLE,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getRole(), SearchCriteria.Op.EQ);
 
-        updateStateSearch = this.createSearchBuilder();
-        updateStateSearch.and("id", updateStateSearch.entity().getId(), SearchCriteria.Op.EQ);
-        updateStateSearch.and("state", updateStateSearch.entity().getState(), SearchCriteria.Op.EQ);
-        updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), SearchCriteria.Op.EQ);
-        updateStateSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(ID,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getId(), SearchCriteria.Op.EQ);
 
-        snapshotSearch = createSearchBuilder();
-        snapshotSearch.and("snapshot_id", snapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        snapshotSearch.and("store_role", snapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        snapshotSearch.and("state", snapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
-        snapshotSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(UPDATED_COUNT,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getUpdatedCount(), SearchCriteria.Op.EQ);
 
-        storeSnapshotSearch = createSearchBuilder();
-        storeSnapshotSearch.and("snapshot_id", storeSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeSnapshotSearch.and("store_role", storeSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        storeSnapshotSearch.and("state", storeSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
-        storeSnapshotSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(SNAPSHOT_ID,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getSnapshotId(), SearchCriteria.Op.EQ);
 
-        snapshotIdSearch = createSearchBuilder();
-        snapshotIdSearch.and("snapshot_id", snapshotIdSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        snapshotIdSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.and(VOLUME_ID,
+            searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.entity().getVolumeId(), SearchCriteria.Op.EQ);
 
-        volumeIdSearch = createSearchBuilder();
-        volumeIdSearch.and("volume_id", volumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        volumeIdSearch.done();
+        searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.done();
 
-        volumeSearch = createSearchBuilder();
-        volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        volumeSearch.and("store_role", volumeSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        volumeSearch.and("snapshot_id", volumeSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        volumeSearch.done();
-
-        volumeIdAndStateReadySearch = createSearchBuilder();
-        volumeIdAndStateReadySearch.and("volume_id", volumeIdAndStateReadySearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        volumeIdAndStateReadySearch.and("state", volumeIdAndStateReadySearch.entity().getState(), SearchCriteria.Op.EQ);
-        volumeIdAndStateReadySearch.done();
 
         stateSearch = createSearchBuilder();
-        stateSearch.and("state", stateSearch.entity().getState(), SearchCriteria.Op.IN);
+        stateSearch.and(STATE, stateSearch.entity().getState(), SearchCriteria.Op.IN);
         stateSearch.done();
 
-        parentSnapshotSearch = createSearchBuilder();
-        parentSnapshotSearch.and("volume_id", parentSnapshotSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        parentSnapshotSearch.and("store_id", parentSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        parentSnapshotSearch.and("store_role", parentSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        parentSnapshotSearch.and("state", parentSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
-        parentSnapshotSearch.done();
-
         snapshotVOSearch = snapshotDao.createSearchBuilder();
-        snapshotVOSearch.and("volume_id", snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        snapshotVOSearch.and(VOLUME_ID, snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         snapshotVOSearch.done();
 
         snapshotCreatedSearch = createSearchBuilder();
-        snapshotCreatedSearch.and("store_id", snapshotCreatedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        snapshotCreatedSearch.and("created",  snapshotCreatedSearch.entity().getCreated(), SearchCriteria.Op.BETWEEN);
+        snapshotCreatedSearch.and(STORE_ID, snapshotCreatedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        snapshotCreatedSearch.and(CREATED,  snapshotCreatedSearch.entity().getCreated(), SearchCriteria.Op.BETWEEN);
         snapshotCreatedSearch.done();
 
         return true;
@@ -184,7 +134,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 
-        SearchCriteria<SnapshotDataStoreVO> sc = updateStateSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(ID, dataObj.getId());
         sc.setParameters(STATE, currentState);
         sc.setParameters(UPDATED_COUNT, dataObj.getUpdatedCount());
@@ -216,7 +166,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.create();
         sc.setParameters(STORE_ID, id);
         sc.setParameters(STORE_ROLE, role);
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Destroyed);
@@ -225,7 +175,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listByStoreIdAndState(long id, ObjectInDataStoreStateMachine.State state) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeStateSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(STORE_ID, id);
         sc.setParameters(STATE, state);
         return listBy(sc);
@@ -233,7 +183,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public void deletePrimaryRecordsForStore(long id, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.create();
         sc.setParameters(STORE_ID, id);
         sc.setParameters(STORE_ROLE, role);
         remove(sc);
@@ -241,14 +191,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public void deleteSnapshotRecordsOnPrimary() {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.create();
         sc.setParameters(STORE_ROLE, DataStoreRole.Primary);
         remove(sc);
     }
 
     @Override
     public SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(STORE_ID, storeId);
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STORE_ROLE, role);
@@ -295,7 +245,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             return null;
         }
 
-        SearchCriteria<SnapshotDataStoreVO> sc = parentSnapshotSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STORE_ROLE, role.toString());
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
@@ -324,7 +274,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STORE_ROLE, role);
         return listBy(sc);
@@ -332,7 +282,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STORE_ROLE, role);
         return findOneBy(sc);
@@ -340,7 +290,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STORE_ROLE, role);
@@ -349,14 +299,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = snapshotIdSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         return listBy(sc);
     }
 
     @Override
     public List<SnapshotDataStoreVO> listDestroyed(long id) {
-        SearchCriteria<SnapshotDataStoreVO> sc = destroyedSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(STORE_ID, id);
         sc.setParameters(STORE_ROLE, DataStoreRole.Image);
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Destroyed);
@@ -365,7 +315,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listActiveOnCache(long id) {
-        SearchCriteria<SnapshotDataStoreVO> sc = cacheSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.create();
         sc.setParameters(STORE_ID, id);
         sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Destroyed);
@@ -378,7 +328,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
      */
     @Override
     public void duplicateCacheRecordsOnRegionStore(long storeId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snapshots = listBy(sc);
@@ -418,7 +368,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public SnapshotDataStoreVO findReadyOnCache(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready);
@@ -427,7 +377,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listOnCache(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STORE_ROLE, DataStoreRole.ImageCache);
         return search(sc, null);
@@ -435,7 +385,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public void updateStoreRoleToCache(long storeId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = storeSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.create();
         sc.setParameters(STORE_ID, storeId);
         sc.setParameters("destroyed", false);
         List<SnapshotDataStoreVO> snaps = listBy(sc);
@@ -451,7 +401,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public void updateVolumeIds(long oldVolId, long newVolId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = volumeIdSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, oldVolId);
         SnapshotDataStoreVO snapshot = createForUpdate();
         snapshot.setVolumeId(newVolId);
@@ -487,7 +437,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
      * @return A SearchCriteria with snapshot id and data store role
      */
     protected SearchCriteria<SnapshotDataStoreVO> createSearchCriteriaBySnapshotIdAndStoreRole(long snapshotId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STORE_ROLE, role);
         return sc;
@@ -510,7 +460,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = volumeIdAndStateReadySearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STATE, State.Ready);
         return listBy(sc);
