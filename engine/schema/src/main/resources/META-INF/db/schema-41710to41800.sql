@@ -251,3 +251,8 @@ DELETE role_perm
 FROM role_permissions role_perm
 INNER JOIN roles ON role_perm.role_id = roles.id
 WHERE roles.role_type != 'Admin' AND roles.is_default = 1 AND role_perm.rule = 'migrateVolume';
+
+-- Improve alert.email.addresses description.
+UPDATE  cloud.configuration
+SET     description = 'Comma separated list of email addresses which are going to receive alert emails.'
+WHERE   name = 'alert.email.addresses';
