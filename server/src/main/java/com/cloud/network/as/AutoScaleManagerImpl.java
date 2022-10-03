@@ -2510,7 +2510,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         // update counter maps in memory
         if (!updateCountersMap(groupTO, countersMap, countersNumberMap)) {
-            s_logger.error("Failed to update counters map, existing");
             return;
         }
 
@@ -2675,12 +2674,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
             List<AutoScaleVmGroupStatisticsVO> dummyStats = asGroupStatisticsDao.listDummyRecordsByVmGroup(groupTO.getId(), afterDate);
             if (CollectionUtils.isNotEmpty(dummyStats)) {
-                s_logger.error(String.format("There are %d dummy statistics in as group %d, skipping this round of check", dummyStats.size(), groupTO.getId()));
+                s_logger.error(String.format("Failed to update counters map as there are %d dummy statistics in as group %d", dummyStats.size(), groupTO.getId()));
                 return false;
             }
             List<AutoScaleVmGroupStatisticsVO> inactiveStats = asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(groupTO.getId(), policyTO.getId(), afterDate);
             if (CollectionUtils.isNotEmpty(inactiveStats)) {
-                s_logger.error(String.format("There are %d Inactive statistics in as group %d and policy %s, skipping this round of check", inactiveStats.size(), groupTO.getId(), policyTO.getId()));
+                s_logger.error(String.format("Failed to update counters map as there are %d Inactive statistics in as group %d and policy %s", inactiveStats.size(), groupTO.getId(), policyTO.getId()));
                 return false;
             }
             for (ConditionTO conditionTO : policyTO.getConditions()) {
