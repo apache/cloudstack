@@ -131,7 +131,7 @@ export default {
       const differentYear = startDate.getFullYear() !== endDate.getFullYear()
       var displayFormat = 'HH:mm'
       if (xAxisStepSize < 5 * 60) {
-        displayFormat += 'ss'
+        displayFormat += ':ss'
       }
       if (differentDay) {
         displayFormat = 'MMM-DD ' + displayFormat

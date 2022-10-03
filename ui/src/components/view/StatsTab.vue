@@ -44,16 +44,16 @@
             <a-radio-button value="">
               {{ $t('1 hour') }}
             </a-radio-button>
-            <a-radio-button value="today">
+            <a-radio-button value="today" v-if="statsRetentionTime >= 60">
               {{ $t('label.duration.today') }}
             </a-radio-button>
-            <a-radio-button value="day">
+            <a-radio-button value="day" v-if="statsRetentionTime >= 6 * 60">
               {{ $t('label.duration.24hours') }}
             </a-radio-button>
-            <a-radio-button value="week">
+            <a-radio-button value="week" v-if="statsRetentionTime >= 24 * 60">
               {{ $t('label.duration.7days') }}
             </a-radio-button>
-            <a-radio-button value="month">
+            <a-radio-button value="month" v-if="statsRetentionTime >= 7 * 24 * 60">
               {{ $t('label.duration.1month') }}
             </a-radio-button>
             <a-radio-button value="custom">
@@ -268,6 +268,7 @@ export default {
   },
   data () {
     return {
+      durationSelectorValue: '',
       resourceTypeToShowInfo: null,
       showResourceInfoModal: false,
       resourceInfoModalTitle: null,
@@ -330,6 +331,9 @@ export default {
   computed: {
     usebrowsertimezone: function () {
       return this.$store.getters.usebrowsertimezone
+    },
+    statsRetentionTime: function () {
+      return this.$store.getters.features.instancesstatsretentiontime
     }
   },
   watch: {
