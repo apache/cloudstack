@@ -855,7 +855,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
-                if (!_vmMgr.expunge(vm, callerUserId, caller)) {
+                if (!_vmMgr.expunge(vm)) {
                     s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }

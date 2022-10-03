@@ -2360,10 +2360,10 @@ public class AutoScaleManagerImplTest {
     @Test
     public void destroyVm() {
         when(userVmDao.findById(virtualMachineId)).thenReturn(userVmMock);
-        PowerMockito.doReturn(true).when(userVmMgr).expunge(eq(userVmMock), anyLong(), any());
+        PowerMockito.doReturn(true).when(userVmMgr).expunge(eq(userVmMock));
 
         autoScaleManagerImplSpy.destroyVm(virtualMachineId);
 
-        Mockito.verify(userVmMgr).expunge(eq(userVmMock), anyLong(), any());
+        Mockito.verify(userVmMgr).expunge(eq(userVmMock));
     }
 }

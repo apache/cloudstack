@@ -2044,13 +2044,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Integer expungeVmGracePeriod = asProfile.getExpungeVmGracePeriod();
             if (expungeVmGracePeriod >= 0) {
                 executor.schedule(() -> {
-                    try {
-
-                        userVmMgr.destroyVm(vmId, false);
-
-                    } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
-                        s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
-                    }
+                    destroyVm(vmId);
                 }, expungeVmGracePeriod, TimeUnit.SECONDS);
             }
         } else {
@@ -2861,9 +2855,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         try {
             UserVmVO vm = userVmDao.findById(vmId);
             if (vm != null) {
-                userVmMgr.expunge(vm, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount());
+                userVmMgr.destroyVm(vmId, true);
+                userVmMgr.expunge(vm);
             }
-        } catch (ConcurrentOperationException ex) {
+        } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
             s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
         }
     }
