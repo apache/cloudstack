@@ -2225,6 +2225,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             s_logger.debug(String.format("Checking policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), sum, number));
             if (number == null || number == 0) {
                 bValid = false;
+                s_logger.debug(String.format("Skipping policyId = %d, conditionId = %d, counter = %s because the number is %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), number));
                 break;
             }
             Double avg = sum / number;
@@ -2235,15 +2236,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg.doubleValue() <= thresholdPercent.doubleValue()))
                     || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg.doubleValue() < thresholdPercent.doubleValue()));
 
+            s_logger.debug(String.format("Check result on policyId = %d, conditionId = %d, counter = %s is : %s" +
+                            " (actual result = %f, operator = %s, threshold = %f)",
+                    policyTO.getId(), conditionTO.getId(), counter.getSource(), bConditionCheck, avg, op, thresholdPercent));
+
             if (!bConditionCheck) {
                 bValid = false;
                 break;
             }
         }
-        if (bValid) {
-            return policyTO.getAction();
-        }
-        return null;
+        AutoScalePolicy.Action action = bValid ? policyTO.getAction() : null;
+        s_logger.debug(String.format("Check result on policyId = %d is %s", policyTO.getId(), action));
+
+        return action;
     }
 
     private List<Pair<String, Integer>> getPairofCounternameAndDuration(AutoScaleVmGroupTO groupTO) {
