@@ -314,7 +314,7 @@ public class VolumeApiServiceImplTest {
             upVolume.setState(Volume.State.Uploaded);
             when(volumeDaoMock.findById(8L)).thenReturn(upVolume);
 
-            UserVmVO kvmVm = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.KVM, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
+            UserVmVO kvmVm = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.KVM, 1L, false, false, 1L, 1L, 1, 1L, null, null, null, "vm");
             kvmVm.setState(State.Running);
             kvmVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(4L)).thenReturn(kvmVm);
