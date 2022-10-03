@@ -34,27 +34,53 @@
       :footer="null">
       <resource-stats-info :resourceType="resourceTypeToShowInfo" :key="resourceTypeToShowInfo"/>
     </a-modal>
-    <a-row class="chart-row">
-      <a-col>
-        <span class="ant-tag">
+    <div class="chart-row">
+      <a-space direction="vertical">
+        <div>
+          <a-radio-group
+            v-model:value="durationSelectorValue"
+            buttonStyle="solid"
+            @change="handleDurationChange">
+            <a-radio-button value="">
+              {{ $t('1 hour') }}
+            </a-radio-button>
+            <a-radio-button value="today">
+              {{ $t('label.duration.today') }}
+            </a-radio-button>
+            <a-radio-button value="day">
+              {{ $t('label.duration.24hours') }}
+            </a-radio-button>
+            <a-radio-button value="week">
+              {{ $t('label.duration.7days') }}
+            </a-radio-button>
+            <a-radio-button value="month">
+              {{ $t('label.duration.1month') }}
+            </a-radio-button>
+            <a-radio-button value="custom">
+              {{ $t('label.duration.custom') }}
+            </a-radio-button>
+          </a-radio-group>
+        </div>
+        <div class="ant-tag" v-if="durationSelectorValue==='custom'">
           <a-button @click="openFilter()">
             <FilterOutlined/>
           </a-button>
           <span v-html="formatedPeriod"></span>
-        </span>
-      </a-col>
-    </a-row>
+        </div>
+      </a-space>
+    </div>
     <div v-if="loaded">
       <div v-if="chartLabels.length > 0">
         <a-row class="chart-row">
           <a-col>
             <strong>CPU</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.cpu.usage')" @click="onClickShowResourceInfoModal('CPU')"/>
-            <line-chart
-              :chartData="prepareData(resourceUsageHistory.cpu)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.cpu, 100, 10), '%')"
-              :width="1024"
-              :height="250"
+            <resource-stats-line-chart
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.cpu"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="10"
+              :yAxisMeasurementUnit="'%'"
             />
           </a-col>
         </a-row>
@@ -77,79 +103,53 @@
                 {{ unit }}
               </a-select-option>
             </a-select>
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedMemoryChartType === 0 && selectedMemoryUsageType === 0 && selectedMemoryUnitOfMeasurement === 'MB'"
-              :chartData="prepareData(resourceUsageHistory.memory.rawData.used.inMB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.memory.rawData.used.inMB, 10, 100), ' MB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.memory.rawData.used.inMB"
+              :yAxisInitialMax="10"
+              :yAxisIncrementValue="100"
+              :yAxisMeasurementUnit="' MB'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedMemoryChartType === 0 && selectedMemoryUsageType === 0 && selectedMemoryUnitOfMeasurement === 'GB'"
-              :chartData="prepareData(resourceUsageHistory.memory.rawData.used.inGB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.memory.rawData.used.inGB, 1, 1), ' GB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.memory.rawData.used.inGB"
+              :yAxisInitialMax="1"
+              :yAxisIncrementValue="1"
+              :yAxisMeasurementUnit="' GB'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedMemoryChartType === 0 && selectedMemoryUsageType === 1 && selectedMemoryUnitOfMeasurement === 'MB'"
-              :chartData="prepareData(resourceUsageHistory.memory.rawData.free.inMB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.memory.rawData.free.inMB, 10, 100), ' MB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.memory.rawData.free.inMB"
+              :yAxisInitialMax="10"
+              :yAxisIncrementValue="100"
+              :yAxisMeasurementUnit="' MB'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedMemoryChartType === 0 && selectedMemoryUsageType === 1 && selectedMemoryUnitOfMeasurement === 'GB'"
-              :chartData="prepareData(resourceUsageHistory.memory.rawData.free.inGB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.memory.rawData.free.inGB, 1, 1), ' GB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.memory.rawData.free.inGB"
+              :yAxisInitialMax="1"
+              :yAxisIncrementValue="1"
+              :yAxisMeasurementUnit="' GB'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedMemoryChartType === 1 && selectedMemoryUsageType === 0"
-              :chartData="prepareData(resourceUsageHistory.memory.percentage.used)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.memory.percentage.used, 100, 10), '%')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.memory.percentage.used"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="10"
+              :yAxisMeasurementUnit="'%'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedMemoryChartType === 1 && selectedMemoryUsageType === 1"
-              :chartData="prepareData(resourceUsageHistory.memory.percentage.free)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.memory.percentage.free, 100, 10), '%')"
-              :width="1024"
-              :height="250"
-            />
-          </a-col>
-        </a-row>
-        <a-row class="chart-row">
-          <a-col>
-            <strong>{{ $t('label.network') }}</strong>
-            <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.network.usage')" @click="onClickShowResourceInfoModal('NET')"/>
-            <a-select v-model:value="selectedNetworkUnitOfMeasurement">
-              <a-select-option v-for="unit in networkUnitsOfMeasurement" :key="unit">
-                {{ unit }}
-              </a-select-option>
-            </a-select>
-            <line-chart
-              v-if="selectedNetworkUnitOfMeasurement === 'KiB'"
-              :chartData="prepareData(resourceUsageHistory.network.inKiB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.network.inKiB, 100, 100), ' KiB')"
-              :width="1024"
-              :height="250"
-            />
-            <line-chart
-              v-if="selectedNetworkUnitOfMeasurement === 'MiB'"
-              :chartData="prepareData(resourceUsageHistory.network.inMiB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.network.inMiB, 100, 100), ' MiB')"
-              :width="1024"
-              :height="250"
-            />
-            <line-chart
-              v-if="selectedNetworkUnitOfMeasurement === 'GiB'"
-              :chartData="prepareData(resourceUsageHistory.network.inGiB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.network.inGiB, 1, 1), ' GiB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.memory.percentage.free"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="10"
+              :yAxisMeasurementUnit="'%'"
             />
           </a-col>
         </a-row>
@@ -169,33 +169,72 @@
                 {{ unit }}
               </a-select-option>
             </a-select>
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedDiskChartType === 0"
-              :chartData="prepareData(resourceUsageHistory.disk.iops)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.disk.iops, 100, 100), ' IOPS')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.disk.iops"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="100"
+              :yAxisMeasurementUnit="' IOPS'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedDiskChartType === 1 && selectedDiskUnitOfMeasurement === 'KiB'"
-              :chartData="prepareData(resourceUsageHistory.disk.readAndWrite.inKiB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.disk.readAndWrite.inKiB, 100, 100), ' KiB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.disk.readAndWrite.inKiB"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="100"
+              :yAxisMeasurementUnit="' KiB'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedDiskChartType === 1 && selectedDiskUnitOfMeasurement === 'MiB'"
-              :chartData="prepareData(resourceUsageHistory.disk.readAndWrite.inMiB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.disk.readAndWrite.inMiB, 10, 10), ' MiB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.disk.readAndWrite.inMiB"
+              :yAxisInitialMax="10"
+              :yAxisIncrementValue="10"
+              :yAxisMeasurementUnit="' MiB'"
             />
-            <line-chart
+            <resource-stats-line-chart
               v-if="selectedDiskChartType === 1 && selectedDiskUnitOfMeasurement === 'GiB'"
-              :chartData="prepareData(resourceUsageHistory.disk.readAndWrite.inGiB)"
-              :chartOptions="getChartOptions(calculateMaxYAxisAndStepSize(resourceUsageHistory.disk.readAndWrite.inGiB, 1, 1), ' GiB')"
-              :width="1024"
-              :height="250"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.disk.readAndWrite.inGiB"
+              :yAxisInitialMax="1"
+              :yAxisIncrementValue="1"
+              :yAxisMeasurementUnit="' GiB'"
+            />
+          </a-col>
+        </a-row>
+        <a-row class="chart-row">
+          <a-col>
+            <strong>{{ $t('label.network') }}</strong>
+            <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.network.usage')" @click="onClickShowResourceInfoModal('NET')"/>
+            <a-select v-model:value="selectedNetworkUnitOfMeasurement">
+              <a-select-option v-for="unit in networkUnitsOfMeasurement" :key="unit">
+                {{ unit }}
+              </a-select-option>
+            </a-select>
+            <resource-stats-line-chart
+              v-if="selectedNetworkUnitOfMeasurement === 'KiB'"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.network.inKiB"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="100"
+              :yAxisMeasurementUnit="' KiB'"
+            />
+            <resource-stats-line-chart
+              v-if="selectedNetworkUnitOfMeasurement === 'MiB'"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.network.inMiB"
+              :yAxisInitialMax="100"
+              :yAxisIncrementValue="100"
+              :yAxisMeasurementUnit="' MiB'"
+            />
+            <resource-stats-line-chart
+              v-if="selectedNetworkUnitOfMeasurement === 'GiB'"
+              :chartLabels="chartLabels"
+              :chartData="resourceUsageHistory.network.inGiB"
+              :yAxisInitialMax="1"
+              :yAxisIncrementValue="1"
+              :yAxisMeasurementUnit="' GiB'"
             />
           </a-col>
         </a-row>
@@ -213,7 +252,7 @@ import moment from 'moment'
 import 'chartjs-adapter-moment'
 import FilterStats from './stats/FilterStats'
 import ResourceStatsInfo from './stats/ResourceStatsInfo'
-import LineChart from './chart/LineChart'
+import ResourceStatsLineChart from './stats/ResourceStatsLineChart'
 
 export default {
   props: {
@@ -225,7 +264,7 @@ export default {
   components: {
     FilterStats,
     ResourceStatsInfo,
-    LineChart
+    ResourceStatsLineChart
   },
   data () {
     return {
@@ -332,6 +371,27 @@ export default {
       this.resourceTypeToShowInfo = resource
       this.showResourceInfoModal = true
     },
+    handleDurationChange () {
+      var now = this.getEndDate()
+      var start = new Date(now)
+      switch (this.durationSelectorValue) {
+        case 'today':
+          start.setHours(0, 0, 0, 0)
+          break
+        case 'day':
+          start.setDate(start.getDate() - 1)
+          break
+        case 'week':
+          start.setDate(start.getDate() - 7)
+          break
+        case 'month':
+          start.setMonth(start.getMonth() - 1)
+          break
+        default:
+          start.setHours(start.getHours() - 1)
+      }
+      this.handleSubmit({ startDate: start, endDate: now })
+    },
     handleSubmit (values) {
       if (values.startDate) {
         this.startDate = new Date(values.startDate)
@@ -349,21 +409,20 @@ export default {
     closeAction () {
       this.showFilterStatsModal = false
     },
-    getStartDate () {
+    getCurrentDate () {
       var now = new Date()
       if (!this.$store.getters.usebrowsertimezone) {
-        var dateInUTC = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
-        return dateInUTC.setHours(dateInUTC.getHours() - 1)
+        now = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
       }
+      return now
+    },
+    getStartDate () {
+      var now = this.getCurrentDate()
       now.setHours(now.getHours() - 1)
       return now
     },
     getEndDate () {
-      var now = new Date()
-      if (this.$store.getters.usebrowsertimezone) {
-        return now
-      }
-      return new Date(now.getTime() + now.getTimezoneOffset() * 60000)
+      return this.getCurrentDate()
     },
     onToggleUseBrowserTimezone (date) {
       if (this.$store.getters.usebrowsertimezone) {
@@ -582,128 +641,6 @@ export default {
         return parseFloat(100.0 * (memoryTotalInKB - memoryFreeInKB) / memoryTotalInKB).toFixed(2)
       }
       return parseFloat(100.0 * memoryFreeInKB / memoryTotalInKB).toFixed(2)
-    },
-    /**
-     * Calculates the maximum Y axis and the step size based on the chart data.
-     * @param chartLines the chart lines with their respective data.
-     * @param initialMaxValue the initial maximum value to the Y axis.
-     * @param incrementValue the increment value.
-     * @returns an object containing the maximum Y axis and the step size for the chart.
-     */
-    calculateMaxYAxisAndStepSize (chartLines, initialMaxYAxis, incrementValue) {
-      const numberOfLabelsOnYaxis = 4
-      var highestValue = 0
-      var maxYAxis = initialMaxYAxis
-      for (const line of chartLines) {
-        for (const d of line.data) {
-          const currentValue = parseFloat(d.stat)
-          if (currentValue > highestValue) {
-            highestValue = currentValue
-            while (highestValue > maxYAxis) {
-              maxYAxis += incrementValue
-            }
-          }
-        }
-      }
-      return { maxYAxes: maxYAxis, stepSize: maxYAxis / numberOfLabelsOnYaxis }
-    },
-    /**
-     * Returns the chart options.
-     * @param yAxesStepSize the step size for the Y axes.
-     * @param yAxesUnitOfMeasurement the unit of measurement label used on the Y axes.
-     * @returns the chart options.
-     */
-    getChartOptions (yAxesOptions, yAxesUnitOfMeasurement) {
-      var chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          yAxis: {
-            min: 0,
-            max: yAxesOptions.maxYAxes,
-            reverse: false,
-            ticks: {
-              stepSize: yAxesOptions.stepSize,
-              callback: function (label) {
-                return label + yAxesUnitOfMeasurement
-              }
-            }
-          },
-          xAxis: {
-            type: 'time',
-            autoSkip: false,
-            time: {
-              parser: 'YYYY-MM-DD HH:mm:ss',
-              unit: 'second',
-              displayFormats: {
-                second: 'HH:mm:ss'
-              }
-            }
-          }
-        }
-      }
-      const dateTimes = this.convertStringArrayToDateArray(JSON.parse(JSON.stringify(this.chartLabels)))
-      const averageDifference = this.averageDifferenceBetweenTimes(dateTimes)
-      chartOptions.scales.xAxis.time.stepSize = this.calculateStepSize(this.chartLabels.length, averageDifference)
-      return chartOptions
-    },
-    convertStringArrayToDateArray (stringArray) {
-      const dateArray = []
-      for (const element of stringArray) {
-        dateArray.push(new Date(element.replace(' ', 'T')))
-      }
-      return dateArray
-    },
-    averageDifferenceBetweenTimes (timeList) {
-      const oneSecond = 1000 // 1 second represented as milliseconds
-      const differences = []
-      var previus = timeList.splice(0, 1)[0]
-      for (const time of timeList) {
-        differences.push((time - previus) / oneSecond) // push the difference in seconds
-        previus = time
-      }
-      if (differences.length === 0) {
-        return 1
-      }
-      const averageDifference = Math.trunc(differences.reduce((a, b) => a + b, 0) / differences.length)
-      return averageDifference
-    },
-    calculateStepSize (numberOfDataPoints, differenceBetweenTimes) {
-      const idealNumberOfLabels = 8
-      const result = numberOfDataPoints / idealNumberOfLabels
-      if (result > 1) {
-        return result * differenceBetweenTimes
-      }
-      return differenceBetweenTimes
-    },
-    prepareData (chartData) {
-      const datasetList = []
-      for (const element of chartData) {
-        datasetList.push(
-          {
-            backgroundColor: element.backgroundColor,
-            borderColor: element.borderColor,
-            borderWidth: 3,
-            label: element.label,
-            data: element.data.map(d => d.stat),
-            hidden: this.hideLine(element.data.map(d => d.stat)),
-            pointRadius: element.pointRadius,
-            fill: 'origin'
-          }
-        )
-      }
-      return {
-        labels: this.chartLabels,
-        datasets: datasetList
-      }
-    },
-    hideLine (data) {
-      for (const d of data) {
-        if (d < 0) {
-          return true
-        }
-      }
-      return false
     }
   }
 }
