@@ -541,6 +541,14 @@
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.userdataname">
+          <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+          <div class="resource-detail-item__details">
+            <solution-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).route.name !== '404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
+            <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.owner">
           <div class="resource-detail-item__label">{{ $t('label.owners') }}</div>
           <div class="resource-detail-item__details">

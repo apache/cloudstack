@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.server.ResourceIcon;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
@@ -33,6 +32,7 @@ import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -211,8 +211,10 @@ import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
@@ -482,6 +484,8 @@ public interface ResponseGenerator {
     ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds);
 
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
+
+    UserDataResponse createUserDataResponse(UserData userData);
 
     BackupResponse createBackupResponse(Backup backup);
 

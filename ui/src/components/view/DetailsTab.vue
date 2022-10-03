@@ -45,6 +45,9 @@
         <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
           {{ $toLocaleDate(resource[item]) }}
         </div>
+        <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
+          <div style="white-space: pre-wrap;"> {{ decodeUserData(resource.userdata) }} </div>
+        </div>
         <div v-else>{{ resource[item] }}</div>
       </div>
     </a-list-item>
@@ -119,6 +122,10 @@ export default {
     }
   },
   methods: {
+    decodeUserData (userdata) {
+      const decodedData = Buffer.from(userdata, 'base64')
+      return decodedData.toString('utf-8')
+    },
     fetchProjectAdmins () {
       if (!this.resource.owner) {
         return false

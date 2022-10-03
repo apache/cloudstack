@@ -392,7 +392,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
             if (userVm != null) {
                 final boolean isWindows = isWindows(userVm.getGuestOSId());
-                List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
+                List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), userVm.getUserDataDetails(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
                         vm.getUuid(), nic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, VirtualMachineManager.getHypervisorHostname(dest.getHost() != null ? dest.getHost().getName() : ""));
                 vm.setVmData(vmData);
                 vm.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
@@ -534,9 +534,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName() + " on host: " + hostId);
 
+        Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
+
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
@@ -593,9 +595,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
 
+        Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
+
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         boolean useHostCacheOnUnsupportedPool = VirtualMachineManager.VmConfigDriveUseHostCacheOnUnsupportedPool.valueIn(dest.getDataCenter().getId());
         boolean preferHostCache = VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), useHostCacheOnUnsupportedPool, preferHostCache, true);
@@ -609,6 +613,23 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    private Map<String, String> getVMCustomUserdataParamMap(long vmId) {
+        UserVmVO userVm = _userVmDao.findById(vmId);
+        String userDataDetails = userVm.getUserDataDetails();
+        Map<String,String> customUserdataParamMap = new HashMap<>();
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                customUserdataParamMap.put(entry[0].trim(), entry[1].trim());
+            }
+        }
+
+        return customUserdataParamMap;
     }
 
     private DataStore getDatastoreForConfigDriveIso(DiskTO disk, VirtualMachineProfile profile, DeployDestination dest) {
@@ -723,7 +744,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             } else {
                 destHostname = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
             }
-            final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
+            final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), vm.getUserDataDetails(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                     vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
             profile.setVmData(vmData);
             profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());

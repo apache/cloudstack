@@ -656,7 +656,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         } else {
             long id = userVmDao.getNextInSequence(Long.class, "id");
             UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware, guestOsId, false, false, domainId, accountId, userId,
-                    serviceOfferingId, null, vmInternalName, null);
+                    serviceOfferingId, null, null, null, vmInternalName, null);
             vmInstanceVO.setDataCenterId(zoneId);
             return userVmDao.persist(vmInstanceVO);
         }

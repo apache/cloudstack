@@ -48,7 +48,7 @@ public class UserVmDaoImplTest extends TestCase {
         // Persist the data.
         UserVmVO vo =
             new UserVmVO(vmId, instanceName, displayName, templateId, hypervisor, guestOsId, haEnabled, limitCpuUse, domainId, accountId, 1, serviceOfferingId, userdata,
-                name, diskOfferingId);
+               null, null, name, diskOfferingId);
         dao.persist(vo);
 
         vo = dao.findById(vmId);

@@ -46,7 +46,7 @@ export default {
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
           'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
-          'account', 'domain', 'created']
+          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype', 'url')
         }
@@ -194,7 +194,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',

@@ -44,6 +44,12 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
+    @Column(name = "user_data_id", nullable = true)
+    private Long userDataId = null;
+
+    @Column(name = "user_data_details", updatable = true, length = 4096)
+    private String userDataDetails;
+
     @Column(name = "display_name", updatable = true, nullable = true)
     private String displayName;
 
@@ -75,9 +81,11 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
 
     public UserVmVO(long id, String instanceName, String displayName, long templateId, HypervisorType hypervisorType, long guestOsId, boolean haEnabled,
-                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, String name, Long diskOfferingId) {
+                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, Long userDataId, String userDataDetails, String name, Long diskOfferingId) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, userId, haEnabled, limitCpuUse, diskOfferingId);
         this.userData = userData;
+        this.userDataId = userDataId;
+        this.userDataDetails = userDataDetails;
         this.displayName = displayName;
         this.details = new HashMap<String, String>();
     }
@@ -98,6 +106,16 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Override
     public String getUserData() {
         return userData;
+    }
+
+    @Override
+    public void setUserDataId(Long userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    @Override
+    public Long getUserDataId() {
+        return userDataId;
     }
 
     @Override
@@ -146,5 +164,15 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     public String getDisplayNameOrHostName() {
         return StringUtils.isNotBlank(displayName) ? displayName : getHostName();
+    }
+
+    @Override
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    @Override
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
     }
 }
