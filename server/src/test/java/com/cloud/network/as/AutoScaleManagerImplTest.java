@@ -1096,7 +1096,7 @@ public class AutoScaleManagerImplTest {
         when(autoScaleVmGroupVmMapDao.countByGroup(vmGroupId)).thenReturn(1);
         when(autoScaleVmGroupVmMapDao.listByGroup(vmGroupId)).thenReturn(Arrays.asList(autoScaleVmGroupVmMapVOMock));
         when(autoScaleVmGroupVmMapVOMock.getInstanceId()).thenReturn(virtualMachineId);
-        PowerMockito.doNothing().when(autoScaleManagerImplSpy).destroyVm(virtualMachineId);
+        PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).destroyVm(virtualMachineId);
         PowerMockito.doReturn(true).when(autoScaleManagerImplSpy).configureAutoScaleVmGroup(vmGroupId, AutoScaleVmGroup.State.ENABLED);
         when(autoScaleVmGroupDao.remove(vmGroupId)).thenReturn(true);
         PowerMockito.doNothing().when(autoScaleManagerImplSpy).cancelMonitorTask(vmGroupId);
