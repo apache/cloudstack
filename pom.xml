@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>11</version>
+        <version>27</version>
         <relativePath />
     </parent>
 
@@ -47,6 +47,7 @@
 
     <properties>
         <!-- keep in alphabetic order -->
+        <project.build.outputTimestamp>10</project.build.outputTimestamp>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.version>4.17.0.0</project.systemvm.template.version>
@@ -73,7 +74,6 @@
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.owasp.dependency-checker-plugin.version>5.3.0</cs.owasp.dependency-checker-plugin.version>
-        <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
@@ -883,7 +883,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>${cs.release-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>default</id>
