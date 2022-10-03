@@ -16,35 +16,34 @@
 // under the License.
 
 <template>
-  <span v-if="$config.externalLinks.some(item => item.link)" >
-    <span class="action" v-if="$config.externalLinks.length == 1">
+  <span v-if="$config.plugins.some(item => item.path && item.isExternalLink)">
+    <span class="action" v-if="$config.plugins.length == 1">
       <a-tooltip placement="bottom">
         <template #title>
-          {{ $t('label.redirect') + ' ' + ( $config.externalLinks[0].title || $config.externalLinks[0].link) }}
+          {{ $t('label.redirect') + ' ' + ( $config.plugins[0].name || $config.plugins[0].path) }}
         </template>
         <a-button shape="circle" >
-          <a :href="$config.externalLinks[0]['link']" target="_blank">
-            <img v-if="$config.externalLinksIcon" :src="$config.externalLinksIcon" :style="{height: '24px', padding: '2px', align: 'center'}"/>
+          <a :href=" $config.plugins[0].path" target="_blank">
+            <img v-if="$config.plugins[0].icon" :src="$config.plugins[0].icon" :style="{height: '24px', padding: '2px', align: 'center'}"/>
             <link-outlined v-else/>
           </a>
         </a-button>
       </a-tooltip>
     </span>
-    <a-dropdown v-else-if="$config.externalLinks.length > 1">
+    <a-dropdown v-else-if="$config.plugins.length > 1 && $config.plugins.some(item => item.path && item.isExternalLink)">
       <span class="action ant-dropdown-link">
         <a-button shape="circle" >
-          <img v-if="$config.externalLinksIcon" :style="{height: '24px', padding: '2px', align: 'center'}" :src="$config.externalLinksIcon">
-          <link-outlined v-else/>
+          <link-outlined/>
         </a-button>
       </span>
       <template #overlay>
         <a-menu class="user-menu-wrapper">
-          <span v-for="external in $config.externalLinks" :key="external.link">
-            <a-menu-item  v-if="external.link" :key="external.link">
-              <a :href="external.link" target="_blank">
+          <span v-for="external in $config.plugins" :key="external.isExternalLink">
+            <a-menu-item  v-if="external.path && external.isExternalLink=='true'" :key="external.isExternalLink">
+              <a :href="external.path" target="_blank">
                 <img v-if="external.icon" :src="external.icon" :style="{ height: '18px', width: '18px', align: 'center' }"/>
                 <link-outlined v-else/>
-                {{ external.title || external.link }}
+                {{ external.name || external.path }}
               </a>
             </a-menu-item>
           </span>
