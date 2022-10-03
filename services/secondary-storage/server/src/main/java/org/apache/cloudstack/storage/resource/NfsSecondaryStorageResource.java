@@ -2223,7 +2223,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    public String allowOutgoingOnPrivate(String destCidr) {
+    public synchronized String allowOutgoingOnPrivate(String destCidr) {
         if (!_inSystemVM) {
             return null;
         }
