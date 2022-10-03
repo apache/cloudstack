@@ -1048,7 +1048,24 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
 
         autoscaling_vmgroup_vpc.disable(self.regular_user_apiclient)
+
+        try:
+            Autoscale.updateAutoscaleVMGroup(
+                self.regular_user_apiclient,
+                id = autoscaling_vmgroup_vpc.id,
+                name=NAME_PREFIX + format(datetime.datetime.now(), '%Y%m%d-%H%M%S'),
+                maxmembers = MAX_MEMBER - 1
+            )
+        except Exception as ex:
+            self.fail("Autoscale VM Group should be updatable when VM Group is Disabled")
+
         autoscaling_vmgroup_vpc.enable(self.regular_user_apiclient)
+
+        # VM count decreases from MAX_MEMBER to MAX_MEMBER - 1
+        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION)
+        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be destroyed ====" % (sleeptime, 1))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MAX_MEMBER - 1, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
 
         self.delete_vmgroup(autoscaling_vmgroup_vpc, self.regular_user_apiclient, cleanup=False, expected=False)
         self.delete_vmgroup(autoscaling_vmgroup_vpc, self.regular_user_apiclient, cleanup=True, expected=True)
