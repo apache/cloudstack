@@ -2303,16 +2303,36 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return lbRulesMgr.getLoadBalancerServiceProvider(loadBalancer);
     }
 
+    protected boolean checkAsGroupMaxAndMinMembers(AutoScaleVmGroupVO asGroup) {
+        // check minimum vm of group
+        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
+        if (currentVM < asGroup.getMinMembers()) {
+            s_logger.debug(String.format("There are currently %s available VMs which is less than the minimum member of " +
+                    "the AS group (%s), scaling up %d VMs", currentVM, asGroup.getMinMembers(), asGroup.getMinMembers() - currentVM));
+            doScaleUp(asGroup.getId(), asGroup.getMinMembers() - currentVM);
+            return false;
+        }
+
+        // check maximum vm of group
+        if (currentVM > asGroup.getMaxMembers()) {
+            s_logger.debug(String.format("There are currently %s available VMs which is more than the maximum member of " +
+                    "the AS group (%s), scaling down %d VMs", currentVM, asGroup.getMaxMembers(), currentVM - asGroup.getMaxMembers()));
+            for (int i = 0; i <  currentVM - asGroup.getMaxMembers(); i++) {
+                doScaleDown(asGroup.getId());
+            }
+            return false;
+        }
+        return true;
+    }
+
     protected void checkNetScalerAsGroup(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmGroupTO groupTO = lbRulesMgr.toAutoScaleVmGroupTO(asGroup);
 
         if (!isNative(groupTO)) {
             return;
         }
-        // check minimum vm of group
-        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
-        if (currentVM < asGroup.getMinMembers()) {
-            doScaleUp(asGroup.getId(), asGroup.getMinMembers() - currentVM);
+
+        if (!checkAsGroupMaxAndMinMembers(asGroup)) {
             return;
         }
 
@@ -2469,10 +2489,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     protected void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
-        // check minimum vm of group
-        Integer currentVM = autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(asGroup.getId());
-        if (currentVM < asGroup.getMinMembers()) {
-            doScaleUp(asGroup.getId(), asGroup.getMinMembers() - currentVM);
+        if (!checkAsGroupMaxAndMinMembers(asGroup)) {
             return;
         }
 

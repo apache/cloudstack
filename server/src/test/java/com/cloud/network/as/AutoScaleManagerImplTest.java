@@ -1805,6 +1805,7 @@ public class AutoScaleManagerImplTest {
 
         when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(minMembers);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
+        when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
 
         when(autoScaleVmGroupVmMapDao.listByGroup(vmGroupId)).thenReturn(Arrays.asList(autoScaleVmGroupVmMapVOMock));
         when(autoScaleVmGroupVmMapVOMock.getInstanceId()).thenReturn(virtualMachineId);
@@ -2086,6 +2087,7 @@ public class AutoScaleManagerImplTest {
 
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
+        when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
         when(autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(vmGroupId)).thenReturn(minMembers);
         when(lbRulesMgr.toAutoScaleVmGroupTO(asVmGroupMock)).thenReturn(groupTO);
 
