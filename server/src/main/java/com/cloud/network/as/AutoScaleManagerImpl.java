@@ -50,6 +50,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
@@ -97,7 +98,9 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -1959,6 +1962,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             return;
         }
         for (int i = 0; i < numVm; i++) {
+            ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                    "Scaling Up AutoScale VM group " + groupId, groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(),
+                    true, 0);
             long vmId = createNewVM(asGroup);
             if (vmId == -1) {
                 s_logger.error("Can not deploy new VM for scaling up in the group "
@@ -1987,13 +1993,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                             break;
                         }
                     }
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                            String.format("Started and assigned LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
                 } else {
                     s_logger.error("Can not assign LB rule for this new VM");
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                            String.format("Failed to assign LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
                     break;
                 }
             } catch (ServerApiException e) {
                 s_logger.error("Can not deploy new VM for scaling up in the group "
                     + asGroup.getId() + ". Waiting for next round");
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                        String.format("Failed to start VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
                 destroyVm(vmId);
                 break;
             }
@@ -2019,6 +2031,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             s_logger.error(String.format("Can not update vmgroup state from %s to %s, groupId: %s", oldState, newState, groupId));
             return;
         }
+        ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
+                "Scaling down AutoScale VM group " + groupId, groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(),
+                true, 0);
         final long vmId = removeLBrule(asGroup);
         if (vmId != -1) {
             long profileId = asGroup.getProfileId();
@@ -2045,10 +2060,14 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             if (expungeVmGracePeriod >= 0) {
                 executor.schedule(() -> {
                     destroyVm(vmId);
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
+                            String.format("Destroyed VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
                 }, expungeVmGracePeriod, TimeUnit.SECONDS);
             }
         } else {
             s_logger.error("Can not remove LB rule for the VM being destroyed. Do nothing more.");
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
+                    String.format("Failed to remove LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
         }
         if (!autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
             s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));

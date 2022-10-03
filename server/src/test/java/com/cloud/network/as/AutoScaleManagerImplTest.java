@@ -31,6 +31,7 @@ import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -1365,7 +1366,10 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
+    @PrepareForTest(ActionEventUtils.class)
     public void testDoScaleUp() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        PowerMockito.mockStatic(ActionEventUtils.class);
+
         when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
         when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
@@ -1391,7 +1395,10 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
+    @PrepareForTest(ActionEventUtils.class)
     public void testDoScaleDown() {
+        PowerMockito.mockStatic(ActionEventUtils.class);
+
         when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
         when(asVmGroupMock.getId()).thenReturn(vmGroupId);
 
