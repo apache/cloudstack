@@ -84,7 +84,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(STORE_ID, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(STORE_ROLE, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getRole(), SearchCriteria.Op.EQ);
         searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(STATE, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getState(), SearchCriteria.Op.NEQ);
-        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(REF_CNT searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getRefCnt(), SearchCriteria.Op.NEQ);
+        searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.and(REF_CNT, searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.entity().getRefCnt(), SearchCriteria.Op.NEQ);
         searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.done();
 
         searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq = createSearchBuilder();
