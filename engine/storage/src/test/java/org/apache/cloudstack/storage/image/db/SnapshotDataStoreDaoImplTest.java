@@ -56,7 +56,7 @@ public class SnapshotDataStoreDaoImplTest {
 
     @Before
     public void init(){
-        snapshotDataStoreDaoImplSpy.snapshotSearch = searchBuilderMock;
+        snapshotDataStoreDaoImplSpy.searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq = searchBuilderMock;
         snapshotDataStoreDaoImplSpy.snapshotDao = snapshotDaoMock;
     }
 
