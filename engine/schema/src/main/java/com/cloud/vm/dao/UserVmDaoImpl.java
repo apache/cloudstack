@@ -40,6 +40,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -75,6 +76,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccountPod;
     protected GenericSearchBuilder<UserVmVO, Long> CountByAccount;
+    protected GenericSearchBuilder<UserVmVO, Long> CountActiveAccount;
     protected GenericSearchBuilder<UserVmVO, Long> PodsHavingVmsForAccount;
 
     protected SearchBuilder<UserVmVO> UserVmSearch;
@@ -191,6 +193,15 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
         CountByAccount.and("displayVm", CountByAccount.entity().isDisplayVm(), SearchCriteria.Op.EQ);
         CountByAccount.done();
+
+        CountActiveAccount = createSearchBuilder(Long.class);
+        CountActiveAccount.select(null, Func.COUNT, null);
+        CountActiveAccount.and("account", CountActiveAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountActiveAccount.and("type", CountActiveAccount.entity().getType(), SearchCriteria.Op.EQ);
+        CountActiveAccount.and("dataCenterId", CountActiveAccount.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        CountActiveAccount.and("state", CountActiveAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountActiveAccount.groupBy(CountActiveAccount.entity().getAccountId());
+        CountActiveAccount.done();
 
         SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
         nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -720,5 +731,36 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         }
 
         return vmsDetailByNames;
+    }
+
+    @Override
+    public List<Ternary<Integer, Integer, Integer>> countVmsBySize(long dcId, int limit) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        String sql = "SELECT cpu,ram_size,count(1) AS count FROM (SELECT * FROM user_vm_view WHERE data_center_id = ? AND state NOT IN ('Destroyed', 'Error', 'Expunging') GROUP BY id) AS uvv GROUP BY cpu,ram_size ORDER BY count DESC ";
+        if (limit >= 0)
+            sql = sql + "limit " + limit;
+        PreparedStatement pstmt = null;
+        List<Ternary<Integer, Integer, Integer>> result = new ArrayList<>();
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, dcId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(new Ternary<Integer, Integer, Integer>(rs.getInt(1), rs.getInt(2), rs.getInt(3)));
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error counting vms by size for dcId= " + dcId, e);
+        }
+        return result;
+    }
+
+    @Override
+    public int getActiveAccounts(final long dcId) {
+        SearchCriteria<Long> sc = CountActiveAccount.create();
+        sc.setParameters("type", VirtualMachine.Type.User);
+        sc.setParameters("state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
+        sc.setParameters("dataCenterId", dcId);
+
+        return customSearch(sc, null).size();
     }
 }
