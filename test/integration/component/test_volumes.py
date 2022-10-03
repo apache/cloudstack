@@ -1193,7 +1193,7 @@ class TestVolumes(cloudstackTestCase):
             UserName=domuser.name,
             DomainName=dom.name)
 
-        diskoffering = DiskOffering.list(self.apiclient)
+        diskoffering = DiskOffering.list(domapiclient)
         self.assertTrue(
             isinstance(
                 diskoffering,
@@ -1216,7 +1216,11 @@ class TestVolumes(cloudstackTestCase):
             vol is not None, "volume creation fails in domain %s as user %s" %
             (dom.name, domuser.name))
 
-        time.sleep(180)
+        listed_vol_noid = Volume.list(domapiclient)
+        print(listed_vol_noid)
+        listed_vol_admin = Volume.list(self.apiclient)
+        print(listed_vol_admin)
+        time.sleep(360)
 
         listed_vol = Volume.list(domapiclient, id=vol.id)
         self.assertTrue(
