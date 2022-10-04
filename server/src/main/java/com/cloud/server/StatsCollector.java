@@ -665,9 +665,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     protected Map<Long, VMInstanceVO> getVmMapForStatsForHost(Host host) {
         List<VMInstanceVO> vms = _vmInstance.listByHostAndState(host.getId(), VirtualMachine.State.Running);
+        boolean collectUserVMStatsOnly = Boolean.TRUE.equals(vmStatsCollectUserVMOnly.value());
         Map<Long, VMInstanceVO> vmMap = new HashMap<>();
         for (VMInstanceVO vm : vms) {
-            if (Boolean.TRUE.equals(vmStatsCollectUserVMOnly.value()) && !VirtualMachine.Type.User.equals(vm.getType())) {
+            if (collectUserVMStatsOnly && !VirtualMachine.Type.User.equals(vm.getType())) {
                 continue;
             }
             vmMap.put(vm.getId(), vm);
