@@ -82,6 +82,7 @@ class TestVmAutoScaling(cloudstackTestCase):
                               CONFIG_NAME_DISK_CONTROLLER,
                               OS_DEFAULT)
 
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
         cls.template = get_template(cls.apiclient, cls.zone.id)
@@ -203,37 +204,34 @@ class TestVmAutoScaling(cloudstackTestCase):
             elif counter.source == 'VIRTUALROUTER' and counter.value == 'virtual.network.lb.average.connections':
                 cls.counter_lb_connection_id = counter.id
 
+        if cls.hypervisor.lower() == 'vmware':
+            cls.counter_cpu_or_memory_id = cls.counter_memory_id
+        else:
+            cls.counter_cpu_or_memory_id = cls.counter_cpu_id
+
         # 10. Create AS conditions
-        cls.scale_up_condition_cpu = AutoScaleCondition.create(
+        cls.scale_up_condition = AutoScaleCondition.create(
             cls.regular_user_apiclient,
             counterid = cls.counter_cpu_id,
             relationaloperator = "GE",
             threshold = 1
         )
 
-        cls.scale_up_condition_memory = AutoScaleCondition.create(
-            cls.regular_user_apiclient,
-            counterid = cls.counter_memory_id,
-            relationaloperator = "LE",
-            threshold = 100
-        )
-
         cls.scale_down_condition = AutoScaleCondition.create(
             cls.regular_user_apiclient,
-            counterid = cls.counter_memory_id,
+            counterid = cls.counter_cpu_or_memory_id,
             relationaloperator = "LE",
             threshold = 100
         )
 
-        cls._cleanup.append(cls.scale_up_condition_cpu)
-        cls._cleanup.append(cls.scale_up_condition_memory)
+        cls._cleanup.append(cls.scale_up_condition)
         cls._cleanup.append(cls.scale_down_condition)
 
         # 11. Create AS policies
         cls.scale_up_policy = AutoScalePolicy.create(
             cls.regular_user_apiclient,
             action='ScaleUp',
-            conditionids=','.join([cls.scale_up_condition_cpu.id, cls.scale_up_condition_memory.id]),
+            conditionids=','.join([cls.scale_up_condition.id]),
             duration=DEFAULT_DURATION
         )
 
@@ -776,7 +774,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         scale_down_condition_project = AutoScaleCondition.create(
             self.regular_user_apiclient,
             projectid = project.id,
-            counterid = self.counter_memory_id,
+            counterid = self.counter_cpu_or_memory_id,
             relationaloperator = "LE",
             threshold = 100
         )
@@ -948,15 +946,9 @@ class TestVmAutoScaling(cloudstackTestCase):
         # Create AS conditions for vpc
         scale_up_condition_1 = AutoScaleCondition.create(
             self.regular_user_apiclient,
-            counterid = self.counter_cpu_id,
+            counterid = self.counter_cpu_or_memory_id,
             relationaloperator = "GE",
             threshold = 1
-        )
-        scale_up_condition_2 = AutoScaleCondition.create(
-            self.regular_user_apiclient,
-            counterid = self.counter_memory_id,
-            relationaloperator = "LE",
-            threshold = 100
         )
         scale_up_condition_3 = AutoScaleCondition.create(
             self.regular_user_apiclient,
@@ -979,13 +971,12 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         scale_down_condition_vpc = AutoScaleCondition.create(
             self.regular_user_apiclient,
-            counterid = self.counter_memory_id,
+            counterid = self.counter_cpu_or_memory_id,
             relationaloperator = "LE",
             threshold = 100
         )
 
         self.cleanup.append(scale_up_condition_1)
-        self.cleanup.append(scale_up_condition_2)
         self.cleanup.append(scale_up_condition_3)
         self.cleanup.append(scale_up_condition_4)
         self.cleanup.append(scale_up_condition_5)
@@ -995,7 +986,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         scale_up_policy_vpc = AutoScalePolicy.create(
             self.regular_user_apiclient,
             action='ScaleUp',
-            conditionids=','.join([scale_up_condition_1.id, scale_up_condition_2.id, scale_up_condition_3.id,
+            conditionids=','.join([scale_up_condition_1.id, scale_up_condition_3.id,
                                    scale_up_condition_4.id, scale_up_condition_5.id]),
             duration=DEFAULT_DURATION
         )

@@ -2621,7 +2621,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                         if (Counter.Source.CPU.equals(counter.getSource())) {
                             counterValue = vmStats.getCPUUtilization() / 100;
                         } else if (Counter.Source.MEMORY.equals(counter.getSource())) {
-                            counterValue = vmStats.getMemoryKBs() / 1024;
+                            if (vmStats.getIntFreeMemoryKBs() >= 0 && vmStats.getIntFreeMemoryKBs() <= vmStats.getMemoryKBs()) {
+                                counterValue = (vmStats.getMemoryKBs() - vmStats.getIntFreeMemoryKBs()) / 1024;
+                            } else {
+                                // In some scenarios, the free memory is greater than VM memory
+                                // see https://github.com/apache/cloudstack/issues/4566
+                                s_logger.warn(String.format("Getting virtual machine statistics return invalid free memory KBs for VM %d: %f", vmId, vmStats.getIntFreeMemoryKBs()));
+                            }
                         }
                     }
                     if (counterValue == null) {
