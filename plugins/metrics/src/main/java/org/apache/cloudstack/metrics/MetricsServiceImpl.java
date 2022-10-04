@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.metrics;
 
+import static com.cloud.utils.NumbersUtil.toReadableSize;
+
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -28,14 +30,6 @@ import java.util.Properties;
 
 import javax.inject.Inject;
 
-import com.cloud.server.DbStatsCollection;
-import com.cloud.server.StatsCollector;
-import com.cloud.usage.UsageJobVO;
-import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.db.DbProperties;
-import com.cloud.utils.db.DbUtil;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.script.Script;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -43,6 +37,7 @@ import org.apache.cloudstack.api.ListHostsMetricsCmd;
 import org.apache.cloudstack.api.ListInfrastructureCmd;
 import org.apache.cloudstack.api.ListMgmtsMetricsCmd;
 import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
+import org.apache.cloudstack.api.ListSystemVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListUsageServerMetricsCmd;
 import org.apache.cloudstack.api.ListVMsMetricsCmd;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
@@ -52,8 +47,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.StatsResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.StatsResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -76,6 +71,10 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.alert.AlertManager;
@@ -103,13 +102,21 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.server.DbStatsCollection;
 import com.cloud.server.ManagementServerHostStats;
+import com.cloud.server.StatsCollector;
+import com.cloud.usage.UsageJobVO;
+import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.DbProperties;
+import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -119,12 +126,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.log4j.Logger;
-
-import static com.cloud.utils.NumbersUtil.toReadableSize;
 
 public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
     private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
@@ -196,8 +197,21 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public ListResponse<VmMetricsStatsResponse> searchForVmMetricsStats(ListVMsUsageHistoryCmd cmd) {
         Pair<List<UserVmVO>, Integer> userVmList = searchForUserVmsInternal(cmd);
-        Map<Long,List<VmStatsVO>> vmStatsList = searchForVmMetricsStatsInternal(cmd, userVmList.first());
-        return createVmMetricsStatsResponse(userVmList, vmStatsList);
+        Map<Long,List<VmStatsVO>> vmStatsList = searchForVmMetricsStatsInternal(cmd.getStartDate(), cmd.getEndDate(), userVmList.first());
+        return createVmMetricsStatsResponse(userVmList.first(), vmStatsList);
+    }
+
+    /**
+     * Searches for VM stats based on the {@code ListVMsUsageHistoryCmd} parameters.
+     *
+     * @param cmd the {@link ListVMsUsageHistoryCmd} specifying what should be searched.
+     * @return the list of VM metrics stats found.
+     */
+    @Override
+    public ListResponse<VmMetricsStatsResponse> searchForSystemVmMetricsStats(ListSystemVMsUsageHistoryCmd cmd) {
+        Pair<List<VMInstanceVO>, Integer> vmList = searchForSystemVmsInternal(cmd);
+        Map<Long,List<VmStatsVO>> vmStatsList = searchForVmMetricsStatsInternal(cmd.getStartDate(), cmd.getEndDate(), vmList.first());
+        return createVmMetricsStatsResponse(vmList.first(), vmStatsList);
     }
 
     /**
@@ -235,21 +249,51 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     /**
+     * Searches System VMs based on {@code ListSystemVMsUsageHistoryCmd} parameters.
+     *
+     * @param cmd the {@link ListSystemVMsUsageHistoryCmd} specifying the parameters.
+     * @return the list of VMs.
+     */
+    protected Pair<List<VMInstanceVO>, Integer> searchForSystemVmsInternal(ListSystemVMsUsageHistoryCmd cmd) {
+        Filter searchFilter = new Filter(VMInstanceVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+        String keyword = cmd.getKeyword();
+
+        SearchBuilder<VMInstanceVO> sb =  vmInstanceDao.createSearchBuilder();
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.NEQ);
+
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("type", VirtualMachine.Type.User.toString());
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.setParameters("idIN", ids.toArray());
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            SearchCriteria<VMInstanceVO> ssc = vmInstanceDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        return vmInstanceDao.searchAndCount(sc, searchFilter);
+    }
+
+    /**
      * Searches stats for a list of VMs, based on date filtering parameters.
      *
-     * @param cmd the {@link ListVMsUsageHistoryCmd} specifying the filtering parameters.
-     * @param userVmList the list of VMs for which stats should be searched.
+     * @param startDate the start date for which stats should be searched.
+     * @param endDate the end date for which stats should be searched.
+     * @param vmList the list of VMs for which stats should be searched.
      * @return the key-value map in which keys are VM IDs and values are lists of VM stats.
      */
-    protected Map<Long,List<VmStatsVO>> searchForVmMetricsStatsInternal(ListVMsUsageHistoryCmd cmd, List<UserVmVO> userVmList) {
-        Map<Long,List<VmStatsVO>> vmStatsVOList = new HashMap<Long,List<VmStatsVO>>();
-        Date startDate = cmd.getStartDate();
-        Date endDate = cmd.getEndDate();
-
+    protected Map<Long,List<VmStatsVO>> searchForVmMetricsStatsInternal(Date startDate, Date endDate, List<? extends VMInstanceVO> vmList) {
+        Map<Long,List<VmStatsVO>> vmStatsVOList = new HashMap<>();
         validateDateParams(startDate, endDate);
 
-        for (UserVmVO userVmVO : userVmList) {
-            Long vmId = userVmVO.getId();
+        for (VMInstanceVO vmInstanceVO : vmList) {
+            Long vmId = vmInstanceVO.getId();
             vmStatsVOList.put(vmId, findVmStatsAccordingToDateParams(vmId, startDate, endDate));
         }
 
@@ -294,21 +338,22 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * Creates a {@code ListResponse<VmMetricsStatsResponse>}. For each VM, this joins essential VM info
      * with its respective list of stats.
      *
-     * @param userVmList the list of VMs.
+     * @param vmList the list of VMs.
      * @param vmStatsList the respective list of stats.
      * @return the list of responses that was created.
      */
-    protected ListResponse<VmMetricsStatsResponse> createVmMetricsStatsResponse(Pair<List<UserVmVO>, Integer> userVmList,
+    protected ListResponse<VmMetricsStatsResponse> createVmMetricsStatsResponse(List<? extends VMInstanceVO> vmList,
             Map<Long,List<VmStatsVO>> vmStatsList) {
-        List<VmMetricsStatsResponse> responses = new ArrayList<VmMetricsStatsResponse>();
-        for (UserVmVO userVmVO : userVmList.first()) {
+        List<VmMetricsStatsResponse> responses = new ArrayList<>();
+        for (VMInstanceVO vmVO : vmList) {
             VmMetricsStatsResponse vmMetricsStatsResponse = new VmMetricsStatsResponse();
             vmMetricsStatsResponse.setObjectName("virtualmachine");
-            vmMetricsStatsResponse.setId(userVmVO.getUuid());
-            vmMetricsStatsResponse.setName(userVmVO.getName());
-            vmMetricsStatsResponse.setDisplayName(userVmVO.getDisplayName());
-
-            vmMetricsStatsResponse.setStats(createStatsResponse(vmStatsList.get(userVmVO.getId())));
+            vmMetricsStatsResponse.setId(vmVO.getUuid());
+            vmMetricsStatsResponse.setName(vmVO.getName());
+            if (vmVO instanceof UserVmVO) {
+                vmMetricsStatsResponse.setDisplayName(((UserVmVO) vmVO).getDisplayName());
+            }
+            vmMetricsStatsResponse.setStats(createStatsResponse(vmStatsList.get(vmVO.getId())));
             responses.add(vmMetricsStatsResponse);
         }
 
@@ -878,6 +923,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         cmdList.add(ListVolumesMetricsCmd.class);
         cmdList.add(ListZonesMetricsCmd.class);
         cmdList.add(ListVMsUsageHistoryCmd.class);
+        cmdList.add(ListSystemVMsUsageHistoryCmd.class);
         return cmdList;
     }
 

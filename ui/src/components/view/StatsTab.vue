@@ -259,6 +259,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    resourceType: {
+      type: String,
+      default: 'VirtualMachine'
     }
   },
   components: {
@@ -334,6 +338,13 @@ export default {
     },
     statsRetentionTime: function () {
       return this.$store.getters.features.instancesstatsretentiontime
+    },
+    resourceStatsApi: function () {
+      var api = 'listVirtualMachinesUsageHistory'
+      if (['SystemVm', 'DomainRouter'].includes(this.resourceType)) {
+        api = 'listSystemVmsUsageHistory'
+      }
+      return api
     }
   },
   watch: {
@@ -452,7 +463,7 @@ export default {
       if (this.endDate) {
         params.endDate = this.convertAndFormatDateAppropriately(this.endDate)
       }
-      api('listVirtualMachinesUsageHistory', params).then(response => {
+      api(this.resourceStatsApi, params).then(response => {
         this.handleStatsResponse(response)
       }).catch(error => {
         this.$notifyError(error)
@@ -479,7 +490,7 @@ export default {
     },
     handleStatsResponse (responseData) {
       this.resetData()
-      const vm = responseData.listvirtualmachinesusagehistoryresponse.virtualmachine
+      const vm = responseData[this.resourceStatsApi.toLowerCase() + 'response'].virtualmachine
 
       const chartPointRadius = this.getChartPointRadius(vm[0].stats.length)
 

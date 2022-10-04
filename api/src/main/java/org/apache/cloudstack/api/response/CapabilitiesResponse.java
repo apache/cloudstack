@@ -108,6 +108,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the retention time for Instances stats", since = "4.18.0")
     private Integer instancesStatsRetentionTime;
 
+    @SerializedName(ApiConstants.INSTANCES_STATS_USER_ONLY)
+    @Param(description = "true if stats are collected only for user instances, false if system instance stats are also collected", since = "4.18.0")
+    private Boolean instancesStatsUserOnly;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -190,5 +194,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setInstancesStatsRetentionTime(Integer instancesStatsRetentionTime) {
         this.instancesStatsRetentionTime = instancesStatsRetentionTime;
+    }
+
+    public void setInstancesStatsUserOnly(Boolean instancesStatsUserOnly) {
+        this.instancesStatsUserOnly = instancesStatsUserOnly;
     }
 }

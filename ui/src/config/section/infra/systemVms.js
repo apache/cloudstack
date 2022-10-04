@@ -33,6 +33,12 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
+      name: 'statistics',
+      resourceType: 'SystemVm',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+      show: () => { return store.getters.features.instancesstatsuseronly === false }
+    },
+    {
       name: 'events',
       resourceType: 'SystemVm',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),

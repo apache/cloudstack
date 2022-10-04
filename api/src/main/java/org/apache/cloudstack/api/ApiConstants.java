@@ -211,6 +211,7 @@ public class ApiConstants {
     public static final String IDS = "ids";
     public static final String INDEX = "index";
     public static final String INSTANCES_STATS_RETENTION_TIME = "instancesstatsretentiontime";
+    public static final String INSTANCES_STATS_USER_ONLY = "instancesstatsuseronly";
     public static final String PREFIX = "prefix";
     public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
