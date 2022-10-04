@@ -352,6 +352,13 @@ export default {
       }
       return 'listVirtualMachinesUsageHistory'
     },
+    resourceStatsApiResponseObject () {
+      switch (this.resourceType) {
+        case 'Volume':
+          return this.resourceType.toLowerCase()
+      }
+      return 'virtualmachine'
+    },
     resourceIsVirtualMachine () {
       return ['VirtualMachine', 'SystemVm', 'DomainRouter'].includes(this.resourceType)
     },
@@ -502,7 +509,7 @@ export default {
     },
     handleStatsResponse (responseData) {
       this.resetData()
-      const vm = responseData[this.resourceStatsApi.toLowerCase() + 'response'].virtualmachine
+      const vm = responseData[this.resourceStatsApi.toLowerCase() + 'response'][this.resourceStatsApiResponseObject]
 
       const chartPointRadius = this.getChartPointRadius(vm[0].stats.length)
 

@@ -510,7 +510,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         List<VolumeMetricsStatsResponse> responses = new ArrayList<>();
         for (VolumeVO volumeVO : volumeList.first()) {
             VolumeMetricsStatsResponse volumeMetricsStatsResponse = new VolumeMetricsStatsResponse();
-            volumeMetricsStatsResponse.setObjectName("virtualmachine");
+            volumeMetricsStatsResponse.setObjectName("volume");
             volumeMetricsStatsResponse.setId(volumeVO.getUuid());
             volumeMetricsStatsResponse.setName(volumeVO.getName());
 
