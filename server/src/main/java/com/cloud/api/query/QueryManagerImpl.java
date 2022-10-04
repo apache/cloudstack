@@ -2125,7 +2125,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
+        sb.cp();
 
         // now set the SC criteria...
         SearchCriteria<VolumeJoinVO> sc = sb.create();
