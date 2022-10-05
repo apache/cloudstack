@@ -1095,7 +1095,7 @@ public class LibvirtVMDef {
                 diskBuilder.append(">\n");
                 for (String sourceHost : _sourceHost.split(",")) {
                     diskBuilder.append("<host name='");
-                    diskBuilder.append(sourceHost);
+                    diskBuilder.append(sourceHost.replace("[", "").replace("]", ""));
                     if (_sourcePort != 0) {
                         diskBuilder.append("' port='");
                         diskBuilder.append(_sourcePort);
