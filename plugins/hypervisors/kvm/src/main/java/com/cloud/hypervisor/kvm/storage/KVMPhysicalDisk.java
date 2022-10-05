@@ -53,12 +53,19 @@ public class KVMPhysicalDisk {
         List<String> hosts = new ArrayList<>();
         for (String host : monHost.split(",")) {
             if (monPort > 0) {
-                hosts.add(host + "\\:" + monPort);
+                hosts.add(replaceHostAddress(host) + "\\:" + monPort);
             } else {
-                hosts.add(host);
+                hosts.add(replaceHostAddress(host));
             }
         }
         return StringUtils.join(hosts, "\\;");
+    }
+
+    private static String replaceHostAddress(String hostIp) {
+        if (hostIp != null && hostIp.startsWith("[") && hostIp.endsWith("]")) {
+            return hostIp.replaceAll("\\:", "\\\\:");
+        }
+        return hostIp;
     }
 
     private PhysicalDiskFormat format;
