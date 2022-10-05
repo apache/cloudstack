@@ -32,7 +32,7 @@ public class QemuImageOptions {
     private static final String DRIVER = "driver";
 
     private QemuImg.PhysicalDiskFormat format;
-    private static final List<QemuImg.PhysicalDiskFormat> supportedFormats = Arrays.asList(QemuImg.PhysicalDiskFormat.QCOW2, QemuImg.PhysicalDiskFormat.LUKS);
+    private static final List<QemuImg.PhysicalDiskFormat> DISK_FORMATS_THAT_SUPPORT_OPTION_IMAGE_OPTS = Arrays.asList(QemuImg.PhysicalDiskFormat.QCOW2, QemuImg.PhysicalDiskFormat.LUKS);
 
     public QemuImageOptions(String filePath) {
         params.put(FILENAME_PARAM_KEY, filePath);
@@ -76,7 +76,7 @@ public class QemuImageOptions {
      * @return array of strings representing command flag and value (--image-opts)
      */
     public String[] toCommandFlag() {
-        if (format == null || !supportedFormats.contains(format)) {
+        if (format == null || !DISK_FORMATS_THAT_SUPPORT_OPTION_IMAGE_OPTS.contains(format)) {
             return new String[] { params.get(FILENAME_PARAM_KEY) };
         }
         Map<String, String> sorted = new TreeMap<>(params);
