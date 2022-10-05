@@ -76,4 +76,29 @@ public class LibvirtStoragePoolXMLParserTest extends TestCase {
         Assert.assertEquals("10.11.12.13,10.11.12.14,10.11.12.15", pool.getSourceHost());
         Assert.assertEquals(6789, pool.getSourcePort());
     }
+
+    public void testParseRbdStoragePoolXMLWithMultipleHostsIpv6() {
+        String poolXML = "<pool type='rbd'>\n" +
+                "  <name>feff06b5-84b2-3258-b5f9-1953217295de</name>\n" +
+                "  <uuid>feff06b5-84b2-3258-b5f9-1953217295de</uuid>\n" +
+                "  <source>\n" +
+                "    <name>rbdpool</name>\n" +
+                "    <host name='[fc00:aa:bb:cc::1]' port='6789'/>\n" +
+                "    <host name='[fc00:aa:bb:cc::2]' port='6789'/>\n" +
+                "    <host name='[fc00:aa:bb:cc::3]' port='6789'/>\n" +
+                "    <format type='auto'/>\n" +
+                "    <auth username='admin' type='ceph'>\n" +
+                "      <secret uuid='262f743a-3726-11ed-aaee-93e90b39d5c4'/>\n" +
+                "    </auth>\n" +
+                "  </source>\n" +
+                "</pool>";
+
+        LibvirtStoragePoolXMLParser parser = new LibvirtStoragePoolXMLParser();
+        LibvirtStoragePoolDef pool = parser.parseStoragePoolXML(poolXML);
+
+        Assert.assertEquals(LibvirtStoragePoolDef.PoolType.RBD, pool.getPoolType());
+        Assert.assertEquals(LibvirtStoragePoolDef.AuthenticationType.CEPH, pool.getAuthType());
+        Assert.assertEquals("[fc00:aa:bb:cc::1],[fc00:aa:bb:cc::2],[fc00:aa:bb:cc::3]", pool.getSourceHost());
+        Assert.assertEquals(6789, pool.getSourcePort());
+    }
 }

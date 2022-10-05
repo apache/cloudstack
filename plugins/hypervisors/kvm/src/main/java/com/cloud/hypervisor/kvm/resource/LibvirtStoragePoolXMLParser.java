@@ -54,7 +54,7 @@ public class LibvirtStoragePoolXMLParser {
             String poolName = getTagValue("name", rootElement);
 
             Element source = (Element)rootElement.getElementsByTagName("source").item(0);
-            String host = getStorageHost(source);
+            String host = getStorageHosts(source);
             String format = getAttrValue("format", "type", source);
 
             if (type.equalsIgnoreCase("rbd") || type.equalsIgnoreCase("powerflex")) {
@@ -126,7 +126,7 @@ public class LibvirtStoragePoolXMLParser {
         return node.getAttribute(attr);
     }
 
-    protected static String getStorageHost(Element parentElement) {
+    protected static String getStorageHosts(Element parentElement) {
         List<String> storageHosts = new ArrayList<>();
         NodeList hosts = parentElement.getElementsByTagName("host");
         for (int j = 0; j < hosts.getLength(); j++) {

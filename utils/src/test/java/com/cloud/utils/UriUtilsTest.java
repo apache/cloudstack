@@ -111,17 +111,71 @@ public class UriUtilsTest {
 
     @Test
     public void testGetRbdUriInfo() {
-        String url0 = "rbd://user:password@host1,host2,host3:3300/pool/volume2";
-        String url1 = "rbd://user:password@host1,host2,host3:3300/pool";
-        String url2 = "rbd://user:password@host1,host2,host3/pool";
-        String url3 = "rbd://host1,host2,host3:3300/pool";
-        String url4 = "rbd://host1,host2,host3/pool";
-        String url5 = "rbd://user:password@host1,host2,host3";
-        String url6 = "rbd://host1,host2,host3:3300";
-        String url7 = "rbd://host1,host2,host3";
-        String url8 = "rbd://user@host1,host2,host3";
+        String host = "10.11.12.13";
 
-        String host = "host1,host2,host3";
+        String url0 = String.format("rbd://user:password@%s:3300/pool/volume2", host);
+        String url1 = String.format("rbd://user:password@%s:3300/pool", host);
+        String url2 = String.format("rbd://user:password@%s/pool", host);
+        String url3 = String.format("rbd://%s:3300/pool", host);
+        String url4 = String.format("rbd://%s/pool", host);
+        String url5 = String.format("rbd://user:password@%s", host);
+        String url6 = String.format("rbd://%s:3300", host);
+        String url7 = String.format("rbd://%s", host);
+        String url8 = String.format("rbd://user@%s", host);
+
+        testGetUriInfoInternal(url0, host);
+        testGetUriInfoInternal(url1, host);
+        testGetUriInfoInternal(url2, host);
+        testGetUriInfoInternal(url3, host);
+        testGetUriInfoInternal(url4, host);
+        testGetUriInfoInternal(url5, host);
+        testGetUriInfoInternal(url6, host);
+        testGetUriInfoInternal(url7, host);
+        testGetUriInfoInternal(url8, host);
+    }
+
+    @Test
+    public void testGetRbdUriInfoSingleIpv6() {
+        String host = "[fc00:aa:bb:cc::1]";
+
+        String url0 = String.format("rbd://user:password@%s:3300/pool/volume2", host);
+        String url1 = String.format("rbd://user:password@%s:3300/pool", host);
+        String url2 = String.format("rbd://user:password@%s/pool", host);
+        String url3 = String.format("rbd://%s:3300/pool", host);
+        String url4 = String.format("rbd://%s/pool", host);
+        String url5 = String.format("rbd://user:password@%s", host);
+        String url6 = String.format("rbd://%s:3300", host);
+        String url7 = String.format("rbd://%s", host);
+        String url8 = String.format("rbd://user@%s", host);
+
+        testGetUriInfoInternal(url0, host);
+        testGetUriInfoInternal(url1, host);
+        testGetUriInfoInternal(url2, host);
+        testGetUriInfoInternal(url3, host);
+        testGetUriInfoInternal(url4, host);
+        testGetUriInfoInternal(url5, host);
+        testGetUriInfoInternal(url6, host);
+        testGetUriInfoInternal(url7, host);
+        testGetUriInfoInternal(url8, host);
+    }
+
+    @Test
+    public void testGetRbdUriInfoMultipleIpv6() {
+        String host1 = "[fc00:aa:bb:cc::1]";
+        String host2 = "[fc00:aa:bb:cc::2]";
+        String host3 = "[fc00:aa:bb:cc::3]";
+
+        String url0 = String.format("rbd://user:password@%s,%s,%s:3300/pool/volume2", host1, host2, host3);
+        String url1 = String.format("rbd://user:password@%s,%s,%s:3300/pool", host1, host2, host3);
+        String url2 = String.format("rbd://user:password@%s,%s,%s/pool", host1, host2, host3);
+        String url3 = String.format("rbd://%s,%s,%s:3300/pool", host1, host2, host3);
+        String url4 = String.format("rbd://%s,%s,%s/pool", host1, host2, host3);
+        String url5 = String.format("rbd://user:password@%s,%s,%s", host1, host2, host3);
+        String url6 = String.format("rbd://%s,%s,%s:3300", host1, host2, host3);
+        String url7 = String.format("rbd://%s,%s,%s", host1, host2, host3);
+        String url8 = String.format("rbd://user@%s,%s,%s", host1, host2, host3);
+
+        String host = String.format("%s,%s,%s", host1, host2, host3);
 
         testGetUriInfoInternal(url0, host);
         testGetUriInfoInternal(url1, host);
@@ -136,21 +190,54 @@ public class UriUtilsTest {
 
     @Test
     public void testGetUriInfo() {
-        String url0 = "nfs://user:password@host:3300/pool/volume2";
-        String url1 = "cifs://user:password@host:3300/pool";
-        String url2 = "file://user:password@host/pool";
-        String url3 = "sharedMountPoint://host:3300/pool";
-        String url4 = "clvm://host/pool";
-        String url5 = "PreSetup://user@host";
-        String url6 = "DatastoreCluster://host:3300";
-        String url7 = "iscsi://host";
-        String url8 = "iso://user@host:3300/pool/volume2";
-        String url9 = "vmfs://user@host:3300/pool";
-        String url10 = "ocfs2://user@host/pool";
-        String url11 = "gluster://host:3300/pool";
-        String url12 = "rbd://user:password@host:3300/pool/volume2";
+        String host = "10.11.12.13";
 
-        String host = "host";
+        String url0 = String.format("nfs://user:password@%s:3300/pool/volume2", host);
+        String url1 = String.format("cifs://user:password@%s:3300/pool", host);
+        String url2 = String.format("file://user:password@%s/pool", host);
+        String url3 = String.format("sharedMountPoint://%s:3300/pool", host);
+        String url4 = String.format("clvm://%s/pool", host);
+        String url5 = String.format("PreSetup://user@%s", host);
+        String url6 = String.format("DatastoreCluster://%s:3300", host);
+        String url7 = String.format("iscsi://%s", host);
+        String url8 = String.format("iso://user@%s:3300/pool/volume2", host);
+        String url9 = String.format("vmfs://user@%s:3300/pool", host);
+        String url10 = String.format("ocfs2://user@%s/pool", host);
+        String url11 = String.format("gluster://%s:3300/pool", host);
+        String url12 = String.format("rbd://user:password@%s:3300/pool/volume2", host);
+
+        testGetUriInfoInternal(url0, host);
+        testGetUriInfoInternal(url1, host);
+        testGetUriInfoInternal(url2, host);
+        testGetUriInfoInternal(url3, host);
+        testGetUriInfoInternal(url4, host);
+        testGetUriInfoInternal(url5, host);
+        testGetUriInfoInternal(url6, host);
+        testGetUriInfoInternal(url7, host);
+        testGetUriInfoInternal(url8, host);
+        testGetUriInfoInternal(url9, host);
+        testGetUriInfoInternal(url10, host);
+        testGetUriInfoInternal(url11, host);
+        testGetUriInfoInternal(url12, host);
+    }
+
+    @Test
+    public void testGetUriInfoIpv6() {
+        String host = "[fc00:aa:bb:cc::1]";
+
+        String url0 = String.format("nfs://user:password@%s:3300/pool/volume2", host);
+        String url1 = String.format("cifs://user:password@%s:3300/pool", host);
+        String url2 = String.format("file://user:password@%s/pool", host);
+        String url3 = String.format("sharedMountPoint://%s:3300/pool", host);
+        String url4 = String.format("clvm://%s/pool", host);
+        String url5 = String.format("PreSetup://user@%s", host);
+        String url6 = String.format("DatastoreCluster://%s:3300", host);
+        String url7 = String.format("iscsi://%s", host);
+        String url8 = String.format("iso://user@%s:3300/pool/volume2", host);
+        String url9 = String.format("vmfs://user@%s:3300/pool", host);
+        String url10 = String.format("ocfs2://user@%s/pool", host);
+        String url11 = String.format("gluster://%s:3300/pool", host);
+        String url12 = String.format("rbd://user:password@%s:3300/pool/volume2", host);
 
         testGetUriInfoInternal(url0, host);
         testGetUriInfoInternal(url1, host);

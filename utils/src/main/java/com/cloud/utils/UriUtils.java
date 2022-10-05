@@ -702,12 +702,16 @@ public class UriUtils {
         int thirdSlash = StringUtils.ordinalIndexOf(url, "/", 3);
         int firstAt = StringUtils.indexOf(url, "@");
         int lastColon = StringUtils.lastIndexOf(url,":");
+        int lastSquareBracket = StringUtils.lastIndexOf(url,"]");
         int startOfHost = Math.max(secondSlash, firstAt) + 1;
-        int endOfHost = lastColon < startOfHost ? (thirdSlash > 0 ? thirdSlash : url.length() + 1) : lastColon;
+        int endOfHost = lastColon < startOfHost ? (thirdSlash > 0 ? thirdSlash : url.length() + 1) :
+                (lastSquareBracket > lastColon ? lastSquareBracket + 1 : lastColon);
         String storageHosts = StringUtils.substring(url, startOfHost, endOfHost);
         String firstHost = storageHosts.split(",")[0];
+        String strBeforeHosts = StringUtils.substring(url, 0, startOfHost);
+        String strAfterHosts = StringUtils.substring(url, endOfHost);
         try {
-            URI uri = new URI(UriUtils.encodeURIComponent(url.replaceFirst(storageHosts, firstHost)));
+            URI uri = new URI(UriUtils.encodeURIComponent(strBeforeHosts + firstHost + strAfterHosts));
             return new UriInfo(uri.getScheme(), storageHosts, uri.getPath(), uri.getUserInfo(), uri.getPort());
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(url + " is not a valid uri for RBD");
