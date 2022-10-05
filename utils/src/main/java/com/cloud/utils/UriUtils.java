@@ -647,6 +647,9 @@ public class UriUtils {
         String userInfo;
         int port = -1;
 
+        public UriInfo() {
+        }
+
         public UriInfo(String scheme, String storageHost, String storagePath, String userInfo, int port) {
             this.scheme = scheme;
             this.storageHost = storageHost;
@@ -687,7 +690,10 @@ public class UriUtils {
 
     public static UriInfo getUriInfo(String url) {
         try {
-            if (url != null && url.startsWith("rbd://")) {
+            if (url == null) {
+                return new UriInfo();
+            }
+            if (url.startsWith("rbd://")) {
                 return getRbdUrlInfo(url);
             }
             URI uri = new URI(UriUtils.encodeURIComponent(url));
