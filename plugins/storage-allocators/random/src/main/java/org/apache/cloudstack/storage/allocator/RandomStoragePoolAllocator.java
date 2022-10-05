@@ -36,6 +36,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
     @Override
     public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+        logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
@@ -44,22 +45,22 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
         Long clusterId = plan.getClusterId();
 
         if (podId == null) {
+            s_logger.debug("RandomStoragePoolAllocator is returning null since the pod ID is null. This may be a zone wide storage.");
             return null;
         }
 
-        s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+        s_logger.debug(String.format("Looking for pools in dc [%s], pod [%s] and cluster [%s].", dcId, podId, clusterId));
         List<StoragePoolVO> pools = storagePoolDao.listBy(dcId, podId, clusterId, ScopeType.CLUSTER);
         if (pools.size() == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No storage pools available for allocation, returning");
-            }
+            s_logger.debug(String.format("RandomStoragePoolAllocator found no storage pools available for allocation in dc [%s], pod [%s] and cluster [%s]. Returning an empty list.",
+                    dcId, podId, clusterId));
             return suitablePools;
         }
 
         Collections.shuffle(pools);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("RandomStoragePoolAllocator has " + pools.size() + " pools to check for allocation");
-        }
+
+        s_logger.debug(String.format("RandomStoragePoolAllocator has [%s] pools to check for allocation [%s].", pools.size(), pools));
+
         for (StoragePoolVO pool : pools) {
             if (suitablePools.size() == returnUpTo) {
                 break;
@@ -67,13 +68,12 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
             StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
 
             if (filter(avoid, pol, dskCh, plan)) {
+                s_logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
                 suitablePools.add(pol);
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("RandomStoragePoolAllocator returning " + suitablePools.size() + " suitable storage pools");
-        }
+        s_logger.debug(String.format("RandomStoragePoolAllocator is returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
 
         return suitablePools;
     }

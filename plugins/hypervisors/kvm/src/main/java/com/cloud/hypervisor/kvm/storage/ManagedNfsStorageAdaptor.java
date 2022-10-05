@@ -291,6 +291,11 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
+    }
+
+    @Override
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] destPassphrase, ProvisioningType provisioningType) {
         throw new UnsupportedOperationException("Copying a disk is not supported in this configuration.");
     }
 
@@ -315,7 +320,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         return null;
     }
 
@@ -325,7 +330,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format, ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, PhysicalDiskFormat format, ProvisioningType provisioningType, long size, byte[] passphrase) {
         return null;
     }
 
@@ -335,7 +340,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         return null;
     }
 }

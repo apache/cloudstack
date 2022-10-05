@@ -112,7 +112,8 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
         return new ConfigKey<?>[] {
                 EnablePrometheusExporter,
                 PrometheusExporterServerPort,
-                PrometheusExporterAllowedAddresses
+                PrometheusExporterAllowedAddresses,
+                PrometheusExporterOfferingCountLimit
         };
     }
 }

@@ -423,7 +423,7 @@ class CsIP:
                             "-d %s/32 -j FIREWALL_%s" % (self.address['public_ip'], self.address['public_ip'])])
             self.fw.append(["mangle", "front",
                             "-A FIREWALL_%s " % self.address['public_ip'] +
-                            "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
+                            "-m state --state RELATED,ESTABLISHED -j RETURN"])
             self.fw.append(["mangle", "",
                             "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
             self.fw.append(["mangle", "",

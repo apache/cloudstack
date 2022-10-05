@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,17 +15,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+//
+package org.apache.cloudstack.user;
 
-import org.apache.cloudstack.api.ServerApiException;
-
-import com.cloud.user.Account;
-import com.cloud.utils.component.Adapter;
+import com.cloud.configuration.Resource;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
- * APILimitChecker checks if we should block an API request based on pre-set account based api limit.
+ * an interface defining an {code}AutoClosable{code} reservation object
  */
-public interface APILimitChecker extends Adapter {
-    // Interface for checking if the account is over its api limit
-    void checkLimit(Account account) throws ServerApiException;
+public interface
+ResourceReservation extends InternalIdentity {
+
+    Long getAccountId();
+
+    Long getDomainId();
+
+    Resource.ResourceType getResourceType();
+
+    Long getReservedAmount();
 }
