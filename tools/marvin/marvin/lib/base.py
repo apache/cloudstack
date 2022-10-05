@@ -522,7 +522,7 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None, userdataid=None, userdatadetails=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -611,6 +611,12 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
+
+        if userdataid is not None:
+            cmd.userdataid = userdataid
+
+        if userdatadetails is not None:
+            cmd.userdatadetails = userdatadetails
 
         if "dhcpoptionsnetworklist" in services:
             cmd.dhcpoptionsnetworklist = services["dhcpoptionsnetworklist"]
@@ -1665,6 +1671,18 @@ class Template:
             cmd.listall = True
         return (apiclient.listTemplates(cmd))
 
+    @classmethod
+    def linkUserDataToTemplate(cls, apiclient, templateid, userdataid=None, userdatapolicy=None):
+        "Link userdata to template "
+
+        cmd = linkUserDataToTemplate.linkUserDataToTemplateCmd()
+        cmd.templateid = templateid
+        if userdataid is not None:
+            cmd.userdataid = userdataid
+        if userdatapolicy is not None:
+            cmd.userdatapolicy = userdatapolicy
+
+        return apiclient.linkUserDataToTemplate(cmd)
 
 class Iso:
     """Manage ISO life cycle"""
@@ -4998,6 +5016,45 @@ class SSHKeyPair:
             cmd.listall = True
         return (apiclient.listSSHKeyPairs(cmd))
 
+class UserData:
+    """Manage Userdata"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def register(cls, apiclient, name=None, account=None,
+                 domainid=None, projectid=None, userdata=None, params=None):
+        """Registers Userdata"""
+        cmd = registerUserData.registerUserDataCmd()
+        cmd.name = name
+        cmd.userdata = userdata
+        if params is not None:
+            cmd.params = params
+        if account is not None:
+            cmd.account = account
+        if domainid is not None:
+            cmd.domainid = domainid
+        if projectid is not None:
+            cmd.projectid = projectid
+
+        return (apiclient.registerUserData(cmd))
+
+    @classmethod
+    def delete(cls, apiclient, id):
+        """Delete Userdata"""
+        cmd = deleteUserData.deleteUserDataCmd()
+        cmd.id = id
+        apiclient.deleteUserData(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all UserData"""
+        cmd = listUserData.listUserDataCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listUserData(cmd))
 
 class Capacities:
     """Manage Capacities"""
