@@ -2235,6 +2235,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
     }
 
+    private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
+        return Boolean.TRUE.equals(cmd.getListSystemVms()) && _accountMgr.isRootAdmin(callerId);
+    }
+
     @Override
     public ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd) {
         Pair<List<DomainJoinVO>, Integer> result = searchForDomainsInternal(cmd);
