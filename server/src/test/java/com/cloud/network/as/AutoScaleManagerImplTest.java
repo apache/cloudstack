@@ -1165,7 +1165,7 @@ public class AutoScaleManagerImplTest {
         when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         when(userVmService.createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any())).thenReturn(userVmMock);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1173,7 +1173,7 @@ public class AutoScaleManagerImplTest {
         Assert.assertEquals((long) virtualMachineId, result);
 
         Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any());
     }
 
@@ -1205,7 +1205,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(zoneMock.isSecurityGroupEnabled()).thenReturn(true);
         when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1213,7 +1213,7 @@ public class AutoScaleManagerImplTest {
         Assert.assertEquals((long) virtualMachineId, result);
 
         Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any());
     }
 
@@ -1245,7 +1245,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(zoneMock.isSecurityGroupEnabled()).thenReturn(false);
         when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1253,7 +1253,7 @@ public class AutoScaleManagerImplTest {
         Assert.assertEquals((long) virtualMachineId, result);
 
         Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any());
     }
 
