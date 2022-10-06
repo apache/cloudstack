@@ -363,7 +363,142 @@ CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (
   INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Update user vm view to include autoscale vm group id
+-- UserData as first class resource (PR #6202)
+CREATE TABLE `cloud`.`user_data` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'UUID of the user data',
+  `name` varchar(256) NOT NULL COMMENT 'name of the user data',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner, foreign key to account table',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain, foreign key to domain table',
+  `user_data` mediumtext COMMENT 'value of the userdata',
+  `params` mediumtext COMMENT 'value of the comma-separated list of parameters',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_userdata__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_userdata__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_userdata__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data' AFTER `user_data`;
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_details` mediumtext DEFAULT NULL COMMENT 'value of the comma-separated list of parameters' AFTER `user_data_id`;
+ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__user_data_id` FOREIGN KEY `fk_user_vm__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`);
+
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data';
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_link_policy` varchar(255) DEFAULT NULL COMMENT 'user data link policy with template';
+ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `fk_vm_template__user_data_id` FOREIGN KEY `fk_vm_template__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`);
+
+-- Added userdata details to template
+DROP VIEW IF EXISTS `cloud`.`template_view`;
+CREATE VIEW `cloud`.`template_view` AS
+     SELECT
+         `vm_template`.`id` AS `id`,
+         `vm_template`.`uuid` AS `uuid`,
+         `vm_template`.`unique_name` AS `unique_name`,
+         `vm_template`.`name` AS `name`,
+         `vm_template`.`public` AS `public`,
+         `vm_template`.`featured` AS `featured`,
+         `vm_template`.`type` AS `type`,
+         `vm_template`.`hvm` AS `hvm`,
+         `vm_template`.`bits` AS `bits`,
+         `vm_template`.`url` AS `url`,
+         `vm_template`.`format` AS `format`,
+         `vm_template`.`created` AS `created`,
+         `vm_template`.`checksum` AS `checksum`,
+         `vm_template`.`display_text` AS `display_text`,
+         `vm_template`.`enable_password` AS `enable_password`,
+         `vm_template`.`dynamically_scalable` AS `dynamically_scalable`,
+         `vm_template`.`state` AS `template_state`,
+         `vm_template`.`guest_os_id` AS `guest_os_id`,
+         `guest_os`.`uuid` AS `guest_os_uuid`,
+         `guest_os`.`display_name` AS `guest_os_name`,
+         `vm_template`.`bootable` AS `bootable`,
+         `vm_template`.`prepopulate` AS `prepopulate`,
+         `vm_template`.`cross_zones` AS `cross_zones`,
+         `vm_template`.`hypervisor_type` AS `hypervisor_type`,
+         `vm_template`.`extractable` AS `extractable`,
+         `vm_template`.`template_tag` AS `template_tag`,
+         `vm_template`.`sort_key` AS `sort_key`,
+         `vm_template`.`removed` AS `removed`,
+         `vm_template`.`enable_sshkey` AS `enable_sshkey`,
+         `parent_template`.`id` AS `parent_template_id`,
+         `parent_template`.`uuid` AS `parent_template_uuid`,
+         `source_template`.`id` AS `source_template_id`,
+         `source_template`.`uuid` AS `source_template_uuid`,
+         `account`.`id` AS `account_id`,
+         `account`.`uuid` AS `account_uuid`,
+         `account`.`account_name` AS `account_name`,
+         `account`.`type` AS `account_type`,
+         `domain`.`id` AS `domain_id`,
+         `domain`.`uuid` AS `domain_uuid`,
+         `domain`.`name` AS `domain_name`,
+         `domain`.`path` AS `domain_path`,
+         `projects`.`id` AS `project_id`,
+         `projects`.`uuid` AS `project_uuid`,
+         `projects`.`name` AS `project_name`,
+         `data_center`.`id` AS `data_center_id`,
+         `data_center`.`uuid` AS `data_center_uuid`,
+         `data_center`.`name` AS `data_center_name`,
+         `launch_permission`.`account_id` AS `lp_account_id`,
+         `template_store_ref`.`store_id` AS `store_id`,
+         `image_store`.`scope` AS `store_scope`,
+         `template_store_ref`.`state` AS `state`,
+         `template_store_ref`.`download_state` AS `download_state`,
+         `template_store_ref`.`download_pct` AS `download_pct`,
+         `template_store_ref`.`error_str` AS `error_str`,
+         `template_store_ref`.`size` AS `size`,
+         `template_store_ref`.physical_size AS `physical_size`,
+         `template_store_ref`.`destroyed` AS `destroyed`,
+         `template_store_ref`.`created` AS `created_on_store`,
+         `vm_template_details`.`name` AS `detail_name`,
+         `vm_template_details`.`value` AS `detail_value`,
+         `resource_tags`.`id` AS `tag_id`,
+         `resource_tags`.`uuid` AS `tag_uuid`,
+         `resource_tags`.`key` AS `tag_key`,
+         `resource_tags`.`value` AS `tag_value`,
+         `resource_tags`.`domain_id` AS `tag_domain_id`,
+         `domain`.`uuid` AS `tag_domain_uuid`,
+         `domain`.`name` AS `tag_domain_name`,
+         `resource_tags`.`account_id` AS `tag_account_id`,
+         `account`.`account_name` AS `tag_account_name`,
+         `resource_tags`.`resource_id` AS `tag_resource_id`,
+         `resource_tags`.`resource_uuid` AS `tag_resource_uuid`,
+         `resource_tags`.`resource_type` AS `tag_resource_type`,
+         `resource_tags`.`customer` AS `tag_customer`,
+          CONCAT(`vm_template`.`id`,
+                 '_',
+                 IFNULL(`data_center`.`id`, 0)) AS `temp_zone_pair`,
+          `vm_template`.`direct_download` AS `direct_download`,
+          `vm_template`.`deploy_as_is` AS `deploy_as_is`,
+         `user_data`.`id` AS `user_data_id`,
+         `user_data`.`uuid` AS `user_data_uuid`,
+         `user_data`.`name` AS `user_data_name`,
+         `user_data`.`params` AS `user_data_params`,
+         `vm_template`.`user_data_link_policy` AS `user_data_policy`
+     FROM
+         (((((((((((((`vm_template`
+         JOIN `guest_os` ON ((`guest_os`.`id` = `vm_template`.`guest_os_id`)))
+         JOIN `account` ON ((`account`.`id` = `vm_template`.`account_id`)))
+         JOIN `domain` ON ((`domain`.`id` = `account`.`domain_id`)))
+         LEFT JOIN `projects` ON ((`projects`.`project_account_id` = `account`.`id`)))
+         LEFT JOIN `vm_template_details` ON ((`vm_template_details`.`template_id` = `vm_template`.`id`)))
+         LEFT JOIN `vm_template` `source_template` ON ((`source_template`.`id` = `vm_template`.`source_template_id`)))
+         LEFT JOIN `template_store_ref` ON (((`template_store_ref`.`template_id` = `vm_template`.`id`)
+             AND (`template_store_ref`.`store_role` = 'Image')
+             AND (`template_store_ref`.`destroyed` = 0))))
+         LEFT JOIN `vm_template` `parent_template` ON ((`parent_template`.`id` = `vm_template`.`parent_template_id`)))
+         LEFT JOIN `image_store` ON ((ISNULL(`image_store`.`removed`)
+             AND (`template_store_ref`.`store_id` IS NOT NULL)
+             AND (`image_store`.`id` = `template_store_ref`.`store_id`))))
+         LEFT JOIN `template_zone_ref` ON (((`template_zone_ref`.`template_id` = `vm_template`.`id`)
+             AND ISNULL(`template_store_ref`.`store_id`)
+             AND ISNULL(`template_zone_ref`.`removed`))))
+         LEFT JOIN `data_center` ON (((`image_store`.`data_center_id` = `data_center`.`id`)
+             OR (`template_zone_ref`.`zone_id` = `data_center`.`id`))))
+         LEFT JOIN `launch_permission` ON ((`launch_permission`.`template_id` = `vm_template`.`id`)))
+         LEFT JOIN `user_data` ON ((`user_data`.`id` = `vm_template`.`user_data_id`))
+         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
+             AND ((`resource_tags`.`resource_type` = 'Template')
+             OR (`resource_tags`.`resource_type` = 'ISO')))));
+
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE
     VIEW `user_vm_view` AS
@@ -504,9 +639,14 @@ SELECT
     `autoscale_vmgroups`.`id` AS `autoscale_vmgroup_id`,
     `autoscale_vmgroups`.`uuid` AS `autoscale_vmgroup_uuid`,
     `autoscale_vmgroups`.`name` AS `autoscale_vmgroup_name`,
-    `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`
+    `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`,
+    `user_data`.`id` AS `user_data_id`,
+    `user_data`.`uuid` AS `user_data_uuid`,
+    `user_data`.`name` AS `user_data_name`,
+    `user_vm`.`user_data_details` AS `user_data_details`,
+    `vm_template`.`user_data_link_policy` AS `user_data_policy`
 FROM
-    ((((((((((((((((((((((((((((((((((`user_vm`
+    (((((((((((((((((((((((((((((((((((`user_vm`
         JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
             AND ISNULL(`vm_instance`.`removed`))))
         JOIN `account` ON ((`vm_instance`.`account_id` = `account`.`id`)))
@@ -528,26 +668,27 @@ FROM
         LEFT JOIN `storage_pool` ON ((`volumes`.`pool_id` = `storage_pool`.`id`)))
         LEFT JOIN `security_group_vm_map` ON ((`vm_instance`.`id` = `security_group_vm_map`.`instance_id`)))
         LEFT JOIN `security_group` ON ((`security_group_vm_map`.`security_group_id` = `security_group`.`id`)))
+        LEFT JOIN `user_data` ON ((`user_data`.`id` = `user_vm`.`user_data_id`)))
         LEFT JOIN `nics` ON (((`vm_instance`.`id` = `nics`.`instance_id`)
-        AND ISNULL(`nics`.`removed`))))
+            AND ISNULL(`nics`.`removed`))))
         LEFT JOIN `networks` ON ((`nics`.`network_id` = `networks`.`id`)))
         LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
-        AND ISNULL(`vpc`.`removed`))))
+            AND ISNULL(`vpc`.`removed`))))
         LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
         LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
-        AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
+            AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)
-        AND (`resource_tags`.`resource_type` = 'UserVm'))))
+            AND (`resource_tags`.`resource_type` = 'UserVm'))))
         LEFT JOIN `async_job` ON (((`async_job`.`instance_id` = `vm_instance`.`id`)
-        AND (`async_job`.`instance_type` = 'VirtualMachine')
-        AND (`async_job`.`job_status` = 0))))
+            AND (`async_job`.`instance_type` = 'VirtualMachine')
+            AND (`async_job`.`job_status` = 0))))
         LEFT JOIN `affinity_group_vm_map` ON ((`vm_instance`.`id` = `affinity_group_vm_map`.`instance_id`)))
         LEFT JOIN `affinity_group` ON ((`affinity_group_vm_map`.`affinity_group_id` = `affinity_group`.`id`)))
         LEFT JOIN `autoscale_vmgroup_vm_map` ON ((`autoscale_vmgroup_vm_map`.`instance_id` = `vm_instance`.`id`)))
         LEFT JOIN `autoscale_vmgroups` ON ((`autoscale_vmgroup_vm_map`.`vmgroup_id` = `autoscale_vmgroups`.`id`)))
         LEFT JOIN `user_vm_details` `custom_cpu` ON (((`custom_cpu`.`vm_id` = `vm_instance`.`id`)
-        AND (`custom_cpu`.`name` = 'CpuNumber'))))
+            AND (`custom_cpu`.`name` = 'CpuNumber'))))
         LEFT JOIN `user_vm_details` `custom_speed` ON (((`custom_speed`.`vm_id` = `vm_instance`.`id`)
-        AND (`custom_speed`.`name` = 'CpuSpeed'))))
+            AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));

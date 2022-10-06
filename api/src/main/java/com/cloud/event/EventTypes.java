@@ -101,6 +101,8 @@ public class EventTypes {
     public static final String EVENT_VM_DYNAMIC_SCALE = "VM.DYNAMIC.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
+
+    public static final String EVENT_VM_RESETUSERDATA = "VM.RESETUSERDATA";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
@@ -234,6 +236,9 @@ public class EventTypes {
 
     //registering SSH keypair events
     public static final String EVENT_REGISTER_SSH_KEYPAIR = "REGISTER.SSH.KEYPAIR";
+
+    //registering userdata events
+    public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";

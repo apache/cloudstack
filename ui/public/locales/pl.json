@@ -1381,6 +1381,7 @@
 "message.desc.primary.storage": "Each cluster must contain one or more primary storage servers, and we will add the first one now. Primary storage contains the disk volumes for all the VMs running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.",
 "message.desc.reset.ssh.key.pair": "Please specify a ssh key pair that you would like to add to this VM. Please note the root password will be changed by this operation if password is enabled.",
 "message.desc.secondary.storage": "Each zone must have at least one NFS or secondary storage server, and we will add the first one now. Secondary storage stores VM templates, ISO images, and VM disk volume snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.",
+"message.desc.reset.userdata": "Please select a userdata that you would like to add to this VM.",
 "message.desc.zone": "A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.",
 "message.detach.disk": "Are you sure you want to detach this disk?",
 "message.detach.iso.confirm": "Please confirm that you want to detach the ISO from this virtual instance.",

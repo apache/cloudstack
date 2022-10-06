@@ -1728,22 +1728,22 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
                         vmHostName, diskOfferingId, dataDiskSize, null,
-                    hypervisorType, HTTPMethod.GET, userData, sshKeyPairs, null,
-                    null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                    null, true, overrideDiskOfferingId);
+                        hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                        null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
+                        null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
-                        owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
-                        hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
-                        null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                        null, true, overrideDiskOfferingId, null);
+                            owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
+                            hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                            null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
+                            null, true, overrideDiskOfferingId, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
                             diskOfferingId, dataDiskSize, null,
-                        hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
-                        addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
-                        null, true, null, overrideDiskOfferingId);
+                            hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                            null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
+                            null, true, null, overrideDiskOfferingId);
                 }
             }
 

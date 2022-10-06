@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -90,6 +91,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private UserDataDao userDataDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -290,6 +293,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setChildTemplates(childTemplatesSet);
         }
 
+        if (template.getUserDataId() != null) {
+            templateResponse.setUserDataId(template.getUserDataUUid());
+            templateResponse.setUserDataName(template.getUserDataName());
+            templateResponse.setUserDataParams(template.getUserDataParams());
+            templateResponse.setUserDataPolicy(template.getUserDataPolicy());
+        }
         templateResponse.setObjectName("template");
         return templateResponse;
     }
@@ -336,6 +345,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             Map<String, String> details = new HashMap<>();
             details.put(result.getDetailName(), result.getDetailValue());
             response.setDetails(details);
+        }
+
+        if (result.getUserDataId() != null) {
+            response.setUserDataId(result.getUserDataUUid());
+            response.setUserDataName(result.getUserDataName());
+            response.setUserDataParams(result.getUserDataParams());
+            response.setUserDataPolicy(result.getUserDataPolicy());
         }
 
         // update tag information
@@ -449,6 +465,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         Long isoSize = iso.getSize();
         if (isoSize > 0) {
             isoResponse.setSize(isoSize);
+        }
+
+        if (iso.getUserDataId() != null) {
+            isoResponse.setUserDataId(iso.getUserDataUUid());
+            isoResponse.setUserDataName(iso.getUserDataName());
+            isoResponse.setUserDataParams(iso.getUserDataParams());
+            isoResponse.setUserDataPolicy(iso.getUserDataPolicy());
         }
 
         // update tag information
