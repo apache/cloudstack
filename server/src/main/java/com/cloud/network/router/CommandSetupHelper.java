@@ -26,6 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -150,6 +152,8 @@ public class CommandSetupHelper {
     private EntityManager _entityMgr;
 
     @Inject
+    private DomainDao domainDao;
+    @Inject
     private NicDao _nicDao;
     @Inject
     private NetworkDao _networkDao;
@@ -210,11 +214,18 @@ public class CommandSetupHelper {
 
             Host host = _hostDao.findById(vm.getHostId());
             String destHostname = VirtualMachineManager.getHypervisorHostname(host != null ? host.getName() : "");
-            cmds.addCommand(
-                    "vmdata",
-                    generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
-                            staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
-                            vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId(), destHostname));
+            VmDataCommand vmDataCommand = generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), vm.getUserDataDetails(), serviceOffering, zoneName,
+                    staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
+                    vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId(), destHostname);
+
+            Domain domain = domainDao.findById(vm.getDomainId());
+            if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
+                s_logger.debug("Adding domain info to cloud metadata");
+                vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_FILE, domain.getName());
+                vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_ID_FILE, domain.getUuid());
+            }
+
+            cmds.addCommand("vmdata", vmDataCommand);
         }
     }
 
@@ -1174,9 +1185,9 @@ public class CommandSetupHelper {
         }
     }
 
-    private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
-            final String zoneName, final String publicIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
-            final long guestNetworkId, String hostname) {
+    private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, String userDataDetails, final String serviceOffering,
+                                                final String zoneName, final String publicIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
+                                                final long guestNetworkId, String hostname) {
         final VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkModel.getExecuteInSeqNtwkElmtCmd());
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
@@ -1191,6 +1202,8 @@ public class CommandSetupHelper {
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
         cmd.addVmData("metadata", "local-ipv4", vmPrivateIpAddress);
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
+
+        addUserDataDetailsToCommand(cmd, userDataDetails);
 
         Network network = _networkDao.findById(guestNetworkId);
         if (dcVo.getNetworkType() == NetworkType.Basic || network.getGuestType() == Network.GuestType.Shared) {
@@ -1224,6 +1237,20 @@ public class CommandSetupHelper {
 
         cmd.addVmData("metadata", "hypervisor-host-name", hostname);
         return cmd;
+    }
+
+    protected void addUserDataDetailsToCommand(VmDataCommand cmd, String userDataDetails) {
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                String key = entry[0].trim();
+                String value = entry[1].trim();
+                cmd.addVmData("metadata", key, value);
+            }
+        }
     }
 
     private NicVO findGatewayIp(final long userVmId) {

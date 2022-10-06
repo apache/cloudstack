@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
 
 import junit.framework.TestCase;
 
@@ -30,6 +31,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -216,6 +218,24 @@ public class LibvirtVMDefTest extends TestCase {
                              "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
 
         assertEquals(xmlDef, expectedXml);
+    }
+
+    @Test
+    public void testDiskDefWithEncryption() {
+        String passphraseUuid = UUID.randomUUID().toString();
+        DiskDef disk = new DiskDef();
+        DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(passphraseUuid, QemuObject.EncryptFormat.LUKS);
+        disk.defBlockBasedDisk("disk1", 1, DiskDef.DiskBus.VIRTIO);
+        disk.setLibvirtDiskEncryptDetails(encryptDetails);
+        String expectedXML = "<disk  device='disk' type='block'>\n" +
+            "<driver name='qemu' type='raw' cache='none' />\n" +
+            "<source dev='disk1'/>\n" +
+            "<target dev='vdb' bus='virtio'/>\n" +
+            "<encryption format='luks'>\n" +
+            "<secret type='passphrase' uuid='" + passphraseUuid + "' />\n" +
+            "</encryption>\n" +
+            "</disk>\n";
+        assertEquals(disk.toString(), expectedXML);
     }
 
     @Test

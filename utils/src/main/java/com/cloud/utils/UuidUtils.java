@@ -24,13 +24,14 @@ import org.apache.xerces.impl.xpath.regex.RegularExpression;
 
 public class UuidUtils {
 
-    public final static String first(String uuid) {
+    private static final RegularExpression uuidRegex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
+
+    public static String first(String uuid) {
         return uuid.substring(0, uuid.indexOf('-'));
     }
 
     public static boolean validateUUID(String uuid) {
-        RegularExpression regex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
-        return regex.matches(uuid);
+        return uuidRegex.matches(uuid);
     }
 
     /**
@@ -52,5 +53,9 @@ public class UuidUtils {
             throw new CloudRuntimeException("Error generating UUID");
         }
         return uuid;
+    }
+
+    public static RegularExpression getUuidRegex() {
+        return uuidRegex;
     }
 }

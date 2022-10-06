@@ -254,6 +254,46 @@
           </a-select>
         </a-form-item>
         <a-row :gutter="12">
+          <a-col :md="24" :lg="12">
+            <a-form-item
+              name="userdataid"
+              ref="userdataid"
+              :label="$t('label.userdata')">
+              <a-select
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
+                v-model:value="userdataid"
+                :placeholder="linkUserDataParams.userdataid.description"
+                :loading="userdata.loading">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id">
+                  {{ opt.name || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="userdatapolicy" name="userdatapolicy">
+              <template #label>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+              </template>
+              <a-select
+                v-model:value="userdatapolicy"
+                :placeholder="linkUserDataParams.userdatapolicy.description"
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id">
+                  {{ opt.id || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
           <a-col :md="24" :lg="24">
             <a-form-item ref="groupenabled" name="groupenabled">
               <a-checkbox-group
@@ -318,6 +358,7 @@ import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -333,7 +374,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    TooltipLabel
   },
   data () {
     return {
@@ -349,6 +391,10 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      userdata: {},
+      userdataid: null,
+      userdatapolicy: null,
+      userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
       hyperXenServerShow: false,
@@ -366,6 +412,7 @@ export default {
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('registerTemplate')
+    this.linkUserDataParams = this.$getApiParams('linkUserDataToTemplate')
   },
   created () {
     this.initForm()
@@ -405,6 +452,8 @@ export default {
     fetchData () {
       this.fetchZone()
       this.fetchOsTypes()
+      this.fetchUserData()
+      this.fetchUserdataPolicy()
       if (Object.prototype.hasOwnProperty.call(store.getters.apis, 'listConfigurations')) {
         if (this.allowed && this.hyperXenServerShow) {
           this.fetchXenServerProvider()
@@ -518,6 +567,20 @@ export default {
         this.defaultOsId = this.osTypes.opts[1].id
       }).finally(() => {
         this.osTypes.loading = false
+      })
+    },
+    fetchUserData () {
+      const params = {}
+      params.listAll = true
+
+      this.userdata.opts = []
+      this.userdata.loading = true
+
+      api('listUserData', params).then(json => {
+        const listUserdata = json.listuserdataresponse.userdata
+        this.userdata.opts = listUserdata
+      }).finally(() => {
+        this.userdata.loading = false
       })
     },
     fetchXenServerProvider () {
@@ -712,6 +775,23 @@ export default {
       }
       this.format.opts = format
     },
+    fetchUserdataPolicy () {
+      const userdataPolicy = []
+      userdataPolicy.push({
+        id: 'allowoverride',
+        description: 'allowoverride'
+      })
+      userdataPolicy.push({
+        id: 'append',
+        description: 'append'
+      })
+      userdataPolicy.push({
+        id: 'denyoverride',
+        description: 'denyoverride'
+      })
+      this.userdatapolicylist.opts = userdataPolicy
+    },
+
     handlerSelectZone (value) {
       if (!Array.isArray(value)) {
         value = [value]
@@ -830,6 +910,9 @@ export default {
         if (this.currentForm === 'Create') {
           this.loading = true
           api('registerTemplate', params).then(json => {
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
+            }
             this.$notification.success({
               message: this.$t('label.register.template'),
               description: `${this.$t('message.success.register.template')} ${params.name}`
@@ -853,6 +936,9 @@ export default {
           api('getUploadParamsForTemplate', params).then(json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
             this.handleUpload()
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.postuploadtemplateresponse.template[0].id)
+            }
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
@@ -880,6 +966,22 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    linkUserdataToTemplate (userdataid, templateid, userdatapolicy) {
+      this.loading = true
+      const params = {}
+      params.userdataid = userdataid
+      params.templateid = templateid
+      if (userdatapolicy) {
+        params.userdatapolicy = userdatapolicy
+      }
+      api('linkUserDataToTemplate', params).then(json => {
+        this.closeAction()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
     },
     resetSelect (arrSelectReset) {
       arrSelectReset.forEach(name => {

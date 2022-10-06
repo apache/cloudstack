@@ -36,10 +36,12 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.user.ResourceReservation;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -71,7 +73,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -114,51 +115,53 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
     @Inject
-    private DomainDao _domainDao;
-    @Inject
     private AccountManager _accountMgr;
     @Inject
     private AlertManager _alertMgr;
     @Inject
-    private ResourceCountDao _resourceCountDao;
-    @Inject
-    private ResourceLimitDao _resourceLimitDao;
-    @Inject
-    private UserVmDao _userVmDao;
-    @Inject
     private AccountDao _accountDao;
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
-    protected VMTemplateDao _vmTemplateDao;
-    @Inject
-    private VolumeDao _volumeDao;
-    @Inject
-    private IPAddressDao _ipAddressDao;
-    @Inject
-    private VMInstanceDao _vmDao;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
+    private DomainDao _domainDao;
+    @Inject
     private EntityManager _entityMgr;
+    @Inject
+    private IPAddressDao _ipAddressDao;
+    @Inject
+    private NetworkDao _networkDao;
     @Inject
     private ProjectDao _projectDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
     @Inject
-    private NetworkDao _networkDao;
+    private ResourceCountDao _resourceCountDao;
     @Inject
-    private VpcDao _vpcDao;
+    private ResourceLimitDao _resourceLimitDao;
     @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
+    private ResourceLimitService resourceLimitService;
     @Inject
-    private TemplateDataStoreDao _vmTemplateStoreDao;
+    private ReservationDao reservationDao;
     @Inject
-    private VlanDao _vlanDao;
+    protected SnapshotDao _snapshotDao;
     @Inject
     private SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
+    private TemplateDataStoreDao _vmTemplateStoreDao;
+    @Inject
+    private UserVmDao _userVmDao;
+    @Inject
     private UserVmJoinDao _userVmJoinDao;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    protected VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private VpcDao _vpcDao;
+    @Inject
+    private VlanDao _vlanDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -428,7 +431,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             if (domainId != Domain.ROOT_DOMAIN) {
                 long domainResourceLimit = findCorrectResourceLimitForDomain(domain, type);
                 long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
-                long requestedDomainResourceCount = currentDomainResourceCount + numResources;
+                long currentResourceReservation = reservationDao.getDomainReservation(domainId, type);
+                long requestedDomainResourceCount = currentDomainResourceCount + currentResourceReservation + numResources;
                 String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + toHumanReadableSize(domainResourceLimit)
                         + ", Current Domain Resource Amount = " + toHumanReadableSize(currentDomainResourceCount) + ", Requested Resource Amount = " + toHumanReadableSize(numResources) + ".";
 
@@ -451,7 +455,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         // Check account limits
         long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
-        long requestedResourceCount = currentResourceCount + numResources;
+        long currentResourceReservation = reservationDao.getAccountReservation(account.getId(), type);
+        long requestedResourceCount = currentResourceCount + currentResourceReservation + numResources;
 
         String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
         String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
@@ -1060,7 +1065,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         // 1. If its null assume displayResource = 1
         // 2. If its not null then send true if displayResource = 1
-        return (displayResource == null) || (displayResource != null && displayResource);
+        return ! Boolean.FALSE.equals(displayResource);
     }
 
     @Override
@@ -1104,6 +1109,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
+    public ResourceReservation getReservation(final Account account, final Boolean displayResource, final Resource.ResourceType type, final Long delta) throws ResourceAllocationException {
+        if (! Boolean.FALSE.equals(displayResource)) {
+            return new CheckedReservation(account, type, delta, reservationDao, resourceLimitService);
+        }
+        throw new CloudRuntimeException("no reservation needed for resources that display as false");
+    }
+
+    @Override
     public String getConfigComponentName() {
         return ResourceLimitManagerImpl.class.getName();
     }
@@ -1124,7 +1137,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
             List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
 
-            for (ResourceType type : ResourceCount.ResourceType.values()) {
+            for (ResourceType type : ResourceType.values()) {
                 if (type.supportsOwner(ResourceOwnerType.Domain)) {
                     recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
                     for (Domain domain : domains) {

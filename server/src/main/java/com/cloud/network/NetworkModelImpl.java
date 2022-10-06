@@ -34,6 +34,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -2547,7 +2549,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    public List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                          String vmName, String vmHostName, long vmId, String vmUuid,
                                          String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
 
@@ -2555,6 +2557,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final String zoneName = dcVo.getName();
 
         IPAddressVO publicIp = _ipAddressDao.findByAssociatedVmId(vmId);
+        VirtualMachine vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("Cannot generate VM instance data, no VM exists by ID: %d", vmId));
+        }
 
         final List<String[]> vmData = new ArrayList<String[]>();
 
@@ -2565,6 +2571,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
+
+        addUserDataDetailsToCommand(vmData, userDataDetails);
 
         String publicIpAddress = guestIpAddress;
         String publicHostName = StringUtils.unicodeEscape(vmHostName);
@@ -2623,7 +2631,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             vmData.add(new String[]{PASSWORD_DIR, PASSWORD_FILE, password});
         }
         vmData.add(new String[]{METATDATA_DIR, HYPERVISOR_HOST_NAME_FILE, hostname});
+
+        Domain domain = _domainDao.findById(vm.getDomainId());
+        if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
+            s_logger.debug("Adding domain info to cloud metadata");
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_FILE, domain.getName()});
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_ID_FILE, domain.getUuid()});
+        }
+
         return vmData;
+    }
+
+    protected void addUserDataDetailsToCommand(List<String[]> vmData, String userDataDetails) {
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                String key = entry[0].trim();
+                String value = entry[1].trim();
+                vmData.add(new String[]{METATDATA_DIR, key, StringUtils.unicodeEscape(value)});
+            }
+        }
     }
 
     @Override

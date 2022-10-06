@@ -16,6 +16,26 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.StringJoiner;
+
+import javax.annotation.Nonnull;
+
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
+
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
@@ -32,25 +52,6 @@ import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
 import com.linbit.linstor.api.model.VolumeDefinition;
-
-import javax.annotation.Nonnull;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.StringJoiner;
-
-import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType=Storage.StoragePoolType.Linstor)
 public class LinstorStorageAdaptor implements StorageAdaptor {
@@ -197,7 +198,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format,
-                                              Storage.ProvisioningType provisioningType, long size)
+                                              Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
         final String rscName = getLinstorRscName(name);
         LinstorStoragePool lpool = (LinstorStoragePool) pool;
@@ -377,7 +378,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         Storage.ProvisioningType provisioningType,
         long size,
         KVMStoragePool destPool,
-        int timeout)
+        int timeout,
+        byte[] passphrase)
     {
         s_logger.info("Linstor: createDiskFromTemplate");
         return copyPhysicalDisk(template, name, destPool, timeout);
@@ -401,23 +403,28 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout)
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
+    }
+
+    @Override
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
         s_logger.debug("Linstor: copyPhysicalDisk");
         final QemuImg.PhysicalDiskFormat sourceFormat = disk.getFormat();
         final String sourcePath = disk.getPath();
-        final QemuImg qemu = new QemuImg(timeout);
 
         final QemuImgFile srcFile = new QemuImgFile(sourcePath, sourceFormat);
 
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
-            name, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.FAT, disk.getVirtualSize());
+            name, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.FAT, disk.getVirtualSize(), null);
 
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
         try {
+            final QemuImg qemu = new QemuImg(timeout);
             qemu.convert(srcFile, destFile);
         } catch (QemuImgException | LibvirtException e) {
             s_logger.error(e);
@@ -452,7 +459,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         QemuImg.PhysicalDiskFormat format,
         long size,
         KVMStoragePool destPool,
-        int timeout)
+        int timeout, byte[] passphrase)
     {
         s_logger.debug("Linstor: createDiskFromTemplateBacking");
         return null;

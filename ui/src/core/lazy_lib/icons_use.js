@@ -157,7 +157,8 @@ import {
   UserOutlined,
   UploadOutlined,
   WarningOutlined,
-  WifiOutlined
+  WifiOutlined,
+  SolutionOutlined
 } from '@ant-design/icons-vue'
 import renderIcon from '@/utils/renderIcon'
 
@@ -306,5 +307,6 @@ export default {
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)
+    app.component('SolutionOutlined', SolutionOutlined)
   }
 }

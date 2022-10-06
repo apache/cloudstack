@@ -386,35 +386,35 @@ public class KVMStoragePoolManager {
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, Storage.ProvisioningType provisioningType,
-                                                    KVMStoragePool destPool, int timeout) {
-        return createDiskFromTemplate(template, name, provisioningType, destPool, template.getSize(), timeout);
+                                                    KVMStoragePool destPool, int timeout, byte[] passphrase) {
+        return createDiskFromTemplate(template, name, provisioningType, destPool, template.getSize(), timeout, passphrase);
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, Storage.ProvisioningType provisioningType,
-                                                    KVMStoragePool destPool, long size, int timeout) {
+                                                    KVMStoragePool destPool, long size, int timeout, byte[] passphrase) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
 
         // LibvirtStorageAdaptor-specific statement
         if (destPool.getType() == StoragePoolType.RBD) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.RAW, provisioningType,
-                    size, destPool, timeout);
+                    size, destPool, timeout, passphrase);
         } else if (destPool.getType() == StoragePoolType.CLVM) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.RAW, provisioningType,
-                    size, destPool, timeout);
+                    size, destPool, timeout, passphrase);
         } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.DIR, provisioningType,
-                    size, destPool, timeout);
+                    size, destPool, timeout, passphrase);
         } else if (destPool.getType() == StoragePoolType.PowerFlex || destPool.getType() == StoragePoolType.Linstor) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.RAW, provisioningType,
-                    size, destPool, timeout);
+                    size, destPool, timeout, passphrase);
         } else {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.QCOW2, provisioningType,
-                    size, destPool, timeout);
+                    size, destPool, timeout, passphrase);
         }
     }
 
@@ -425,13 +425,18 @@ public class KVMStoragePoolManager {
 
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout);
+        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
+    }
+
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] dstPassphrase, Storage.ProvisioningType provisioningType) {
+        StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
+        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout, srcPassphrase, dstPassphrase, provisioningType);
     }
 
     public KVMPhysicalDisk createDiskWithTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size,
-                                                         KVMStoragePool destPool, int timeout) {
+                                                         KVMStoragePool destPool, int timeout, byte[] passphrase) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.createDiskFromTemplateBacking(template, name, format, size, destPool, timeout);
+        return adaptor.createDiskFromTemplateBacking(template, name, format, size, destPool, timeout, passphrase);
     }
 
     public KVMPhysicalDisk createPhysicalDiskFromDirectDownloadTemplate(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {

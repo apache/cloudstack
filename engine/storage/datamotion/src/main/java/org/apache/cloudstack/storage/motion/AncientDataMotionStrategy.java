@@ -80,6 +80,9 @@ import com.cloud.vm.VirtualMachineManager;
 @Component
 public class AncientDataMotionStrategy implements DataMotionStrategy {
     private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
+    private static final String NO_REMOTE_ENDPOINT_SSVM = "No remote endpoint to send command, check if host or ssvm is down?";
+    private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
+
     @Inject
     EndPointSelector selector;
     @Inject
@@ -170,9 +173,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
-                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                s_logger.error(errMsg);
-                answer = new Answer(cmd, false, errMsg);
+                s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
             } else {
                 answer = ep.sendMessage(cmd);
             }
@@ -294,9 +296,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
             Answer answer = null;
             if (ep == null) {
-                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                s_logger.error(errMsg);
-                answer = new Answer(cmd, false, errMsg);
+                s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
             } else {
                 answer = ep.sendMessage(cmd);
             }
@@ -316,12 +317,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     protected Answer cloneVolume(DataObject template, DataObject volume) {
         CopyCommand cmd = new CopyCommand(template.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volume.getTO()), 0, VirtualMachineManager.ExecuteInSequence.value());
         try {
-            EndPoint ep = selector.select(volume.getDataStore());
+            EndPoint ep = selector.select(volume, anyVolumeRequiresEncryption(volume));
             Answer answer = null;
             if (ep == null) {
-                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                s_logger.error(errMsg);
-                answer = new Answer(cmd, false, errMsg);
+                s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
             } else {
                 answer = ep.sendMessage(cmd);
             }
@@ -351,14 +351,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (srcData instanceof VolumeInfo && ((VolumeInfo)srcData).isDirectDownload()) {
             bypassSecondaryStorage = true;
         }
+        boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         if (cacheStore == null) {
             if (bypassSecondaryStorage) {
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
-                EndPoint ep = selector.select(srcData, destData);
+                EndPoint ep = selector.select(srcData, destData, encryptionRequired);
                 Answer answer = null;
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                     s_logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
@@ -395,9 +396,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 objOnImageStore.processEvent(Event.CopyingRequested);
 
                 CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
-                EndPoint ep = selector.select(objOnImageStore, destData);
+                EndPoint ep = selector.select(objOnImageStore, destData, encryptionRequired);
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                     s_logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
@@ -427,10 +428,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         } else {
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
             CopyCommand cmd = new CopyCommand(cacheData.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
-            EndPoint ep = selector.select(cacheData, destData);
+            EndPoint ep = selector.select(cacheData, destData, encryptionRequired);
             Answer answer = null;
             if (ep == null) {
-                String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
@@ -457,10 +458,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
 
+        boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
+
         EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);
         Answer answer = null;
         if (ep == null) {
-            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
             s_logger.error(errMsg);
             answer = new Answer(command, false, errMsg);
         } else {
@@ -556,9 +559,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
         Answer answer = null;
         if (ep == null) {
-            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
-            answer = new Answer(cmd, false, errMsg);
+            s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+            answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
         } else {
             answer = ep.sendMessage(cmd);
         }
@@ -584,6 +586,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
         options.put(BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(BackupSnapshotAfterTakingSnapshot.value()));
+        boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
+
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
@@ -593,11 +597,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
                 cmd.setOptions(options);
-                EndPoint ep = selector.select(srcData, destData);
+                EndPoint ep = selector.select(srcData, destData, encryptionRequired);
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                    s_logger.error(errMsg);
-                    answer = new Answer(cmd, false, errMsg);
+                    s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                    answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
                 } else {
                     answer = ep.sendMessage(cmd);
                 }
@@ -605,11 +608,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO());
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setOptions(options);
-                EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT);
+                EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT, encryptionRequired);
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                    s_logger.error(errMsg);
-                    answer = new Answer(cmd, false, errMsg);
+                    s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                    answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
                 } else {
                     answer = ep.sendMessage(cmd);
                 }
@@ -635,5 +637,20 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         CopyCommandResult result = new CopyCommandResult(null, null);
         result.setResult("Unsupported operation requested for copying data.");
         callback.complete(result);
+    }
+
+    /**
+     * Does any object require encryption support?
+     */
+    private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
+        for (DataObject o : objects) {
+            // this fails code smell for returning true twice, but it is more readable than combining all tests into one statement
+            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
+                return true;
+            } else if (o instanceof SnapshotInfo && ((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null) {
+                return true;
+            }
+        }
+        return false;
     }
 }
