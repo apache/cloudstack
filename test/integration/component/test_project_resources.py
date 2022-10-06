@@ -662,8 +662,6 @@ class TestTemplates(cloudstackTestCase):
                             type='ROOT',
                             listall=True
                             )
-            volumes = [volume for volume in volumes if volume.vmtype == "User"]
-
             self.assertEqual(
                         isinstance(volumes, list),
                         True,
@@ -729,8 +727,6 @@ class TestTemplates(cloudstackTestCase):
                             type='ROOT',
                             listall=True
                             )
-            volumes = [volume for volume in volumes if volume.vmtype == "User"]
-
             self.assertEqual(
                         isinstance(volumes, list),
                         True,
@@ -902,8 +898,6 @@ class TestSnapshots(cloudstackTestCase):
                             type='ROOT',
                             listall=True
                             )
-        volumes = [volume for volume in volumes if volume.vmtype == "User"]
-
         self.assertEqual(
                         isinstance(volumes, list),
                         True,
