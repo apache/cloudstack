@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.security.CertificateHelper;
+import com.cloud.user.UserData;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -156,6 +158,7 @@ import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
@@ -370,7 +373,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.security.CertificateHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
@@ -4569,6 +4571,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
         response.setHasAnnotation(annotationDao.hasAnnotations(sshkeyPair.getUuid(), AnnotationService.EntityType.SSH_KEYPAIR.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        return response;
+    }
+
+    @Override
+    public UserDataResponse createUserDataResponse(UserData userData) {
+        UserDataResponse response = new UserDataResponse(userData.getUuid(), userData.getName(), userData.getUserData(), userData.getParams());
+        Account account = ApiDBUtils.findAccountById(userData.getAccountId());
+        response.setAccountId(account.getUuid());
+        response.setAccountName(account.getAccountName());
+        Domain domain = ApiDBUtils.findDomainById(userData.getDomainId());
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
+        response.setHasAnnotation(annotationDao.hasAnnotations(userData.getUuid(), AnnotationService.EntityType.USER_DATA.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         return response;
     }
