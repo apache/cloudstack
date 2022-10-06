@@ -104,6 +104,46 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12">
+            <a-form-item
+              name="userdataid"
+              ref="userdataid"
+              :label="$t('label.userdata')">
+              <a-select
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
+                v-model:value="userdataid"
+                :placeholder="linkUserDataParams.userdataid.description"
+                :loading="userdata.loading">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id">
+                  {{ opt.name || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="userdatapolicy" name="userdatapolicy">
+              <template #label>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+              </template>
+              <a-select
+                v-model:value="userdatapolicy"
+                :placeholder="linkUserDataParams.userdatapolicy.description"
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id">
+                  {{ opt.id || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
           <template #label>
             <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
@@ -170,12 +210,17 @@ export default {
       keyboardType: {},
       osTypes: {},
       loading: false,
-      selectedTemplateType: ''
+      selectedTemplateType: '',
+      userdata: {},
+      userdataid: null,
+      userdatapolicy: null,
+      userdatapolicylist: {}
     }
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateTemplate')
     this.isAdmin = ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    this.linkUserDataParams = this.$getApiParams('linkUserDataToTemplate')
   },
   created () {
     this.initForm()
@@ -198,14 +243,24 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
       if (this.isAdmin) {
         resourceFields.push('templatetype')
       }
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]
         if (fieldValue) {
-          this.form[field] = fieldValue
+          switch (field) {
+            case 'userdataid':
+              this.userdataid = fieldValue
+              break
+            case 'userdatapolicy':
+              this.userdatapolicy = fieldValue
+              break
+            default:
+              this.form[field] = fieldValue
+              break
+          }
         }
       }
       const resourceDetailsFields = []
@@ -226,6 +281,8 @@ export default {
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
       this.fetchNicAdapterTypes()
       this.fetchKeyboardTypes()
+      this.fetchUserdata()
+      this.fetchUserdataPolicy()
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null && obj[key] !== undefined && obj[key] !== ''
@@ -346,6 +403,53 @@ export default {
 
       this.keyboardType.opts = keyboardType
     },
+    fetchUserdataPolicy () {
+      const userdataPolicy = []
+      userdataPolicy.push({
+        id: '',
+        description: ''
+      })
+      userdataPolicy.push({
+        id: 'allowoverride',
+        description: 'allowoverride'
+      })
+      userdataPolicy.push({
+        id: 'append',
+        description: 'append'
+      })
+      userdataPolicy.push({
+        id: 'denyoverride',
+        description: 'denyoverride'
+      })
+      this.userdatapolicylist.opts = userdataPolicy
+    },
+    fetchUserdata () {
+      const params = {}
+      params.listAll = true
+
+      this.userdata.opts = []
+      this.userdata.loading = true
+
+      api('listUserData', params).then(json => {
+        const userdataIdAndName = []
+        const userdataOpts = json.listuserdataresponse.userdata
+        userdataIdAndName.push({
+          id: '',
+          name: ''
+        })
+
+        Object.values(userdataOpts).forEach(userdata => {
+          userdataIdAndName.push({
+            id: userdata.id,
+            name: userdata.name
+          })
+        })
+
+        this.userdata.opts = userdataIdAndName
+      }).finally(() => {
+        this.userdata.loading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -365,6 +469,9 @@ export default {
           params[key] = values[key]
         }
         api('updateTemplate', params).then(json => {
+          if (this.userdataid !== null) {
+            this.linkUserdataToTemplate(this.userdataid, json.updatetemplateresponse.template.id, this.userdatapolicy)
+          }
           this.$message.success(`${this.$t('message.success.update.template')}: ${this.resource.name}`)
           this.$emit('refresh-data')
           this.closeAction()
@@ -379,6 +486,24 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    linkUserdataToTemplate (userdataid, templateid, userdatapolicy) {
+      this.loading = true
+      const params = {}
+      if (userdataid && userdataid.length > 0) {
+        params.userdataid = userdataid
+      }
+      params.templateid = templateid
+      if (userdatapolicy) {
+        params.userdatapolicy = userdatapolicy
+      }
+      api('linkUserDataToTemplate', params).then(json => {
+        this.closeAction()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
     }
   }
 }

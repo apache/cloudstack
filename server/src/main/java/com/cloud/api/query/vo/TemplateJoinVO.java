@@ -236,6 +236,21 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "deploy_as_is")
     private boolean deployAsIs;
 
+    @Column(name = "user_data_id")
+    private Long userDataId;
+
+    @Column(name = "user_data_uuid")
+    private String userDataUuid;
+
+    @Column(name = "user_data_name")
+    private String userDataName;
+
+    @Column(name = "user_data_policy")
+    private String userDataPolicy;
+
+    @Column(name = "user_data_params")
+    private String userDataParams;
+
     public TemplateJoinVO() {
     }
 
@@ -507,4 +522,23 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         return parentTemplateUuid;
     }
 
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public String getUserDataUUid() {
+        return userDataUuid;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public String getUserDataParams() {
+        return userDataParams;
+    }
 }

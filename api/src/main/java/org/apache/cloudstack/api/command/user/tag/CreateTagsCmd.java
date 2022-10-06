@@ -106,17 +106,17 @@ public class CreateTagsCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload resource icon");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create resource tag(s)");
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_RESOURCE_ICON_UPLOAD;
+        return EventTypes.EVENT_TAGS_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Uploading resource icon";
+        return "Creating resource tag(s)";
     }
 }

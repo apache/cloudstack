@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.server;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -43,6 +45,11 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PatchSystemVmAnswer;
@@ -68,6 +75,7 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
@@ -506,6 +514,10 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -518,6 +530,7 @@ import org.apache.cloudstack.api.command.user.vm.RemoveIpFromVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
@@ -786,6 +799,9 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
+import static com.cloud.vm.UserVmManager.MAX_USER_DATA_LENGTH_BYTES;
+
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -795,6 +811,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
+
+    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
+    private static final int NUM_OF_2K_BLOCKS = 512;
+    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
 
     @Inject
     public AccountManager _accountMgr;
@@ -829,7 +849,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private UserDao _userDao;
     @Inject
-    private UserVmDao _userVmDao;
+    protected UserVmDao _userVmDao;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
@@ -927,8 +947,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private VpcDao _vpcDao;
     @Inject
-    private AnnotationDao annotationDao;
-    @Inject
     private DomainVlanMapDao _domainVlanMapDao;
     @Inject
     private NicDao nicDao;
@@ -936,6 +954,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     DomainRouterDao routerDao;
     @Inject
     public UUIDManager uuidMgr;
+    @Inject
+    protected UserDataDao userDataDao;
+    @Inject
+    protected VMTemplateDao templateDao;
+    @Inject
+    protected AnnotationDao annotationDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -3455,6 +3479,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveNicFromVMCmd.class);
         cmdList.add(ResetVMPasswordCmd.class);
         cmdList.add(ResetVMSSHKeyCmd.class);
+        cmdList.add(ResetVMUserDataCmd.class);
         cmdList.add(RestoreVMCmd.class);
         cmdList.add(StartVMCmd.class);
         cmdList.add(StopVMCmd.class);
@@ -3671,6 +3696,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
         cmdList.add(CreateConsoleEndpointCmd.class);
+
+        //user data APIs
+        cmdList.add(RegisterUserDataCmd.class);
+        cmdList.add(DeleteUserDataCmd.class);
+        cmdList.add(ListUserDataCmd.class);
+        cmdList.add(LinkUserDataToTemplateCmd.class);
         return cmdList;
     }
 
@@ -4329,9 +4360,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String keyword = cmd.getKeyword();
 
         final Account caller = getCaller();
-        final List<Long> permittedAccounts = new ArrayList<Long>();
+        final List<Long> permittedAccounts = new ArrayList<>();
 
-        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         final Long domainId = domainIdRecursiveListProject.first();
         final Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -4363,7 +4394,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends SSHKeyPair>, Integer>(result.first(), result.second());
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -4380,6 +4411,180 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String fingerprint = getFingerprint(publicKey);
 
         return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null, owner);
+    }
+
+    @Override
+    public boolean deleteUserData(final DeleteUserDataCmd cmd) {
+        final Account caller = getCaller();
+        final String accountName = cmd.getAccountName();
+        final Long domainId = cmd.getDomainId();
+        final Long projectId = cmd.getProjectId();
+
+        Account owner = null;
+        try {
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        } catch (InvalidParameterValueException ex) {
+            if (caller.getType() == Account.Type.ADMIN && accountName != null && domainId != null) {
+                owner = _accountDao.findAccountIncludingRemoved(accountName, domainId);
+            }
+            if (owner == null) {
+                throw ex;
+            }
+        }
+
+        final UserDataVO userData = userDataDao.findById(cmd.getId());
+        if (userData == null) {
+            final InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "A UserData with id '" + cmd.getId() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
+            final DomainVO domain = ApiDBUtils.findDomainById(owner.getDomainId());
+            String domainUuid = String.valueOf(owner.getDomainId());
+            if (domain != null) {
+                domainUuid = domain.getUuid();
+            }
+            ex.addProxyObject(domainUuid, "domainId");
+            throw ex;
+        }
+
+        List<VMTemplateVO> templatesLinkedToUserData = templateDao.findTemplatesLinkedToUserdata(userData.getId());
+        if (CollectionUtils.isNotEmpty(templatesLinkedToUserData)) {
+            throw new CloudRuntimeException(String.format("Userdata %s cannot be removed as it is linked to active template/templates", userData.getName()));
+        }
+
+        List<UserVmVO> userVMsHavingUserdata = _userVmDao.findByUserDataId(userData.getId());
+        if (CollectionUtils.isNotEmpty(userVMsHavingUserdata)) {
+            throw new CloudRuntimeException(String.format("Userdata %s cannot be removed as it is being used by some VMs", userData.getName()));
+        }
+
+        annotationDao.removeByEntityType(AnnotationService.EntityType.USER_DATA.name(), userData.getUuid());
+
+        return userDataDao.remove(userData.getId());
+    }
+
+    @Override
+    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd) {
+        final Long id = cmd.getId();
+        final String name = cmd.getName();
+        final String keyword = cmd.getKeyword();
+
+        final Account caller = getCaller();
+        final List<Long> permittedAccounts = new ArrayList<Long>();
+
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        final Long domainId = domainIdRecursiveListProject.first();
+        final Boolean isRecursive = domainIdRecursiveListProject.second();
+        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        final SearchBuilder<UserDataVO> sb = userDataDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        final Filter searchFilter = new Filter(UserDataVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        final SearchCriteria<UserDataVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (keyword != null) {
+            sc.setParameters("name",  "%" + keyword + "%");
+        }
+
+        final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);
+        return new Pair<>(result.first(), result.second());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_USER_DATA, eventDescription = "registering userdata", async = true)
+    public UserData registerUserData(final RegisterUserDataCmd cmd) {
+        final Account owner = getOwner(cmd);
+        checkForUserDataByName(cmd, owner);
+        checkForUserData(cmd, owner);
+
+        final String name = cmd.getName();
+        String userdata = cmd.getUserData();
+        final String params = cmd.getParams();
+
+        userdata = validateUserData(userdata, cmd.getHttpMethod());
+
+        return createAndSaveUserData(name, userdata, params, owner);
+    }
+
+    private String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
+        byte[] decodedUserData = null;
+        if (userData != null) {
+
+            if (userData.contains("%")) {
+                try {
+                    userData = URLDecoder.decode(userData, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
+                }
+            }
+
+            if (!Base64.isBase64(userData)) {
+                throw new InvalidParameterValueException("User data is not base64 encoded");
+            }
+            // If GET, use 4K. If POST, support up to 1M.
+            if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
+                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
+            } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
+                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
+            }
+
+            if (decodedUserData == null || decodedUserData.length < 1) {
+                throw new InvalidParameterValueException("User data is too short");
+            }
+            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
+            return Base64.encodeBase64String(decodedUserData);
+        }
+        return null;
+    }
+
+    private byte[] validateAndDecodeByHTTPmethod(String userData, int maxHTTPlength, BaseCmd.HTTPMethod httpMethod) {
+        byte[] decodedUserData = null;
+
+        if (userData.length() >= maxHTTPlength) {
+            throw new InvalidParameterValueException(String.format("User data is too long for an http %s request", httpMethod.toString()));
+        }
+        if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
+        }
+        decodedUserData = Base64.decodeBase64(userData.getBytes());
+        if (decodedUserData.length > maxHTTPlength) {
+            throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
+        }
+        return decodedUserData;
+    }
+
+    /**
+     * @param cmd
+     * @param owner
+     * @throws InvalidParameterValueException
+     */
+    private void checkForUserData(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+        final UserDataVO userData = userDataDao.findByUserData(owner.getAccountId(), owner.getDomainId(), cmd.getUserData());
+        if (userData != null) {
+            throw new InvalidParameterValueException(String.format("Userdata %s with same content already exists for this account.", userData.getName()));
+        }
+    }
+
+    /**
+     * @param cmd
+     * @param owner
+     * @throws InvalidParameterValueException
+     */
+    private void checkForUserDataByName(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+        final UserDataVO userData = userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+        if (userData != null) {
+            throw new InvalidParameterValueException(String.format("A userdata with name %s already exists for this account.", cmd.getName()));
+        }
     }
 
     /**
@@ -4441,6 +4646,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     /**
+     * @param cmd
+     * @return Account
+     */
+    protected Account getOwner(final RegisterUserDataCmd cmd) {
+        final Account caller = getCaller();
+        return  _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+    }
+
+    /**
      * @return
      */
     protected Account getCaller() {
@@ -4461,6 +4675,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _sshKeyPairDao.persist(newPair);
 
         return newPair;
+    }
+
+    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner) {
+        final UserDataVO userDataVO = new UserDataVO();
+
+        userDataVO.setAccountId(owner.getAccountId());
+        userDataVO.setDomainId(owner.getDomainId());
+        userDataVO.setName(name);
+        userDataVO.setUserData(userdata);
+        userDataVO.setParams(params);
+
+        userDataDao.persist(userDataVO);
+
+        return userDataVO;
     }
 
     @Override
