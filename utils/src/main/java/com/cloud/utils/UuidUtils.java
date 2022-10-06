@@ -30,6 +30,12 @@ public class UuidUtils {
         return uuid.substring(0, uuid.indexOf('-'));
     }
 
+    /**
+     * Checks if the parameter is a valid UUID (based on {@link UuidUtils#uuidRegex}).
+     * <br/>
+     * Example: 24abcb8f-4211-374f-a2e1-e5c0b7e88a2d -> true
+     *          24abcb8f4211374fa2e1e5c0b7e88a2dda23 -> false
+     */
     public static boolean isUuid(String uuid) {
         return uuidRegex.matches(uuid);
     }
