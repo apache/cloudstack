@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
@@ -297,13 +298,33 @@ public class ApiServlet extends HttpServlet {
 
             if (isNew && s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("new session: %s", session));
+                // 1. 2fa enabled
+                // 2. except login command with 2fa code
+                // 3. login command and 2fa is succeeded
+                s_logger.trace("Checking if two factor authentication is enabled, if enabled it will be verified");
+                UserAccount userAccount = accountMgr.getUserAccountById(userId);
+                boolean is2FAenabled = userAccount.is2faEnabled();
+                if (is2FAenabled) {
+                    if (command != null && !command.equals(ApiConstants.TWOFACTORAUTHENTICATION) ) {
+                        if (session != null) {
+                            invalidateHttpSession(session, String.format("request verification failed for %s from %s", userId, remoteAddress.getHostAddress()));
+                        }
+
+                        auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "two factor authentication is not done");
+                        final String serializedResponse =
+                                apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "two factor authentication is not done", params,
+                                        responseType);
+                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+
+                    }
+                }
             }
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
                 final String account = (String) session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
                 if (account != null) {
-                    if (invalidateHttpSesseionIfNeeded(req, resp, auditTrailSb, responseType, params, session, account)) return;
+                    if (invalidateHttpSessionIfNeeded(req, resp, auditTrailSb, responseType, params, session, account)) return;
                 } else {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("no account, this request will be validated through apikey(%s)/signature");
@@ -400,7 +421,7 @@ public class ApiServlet extends HttpServlet {
         return true;
     }
 
-    private boolean invalidateHttpSesseionIfNeeded(HttpServletRequest req, HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String account) {
+    private boolean invalidateHttpSessionIfNeeded(HttpServletRequest req, HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String account) {
         if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
             String msg = String.format("invalidating session %s for account %s", session.getId(), account);
             invalidateHttpSession(session, msg);

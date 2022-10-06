@@ -239,6 +239,8 @@ public class ApiConstants {
     public static final String IP_ADDRESSES = "ipaddresses";
     public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";
+    public static final String IS_2FA_ENABLED = "is2faenabled";
+
     public static final String IS_ASYNC = "isasync";
     public static final String IP_AVAILABLE = "ipavailable";
     public static final String IP_LIMIT = "iplimit";
@@ -1003,6 +1005,9 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
+    public static final String TWOFACTORAUTHENTICATION = "twofactorauthentication";
+    public static final String SETUPTWOFACTORAUTHENTICATION = "setup2fa";
+    public static final String TWOFACTORAUTHENTICATIONCODE = "2facode";
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";

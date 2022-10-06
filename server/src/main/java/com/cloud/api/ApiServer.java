@@ -1069,6 +1069,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.SESSIONKEY.equalsIgnoreCase(attrName)) {
                     response.setSessionKey(attrObj.toString());
                 }
+                if (ApiConstants.IS_2FA_ENABLED.equalsIgnoreCase(attrName)) {
+                    response.set2FAenabled(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1131,6 +1134,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezone", timezone);
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
+
+            session.setAttribute("2FAenabled", Boolean.toString(userAcct.is2faEnabled()));
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back

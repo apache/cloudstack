@@ -70,6 +70,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "Session key that can be passed in subsequent Query command calls", isSensitive = true)
     private String sessionKey;
 
+    @SerializedName(value = ApiConstants.IS_2FA_ENABLED)
+    @Param(description = "Is two factor authentication enabled")
+    private String is2FAenabled;
+
     public String getUsername() {
         return username;
     }
@@ -162,5 +166,13 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void setSessionKey(String sessionKey) {
         this.sessionKey = sessionKey;
+    }
+
+    public String Is2FAenabled() {
+        return is2FAenabled;
+    }
+
+    public void set2FAenabled(String is2FAenabled) {
+        this.is2FAenabled = is2FAenabled;
     }
 }

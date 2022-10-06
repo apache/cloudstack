@@ -18,16 +18,20 @@ package org.apache.cloudstack.auth;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import de.taimos.totp.TOTP;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.UserAccount;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.AdapterBase;
+
+import java.security.SecureRandom;
 
 public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements UserTwoFactorAuthenticator {
     public static final Logger s_logger = Logger.getLogger(GoogleUserTwoFactorAuthenticator.class);
@@ -37,7 +41,6 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
 
     @Override
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException {
-        // TODO: in future get userAccount specific 2FA key
         String expectedCode = get2FACode(get2FAKey(userAccount));
         if (expectedCode.equals(code)) {
             s_logger.info("2FA matches user's input");
@@ -48,18 +51,6 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
 
     public static String get2FAKey(UserAccount userAccount) {
         return userAccount.getKeyFor2fa();
-        //return "7t4gabg72liipmq7n43lt3cw66fel4iz";
-        /*
-        This logic can be replaced on per-user-account basis
-        where the key is generated to show the user one-time QR code,
-        and then stored in DB.
-        For #CCC21 hackathon, we'll take shortcuts ;)
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[20];
-        random.nextBytes(bytes);
-        Base32 base32 = new Base32();
-        return base32.encodeToString(bytes);
-         */
     }
 
     public static String get2FACode(String secretKey) {
@@ -69,4 +60,15 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
         return TOTP.getOTP(hexKey);
     }
 
+    public static void setup2FAKey(UserAccount userAccount) {
+        if (StringUtils.isNotEmpty(userAccount.getKeyFor2fa())) {
+            throw new CloudRuntimeException(String.format("2FA key is already setup for the user account %s", userAccount.getAccountName()));
+        }
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[20];
+        random.nextBytes(bytes);
+        Base32 base32 = new Base32();
+        String key = base32.encodeToString(bytes);
+        userAccount.setKeyFor2fa(key);
+    }
 }
