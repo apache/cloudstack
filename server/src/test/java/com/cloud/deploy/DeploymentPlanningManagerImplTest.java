@@ -193,6 +193,9 @@ public class DeploymentPlanningManagerImplTest {
     @Mock
     Host host;
 
+    @Mock
+    ConfigurationDao configDao;
+
     private static final long dataCenterId = 1L;
     private static final long instanceId = 123L;
     private static final long hostId = 0L;
