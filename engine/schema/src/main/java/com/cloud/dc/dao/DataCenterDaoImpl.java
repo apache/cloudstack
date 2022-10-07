@@ -63,6 +63,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
+    protected SearchBuilder<DataCenterVO> ZoneAllocationAndTypeSearch;
 
     @Inject
     protected DataCenterIpAddressDao _ipAllocDao = null;
@@ -336,6 +337,11 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
         DisabledZonesSearch.done();
 
+        ZoneAllocationAndTypeSearch = createSearchBuilder();
+        ZoneAllocationAndTypeSearch.and("allocationState", ZoneAllocationAndTypeSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        ZoneAllocationAndTypeSearch.and("type", ZoneAllocationAndTypeSearch.entity().getDescription(), SearchCriteria.Op.NLIKE);
+        ZoneAllocationAndTypeSearch.done();
+
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
         TokenSearch.done();
@@ -397,6 +403,16 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         List<DataCenterVO> dcs = listBy(sc);
 
         return dcs;
+    }
+
+    @Override
+    public List<DataCenterVO> listEnabledNonEdgeZones() {
+        SearchCriteria<DataCenterVO> sc = ZoneAllocationAndTypeSearch.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        // TODO
+        String edgeStr = "edge";
+        sc.setParameters("type", edgeStr);
+        return listBy(sc);
     }
 
     @Override

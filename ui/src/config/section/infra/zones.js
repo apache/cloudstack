@@ -24,7 +24,7 @@ export default {
   icon: 'global-outlined',
   permission: ['listZonesMetrics'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'networktype', 'clusters']
+    const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
     const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
@@ -63,7 +63,8 @@ export default {
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
   }, {
     name: 'system.vms',
-    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue')))
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
+    show: (record) => { return record.isEdge !== true }
   }, {
     name: 'resources',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Resources.vue')))

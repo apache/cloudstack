@@ -50,7 +50,7 @@
                   <a-switch
                     class="card-form-item"
                     v-model:checked="form.securityGroupsEnabled"
-                    :disabled="!isAdvancedZone"
+                    :disabled="!isAdvancedZone || form.isEdge"
                     v-focus="true"
                   />
                 </a-form-item>
@@ -58,6 +58,26 @@
               </a-col>
               <a-col :md="18" :lg="18" style="margin-top: 15px;">
                 <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
+              </a-col>
+            </a-row>
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6" style="margin-top: 15px">
+                <a-form-item
+                  name="isEdge"
+                  ref="isEdge"
+                  class="card-form-item"
+                  v-bind="formItemLayout">
+                  <a-switch
+                    class="card-form-item"
+                    v-model:checked="form.isEdge"
+                    :disabled="!isAdvancedZone || form.securityGroupsEnabled"
+                    v-focus="true"
+                  />
+                </a-form-item>
+                <span>{{ $t('label.edge') }}</span>
+              </a-col>
+              <a-col :md="18" :lg="18" style="margin-top: 15px;">
+                <a-card class="zone-support">{{ $t(zoneDescription.Edge) }}</a-card>
               </a-col>
             </a-row>
           </a-card>
@@ -102,7 +122,8 @@ export default {
     zoneDescription: {
       Basic: 'message.desc.basic.zone',
       Advanced: 'message.desc.advanced.zone',
-      SecurityGroups: 'message.advanced.security.group'
+      SecurityGroups: 'message.advanced.security.group',
+      Edge: 'message.desc.advanced.zone.edge'
     },
     formModel: {}
   }),
