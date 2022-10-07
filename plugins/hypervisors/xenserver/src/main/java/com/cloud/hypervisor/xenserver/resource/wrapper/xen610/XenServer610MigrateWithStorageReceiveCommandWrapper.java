@@ -45,7 +45,7 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.SR;
 
-@ResourceWrapper(handles =  MigrateWithStorageReceiveCommand.class)
+@ResourceWrapper(handles = MigrateWithStorageReceiveCommand.class)
 public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends CommandWrapper<MigrateWithStorageReceiveCommand, Answer, XenServer610Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageReceiveCommandWrapper.class);
@@ -87,6 +87,11 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
             final String uuid = xsHost.getUuid();
 
             final Map<String, String> other = new HashMap<String, String>();
+
+            if (vmSpec.getDetails().containsKey("forcemigrate")) {
+                other.put("force", vmSpec.getDetails().get("forcemigrate"));
+            }
+
             other.put("live", "true");
 
             final Host host = Host.getByUuid(connection, uuid);

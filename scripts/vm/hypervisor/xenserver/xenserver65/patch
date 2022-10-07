@@ -68,3 +68,4 @@ ovs-get-bridge.sh=..,0755,/opt/cloud/bin
 cloudlog=..,0644,/etc/logrotate.d
 update_host_passwd.sh=../..,0755,/opt/cloud/bin
 logrotate=..,0755,/etc/cron.hourly
+migrate-unattached-disk=..,0755,/etc/xapi.d/plugins
