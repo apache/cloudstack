@@ -699,6 +699,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 AutoScalePolicyVO autoScalePolicyVO = autoScalePolicyDao.persist(autoScalePolicyVOFinal);
 
                 if (conditionIds != null) {
+                    if (CollectionUtils.isEmpty(conditionIds)) {
+                        throw new InvalidParameterValueException("AutoScale policy must have at least one condition");
+                    }
                     SearchBuilder<ConditionVO> conditionsSearch = conditionDao.createSearchBuilder();
                     conditionsSearch.and("ids", conditionsSearch.entity().getId(), Op.IN);
                     conditionsSearch.done();
@@ -1194,6 +1197,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         if (passedScaleUpPolicyIds != null) {
+            if (CollectionUtils.isEmpty(passedScaleUpPolicyIds)) {
+                throw new InvalidParameterValueException("AutoScale VM group must have at least one ScaleUp policy");
+            }
             policies.addAll(getAutoScalePolicies(passedScaleUpPolicyIds, counters, interval, true));
             policyIds.addAll(passedScaleUpPolicyIds);
         } else {
@@ -1203,6 +1209,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         if (passedScaleDownPolicyIds != null) {
+            if (CollectionUtils.isEmpty(passedScaleDownPolicyIds)) {
+                throw new InvalidParameterValueException("AutoScale VM group must have at least one ScaleDown policy");
+            }
             policies.addAll(getAutoScalePolicies(passedScaleDownPolicyIds, counters, interval, false));
             policyIds.addAll(passedScaleDownPolicyIds);
         } else {
