@@ -784,11 +784,6 @@ export default {
           name: 'tungsten.fabric',
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabric.vue'))),
           show: (record) => { return !record.securitygroupsenabled }
-        },
-        {
-          name: 'tungsten.fabric.routing',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabricRouting.vue'))),
-          show: (record) => { return !record.securitygroupsenabled }
         }
       ]
     },

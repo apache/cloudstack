@@ -155,6 +155,68 @@ export default {
           ]
         },
         {
+          name: 'tungsten.logical.router',
+          api: 'listTungstenFabricLogicalRouter',
+          actions: [
+            {
+              api: 'createTungstenFabricLogicalRouter',
+              icon: 'plus-outlined',
+              label: 'label.add.tungsten.logical.route',
+              listView: true,
+              popup: true,
+              fields: [{
+                name: 'name',
+                required: true
+              }]
+            },
+            {
+              api: 'removeTungstenFabricNetworkGatewayFromLogicalRouter',
+              icon: 'close',
+              label: 'label.remove.logical.network',
+              dataView: true,
+              popup: true,
+              fields: [
+                {
+                  name: 'networkuuid',
+                  required: true,
+                  type: 'uuid',
+                  loading: false,
+                  opts: [],
+                  optGet: record => record.network
+                }
+              ],
+              show: record => record.network.length > 0,
+              args: {
+                logicalrouteruuid: record => record.uuid
+              }
+            },
+            {
+              api: 'deleteTungstenFabricLogicalRouter',
+              icon: 'delete-outlined',
+              label: 'label.remove.logical.router',
+              dataView: true,
+              confirm: true,
+              message: 'label.confirm.remove.logical.router',
+              args: {
+                logicalrouteruuid: record => record.uuid
+              }
+            }
+          ],
+          columns: [{
+            dataIndex: 'name',
+            title: this.$t('label.name'),
+            slots: { customRender: 'name' }
+          }, {
+            dataIndex: 'network',
+            title: this.$t('label.network'),
+            slots: { customRender: 'network' }
+          }, {
+            title: this.$t('label.action'),
+            slots: { customRender: 'action' },
+            width: 150
+          }]
+        },
+        {
           name: 'tag',
           api: 'listTungstenFabricTag',
           actions: [
