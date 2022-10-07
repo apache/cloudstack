@@ -648,7 +648,10 @@ export default {
         return
       }
 
-      const newCondition = await this.addCondition({ ...this.newCondition })
+      const params = { ...this.newCondition }
+      params.domainid = this.resource.domainid
+      params.account = this.resource.account
+      const newCondition = await this.addCondition(params)
 
       await this.updateAutoScalePolicy(newCondition.id, null)
     },
@@ -682,12 +685,16 @@ export default {
       this.loading = true
 
       const newCondition = await this.addCondition({
+        domainid: this.resource.domainid,
+        account: this.resource.account,
         counterid: this.newPolicy.counterid,
         relationaloperator: this.newPolicy.relationaloperator,
         threshold: this.newPolicy.threshold
       })
 
       const newPolicy = await this.createAutoScalePolicy({
+        domainid: this.resource.domainid,
+        account: this.resource.account,
         name: this.newPolicy.name,
         conditionids: newCondition.id,
         duration: this.newPolicy.duration,
@@ -708,12 +715,13 @@ export default {
     },
     async removeScalePolicyFromGroup () {
       this.policies = this.policies.filter(policy => policy.id !== this.selectedPolicyId)
-      this.selectedPolicyId = this.policies[this.policies.length - 1].id
 
       await this.updateAutoScaleVmGroup({
         id: this.resource.id,
         scaledownpolicyids: this.policies.map(policy => { return policy.id }).join(',')
       })
+
+      this.selectedPolicyId = this.policies[this.policies.length - 1].id
     },
     createAutoScalePolicy (params) {
       this.loading = true
