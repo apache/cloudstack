@@ -32,7 +32,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -796,6 +796,12 @@ export default {
       return host.state
     },
     getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      }
+      return name
+    },
+    getColumTitle (name) {
       if (typeof name === 'object') {
         name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }

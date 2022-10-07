@@ -807,7 +807,7 @@ export default {
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.customTitle
+            key = columnKey.field
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
