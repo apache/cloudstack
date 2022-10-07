@@ -772,6 +772,7 @@ export default {
       this.loading = true
       this.lbRules.forEach(rule => {
         api('listLBStickinessPolicies', {
+          listAll: true,
           lbruleid: rule.id
         }).then(response => {
           this.stickinessPolicies.push(...response.listlbstickinesspoliciesresponse.stickinesspolicies)

@@ -615,6 +615,8 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.tagsModalLoading = false
       })
     },
     handleDeleteTag (tag) {
@@ -651,7 +653,9 @@ export default {
     },
     openStickinessModal (id) {
       this.initForm()
-      this.rules = { name: [{ required: true, message: this.$t('message.error.specify.sticky.name') }] }
+      this.rules = {
+        methodname: [{ required: true, message: this.$t('message.error.specify.stickiness.method') }]
+      }
       this.stickinessModalVisible = true
       this.selectedRule = id
       const match = this.stickinessPolicies.find(policy => policy.lbruleid === id)
@@ -753,6 +757,14 @@ export default {
           return
         }
 
+        if (values.name === null || values.name === undefined || values.name === '') {
+          this.$notification.error({
+            message: this.$t('label.error'),
+            description: this.$t('message.error.specify.sticky.name')
+          })
+          return
+        }
+
         values.nocache = this.form.nocache
         values.indirect = this.form.indirect
         values.postonly = this.form.postonly
@@ -778,11 +790,14 @@ export default {
         this.handleAddStickinessPolicy(data, values)
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.stickinessModalLoading = false
       })
     },
     handleStickinessMethodSelectChange (e) {
       if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
+      this.form.methodname = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
