@@ -36,6 +36,12 @@
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="userTwoFactorAuthenticatorsRegistry" />
+        <property name="typeClass"
+                  value="org.apache.cloudstack.auth.UserTwoFactorAuthenticator" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="pluggableAPIAuthenticatorsRegistry" />
         <property name="typeClass"
                   value=" org.apache.cloudstack.api.auth.PluggableAPIAuthenticator" />

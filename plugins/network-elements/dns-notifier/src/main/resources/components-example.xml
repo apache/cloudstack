@@ -87,9 +87,9 @@ under the License.
         <adapters key="com.cloud.network.IpAddrAllocator">
             <adapter name="Basic" class="com.cloud.network.ExternalIpAddressAllocator"/>
         </adapters>
-        <adapters key="org.apache.cloudstack.auth.UserAuthenticator">
-            <!-- <adapter name="SHA256SALT" class="org.apache.cloudstack.auth.SHA256SaltedUserAuthenticator"/> -->
-            <adapter name="MD5" class="org.apache.cloudstack.auth.MD5UserAuthenticator"/>
+        <adapters key="com.cloud.server.auth.UserAuthenticator">
+            <!-- <adapter name="SHA256SALT" class="com.cloud.server.auth.SHA256SaltedUserAuthenticator"/> -->
+            <adapter name="MD5" class="com.cloud.server.auth.MD5UserAuthenticator"/>
             <adapter name="LDAP" class="com.cloud.server.auth.LDAPUserAuthenticator"/>
         </adapters>
         <adapters key="com.cloud.ha.Investigator">
