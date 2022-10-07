@@ -2067,8 +2067,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Integer expungeVmGracePeriod = asProfile.getExpungeVmGracePeriod();
             if (expungeVmGracePeriod > 0) {
                 try {
-                    Thread.sleep(expungeVmGracePeriod * 1000);
+                    Thread.sleep(expungeVmGracePeriod * 1000L);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new CloudRuntimeException(String.format("Error while waiting %s seconds to destroy the VM %s", expungeVmGracePeriod, vmId));
                 }
             }

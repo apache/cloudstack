@@ -68,11 +68,11 @@ public class AutoScaleVmGroupDaoImpl extends GenericDaoBase<AutoScaleVmGroupVO, 
 
     @Override
     public boolean isAutoScaleLoadBalancer(Long loadBalancerId) {
-        GenericSearchBuilder<AutoScaleVmGroupVO, Long> CountByLoadBalancer = createSearchBuilder(Long.class);
-        CountByLoadBalancer.select(null, Func.COUNT, null);
-        CountByLoadBalancer.and("loadBalancerId", CountByLoadBalancer.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
+        GenericSearchBuilder<AutoScaleVmGroupVO, Long> countByLoadBalancer = createSearchBuilder(Long.class);
+        countByLoadBalancer.select(null, Func.COUNT, null);
+        countByLoadBalancer.and("loadBalancerId", countByLoadBalancer.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
 
-        SearchCriteria<Long> sc = CountByLoadBalancer.create();
+        SearchCriteria<Long> sc = countByLoadBalancer.create();
         sc.setParameters("loadBalancerId", loadBalancerId);
         return customSearch(sc, null).get(0) > 0;
     }

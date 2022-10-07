@@ -67,7 +67,7 @@ public class AutoScaleVmGroupVmMapDaoImpl extends GenericDaoBase<AutoScaleVmGrou
         SearchCriteria<Integer> sc = CountBy.create();
         sc.setParameters("vmGroupId", vmGroupId);
         sc.setJoinParameters("vmSearch", "states",
-                new Object[] {State.Starting, State.Running, State.Stopping, State.Migrating});
+                State.Starting, State.Running, State.Stopping, State.Migrating);
         final List<Integer> results = customSearch(sc, null);
         return results.get(0);
     }
