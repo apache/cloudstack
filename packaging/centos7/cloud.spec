@@ -65,6 +65,8 @@ Requires: python
 Requires: python3
 Requires: bash
 Requires: gawk
+Requires: which
+Requires: file
 Requires: bzip2
 Requires: gzip
 Requires: unzip
