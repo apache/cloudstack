@@ -575,3 +575,9 @@ FROM
             AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
+
+-- Improve alert.email.addresses description #6806.
+UPDATE  cloud.configuration
+SET     description = 'Comma separated list of email addresses which are going to receive alert emails.'
+WHERE   name = 'alert.email.addresses';
+
