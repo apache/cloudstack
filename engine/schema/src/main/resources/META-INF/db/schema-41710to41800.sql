@@ -586,3 +586,8 @@ CREATE TABLE `cloud`.`volume_stats` (
     `volume_stats_data` text NOT NULL,
     PRIMARY KEY(`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Improve alert.email.addresses description #6806.
+UPDATE  cloud.configuration
+SET     description = 'Comma separated list of email addresses which are going to receive alert emails.'
+WHERE   name = 'alert.email.addresses';
