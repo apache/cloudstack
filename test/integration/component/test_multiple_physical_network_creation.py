@@ -246,6 +246,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
             self.apiclient,
             self.services["network_offering_shared"]
         )
+        self.cleanup.append(self.network_offering)
 
         # Enable network offering
         self.network_offering.update(
@@ -297,12 +298,6 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
         self.assertEqual(vm.nic[0].isolationuri,
                          "vlan://" + str(self.services["network2"]["vlan"]),
                          "Vm network vlan is not same")
-
-        self.cleanup.append(self.virtual_machine)
-        self.cleanup.append(self.service_offering)
-        self.cleanup.append(self.shared_network)
-        self.cleanup.append(self.network_offering)
-        self.cleanup.append(self.physical_network_3)
 
         self.network_offering.update(
             self.apiclient,
