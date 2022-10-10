@@ -33,17 +33,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.agent.PowerMockAgent;
-import org.powermock.modules.junit4.rule.PowerMockRule;
 import org.reflections.ReflectionUtils;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -51,14 +49,7 @@ import com.cloud.utils.script.Script;
 import com.google.gson.JsonObject;
 
 @PrepareForTest({FileUtils.class})
-public class ConfigDriveBuilderTest {
-
-    @Rule
-    public PowerMockRule rule = new PowerMockRule();
-
-    static {
-        PowerMockAgent.initializeIfNeeded();
-    }
+public class ConfigDriveBuilderTest extends SpringUtils.CloudStackPowerMockTest {
 
     @Test
     public void writeFileTest() throws Exception {

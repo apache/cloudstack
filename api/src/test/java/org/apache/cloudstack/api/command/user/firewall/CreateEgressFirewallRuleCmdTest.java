@@ -20,21 +20,19 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 
 @PrepareForTest(NetUtils.class)
-@RunWith(PowerMockRunner.class)
-public class CreateEgressFirewallRuleCmdTest {
+public class CreateEgressFirewallRuleCmdTest extends SpringUtils.CloudStackPowerMockTest {
 
     @Mock
     NetworkService networkServiceMock;

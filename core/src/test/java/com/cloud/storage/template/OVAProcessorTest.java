@@ -19,6 +19,7 @@
 
 package com.cloud.storage.template;
 
+import org.apache.cloudstack.test.utils.SpringUtils;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
@@ -26,22 +27,20 @@ import com.cloud.utils.script.Script;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-@RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.xml.*", "java.xml.*", "javax.management.*", "org.apache.xerces.*"})
 @PrepareForTest(OVAProcessor.class)
-public class OVAProcessorTest {
+public class OVAProcessorTest extends SpringUtils.CloudStackPowerMockTest {
+
     OVAProcessor processor;
 
     @Mock

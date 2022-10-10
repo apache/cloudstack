@@ -20,6 +20,9 @@ package org.apache.cloudstack.test.utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Rule;
+import org.powermock.modules.agent.PowerMockAgent;
+import org.powermock.modules.junit4.rule.PowerMockRule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -110,5 +113,14 @@ public class SpringUtils {
             return processor;
         }
 
+    }
+
+    public static class CloudStackPowerMockTest {
+        @Rule
+        public PowerMockRule rule = new PowerMockRule();
+
+        static {
+            PowerMockAgent.initializeIfNeeded();
+        }
     }
 }

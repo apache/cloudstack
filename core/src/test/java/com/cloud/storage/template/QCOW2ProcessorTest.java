@@ -23,22 +23,20 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(QCOW2Processor.class)
-public class QCOW2ProcessorTest {
+public class QCOW2ProcessorTest extends SpringUtils.CloudStackPowerMockTest {
     QCOW2Processor processor;
 
     @Mock

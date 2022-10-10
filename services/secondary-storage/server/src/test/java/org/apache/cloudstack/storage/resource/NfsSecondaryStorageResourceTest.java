@@ -29,30 +29,20 @@ import java.io.StringWriter;
 
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.agent.PowerMockAgent;
-import org.powermock.modules.junit4.rule.PowerMockRule;
 
 import com.cloud.test.TestAppender;
 
 @PowerMockIgnore({ "javax.xml.*", "org.xml.*"})
-public class NfsSecondaryStorageResourceTest {
-
-    @Rule
-    public PowerMockRule rule = new PowerMockRule();
-
-    static {
-        PowerMockAgent.initializeIfNeeded();
-    }
-
+public class NfsSecondaryStorageResourceTest extends SpringUtils.CloudStackPowerMockTest {
     private NfsSecondaryStorageResource resource;
 
     @Before
