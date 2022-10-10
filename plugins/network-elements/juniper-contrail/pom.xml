@@ -136,7 +136,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <forkMode>always</forkMode>
-                    <argLine>@{argLine} -Xmx1024m</argLine>
                     <excludes>
                         <exclude>**/NetworkProviderTest.java</exclude>
                         <exclude>**/PublicNetworkTest.java</exclude>
