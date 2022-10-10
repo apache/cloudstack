@@ -1945,6 +1945,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    private void setNewIopsLimits(VolumeVO volume, DiskOfferingVO newDiskOffering, Long[] newMinIops, Long[] newMaxIops) {
+        if (Boolean.TRUE.equals(newDiskOffering.isCustomizedIops())) {
+            newMinIops[0] = newMinIops[0] != null ? newMinIops[0] : volume.getMinIops();
+            newMaxIops[0] = newMaxIops[0] != null ? newMaxIops[0] : volume.getMaxIops();
+
+            validateIops(newMinIops[0], newMaxIops[0], volume.getPoolType());
+        } else {
+            newMinIops[0] = newDiskOffering.getMinIops();
+            newMaxIops[0] = newDiskOffering.getMaxIops();
+        }
+    }
+
     private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException("Requested disk offering has been removed.");
@@ -1993,19 +2005,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } else {
                 newSize[0] = newDiskOffering.getDiskSize();
             }
-            if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
-                newMinIops[0] = newMinIops[0] != null ? newMinIops[0] : volume.getMinIops();
-                newMaxIops[0] = newMaxIops[0] != null ? newMaxIops[0] : volume.getMaxIops();
-
-                validateIops(newMinIops[0], newMaxIops[0], volume.getPoolType());
-            } else {
-                newMinIops[0] = newDiskOffering.getMinIops();
-                newMaxIops[0] = newDiskOffering.getMaxIops();
-            }
 
             // if the hypervisor snapshot reserve value is null, it must remain null (currently only KVM uses null and null is all KVM uses for a value here)
             newHypervisorSnapshotReserve[0] = volume.getHypervisorSnapshotReserve() != null ? newDiskOffering.getHypervisorSnapshotReserve() : null;
         }
+
+        setNewIopsLimits(volume, newDiskOffering, newMinIops, newMaxIops);
 
         if (existingDiskOffering.getDiskSizeStrictness() && !(volume.getSize().equals(newSize[0]))) {
             throw new InvalidParameterValueException(String.format("Resize volume for %s is not allowed since disk offering's size is fixed", volume.getName()));

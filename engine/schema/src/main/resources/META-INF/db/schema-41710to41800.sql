@@ -576,6 +576,11 @@ FROM
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
 
+-- Improve alert.email.addresses description #6806.
+UPDATE  cloud.configuration
+SET     description = 'Comma separated list of email addresses which are going to receive alert emails.'
+WHERE   name = 'alert.email.addresses';
+
 -- Improve description of configuration `secstorage.encrypt.copy` #6811.
 UPDATE  cloud.configuration
 SET     description = "Use SSL method used to encrypt copy traffic between zones. Also ensures that the certificate assigned to the zone is used when

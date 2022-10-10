@@ -71,7 +71,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     private String getHostname() {
         // either there is already some function for that in the agent or a better way.
-        ProcessBuilder pb = new ProcessBuilder("hostname");
+        ProcessBuilder pb = new ProcessBuilder("/usr/bin/hostname");
         try
         {
             String result;
@@ -86,7 +86,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             p.destroy();
             return result.trim();
         } catch (IOException | InterruptedException exc) {
-            throw new CloudRuntimeException("Unable to run 'hostname' command.");
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException("Unable to run '/usr/bin/hostname' command.");
         }
     }
 
@@ -310,11 +311,11 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public boolean disconnectPhysicalDiskByPath(String localPath)
     {
         // get first storage pool from the map, as we don't know any better:
-        if (!MapStorageUuidToStoragePool.isEmpty())
+        Optional<KVMStoragePool> optFirstPool = MapStorageUuidToStoragePool.values().stream().findFirst();
+        if (optFirstPool.isPresent())
         {
             s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
-            String firstKey = MapStorageUuidToStoragePool.keySet().stream().findFirst().get();
-            final KVMStoragePool pool = MapStorageUuidToStoragePool.get(firstKey);
+            final KVMStoragePool pool = optFirstPool.get();
 
             s_logger.debug("Linstor: Using storpool: " + pool.getUuid());
             final DevelopersApi api = getLinstorAPI(pool);

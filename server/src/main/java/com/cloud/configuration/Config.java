@@ -53,7 +53,7 @@ public enum Config {
             String.class,
             "alert.email.addresses",
             null,
-            "Comma separated list of email addresses used for sending alerts.",
+            "Comma separated list of email addresses which are going to receive alert emails.",
             null),
     AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
     AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
