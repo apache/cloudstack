@@ -188,7 +188,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-user-two-factor-authenticator-static-pin</artifactId>
+            <artifactId>cloud-plugin-user-two-factor-authenticator-staticpin</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

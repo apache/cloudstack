@@ -139,6 +139,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
+        return null;
+    }
+
+    @Override
     public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;

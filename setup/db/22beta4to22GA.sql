@@ -61,7 +61,7 @@ ALTER TABLE `cloud`.`user_ip_address` DROP COLUMN public_ip_address;
 ALTER TABLE `cloud`.`user_ip_address` CHANGE public_ip_address1 public_ip_address char(40) NOT NULL COMMENT 'the public ip address';
 
 DROP VIEW if exists port_forwarding_rules_view;
-ALTER TABLE `cloud`.`port_forwarding_rules` ADD COLUMN `dest_ip_address1` char(40) NOT NULL COMMENT 'the destination ip address';
+    ALTER TABLE `cloud`.`port_forwarding_rules` ADD COLUMN `dest_ip_address1` char(40) NOT NULL COMMENT 'the destination ip address';
 UPDATE port_forwarding_rules SET dest_ip_address1 = INET_NTOA(dest_ip_address);
 ALTER TABLE `cloud`.`port_forwarding_rules` DROP COLUMN dest_ip_address;
 ALTER TABLE `cloud`.`port_forwarding_rules` CHANGE dest_ip_address1 dest_ip_address char(40) NOT NULL COMMENT 'the destination ip address';

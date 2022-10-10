@@ -28,7 +28,7 @@
                       >
 
     <bean id="StaticPinUserTwoFactorAuthenticator" class="org.apache.cloudstack.auth.StaticPinUserTwoFactorAuthenticator">
-        <property name="name" value="StaticPin" />
+        <property name="name" value="STATICPIN" />
     </bean>
 
     

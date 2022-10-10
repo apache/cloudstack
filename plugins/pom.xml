@@ -139,7 +139,10 @@
         <module>user-authenticators/saml2</module>
         <module>user-authenticators/sha256salted</module>
 
-   </modules>
+        <module>user-two-factor-authenticators/google</module>
+        <module>user-two-factor-authenticators/static-pin</module>
+
+    </modules>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

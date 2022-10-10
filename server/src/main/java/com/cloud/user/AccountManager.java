@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -197,8 +198,10 @@ public interface AccountManager extends AccountService, Configurable {
 
     ConfigKey<String> userTwoFactorAuthenticationProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "user.two.factor.authentication.provider.plugin",
-            "google",
-            "The user two factor authentication provider plugin. Eg. google, static-pin", true, ConfigKey.Scope.Domain);
+            "GOOGLE",
+            "The user two factor authentication provider plugin. Eg. GOOGLE, STATICPIN", true, ConfigKey.Scope.Domain);
 
     boolean moveUser(long id, Long domainId, Account newAccount);
+
+    UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
 }

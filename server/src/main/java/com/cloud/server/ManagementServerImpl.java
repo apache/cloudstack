@@ -581,6 +581,7 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
@@ -986,6 +987,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private Map<String, Boolean> _availableIdsMap;
 
     private List<UserAuthenticator> _userAuthenticators;
+    private List<UserTwoFactorAuthenticator> _userTwoFactorAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
     protected boolean _executeInSequence;
 
@@ -1028,6 +1030,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public void setUserAuthenticators(final List<UserAuthenticator> authenticators) {
         _userAuthenticators = authenticators;
+    }
+
+    public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticators() {
+        return _userTwoFactorAuthenticators;
+    }
+
+    public void setUserTwoFactorAuthenticators(final List<UserTwoFactorAuthenticator> userTwoFactorAuthenticators) {
+        _userTwoFactorAuthenticators = userTwoFactorAuthenticators;
     }
 
     public List<UserAuthenticator> getUserPasswordEncoders() {

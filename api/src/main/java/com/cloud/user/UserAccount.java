@@ -76,4 +76,9 @@ public interface UserAccount extends InternalIdentity {
 
     public void setKeyFor2fa(String keyFor2fa);
 
+    public String getUser2faProvider();
+
+    public void setUser2faProvider(String user2faProvider);
+
+
 }

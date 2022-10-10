@@ -109,6 +109,9 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "is_2fa_enabled")
     boolean is2faEnabled;
 
+    @Column(name = "user_2fa_provider")
+    private String user2faProvider;
+
     @Column(name = "key_for_2fa")
     private String keyFor2fa;
 
@@ -338,4 +341,13 @@ public class UserVO implements User, Identity, InternalIdentity {
     public void setKeyFor2fa(String keyFor2fa) {
         this.keyFor2fa = keyFor2fa;
     }
+
+    public String getUser2faProvider() {
+        return user2faProvider;
+    }
+
+    public void setUser2faProvider(String user2faProvider) {
+        this.user2faProvider = user2faProvider;
+    }
+
 }

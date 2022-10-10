@@ -328,6 +328,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
+        return null;
+    }
+
+    @Override
     public boolean deleteUserAccount(long arg0) {
         // TODO Auto-generated method stub
         return false;
