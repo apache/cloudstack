@@ -2462,6 +2462,8 @@
 "message.volume.state.uploaderror": "O carregamento do volume encontrou um erro",
 "message.volume.state.uploadinprogress": "Carregamento do volume em progresso",
 "message.volume.state.uploadop": "A opera\u00e7\u00e3o de carregamento de volume est\u00e1 em andamento",
+"message.vr.alert.upon.network.offering.creation.l2": "Como VRs não são criados para redes do tipo L2, a oferta de computação não será utilizada.",
+"message.vr.alert.upon.network.offering.creation.others": "Como nenhum dos serviços obrigatórios para criação do VR (VPN, DHCP, DNS, Firewall, LB, UserData, SourceNat, StaticNat, PortForwarding) foram habilitados, o VR não será criado e a oferta de computação não será usada.",
 "message.warn.filetype": "jpg, jpeg, png, bmp e svg s\u00e3o os \u00fanicos formatos de imagem suportados",
 "message.zone.creation.complete": "Cria\u00e7\u00e3o de zona completa",
 "message.zone.detail.description": "Preencha os detalhes da zona",

@@ -522,9 +522,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find " + desc + " with id " + templateId);
         }
 
-        if (template.getTemplateType() == Storage.TemplateType.SYSTEM) {
-            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it is a default System template");
-        } else if (template.getTemplateType() == Storage.TemplateType.PERHOST) {
+        if (template.getTemplateType() == Storage.TemplateType.PERHOST) {
             throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it resides on host and not on SSVM");
         }
 

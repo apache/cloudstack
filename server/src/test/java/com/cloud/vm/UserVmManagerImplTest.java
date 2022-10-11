@@ -565,6 +565,34 @@ public class UserVmManagerImplTest {
         prepareAndRunResizeVolumeTest(2L, 10L, 20L, largerDisdkOffering, smallerDisdkOffering);
     }
 
+    @Test
+    public void validateDiskOfferingCheckForEncryption1Test() {
+        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, true);
+        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, true);
+        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
+    }
+
+    @Test
+    public void validateDiskOfferingCheckForEncryption2Test() {
+        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, false);
+        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, false);
+        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateDiskOfferingCheckForEncryptionFail1Test() {
+        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, false);
+        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, true);
+        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateDiskOfferingCheckForEncryptionFail2Test() {
+        ServiceOfferingVO currentOffering = prepareOfferingsForEncryptionValidation(1L, true);
+        ServiceOfferingVO newOffering = prepareOfferingsForEncryptionValidation(2L, false);
+        userVmManagerImpl.validateDiskOfferingChecks(currentOffering, newOffering);
+    }
+
     private void prepareAndRunResizeVolumeTest(Long expectedOfferingId, long expectedMinIops, long expectedMaxIops, DiskOfferingVO currentRootDiskOffering, DiskOfferingVO newRootDiskOffering) {
         long rootVolumeId = 1l;
         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
@@ -586,6 +614,20 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getMaxIops()).thenReturn(offeringMaxIops);
         Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
+    }
+
+    private ServiceOfferingVO prepareOfferingsForEncryptionValidation(long diskOfferingId, boolean encryption) {
+        ServiceOfferingVO svcOffering = Mockito.mock(ServiceOfferingVO.class);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(svcOffering.getDiskOfferingId()).thenReturn(diskOfferingId);
+        Mockito.when(diskOffering.getEncrypt()).thenReturn(encryption);
+
+        // Be aware - Multiple calls with the same disk offering ID could conflict
+        Mockito.when(diskOfferingDao.findByIdIncludingRemoved(diskOfferingId)).thenReturn(diskOffering);
+        Mockito.when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
+
+        return svcOffering;
     }
 
     @Test (expected = CloudRuntimeException.class)

@@ -793,7 +793,10 @@ export default {
     }
   },
   watch: {
-    '$route.fullPath': function () {
+    '$route.fullPath': function (path) {
+      if (path === '/user/login') {
+        return
+      }
       this.getIcons()
     },
     resource: {
