@@ -1179,11 +1179,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             ApiDBUtils.getAutoScaleVmGroupPolicyIds(vmGroup.getId(), currentScaleUpPolicyIds, currentScaleDownPolicyIds);
         }
 
-        if (minMembers < 0) {
+        if (minMembers <= 0) {
             throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers);
         }
 
-        if (maxMembers < 0) {
+        if (maxMembers <= 0) {
             throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + maxMembers);
         }
 
@@ -1192,7 +1192,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 maxMembers + ")");
         }
 
-        if (interval < 0) {
+        if (interval <= 0) {
             throw new InvalidParameterValueException("interval is an invalid value: " + interval);
         }
 
