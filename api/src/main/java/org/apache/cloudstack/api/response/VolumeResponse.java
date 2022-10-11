@@ -96,7 +96,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "state of the virtual machine")
     private String virtualMachineState;
 
-    @SerializedName("vmtype")
+    @SerializedName(ApiConstants.VM_TYPE)
     @Param(description = "type of the virtual machine")
     private String vmType;
 

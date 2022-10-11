@@ -697,7 +697,7 @@
 
 <script>
 import { api } from '@/api'
-import { createPathBasedOnVmType } from '@/utils/path'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'

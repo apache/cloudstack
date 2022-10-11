@@ -445,6 +445,7 @@ public class ApiConstants {
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
+    public static final String VM_TYPE = "vmtype";
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";

@@ -156,14 +156,14 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException(String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO));
         }
 
-        VirtualMachine userVm = _userVmService.getVm(getVirtualMachineId());
-        if (!VirtualMachine.State.Running.equals(userVm.getState()) && hostId != null) {
-            throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to the new host.", userVm));
+        VirtualMachine virtualMachine = _userVmService.getVm(getVirtualMachineId());
+        if (!VirtualMachine.State.Running.equals(virtualMachine.getState()) && hostId != null) {
+            throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to the new host.", virtualMachine));
         }
 
-        if (!VirtualMachine.State.Stopped.equals(userVm.getState()) && hostId == null) {
+        if (!VirtualMachine.State.Stopped.equals(virtualMachine.getState()) && hostId == null) {
             throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.",
-                    userVm, ApiConstants.HOST_ID));
+                    virtualMachine, ApiConstants.HOST_ID));
         }
 
         try {
@@ -180,7 +180,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), getVolumeToPool());
             }
             if (migratedVm != null) {
-                setResponseBasedOnVmType(userVm, migratedVm);
+                setResponseBasedOnVmType(virtualMachine, migratedVm);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }
@@ -193,8 +193,8 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         }
     }
 
-    private void setResponseBasedOnVmType(VirtualMachine userVm, VirtualMachine migratedVm) {
-        if (VirtualMachine.Type.User.equals(userVm.getType())) {
+    private void setResponseBasedOnVmType(VirtualMachine virtualMachine, VirtualMachine migratedVm) {
+        if (VirtualMachine.Type.User.equals(virtualMachine.getType())) {
             UserVmResponse userVmResponse = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm) migratedVm).get(0);
             userVmResponse.setResponseName(getCommandName());
             setResponseObject(userVmResponse);

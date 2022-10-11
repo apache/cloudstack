@@ -416,7 +416,7 @@ import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
-import { createPathBasedOnVmType } from '@/utils/path'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 
 export default {
   name: 'ListView',
