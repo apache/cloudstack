@@ -44,17 +44,17 @@
             <a-radio-button value="">
               {{ $t('1 hour') }}
             </a-radio-button>
-            <a-radio-button value="today" v-if="statsRetentionTime >= 60">
-              {{ $t('label.duration.today') }}
+            <a-radio-button value="6hours" v-if="statsRetentionTime >= 60">
+              {{ $t('label.duration.6hours') }}
             </a-radio-button>
-            <a-radio-button value="day" v-if="statsRetentionTime >= 6 * 60">
+            <a-radio-button value="12hours" v-if="statsRetentionTime >= 6 * 60">
+              {{ $t('label.duration.12hours') }}
+            </a-radio-button>
+            <a-radio-button value="day" v-if="statsRetentionTime >= 12 * 60">
               {{ $t('label.duration.24hours') }}
             </a-radio-button>
             <a-radio-button value="week" v-if="statsRetentionTime >= 24 * 60">
               {{ $t('label.duration.7days') }}
-            </a-radio-button>
-            <a-radio-button value="month" v-if="statsRetentionTime >= 7 * 24 * 60">
-              {{ $t('label.duration.1month') }}
             </a-radio-button>
             <a-radio-button value="custom">
               {{ $t('label.duration.custom') }}
@@ -203,7 +203,7 @@
             />
           </a-col>
         </a-row>
-        <a-row class="chart-row" v-if="resourceIsVirtualMachine">
+        <a-row class="chart-row" v-if="resourceType === 'VirtualMachine'">
           <a-col>
             <strong>{{ $t('label.network') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.network.usage')" @click="onClickShowResourceInfoModal('NET')"/>
@@ -409,17 +409,17 @@ export default {
       var now = this.getEndDate()
       var start = new Date(now)
       switch (this.durationSelectorValue) {
-        case 'today':
-          start.setHours(0, 0, 0, 0)
+        case '6hours':
+          start.setHours(start.getHours() - 6)
+          break
+        case '12hours':
+          start.setHours(start.getHours() - 12)
           break
         case 'day':
           start.setDate(start.getDate() - 1)
           break
         case 'week':
           start.setDate(start.getDate() - 7)
-          break
-        case 'month':
-          start.setMonth(start.getMonth() - 1)
           break
         default:
           start.setHours(start.getHours() - 1)

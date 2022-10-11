@@ -299,16 +299,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<Boolean> VM_STATS_INCREMENT_METRICS_IN_MEMORY = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.increment.metrics.in.memory", "true",
             "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed and stored in memory. "
             + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
-    protected static ConfigKey<Integer> vmStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.stats.max.retention.time", "1440",
+    protected static ConfigKey<Integer> vmStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.stats.max.retention.time", "720",
             "The maximum time (in minutes) for keeping VM stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
 
-    protected static ConfigKey<Boolean> vmStatsCollectUserVMOnly = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.user.vm.only", "true",
+    protected static ConfigKey<Boolean> vmStatsCollectUserVMOnly = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.user.vm.only", "false",
             "When set to 'false' stats for system VMs will be collected otherwise stats collection will be done only for user VMs", true);
 
     protected static ConfigKey<Boolean> vmDiskStatsRetentionEnabled = new ConfigKey<>("Advanced", Boolean.class, "vm.disk.stats.retention.enabled", "false",
             "When set to 'true' stats for VM disks will be stored in the database otherwise disk stats will not be stored", true);
 
-    protected static ConfigKey<Integer> vmDiskStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.max.retention.time", "1440",
+    protected static ConfigKey<Integer> vmDiskStatsMaxRetentionTime = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.max.retention.time", "720",
             "The maximum time (in minutes) for keeping Volume stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
 
     private static StatsCollector s_instance = null;

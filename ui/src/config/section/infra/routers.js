@@ -37,7 +37,7 @@ export default {
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
-    name: 'statistics',
+    name: 'metrics',
     resourceType: 'DomainRouter',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
     show: () => { return store.getters.features.instancesstatsuseronly === false }
