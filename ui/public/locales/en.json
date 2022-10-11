@@ -2650,6 +2650,8 @@
 "message.volume.state.uploadinprogress": "Volume upload is in progress.",
 "message.volume.state.uploadop": "The volume upload operation is in progress or in short the volume is on secondary storage.",
 "message.volume.state.primary.storage.suitability": "The suitability of a primary storage for a volume depends on the disk offering of the volume and on the virtual machine allocations if the volume is attached to a virtual machine.",
+"message.vr.alert.upon.network.offering.creation.l2": "As virtual routers are not created for L2 networks, the compute offering will not be used.",
+"message.vr.alert.upon.network.offering.creation.others": "As none of the obligatory services for creating a virtual router (VPN, DHCP, DNS, Firewall, LB, UserData, SourceNat, StaticNat, PortForwarding) are enabled, the virtual router will not be created and the compute offering will not be used.",
 "message.warn.filetype": "jpg, jpeg, png, bmp and svg are the only supported image formats.",
 "message.zone.creation.complete": "Zone creation complete.",
 "message.zone.detail.description": "Populate zone details.",
