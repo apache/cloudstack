@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -69,7 +71,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
@@ -109,12 +114,13 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.management.*")
 public class VolumeApiServiceImplTest {
 
     @Spy
     @InjectMocks
-    private VolumeApiServiceImpl volumeApiServiceImpl;
+    private VolumeApiServiceImpl volumeApiServiceImpl = new VolumeApiServiceImpl();
     @Mock
     private SnapshotManager snapshotManagerMock;
     @Mock
@@ -188,6 +194,10 @@ public class VolumeApiServiceImplTest {
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
     private long volumeSizeMock = 456789921939l;
+
+    private long diskOfferingMockId = 100203L;
+
+    private long offeringMockId = 31902L;
 
     @Before
     public void setup() throws InterruptedException, ExecutionException {
@@ -1244,5 +1254,69 @@ public class VolumeApiServiceImplTest {
         }
         boolean result = volumeApiServiceImpl.isNewDiskOfferingTheSameAndCustomServiceOffering(existingDiskOffering, newDiskOffering);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    @PrepareForTest(UsageEventUtils.class)
+    public void publishVolumeCreationUsageEventTestNullDiskOfferingId() {
+        Mockito.doReturn(null).when(volumeVoMock).getDiskOfferingId();
+        PowerMockito.mockStatic(UsageEventUtils.class);
+
+        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+
+        PowerMockito.verifyStatic(UsageEventUtils.class);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
+
+    }
+
+    @Test
+    @PrepareForTest(UsageEventUtils.class)
+    public void publishVolumeCreationUsageEventTestNullDiskOfferingVo() {
+        Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
+        Mockito.doReturn(null).when(_diskOfferingDao).findById(diskOfferingMockId);
+        PowerMockito.mockStatic(UsageEventUtils.class);
+
+        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+
+        PowerMockito.verifyStatic(UsageEventUtils.class);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
+
+    }
+
+    @Test
+    @PrepareForTest(UsageEventUtils.class)
+    public void publishVolumeCreationUsageEventTestDiskOfferingVoTypeNotDisk() {
+        Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
+        Mockito.doReturn(newDiskOfferingMock).when(_diskOfferingDao).findById(diskOfferingMockId);
+        Mockito.doReturn(true).when(newDiskOfferingMock).isComputeOnly();
+
+        PowerMockito.mockStatic(UsageEventUtils.class);
+
+        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+
+        PowerMockito.verifyStatic(UsageEventUtils.class);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
+
+    }
+
+    @Test
+    @PrepareForTest(UsageEventUtils.class)
+    public void publishVolumeCreationUsageEventTestOfferingIdNotNull() {
+        Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
+        Mockito.doReturn(newDiskOfferingMock).when(_diskOfferingDao).findById(diskOfferingMockId);
+        Mockito.doReturn(false).when(newDiskOfferingMock).isComputeOnly();
+        Mockito.doReturn(offeringMockId).when(newDiskOfferingMock).getId();
+
+        PowerMockito.mockStatic(UsageEventUtils.class);
+
+        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+
+        PowerMockito.verifyStatic(UsageEventUtils.class);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
+
     }
 }
