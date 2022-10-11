@@ -118,5 +118,4 @@ public class VolumeStatsDaoImpl extends GenericDaoBase<VolumeStatsVO, Long> impl
         sc.setParameters("timestamp", limit);
         expunge(sc);
     }
-
 }
