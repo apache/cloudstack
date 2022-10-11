@@ -552,6 +552,10 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
 
+mkdir -p /usr/local/libexec
+touch /usr/local/libexec/sanity-check-last-id
+chown cloud:cloud /usr/local/libexec/sanity-check-last-id
+
 %posttrans usage
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
