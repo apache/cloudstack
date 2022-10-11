@@ -2737,7 +2737,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             List<AutoScaleVmGroupStatisticsVO> inactiveStats = asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(groupTO.getId(), policyTO.getId(), afterDate);
             if (CollectionUtils.isNotEmpty(inactiveStats)) {
                 s_logger.error(String.format("Failed to update counters map as there are %d Inactive statistics in as group %d and policy %s", inactiveStats.size(), groupTO.getId(), policyTO.getId()));
-                return false;
+                continue;
             }
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 updateCountersMapPerCondition(groupTO, policyTO, conditionTO, afterDate, countersMap, countersNumberMap);
