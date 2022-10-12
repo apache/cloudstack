@@ -213,7 +213,9 @@ public class UsageSanityChecker {
             maxId = -1;
             if (rs.next() && (rs.getInt(1) > 0)) {
                 maxId = rs.getInt(1);
-                lastCheckId += " and cu.id <= ?";
+                if (maxId > lastId) {
+                    lastCheckId += " and cu.id <= ?";
+                }
             }
         }catch (Exception e) {
             s_logger.error("readMaxId:"+e.getMessage(),e);
