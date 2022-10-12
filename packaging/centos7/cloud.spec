@@ -553,7 +553,9 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
 fi
 
 mkdir -p /usr/local/libexec
-touch /usr/local/libexec/sanity-check-last-id
+if [ ! -f "/usr/local/libexec/sanity-check-last-id" ]; then
+    echo 1 >> /usr/local/libexec/sanity-check-last-id
+fi
 chown cloud:cloud /usr/local/libexec/sanity-check-last-id
 
 %posttrans usage
