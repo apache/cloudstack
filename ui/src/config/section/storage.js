@@ -72,7 +72,7 @@ export default {
           name: 'statistics',
           resourceType: 'Volume',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
-          show: (record) => { return store.getters.features.instancesdisksstatsretentionenabled && record.vmstate === 'Running' }
+          show: (record) => { return store.getters.features.instancesdisksstatsretentionenabled }
         },
         {
           name: 'events',
