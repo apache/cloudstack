@@ -349,7 +349,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             sc.setParameters("name", "%" + name + "%");
         }
         if (StringUtils.isNotBlank(keyword)) {
-            SearchCriteria<UserVmVO> ssc = userVmDao.createSearchCriteria();
+            SearchCriteria<VolumeVO> ssc = volumeDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);

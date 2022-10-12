@@ -17,26 +17,19 @@
 
 package org.apache.cloudstack.api;
 
-import java.util.Date;
 import java.util.List;
-
-import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 
-@APICommand(name = ListVolumesUsageHistoryCmd.APINAME, description = "Lists VM stats", responseObject = VolumeMetricsStatsResponse.class,
+@APICommand(name = ListVolumesUsageHistoryCmd.APINAME, description = "Lists volume stats", responseObject = VolumeMetricsStatsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListVolumesUsageHistoryCmd extends BaseListCmd {
+public class ListVolumesUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
     public static final String APINAME = "listVolumesUsageHistory";
-
-    @Inject
-    private MetricsService metricsService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -45,19 +38,11 @@ public class ListVolumesUsageHistoryCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the volume.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the volumes, mutually exclusive with id.")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType= SystemVmResponse.class, description="the IDs of the volumes, mutually exclusive with id.")
     private List<Long> ids;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the volume (a substring match is made against the parameter value returning the data for all matching Volumes).")
     private String name;
-
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date to filter VM stats."
-            + "Use format \"yyyy-MM-dd hh:mm:ss\")")
-    private Date startDate;
-
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date to filter VM stats."
-            + "Use format \"yyyy-MM-dd hh:mm:ss\")")
-    private Date endDate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -73,14 +58,6 @@ public class ListVolumesUsageHistoryCmd extends BaseListCmd {
 
     public String getName() {
         return name;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
     }
 
     /////////////////////////////////////////////////////

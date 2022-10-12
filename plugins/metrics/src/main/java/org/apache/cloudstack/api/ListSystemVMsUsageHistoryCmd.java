@@ -17,25 +17,18 @@
 
 package org.apache.cloudstack.api;
 
-import java.util.Date;
 import java.util.List;
-
-import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 
 @APICommand(name = ListSystemVMsUsageHistoryCmd.APINAME, description = "Lists System VM stats", responseObject = VmMetricsStatsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin})
-public class ListSystemVMsUsageHistoryCmd extends BaseListCmd {
+public class ListSystemVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
     public static final String APINAME = "listSystemVmsUsageHistory";
-
-    @Inject
-    private MetricsService metricsService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -44,19 +37,11 @@ public class ListSystemVMsUsageHistoryCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the system VM.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the system VsM, mutually exclusive with id.")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the system VMs, mutually exclusive with id.")
     private List<Long> ids;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the system VMs (a substring match is made against the parameter value returning the data for all matching VMs).")
     private String name;
-
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date to filter system VM stats."
-            + "Use format \"yyyy-MM-dd hh:mm:ss\")")
-    private Date startDate;
-
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date to filter system VM stats."
-            + "Use format \"yyyy-MM-dd hh:mm:ss\")")
-    private Date endDate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,14 +57,6 @@ public class ListSystemVMsUsageHistoryCmd extends BaseListCmd {
 
     public String getName() {
         return name;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
     }
 
     /////////////////////////////////////////////////////
