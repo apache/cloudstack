@@ -157,18 +157,9 @@
           <a-col>
             <strong>{{ $t('label.disk') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.disk.usage')" @click="onClickShowResourceInfoModal('DISK')"/>
-            <a-select class="chart-type-select" v-model:value="selectedDiskChartType">
-              <a-select-option v-for="(type, typeIndex) in diskChartTypes" :key="typeIndex">
-                {{ type }}
-              </a-select-option>
-            </a-select>
-            <a-select
-              v-if="selectedDiskChartType === 1"
-              v-model:value="selectedDiskUnitOfMeasurement">
-              <a-select-option v-for="unit in diskUnitsOfMeasurement" :key="unit">
-                {{ unit }}
-              </a-select-option>
-            </a-select>
+            <div class="chart-row-inner">
+              {{ $t('label.iops') }}
+            </div>
             <resource-stats-line-chart
               v-if="selectedDiskChartType === 0"
               :chartLabels="chartLabels"
@@ -177,8 +168,17 @@
               :yAxisIncrementValue="100"
               :yAxisMeasurementUnit="' IOPS'"
             />
+            <div class="chart-row-inner">
+              {{ $t('label.read.and.write') }}
+              <a-select
+                v-model:value="selectedDiskUnitOfMeasurement">
+                <a-select-option v-for="unit in diskUnitsOfMeasurement" :key="unit">
+                  {{ unit }}
+                </a-select-option>
+              </a-select>
+            </div>
             <resource-stats-line-chart
-              v-if="selectedDiskChartType === 1 && selectedDiskUnitOfMeasurement === 'KiB'"
+              v-if="selectedDiskUnitOfMeasurement === 'KiB'"
               :chartLabels="chartLabels"
               :chartData="resourceUsageHistory.disk.readAndWrite.inKiB"
               :yAxisInitialMax="100"
@@ -186,7 +186,7 @@
               :yAxisMeasurementUnit="' KiB'"
             />
             <resource-stats-line-chart
-              v-if="selectedDiskChartType === 1 && selectedDiskUnitOfMeasurement === 'MiB'"
+              v-if="selectedDiskUnitOfMeasurement === 'MiB'"
               :chartLabels="chartLabels"
               :chartData="resourceUsageHistory.disk.readAndWrite.inMiB"
               :yAxisInitialMax="10"
@@ -194,7 +194,7 @@
               :yAxisMeasurementUnit="' MiB'"
             />
             <resource-stats-line-chart
-              v-if="selectedDiskChartType === 1 && selectedDiskUnitOfMeasurement === 'GiB'"
+              v-if="selectedDiskUnitOfMeasurement === 'GiB'"
               :chartLabels="chartLabels"
               :chartData="resourceUsageHistory.disk.readAndWrite.inGiB"
               :yAxisInitialMax="1"
