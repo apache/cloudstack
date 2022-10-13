@@ -371,14 +371,14 @@ public class KVMStorageProcessorTest {
     @PrepareForTest(KVMStorageProcessor.class)
     public void checkDetachSucessTestDetachReturnTrue() throws Exception {
         checkDetachSucessTest(false);
-        Assert.assertTrue(storageProcessorSpy.checkDetachSucess("path", domainMock));
+        Assert.assertTrue(storageProcessorSpy.checkDetachSuccess("path", domainMock));
     }
 
     @Test
     @PrepareForTest(KVMStorageProcessor.class)
     public void checkDetachSucessTestDetachReturnFalse() throws Exception {
         checkDetachSucessTest(true);
-        Assert.assertFalse(storageProcessorSpy.checkDetachSucess("path", domainMock));
+        Assert.assertFalse(storageProcessorSpy.checkDetachSuccess("path", domainMock));
     }
 
     private void attachOrDetachDeviceTest (boolean attach, String vmName, LibvirtVMDef.DiskDef xml) throws LibvirtException, InternalErrorException {
@@ -425,7 +425,7 @@ public class KVMStorageProcessorTest {
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachSuccess() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
-        PowerMockito.doReturn(true).when(storageProcessorSpy).checkDetachSucess(Mockito.anyString(), Mockito.any(Domain.class));
+        PowerMockito.doReturn(true).when(storageProcessorSpy).checkDetachSuccess(Mockito.anyString(), Mockito.any(Domain.class));
         Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock, 10000);
@@ -436,7 +436,7 @@ public class KVMStorageProcessorTest {
     @PrepareForTest(KVMStorageProcessor.class)
     public void attachOrDetachDeviceTestDetachThrowInternalErrorException() throws LibvirtException, InternalErrorException {
         Mockito.when(connectMock.domainLookupByName("vmName")).thenReturn(domainMock);
-        PowerMockito.doReturn(false).when(storageProcessorSpy).checkDetachSucess(Mockito.anyString(), Mockito.any(Domain.class));
+        PowerMockito.doReturn(false).when(storageProcessorSpy).checkDetachSuccess(Mockito.anyString(), Mockito.any(Domain.class));
         Mockito.when(diskDefMock.toString()).thenReturn("diskDef");
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock);

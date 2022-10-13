@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -1072,8 +1071,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
         }
     }
-    protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws LibvirtException, URISyntaxException,
-    InternalErrorException {
+    protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws
+            LibvirtException, InternalErrorException {
         DiskDef iso = new DiskDef();
         boolean isUefiEnabled = MapUtils.isNotEmpty(params) && params.containsKey("UEFI");
         if (isoPath != null && isAttach) {
@@ -1099,7 +1098,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
         }
-        return;
     }
 
     @Override
@@ -1113,8 +1111,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true, cmd.getControllerInfo());
         } catch (final LibvirtException e) {
-            return new Answer(cmd, false, e.toString());
-        } catch (final URISyntaxException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
             return new Answer(cmd, false, e.toString());
@@ -1136,8 +1132,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false, cmd.getParams());
         } catch (final LibvirtException e) {
-            return new Answer(cmd, false, e.toString());
-        } catch (final URISyntaxException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
             return new Answer(cmd, false, e.toString());
@@ -1172,6 +1166,17 @@ public class KVMStorageProcessor implements StorageProcessor {
             throws LibvirtException, InternalErrorException {
         attachOrDetachDevice(conn, attach, vmName, xml, 0l);
     }
+
+    /**
+     * attach or detach a device (ISO or disk) to an instance
+     * @param conn libvirt connection
+     * @param attach boolean that determines whether the device will be attached or detached
+     * @param vmName instance name
+     * @param diskDef disk definition or iso to be attached or detached
+     * @param waitDetachDevice value set in milliseconds to wait before assuming device removal failed
+     * @throws LibvirtException
+     * @throws InternalErrorException
+     */
     protected synchronized void attachOrDetachDevice(final Connect conn, final boolean attach, final String vmName, final DiskDef diskDef, long waitDetachDevice)
             throws LibvirtException, InternalErrorException {
         Domain dm = null;
@@ -1188,15 +1193,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.debug(String.format("Detaching device: [%s].", diskXml));
             dm.detachDevice(diskXml);
             long wait = waitDetachDevice;
-            while (!checkDetachSucess(diskPath, dm) && wait > 0) {
-                try {
-                    wait -= waitDelayForVirshCommands;
-                    Thread.sleep(waitDelayForVirshCommands);
-                    s_logger.trace(String.format("Trying to detach device [%s] from VM instance with UUID [%s]. " +
-                            "Waiting [%s] milliseconds before assuming the VM was unable to detach the volume.", diskPath, dm.getUUIDString(), wait));
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+            while (!checkDetachSuccess(diskPath, dm) && wait > 0) {
+                wait = getWaitAfterSleep(dm, diskPath, wait);
             }
             if (wait <= 0) {
                 throw new InternalErrorException(String.format("Could not detach volume after sending the command and waiting for [%s] milliseconds. Probably the VM does " +
@@ -1221,10 +1219,32 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
         }
-
-        return;
     }
-    protected boolean checkDetachSucess(String diskPath, Domain dm) throws LibvirtException {
+
+    /**
+     * Waits {@link #waitDelayForVirshCommands} milliseconds before checking again if the device has been removed.
+     * @return The configured value in wait.detach.device reduced by {@link #waitDelayForVirshCommands}
+     * @throws LibvirtException
+     */
+    private long getWaitAfterSleep(Domain dm, String diskPath, long wait) throws LibvirtException {
+        try {
+            wait -= waitDelayForVirshCommands;
+            Thread.sleep(waitDelayForVirshCommands);
+            s_logger.trace(String.format("Trying to detach device [%s] from VM instance with UUID [%s]. " +
+                    "Waiting [%s] milliseconds before assuming the VM was unable to detach the volume.", diskPath, dm.getUUIDString(), wait));
+        } catch (InterruptedException e) {
+            throw new CloudRuntimeException(e);
+        }
+        return wait;
+    }
+
+    /**
+     * Checks if the device has been removed from the instance
+     * @param diskPath Path to the device that was removed
+     * @param dm instance to be checked if the device was properly removed
+     * @throws LibvirtException
+     */
+    protected boolean checkDetachSuccess(String diskPath, Domain dm) throws LibvirtException {
         LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         parser.parseDomainXML(dm.getXMLDesc(0));
         List<DiskDef> disks = parser.getDisks();
@@ -1237,6 +1257,32 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
         return true;
     }
+
+    /**
+     * attach or detach a disk to an instance
+     * @param conn libvirt connection
+     * @param attach boolean that determines whether the device will be attached or detached
+     * @param vmName instance name
+     * @param attachingDisk kvm physical disk
+     * @param devId device id in instance
+     * @param serial
+     * @param bytesReadRate bytes read rate
+     * @param bytesReadRateMax bytes read rate max
+     * @param bytesReadRateMaxLength bytes read rate max length
+     * @param bytesWriteRate bytes write rate
+     * @param bytesWriteRateMax bytes write rate amx
+     * @param bytesWriteRateMaxLength bytes write rate max length
+     * @param iopsReadRate iops read rate
+     * @param iopsReadRateMax iops read rate max
+     * @param iopsReadRateMaxLength iops read rate max length
+     * @param iopsWriteRate iops write rate
+     * @param iopsWriteRateMax iops write rate max
+     * @param iopsWriteRateMaxLength iops write rate max length
+     * @param cacheMode cache mode
+     * @param encryptDetails encrypt details
+     * @throws LibvirtException
+     * @throws InternalErrorException
+     */
     protected synchronized void attachOrDetachDisk(final Connect conn, final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk, final int devId,
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
@@ -1247,6 +1293,34 @@ public class KVMStorageProcessor implements StorageProcessor {
                 bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate,
                 iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l);
     }
+
+    /**
+     *
+     * attach or detach a disk to an instance
+     * @param conn libvirt connection
+     * @param attach boolean that determines whether the device will be attached or detached
+     * @param vmName instance name
+     * @param attachingDisk kvm physical disk
+     * @param devId device id in instance
+     * @param serial
+     * @param bytesReadRate bytes read rate
+     * @param bytesReadRateMax bytes read rate max
+     * @param bytesReadRateMaxLength bytes read rate max length
+     * @param bytesWriteRate bytes write rate
+     * @param bytesWriteRateMax bytes write rate amx
+     * @param bytesWriteRateMaxLength bytes write rate max length
+     * @param iopsReadRate iops read rate
+     * @param iopsReadRateMax iops read rate max
+     * @param iopsReadRateMaxLength iops read rate max length
+     * @param iopsWriteRate iops write rate
+     * @param iopsWriteRateMax iops write rate max
+     * @param iopsWriteRateMaxLength iops write rate max length
+     * @param cacheMode cache mode
+     * @param encryptDetails encrypt details
+     * @param waitDetachDevice value set in milliseconds to wait before assuming device removal failed
+     * @throws LibvirtException
+     * @throws InternalErrorException
+     */
     protected synchronized void attachOrDetachDisk(final Connect conn, final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk, final int devId,
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
@@ -1379,7 +1453,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            attachOrDetachDevice(conn, attach, vmName, diskdef);
+            attachOrDetachDevice(conn, attach, vmName, diskdef, waitDetachDevice);
         } finally {
             if (dm != null) {
                 dm.free();

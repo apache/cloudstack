@@ -336,7 +336,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<Boolean>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
             "If true, volume's disk offering can be changed only with the matched storage tags", true, ConfigKey.Scope.Zone);
 
-    public static ConfigKey<Long> WaitDetachDevice = new ConfigKey<>(
+    public static final ConfigKey<Long> WaitDetachDevice = new ConfigKey<>(
             "Advanced",
             Long.class,
             "wait.detach.device",
