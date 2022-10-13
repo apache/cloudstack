@@ -34,6 +34,7 @@ import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -203,25 +204,20 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 userNames = userNames.substring(0, userNames.length() - 1);
             }
 
-            final Map<String, String> optionMap = new HashMap<String, String>();
-            optionMap.put("accountName", account.getAccountName());
-            optionMap.put("accountID", account.getUuid());
-            optionMap.put("accountUsers", userNames);
-            optionMap.put("domainName", accountDomain.getName());
-            optionMap.put("domainID", accountDomain.getUuid());
-            optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.toString());
-            if (emailType == QuotaEmailTemplateTypes.QUOTA_STATEMENT) {
-                optionMap.put("quotaUsage", QuotaConfig.QuotaCurrencySymbol.value() + " " + usage.toString());
-            }
+            final Map<String, String> subjectOptionMap = generateOptionMap(account, userNames, accountDomain, balance, usage, emailType, false);
+            final Map<String, String> bodyOptionMap = generateOptionMap(account, userNames, accountDomain, balance, usage, emailType, true);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName() + "domainID"
                         + accountDomain.getUuid());
             }
 
-            final StrSubstitutor templateEngine = new StrSubstitutor(optionMap);
-            final String subject = templateEngine.replace(emailTemplate.getTemplateSubject());
-            final String body = templateEngine.replace(emailTemplate.getTemplateBody());
+            final StrSubstitutor subjectSubstitutor = new StrSubstitutor(subjectOptionMap);
+            final String subject = subjectSubstitutor.replace(emailTemplate.getTemplateSubject());
+
+            final StrSubstitutor bodySubstitutor = new StrSubstitutor(bodyOptionMap);
+            final String body = bodySubstitutor.replace(emailTemplate.getTemplateBody());
+
             try {
                 sendQuotaAlert(account.getUuid(), emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
@@ -235,6 +231,34 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         } else {
             s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
         }
+    }
+
+    /*
+    *
+    *
+     */
+    public Map<String, String> generateOptionMap(AccountVO accountVO, String userNames, DomainVO domainVO, final BigDecimal balance, final BigDecimal usage,
+                                                 final QuotaConfig.QuotaEmailTemplateTypes emailType, boolean escapeHtml) {
+        final Map<String, String> optionMap = new HashMap<>();
+        optionMap.put("accountID", accountVO.getUuid());
+        optionMap.put("domainID", domainVO.getUuid());
+        optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.toString());
+
+        if (emailType == QuotaEmailTemplateTypes.QUOTA_STATEMENT) {
+            optionMap.put("quotaUsage", QuotaConfig.QuotaCurrencySymbol.value() + " " + usage.toString());
+        }
+
+        if (escapeHtml) {
+            optionMap.put("accountName", StringEscapeUtils.escapeHtml(accountVO.getAccountName()));
+            optionMap.put("accountUsers", StringEscapeUtils.escapeHtml(userNames));
+            optionMap.put("domainName", StringEscapeUtils.escapeHtml(domainVO.getName()));
+            return optionMap;
+        }
+
+        optionMap.put("accountName", accountVO.getAccountName());
+        optionMap.put("accountUsers", userNames);
+        optionMap.put("domainName", domainVO.getName());
+        return optionMap;
     }
 
     public static long getDifferenceDays(Date d1, Date d2) {
