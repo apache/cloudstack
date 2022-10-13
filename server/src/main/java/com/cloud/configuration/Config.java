@@ -689,7 +689,7 @@ public enum Config {
             Boolean.class,
             "secstorage.encrypt.copy",
             "false",
-            "Use SSL method used to encrypt copy traffic between zones",
+            "Use SSL method used to encrypt copy traffic between zones. Also ensures that the certificate assigned to the zone is used when generating links for external access.",
             "true,false"),
     SecStorageSecureCopyCert(
             "Advanced",
