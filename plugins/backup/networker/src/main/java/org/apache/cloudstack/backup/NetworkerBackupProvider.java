@@ -63,6 +63,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
@@ -485,7 +486,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         if ( backupRentionPeriod == null ) {
             LOG.warn("There is no retention setting for Emc Networker Policy, setting default for 1 day");
-            backupRentionPeriod="1 Day";
+            backupRentionPeriod = "1 Day";
         }
 
         // Get Cluster
