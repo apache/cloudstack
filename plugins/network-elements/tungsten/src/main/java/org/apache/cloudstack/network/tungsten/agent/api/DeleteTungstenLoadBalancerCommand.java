@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class DeleteTungstenLoadBalancerCommand extends TungstenCommand {
     private final String projectFqn;
     private final String publicNetworkUuid;
@@ -63,5 +65,19 @@ public class DeleteTungstenLoadBalancerCommand extends TungstenCommand {
 
     public String getFiName() {
         return fiName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenLoadBalancerCommand that = (DeleteTungstenLoadBalancerCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(publicNetworkUuid, that.publicNetworkUuid) && Objects.equals(loadBalancerName, that.loadBalancerName) && Objects.equals(loadBalancerHealthMonitorName, that.loadBalancerHealthMonitorName) && Objects.equals(loadBalancerVmiName, that.loadBalancerVmiName) && Objects.equals(fipName, that.fipName) && Objects.equals(fiName, that.fiName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, publicNetworkUuid, loadBalancerName, loadBalancerHealthMonitorName, loadBalancerVmiName, fipName, fiName);
     }
 }

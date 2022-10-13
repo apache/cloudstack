@@ -51,7 +51,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String SystemPrivateGatewayNetworkOfferingWithoutVlan = "System-Private-Gateway-Network-Offering-Without-Vlan";
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
-    public final static String DefaultTungstenSharedNetworkOfferingWithSGService = "DefaultTungstenSharedNetworkOfferingWithSGService";
+    public static final String DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE = "DefaultTungstenSharedNetworkOfferingWithSGService";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";

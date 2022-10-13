@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.resource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -45,7 +46,6 @@ import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.GlobalVrouterConfig;
 import net.juniper.tungsten.api.types.InstanceIp;
-import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.Loadbalancer;
 import net.juniper.tungsten.api.types.LoadbalancerHealthmonitor;
 import net.juniper.tungsten.api.types.LoadbalancerListener;
@@ -53,11 +53,7 @@ import net.juniper.tungsten.api.types.LoadbalancerMember;
 import net.juniper.tungsten.api.types.LoadbalancerPool;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
-import net.juniper.tungsten.api.types.PolicyTermType;
 import net.juniper.tungsten.api.types.Project;
-import net.juniper.tungsten.api.types.RouteTable;
-import net.juniper.tungsten.api.types.RouteType;
-import net.juniper.tungsten.api.types.RoutingPolicy;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.ServiceGroup;
 import net.juniper.tungsten.api.types.Tag;
@@ -66,14 +62,9 @@ import net.juniper.tungsten.api.types.VirtualMachine;
 import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -89,16 +80,13 @@ import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallPo
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkLoadbalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenTagCommand;
@@ -137,33 +125,20 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenAddressGroup
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenApplicationPolicySetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNicCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagTypeCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkGatewayFromLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenTagCommand;
@@ -177,9 +152,6 @@ import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalanc
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerMemberCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerPoolCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenVrouterConfigCommand;
-import org.apache.cloudstack.network.tungsten.model.RoutingPolicyFromTerm;
-import org.apache.cloudstack.network.tungsten.model.RoutingPolicyPrefix;
-import org.apache.cloudstack.network.tungsten.model.RoutingPolicyThenTerm;
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.model.TungstenNetworkPolicy;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
@@ -192,7 +164,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -241,11 +212,10 @@ public class TungstenResourceTest {
         assertTrue(tungstenResource.configure("tungsten", map));
     }
 
-    @Test(expected = ConfigurationException.class)
-    public void configureFailTest() throws ConfigurationException {
+    @Test
+    public void configureFailTest() {
         Map<String, Object> map = new HashMap<>();
-
-        assertTrue(tungstenResource.configure("tungsten", map));
+        assertThrows(ConfigurationException.class, () -> tungstenResource.configure("tungsten", map));
     }
 
     @Test
@@ -517,7 +487,7 @@ public class TungstenResourceTest {
     @Test
     public void executeRequestCreateTungstenNetworkPolicyCommandest() {
         TungstenRule tungstenRule = mock(TungstenRule.class);
-        List<TungstenRule> tungstenRuleList = Arrays.asList(tungstenRule);
+        List<TungstenRule> tungstenRuleList = List.of(tungstenRule);
         TungstenCommand command = new CreateTungstenNetworkPolicyCommand("policy", "projectFqn", tungstenRuleList);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
 
@@ -732,8 +702,8 @@ public class TungstenResourceTest {
         when(pool.getUuid()).thenReturn("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe");
         when(member1.getUuid()).thenReturn("7d5575eb-d029-467e-8b78-6056a8c94a71");
         when(member2.getUuid()).thenReturn("88729834-3ebd-413a-adf9-40aff73cf638");
-        when(loadbalancer.getLoadbalancerListenerBackRefs()).thenReturn(Arrays.asList(listerner));
-        when(loadbalancerListener.getLoadbalancerPoolBackRefs()).thenReturn(Arrays.asList(pool));
+        when(loadbalancer.getLoadbalancerListenerBackRefs()).thenReturn(List.of(listerner));
+        when(loadbalancerListener.getLoadbalancerPoolBackRefs()).thenReturn(List.of(pool));
         when(loadbalancerPool.getLoadbalancerMembers()).thenReturn(Arrays.asList(member1, member2));
         when(tungstenApi.getTungstenObjectByName(eq(Loadbalancer.class), any(), anyString())).thenReturn(loadbalancer);
         when(tungstenApi.getTungstenObjectByName(eq(VirtualMachineInterface.class), any(), anyString())).thenReturn(
@@ -1047,10 +1017,10 @@ public class TungstenResourceTest {
         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
         when(tungstenApi.createTungstenTag(anyString(), anyString(), anyString(), any())).thenReturn(tag);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(NetworkPolicy.class), anyList())).thenAnswer(networkPoliciesAnswer);
+        when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+        when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+        when(tungstenApi.getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
+        when(tungstenApi.getBackRefFromNetworkPolicy(eq(NetworkPolicy.class), anyList())).thenAnswer(networkPoliciesAnswer);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
         assertNotNull(answer.getTungstenModel());
@@ -1097,11 +1067,11 @@ public class TungstenResourceTest {
         VirtualMachine virtualMachine = mock(VirtualMachine.class);
         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
-        doReturn(Arrays.asList(tag)).when(tungstenApi).listTungstenTag(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
-        doReturn(Arrays.asList(virtualNetwork)).when(tungstenApi).getBackRefFromObject(eq(VirtualNetwork.class), anyList());
-        doReturn(Arrays.asList(virtualMachine)).when(tungstenApi).getBackRefFromObject(eq(VirtualMachine.class), anyList());
-        doReturn(Arrays.asList(virtualMachineInterface)).when(tungstenApi).getBackRefFromObject(eq(VirtualMachineInterface.class), anyList());
-        doReturn(Arrays.asList(networkPolicy)).when(tungstenApi).getBackRefFromObject(eq(NetworkPolicy.class), anyList());
+        doReturn(List.of(tag)).when(tungstenApi).listTungstenTag(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        doReturn(List.of(virtualNetwork)).when(tungstenApi).getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList());
+        doReturn(List.of(virtualMachine)).when(tungstenApi).getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList());
+        doReturn(List.of(virtualMachineInterface)).when(tungstenApi).getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList());
+        doReturn(List.of(networkPolicy)).when(tungstenApi).getBackRefFromNetworkPolicy(eq(NetworkPolicy.class), anyList());
 
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
@@ -1146,11 +1116,11 @@ public class TungstenResourceTest {
         Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
         when(tungstenApi.applyTungstenPolicyTag(anyString(), anyString())).thenReturn(true);
         when(tungstenApi.getTungstenObject(eq(Tag.class), anyString())).thenReturn(tag);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(NetworkPolicy.class), anyList())).thenAnswer(networkPoliciesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(ApplicationPolicySet.class), anyList())).thenAnswer(applicationPoliciesAnswer);
+        when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+        when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+        when(tungstenApi.getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
+        when(tungstenApi.getBackRefFromNetworkPolicy(eq(NetworkPolicy.class), anyList())).thenAnswer(networkPoliciesAnswer);
+        when(tungstenApi.getBackRefFromApplicationPolicySet(eq(ApplicationPolicySet.class), anyList())).thenAnswer(applicationPoliciesAnswer);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
         assertNotNull(answer.getTungstenModel());
@@ -1174,7 +1144,7 @@ public class TungstenResourceTest {
     @Test
     public void executeRequestRemoveTungstenTagCommandTest() {
         List<String> networkUuids = Arrays.asList("91d32b4a-10a9-11ec-82a8-0242ac130003", "97007956-10a9-11ec-82a8-0242ac130003");
-        List<String> vmUuids = Arrays.asList("a2f226ba-10a9-11ec-82a8-0242ac130003");
+        List<String> vmUuids = List.of("a2f226ba-10a9-11ec-82a8-0242ac130003");
         List<String> nicUuids = Arrays.asList("af6478e4-10a9-11ec-82a8-0242ac130003", "b30ff54a-10a9-11ec-82a8-0242ac130003");
         TungstenCommand command = new RemoveTungstenTagCommand(networkUuids, vmUuids, nicUuids,
             "c8ed82ea-10a1-11ec-82a8-0242ac130003", "41c2e4a8-1553-4cbb-9d68-0c1173e18c7b",
@@ -1196,11 +1166,11 @@ public class TungstenResourceTest {
         ApplicationPolicySet applicationPolicySet2 = mock(ApplicationPolicySet.class);
         Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
         when(tungstenApi.removeTungstenTag(anyList(), anyList(), anyList(), anyString(), anyString(), anyString())).thenReturn(tag);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(NetworkPolicy.class), anyList())).thenAnswer(networkPoliciesAnswer);
-        when(tungstenApi.getBackRefFromObject(eq(ApplicationPolicySet.class), anyList())).thenAnswer(applicationPoliciesAnswer);
+        when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+        when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+        when(tungstenApi.getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
+        when(tungstenApi.getBackRefFromNetworkPolicy(eq(NetworkPolicy.class), anyList())).thenAnswer(networkPoliciesAnswer);
+        when(tungstenApi.getBackRefFromApplicationPolicySet(eq(ApplicationPolicySet.class), anyList())).thenAnswer(applicationPoliciesAnswer);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
         assertNotNull(answer.getTungstenModel());
@@ -1392,176 +1362,6 @@ public class TungstenResourceTest {
     }
 
     @Test
-    public void executeRequestCreateTungstenNetworkRouteTableCommandTest() {
-        TungstenCommand command = new CreateTungstenNetworkRouteTableCommand(null, "NetworkRouteTableName");
-        RouteTable routeTable = mock(RouteTable.class);
-        when(tungstenApi.createNetworkRouteTable(anyString(), anyString(), anyString())).thenReturn(routeTable);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBase());
-    }
-
-    @Test
-    public void executeRequestCreateTungstenInterfaceRouteTableCommandTest() {
-        TungstenCommand command = new CreateTungstenInterfaceRouteTableCommand(null, "interfaceRouteTableName");
-        InterfaceRouteTable interfaceRouteTable = mock(InterfaceRouteTable.class);
-        when(tungstenApi.createInterfaceRouteTable(anyString(), anyString(), anyString())).thenReturn(interfaceRouteTable);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBase());
-    }
-
-    @Test
-    public void executeRequestAddTungstenNetworkStaticRouteCommandTest()  {
-        TungstenCommand command = new AddTungstenNetworkStaticRouteCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "9.9.9.9/32", "10.0.0.4", "ip-address", "64511:1");
-        RouteType routeType = mock(RouteType.class);
-        when(tungstenApi.addNetworkStaticRoute(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(routeType);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiPropertyBase());
-    }
-
-    @Test
-    public void executeRequestAddTungstenInterfaceStaticRouteCommandTest()  {
-        TungstenCommand command = new AddTungstenInterfaceStaticRouteCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "9.9.9.9/32", "64511:1");
-        RouteType routeType = mock(RouteType.class);
-        when(tungstenApi.addInterfaceStaticRoute(anyString(), anyString(), anyString())).thenReturn(routeType);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiPropertyBase());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenNetworkStaticRouteCommandTest()  {
-        TungstenCommand command = new RemoveTungstenNetworkStaticRouteCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "9.9.9.9/32");
-        RouteType routeType = mock(RouteType.class);
-        when(tungstenApi.removeNetworkStaticRoute(anyString(), anyString())).thenReturn(routeType);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiPropertyBase());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenInterfaceStaticRouteCommandTest() {
-        TungstenCommand command = new RemoveTungstenInterfaceStaticRouteCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "9.9.9.9/32");
-        RouteType routeType = mock(RouteType.class);
-        when(tungstenApi.removeInterfaceStaticRoute(anyString(), anyString())).thenReturn(routeType);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiPropertyBase());
-    }
-
-    @Test
-    public void executeRequestListTungstenNetworkRouteTableCommandTest() {
-        TungstenCommand command = new ListTungstenNetworkRouteTableCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                null, true);
-        RouteTable routeTable1 = mock(RouteTable.class);
-        RouteTable routeTable2 = mock(RouteTable.class);
-        Answer<List<ApiObjectBase>> routeTablesAnswer = setupApiObjectBaseListAnswer(routeTable1, routeTable2);
-        when(tungstenApi.listTungstenNetworkRouteTable(anyString())).thenAnswer(routeTablesAnswer);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBaseList());
-    }
-
-    @Test
-    public void executeRequestListTungstenInterfaceRouteTableCommandTest() {
-        TungstenCommand command = new ListTungstenInterfaceRouteTableCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                null, true);
-        InterfaceRouteTable interfaceRouteTable1 = mock(InterfaceRouteTable.class);
-        InterfaceRouteTable interfaceRouteTable2 = mock(InterfaceRouteTable.class);
-        Answer<List<ApiObjectBase>> interfaceRouteTablesAnswer = setupApiObjectBaseListAnswer(interfaceRouteTable1, interfaceRouteTable2);
-        when(tungstenApi.listTungstenInterfaceRouteTable(anyString())).thenAnswer(interfaceRouteTablesAnswer);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBaseList());
-    }
-
-    @Test
-    public void executeRequestListTungstenNetworkRouteTableStaticRouteCommandTest() {
-        TungstenCommand command = new ListTungstenNetworkRouteTableStaticRouteCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "9.9.9.9/32");
-        RouteType routeType1 = mock(RouteType.class);
-        RouteType routeType2 = mock(RouteType.class);
-        Answer<List<ApiPropertyBase>> routeTypesAnswer = setupApiPropertyBaseListAnswer(routeType1, routeType2);
-        when(tungstenApi.listNetworkRouteTableStaticRoute(anyString(), anyString())).thenAnswer(routeTypesAnswer);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void executeRequestListTungstenInterfaceRouteTableStaticRouteCommandTest() {
-        TungstenCommand command = new ListTungstenInterfaceRouteTableStaticRouteCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "9.9.9.9/32");
-        RouteType routeType1 = mock(RouteType.class);
-        RouteType routeType2 = mock(RouteType.class);
-        Answer<List<ApiPropertyBase>> routeTypesAnswer = setupApiPropertyBaseListAnswer(routeType1, routeType2);
-        when(tungstenApi.listInterfaceRouteTableStaticRoute(anyString(), anyString())).thenAnswer(routeTypesAnswer);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenNetworkRouteTableCommandTest() {
-        TungstenCommand command = new RemoveTungstenNetworkRouteTableCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
-        when(tungstenApi.removeNetworkRouteTable(anyString())).thenReturn(true);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenInterfaceRouteTableCommandTest() {
-        TungstenCommand command = new RemoveTungstenInterfaceRouteTableCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
-        when(tungstenApi.removeInterfaceRouteTable(anyString())).thenReturn(true);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void executeRequestAddTungstenRouteTableToNetworkCommandTest() {
-        TungstenCommand command = new AddTungstenRouteTableToNetworkCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "439a7efc-113e-11ec-82a8-0242ac130003");
-        RouteTable routeTable = mock(RouteTable.class);
-        when(tungstenApi.addRouteTableToNetwork(anyString(), anyString())).thenReturn(routeTable);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBase());
-    }
-
-    @Test
-    public void executeRequestAddTungstenRouteTableToInterfaceCommandTest() {
-        TungstenCommand command = new AddTungstenRouteTableToInterfaceCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "439a7efc-113e-11ec-82a8-0242ac130003");
-        InterfaceRouteTable interfaceRouteTable = mock(InterfaceRouteTable.class);
-        when(tungstenApi.addRouteTableToInterface(anyString(), anyString())).thenReturn(interfaceRouteTable);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBase());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenRouteTableFromNetworkCommandTest() {
-        TungstenCommand command = new RemoveTungstenRouteTableFromNetworkCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "439a7efc-113e-11ec-82a8-0242ac130003");
-        when(tungstenApi.removeRouteTableFromNetwork(anyString(), anyString())).thenReturn(true);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenRouteTableFromInterfaceCommandTest() {
-        TungstenCommand command = new RemoveTungstenRouteTableFromInterfaceCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                "439a7efc-113e-11ec-82a8-0242ac130003");
-        when(tungstenApi.removeRouteTableFromInterface(anyString(), anyString())).thenReturn(true);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
     public void executeRequestCreateTungstenRoutingLogicalRouterCommandTest() {
         TungstenCommand command = new CreateTungstenRoutingLogicalRouterCommand("projectFqn", "logicalRouterName");
         LogicalRouter logicalRouter = mock(LogicalRouter.class);
@@ -1618,7 +1418,7 @@ public class TungstenResourceTest {
         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
-        when(tungstenApi.listRoutingLogicalRouter(anyString(), anyString())).thenAnswer(logicalRoutersAnswer);
+        when(tungstenApi.listRoutingLogicalRouter(anyString())).thenAnswer(logicalRoutersAnswer);
         when(tungstenApi.listConnectedNetworkFromLogicalRouter(any(LogicalRouter.class))).thenReturn(virtualNetworks);
         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
         assertTrue(answer.getResult());
@@ -1645,7 +1445,7 @@ public class TungstenResourceTest {
         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
 
         when(tungstenApi.getTungstenObject(eq(LogicalRouter.class), anyString())).thenReturn(logicalRouter);
-        when(logicalRouter.getVirtualMachineInterface()).thenReturn(Arrays.asList(objectReference));
+        when(logicalRouter.getVirtualMachineInterface()).thenReturn(List.of(objectReference));
         when(tungstenApi.updateTungstenObject(any(LogicalRouter.class))).thenReturn(true);
         when(tungstenApi.getTungstenObject(eq(VirtualMachineInterface.class), anyString())).thenReturn(virtualMachineInterface);
         when(tungstenApi.deleteTungstenVmInterface(any(VirtualMachineInterface.class))).thenReturn(true);
@@ -1655,87 +1455,11 @@ public class TungstenResourceTest {
         assertTrue(answer.getResult());
     }
 
-    @Test
-    public void executeRequestListTungstenRoutingPolicyCommandTest() {
-        TungstenCommand command = new ListTungstenRoutingPolicyCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003", null, false);
-        RoutingPolicy routingPolicy1 = mock(RoutingPolicy.class);
-        RoutingPolicy routingPolicy2 = mock(RoutingPolicy.class);
-        List<RoutingPolicy> routingPoliciesAnswer = new ArrayList<>(Arrays.asList(routingPolicy1, routingPolicy2));
-        when(tungstenApi.listTungstenRoutingPolicy(anyString())).thenReturn(routingPoliciesAnswer);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBaseList());
-    }
-
-    @Test
-    public void executeRequestCreateTungstenRoutingPolicyCommandTest() {
-        TungstenCommand command = new CreateTungstenRoutingPolicyCommand("projectFqn", "RoutingPolicyName");
-        RoutingPolicy routingPolicy = mock(RoutingPolicy.class);
-        when(tungstenApi.createRoutingPolicy(anyString(), anyString())).thenReturn(routingPolicy);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiObjectBase());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenRoutingPolicyCommandTest() {
-        TungstenCommand command = new RemoveTungstenRoutingPolicyCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
-        when(tungstenApi.removeRoutingPolicy(anyString())).thenReturn(true);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
-
-    @Test
-    public void executeRequestAddTungstenRoutingPolicyTermCommandTest() {
-        RoutingPolicyFromTerm routingPolicyFromTerm = new RoutingPolicyFromTerm(new ArrayList<>(Arrays.asList("no-export")),
-                true, new ArrayList<>(Arrays.asList("xmpp")),
-                new ArrayList<>(Arrays.asList(new RoutingPolicyPrefix("10.0.0.1", "exact"))));
-        List<RoutingPolicyThenTerm> routingPolicyThenTerms = new ArrayList<>(Arrays.asList(
-                new RoutingPolicyThenTerm(null, "add community", "1111:1111")));
-        PolicyTermType policyTermType = mock(PolicyTermType.class);
-        TungstenCommand command = new AddTungstenRoutingPolicyTermCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003",
-                routingPolicyFromTerm, routingPolicyThenTerms);
-        when(tungstenApi.addRoutingPolicyTerm(anyString(), any(RoutingPolicyFromTerm.class), anyList())).thenReturn(policyTermType);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-        assertNotNull(answer.getApiPropertyBase());
-    }
-
-    @Test
-    public void executeRequestRemoveTungstenRoutingPolicyTermCommandTest() {
-        RoutingPolicyFromTerm routingPolicyFromTerm = new RoutingPolicyFromTerm(new ArrayList<>(Arrays.asList("no-export")),
-                true, new ArrayList<>(Arrays.asList("xmpp")),
-                new ArrayList<>(Arrays.asList(new RoutingPolicyPrefix("10.0.0.1", "exact"))));
-        TungstenCommand command = new RemoveTungstenRoutingPolicyTermCommand(
-                "25cd50c0-be2d-42e0-9f7a-48b25db0cb48", routingPolicyFromTerm);
-        when(tungstenApi.removeRoutingPolicyTerm(anyString(), any(RoutingPolicyFromTerm.class))).thenReturn(true);
-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
-        assertTrue(answer.getResult());
-    }
 
     private <N extends ApiObjectBase> Answer<List<N>> setupApiObjectBaseListAnswer(N... values) {
-        final List<N> list = new ArrayList<N>();
 
-        list.addAll(Arrays.asList(values));
+        final List<N> list = new ArrayList<>(Arrays.asList(values));
 
-        Answer<List<N>> answer = new Answer<List<N>>() {
-            public List<N> answer(InvocationOnMock invocation) throws Throwable {
-                return list;
-            }
-        };
-        return answer;
-    }
-
-    private <N extends ApiPropertyBase> Answer<List<N>> setupApiPropertyBaseListAnswer(N... values) {
-        final List<N> list = new ArrayList<N>();
-
-        list.addAll(Arrays.asList(values));
-
-        Answer<List<N>> answer = new Answer<List<N>>() {
-            public List<N> answer(InvocationOnMock invocation) throws Throwable {
-                return list;
-            }
-        };
-        return answer;
+        return invocation -> list;
     }
 }

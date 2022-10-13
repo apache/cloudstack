@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class SetTungstenNetworkGatewayCommand extends TungstenCommand {
     private final String projectFqn;
     private final String routerName;
@@ -50,5 +52,19 @@ public class SetTungstenNetworkGatewayCommand extends TungstenCommand {
 
     public String getProjectFqn() {
         return projectFqn;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        SetTungstenNetworkGatewayCommand that = (SetTungstenNetworkGatewayCommand) o;
+        return vnId == that.vnId && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(routerName, that.routerName) && Objects.equals(vnUuid, that.vnUuid) && Objects.equals(vnGatewayIp, that.vnGatewayIp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, routerName, vnId, vnUuid, vnGatewayIp);
     }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class AddTungstenNetworkGatewayToLogicalRouterCommand extends TungstenCommand {
     private final String networkUuid;
     private final String logicalRouterUuid;
@@ -37,5 +39,19 @@ public class AddTungstenNetworkGatewayToLogicalRouterCommand extends TungstenCom
 
     public String getIpAddress() {
         return ipAddress;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AddTungstenNetworkGatewayToLogicalRouterCommand that = (AddTungstenNetworkGatewayToLogicalRouterCommand) o;
+        return Objects.equals(networkUuid, that.networkUuid) && Objects.equals(logicalRouterUuid, that.logicalRouterUuid) && Objects.equals(ipAddress, that.ipAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkUuid, logicalRouterUuid, ipAddress);
     }
 }

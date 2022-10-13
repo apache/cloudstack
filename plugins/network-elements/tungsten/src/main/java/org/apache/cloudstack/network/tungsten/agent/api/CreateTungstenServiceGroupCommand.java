@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class CreateTungstenServiceGroupCommand extends TungstenCommand {
@@ -52,5 +53,19 @@ public class CreateTungstenServiceGroupCommand extends TungstenCommand {
 
     public int getEndPort() {
         return endPort;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenServiceGroupCommand that = (CreateTungstenServiceGroupCommand) o;
+        return startPort == that.startPort && endPort == that.endPort && Objects.equals(uuid, that.uuid) && Objects.equals(name, that.name) && Objects.equals(protocol, that.protocol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), uuid, name, protocol, startPort, endPort);
     }
 }

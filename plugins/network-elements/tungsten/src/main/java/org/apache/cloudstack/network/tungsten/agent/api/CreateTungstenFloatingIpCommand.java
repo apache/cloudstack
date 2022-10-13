@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class CreateTungstenFloatingIpCommand extends TungstenCommand {
     private final String projectFqn;
     private final String networkUuid;
@@ -50,5 +52,19 @@ public class CreateTungstenFloatingIpCommand extends TungstenCommand {
 
     public String getPublicIp() {
         return publicIp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenFloatingIpCommand that = (CreateTungstenFloatingIpCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(networkUuid, that.networkUuid) && Objects.equals(fipName, that.fipName) && Objects.equals(name, that.name) && Objects.equals(publicIp, that.publicIp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, networkUuid, fipName, name, publicIp);
     }
 }

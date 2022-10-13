@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class UpdateTungstenLoadBalancerHealthMonitorCommand extends TungstenCommand {
     private final String projectFqn;
     private final String healthMonitorName;
@@ -75,5 +77,19 @@ public class UpdateTungstenLoadBalancerHealthMonitorCommand extends TungstenComm
 
     public String getUrlPath() {
         return urlPath;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateTungstenLoadBalancerHealthMonitorCommand that = (UpdateTungstenLoadBalancerHealthMonitorCommand) o;
+        return retry == that.retry && timeout == that.timeout && interval == that.interval && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(healthMonitorName, that.healthMonitorName) && Objects.equals(type, that.type) && Objects.equals(httpMethod, that.httpMethod) && Objects.equals(expectedCode, that.expectedCode) && Objects.equals(urlPath, that.urlPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, healthMonitorName, type, retry, timeout, interval, httpMethod, expectedCode, urlPath);
     }
 }

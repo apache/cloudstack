@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class CreateTungstenTagCommand extends TungstenCommand {
@@ -39,5 +40,19 @@ public class CreateTungstenTagCommand extends TungstenCommand {
 
     public String getTagValue() {
         return tagValue;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenTagCommand that = (CreateTungstenTagCommand) o;
+        return Objects.equals(uuid, that.uuid) && Objects.equals(tagType, that.tagType) && Objects.equals(tagValue, that.tagValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), uuid, tagType, tagValue);
     }
 }

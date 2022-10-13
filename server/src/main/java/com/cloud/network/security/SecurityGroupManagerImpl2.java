@@ -180,7 +180,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             if (agentId != null) {
                 NicVO nic = _nicDao.findFirstNicForVM(vm.getId());
                 List<String> nicSecIps = null;
-                if (nic != null && !nic.getBroadcastUri().equals(Networks.BroadcastDomainType.Tungsten.toUri("tf"))) {
+                if (nic != null && !nic.getBroadcastUri().equals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"))) {
                     if (nic.getSecondaryIp()) {
                         nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                     }

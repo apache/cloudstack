@@ -18,6 +18,8 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 import com.cloud.agent.api.Command;
 
+import java.util.Objects;
+
 public class SetupTungstenVRouterCommand extends Command {
     private final String oper;
     private final String inf;
@@ -52,6 +54,20 @@ public class SetupTungstenVRouterCommand extends Command {
 
     public String getVrf() {
         return vrf;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        SetupTungstenVRouterCommand that = (SetupTungstenVRouterCommand) o;
+        return Objects.equals(oper, that.oper) && Objects.equals(inf, that.inf) && Objects.equals(subnet, that.subnet) && Objects.equals(route, that.route) && Objects.equals(vrf, that.vrf);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), oper, inf, subnet, route, vrf);
     }
 
     @Override

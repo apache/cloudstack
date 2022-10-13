@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class RemoveTungstenNetworkSubnetCommand extends TungstenCommand {
     private final String networkUuid;
     private final String subnetName;
@@ -31,5 +33,19 @@ public class RemoveTungstenNetworkSubnetCommand extends TungstenCommand {
 
     public String getSubnetName() {
         return subnetName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        RemoveTungstenNetworkSubnetCommand that = (RemoveTungstenNetworkSubnetCommand) o;
+        return Objects.equals(networkUuid, that.networkUuid) && Objects.equals(subnetName, that.subnetName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkUuid, subnetName);
     }
 }

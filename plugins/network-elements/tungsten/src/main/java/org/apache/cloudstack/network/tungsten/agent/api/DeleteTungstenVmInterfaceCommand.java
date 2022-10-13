@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class DeleteTungstenVmInterfaceCommand extends TungstenCommand {
     private final String projectFqn;
     private final String name;
@@ -31,5 +33,19 @@ public class DeleteTungstenVmInterfaceCommand extends TungstenCommand {
 
     public String getProjectFqn() {
         return projectFqn;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenVmInterfaceCommand that = (DeleteTungstenVmInterfaceCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, name);
     }
 }

@@ -18,6 +18,8 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -178,22 +180,22 @@ public class TungstenGuestNetworkGuruTest {
 
         when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(dc.getGuestNetworkCidr()).thenReturn("10.1.1.1/24");
-        when(dc.getId()).thenReturn(1l);
+        when(dc.getId()).thenReturn(1L);
         when(dcDao.findById(anyLong())).thenReturn(dc);
 
-        when(physicalNetwork.getId()).thenReturn(1l);
-        when(physicalNetwork.getIsolationMethods()).thenReturn(Arrays.asList("TF"));
+        when(physicalNetwork.getId()).thenReturn(1L);
+        when(physicalNetwork.getIsolationMethods()).thenReturn(List.of("TF"));
         when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
         when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
-        when(offering.getId()).thenReturn(1l);
+        when(offering.getId()).thenReturn(1L);
 
         when(ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Tungsten)).thenReturn(
             true);
 
-        when(plan.getDataCenterId()).thenReturn(1l);
-        when(plan.getPhysicalNetworkId()).thenReturn(1l);
+        when(plan.getDataCenterId()).thenReturn(1L);
+        when(plan.getPhysicalNetworkId()).thenReturn(1L);
     }
 
     @Test
@@ -229,9 +231,9 @@ public class TungstenGuestNetworkGuruTest {
         final Account account = mock(Account.class);
 
         final Network designedNetwork = guru.design(offering, plan, network, account);
-        assertTrue(designedNetwork != null);
-        assertTrue(designedNetwork.getBroadcastDomainType() == Networks.BroadcastDomainType.Tungsten);
-        assertTrue(designedNetwork.getState() == Network.State.Allocated);
+        assertNotNull(designedNetwork);
+        assertSame(Networks.BroadcastDomainType.TUNGSTEN, designedNetwork.getBroadcastDomainType());
+        assertSame(Network.State.Allocated, designedNetwork.getState());
     }
 
     @Test
@@ -244,7 +246,7 @@ public class TungstenGuestNetworkGuruTest {
         when(network.getDataCenterId()).thenReturn(1L);
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.User);
-        when(nicDao.listByVmId(anyLong())).thenReturn(Arrays.asList(nicVO));
+        when(nicDao.listByVmId(anyLong())).thenReturn(List.of(nicVO));
 
         guru.deallocate(network, nicProfile, virtualMachineProfile);
         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong());
@@ -260,7 +262,7 @@ public class TungstenGuestNetworkGuruTest {
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenThrow(
             new IllegalArgumentException());
-        when(nicDao.listByVmId(anyLong())).thenReturn(Arrays.asList(nicVO));
+        when(nicDao.listByVmId(anyLong())).thenReturn(List.of(nicVO));
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.User);
 
@@ -268,7 +270,7 @@ public class TungstenGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplementGuestNetwork() throws InsufficientVirtualNetworkCapacityException {
+    public void testImplementGuestNetwork() {
         final Network network = mock(Network.class);
         final DeployDestination deployDestination = mock(DeployDestination.class);
         final ReservationContext reservationContext = mock(ReservationContext.class);
@@ -278,7 +280,7 @@ public class TungstenGuestNetworkGuruTest {
         when(network.getMode()).thenReturn(Networks.Mode.Dhcp);
         when(network.getGateway()).thenReturn("192.168.1.1");
         when(network.getCidr()).thenReturn("192.168.1.0/24");
-        when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Tungsten);
+        when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN);
         when(network.getNetworkOfferingId()).thenReturn(1L);
         when(network.getState()).thenReturn(Network.State.Implementing);
         when(network.getDataCenterId()).thenReturn(2L);
@@ -297,11 +299,11 @@ public class TungstenGuestNetworkGuruTest {
         when(tungstenService.allocateDnsIpAddress(any(Network.class), any(), anyString())).thenReturn(true);
 
         final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);
-        assertEquals(Networks.BroadcastDomainType.Tungsten.toUri("tf"), implemented.getBroadcastUri());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), implemented.getBroadcastUri());
         assertEquals("192.168.1.1", implemented.getGateway());
         assertEquals("192.168.1.0/24", implemented.getCidr());
         assertEquals(Networks.Mode.Dhcp, implemented.getMode());
-        assertEquals(Networks.BroadcastDomainType.Tungsten, implemented.getBroadcastDomainType());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN, implemented.getBroadcastDomainType());
         assertEquals(1L, implemented.getNetworkOfferingId());
         assertEquals(Network.State.Implemented, implemented.getState());
         assertEquals(2L, implemented.getDataCenterId());
@@ -316,7 +318,7 @@ public class TungstenGuestNetworkGuruTest {
     }
 
     @Test
-    public void testImplementSharedNetwork() throws InsufficientVirtualNetworkCapacityException {
+    public void testImplementSharedNetwork() {
         final Network network = mock(Network.class);
         final DeployDestination deployDestination = mock(DeployDestination.class);
         final ReservationContext reservationContext = mock(ReservationContext.class);
@@ -325,22 +327,22 @@ public class TungstenGuestNetworkGuruTest {
         when(network.getMode()).thenReturn(Networks.Mode.Dhcp);
         when(network.getGateway()).thenReturn("192.168.1.1");
         when(network.getCidr()).thenReturn("192.168.1.0/24");
-        when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Tungsten);
+        when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN);
         when(network.getNetworkOfferingId()).thenReturn(1L);
         when(network.getState()).thenReturn(Network.State.Implementing);
         when(network.getDataCenterId()).thenReturn(2L);
         when(network.getPhysicalNetworkId()).thenReturn(3L);
         when(offering.isRedundantRouter()).thenReturn(false);
         when(offering.getGuestType()).thenReturn(Network.GuestType.Shared);
-        when(vlanDao.listVlansByNetworkId(anyLong())).thenReturn(Arrays.asList(new VlanVO()));
+        when(vlanDao.listVlansByNetworkId(anyLong())).thenReturn(List.of(new VlanVO()));
         when(tungstenService.createSharedNetwork(any(Network.class), any(VlanVO.class))).thenReturn(true);
 
         final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);
-        assertEquals(Networks.BroadcastDomainType.Tungsten.toUri("tf"), implemented.getBroadcastUri());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), implemented.getBroadcastUri());
         assertEquals("192.168.1.1", implemented.getGateway());
         assertEquals("192.168.1.0/24", implemented.getCidr());
         assertEquals(Networks.Mode.Dhcp, implemented.getMode());
-        assertEquals(Networks.BroadcastDomainType.Tungsten, implemented.getBroadcastDomainType());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN, implemented.getBroadcastDomainType());
         assertEquals(1L, implemented.getNetworkOfferingId());
         assertEquals(Network.State.Implemented, implemented.getState());
         assertEquals(2L, implemented.getDataCenterId());
@@ -349,7 +351,7 @@ public class TungstenGuestNetworkGuruTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testImplementWithException() throws InsufficientVirtualNetworkCapacityException {
+    public void testImplementWithException() {
         final Network network = mock(Network.class);
         final DeployDestination deployDestination = mock(DeployDestination.class);
         final ReservationContext reservationContext = mock(ReservationContext.class);
@@ -358,7 +360,7 @@ public class TungstenGuestNetworkGuruTest {
         when(network.getMode()).thenReturn(Networks.Mode.Dhcp);
         when(network.getGateway()).thenReturn("192.168.1.1");
         when(network.getCidr()).thenReturn("192.168.1.0/24");
-        when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Tungsten);
+        when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN);
         when(network.getState()).thenReturn(Network.State.Implementing);
         when(offering.isRedundantRouter()).thenReturn(false);
         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
@@ -424,8 +426,8 @@ public class TungstenGuestNetworkGuruTest {
 
         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(new NetworkVO());
-        when(ipAddressDao.listByAssociatedNetwork(anyLong(), any())).thenReturn(Arrays.asList(ipAddressVO));
-        when(firewallRulesDao.listByNetworkAndPurpose(anyLong(), any())).thenReturn(Arrays.asList(firewallRuleVO));
+        when(ipAddressDao.listByAssociatedNetwork(anyLong(), any())).thenReturn(List.of(ipAddressVO));
+        when(firewallRulesDao.listByNetworkAndPurpose(anyLong(), any())).thenReturn(List.of(firewallRuleVO));
 
         guru.shutdown(profile, offering);
         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class),

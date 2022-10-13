@@ -62,17 +62,17 @@ public class TungstenFabricFirewallPolicyResponse extends BaseResponse {
         this.name = firewallPolicy.getName();
         this.setObjectName("firewallpolicy");
 
-        List<TungstenFabricFirewallRuleResponse> firewallRules = new ArrayList<>();
+        List<TungstenFabricFirewallRuleResponse> responsesFirewallRules = new ArrayList<>();
         List<ObjectReference<FirewallSequence>> objectReferenceFirewallRuleList = firewallPolicy.getFirewallRule();
         if (objectReferenceFirewallRuleList != null) {
             for (ObjectReference<FirewallSequence> objectReference : objectReferenceFirewallRuleList) {
                 TungstenFabricFirewallRuleResponse tungstenFabricFirewallRuleResponse = new TungstenFabricFirewallRuleResponse(
                     objectReference.getUuid(),
                     objectReference.getReferredName().get(objectReference.getReferredName().size() - 1), zone);
-                firewallRules.add(tungstenFabricFirewallRuleResponse);
+                responsesFirewallRules.add(tungstenFabricFirewallRuleResponse);
             }
         }
-        this.firewallRules = firewallRules;
+        this.firewallRules = responsesFirewallRules;
         this.zoneId = zone.getId();
         this.zoneName = zone.getName();
     }

@@ -293,6 +293,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
+    public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
+
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -791,7 +793,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String getDefaultTungstenScriptsDir() {
-        return "scripts/vm/network/tungsten";
+        return TUNGSTEN_PATH;
     }
 
     @Override
@@ -4528,10 +4530,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add(vrf);
 
         final String result = cmd.execute();
-        if (result != null) {
-            return false;
-        }
-        return true;
+        return result == null;
     }
 
     public boolean updateTungstenLoadbalancerStats(final String lbUuid, final String lbStatsPort,
@@ -4543,10 +4542,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add(lbStatsAuth);
 
         final String result = cmd.execute();
-        if (result != null) {
-            return false;
-        }
-        return true;
+        return result == null;
     }
 
     public boolean updateTungstenLoadbalancerSsl(final String lbUuid, final String sslCertName,
@@ -4560,10 +4556,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add(port);
 
         final String result = cmd.execute();
-        if (result != null) {
-            return false;
-        }
-        return true;
+        return result == null;
     }
 
     public boolean setupTfRoute(final String privateIpAddress, final String fromNetwork, final String toNetwork) {

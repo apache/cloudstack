@@ -33,20 +33,19 @@ import java.io.IOException;
 import java.util.List;
 
 public class VRouterApiConnectorImpl implements VRouterApiConnector {
-    private static final Logger s_logger = Logger.getLogger(VRouterApiConnector.class);
-    private String url;
+    private static final Logger s_logger = Logger.getLogger(VRouterApiConnectorImpl.class);
+    private final String vrouterUrl;
 
     public VRouterApiConnectorImpl(VRouter vRouter) {
-        url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
+        vrouterUrl = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
     }
 
     @Override
     public boolean addPort(final Port port) throws IOException {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("port");
+        String url = this.vrouterUrl + "port";
         Gson gson = new Gson();
         final String jsonData = gson.toJson(port);
-        HttpPost httpPost = new HttpPost(url.toString());
+        HttpPost httpPost = new HttpPost(url);
         httpPost.setEntity(new StringEntity(jsonData));
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpPost)) {
@@ -59,9 +58,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
 
     @Override
     public boolean deletePort(final String portId) {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("port/").append(portId);
-        HttpDelete httpDelete = new HttpDelete(url.toString());
+        HttpDelete httpDelete = new HttpDelete(this.vrouterUrl + "port/" + portId);
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpDelete)) {
             return getResponse(httpResponse);
@@ -73,9 +70,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
 
     @Override
     public boolean enablePort(final String portId) {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("enable-port/").append(portId);
-        HttpPut httpPut = new HttpPut(url.toString());
+        HttpPut httpPut = new HttpPut(this.vrouterUrl + "enable-port/" + portId);
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
             return getResponse(httpResponse);
@@ -87,9 +82,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
 
     @Override
     public boolean disablePort(final String portId) {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("disable-port/").append(portId);
-        HttpPut httpPut = new HttpPut(url.toString());
+        HttpPut httpPut = new HttpPut(this.vrouterUrl + "disable-port/" + portId);
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
             return getResponse(httpResponse);
@@ -102,9 +95,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
 
     @Override
     public boolean addGateway(List<Gateway> gatewayList) throws IOException {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("gateway");
-        HttpPost httpPost = new HttpPost(url.toString());
+        HttpPost httpPost = new HttpPost(this.vrouterUrl + "gateway");
         Gson gson = new Gson();
         final String jsonData = gson.toJson(gatewayList);
         httpPost.setEntity(new StringEntity(jsonData));
@@ -119,9 +110,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
 
     @Override
     public boolean deleteGateway(List<Gateway> gatewayList) throws IOException {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("gateway");
-        CustomHttpDelete customHttpDelete = new CustomHttpDelete(url.toString());
+        CustomHttpDelete customHttpDelete = new CustomHttpDelete(this.vrouterUrl + "gateway");
         Gson gson = new Gson();
         final String jsonData = gson.toJson(gatewayList);
         customHttpDelete.setEntity(new StringEntity(jsonData));
@@ -138,7 +127,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
         JsonParser parser = new JsonParser();
         String result = EntityUtils.toString(httpResponse.getEntity());
         JsonObject jsonObject = parser.parse(result).getAsJsonObject();
-        if (jsonObject.entrySet().size() == 0) {
+        if (jsonObject.entrySet().isEmpty()) {
             return true;
         } else {
             String error = jsonObject.get("error").getAsString();

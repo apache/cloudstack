@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ListTungstenVmCommand extends TungstenCommand {
-    final private String projectFqn;
-    final private String vmUuid;
+    private final String projectFqn;
+    private final String vmUuid;
 
     public ListTungstenVmCommand(final String projectFqn, final String vmUuid) {
         this.projectFqn = projectFqn;
@@ -31,5 +33,19 @@ public class ListTungstenVmCommand extends TungstenCommand {
 
     public String getVmUuid() {
         return vmUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ListTungstenVmCommand that = (ListTungstenVmCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(vmUuid, that.vmUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, vmUuid);
     }
 }

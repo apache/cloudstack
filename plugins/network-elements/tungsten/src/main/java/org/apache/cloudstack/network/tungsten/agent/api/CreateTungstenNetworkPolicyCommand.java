@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CreateTungstenNetworkPolicyCommand extends TungstenCommand {
     private final String name;
@@ -42,5 +43,19 @@ public class CreateTungstenNetworkPolicyCommand extends TungstenCommand {
 
     public List<TungstenRule> getTungstenRuleList() {
         return tungstenRuleList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenNetworkPolicyCommand that = (CreateTungstenNetworkPolicyCommand) o;
+        return Objects.equals(name, that.name) && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(tungstenRuleList, that.tungstenRuleList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), name, projectFqn, tungstenRuleList);
     }
 }

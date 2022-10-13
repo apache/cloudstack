@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class RemoveTungstenSecondaryIpAddressCommand extends TungstenCommand {
     private final String iiName;
 
@@ -25,5 +27,19 @@ public class RemoveTungstenSecondaryIpAddressCommand extends TungstenCommand {
 
     public String getIiName() {
         return iiName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        RemoveTungstenSecondaryIpAddressCommand that = (RemoveTungstenSecondaryIpAddressCommand) o;
+        return Objects.equals(iiName, that.iiName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), iiName);
     }
 }

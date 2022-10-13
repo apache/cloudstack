@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class AddTungstenNetworkSubnetCommand extends TungstenCommand {
     private final String networkUuid;
     private final String ipPrefix;
@@ -81,5 +83,19 @@ public class AddTungstenNetworkSubnetCommand extends TungstenCommand {
 
     public String getSubnetName() {
         return subnetName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AddTungstenNetworkSubnetCommand that = (AddTungstenNetworkSubnetCommand) o;
+        return ipPrefixLen == that.ipPrefixLen && dhcpEnable == that.dhcpEnable && ipFromStart == that.ipFromStart && Objects.equals(networkUuid, that.networkUuid) && Objects.equals(ipPrefix, that.ipPrefix) && Objects.equals(gateway, that.gateway) && Objects.equals(dnsServer, that.dnsServer) && Objects.equals(allocationStart, that.allocationStart) && Objects.equals(allocationEnd, that.allocationEnd) && Objects.equals(subnetName, that.subnetName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkUuid, ipPrefix, ipPrefixLen, gateway, dhcpEnable, dnsServer, allocationStart, allocationEnd, ipFromStart, subnetName);
     }
 }

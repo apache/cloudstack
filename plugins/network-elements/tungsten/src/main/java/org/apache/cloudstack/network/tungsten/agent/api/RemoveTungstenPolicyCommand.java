@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class RemoveTungstenPolicyCommand extends TungstenCommand {
     private final String networkUuid;
     private final String policyUuid;
@@ -31,5 +33,19 @@ public class RemoveTungstenPolicyCommand extends TungstenCommand {
 
     public String getPolicyUuid() {
         return policyUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        RemoveTungstenPolicyCommand that = (RemoveTungstenPolicyCommand) o;
+        return Objects.equals(networkUuid, that.networkUuid) && Objects.equals(policyUuid, that.policyUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkUuid, policyUuid);
     }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class DeleteTungstenLoadBalancerListenerCommand extends TungstenCommand {
     private final String projectFqn;
     private final String loadBalancerListenerName;
@@ -31,5 +33,19 @@ public class DeleteTungstenLoadBalancerListenerCommand extends TungstenCommand {
 
     public String getLoadBalancerListenerName() {
         return loadBalancerListenerName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenLoadBalancerListenerCommand that = (DeleteTungstenLoadBalancerListenerCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(loadBalancerListenerName, that.loadBalancerListenerName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, loadBalancerListenerName);
     }
 }

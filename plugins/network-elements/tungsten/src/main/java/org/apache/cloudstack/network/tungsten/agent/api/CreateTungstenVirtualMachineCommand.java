@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
     private final String projectFqn;
     private final String vnUuid;
@@ -105,5 +107,19 @@ public class CreateTungstenVirtualMachineCommand extends TungstenCommand {
 
     public boolean isDefaultNic() {
         return isDefaultNic;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenVirtualMachineCommand that = (CreateTungstenVirtualMachineCommand) o;
+        return nicId == that.nicId && isDefaultNic == that.isDefaultNic && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(vnUuid, that.vnUuid) && Objects.equals(vmUuid, that.vmUuid) && Objects.equals(vmName, that.vmName) && Objects.equals(nicUuid, that.nicUuid) && Objects.equals(ip, that.ip) && Objects.equals(ipv6, that.ipv6) && Objects.equals(mac, that.mac) && Objects.equals(vmType, that.vmType) && Objects.equals(trafficType, that.trafficType) && Objects.equals(host, that.host) && Objects.equals(gateway, that.gateway);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, vnUuid, vmUuid, vmName, nicUuid, nicId, ip, ipv6, mac, vmType, trafficType, host, gateway, isDefaultNic);
     }
 }

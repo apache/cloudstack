@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ListTungstenTagTypeCommand extends TungstenCommand {
-    final private String tagTypeUuid;
+    private final String tagTypeUuid;
 
     public ListTungstenTagTypeCommand(final String tagTypeUuid) {
         this.tagTypeUuid = tagTypeUuid;
@@ -25,5 +27,19 @@ public class ListTungstenTagTypeCommand extends TungstenCommand {
 
     public String getTagTypeUuid() {
         return tagTypeUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ListTungstenTagTypeCommand that = (ListTungstenTagTypeCommand) o;
+        return Objects.equals(tagTypeUuid, that.tagTypeUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tagTypeUuid);
     }
 }

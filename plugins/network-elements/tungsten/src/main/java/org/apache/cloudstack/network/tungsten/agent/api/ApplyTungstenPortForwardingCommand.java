@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ApplyTungstenPortForwardingCommand extends TungstenCommand {
     private final boolean isAdd;
     private final String publicNetworkUuid;
@@ -69,5 +71,19 @@ public class ApplyTungstenPortForwardingCommand extends TungstenCommand {
 
     public int getPrivatePort() {
         return privatePort;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ApplyTungstenPortForwardingCommand that = (ApplyTungstenPortForwardingCommand) o;
+        return isAdd == that.isAdd && publicPort == that.publicPort && privatePort == that.privatePort && Objects.equals(publicNetworkUuid, that.publicNetworkUuid) && Objects.equals(floatingIpPoolName, that.floatingIpPoolName) && Objects.equals(floatingIpName, that.floatingIpName) && Objects.equals(vmiUuid, that.vmiUuid) && Objects.equals(protocol, that.protocol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), isAdd, publicNetworkUuid, floatingIpPoolName, floatingIpName, vmiUuid, protocol, publicPort, privatePort);
     }
 }

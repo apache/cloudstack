@@ -51,11 +51,11 @@ public class TungstenFabricLogicalRouterResponse extends BaseResponse {
     public TungstenFabricLogicalRouterResponse(TungstenLogicalRouter tungstenLogicalRouter, DataCenter zone) {
         this.uuid = tungstenLogicalRouter.getLogicalRouter().getUuid();
         this.name = tungstenLogicalRouter.getLogicalRouter().getDisplayName();
-        List<TungstenFabricNetworkResponse> networks = new ArrayList<>();
+        List<TungstenFabricNetworkResponse> responseNetworks = new ArrayList<>();
         for (VirtualNetwork virtualNetwork : tungstenLogicalRouter.getVirtualNetworkList()) {
-            networks.add(new TungstenFabricNetworkResponse(virtualNetwork, zone));
+            responseNetworks.add(new TungstenFabricNetworkResponse(virtualNetwork, zone));
         }
-        this.networks = networks;
+        this.networks = responseNetworks;
         this.zoneId = zone.getId();
         this.zoneName = zone.getName();
         this.setObjectName("logicalrouter");

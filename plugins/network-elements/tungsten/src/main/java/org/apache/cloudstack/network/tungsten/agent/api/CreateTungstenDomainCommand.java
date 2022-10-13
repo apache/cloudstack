@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class CreateTungstenDomainCommand extends TungstenCommand {
     private final String tungstenDomainName;
     private final String tungstenDomainUuid;
@@ -31,5 +33,19 @@ public class CreateTungstenDomainCommand extends TungstenCommand {
 
     public String getTungstenDomainUuid() {
         return tungstenDomainUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenDomainCommand that = (CreateTungstenDomainCommand) o;
+        return Objects.equals(tungstenDomainName, that.tungstenDomainName) && Objects.equals(tungstenDomainUuid, that.tungstenDomainUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tungstenDomainName, tungstenDomainUuid);
     }
 }

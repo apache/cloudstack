@@ -18,6 +18,8 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 import com.cloud.agent.api.Command;
 
+import java.util.Objects;
+
 public class SetupTfRouteCommand extends Command {
     private final String privateIp;
     private final String publicIp;
@@ -39,6 +41,20 @@ public class SetupTfRouteCommand extends Command {
 
     public String getSrcNetwork() {
         return srcNetwork;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        SetupTfRouteCommand that = (SetupTfRouteCommand) o;
+        return Objects.equals(privateIp, that.privateIp) && Objects.equals(publicIp, that.publicIp) && Objects.equals(srcNetwork, that.srcNetwork);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), privateIp, publicIp, srcNetwork);
     }
 
     @Override

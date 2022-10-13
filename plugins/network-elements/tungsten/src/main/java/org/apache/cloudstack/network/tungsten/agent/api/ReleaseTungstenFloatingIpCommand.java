@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ReleaseTungstenFloatingIpCommand extends TungstenCommand {
     private final String vnUuid;
     private final String fipName;
@@ -37,5 +39,19 @@ public class ReleaseTungstenFloatingIpCommand extends TungstenCommand {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ReleaseTungstenFloatingIpCommand that = (ReleaseTungstenFloatingIpCommand) o;
+        return Objects.equals(vnUuid, that.vnUuid) && Objects.equals(fipName, that.fipName) && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), vnUuid, fipName, name);
     }
 }

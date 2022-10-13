@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ClearTungstenNetworkGatewayCommand extends TungstenCommand {
     private final String projectFqn;
     private final String routerName;
@@ -37,5 +39,19 @@ public class ClearTungstenNetworkGatewayCommand extends TungstenCommand {
 
     public long getVnId() {
         return vnId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ClearTungstenNetworkGatewayCommand that = (ClearTungstenNetworkGatewayCommand) o;
+        return vnId == that.vnId && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(routerName, that.routerName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, routerName, vnId);
     }
 }

@@ -22,24 +22,24 @@ import com.cloud.utils.db.SearchCriteria;
 
 public class TungstenFabricLBHealthMonitorDaoImpl extends GenericDaoBase<TungstenFabricLBHealthMonitorVO, Long>
     implements TungstenFabricLBHealthMonitorDao {
-    final SearchBuilder<TungstenFabricLBHealthMonitorVO> AllFieldsSearch;
+    final SearchBuilder<TungstenFabricLBHealthMonitorVO> allFieldsSearch;
 
     public TungstenFabricLBHealthMonitorDaoImpl() {
-        AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("load_balancer_id", AllFieldsSearch.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("method", AllFieldsSearch.entity().getType(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("retry", AllFieldsSearch.entity().getRetry(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("timeout", AllFieldsSearch.entity().getTimeout(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("interval", AllFieldsSearch.entity().getInterval(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("http", AllFieldsSearch.entity().getHttpMethod(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("expected_code", AllFieldsSearch.entity().getExpectedCode(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("url_path", AllFieldsSearch.entity().getUrlPath(), SearchCriteria.Op.EQ);
+        allFieldsSearch = createSearchBuilder();
+        allFieldsSearch.and("id", allFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("load_balancer_id", allFieldsSearch.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("method", allFieldsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("retry", allFieldsSearch.entity().getRetry(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("timeout", allFieldsSearch.entity().getTimeout(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("interval", allFieldsSearch.entity().getInterval(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("http", allFieldsSearch.entity().getHttpMethod(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("expected_code", allFieldsSearch.entity().getExpectedCode(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and("url_path", allFieldsSearch.entity().getUrlPath(), SearchCriteria.Op.EQ);
     }
 
     @Override
     public TungstenFabricLBHealthMonitorVO findByLbId(final long lbId) {
-        SearchCriteria<TungstenFabricLBHealthMonitorVO> searchCriteria = AllFieldsSearch.create();
+        SearchCriteria<TungstenFabricLBHealthMonitorVO> searchCriteria = allFieldsSearch.create();
         searchCriteria.setParameters("load_balancer_id", lbId);
         return findOneBy(searchCriteria);
     }

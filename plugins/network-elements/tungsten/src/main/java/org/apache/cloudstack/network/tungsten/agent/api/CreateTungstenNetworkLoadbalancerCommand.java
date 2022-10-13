@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CreateTungstenNetworkLoadbalancerCommand extends TungstenCommand {
     private final String projectFqn;
@@ -180,5 +181,20 @@ public class CreateTungstenNetworkLoadbalancerCommand extends TungstenCommand {
 
     public String getExpectedCodes() {
         return expectedCodes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenNetworkLoadbalancerCommand that = (CreateTungstenNetworkLoadbalancerCommand) o;
+        return ruleId == that.ruleId && srcPort == that.srcPort && dstPort == that.dstPort && maxRetries == that.maxRetries && delay == that.delay && timeout == that.timeout && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(networkUuid, that.networkUuid) && Objects.equals(publicNetworkUuid, that.publicNetworkUuid) && Objects.equals(loadBalancerMethod, that.loadBalancerMethod) && Objects.equals(loadBalancerName, that.loadBalancerName) && Objects.equals(loadBalancerListenerName, that.loadBalancerListenerName) && Objects.equals(loadBalancerPoolName, that.loadBalancerPoolName)
+                && Objects.equals(loadBalancerHealthMonitorName, that.loadBalancerHealthMonitorName) && Objects.equals(loadBalancerVmiName, that.loadBalancerVmiName) && Objects.equals(loadBalancerIiName, that.loadBalancerIiName) && Objects.equals(listMember, that.listMember) && Objects.equals(protocol, that.protocol) && Objects.equals(privateIp, that.privateIp) && Objects.equals(fipName, that.fipName) && Objects.equals(fiName, that.fiName) && Objects.equals(monitorType, that.monitorType) && Objects.equals(httpMethod, that.httpMethod) && Objects.equals(urlPath, that.urlPath) && Objects.equals(expectedCodes, that.expectedCodes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, networkUuid, publicNetworkUuid, loadBalancerMethod, loadBalancerName, loadBalancerListenerName, loadBalancerPoolName, loadBalancerHealthMonitorName, loadBalancerVmiName, loadBalancerIiName, ruleId, listMember, protocol, srcPort, dstPort, privateIp, fipName, fiName, monitorType, maxRetries, delay, timeout, httpMethod, urlPath, expectedCodes);
     }
 }

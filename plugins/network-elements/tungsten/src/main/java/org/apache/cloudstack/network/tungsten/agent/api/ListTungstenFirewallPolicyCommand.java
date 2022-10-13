@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ListTungstenFirewallPolicyCommand extends TungstenCommand {
-    final private String applicationPolicySetUuid;
-    final private String firewallPolicyUuid;
+    private final String applicationPolicySetUuid;
+    private final String firewallPolicyUuid;
 
     public ListTungstenFirewallPolicyCommand(final String applicationPolicySetUuid, final String firewallPolicyUuid) {
         this.applicationPolicySetUuid = applicationPolicySetUuid;
@@ -31,5 +33,19 @@ public class ListTungstenFirewallPolicyCommand extends TungstenCommand {
 
     public String getFirewallPolicyUuid() {
         return firewallPolicyUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ListTungstenFirewallPolicyCommand that = (ListTungstenFirewallPolicyCommand) o;
+        return Objects.equals(applicationPolicySetUuid, that.applicationPolicySetUuid) && Objects.equals(firewallPolicyUuid, that.firewallPolicyUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), applicationPolicySetUuid, firewallPolicyUuid);
     }
 }

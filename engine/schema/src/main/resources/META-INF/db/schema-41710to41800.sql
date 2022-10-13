@@ -638,7 +638,8 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
         GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
         GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
-        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        `offering_details`.value AS internet_protocol
     FROM
         `cloud`.`network_offerings`
             LEFT JOIN
@@ -649,6 +650,8 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
             LEFT JOIN
         `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
     GROUP BY
         `network_offerings`.`id`;
 

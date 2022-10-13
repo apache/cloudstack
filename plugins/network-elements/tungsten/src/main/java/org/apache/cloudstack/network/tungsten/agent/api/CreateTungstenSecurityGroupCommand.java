@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class CreateTungstenSecurityGroupCommand extends TungstenCommand {
     private final String securityGroupUuid;
     private final String securityGroupName;
@@ -44,5 +46,19 @@ public class CreateTungstenSecurityGroupCommand extends TungstenCommand {
 
     public String getProjectFqn() {
         return projectFqn;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenSecurityGroupCommand that = (CreateTungstenSecurityGroupCommand) o;
+        return Objects.equals(securityGroupUuid, that.securityGroupUuid) && Objects.equals(securityGroupName, that.securityGroupName) && Objects.equals(securityGroupDescription, that.securityGroupDescription) && Objects.equals(projectFqn, that.projectFqn);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), securityGroupUuid, securityGroupName, securityGroupDescription, projectFqn);
     }
 }

@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ListTungstenAddressGroupCommand extends TungstenCommand {
-    final private String addressGroupUuid;
+    private final String addressGroupUuid;
 
     public ListTungstenAddressGroupCommand(final String addressGroupUuid) {
         this.addressGroupUuid = addressGroupUuid;
@@ -25,5 +27,19 @@ public class ListTungstenAddressGroupCommand extends TungstenCommand {
 
     public String getAddressGroupUuid() {
         return addressGroupUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ListTungstenAddressGroupCommand that = (ListTungstenAddressGroupCommand) o;
+        return Objects.equals(addressGroupUuid, that.addressGroupUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), addressGroupUuid);
     }
 }

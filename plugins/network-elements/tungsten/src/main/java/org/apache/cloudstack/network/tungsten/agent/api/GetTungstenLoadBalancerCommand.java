@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class GetTungstenLoadBalancerCommand extends TungstenCommand {
     private final String projectFqn;
     private final String lbName;
@@ -31,5 +33,19 @@ public class GetTungstenLoadBalancerCommand extends TungstenCommand {
 
     public String getLbName() {
         return lbName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        GetTungstenLoadBalancerCommand that = (GetTungstenLoadBalancerCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(lbName, that.lbName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, lbName);
     }
 }

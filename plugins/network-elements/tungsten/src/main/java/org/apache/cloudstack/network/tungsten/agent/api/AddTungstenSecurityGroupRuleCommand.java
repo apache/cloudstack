@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class AddTungstenSecurityGroupRuleCommand extends TungstenCommand {
     private final String tungstenSecurityGroupUuid;
     private final String tungstenGroupRuleUuid;
@@ -69,5 +71,19 @@ public class AddTungstenSecurityGroupRuleCommand extends TungstenCommand {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AddTungstenSecurityGroupRuleCommand that = (AddTungstenSecurityGroupRuleCommand) o;
+        return startPort == that.startPort && endPort == that.endPort && Objects.equals(tungstenSecurityGroupUuid, that.tungstenSecurityGroupUuid) && Objects.equals(tungstenGroupRuleUuid, that.tungstenGroupRuleUuid) && Objects.equals(securityGroupRuleType, that.securityGroupRuleType) && Objects.equals(target, that.target) && Objects.equals(etherType, that.etherType) && Objects.equals(protocol, that.protocol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tungstenSecurityGroupUuid, tungstenGroupRuleUuid, securityGroupRuleType, startPort, endPort, target, etherType, protocol);
     }
 }

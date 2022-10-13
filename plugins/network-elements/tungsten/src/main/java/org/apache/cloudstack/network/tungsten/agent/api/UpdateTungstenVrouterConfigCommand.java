@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class UpdateTungstenVrouterConfigCommand extends TungstenCommand {
     private final String forwardingMode;
 
@@ -25,5 +27,19 @@ public class UpdateTungstenVrouterConfigCommand extends TungstenCommand {
 
     public String getForwardingMode() {
         return forwardingMode;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateTungstenVrouterConfigCommand that = (UpdateTungstenVrouterConfigCommand) o;
+        return Objects.equals(forwardingMode, that.forwardingMode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), forwardingMode);
     }
 }

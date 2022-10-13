@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class UpdateTungstenLoadBalancerPoolCommand extends TungstenCommand {
     private final String projectFqn;
     private final String lbPoolName;
@@ -82,5 +84,19 @@ public class UpdateTungstenLoadBalancerPoolCommand extends TungstenCommand {
 
     public String getLbStatsAuth() {
         return lbStatsAuth;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateTungstenLoadBalancerPoolCommand that = (UpdateTungstenLoadBalancerPoolCommand) o;
+        return lbStatsEnable == that.lbStatsEnable && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(lbPoolName, that.lbPoolName) && Objects.equals(lbMethod, that.lbMethod) && Objects.equals(lbSessionPersistence, that.lbSessionPersistence) && Objects.equals(lbPersistenceCookieName, that.lbPersistenceCookieName) && Objects.equals(lbProtocol, that.lbProtocol) && Objects.equals(lbStatsPort, that.lbStatsPort) && Objects.equals(lbStatsUri, that.lbStatsUri) && Objects.equals(lbStatsAuth, that.lbStatsAuth);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, lbPoolName, lbMethod, lbSessionPersistence, lbPersistenceCookieName, lbProtocol, lbStatsEnable, lbStatsPort, lbStatsUri, lbStatsAuth);
     }
 }

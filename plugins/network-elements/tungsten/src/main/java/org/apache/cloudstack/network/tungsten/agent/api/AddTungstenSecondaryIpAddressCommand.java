@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class AddTungstenSecondaryIpAddressCommand extends TungstenCommand {
     private final String networkUuid;
     private final String nicUuid;
@@ -44,5 +46,19 @@ public class AddTungstenSecondaryIpAddressCommand extends TungstenCommand {
 
     public String getAddress() {
         return address;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AddTungstenSecondaryIpAddressCommand that = (AddTungstenSecondaryIpAddressCommand) o;
+        return Objects.equals(networkUuid, that.networkUuid) && Objects.equals(nicUuid, that.nicUuid) && Objects.equals(iiName, that.iiName) && Objects.equals(address, that.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkUuid, nicUuid, iiName, address);
     }
 }

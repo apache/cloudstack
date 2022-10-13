@@ -1043,7 +1043,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
 
                 NetworkOfferingVO defaultTungstenSharedSGNetworkOffering =
-                        new NetworkOfferingVO(NetworkOffering.DefaultTungstenSharedNetworkOfferingWithSGService, "Offering for Tungsten Shared Security group enabled networks",
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE, "Offering for Tungsten Shared Security group enabled networks",
                                 TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false, false);
 
                 defaultTungstenSharedSGNetworkOffering.setForTungsten(true);

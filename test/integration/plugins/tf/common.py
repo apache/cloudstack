@@ -19,7 +19,7 @@ import requests
 from marvin.lib.utils import (validateList)
 from marvin.lib.base import (VirtualMachine, FirewallRule, FirewallPolicy, TungstenTag,
                              ApplicationPolicySet, AddressGroup, ServiceGroup, LogicalRouter,
-                             NetworkPolicy, NetworkRouteTable, InterfaceRouteTable, RoutingPolicy)
+                             NetworkPolicy)
 from marvin.cloudstackAPI import (listTungstenFabricProviders, listSystemVms)
 from marvin.codes import PASS
 
@@ -89,12 +89,6 @@ def cleanup_resources(api_client, zoneid, resources):
         elif isinstance(obj, LogicalRouter):
             obj.delete(api_client, zoneid, obj.uuid)
         elif isinstance(obj, NetworkPolicy):
-            obj.delete(api_client, zoneid, obj.uuid)
-        elif isinstance(obj, NetworkRouteTable):
-            obj.delete(api_client, zoneid, obj.uuid)
-        elif isinstance(obj, InterfaceRouteTable):
-            obj.delete(api_client, zoneid, obj.uuid)
-        elif isinstance(obj, RoutingPolicy):
             obj.delete(api_client, zoneid, obj.uuid)
         else:
             obj.delete(api_client)

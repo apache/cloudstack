@@ -461,7 +461,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // populate providers
         final Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
-        final Set<Network.Provider> tungstenProvider = new HashSet<Network.Provider>();
+        final Set<Network.Provider> tungstenProvider = new HashSet<>();
 
         defaultProviders.add(Network.Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
@@ -488,7 +488,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
 
         tungstenProvider.add(Provider.Tungsten);
-        final Map<Network.Service, Set<Network.Provider>> defaultTungstenSharedSGEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        final Map<Network.Service, Set<Network.Provider>> defaultTungstenSharedSGEnabledNetworkOfferingProviders = new HashMap<>();
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Connectivity, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dhcp, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dns, tungstenProvider);
@@ -548,8 +548,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             null, true, false, false, null, null, true, null);
                 }
 
-                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultTungstenSharedNetworkOfferingWithSGService) == null) {
-                    offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultTungstenSharedNetworkOfferingWithSGService, "Offering for Tungsten Shared Security group enabled networks",
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE, "Offering for Tungsten Shared Security group enabled networks",
                             TrafficType.Guest, null, true, Availability.Optional, null, defaultTungstenSharedSGEnabledNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true,
                             null, true, false, null, false, null, true, false, true,null, null, true, null);
                     offering.setState(NetworkOffering.State.Enabled);

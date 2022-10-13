@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class CreateTungstenAddressGroupCommand extends TungstenCommand {
@@ -45,5 +46,19 @@ public class CreateTungstenAddressGroupCommand extends TungstenCommand {
 
     public int getIpPrefixLen() {
         return ipPrefixLen;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenAddressGroupCommand that = (CreateTungstenAddressGroupCommand) o;
+        return ipPrefixLen == that.ipPrefixLen && Objects.equals(uuid, that.uuid) && Objects.equals(name, that.name) && Objects.equals(ipPrefix, that.ipPrefix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), uuid, name, ipPrefix, ipPrefixLen);
     }
 }

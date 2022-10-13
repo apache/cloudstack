@@ -30,49 +30,49 @@ import java.util.List;
 public class TungstenProviderDaoImpl extends GenericDaoBase<TungstenProviderVO, Long>
         implements TungstenProviderDao {
 
-    final SearchBuilder<TungstenProviderVO> AllFieldsSearch;
+    final SearchBuilder<TungstenProviderVO> allFieldsSearch;
 
     public TungstenProviderDaoImpl() {
         super();
-        AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(),
+        allFieldsSearch = createSearchBuilder();
+        allFieldsSearch.and("id", allFieldsSearch.entity().getId(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getUuid(),
+        allFieldsSearch.and("uuid", allFieldsSearch.entity().getUuid(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("hostname", AllFieldsSearch.entity().getHostname(),
+        allFieldsSearch.and("hostname", allFieldsSearch.entity().getHostname(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("provider_name", AllFieldsSearch.entity().getProviderName(),
+        allFieldsSearch.and("provider_name", allFieldsSearch.entity().getProviderName(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("port", AllFieldsSearch.entity().getPort(),
+        allFieldsSearch.and("port", allFieldsSearch.entity().getPort(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("zone_id", AllFieldsSearch.entity().getZoneId(),
+        allFieldsSearch.and("zone_id", allFieldsSearch.entity().getZoneId(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("gateway", AllFieldsSearch.entity().getGateway(),
+        allFieldsSearch.and("gateway", allFieldsSearch.entity().getGateway(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("vrouter_port", AllFieldsSearch.entity().getVrouterPort(),
+        allFieldsSearch.and("vrouter_port", allFieldsSearch.entity().getVrouterPort(),
                 SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("introspect_port", AllFieldsSearch.entity().getIntrospectPort(),
+        allFieldsSearch.and("introspect_port", allFieldsSearch.entity().getIntrospectPort(),
             SearchCriteria.Op.EQ);
-        AllFieldsSearch.done();
+        allFieldsSearch.done();
     }
 
     @Override
     public TungstenProviderVO findByZoneId(long nspId) {
-        SearchCriteria<TungstenProviderVO> sc = AllFieldsSearch.create();
+        SearchCriteria<TungstenProviderVO> sc = allFieldsSearch.create();
         sc.setParameters("zone_id", nspId);
         return findOneBy(sc);
     }
 
     @Override
     public TungstenProviderVO findByUuid(String uuid) {
-        SearchCriteria<TungstenProviderVO> sc = AllFieldsSearch.create();
+        SearchCriteria<TungstenProviderVO> sc = allFieldsSearch.create();
         sc.setParameters("uuid", uuid);
         return findOneBy(sc);
     }
 
     @Override
     public void deleteProviderByUuid(String providerUuid) {
-        SearchCriteria<TungstenProviderVO> sc = AllFieldsSearch.create();
+        SearchCriteria<TungstenProviderVO> sc = allFieldsSearch.create();
         sc.setParameters("uuid", providerUuid);
         remove(sc);
     }

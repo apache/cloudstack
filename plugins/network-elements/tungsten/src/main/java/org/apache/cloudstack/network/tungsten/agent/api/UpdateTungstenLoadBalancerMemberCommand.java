@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 
 import java.util.List;
+import java.util.Objects;
 
 public class UpdateTungstenLoadBalancerMemberCommand extends TungstenCommand {
     private final String projectFqn;
@@ -48,5 +49,19 @@ public class UpdateTungstenLoadBalancerMemberCommand extends TungstenCommand {
 
     public List<TungstenLoadBalancerMember> getListTungstenLoadBalancerMember() {
         return listTungstenLoadBalancerMember;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateTungstenLoadBalancerMemberCommand that = (UpdateTungstenLoadBalancerMemberCommand) o;
+        return Objects.equals(projectFqn, that.projectFqn) && Objects.equals(networkUuid, that.networkUuid) && Objects.equals(lbPoolName, that.lbPoolName) && Objects.equals(listTungstenLoadBalancerMember, that.listTungstenLoadBalancerMember);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, networkUuid, lbPoolName, listTungstenLoadBalancerMember);
     }
 }

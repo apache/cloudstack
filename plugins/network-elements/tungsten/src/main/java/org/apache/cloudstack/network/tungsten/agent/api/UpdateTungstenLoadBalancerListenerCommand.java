@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class UpdateTungstenLoadBalancerListenerCommand extends TungstenCommand {
     private final String projectFqn;
     private final String listenerName;
@@ -50,5 +52,19 @@ public class UpdateTungstenLoadBalancerListenerCommand extends TungstenCommand {
 
     public String getUrl() {
         return url;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateTungstenLoadBalancerListenerCommand that = (UpdateTungstenLoadBalancerListenerCommand) o;
+        return port == that.port && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(listenerName, that.listenerName) && Objects.equals(protocol, that.protocol) && Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, listenerName, protocol, port, url);
     }
 }

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.tungsten.agent.api;
 
 import java.util.List;
+import java.util.Objects;
 
 public class RemoveTungstenVmFromSecurityGroupCommand extends TungstenCommand {
     private final String nicUuid;
@@ -33,5 +34,19 @@ public class RemoveTungstenVmFromSecurityGroupCommand extends TungstenCommand {
 
     public List<String> getSecurityGroupUuidList() {
         return securityGroupUuidList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        RemoveTungstenVmFromSecurityGroupCommand that = (RemoveTungstenVmFromSecurityGroupCommand) o;
+        return Objects.equals(nicUuid, that.nicUuid) && Objects.equals(securityGroupUuidList, that.securityGroupUuidList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), nicUuid, securityGroupUuidList);
     }
 }

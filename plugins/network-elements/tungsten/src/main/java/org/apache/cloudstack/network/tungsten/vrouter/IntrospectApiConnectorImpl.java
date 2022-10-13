@@ -27,22 +27,21 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 public class IntrospectApiConnectorImpl implements IntrospectApiConnector {
     private static final Logger s_logger = Logger.getLogger(IntrospectApiConnectorImpl.class);
-    private String url;
+    private final String vrouterUrl;
 
     public IntrospectApiConnectorImpl(VRouter vRouter) {
-        url = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
+        vrouterUrl = "http://" + vRouter.getHost() + ":" + vRouter.getPort() + "/";
     }
 
     public Document getSnhItfReq(String uuid) {
-        final StringBuffer url = new StringBuffer();
-        url.append(this.url).append("Snh_ItfReq?uuid=").append(uuid);
-        HttpUriRequest request = new HttpGet(url.toString());
+        HttpUriRequest request = new HttpGet(this.vrouterUrl + "Snh_ItfReq?uuid=" + uuid);
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
             CloseableHttpResponse httpResponse = httpClient.execute(request)) {
             return getResponse(httpResponse);
@@ -61,6 +60,12 @@ public class IntrospectApiConnectorImpl implements IntrospectApiConnector {
     private Document getResponse(final CloseableHttpResponse httpResponse)
         throws IOException, ParserConfigurationException, SAXException {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        documentBuilderFactory.setExpandEntityReferences(false);
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
         return documentBuilder.parse(httpResponse.getEntity().getContent());
     }

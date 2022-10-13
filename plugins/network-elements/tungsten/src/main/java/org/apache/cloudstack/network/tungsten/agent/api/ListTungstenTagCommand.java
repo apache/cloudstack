@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ListTungstenTagCommand extends TungstenCommand {
     private final String networkUuid;
     private final String vmUuid;
@@ -56,5 +58,19 @@ public class ListTungstenTagCommand extends TungstenCommand {
 
     public String getTagUuid() {
         return tagUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ListTungstenTagCommand that = (ListTungstenTagCommand) o;
+        return Objects.equals(networkUuid, that.networkUuid) && Objects.equals(vmUuid, that.vmUuid) && Objects.equals(nicUuid, that.nicUuid) && Objects.equals(policyUuid, that.policyUuid) && Objects.equals(applicationPolicySetUuid, that.applicationPolicySetUuid) && Objects.equals(tagUuid, that.tagUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkUuid, vmUuid, nicUuid, policyUuid, applicationPolicySetUuid, tagUuid);
     }
 }

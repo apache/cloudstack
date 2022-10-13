@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class DeleteTungstenFloatingIpPoolCommand extends TungstenCommand {
     private final String vnUuid;
     private final String fipName;
@@ -31,5 +33,19 @@ public class DeleteTungstenFloatingIpPoolCommand extends TungstenCommand {
 
     public String getFipName() {
         return fipName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenFloatingIpPoolCommand that = (DeleteTungstenFloatingIpPoolCommand) o;
+        return Objects.equals(vnUuid, that.vnUuid) && Objects.equals(fipName, that.fipName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), vnUuid, fipName);
     }
 }

@@ -128,7 +128,7 @@ public class Networks {
         },
         UnDecided(null, null),
         OpenDaylight("opendaylight", String.class),
-        Tungsten("tf", String.class);
+        TUNGSTEN("tf", String.class);
 
         private final String scheme;
         private final Class<?> type;

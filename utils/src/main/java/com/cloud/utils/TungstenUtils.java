@@ -27,12 +27,8 @@ import java.util.List;
 public class TungstenUtils {
     private static final String defaultVhostInterface = "vhost0";
     private static final String defaultForwardingMode = "l3";
-    private static final String proxyVm = "ConsoleProxy";
-    private static final String secstoreVm = "SecondaryStorageVm";
     private static final String userVm = "User";
     private static final String guestType = "Guest";
-    private static final String publicType = "Public";
-    private static final String managementType = "Management";
     private static final String securityGroup = "securityGroup";
 
     public static final String INGRESS_RULE = "ingress";
@@ -81,21 +77,21 @@ public class TungstenUtils {
     }
 
     public static String getVmiName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType == guestType)
+        if (nicId != 0 && trafficType.equals(guestType))
             return "vmi" + trafficType + vmType + nicId;
         else
             return "vmi" + trafficType + vmType + vmName;
     }
 
     public static String getInstanceIpName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType == getGuestType())
+        if (nicId != 0 && trafficType.equals(getGuestType()))
             return "instanceIp" + trafficType + vmType + nicId;
         else
             return "instanceIp" + trafficType + vmType + vmName;
     }
 
     public static String getV6InstanceIpName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType == getGuestType())
+        if (nicId != 0 && trafficType.equals(getGuestType()))
             return "instanceV6Ip" + trafficType + vmType + nicId;
         else
             return "instanceV6Ip" + trafficType + vmType + vmName;
@@ -141,28 +137,12 @@ public class TungstenUtils {
         return MANAGEMENT_NETWORK_NAME + mvnId;
     }
 
-    public static String getProxyVm() {
-        return proxyVm;
-    }
-
-    public static String getSecstoreVm() {
-        return secstoreVm;
-    }
-
     public static String getUserVm() {
         return userVm;
     }
 
     public static String getGuestType() {
         return guestType;
-    }
-
-    public static String getPublicType() {
-        return publicType;
-    }
-
-    public static String getManagementType() {
-        return managementType;
     }
 
     public static String getVgwName(long zoneId) {

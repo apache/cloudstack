@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class AddTungstenPolicyRuleCommand extends TungstenCommand {
@@ -114,5 +115,19 @@ public class AddTungstenPolicyRuleCommand extends TungstenCommand {
 
     public int getDestEndPort() {
         return destEndPort;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AddTungstenPolicyRuleCommand that = (AddTungstenPolicyRuleCommand) o;
+        return srcIpPrefixLen == that.srcIpPrefixLen && srcStartPort == that.srcStartPort && srcEndPort == that.srcEndPort && destIpPrefixLen == that.destIpPrefixLen && destStartPort == that.destStartPort && destEndPort == that.destEndPort && Objects.equals(uuid, that.uuid) && Objects.equals(policyUuid, that.policyUuid) && Objects.equals(action, that.action) && Objects.equals(direction, that.direction) && Objects.equals(protocol, that.protocol) && Objects.equals(srcNetwork, that.srcNetwork) && Objects.equals(srcIpPrefix, that.srcIpPrefix) && Objects.equals(destNetwork, that.destNetwork) && Objects.equals(destIpPrefix, that.destIpPrefix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), uuid, policyUuid, action, direction, protocol, srcNetwork, srcIpPrefix, srcIpPrefixLen, srcStartPort, srcEndPort, destNetwork, destIpPrefix, destIpPrefixLen, destStartPort, destEndPort);
     }
 }

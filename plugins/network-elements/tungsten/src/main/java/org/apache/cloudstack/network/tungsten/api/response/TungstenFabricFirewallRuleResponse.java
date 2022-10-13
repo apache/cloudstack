@@ -106,9 +106,23 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
             this.serviceGroup = serviceGroupNameList.get(serviceGroupNameList.size() - 1);
         }
 
+        settingEndPoint1(firewallRule);
+
+        settingEndPoint2(firewallRule);
+
+        if (firewallRule.getMatchTags() != null && !firewallRule.getMatchTags().getTagList().isEmpty()) {
+            this.tagType = firewallRule.getMatchTags().getTagList().get(0);
+        }
+        this.zoneId = zone.getId();
+        this.zoneName = zone.getName();
+
+        this.setObjectName("firewallrule");
+    }
+
+    private void settingEndPoint1(FirewallRule firewallRule) {
         if (firewallRule.getEndpoint1() != null) {
             FirewallRuleEndpointType srcEndpoint = firewallRule.getEndpoint1();
-            if (srcEndpoint.getTags() != null && srcEndpoint.getTags().size() > 0) {
+            if (srcEndpoint.getTags() != null && !srcEndpoint.getTags().isEmpty()) {
                 String[] srcTagList = srcEndpoint.getTags().get(0).split(":");
                 this.srcTag = srcTagList[srcTagList.length - 1];
             }
@@ -126,10 +140,12 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
                 this.srcNetwork = TungstenUtils.getNameFromNetwork(networkName);
             }
         }
+    }
 
+    private void settingEndPoint2(FirewallRule firewallRule) {
         if (firewallRule.getEndpoint2() != null) {
             FirewallRuleEndpointType destEndpoint = firewallRule.getEndpoint2();
-            if (destEndpoint.getTags() != null && destEndpoint.getTags().size() > 0) {
+            if (destEndpoint.getTags() != null && !destEndpoint.getTags().isEmpty()) {
                 String[] destTagList = destEndpoint.getTags().get(0).split(":");
                 this.destTag = destTagList[destTagList.length - 1];
             }
@@ -147,14 +163,6 @@ public class TungstenFabricFirewallRuleResponse extends BaseResponse {
                 this.destNetwork = TungstenUtils.getNameFromNetwork(networkName);
             }
         }
-
-        if (firewallRule.getMatchTags() != null && firewallRule.getMatchTags().getTagList().size() > 0) {
-            this.tagType = firewallRule.getMatchTags().getTagList().get(0);
-        }
-        this.zoneId = zone.getId();
-        this.zoneName = zone.getName();
-
-        this.setObjectName("firewallrule");
     }
 
     public String getUuid() {

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class DeleteTungstenVRouterPortCommand extends TungstenCommand {
     private final String host;
     private final String portId;
@@ -31,5 +33,19 @@ public class DeleteTungstenVRouterPortCommand extends TungstenCommand {
 
     public String getHost() {
         return host;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenVRouterPortCommand that = (DeleteTungstenVRouterPortCommand) o;
+        return Objects.equals(host, that.host) && Objects.equals(portId, that.portId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), host, portId);
     }
 }

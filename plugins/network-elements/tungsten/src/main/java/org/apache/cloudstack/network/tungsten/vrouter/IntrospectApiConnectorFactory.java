@@ -20,13 +20,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class IntrospectApiConnectorFactory {
-    private static Map<VRouter, IntrospectApiConnector> introspectApiConnectors = new HashMap<>();
+    private static final Map<VRouter, IntrospectApiConnector> introspectApiConnectors = new HashMap<>();
+
+    private IntrospectApiConnectorFactory() {
+    }
 
     public static IntrospectApiConnector getInstance(String host, String introspectPort) {
         VRouter vRouter = new VRouter(host, introspectPort);
-        if (introspectApiConnectors.get(vRouter) == null) {
-            introspectApiConnectors.put(vRouter, new IntrospectApiConnectorImpl(vRouter));
-        }
-        return introspectApiConnectors.get(vRouter);
+        return introspectApiConnectors.computeIfAbsent(vRouter, IntrospectApiConnectorImpl::new);
     }
 }

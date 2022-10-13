@@ -18,6 +18,8 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 import net.juniper.tungsten.api.ApiObjectBase;
 
+import java.util.Objects;
+
 public class DeleteTungstenObjectCommand extends TungstenCommand {
     private final ApiObjectBase apiObjectBase;
 
@@ -27,5 +29,19 @@ public class DeleteTungstenObjectCommand extends TungstenCommand {
 
     public ApiObjectBase getApiObjectBase() {
         return apiObjectBase;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenObjectCommand that = (DeleteTungstenObjectCommand) o;
+        return Objects.equals(apiObjectBase, that.apiObjectBase);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), apiObjectBase);
     }
 }

@@ -57,18 +57,18 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
     public TungstenFabricApplicationPolicySetResponse(ApplicationPolicySet applicationPolicySet, DataCenter zone) {
         this.uuid = applicationPolicySet.getUuid();
         this.name = applicationPolicySet.getName();
-        List<TungstenFabricTagResponse> tags = new ArrayList<>();
+        List<TungstenFabricTagResponse> responsesTags = new ArrayList<>();
         List<ObjectReference<ApiPropertyBase>> objectReferenceTagList = applicationPolicySet.getTag();
         if (objectReferenceTagList != null) {
             for (ObjectReference<ApiPropertyBase> objectReference : objectReferenceTagList) {
                 TungstenFabricTagResponse tungstenFabricTagResponse = new TungstenFabricTagResponse(
                     objectReference.getUuid(),
                     objectReference.getReferredName().get(objectReference.getReferredName().size() - 1), zone);
-                tags.add(tungstenFabricTagResponse);
+                responsesTags.add(tungstenFabricTagResponse);
             }
         }
-        this.tags = tags;
-        List<TungstenFabricFirewallPolicyResponse> firewallPolicys = new ArrayList<>();
+        this.tags = responsesTags;
+        List<TungstenFabricFirewallPolicyResponse> responsesFirewallPolicys = new ArrayList<>();
         List<ObjectReference<FirewallSequence>> objectReferenceFirewallPolicyList =
             applicationPolicySet.getFirewallPolicy();
         if (objectReferenceFirewallPolicyList != null) {
@@ -77,10 +77,10 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
                     new TungstenFabricFirewallPolicyResponse(
                     objectReference.getUuid(),
                     objectReference.getReferredName().get(objectReference.getReferredName().size() - 1), zone);
-                firewallPolicys.add(tungstenFabricFirewallPolicyResponse);
+                responsesFirewallPolicys.add(tungstenFabricFirewallPolicyResponse);
             }
         }
-        this.firewallPolicys = firewallPolicys;
+        this.firewallPolicys = responsesFirewallPolicys;
         this.zoneId = zone.getId();
         this.zoneName = zone.getName();
         this.setObjectName("applicationpolicyset");

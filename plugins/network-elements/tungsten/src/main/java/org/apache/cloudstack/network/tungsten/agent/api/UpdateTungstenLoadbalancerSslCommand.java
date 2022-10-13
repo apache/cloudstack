@@ -18,6 +18,8 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 
 import com.cloud.agent.api.Command;
 
+import java.util.Objects;
+
 public class UpdateTungstenLoadbalancerSslCommand extends Command {
     private final String lbUuid;
     private final String sslCertName;
@@ -63,5 +65,19 @@ public class UpdateTungstenLoadbalancerSslCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateTungstenLoadbalancerSslCommand that = (UpdateTungstenLoadbalancerSslCommand) o;
+        return Objects.equals(lbUuid, that.lbUuid) && Objects.equals(sslCertName, that.sslCertName) && Objects.equals(certificateKey, that.certificateKey) && Objects.equals(privateKey, that.privateKey) && Objects.equals(privateIp, that.privateIp) && Objects.equals(port, that.port);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), lbUuid, sslCertName, certificateKey, privateKey, privateIp, port);
     }
 }

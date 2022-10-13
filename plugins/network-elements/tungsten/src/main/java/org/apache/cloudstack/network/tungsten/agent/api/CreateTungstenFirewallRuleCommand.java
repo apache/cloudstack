@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class CreateTungstenFirewallRuleCommand extends TungstenCommand {
@@ -107,5 +108,19 @@ public class CreateTungstenFirewallRuleCommand extends TungstenCommand {
 
     public int getSequence() {
         return sequence;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenFirewallRuleCommand that = (CreateTungstenFirewallRuleCommand) o;
+        return sequence == that.sequence && Objects.equals(uuid, that.uuid) && Objects.equals(firewallPolicyUuid, that.firewallPolicyUuid) && Objects.equals(name, that.name) && Objects.equals(action, that.action) && Objects.equals(serviceGroupUuid, that.serviceGroupUuid) && Objects.equals(srcTagUuid, that.srcTagUuid) && Objects.equals(srcAddressGroupUuid, that.srcAddressGroupUuid) && Objects.equals(srcNetworkUuid, that.srcNetworkUuid) && Objects.equals(direction, that.direction) && Objects.equals(destTagUuid, that.destTagUuid) && Objects.equals(destAddressGroupUuid, that.destAddressGroupUuid) && Objects.equals(destNetworkUuid, that.destNetworkUuid) && Objects.equals(tagTypeUuid, that.tagTypeUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), uuid, firewallPolicyUuid, name, action, serviceGroupUuid, srcTagUuid, srcAddressGroupUuid, srcNetworkUuid, direction, destTagUuid, destAddressGroupUuid, destNetworkUuid, tagTypeUuid, sequence);
     }
 }

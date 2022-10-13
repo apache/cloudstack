@@ -30,10 +30,10 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLBHealthMonitorResponse;
 import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorVO;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
@@ -130,32 +130,28 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = null;
-        boolean success = false;
+        TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO;
+        boolean result = tungstenService.applyLBHealthMonitor(lbId);
 
-        try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
-            success = tungstenService.applyLBHealthMonitor(lbId);
-            if (success) {
-                tungstenFabricLBHealthMonitorVO = _entityMgr.findById(TungstenFabricLBHealthMonitorVO.class, getEntityId());
-                LoadBalancer loadBalancer = _entityMgr.findById(LoadBalancer.class, lbId);
-                Network network = _entityMgr.findById(Network.class, loadBalancer.getNetworkId());
-                DataCenter dataCenter = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-                TungstenFabricLBHealthMonitorResponse response = new TungstenFabricLBHealthMonitorResponse(
+        if (result) {
+            tungstenFabricLBHealthMonitorVO = _entityMgr.findById(TungstenFabricLBHealthMonitorVO.class, getEntityId());
+            LoadBalancer loadBalancer = _entityMgr.findById(LoadBalancer.class, lbId);
+            Network network = _entityMgr.findById(Network.class, loadBalancer.getNetworkId());
+            DataCenter dataCenter = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+            TungstenFabricLBHealthMonitorResponse response = new TungstenFabricLBHealthMonitorResponse(
                     tungstenFabricLBHealthMonitorVO, dataCenter);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            }
-        } finally {
-            if (!success || (tungstenFabricLBHealthMonitorVO == null)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update health monitor");
-            }
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        }
+
+        if (!result) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update health monitor");
         }
     }
 
     @Override
     public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCreateCmd.RESPONSE_SUFFIX;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

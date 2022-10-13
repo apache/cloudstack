@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class CreateTungstenNetworkCommand extends TungstenCommand {
     private final String uuid;
     private final String name;
@@ -119,5 +121,19 @@ public class CreateTungstenNetworkCommand extends TungstenCommand {
 
     public String getSubnetName() {
         return subnetName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenNetworkCommand that = (CreateTungstenNetworkCommand) o;
+        return routerExternal == that.routerExternal && shared == that.shared && ipPrefixLen == that.ipPrefixLen && dhcpEnable == that.dhcpEnable && ipFromStart == that.ipFromStart && isManagementNetwork == that.isManagementNetwork && Objects.equals(uuid, that.uuid) && Objects.equals(name, that.name) && Objects.equals(displayName, that.displayName) && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(ipPrefix, that.ipPrefix) && Objects.equals(gateway, that.gateway) && Objects.equals(dnsServer, that.dnsServer) && Objects.equals(allocationStart, that.allocationStart) && Objects.equals(allocationEnd, that.allocationEnd) && Objects.equals(subnetName, that.subnetName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), uuid, name, displayName, projectFqn, routerExternal, shared, ipPrefix, ipPrefixLen, gateway, dhcpEnable, dnsServer, allocationStart, allocationEnd, ipFromStart, isManagementNetwork, subnetName);
     }
 }

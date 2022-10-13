@@ -42,7 +42,6 @@ import net.juniper.tungsten.api.types.FirewallSequence;
 import net.juniper.tungsten.api.types.FloatingIp;
 import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.InstanceIp;
-import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.Loadbalancer;
 import net.juniper.tungsten.api.types.LoadbalancerHealthmonitor;
 import net.juniper.tungsten.api.types.LoadbalancerListener;
@@ -50,11 +49,7 @@ import net.juniper.tungsten.api.types.LoadbalancerMember;
 import net.juniper.tungsten.api.types.LoadbalancerPool;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
-import net.juniper.tungsten.api.types.PolicyTermType;
 import net.juniper.tungsten.api.types.Project;
-import net.juniper.tungsten.api.types.RouteTable;
-import net.juniper.tungsten.api.types.RouteType;
-import net.juniper.tungsten.api.types.RoutingPolicy;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.SequenceType;
 import net.juniper.tungsten.api.types.ServiceGroup;
@@ -65,15 +60,9 @@ import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
 import net.juniper.tungsten.api.types.VirtualNetworkPolicyType;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyTermCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRoutingPolicyToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -84,21 +73,19 @@ import org.apache.cloudstack.network.tungsten.agent.api.AssignTungstenFloatingIp
 import org.apache.cloudstack.network.tungsten.agent.api.ClearTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenAddressGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenApplicationPolicySetCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenDefaultProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkLoadbalancerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenSecurityGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenTagCommand;
@@ -138,34 +125,20 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenApplicationP
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenConnectedNetworkFromLogicalRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNicCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenRoutingPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenServiceGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagTypeCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkGatewayFromLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyFromNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRoutingPolicyTermCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenTagCommand;
@@ -193,6 +166,7 @@ import org.apache.log4j.Logger;
 import javax.naming.ConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -204,10 +178,7 @@ public class TungstenResource implements ServerResource {
     private String guid;
     private String zoneId;
     private int numRetries;
-    private String hostname;
-    private String port;
     private String vrouterPort;
-    private String introspectPort;
 
     protected TungstenApi tungstenApi;
 
@@ -231,12 +202,12 @@ public class TungstenResource implements ServerResource {
 
         numRetries = 2;
 
-        hostname = (String) params.get("hostname");
+        String hostname = (String) params.get("hostname");
         if (hostname == null) {
             throw new ConfigurationException("Missing Tungsten-Fabric hostname from params: " + params);
         }
 
-        port = (String) params.get("port");
+        String port = (String) params.get("port");
         if (port == null) {
             throw new ConfigurationException("Missing Tungsten-Fabric port from params: " + params);
         }
@@ -246,7 +217,7 @@ public class TungstenResource implements ServerResource {
             throw new ConfigurationException("Missing Tungsten-Fabric vrouter port from params: " + params);
         }
 
-        introspectPort = (String) params.get("introspectPort");
+        String introspectPort = (String) params.get("introspectPort");
         if (introspectPort == null) {
             throw new ConfigurationException("Missing Tungsten-Fabric introspect port from params: " + params);
         }
@@ -313,43 +284,43 @@ public class TungstenResource implements ServerResource {
         } else if (cmd instanceof CreateTungstenLogicalRouterCommand) {
             return executeRequest((CreateTungstenLogicalRouterCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenVirtualMachineCommand) {
-            return executeRequest((CreateTungstenVirtualMachineCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenVirtualMachineCommand) cmd);
         } else if (cmd instanceof SetTungstenNetworkGatewayCommand) {
-            return executeRequest((SetTungstenNetworkGatewayCommand) cmd, numRetries);
+            return executeRequest((SetTungstenNetworkGatewayCommand) cmd);
         } else if (cmd instanceof DeleteTungstenVRouterPortCommand) {
-            return executeRequest((DeleteTungstenVRouterPortCommand) cmd, numRetries);
+            return executeRequest((DeleteTungstenVRouterPortCommand) cmd);
         } else if (cmd instanceof GetTungstenNetworkDnsCommand) {
-            return executeRequest((GetTungstenNetworkDnsCommand) cmd, numRetries);
+            return executeRequest((GetTungstenNetworkDnsCommand) cmd);
         } else if (cmd instanceof GetTungstenPolicyCommand) {
-            return executeRequest((GetTungstenPolicyCommand) cmd, numRetries);
+            return executeRequest((GetTungstenPolicyCommand) cmd);
         } else if (cmd instanceof ClearTungstenNetworkGatewayCommand) {
-            return executeRequest((ClearTungstenNetworkGatewayCommand) cmd, numRetries);
+            return executeRequest((ClearTungstenNetworkGatewayCommand) cmd);
         } else if (cmd instanceof CreateTungstenFloatingIpPoolCommand) {
-            return executeRequest((CreateTungstenFloatingIpPoolCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenFloatingIpPoolCommand) cmd);
         } else if (cmd instanceof CreateTungstenFloatingIpCommand) {
-            return executeRequest((CreateTungstenFloatingIpCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenFloatingIpCommand) cmd);
         } else if (cmd instanceof DeleteTungstenFloatingIpCommand) {
-            return executeRequest((DeleteTungstenFloatingIpCommand) cmd, numRetries);
+            return executeRequest((DeleteTungstenFloatingIpCommand) cmd);
         } else if (cmd instanceof DeleteTungstenFloatingIpPoolCommand) {
-            return executeRequest((DeleteTungstenFloatingIpPoolCommand) cmd, numRetries);
+            return executeRequest((DeleteTungstenFloatingIpPoolCommand) cmd);
         } else if (cmd instanceof AssignTungstenFloatingIpCommand) {
-            return executeRequest((AssignTungstenFloatingIpCommand) cmd, numRetries);
+            return executeRequest((AssignTungstenFloatingIpCommand) cmd);
         } else if (cmd instanceof ReleaseTungstenFloatingIpCommand) {
-            return executeRequest((ReleaseTungstenFloatingIpCommand) cmd, numRetries);
+            return executeRequest((ReleaseTungstenFloatingIpCommand) cmd);
         } else if (cmd instanceof GetTungstenNatIpCommand) {
             return executeRequest((GetTungstenNatIpCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenNetworkPolicyCommand) {
-            return executeRequest((CreateTungstenNetworkPolicyCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenNetworkPolicyCommand) cmd);
         } else if (cmd instanceof ApplyTungstenNetworkPolicyCommand) {
-            return executeRequest((ApplyTungstenNetworkPolicyCommand) cmd, numRetries);
+            return executeRequest((ApplyTungstenNetworkPolicyCommand) cmd);
         } else if (cmd instanceof DeleteTungstenNetworkPolicyCommand) {
             return executeRequest((DeleteTungstenNetworkPolicyCommand) cmd, numRetries);
         } else if (cmd instanceof GetTungstenFloatingIpsCommand) {
-            return executeRequest((GetTungstenFloatingIpsCommand) cmd, numRetries);
+            return executeRequest((GetTungstenFloatingIpsCommand) cmd);
         } else if (cmd instanceof GetTungstenFabricNetworkCommand) {
-            return executeRequest((GetTungstenFabricNetworkCommand) cmd, numRetries);
+            return executeRequest((GetTungstenFabricNetworkCommand) cmd);
         } else if (cmd instanceof CreateTungstenNetworkLoadbalancerCommand) {
-            return executeRequest((CreateTungstenNetworkLoadbalancerCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenNetworkLoadbalancerCommand) cmd);
         } else if (cmd instanceof UpdateLoadBalancerServiceInstanceCommand) {
             return executeRequest((UpdateLoadBalancerServiceInstanceCommand) cmd, numRetries);
         } else if (cmd instanceof DeleteTungstenLoadBalancerCommand) {
@@ -367,11 +338,11 @@ public class TungstenResource implements ServerResource {
         } else if (cmd instanceof GetTungstenLoadBalancerCommand) {
             return executeRequest((GetTungstenLoadBalancerCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenDomainCommand) {
-            return executeRequest((CreateTungstenDomainCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenDomainCommand) cmd);
         } else if (cmd instanceof DeleteTungstenDomainCommand) {
             return executeRequest((DeleteTungstenDomainCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenProjectCommand) {
-            return executeRequest((CreateTungstenProjectCommand) cmd, numRetries);
+            return executeRequest((CreateTungstenProjectCommand) cmd);
         } else if (cmd instanceof DeleteTungstenProjectCommand) {
             return executeRequest((DeleteTungstenProjectCommand) cmd, numRetries);
         } else if (cmd instanceof ApplyTungstenPortForwardingCommand) {
@@ -399,7 +370,7 @@ public class TungstenResource implements ServerResource {
         } else if (cmd instanceof RemoveTungstenSecondaryIpAddressCommand) {
             return executeRequest((RemoveTungstenSecondaryIpAddressCommand) cmd, numRetries);
         } else if (cmd instanceof GetTungstenSecurityGroupCommand) {
-            return executeRequest((GetTungstenSecurityGroupCommand) cmd, numRetries);
+            return executeRequest((GetTungstenSecurityGroupCommand) cmd);
         } else if (cmd instanceof CreateTungstenPolicyCommand) {
             return executeRequest((CreateTungstenPolicyCommand) cmd, numRetries);
         } else if (cmd instanceof AddTungstenPolicyRuleCommand) {
@@ -470,38 +441,6 @@ public class TungstenResource implements ServerResource {
             return executeRequest((UpdateTungstenVrouterConfigCommand) cmd, numRetries);
         } else if (cmd instanceof UpdateTungstenDefaultSecurityGroupCommand) {
             return executeRequest((UpdateTungstenDefaultSecurityGroupCommand) cmd, numRetries);
-        } else if (cmd instanceof CreateTungstenNetworkRouteTableCommand) {
-            return executeRequest((CreateTungstenNetworkRouteTableCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenNetworkStaticRouteCommand) {
-            return executeRequest((AddTungstenNetworkStaticRouteCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenNetworkStaticRouteCommand) {
-            return executeRequest((RemoveTungstenNetworkStaticRouteCommand) cmd, numRetries);
-        } else if (cmd instanceof ListTungstenNetworkRouteTableCommand) {
-            return executeRequest((ListTungstenNetworkRouteTableCommand) cmd, numRetries);
-        } else if (cmd instanceof ListTungstenNetworkRouteTableStaticRouteCommand) {
-            return executeRequest((ListTungstenNetworkRouteTableStaticRouteCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenNetworkRouteTableCommand) {
-            return executeRequest((RemoveTungstenNetworkRouteTableCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenRouteTableToNetworkCommand) {
-            return executeRequest((AddTungstenRouteTableToNetworkCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenRouteTableFromNetworkCommand) {
-            return executeRequest((RemoveTungstenRouteTableFromNetworkCommand) cmd, numRetries);
-        } else if (cmd instanceof CreateTungstenInterfaceRouteTableCommand) {
-            return executeRequest((CreateTungstenInterfaceRouteTableCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenInterfaceStaticRouteCommand) {
-            return executeRequest((RemoveTungstenInterfaceStaticRouteCommand) cmd, numRetries);
-        } else if (cmd instanceof ListTungstenInterfaceRouteTableCommand) {
-            return executeRequest((ListTungstenInterfaceRouteTableCommand) cmd, numRetries);
-        } else if (cmd instanceof ListTungstenInterfaceRouteTableStaticRouteCommand) {
-            return executeRequest((ListTungstenInterfaceRouteTableStaticRouteCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenInterfaceRouteTableCommand) {
-            return executeRequest((RemoveTungstenInterfaceRouteTableCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenRouteTableToInterfaceCommand) {
-            return executeRequest((AddTungstenRouteTableToInterfaceCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenRouteTableFromInterfaceCommand) {
-            return executeRequest((RemoveTungstenRouteTableFromInterfaceCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenInterfaceStaticRouteCommand) {
-            return executeRequest((AddTungstenInterfaceStaticRouteCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenRoutingLogicalRouterCommand) {
             return executeRequest((CreateTungstenRoutingLogicalRouterCommand) cmd, numRetries);
         } else if (cmd instanceof AddTungstenNetworkGatewayToLogicalRouterCommand) {
@@ -512,22 +451,10 @@ public class TungstenResource implements ServerResource {
             return executeRequest((RemoveTungstenNetworkGatewayFromLogicalRouterCommand) cmd);
         } else if (cmd instanceof DeleteTungstenRoutingLogicalRouterCommand) {
             return executeRequest((DeleteTungstenRoutingLogicalRouterCommand) cmd, numRetries);
-        } else if (cmd instanceof ListTungstenRoutingPolicyCommand) {
-            return executeRequest((ListTungstenRoutingPolicyCommand) cmd, numRetries);
-        } else if (cmd instanceof CreateTungstenRoutingPolicyCommand) {
-            return executeRequest((CreateTungstenRoutingPolicyCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenRoutingPolicyTermCommand) {
-            return executeRequest((AddTungstenRoutingPolicyTermCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenRoutingPolicyCommand) {
-            return executeRequest((RemoveTungstenRoutingPolicyCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenRoutingPolicyTermCommand) {
-            return executeRequest((RemoveTungstenRoutingPolicyTermCommand) cmd, numRetries);
-        } else if (cmd instanceof AddTungstenRoutingPolicyToNetworkCommand) {
-            return executeRequest((AddTungstenRoutingPolicyToNetworkCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenRoutingPolicyFromNetworkCommand) {
-            return executeRequest((RemoveTungstenRoutingPolicyFromNetworkCommand) cmd, numRetries);
         } else if (cmd instanceof ListTungstenConnectedNetworkFromLogicalRouterCommand) {
-            return executeRequest((ListTungstenConnectedNetworkFromLogicalRouterCommand) cmd, numRetries);
+            return executeRequest((ListTungstenConnectedNetworkFromLogicalRouterCommand) cmd);
+        } else if (cmd instanceof CreateTungstenDefaultProjectCommand) {
+            return executeRequest((CreateTungstenDefaultProjectCommand) cmd);
         }
 
         s_logger.debug("Received unsupported command " + cmd.toString());
@@ -565,17 +492,7 @@ public class TungstenResource implements ServerResource {
         VirtualMachineInterface vmi = (VirtualMachineInterface) tungstenApi.getTungstenObjectByName(
             VirtualMachineInterface.class, project.getQualifiedName(), cmd.getName());
         if (vmi != null) {
-            List<ObjectReference<ApiPropertyBase>> objectReferenceList = vmi.getFloatingIpBackRefs();
-            if (objectReferenceList != null) {
-                for(ObjectReference<ApiPropertyBase> objectReference : objectReferenceList) {
-                    FloatingIp floatingIp = (FloatingIp) tungstenApi.getTungstenObject(FloatingIp.class, objectReference.getUuid());
-                    floatingIp.clearVirtualMachineInterface();
-                    boolean cleared = tungstenApi.updateTungstenObject(floatingIp);
-                    if (!cleared) {
-                        throw new CloudRuntimeException("Can not clear virtual machine interface from floating ip ");
-                    }
-                }
-            }
+            cleanUpVmiFloatingIp(vmi);
             boolean deleted = tungstenApi.deleteTungstenVmInterface(vmi);
             if (deleted)
                 return new TungstenAnswer(cmd, true, "Tungsten-Fabric virtual machine interface deleted");
@@ -589,6 +506,20 @@ public class TungstenResource implements ServerResource {
         }
 
         return new TungstenAnswer(cmd, true, "Tungsten-Fabric virtual machine interface is not exist");
+    }
+
+    private void cleanUpVmiFloatingIp(VirtualMachineInterface vmi) {
+        List<ObjectReference<ApiPropertyBase>> objectReferenceList = vmi.getFloatingIpBackRefs();
+        if (objectReferenceList != null) {
+            for(ObjectReference<ApiPropertyBase> objectReference : objectReferenceList) {
+                FloatingIp floatingIp = (FloatingIp) tungstenApi.getTungstenObject(FloatingIp.class, objectReference.getUuid());
+                floatingIp.clearVirtualMachineInterface();
+                boolean cleared = tungstenApi.updateTungstenObject(floatingIp);
+                if (!cleared) {
+                    throw new CloudRuntimeException("Can not clear virtual machine interface from floating ip ");
+                }
+            }
+        }
     }
 
     private Answer executeRequest(DeleteTungstenVmCommand cmd, int numRetries) {
@@ -636,7 +567,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(CreateTungstenVirtualMachineCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenVirtualMachineCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
             return new TungstenAnswer(cmd, new IOException());
@@ -694,34 +625,46 @@ public class TungstenResource implements ServerResource {
                 return new TungstenAnswer(cmd, new IOException());
             }
         }
-
-        Port port = new Port();
-        port.setId(virtualMachineInterface.getUuid());
-        port.setVnId(virtualNetwork.getUuid());
-        port.setDisplayName(virtualMachine.getName());
-        port.setVmProjectId(project.getUuid());
-        port.setMacAddress(cmd.getMac());
-        if (NetUtils.isValidIp4(cmd.getIp())) {
-            port.setIpAddress(cmd.getIp());
-        } else {
-            port.setIpv6Address(cmd.getIp());
-        }
-
-        if (cmd.getIpv6() != null) {
-            port.setIpv6Address(cmd.getIpv6());
-        }
-
-        port.setInstanceId(virtualMachine.getUuid());
-        port.setTapInterfaceName(TungstenUtils.getTapName(cmd.getMac()));
-        boolean addPortResult = TungstenVRouterApi.addTungstenVrouterPort(cmd.getHost(), vrouterPort, port);
-        if (!addPortResult) {
+        if (!addTungstenVrouterPort(virtualMachineInterface.getUuid()
+                , virtualNetwork.getUuid()
+                , virtualMachine.getName()
+                , project.getUuid()
+                , cmd.getMac()
+                , cmd.getIp()
+                , cmd.getIpv6()
+                , virtualMachine.getUuid()
+                , cmd.getHost()
+        )) {
             return new TungstenAnswer(cmd, new IOException());
         }
 
         return new TungstenAnswer(cmd, virtualMachine, true, null);
     }
 
-    private Answer executeRequest(SetTungstenNetworkGatewayCommand cmd, int numRetries) {
+    private boolean addTungstenVrouterPort(String vmiUuid, String networkUuid, String vmName, String projectUuid,
+                                           String mac, String ip, String ipv6, String vmUuid, String host) {
+        Port vPort = new Port();
+        vPort.setId(vmiUuid);
+        vPort.setVnId(networkUuid);
+        vPort.setDisplayName(vmName);
+        vPort.setVmProjectId(projectUuid);
+        vPort.setMacAddress(mac);
+        if (NetUtils.isValidIp4(ip)) {
+            vPort.setIpAddress(ip);
+        } else {
+            vPort.setIpv6Address(ip);
+        }
+
+        if (ipv6 != null) {
+            vPort.setIpv6Address(ipv6);
+        }
+
+        vPort.setInstanceId(vmUuid);
+        vPort.setTapInterfaceName(TungstenUtils.getTapName(mac));
+        return TungstenVRouterApi.addTungstenVrouterPort(host, vrouterPort, vPort);
+    }
+
+    private Answer executeRequest(SetTungstenNetworkGatewayCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
             return new TungstenAnswer(cmd, new IOException());
@@ -764,12 +707,12 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, virtualMachineInterface, true, null);
     }
 
-    private Answer executeRequest(GetTungstenNetworkDnsCommand cmd, int numRetries) {
+    private Answer executeRequest(GetTungstenNetworkDnsCommand cmd) {
         String dnsIpAddress = tungstenApi.getTungstenNetworkDns(cmd.getUuid(), cmd.getSubnetName());
         return new TungstenAnswer(cmd, true, dnsIpAddress);
     }
 
-    private Answer executeRequest(GetTungstenPolicyCommand cmd, int numRetries) {
+    private Answer executeRequest(GetTungstenPolicyCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
             return new TungstenAnswer(cmd, new IOException());
@@ -780,7 +723,7 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, apiObjectBase, true, null);
     }
 
-    private Answer executeRequest(ClearTungstenNetworkGatewayCommand cmd, int numRetries) {
+    private Answer executeRequest(ClearTungstenNetworkGatewayCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
             return new TungstenAnswer(cmd, new IOException());
@@ -812,7 +755,7 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, true, null);
     }
 
-    private Answer executeRequest(CreateTungstenFloatingIpPoolCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenFloatingIpPoolCommand cmd) {
         ApiObjectBase apiObjectBase = tungstenApi.createTungstenFloatingIpPool(cmd.getNetworkUuid(), cmd.getFipName());
         if (apiObjectBase != null) {
             return new TungstenAnswer(cmd, apiObjectBase, true, null);
@@ -821,7 +764,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(CreateTungstenFloatingIpCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenFloatingIpCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
             return new TungstenAnswer(cmd, new IOException());
@@ -836,7 +779,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(AssignTungstenFloatingIpCommand cmd, int numRetries) {
+    private Answer executeRequest(AssignTungstenFloatingIpCommand cmd) {
         boolean result = tungstenApi.assignTungstenFloatingIp(cmd.getNetworkUuid(), cmd.getVmiUuid(), cmd.getFipName(),
             cmd.getName(), cmd.getPrivateIp());
         if (result) {
@@ -846,7 +789,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(ReleaseTungstenFloatingIpCommand cmd, int numRetries) {
+    private Answer executeRequest(ReleaseTungstenFloatingIpCommand cmd) {
         boolean result = tungstenApi.releaseTungstenFloatingIp(cmd.getVnUuid(), cmd.getFipName(), cmd.getName());
         if (result) {
             return new TungstenAnswer(cmd, true, null);
@@ -869,12 +812,12 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(DeleteTungstenVRouterPortCommand cmd, int numRetries) {
+    private Answer executeRequest(DeleteTungstenVRouterPortCommand cmd) {
         boolean deletePort = TungstenVRouterApi.deleteTungstenVrouterPort(cmd.getHost(), vrouterPort, cmd.getPortId());
         return new TungstenAnswer(cmd, deletePort, null);
     }
 
-    private Answer executeRequest(DeleteTungstenFloatingIpCommand cmd, int numRetries) {
+    private Answer executeRequest(DeleteTungstenFloatingIpCommand cmd) {
         VirtualNetwork virtualNetwork = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
             cmd.getVnUuid());
         FloatingIpPool floatingIpPool = (FloatingIpPool) tungstenApi.getTungstenObjectByName(FloatingIpPool.class,
@@ -885,7 +828,7 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, deleteFip, null);
     }
 
-    private Answer executeRequest(DeleteTungstenFloatingIpPoolCommand cmd, int numRetries) {
+    private Answer executeRequest(DeleteTungstenFloatingIpPoolCommand cmd) {
         boolean deleteFip = true;
         VirtualNetwork virtualNetwork = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
             cmd.getVnUuid());
@@ -899,7 +842,7 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, deleteFip, null);
     }
 
-    private Answer executeRequest(CreateTungstenNetworkPolicyCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenNetworkPolicyCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         ApiObjectBase apiObjectBase = tungstenApi.createOrUpdateTungstenNetworkPolicy(cmd.getName(), project.getUuid(),
             cmd.getTungstenRuleList());
@@ -941,22 +884,21 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, true, "Tungsten-Fabric network policy is not exist");
     }
 
-    private Answer executeRequest(GetTungstenFloatingIpsCommand cmd, int numRetries) {
+    private Answer executeRequest(GetTungstenFloatingIpsCommand cmd) {
         VirtualNetwork virtualNetwork = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
             cmd.getVnUuid());
-        List<FloatingIp> floatingIpList;
+        List<ApiObjectBase> floatingIpList;
         if (virtualNetwork != null) {
             FloatingIpPool floatingIpPool = (FloatingIpPool) tungstenApi.getTungstenObjectByName(FloatingIpPool.class,
                 virtualNetwork.getQualifiedName(), cmd.getFipName());
-            floatingIpList = (List<FloatingIp>) tungstenApi.getTungstenListObject(FloatingIp.class, floatingIpPool,
-                null);
+            floatingIpList = tungstenApi.getTungstenListObject(FloatingIp.class, floatingIpPool,null);
         } else {
             floatingIpList = new ArrayList<>();
         }
         return new TungstenAnswer(cmd, floatingIpList, true, null);
     }
 
-    private Answer executeRequest(ApplyTungstenNetworkPolicyCommand cmd, int numRetries) {
+    private Answer executeRequest(ApplyTungstenNetworkPolicyCommand cmd) {
         ApiObjectBase apiObjectBase;
         String networkPolicyUuid = cmd.getPolicyUuid();
 
@@ -982,7 +924,7 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, tungstenModel, true, "Tungsten-Fabric network policy is applied");
     }
 
-    private Answer executeRequest(GetTungstenFabricNetworkCommand cmd, int numRetries) {
+    private Answer executeRequest(GetTungstenFabricNetworkCommand cmd) {
         ApiObjectBase fabricNetwork = tungstenApi.getTungstenFabricNetwork();
         if (fabricNetwork != null) {
             return new TungstenAnswer(cmd, fabricNetwork, true, null);
@@ -991,7 +933,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(CreateTungstenDomainCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenDomainCommand cmd) {
         ApiObjectBase tungstenDomain = tungstenApi.createTungstenDomain(cmd.getTungstenDomainName(),
             cmd.getTungstenDomainUuid());
         if (tungstenDomain != null) {
@@ -1001,7 +943,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(CreateTungstenProjectCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenProjectCommand cmd) {
         ApiObjectBase tungstenProject = tungstenApi.createTungstenProject(cmd.getTungstenProjectName(),
             cmd.getTungstenProjectUuid(), cmd.getTungstenDomainUuid(), cmd.getTungstenDomainName());
         if (tungstenProject != null) {
@@ -1037,7 +979,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(CreateTungstenNetworkLoadbalancerCommand cmd, int numRetries) {
+    private Answer executeRequest(CreateTungstenNetworkLoadbalancerCommand cmd) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
             return new TungstenAnswer(cmd, new IOException());
@@ -1125,34 +1067,50 @@ public class TungstenResource implements ServerResource {
             return new TungstenAnswer(cmd, new IOException());
         }
 
-        LoadbalancerPool loadbalancerPool = (LoadbalancerPool) tungstenApi.getTungstenObjectByName(
-            LoadbalancerPool.class, project.getQualifiedName(), cmd.getLoadBalancerPoolName());
+        LoadbalancerPool loadbalancerPool = createLoadBalancerPool(cmd.getLoadBalancerPoolName(),
+                cmd.getLoadBalancerMethod(),
+                cmd.getProtocol(), project.getUuid(), project.getQualifiedName(), loadbalancerListener.getUuid(),
+                 loadbalancerHealthmonitor.getUuid());
 
-        if (loadbalancerPool == null) {
-            loadbalancerPool = (LoadbalancerPool) tungstenApi.createTungstenLoadbalancerPool(project.getUuid(),
-                loadbalancerListener.getUuid(), loadbalancerHealthmonitor.getUuid(), cmd.getLoadBalancerPoolName(),
-                cmd.getLoadBalancerMethod(), cmd.getProtocol());
-        }
-
-        if (loadbalancerPool == null) {
-            return new TungstenAnswer(cmd, new IOException());
-        }
-
-        for (TungstenLoadBalancerMember member : cmd.getListMember()) {
-            LoadbalancerMember loadbalancerMember = (LoadbalancerMember) tungstenApi.getTungstenObjectByName(
-                LoadbalancerMember.class, loadbalancerPool.getQualifiedName(), member.getName());
-            if (loadbalancerMember == null) {
-                loadbalancerMember = (LoadbalancerMember) tungstenApi.createTungstenLoadbalancerMember(
-                    loadbalancerPool.getUuid(), member.getName(), member.getIpAddress(), subnetUuid, member.getPort(),
-                    member.getWeight());
-            }
-
-            if (loadbalancerMember == null) {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
+        createLoadBalancerMember(cmd.getListMember(), loadbalancerPool, subnetUuid);
 
         return new TungstenAnswer(cmd, loadbalancer, true, null);
+    }
+
+    private LoadbalancerPool createLoadBalancerPool(String poolName, String method, String protocol, String projectUuid,
+                                                    List<String> projectQualifiedName,
+                                                    String loadbalancerListenerUuid,
+                                                    String loadbalancerHealthmonitorUuid) {
+        LoadbalancerPool loadbalancerPool = (LoadbalancerPool) tungstenApi.getTungstenObjectByName(
+                LoadbalancerPool.class, projectQualifiedName, poolName);
+
+        if (loadbalancerPool == null) {
+            loadbalancerPool = (LoadbalancerPool) tungstenApi.createTungstenLoadbalancerPool(projectUuid,
+                    loadbalancerListenerUuid, loadbalancerHealthmonitorUuid, poolName,
+                    method, protocol);
+        }
+
+        if (loadbalancerPool == null) {
+            throw new CloudRuntimeException("Can not create load balancer pool");
+        }
+
+        return loadbalancerPool;
+    }
+
+    private void createLoadBalancerMember(List<TungstenLoadBalancerMember> members, LoadbalancerPool loadbalancerPool, String subnetUuid) {
+        for (TungstenLoadBalancerMember member : members) {
+            LoadbalancerMember loadbalancerMember = (LoadbalancerMember) tungstenApi.getTungstenObjectByName(
+                    LoadbalancerMember.class, loadbalancerPool.getQualifiedName(), member.getName());
+            if (loadbalancerMember == null) {
+                loadbalancerMember = (LoadbalancerMember) tungstenApi.createTungstenLoadbalancerMember(
+                        loadbalancerPool.getUuid(), member.getName(), member.getIpAddress(), subnetUuid, member.getPort(),
+                        member.getWeight());
+            }
+
+            if (loadbalancerMember == null) {
+                throw new CloudRuntimeException("Can not create load balancer members");
+            }
+        }
     }
 
     private Answer executeRequest(UpdateLoadBalancerServiceInstanceCommand cmd, int numRetries) {
@@ -1171,21 +1129,12 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(DeleteTungstenLoadBalancerCommand cmd, int numRetries) {
-        boolean result = true;
+        boolean result;
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         Loadbalancer loadbalancer = (Loadbalancer) tungstenApi.getTungstenObjectByName(Loadbalancer.class,
             project.getQualifiedName(), cmd.getLoadBalancerName());
         if (loadbalancer != null) {
-            // delete load balancer listener
-            List<ObjectReference<ApiPropertyBase>> listLoadBalancerListener =
-                loadbalancer.getLoadbalancerListenerBackRefs();
-            if (listLoadBalancerListener != null && listLoadBalancerListener.size() > 0) {
-                for (ObjectReference<ApiPropertyBase> listener : listLoadBalancerListener) {
-                    LoadbalancerListener loadbalancerListener = (LoadbalancerListener) tungstenApi.getTungstenObject(
-                        LoadbalancerListener.class, listener.getUuid());
-                    result = result && deleteLoadBalancerListener(loadbalancerListener);
-                }
-            }
+            result= deleteLoadBalancerListener(loadbalancer);
 
             // delete load balancer
             result = result && tungstenApi.deleteTungstenObject(loadbalancer);
@@ -1220,13 +1169,27 @@ public class TungstenResource implements ServerResource {
         return new TungstenAnswer(cmd, true, "Tungsten-Fabric loadbalancer is not exist");
     }
 
-    private Answer executeRequest(DeleteTungstenLoadBalancerListenerCommand cmd, int numRetries) {
+    private boolean deleteLoadBalancerListener(Loadbalancer loadBalancer) {
         boolean result = true;
+        List<ObjectReference<ApiPropertyBase>> listLoadBalancerListener =
+                loadBalancer.getLoadbalancerListenerBackRefs();
+        if (listLoadBalancerListener != null && !listLoadBalancerListener.isEmpty()) {
+            for (ObjectReference<ApiPropertyBase> listener : listLoadBalancerListener) {
+                LoadbalancerListener loadbalancerListener = (LoadbalancerListener) tungstenApi.getTungstenObject(
+                        LoadbalancerListener.class, listener.getUuid());
+                result = result && deleteLoadBalancerListener(loadbalancerListener);
+            }
+        }
+        return result;
+    }
+
+    private Answer executeRequest(DeleteTungstenLoadBalancerListenerCommand cmd, int numRetries) {
+        boolean result;
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         LoadbalancerListener loadbalancerListener = (LoadbalancerListener) tungstenApi.getTungstenObjectByName(
             LoadbalancerListener.class, project.getQualifiedName(), cmd.getLoadBalancerListenerName());
         if (loadbalancerListener != null) {
-            result = result && deleteLoadBalancerListener(loadbalancerListener);
+            result = deleteLoadBalancerListener(loadbalancerListener);
             if (result)
                 return new TungstenAnswer(cmd, true, "Tungsten-Fabric loadbalancer listener deleted");
             else {
@@ -1311,12 +1274,12 @@ public class TungstenResource implements ServerResource {
     private boolean deleteLoadBalancerListener(LoadbalancerListener loadbalancerListener) {
         boolean result = true;
         List<ObjectReference<ApiPropertyBase>> listPool = loadbalancerListener.getLoadbalancerPoolBackRefs();
-        if (listPool != null && listPool.size() > 0) {
+        if (listPool != null && !listPool.isEmpty()) {
             for (ObjectReference<ApiPropertyBase> pool : listPool) {
                 LoadbalancerPool loadbalancerPool = (LoadbalancerPool) tungstenApi.getTungstenObject(
                     LoadbalancerPool.class, pool.getUuid());
                 List<ObjectReference<ApiPropertyBase>> listMember = loadbalancerPool.getLoadbalancerMembers();
-                if (listMember != null && listMember.size() > 0) {
+                if (listMember != null && !listMember.isEmpty()) {
                     for (ObjectReference<ApiPropertyBase> member : listMember) {
                         LoadbalancerMember loadbalancerMember = (LoadbalancerMember) tungstenApi.getTungstenObject(
                             LoadbalancerMember.class, member.getUuid());
@@ -1433,7 +1396,7 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(GetTungstenSecurityGroupCommand cmd, int numRetries) {
+    private Answer executeRequest(GetTungstenSecurityGroupCommand cmd) {
         ApiObjectBase apiObjectBase = tungstenApi.getTungstenObject(SecurityGroup.class,
             cmd.getTungstenSecurityGroupUuid());
         return new TungstenAnswer(cmd, apiObjectBase, true, "Get Tungsten-Fabric security group");
@@ -1650,7 +1613,7 @@ public class TungstenResource implements ServerResource {
             return new TungstenAnswer(cmd, new IOException());
         }
 
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenNetwork(project.getUuid(),
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenNetwork(project.getUuid(),
             cmd.getNetworkUuid());
 
         if (apiObjectBaseList != null)
@@ -1670,7 +1633,7 @@ public class TungstenResource implements ServerResource {
             return new TungstenAnswer(cmd, new IOException());
         }
 
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenVm(project.getUuid(), cmd.getVmUuid());
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenVm(project.getUuid(), cmd.getVmUuid());
 
         if (apiObjectBaseList != null)
             return new TungstenAnswer(cmd, apiObjectBaseList, true, "Tungsten-Fabric vm is listed");
@@ -1689,7 +1652,7 @@ public class TungstenResource implements ServerResource {
             return new TungstenAnswer(cmd, new IOException());
         }
 
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenNic(project.getUuid(),
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenNic(project.getUuid(),
             cmd.getNicUuid());
 
         if (apiObjectBaseList != null)
@@ -1708,11 +1671,11 @@ public class TungstenResource implements ServerResource {
 
         if (apiObjectBase != null) {
             Tag tag = (Tag) apiObjectBase;
-            List<VirtualNetwork> virtualNetworkList = (List<VirtualNetwork>) tungstenApi.getBackRefFromObject(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
-            List<VirtualMachine> virtualMachineList = (List<VirtualMachine>) tungstenApi.getBackRefFromObject(VirtualMachine.class, tag.getVirtualMachineBackRefs());
-            List<VirtualMachineInterface> virtualMachineInterfaceList = (List<VirtualMachineInterface>) tungstenApi.getBackRefFromObject(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
-            List<NetworkPolicy> networkPolicyList = (List<NetworkPolicy>) tungstenApi.getBackRefFromObject(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
-            List<ApplicationPolicySet> applicationPolicySetList = (List<ApplicationPolicySet>) tungstenApi.getBackRefFromObject(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
+            List<VirtualNetwork> virtualNetworkList = tungstenApi.getBackRefFromVirtualNetwork(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
+            List<VirtualMachine> virtualMachineList = tungstenApi.getBackRefFromVirtualMachine(VirtualMachine.class, tag.getVirtualMachineBackRefs());
+            List<VirtualMachineInterface> virtualMachineInterfaceList = tungstenApi.getBackRefFromVirtualMachineInterface(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
+            List<NetworkPolicy> networkPolicyList = tungstenApi.getBackRefFromNetworkPolicy(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
+            List<ApplicationPolicySet> applicationPolicySetList = tungstenApi.getBackRefFromApplicationPolicySet(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
             TungstenModel tungstenModel = new TungstenTag((Tag) apiObjectBase, virtualNetworkList, virtualMachineList, virtualMachineInterfaceList, networkPolicyList, applicationPolicySetList);
             return new TungstenAnswer(cmd, tungstenModel, true, "Tungsten-Fabric tag is created");
         } else {
@@ -1784,11 +1747,11 @@ public class TungstenResource implements ServerResource {
             List<TungstenModel> tungstenModelList = new ArrayList<>();
             for (ApiObjectBase apiObjectBase : apiObjectBaseList) {
                 Tag tag = (Tag) apiObjectBase;
-                List<VirtualNetwork> virtualNetworkList = (List<VirtualNetwork>) tungstenApi.getBackRefFromObject(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
-                List<VirtualMachine> virtualMachineList = (List<VirtualMachine>) tungstenApi.getBackRefFromObject(VirtualMachine.class, tag.getVirtualMachineBackRefs());
-                List<VirtualMachineInterface> virtualMachineInterfaceList = (List<VirtualMachineInterface>) tungstenApi.getBackRefFromObject(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
-                List<NetworkPolicy> networkPolicyList = (List<NetworkPolicy>) tungstenApi.getBackRefFromObject(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
-                List<ApplicationPolicySet> applicationPolicySetList = (List<ApplicationPolicySet>) tungstenApi.getBackRefFromObject(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
+                List<VirtualNetwork> virtualNetworkList = tungstenApi.getBackRefFromVirtualNetwork(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
+                List<VirtualMachine> virtualMachineList = tungstenApi.getBackRefFromVirtualMachine(VirtualMachine.class, tag.getVirtualMachineBackRefs());
+                List<VirtualMachineInterface> virtualMachineInterfaceList = tungstenApi.getBackRefFromVirtualMachineInterface(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
+                List<NetworkPolicy> networkPolicyList = tungstenApi.getBackRefFromNetworkPolicy(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
+                List<ApplicationPolicySet> applicationPolicySetList = tungstenApi.getBackRefFromApplicationPolicySet(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
                 TungstenModel tungstenModel = new TungstenTag((Tag) apiObjectBase, virtualNetworkList, virtualMachineList, virtualMachineInterfaceList, networkPolicyList, applicationPolicySetList);
                 tungstenModelList.add(tungstenModel);
             }
@@ -1803,7 +1766,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenTagTypeCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenTagType(cmd.getTagTypeUuid());
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenTagType(cmd.getTagTypeUuid());
 
         if (apiObjectBaseList != null)
             return new TungstenAnswer(cmd, apiObjectBaseList, true, "Tungsten-Fabric tag type list is got");
@@ -1820,7 +1783,7 @@ public class TungstenResource implements ServerResource {
         boolean applied = true;
 
         if (cmd.getNetworkUuids() != null) {
-            applied = applied && tungstenApi.applyTungstenNetworkTag(cmd.getNetworkUuids(), cmd.getTagUuid());
+            applied = tungstenApi.applyTungstenNetworkTag(cmd.getNetworkUuids(), cmd.getTagUuid());
         }
 
         if (cmd.getVmUuids() != null) {
@@ -1841,14 +1804,13 @@ public class TungstenResource implements ServerResource {
 
         if (applied) {
             Tag tag = (Tag) tungstenApi.getTungstenObject(Tag.class, cmd.getTagUuid());
-            List<VirtualNetwork> virtualNetworkList = (List<VirtualNetwork>) tungstenApi.getBackRefFromObject(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
-            List<VirtualMachine> virtualMachineList = (List<VirtualMachine>) tungstenApi.getBackRefFromObject(VirtualMachine.class, tag.getVirtualMachineBackRefs());
-            List<VirtualMachineInterface> virtualMachineInterfaceList = (List<VirtualMachineInterface>) tungstenApi.getBackRefFromObject(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
-            List<NetworkPolicy> networkPolicyList = (List<NetworkPolicy>) tungstenApi.getBackRefFromObject(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
-            List<ApplicationPolicySet> applicationPolicySetList = (List<ApplicationPolicySet>) tungstenApi.getBackRefFromObject(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
+            List<VirtualNetwork> virtualNetworkList = tungstenApi.getBackRefFromVirtualNetwork(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
+            List<VirtualMachine> virtualMachineList = tungstenApi.getBackRefFromVirtualMachine(VirtualMachine.class, tag.getVirtualMachineBackRefs());
+            List<VirtualMachineInterface> virtualMachineInterfaceList = tungstenApi.getBackRefFromVirtualMachineInterface(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
+            List<NetworkPolicy> networkPolicyList = tungstenApi.getBackRefFromNetworkPolicy(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
+            List<ApplicationPolicySet> applicationPolicySetList = tungstenApi.getBackRefFromApplicationPolicySet(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
             TungstenModel tungstenModel = new TungstenTag(tag, virtualNetworkList, virtualMachineList, virtualMachineInterfaceList, networkPolicyList, applicationPolicySetList);
-            TungstenAnswer tungstenAnswer = new TungstenAnswer(cmd, tungstenModel,true, "Tungsten-Fabric tag is applied");
-            return tungstenAnswer;
+            return new TungstenAnswer(cmd, tungstenModel,true, "Tungsten-Fabric tag is applied");
         } else {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);
@@ -1881,14 +1843,13 @@ public class TungstenResource implements ServerResource {
 
         if (apiObjectBase != null) {
             Tag tag = (Tag) apiObjectBase;
-            List<VirtualNetwork> virtualNetworkList = (List<VirtualNetwork>) tungstenApi.getBackRefFromObject(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
-            List<VirtualMachine> virtualMachineList = (List<VirtualMachine>) tungstenApi.getBackRefFromObject(VirtualMachine.class, tag.getVirtualMachineBackRefs());
-            List<VirtualMachineInterface> virtualMachineInterfaceList = (List<VirtualMachineInterface>) tungstenApi.getBackRefFromObject(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
-            List<NetworkPolicy> networkPolicyList = (List<NetworkPolicy>) tungstenApi.getBackRefFromObject(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
-            List<ApplicationPolicySet> applicationPolicySetList = (List<ApplicationPolicySet>) tungstenApi.getBackRefFromObject(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
+            List<VirtualNetwork> virtualNetworkList = tungstenApi.getBackRefFromVirtualNetwork(VirtualNetwork.class, tag.getVirtualNetworkBackRefs());
+            List<VirtualMachine> virtualMachineList = tungstenApi.getBackRefFromVirtualMachine(VirtualMachine.class, tag.getVirtualMachineBackRefs());
+            List<VirtualMachineInterface> virtualMachineInterfaceList = tungstenApi.getBackRefFromVirtualMachineInterface(VirtualMachineInterface.class, tag.getVirtualMachineInterfaceBackRefs());
+            List<NetworkPolicy> networkPolicyList = tungstenApi.getBackRefFromNetworkPolicy(NetworkPolicy.class, tag.getNetworkPolicyBackRefs());
+            List<ApplicationPolicySet> applicationPolicySetList = tungstenApi.getBackRefFromApplicationPolicySet(ApplicationPolicySet.class, tag.getApplicationPolicySetBackRefs());
             TungstenModel tungstenModel = new TungstenTag(tag, virtualNetworkList, virtualMachineList, virtualMachineInterfaceList, networkPolicyList, applicationPolicySetList);
-            TungstenAnswer tungstenAnswer = new TungstenAnswer(cmd, tungstenModel,true, "Tungsten-Fabric tag is removed");
-            return tungstenAnswer;
+            return new TungstenAnswer(cmd, tungstenModel,true, "Tungsten-Fabric tag is removed");
         } else {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);
@@ -1973,7 +1934,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenApplicationPolicySetCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenApplicationPolicySet(
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenApplicationPolicySet(
             cmd.getApplicationPolicySetUuid());
 
         if (apiObjectBaseList != null)
@@ -1988,7 +1949,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenFirewallPolicyCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenFirewallPolicy(
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenFirewallPolicy(
             cmd.getApplicationPolicySetUuid(), cmd.getFirewallPolicyUuid());
 
         if (apiObjectBaseList != null)
@@ -2003,7 +1964,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenFirewallRuleCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenFirewallRule(
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenFirewallRule(
             cmd.getFirewallPolicyUuid(), cmd.getFirewallRuleUuid());
 
         if (apiObjectBaseList != null)
@@ -2018,7 +1979,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenServiceGroupCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenServiceGroup(
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenServiceGroup(
             cmd.getServiceGroupUuid());
 
         if (apiObjectBaseList != null)
@@ -2033,7 +1994,7 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenAddressGroupCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenAddressGroup(
+        List<ApiObjectBase> apiObjectBaseList = tungstenApi.listTungstenAddressGroup(
             cmd.getAddressGroupUuid());
 
         if (apiObjectBaseList != null)
@@ -2080,16 +2041,7 @@ public class TungstenResource implements ServerResource {
                     objectReference.getUuid());
                 applicationPolicySet.removeFirewallPolicy(firewallPolicy, new FirewallSequence());
                 boolean updated = tungstenApi.updateTungstenObject(applicationPolicySet);
-                if (updated) {
-                    boolean deleted = tungstenApi.deleteTungstenObject(firewallPolicy);
-                    if (deleted) {
-                        return new TungstenAnswer(cmd, true, "Tungsten-Fabric firewall policy is deleted");
-                    }
-                }
-
-                if (numRetries > 0) {
-                    return retry(cmd, --numRetries);
-                } else {
+                if (!updated) {
                     return new TungstenAnswer(cmd, new IOException());
                 }
             }
@@ -2120,16 +2072,7 @@ public class TungstenResource implements ServerResource {
                 FirewallPolicy firewallPolicy = (FirewallPolicy) tungstenApi.getTungstenObject(FirewallPolicy.class, objectReference.getUuid());
                 firewallPolicy.removeFirewallRule(firewallRule, new FirewallSequence());
                 boolean updated = tungstenApi.updateTungstenObject(firewallPolicy);
-                if (updated) {
-                    boolean deleted = tungstenApi.deleteTungstenObject(firewallRule);
-                    if (deleted) {
-                        return new TungstenAnswer(cmd, true, "Tungsten-Fabric firewall rule is deleted");
-                    }
-                }
-
-                if (numRetries > 0) {
-                    return retry(cmd, --numRetries);
-                } else {
+                if (!updated) {
                     return new TungstenAnswer(cmd, new IOException());
                 }
             }
@@ -2213,237 +2156,6 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(CreateTungstenNetworkRouteTableCommand cmd, int numRetries) {
-        Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
-        if (project == null) {
-            return new TungstenAnswer(cmd, new IOException());
-        }
-
-        ApiObjectBase apiObjectBase = tungstenApi.createNetworkRouteTable(cmd.getName(), cmd.getUuid(), project.getUuid());
-        if (apiObjectBase != null) {
-            return new TungstenAnswer(cmd, apiObjectBase, true, "Tungsten-Fabric network route tables was created.");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(CreateTungstenInterfaceRouteTableCommand cmd, int numRetries) {
-        Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
-        if (project == null) {
-            return new TungstenAnswer(cmd, new IOException());
-        }
-
-        ApiObjectBase apiObjectBase = tungstenApi.createInterfaceRouteTable(cmd.getName(), cmd.getUuid(), project.getUuid());
-        if (apiObjectBase != null) {
-            return new TungstenAnswer(cmd, apiObjectBase, true, "Tungsten-Fabric interface route tables was created.");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(AddTungstenNetworkStaticRouteCommand cmd, int numRetries) {
-        RouteType routeType = tungstenApi.addNetworkStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix(),
-                cmd.getRouteNextHop(), cmd.getRouteNextHopType(), cmd.getCommunities());
-        if (routeType != null) {
-            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric network static route was added");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(AddTungstenInterfaceStaticRouteCommand cmd, int numRetries) {
-        RouteType routeType = tungstenApi.addInterfaceStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix(),
-                cmd.getCommunities());
-        if (routeType != null) {
-            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric interface static route was added");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenNetworkStaticRouteCommand cmd, int numRetries) {
-        RouteType routeType = tungstenApi.removeNetworkStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix());
-        if (routeType != null) {
-            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric network static route was removed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenInterfaceStaticRouteCommand cmd, int numRetries) {
-        RouteType routeType = tungstenApi.removeInterfaceStaticRoute(cmd.getRouteTableUuid(), cmd.getRoutePrefix());
-        if (routeType != null) {
-            return new TungstenAnswer(cmd, routeType, true, "Tungsten-Fabric interface static route was removed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(ListTungstenNetworkRouteTableCommand cmd, int numRetries) {
-        List<RouteTable> routeTables = (List<RouteTable>) tungstenApi.listTungstenNetworkRouteTable(
-                cmd.getTungstenNetworkRouteTableUuid());
-        if (cmd.getNetworkUuid() != null) {
-            routeTables = tungstenApi.filterTungstenRouteTableByNetwork(routeTables, cmd.getNetworkUuid(), cmd.isAttachedToNetwork());
-        }
-        if (routeTables != null) {
-            return new TungstenAnswer(cmd, routeTables, true, "Tungsten-Fabric network route table is listed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(ListTungstenInterfaceRouteTableCommand cmd, int numRetries) {
-        List<InterfaceRouteTable> routeTables = (List<InterfaceRouteTable>) tungstenApi.listTungstenInterfaceRouteTable(
-                cmd.getTungstenInterfaceRouteTableUuid());
-        if (cmd.getVmiUuid() != null) {
-            routeTables = tungstenApi.filterTungstenRouteTableByInterface(routeTables, cmd.getVmiUuid(), cmd.isAttachedToInterface());
-        }
-        if (routeTables != null) {
-            return new TungstenAnswer(cmd, routeTables, true, "Tungsten-Fabric interface route table is listed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(ListTungstenNetworkRouteTableStaticRouteCommand cmd, int numRetries) {
-        List<RouteType> networkStaticRoutes = tungstenApi.listNetworkRouteTableStaticRoute(
-                cmd.getTungstenRouteTableUuid(), cmd.getRoutePrefix());
-        if (networkStaticRoutes != null) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric network route table static routes are listed", networkStaticRoutes);
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(ListTungstenInterfaceRouteTableStaticRouteCommand cmd, int numRetries) {
-        List<RouteType> interfaceStaticRoutes = tungstenApi.listInterfaceRouteTableStaticRoute(
-                cmd.getTungstenRouteTableUuid(), cmd.getRoutePrefix());
-        if (interfaceStaticRoutes != null) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric interface route table static routes are listed", interfaceStaticRoutes);
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenNetworkRouteTableCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeNetworkRouteTable(cmd.getRouteTableUuid());
-        if (result) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric network route table was removed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenInterfaceRouteTableCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeInterfaceRouteTable(cmd.getRouteTableUuid());
-        if (result) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric interface route table was removed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(AddTungstenRouteTableToNetworkCommand cmd, int numRetries) {
-        RouteTable routeTable = tungstenApi.addRouteTableToNetwork(cmd.getNetworkUuid(), cmd.getRouteTableUuid());
-        if (routeTable != null) {
-            return new TungstenAnswer(cmd, routeTable, true, "Tungsten-Fabric route table was added to a network");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(AddTungstenRouteTableToInterfaceCommand cmd, int numRetries) {
-        InterfaceRouteTable interfaceRouteTable = tungstenApi.addRouteTableToInterface(cmd.getVmiUuid(),
-                cmd.getRouteTableUuid());
-        if (interfaceRouteTable != null) {
-            return new TungstenAnswer(cmd, interfaceRouteTable, true, "Tungsten-Fabric route table was added to a interface");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenRouteTableFromNetworkCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeRouteTableFromNetwork(cmd.getNetworkUuid(), cmd.getRouteTableUuid());
-        if (result) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric route table was removed from a network");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenRouteTableFromInterfaceCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeRouteTableFromInterface(cmd.getVmiUuid(), cmd.getRouteTableUuid());
-        if (result) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric route table was removed from a interface");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
     private Answer executeRequest(CreateTungstenRoutingLogicalRouterCommand cmd, int numRetries) {
         Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
         if (project == null) {
@@ -2489,22 +2201,12 @@ public class TungstenResource implements ServerResource {
     }
 
     private Answer executeRequest(ListTungstenRoutingLogicalRouterCommand cmd, int numRetries) {
-        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listRoutingLogicalRouter(cmd.getNetworkUuid(), cmd.getLogicalRouterUuid());
+        List<? extends ApiObjectBase> apiObjectBaseList = tungstenApi.listRoutingLogicalRouter(cmd.getLogicalRouterUuid());
 
         if (apiObjectBaseList != null) {
             List<TungstenModel> tungstenModelList = new ArrayList<>();
             for(ApiObjectBase apiObjectBase : apiObjectBaseList) {
-                List<VirtualNetwork> virtualNetworkList = tungstenApi.listConnectedNetworkFromLogicalRouter((LogicalRouter) apiObjectBase);
-                if (cmd.getNetworkUuid() != null) {
-                    for(VirtualNetwork virtualNetwork : virtualNetworkList) {
-                        if (virtualNetwork.getUuid().equals(cmd.getNetworkUuid())) {
-                            tungstenModelList.add(
-                                new TungstenLogicalRouter((LogicalRouter) apiObjectBase, virtualNetworkList));
-                        }
-                    }
-                } else {
-                    tungstenModelList.add(new TungstenLogicalRouter((LogicalRouter) apiObjectBase, virtualNetworkList));
-                }
+                tungstenModelList.addAll(getTungstenLogicalRouterFromVirtualNetwork(apiObjectBase, cmd.getNetworkUuid()));
             }
             return new TungstenAnswer(cmd, true, tungstenModelList, "Tungsten-Fabric logical router is listed");
         } else {
@@ -2514,6 +2216,22 @@ public class TungstenResource implements ServerResource {
                 return new TungstenAnswer(cmd, new IOException());
             }
         }
+    }
+
+    private List<TungstenModel> getTungstenLogicalRouterFromVirtualNetwork(ApiObjectBase apiObjectBase, String networkUuid) {
+        List<TungstenModel> tungstenModelList = new ArrayList<>();
+        List<VirtualNetwork> virtualNetworkList = tungstenApi.listConnectedNetworkFromLogicalRouter((LogicalRouter) apiObjectBase);
+        if (networkUuid != null) {
+            for(VirtualNetwork virtualNetwork : virtualNetworkList) {
+                if (virtualNetwork.getUuid().equals(networkUuid)) {
+                    tungstenModelList.add(
+                            new TungstenLogicalRouter((LogicalRouter) apiObjectBase, virtualNetworkList));
+                }
+            }
+        } else {
+            tungstenModelList.add(new TungstenLogicalRouter((LogicalRouter) apiObjectBase, virtualNetworkList));
+        }
+        return tungstenModelList;
     }
 
     private Answer executeRequest(DeleteTungstenRoutingLogicalRouterCommand cmd, int numRetries) {
@@ -2535,110 +2253,16 @@ public class TungstenResource implements ServerResource {
         }
     }
 
-    private Answer executeRequest(ListTungstenRoutingPolicyCommand cmd, int numRetries) {
-        List<RoutingPolicy> routingPolicies = tungstenApi.listTungstenRoutingPolicy(cmd.getRoutingPolicyUuid());
-        if (cmd.getNetworkUuid() != null) {
-            routingPolicies = tungstenApi.filterTungstenRoutingPolicyByNetwork(routingPolicies, cmd.getNetworkUuid(), cmd.isAttachedToNetwork());
-        }
-        if(routingPolicies != null) {
-            return new TungstenAnswer(cmd, routingPolicies, true, "Tungsten-Fabric routing policies are listed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(CreateTungstenRoutingPolicyCommand cmd, int numRetries) {
-        Project project = (Project) tungstenApi.getTungstenProjectByFqn(cmd.getProjectFqn());
-        if (project == null) {
-            return new TungstenAnswer(cmd, new IOException());
-        }
-
-        RoutingPolicy routingPolicy = tungstenApi.createRoutingPolicy(project.getUuid(), cmd.getRoutingPolicyName());
-        if(routingPolicy != null) {
-            return new TungstenAnswer(cmd, routingPolicy, true, "Tungsten-Fabric routing policy was created");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(AddTungstenRoutingPolicyTermCommand cmd, int numRetries) {
-        PolicyTermType policyTermType = tungstenApi.addRoutingPolicyTerm(cmd.getRoutingPolicyUuid(), cmd.getRoutingPolicyFromTerm(),
-                cmd.getRoutingPolicyThenTerms());
-        if(policyTermType != null) {
-            return new TungstenAnswer(cmd, policyTermType,true, "Tungsten-Fabric routing policy term was added");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenRoutingPolicyCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeRoutingPolicy(cmd.getRoutingPolicyUuid());
-        if(result) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric routing policy was removed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenRoutingPolicyTermCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeRoutingPolicyTerm(cmd.getRoutingPolicyUuid(), cmd.getPolicyTerm());
-        if(result) {
-            return new TungstenAnswer(cmd, true, "Tungsten-Fabric routing policy term was removed");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(AddTungstenRoutingPolicyToNetworkCommand cmd, int numRetries) {
-        boolean result = tungstenApi.addRoutingPolicyToNetwork(cmd.getNetworkUuid(), cmd.getRoutingPolicyUuid());
-        if(result) {
-            return new TungstenAnswer(cmd, true, "Add Tungsten-Fabric routing policy to a network");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(RemoveTungstenRoutingPolicyFromNetworkCommand cmd, int numRetries) {
-        boolean result = tungstenApi.removeRoutingPolicyFromNetwork(cmd.getNetworkUuid(), cmd.getRoutingPolicyUuid());
-        if(result) {
-            return new TungstenAnswer(cmd, true, "Remove Tungsten-Fabric routing policy from a network");
-        } else {
-            if (numRetries > 0) {
-                return retry(cmd, --numRetries);
-            } else {
-                return new TungstenAnswer(cmd, new IOException());
-            }
-        }
-    }
-
-    private Answer executeRequest(ListTungstenConnectedNetworkFromLogicalRouterCommand cmd, int numRetries) {
+    private Answer executeRequest(ListTungstenConnectedNetworkFromLogicalRouterCommand cmd) {
         LogicalRouter logicalRouter = (LogicalRouter) tungstenApi.getTungstenObject(LogicalRouter.class, cmd.getLogicalRouterUuid());
         List<VirtualNetwork> networkList = tungstenApi.listConnectedNetworkFromLogicalRouter(logicalRouter);
-        return new TungstenAnswer(cmd, networkList, true, "Tungsten-Fabric logical router connected network is listed");
+        List<ApiObjectBase> apiObjectBaseList = new ArrayList<>(networkList);
+        return new TungstenAnswer(cmd, apiObjectBaseList, true, "Tungsten-Fabric logical router connected network is listed");
+    }
+
+    private Answer executeRequest(CreateTungstenDefaultProjectCommand cmd) {
+        Project project = tungstenApi.createDefaultTungstenProject();
+        return new TungstenAnswer(cmd, project, true, "Tungsten-Fabric default project is created");
     }
 
     private Answer retry(Command cmd, int numRetries) {
@@ -2648,7 +2272,7 @@ public class TungstenResource implements ServerResource {
 
     @Override
     public void disconnected() {
-
+        // Do nothing
     }
 
     @Override
@@ -2668,6 +2292,7 @@ public class TungstenResource implements ServerResource {
 
     @Override
     public void setAgentControl(IAgentControl agentControl) {
+        // Do nothing
     }
 
     private Answer executeRequest(ReadyCommand cmd) {
@@ -2680,17 +2305,17 @@ public class TungstenResource implements ServerResource {
 
     @Override
     public void setName(final String name) {
-
+        this.name = name;
     }
 
     @Override
     public void setConfigParams(final Map<String, Object> params) {
-
+        // Do nothing
     }
 
     @Override
     public Map<String, Object> getConfigParams() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
@@ -2700,6 +2325,6 @@ public class TungstenResource implements ServerResource {
 
     @Override
     public void setRunLevel(final int level) {
-
+        // Do nothing
     }
 }

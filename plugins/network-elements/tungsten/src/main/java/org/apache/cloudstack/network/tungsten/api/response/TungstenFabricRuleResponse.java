@@ -104,7 +104,7 @@ public class TungstenFabricRuleResponse extends BaseResponse {
         this.direction = policyRuleType.getDirection();
         this.protocol = policyRuleType.getProtocol();
         List<AddressType> srcAddress = policyRuleType.getSrcAddresses();
-        if (srcAddress != null && srcAddress.size() > 0) {
+        if (srcAddress != null && !srcAddress.isEmpty()) {
             this.srcNetwork = srcAddress.get(0).getVirtualNetwork();
             SubnetType subnetType = srcAddress.get(0).getSubnet();
             if (subnetType != null) {
@@ -114,13 +114,13 @@ public class TungstenFabricRuleResponse extends BaseResponse {
         }
 
         List<PortType> srcPortList = policyRuleType.getSrcPorts();
-        if (srcPortList != null && srcPortList.size() > 0) {
+        if (srcPortList != null && !srcPortList.isEmpty()) {
             this.srcStartPort = srcPortList.get(0).getStartPort();
             this.srcEndPort = srcPortList.get(0).getEndPort();
         }
 
         List<AddressType> destAddress = policyRuleType.getDstAddresses();
-        if (destAddress != null && destAddress.size() > 0) {
+        if (destAddress != null && !destAddress.isEmpty()) {
             this.destNetwork = policyRuleType.getDstAddresses().get(0).getVirtualNetwork();
             SubnetType subnetType = destAddress.get(0).getSubnet();
             if (subnetType != null) {
@@ -130,7 +130,7 @@ public class TungstenFabricRuleResponse extends BaseResponse {
         }
 
         List<PortType> destPortList = policyRuleType.getDstPorts();
-        if (destPortList != null && destPortList.size() > 0) {
+        if (destPortList != null && !destPortList.isEmpty()) {
             this.destStartPort = destPortList.get(0).getStartPort();
             this.destEndPort = destPortList.get(0).getEndPort();
         }

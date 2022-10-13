@@ -26,8 +26,7 @@ from marvin.lib.base import (Network, NetworkOffering, Account, VirtualMachine, 
                              NATRule, PublicIPAddress, EgressFireWallRule, Host,
                              FireWallRule, LoadBalancerRule, LogicalRouter, ApplicationPolicySet,
                              FirewallPolicy, FirewallRule, TungstenTag, ServiceGroup,
-                             NetworkPolicy, PolicyRule, NetworkRouteTable, InterfaceRouteTable,
-                             RoutingPolicy)
+                             NetworkPolicy, PolicyRule)
 from marvin.cloudstackAPI import migrateVirtualMachine
 from marvin.lib.utils import (is_server_ssh_ready, get_host_credentials, execute_command_in_host)
 from marvin.lib.common import get_zone, get_template
@@ -275,8 +274,7 @@ class TestIsolatedZone(cloudstackTestCase):
             Host.reconnect(cls.apiclient, id=host.id)
         cls.not_tungsten_fabric_zone = not_tungsten_fabric_zone(cls.apiclient, cls.zone.id)
         cls.is_single_host = len(cls.hosts) < 2
-        cls.not_migrate = cls.not_tungsten_fabric_zone or cls.is_single_host
-        cls.temp = True
+        cls.can_not_migrate = cls.not_tungsten_fabric_zone or cls.is_single_host
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestIsolatedZone")
@@ -340,8 +338,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_connectivity(self):
         # test create network offering
@@ -518,8 +515,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_sourcenat(self):
         # create network offering
@@ -574,8 +570,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_staticnat(self):
         # create network offering
@@ -648,8 +643,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_loadbalancing(self):
         # create network offering
@@ -762,8 +756,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_logicalrouter(self):
         # create network offering
@@ -950,8 +943,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_network_policy(self):
         # create network offering
@@ -1055,8 +1047,7 @@ class TestIsolatedZone(cloudstackTestCase):
 
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
+    @skipTestIf("not_tungsten_fabric_zone")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_application_policy_set(self):
         # create network offering
@@ -1355,589 +1346,7 @@ class TestIsolatedZone(cloudstackTestCase):
         )
         return
 
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
-    @attr(tags=["tungstenfabric"], required_hardware="false")
-    def test_01_network_route_table(self):
-        # create network offering
-        network_offering = NetworkOffering.create(self.apiclient, self.services["network_offering"])
-        network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(network_offering)
-
-        # create network
-        network1 = Network.create(
-            self.apiclient,
-            self.services["networks"]["network1"],
-            networkofferingid=network_offering.id,
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.cleanup.append(network1)
-
-        # create network
-        network2 = Network.create(
-            self.apiclient,
-            self.services["networks"]["network2"],
-            networkofferingid=network_offering.id,
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.cleanup.append(network2)
-
-        # create virtual machine 1
-        vm1 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm1"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network1.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm1)
-
-        # create virtual machine 2
-        vm2 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm2"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network2.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm2)
-
-        # create virtual machine 3
-        vm3 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm3"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network1.id), str(network2.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm3)
-
-        network_route_table1 = NetworkRouteTable.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["network_route_table"]["route_table_1"]["name"]
-        )
-        self.cleanup.append(network_route_table1)
-
-        network_route_table2 = NetworkRouteTable.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["network_route_table"]["route_table_2"]["name"]
-        )
-        self.cleanup.append(network_route_table2)
-
-        NetworkRouteTable.add_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            self.services["network_route_table"]["route_table_1"]["prefix"],
-            vm3.nic[0].ipaddress if vm3.nic[0].networkid == network1.id else vm3.nic[1].ipaddress,
-            self.services["network_route_table"]["route_table_1"]["nexthoptype"],
-            self.services["network_route_table"]["route_table_1"]["communities"]
-        )
-
-        NetworkRouteTable.apply_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            network1.id
-        )
-
-        NetworkRouteTable.add_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            self.services["network_route_table"]["route_table_2"]["prefix"],
-            vm3.nic[1].ipaddress if vm3.nic[1].networkid == network2.id else vm3.nic[0].ipaddress,
-            self.services["network_route_table"]["route_table_2"]["nexthoptype"],
-            self.services["network_route_table"]["route_table_2"]["communities"]
-        )
-
-        NetworkRouteTable.apply_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            network2.id
-        )
-
-        # open firewall rule for network 1
-        EgressFireWallRule.create(
-            apiclient=self.apiclient,
-            networkid=network1.id,
-            protocol='All',
-            cidrlist='0.0.0.0/0'
-        )
-
-        # open firewall rule for network 2
-        EgressFireWallRule.create(
-            apiclient=self.apiclient,
-            networkid=network2.id,
-            protocol='All',
-            cidrlist='0.0.0.0/0'
-        )
-
-        ssh1 = vm1.get_ssh_client()
-        ssh2 = vm2.get_ssh_client()
-        ssh3 = vm3.get_ssh_client()
-
-        ssh3.execute("sysctl net.ipv4.ip_forward=1")
-        res1 = ssh1.execute("ping -c1 %s" % vm2.ipaddress)
-        self.assertEqual(
-            str(res1).count("1 received"),
-            1,
-            "Ping vm2 from vm1 should be successful"
-        )
-
-        res2 = ssh2.execute("ping -c1 %s" % vm1.ipaddress)
-        self.assertEqual(
-            str(res2).count("1 received"),
-            1,
-            "Ping vm1 from vm2 should be successful"
-        )
-
-        NetworkRouteTable.remove_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            network1.id
-        )
-
-        NetworkRouteTable.remove_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            self.services["network_route_table"]["route_table_1"]["prefix"]
-        )
-
-        NetworkRouteTable.remove_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            network2.id
-        )
-
-        NetworkRouteTable.remove_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            self.services["network_route_table"]["route_table_2"]["prefix"]
-        )
-
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
-    @attr(tags=["tungstenfabric"], required_hardware="false")
-    def test_01_interface_route_table(self):
-        # create network offering
-        network_offering = NetworkOffering.create(self.apiclient, self.services["network_offering"])
-        network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(network_offering)
-
-        # create network
-        network1 = Network.create(
-            self.apiclient,
-            self.services["networks"]["network1"],
-            networkofferingid=network_offering.id,
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.cleanup.append(network1)
-
-        # create network
-        network2 = Network.create(
-            self.apiclient,
-            self.services["networks"]["network2"],
-            networkofferingid=network_offering.id,
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.cleanup.append(network2)
-
-        # create virtual machine 1
-        vm1 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm1"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network1.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm1)
-
-        # create virtual machine 2
-        vm2 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm2"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network2.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm2)
-
-        # create virtual machine 3
-        vm3 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm3"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network1.id), str(network2.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm3)
-
-        interface_route_table1 = InterfaceRouteTable.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["interface_route_table"]["route_table_1"]["name"]
-        )
-        self.cleanup.append(interface_route_table1)
-
-        InterfaceRouteTable.add_route(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table1.uuid,
-            self.services["interface_route_table"]["route_table_1"]["prefix"]
-        )
-
-        vmi1 = vm3.nic[0].id if vm3.nic[0].networkid == network1.id else vm3.nic[1].id
-        vmi2 = vm3.nic[0].id if vm3.nic[0].networkid == network2.id else vm3.nic[1].id
-
-        InterfaceRouteTable.apply_vmi(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table1.uuid,
-            vmi1
-        )
-
-        interface_route_table2 = InterfaceRouteTable.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["interface_route_table"]["route_table_2"]["name"]
-        )
-        self.cleanup.append(interface_route_table2)
-
-        InterfaceRouteTable.add_route(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table2.uuid,
-            self.services["interface_route_table"]["route_table_2"]["prefix"]
-        )
-
-        InterfaceRouteTable.apply_vmi(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table2.uuid,
-            vmi2
-        )
-
-        # open firewall rule for network 1
-        EgressFireWallRule.create(
-            apiclient=self.apiclient,
-            networkid=network1.id,
-            protocol='All',
-            cidrlist='0.0.0.0/0'
-        )
-
-        # open firewall rule for network 2
-        EgressFireWallRule.create(
-            apiclient=self.apiclient,
-            networkid=network2.id,
-            protocol='All',
-            cidrlist='0.0.0.0/0'
-        )
-
-        ssh1 = vm1.get_ssh_client()
-        ssh2 = vm2.get_ssh_client()
-        ssh3 = vm3.get_ssh_client()
-
-        ssh3.execute("sysctl net.ipv4.ip_forward=1")
-        res1 = ssh1.execute("ping -c1 %s" % vm2.ipaddress)
-        self.assertEqual(
-            str(res1).count("1 received"),
-            1,
-            "Ping vm2 from vm1 should be successful"
-        )
-
-        res2 = ssh2.execute("ping -c1 %s" % vm1.ipaddress)
-        self.assertEqual(
-            str(res2).count("1 received"),
-            1,
-            "Ping vm1 from vm2 should be successful"
-        )
-
-        InterfaceRouteTable.remove_vmi(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table1.uuid,
-            vmi1
-        )
-
-        InterfaceRouteTable.remove_route(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table1.uuid,
-            self.services["interface_route_table"]["route_table_1"]["prefix"]
-        )
-
-        InterfaceRouteTable.remove_vmi(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table2.uuid,
-            vmi2
-        )
-
-        InterfaceRouteTable.remove_route(
-            self.apiclient,
-            self.zone.id,
-            interface_route_table2.uuid,
-            self.services["interface_route_table"]["route_table_2"]["prefix"]
-        )
-
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
-    @attr(tags=["tungstenfabric"], required_hardware="false")
-    def test_01_routing_policy(self):
-        # create network offering
-        network_offering = NetworkOffering.create(self.apiclient, self.services["network_offering"])
-        network_offering.update(self.apiclient, state='Enabled')
-        self.cleanup.append(network_offering)
-
-        # create network
-        network1 = Network.create(
-            self.apiclient,
-            self.services["networks"]["network1"],
-            networkofferingid=network_offering.id,
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.cleanup.append(network1)
-
-        # create network
-        network2 = Network.create(
-            self.apiclient,
-            self.services["networks"]["network2"],
-            networkofferingid=network_offering.id,
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.cleanup.append(network2)
-
-        # create virtual machine 1
-        vm1 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm1"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network1.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm1)
-
-        # create virtual machine 2
-        vm2 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm2"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network2.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm2)
-
-        # create virtual machine 3
-        vm3 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machines"]["vm3"],
-            serviceofferingid=self.service_offering.id,
-            templateid=self.template.id,
-            networkids=[str(network1.id), str(network2.id)],
-            zoneid=self.zone.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            mode='advanced'
-        )
-        self.cleanup.append(vm3)
-
-        network_route_table1 = NetworkRouteTable.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["network_route_table"]["route_table_1"]["name"]
-        )
-        self.cleanup.append(network_route_table1)
-
-        network_route_table2 = NetworkRouteTable.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["network_route_table"]["route_table_2"]["name"]
-        )
-        self.cleanup.append(network_route_table2)
-
-        NetworkRouteTable.add_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            self.services["network_route_table"]["route_table_1"]["prefix"],
-            vm3.nic[0].ipaddress if vm3.nic[0].networkid == network1.id else vm3.nic[1].ipaddress,
-            self.services["network_route_table"]["route_table_1"]["nexthoptype"],
-            self.services["network_route_table"]["route_table_1"]["communities"]
-        )
-
-        NetworkRouteTable.apply_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            network1.id
-        )
-
-        NetworkRouteTable.add_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            self.services["network_route_table"]["route_table_2"]["prefix"],
-            vm3.nic[1].ipaddress if vm3.nic[1].networkid == network2.id else vm3.nic[0].ipaddress,
-            self.services["network_route_table"]["route_table_2"]["nexthoptype"],
-            self.services["network_route_table"]["route_table_2"]["communities"]
-        )
-
-        NetworkRouteTable.apply_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            network2.id
-        )
-
-        routing_policy_1 = RoutingPolicy.create(
-            self.apiclient,
-            self.zone.id,
-            self.services["routing_policy"]["routing_policy_1"]["name"]
-        )
-        self.cleanup.append(routing_policy_1)
-
-        RoutingPolicy.add_term(
-            self.apiclient,
-            self.zone.id,
-            routing_policy_1.uuid,
-            self.services["routing_policy"]["routing_policy_1"]["communities"],
-            self.services["routing_policy"]["routing_policy_1"]["matchall"],
-            self.services["routing_policy"]["routing_policy_1"]["protocollist"],
-            self.services["routing_policy"]["routing_policy_1"]["prefixlist"],
-            self.services["routing_policy"]["routing_policy_1"]["termlist"]
-        )
-
-        # open firewall rule for network 1
-        EgressFireWallRule.create(
-            apiclient=self.apiclient,
-            networkid=network1.id,
-            protocol='All',
-            cidrlist='0.0.0.0/0'
-        )
-
-        # open firewall rule for network 2
-        EgressFireWallRule.create(
-            apiclient=self.apiclient,
-            networkid=network2.id,
-            protocol='All',
-            cidrlist='0.0.0.0/0'
-        )
-
-        ssh1 = vm1.get_ssh_client()
-        ssh2 = vm3.get_ssh_client()
-
-        ssh2.execute("sysctl net.ipv4.ip_forward=1")
-        res1 = ssh1.execute("ping -c1 %s" % vm2.ipaddress)
-        self.assertEqual(
-            str(res1).count("1 received"),
-            1,
-            "Ping vm2 from vm1 should be successful"
-        )
-
-        RoutingPolicy.apply_network(
-            self.apiclient,
-            self.zone.id,
-            routing_policy_1.uuid,
-            network1.id
-        )
-
-        res2 = ssh1.execute("ping -c1 %s" % vm2.ipaddress)
-        self.assertEqual(
-            str(res2).count("0 received"),
-            1,
-            "Ping vm2 from vm1 should be fail"
-        )
-
-        RoutingPolicy.remove_network(
-            self.apiclient,
-            self.zone.id,
-            routing_policy_1.uuid,
-            network1.id
-        )
-
-        NetworkRouteTable.remove_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            network1.id
-        )
-
-        NetworkRouteTable.remove_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table1.uuid,
-            self.services["network_route_table"]["route_table_1"]["prefix"]
-        )
-
-        NetworkRouteTable.remove_network(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            network2.id
-        )
-
-        NetworkRouteTable.remove_route(
-            self.apiclient,
-            self.zone.id,
-            network_route_table2.uuid,
-            self.services["network_route_table"]["route_table_2"]["prefix"]
-        )
-
-    #@skipTestIf("not_tungsten_fabric_zone")
-    @skipTestIf("temp")
-    @skipTestIf("not_migrate")
+    @skipTestIf("can_not_migrate")
     @attr(tags=["tungstenfabric"], required_hardware="false")
     def test_01_vm_migration(self):
         # create network offering

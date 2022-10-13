@@ -19,17 +19,15 @@ package org.apache.cloudstack.network.tungsten.agent.api;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import net.juniper.tungsten.api.ApiObjectBase;
-import net.juniper.tungsten.api.ApiPropertyBase;
 import org.apache.cloudstack.network.tungsten.model.TungstenModel;
 
 import java.util.List;
+import java.util.Objects;
 
 public class TungstenAnswer extends Answer {
 
     ApiObjectBase apiObjectBase;
-    List<? extends ApiObjectBase> apiObjectBaseList;
-    ApiPropertyBase apiPropertyBase;
-    List<? extends ApiPropertyBase> apiPropertyBaseList;
+    List<ApiObjectBase> apiObjectBaseList;
     TungstenModel tungstenModel;
     List<TungstenModel> tungstenModelList;
 
@@ -43,21 +41,10 @@ public class TungstenAnswer extends Answer {
         setApiObjectBase(apiObjectBase);
     }
 
-    public TungstenAnswer(final Command command, ApiPropertyBase apiPropertyBase, final boolean success,
-                          final String details) {
-        super(command, success, details);
-        setApiPropertyBase(apiPropertyBase);
-    }
-
-    public TungstenAnswer(final Command command, List<? extends ApiObjectBase> apiObjectBaseList, final boolean success,
+    public TungstenAnswer(final Command command, List<ApiObjectBase> apiObjectBaseList, final boolean success,
                           final String details) {
         super(command, success, details);
         setApiObjectBaseList(apiObjectBaseList);
-    }
-
-    public TungstenAnswer(final Command command, final boolean success, String details, List<? extends ApiPropertyBase> apiPropertyBaseList) {
-        super(command, success, details);
-        setApiPropertyBaseList(apiPropertyBaseList);
     }
 
     public TungstenAnswer(final Command command, final TungstenModel tungstenModel, final boolean success,
@@ -84,28 +71,12 @@ public class TungstenAnswer extends Answer {
         this.apiObjectBase = apiObjectBase;
     }
 
-    public List<? extends ApiObjectBase> getApiObjectBaseList() {
+    public List<ApiObjectBase> getApiObjectBaseList() {
         return apiObjectBaseList;
     }
 
-    public void setApiObjectBaseList(final List<? extends ApiObjectBase> apiObjectBaseList) {
+    public void setApiObjectBaseList(final List<ApiObjectBase> apiObjectBaseList) {
         this.apiObjectBaseList = apiObjectBaseList;
-    }
-
-    public ApiPropertyBase getApiPropertyBase() {
-        return apiPropertyBase;
-    }
-
-    public void setApiPropertyBase(ApiPropertyBase apiPropertyBase) {
-        this.apiPropertyBase = apiPropertyBase;
-    }
-
-    public List<? extends ApiPropertyBase> getApiPropertyBaseList() {
-        return apiPropertyBaseList;
-    }
-
-    public void setApiPropertyBaseList(List<? extends ApiPropertyBase> apiPropertyBaseList) {
-        this.apiPropertyBaseList = apiPropertyBaseList;
     }
 
     public TungstenModel getTungstenModel() {
@@ -122,5 +93,20 @@ public class TungstenAnswer extends Answer {
 
     public void setTungstenModelList(final List<TungstenModel> tungstenModelList) {
         this.tungstenModelList = tungstenModelList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        TungstenAnswer that = (TungstenAnswer) o;
+        return Objects.equals(apiObjectBase, that.apiObjectBase) && Objects.equals(apiObjectBaseList,
+                that.apiObjectBaseList) && Objects.equals(tungstenModel, that.tungstenModel) && Objects.equals(tungstenModelList, that.tungstenModelList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), apiObjectBase, apiObjectBaseList, tungstenModel, tungstenModelList);
     }
 }

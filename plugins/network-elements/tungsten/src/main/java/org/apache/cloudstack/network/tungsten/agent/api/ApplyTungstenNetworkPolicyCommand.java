@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class ApplyTungstenNetworkPolicyCommand extends TungstenCommand {
     private final String projectFqn;
     private final String networkPolicyName;
@@ -66,5 +68,19 @@ public class ApplyTungstenNetworkPolicyCommand extends TungstenCommand {
 
     public int getMinorSequence() {
         return minorSequence;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ApplyTungstenNetworkPolicyCommand that = (ApplyTungstenNetworkPolicyCommand) o;
+        return majorSequence == that.majorSequence && minorSequence == that.minorSequence && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(networkPolicyName, that.networkPolicyName) && Objects.equals(networkUuid, that.networkUuid) && Objects.equals(policyUuid, that.policyUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), projectFqn, networkPolicyName, networkUuid, policyUuid, majorSequence, minorSequence);
     }
 }

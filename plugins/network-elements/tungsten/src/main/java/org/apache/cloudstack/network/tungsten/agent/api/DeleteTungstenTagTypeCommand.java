@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class DeleteTungstenTagTypeCommand extends TungstenCommand {
 
     private final String tagTypeUuid;
@@ -26,5 +28,19 @@ public class DeleteTungstenTagTypeCommand extends TungstenCommand {
 
     public String getTagTypeUuid() {
         return tagTypeUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteTungstenTagTypeCommand that = (DeleteTungstenTagTypeCommand) o;
+        return Objects.equals(tagTypeUuid, that.tagTypeUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tagTypeUuid);
     }
 }

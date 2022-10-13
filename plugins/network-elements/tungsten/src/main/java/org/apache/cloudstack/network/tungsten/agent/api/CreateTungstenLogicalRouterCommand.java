@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class CreateTungstenLogicalRouterCommand extends TungstenCommand {
     private final String name;
     private final String projectFqn;
@@ -37,5 +39,19 @@ public class CreateTungstenLogicalRouterCommand extends TungstenCommand {
 
     public String getPubNetworkUuid() {
         return pubNetworkUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateTungstenLogicalRouterCommand that = (CreateTungstenLogicalRouterCommand) o;
+        return Objects.equals(name, that.name) && Objects.equals(projectFqn, that.projectFqn) && Objects.equals(pubNetworkUuid, that.pubNetworkUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), name, projectFqn, pubNetworkUuid);
     }
 }

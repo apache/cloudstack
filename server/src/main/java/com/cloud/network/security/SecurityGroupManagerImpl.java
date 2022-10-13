@@ -1441,7 +1441,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         NicVO nic = _nicDao.findById(nicId);
 
         // Tungsten-Fabric will handle security group by themselves
-        if (nic.getBroadcastUri().equals(Networks.BroadcastDomainType.Tungsten.toUri("tf"))) {
+        if (nic.getBroadcastUri().equals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"))) {
             return true;
         }
 

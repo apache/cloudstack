@@ -85,7 +85,7 @@ public class TungstenProviderServiceTest {
         when(dcDao.findById(anyLong())).thenReturn(zone);
         when(zone.getName()).thenReturn("ZoneName");
         when(resourceMgr.addHost(anyLong(), any(), any(), anyMap())).thenReturn(host);
-        when(host.getId()).thenReturn(1l);
+        when(host.getId()).thenReturn(1L);
         when(domainDao.listAll()).thenReturn(null);
         when(projectDao.listAll()).thenReturn(null);
     }
@@ -93,7 +93,7 @@ public class TungstenProviderServiceTest {
     @Test
     public void addTungstenProviderTest() {
         CreateTungstenFabricProviderCmd cmd = Mockito.mock(CreateTungstenFabricProviderCmd.class);
-        when(cmd.getZoneId()).thenReturn(1l);
+        when(cmd.getZoneId()).thenReturn(1L);
         when(cmd.getName()).thenReturn("TungstenProviderName");
         when(cmd.getHostname()).thenReturn("192.168.0.100");
         when(cmd.getPort()).thenReturn("8082");

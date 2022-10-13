@@ -43,7 +43,7 @@ public class TungstenFabricLBHealthMonitorVO implements InternalIdentity, Identi
     private long loadBalancerId;
 
     @Column(name = "uuid")
-    private String uuid;
+    private final String uuid;
 
     @Column(name = "type")
     private String type;

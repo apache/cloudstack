@@ -105,23 +105,18 @@ import net.juniper.tungsten.api.types.ActionListType;
 import net.juniper.tungsten.api.types.AddressGroup;
 import net.juniper.tungsten.api.types.AddressType;
 import net.juniper.tungsten.api.types.ApplicationPolicySet;
-import net.juniper.tungsten.api.types.CommunityAttributes;
 import net.juniper.tungsten.api.types.FirewallPolicy;
 import net.juniper.tungsten.api.types.FirewallRuleEndpointType;
 import net.juniper.tungsten.api.types.FirewallRuleMatchTagsType;
 import net.juniper.tungsten.api.types.FirewallSequence;
 import net.juniper.tungsten.api.types.FirewallServiceGroupType;
 import net.juniper.tungsten.api.types.FirewallServiceType;
-import net.juniper.tungsten.api.types.FloatingIp;
-import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.Loadbalancer;
 import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyEntriesType;
 import net.juniper.tungsten.api.types.PolicyRuleType;
 import net.juniper.tungsten.api.types.PortType;
-import net.juniper.tungsten.api.types.RouteTable;
-import net.juniper.tungsten.api.types.RouteType;
 import net.juniper.tungsten.api.types.ServiceGroup;
 import net.juniper.tungsten.api.types.SubnetListType;
 import net.juniper.tungsten.api.types.SubnetType;
@@ -133,13 +128,9 @@ import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenPolicyRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToInterfaceCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenRouteTableToNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenVmToSecurityGroupCommand;
@@ -147,15 +138,14 @@ import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenNetworkPoli
 import org.apache.cloudstack.network.tungsten.agent.api.ApplyTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenAddressGroupCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenApplicationPolicySetCommand;
+import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenDefaultProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenDomainCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFirewallRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenFloatingIpPoolCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenInterfaceRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenNetworkRouteTableCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.CreateTungstenRoutingLogicalRouterCommand;
@@ -172,7 +162,6 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIp
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenFloatingIpPoolCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenNetworkPolicyCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenObjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenProjectCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenRoutingLogicalRouterCommand;
@@ -188,11 +177,7 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenAddressGroup
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenApplicationPolicySetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenFirewallRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenInterfaceRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNetworkRouteTableStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenNicCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenPolicyRuleCommand;
@@ -201,16 +186,10 @@ import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenServiceGroup
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenTagTypeCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.ListTungstenVmCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenInterfaceStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkGatewayFromLogicalRouterCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkRouteTableCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkStaticRouteCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenNetworkSubnetCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenPolicyRuleCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromInterfaceCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenRouteTableFromNetworkCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecondaryIpAddressCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenSecurityGroupRuleCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.RemoveTungstenTagCommand;
@@ -237,6 +216,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
 import java.util.Arrays;
+import java.util.List;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Transaction.class, TungstenServiceImpl.class})
@@ -302,7 +282,6 @@ public class TungstenServiceImplTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         tungstenService = new TungstenServiceImpl();
-        tungstenService.messageBus = messageBus;
         tungstenService.projectDao = projectDao;
         tungstenService.tungstenProviderDao = tungstenProviderDao;
         tungstenService.networkModel = networkModel;
@@ -312,7 +291,6 @@ public class TungstenServiceImplTest {
         tungstenService.accountDao = accountDao;
         tungstenService.dataCenterIpAddressDao = dataCenterIpAddressDao;
         tungstenService.networkDetailsDao = networkDetailsDao;
-        tungstenService.messageBus = messageBus;
         tungstenService.agentMgr = agentMgr;
         tungstenService.hostDao = hostDao;
         tungstenService.configDao = configDao;
@@ -330,6 +308,7 @@ public class TungstenServiceImplTest {
         tungstenService.networkDao = networkDao;
         tungstenService.dataCenterDao = dataCenterDao;
         tungstenService.ipAddressManager = ipAddressManager;
+        tungstenService.messageBus = messageBus;
     }
 
     @Test
@@ -361,23 +340,12 @@ public class TungstenServiceImplTest {
     }
 
     @Test
-    public void deleteTungstenFloatingIpWithFloatingIpTest() throws Exception {
-        FloatingIp floatingIp = mock(FloatingIp.class);
-        TungstenAnswer deleteTungstenFloatingIpAnswer = mock(TungstenAnswer.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenObjectCommand.class), anyLong())).thenReturn(deleteTungstenFloatingIpAnswer);
-        when(deleteTungstenFloatingIpAnswer.getResult()).thenReturn(true);
-
-        assertTrue(Whitebox.invokeMethod(tungstenService, "deleteTungstenFloatingIp", 1L, floatingIp));
-    }
-
-    @Test
     public void deleteTungstenDomainTest() throws Exception {
         DomainVO domainVO = mock(DomainVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer deleteTungstenDomainAnswer = mock(TungstenAnswer.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenDomainCommand.class), anyLong())).thenReturn(deleteTungstenDomainAnswer);
         when(deleteTungstenDomainAnswer.getResult()).thenReturn(true);
 
@@ -390,7 +358,7 @@ public class TungstenServiceImplTest {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer deleteTungstenProjectAnswer = mock(TungstenAnswer.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenProjectCommand.class), anyLong())).thenReturn(deleteTungstenProjectAnswer);
         when(deleteTungstenProjectAnswer.getResult()).thenReturn(true);
 
@@ -411,7 +379,7 @@ public class TungstenServiceImplTest {
         when(applyTungstenPolicyAnswer.getResult()).thenReturn(true);
 
         assertTrue(tungstenService.addTungstenDefaultNetworkPolicy(1L, "default-domain:default-project", "policyName", "7279ed91-314e-45be-81b4-b10395fd2ae3"
-            , Arrays.asList(tungstenRule), 1, 1));
+            , List.of(tungstenRule), 1, 1));
     }
 
     @Test
@@ -466,7 +434,7 @@ public class TungstenServiceImplTest {
         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.150");
         when(managementNetwork.getCidr()).thenReturn("192.168.100.0/24");
         when(managementNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Management);
-        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(Arrays.asList(dataCenterIpAddressVO));
+        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(List.of(dataCenterIpAddressVO));
         when(dataCenterIpAddressDao.mark(anyLong(), anyLong(), anyString())).thenReturn(true);
 
         assertTrue(tungstenService.addManagementNetworkSubnet(hostPodVO));
@@ -513,7 +481,7 @@ public class TungstenServiceImplTest {
         when(getTungstenNetworkDnsAnswer.getResult()).thenReturn(true);
         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.150");
         when(managementNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Management);
-        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(Arrays.asList(dataCenterIpAddressVO));
+        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(List.of(dataCenterIpAddressVO));
 
         assertTrue(tungstenService.removeManagementNetworkSubnet(hostPodVO));
         verify(dataCenterIpAddressDao, times(1)).releasePodIpAddress(anyLong());
@@ -688,17 +656,20 @@ public class TungstenServiceImplTest {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer createTungstenDomainAnswer = mock(TungstenAnswer.class);
         TungstenAnswer createTungstenProjectAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer createTungstenDefaultProjectAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = mock(TungstenAnswer.class);
 
-        when(domainDao.listAll()).thenReturn(Arrays.asList(domainVO));
-        when(projectDao.listAll()).thenReturn(Arrays.asList(projectVO));
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(domainDao.listAll()).thenReturn(List.of(domainVO));
+        when(projectDao.listAll()).thenReturn(List.of(projectVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenDomainCommand.class), anyLong())).thenReturn(createTungstenDomainAnswer);
         when(createTungstenDomainAnswer.getResult()).thenReturn(true);
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenProjectCommand.class), anyLong())).thenReturn(createTungstenProjectAnswer);
         when(createTungstenProjectAnswer.getResult()).thenReturn(true);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenDefaultSecurityGroupCommand.class), anyLong())).thenReturn(updateTungstenDefaultSecurityGroupAnswer);
         when(updateTungstenDefaultSecurityGroupAnswer.getResult()).thenReturn(true);
+        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenDefaultProjectCommand.class), anyLong())).thenReturn(createTungstenDefaultProjectAnswer);
+        when(createTungstenDefaultProjectAnswer.getResult()).thenReturn(true);
         when(domainDao.findById(anyLong())).thenReturn(domainVO);
 
         assertTrue(tungstenService.syncTungstenDbWithCloudstackProjectsAndDomains());
@@ -725,7 +696,7 @@ public class TungstenServiceImplTest {
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
-        when(hostDao.listAllHostsByZoneAndHypervisorType(anyLong(), eq(Hypervisor.HypervisorType.KVM))).thenReturn(Arrays.asList(hostVO));
+        when(hostDao.listAllHostsByZoneAndHypervisorType(anyLong(), eq(Hypervisor.HypervisorType.KVM))).thenReturn(List.of(hostVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenLoadBalancerCommand.class), anyLong())).thenReturn(getTungstenLoadBalancerAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateLoadBalancerServiceInstanceCommand.class), anyLong())).thenReturn(updateLoadBalancerServiceInstanceAnswer);
         when(agentMgr.easySend(anyLong(), any(UpdateTungstenLoadbalancerStatsCommand.class))).thenReturn(updateTungstenLoadbalancerStatsAnswer);
@@ -734,8 +705,8 @@ public class TungstenServiceImplTest {
         when(updateLoadBalancerServiceInstanceAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadbalancerStatsAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadbalancerSslAnswer.getResult()).thenReturn(true);
-        when(configDao.getValue(eq(Config.NetworkLBHaproxyStatsVisbility.key()))).thenReturn("enabled");
-        when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(Arrays.asList(firewallRuleVO));
+        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
+        when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(List.of(firewallRuleVO));
         when(lbCertMapDao.findByLbRuleId(anyLong())).thenReturn(loadBalancerCertMapVO);
         when(entityMgr.findById(eq(SslCertVO.class), anyLong())).thenReturn(sslCertVO);
         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
@@ -761,14 +732,14 @@ public class TungstenServiceImplTest {
         mockStatic(Transaction.class);
 
         when(projectDao.findByProjectAccountId(anyLong())).thenReturn(projectVO);
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(domainDao.findById(anyLong())).thenReturn(domainVO);
         when(projectDao.findByUuid(anyString())).thenReturn(projectVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenSecurityGroupCommand.class), anyLong())).thenReturn(createTungstenSecurityGroupAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
         when(createTungstenSecurityGroupAnswer.getResult()).thenReturn(true);
         when(addTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
-        PowerMockito.when(Transaction.execute(any(TransactionCallback.class))).thenReturn(Arrays.asList(tungstenSecurityGroupRuleVO));
+        PowerMockito.when(Transaction.execute(any(TransactionCallback.class))).thenReturn(List.of(tungstenSecurityGroupRuleVO));
 
         assertTrue(tungstenService.createTungstenSecurityGroup(securityGroup));
     }
@@ -779,7 +750,7 @@ public class TungstenServiceImplTest {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer deleteTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenSecurityGroupCommand.class), anyLong())).thenReturn(deleteTungstenSecurityGroupAnswer);
         when(deleteTungstenSecurityGroupAnswer.getResult()).thenReturn(true);
 
@@ -798,7 +769,7 @@ public class TungstenServiceImplTest {
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
         NicVO nicVO = mock(NicVO.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(removeTungstenSecurityGroupRuleAnswer);
@@ -811,16 +782,16 @@ public class TungstenServiceImplTest {
         when(tungstenSecurityGroupRuleDao.findDefaultSecurityRule(anyLong(), anyString(), anyString())).thenReturn(tungstenSecurityGroupRuleVO);
         when(securityRule.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
         when(securityRule.getEndPort()).thenReturn(NetUtils.PORT_RANGE_MIN);
-        when(securityGroupVMMapDao.listVmIdsBySecurityGroup(anyLong())).thenReturn(Arrays.asList(1L));
+        when(securityGroupVMMapDao.listVmIdsBySecurityGroup(anyLong())).thenReturn(List.of(1L));
         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
         when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
         when(nicVO.getIPv6Address()).thenReturn("fd00::1");
         when(nicVO.getSecondaryIp()).thenReturn(true);
-        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(Arrays.asList("192.168.100.200"));
+        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
         when(tungstenSecurityGroupRuleDao.persist(any(TungstenSecurityGroupRuleVO.class))).thenReturn(tungstenSecurityGroupRuleVO);
         when(securityRule.getAllowedNetworkId()).thenReturn(1L);
 
-        assertTrue(tungstenService.addTungstenSecurityGroupRule(Arrays.asList(securityRule)));
+        assertTrue(tungstenService.addTungstenSecurityGroupRule(List.of(securityRule)));
     }
 
     @Test
@@ -832,7 +803,7 @@ public class TungstenServiceImplTest {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
@@ -844,7 +815,7 @@ public class TungstenServiceImplTest {
         when(securityRule.getEndPort()).thenReturn(NetUtils.PORT_RANGE_MIN);
         when(securityRule.getAllowedNetworkId()).thenReturn(null);
 
-        assertTrue(tungstenService.addTungstenSecurityGroupRule(Arrays.asList(securityRule)));
+        assertTrue(tungstenService.addTungstenSecurityGroupRule(List.of(securityRule)));
     }
 
     @Test
@@ -857,7 +828,7 @@ public class TungstenServiceImplTest {
         TungstenAnswer removeTungstenSecurityGroupRuleAnswer = mock(TungstenAnswer.class);
         NicVO nicVO = mock(NicVO.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
         when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.EgressRule);
         when(securityRule.getType()).thenReturn("egress");
@@ -867,13 +838,13 @@ public class TungstenServiceImplTest {
         when(addTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
         when(removeTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
         when(securityRule.getAllowedNetworkId()).thenReturn(1L);
-        when(securityGroupVMMapDao.listVmIdsBySecurityGroup(anyLong())).thenReturn(Arrays.asList(1L));
+        when(securityGroupVMMapDao.listVmIdsBySecurityGroup(anyLong())).thenReturn(List.of(1L));
         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
         when(tungstenSecurityGroupRuleDao.expunge(anyLong())).thenReturn(true);
         when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
         when(nicVO.getIPv6Address()).thenReturn("fd00::1");
         when(nicVO.getSecondaryIp()).thenReturn(true);
-        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(Arrays.asList("192.168.100.200"));
+        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
         when(tungstenSecurityGroupRuleDao.findBySecurityGroupAndRuleTypeAndRuleTarget(anyLong(), anyString(), anyString())).thenReturn(tungstenSecurityGroupRuleVO);
 
         assertTrue(tungstenService.removeTungstenSecurityGroupRule(securityRule));
@@ -886,7 +857,7 @@ public class TungstenServiceImplTest {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer removeTungstenSecurityGroupRuleAnswer = mock(TungstenAnswer.class);
 
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
         when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.IngressRule);
         when(securityRule.getType()).thenReturn("ingress");
@@ -921,11 +892,11 @@ public class TungstenServiceImplTest {
         when(addTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
         when(dataCenter.isSecurityGroupEnabled()).thenReturn(true);
         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
-        when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(Arrays.asList(securityGroupVO));
-        when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(Arrays.asList(securityGroupRuleVO));
+        when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(List.of(securityGroupVO));
+        when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(List.of(securityGroupRuleVO));
         when(tungstenSecurityGroupRuleDao.persist(any(TungstenSecurityGroupRuleVO.class))).thenReturn(tungstenSecurityGroupRuleVO);
         when(securityGroupRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
 
         assertTrue(tungstenService.addTungstenNicSecondaryIpAddress(1L));
     }
@@ -948,7 +919,7 @@ public class TungstenServiceImplTest {
         when(removeTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
         when(dataCenter.isSecurityGroupEnabled()).thenReturn(true);
         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
-        when(tungstenSecurityGroupRuleDao.listByRuleTarget(anyString())).thenReturn(Arrays.asList(tungstenSecurityGroupRuleVO));
+        when(tungstenSecurityGroupRuleDao.listByRuleTarget(anyString())).thenReturn(List.of(tungstenSecurityGroupRuleVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
         when(tungstenSecurityGroupRuleDao.expunge(anyLong())).thenReturn(true);
         when(nicSecondaryIpVO.getIp4Address()).thenReturn("192.168.100.100");
@@ -990,17 +961,17 @@ public class TungstenServiceImplTest {
         when(addTungstenPolicyRuleAnswer.getResult()).thenReturn(true);
         when(addTungstenPolicyRuleAnswer.getApiObjectBase()).thenReturn(networkPolicy);
         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
-        when(policyEntriesType.getPolicyRule()).thenReturn(Arrays.asList(policyRuleType));
+        when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
         whenNew(AddTungstenPolicyRuleCommand.class).withAnyArguments().thenReturn(addTungstenPolicyRuleCommand);
         PowerMockito.when(addTungstenPolicyRuleCommand, "getUuid").thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
         when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
         when(policyRuleType.getActionList()).thenReturn(actionListType);
         when(actionListType.getSimpleAction()).thenReturn("pass");
-        when(policyRuleType.getSrcAddresses()).thenReturn(Arrays.asList(addressType));
+        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
         when(addressType.getSubnet()).thenReturn(subnetType);
-        when(policyRuleType.getSrcPorts()).thenReturn(Arrays.asList(portType));
-        when(policyRuleType.getDstAddresses()).thenReturn(Arrays.asList(addressType));
-        when(policyRuleType.getDstPorts()).thenReturn(Arrays.asList(portType));
+        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
 
         assertNotNull(tungstenService.addTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "pass",
             "<>", "tcp", "network1", "192.168.100.100", 32, 80, 80,
@@ -1020,9 +991,10 @@ public class TungstenServiceImplTest {
         when(networkDao.findById(anyLong())).thenReturn(networkVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyCommand.class), anyLong())).thenReturn(listTungstenPolicyAnswer);
         when(listTungstenPolicyAnswer.getResult()).thenReturn(true);
-        when(listTungstenPolicyAnswer.getTungstenModelList()).thenReturn(Arrays.asList(tungstenNetworkPolicy));
+        when(listTungstenPolicyAnswer.getTungstenModelList()).thenReturn(List.of(tungstenNetworkPolicy));
         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(
+                List.of(virtualNetwork));
 
         assertNotNull(tungstenService.listTungstenPolicy(1L, 2L, 3L, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -1036,7 +1008,7 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNetworkCommand.class), anyLong())).thenReturn(listTungstenNetworkAnswer);
         when(listTungstenNetworkAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(virtualNetwork)).when(listTungstenNetworkAnswer).getApiObjectBaseList();
+        doReturn(List.of(virtualNetwork)).when(listTungstenNetworkAnswer).getApiObjectBaseList();
         when((virtualNetwork.getName())).thenReturn("guestNetwork1");
 
         assertNotNull(tungstenService.listTungstenNetwork(1L, "948f421c-edde-4518-a391-09299cc25dc2", false));
@@ -1051,7 +1023,7 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNicCommand.class), anyLong())).thenReturn(listTungstenNicAnswer);
         when(listTungstenNicAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(virtualMachineInterface)).when(listTungstenNicAnswer).getApiObjectBaseList();
+        doReturn(List.of(virtualMachineInterface)).when(listTungstenNicAnswer).getApiObjectBaseList();
 
         assertNotNull(tungstenService.listTungstenNic(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -1065,7 +1037,7 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenVmCommand.class), anyLong())).thenReturn(listTungstenVmAnswer);
         when(listTungstenVmAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(virtualMachine)).when(listTungstenVmAnswer).getApiObjectBaseList();
+        doReturn(List.of(virtualMachine)).when(listTungstenVmAnswer).getApiObjectBaseList();
 
         assertNotNull(tungstenService.listTungstenVm(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -1097,15 +1069,15 @@ public class TungstenServiceImplTest {
         when(listTungstenPolicyRuleAnswer.getResult()).thenReturn(true);
         doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
-        when(policyEntriesType.getPolicyRule()).thenReturn(Arrays.asList(policyRuleType));
+        when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
         when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
         when(policyRuleType.getActionList()).thenReturn(actionListType);
         when(actionListType.getSimpleAction()).thenReturn("pass");
-        when(policyRuleType.getSrcAddresses()).thenReturn(Arrays.asList(addressType));
+        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
         when(addressType.getSubnet()).thenReturn(subnetType);
-        when(policyRuleType.getSrcPorts()).thenReturn(Arrays.asList(portType));
-        when(policyRuleType.getDstAddresses()).thenReturn(Arrays.asList(addressType));
-        when(policyRuleType.getDstPorts()).thenReturn(Arrays.asList(portType));
+        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
 
         assertNotNull(tungstenService.listTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
@@ -1127,15 +1099,15 @@ public class TungstenServiceImplTest {
         when(listTungstenPolicyRuleAnswer.getResult()).thenReturn(true);
         doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
-        when(policyEntriesType.getPolicyRule()).thenReturn(Arrays.asList(policyRuleType));
+        when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
         when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
         when(policyRuleType.getActionList()).thenReturn(actionListType);
         when(actionListType.getSimpleAction()).thenReturn("pass");
-        when(policyRuleType.getSrcAddresses()).thenReturn(Arrays.asList(addressType));
+        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
         when(addressType.getSubnet()).thenReturn(subnetType);
-        when(policyRuleType.getSrcPorts()).thenReturn(Arrays.asList(portType));
-        when(policyRuleType.getDstAddresses()).thenReturn(Arrays.asList(addressType));
-        when(policyRuleType.getDstPorts()).thenReturn(Arrays.asList(portType));
+        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
 
         assertNotNull(tungstenService.listTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", null));
     }
@@ -1153,7 +1125,7 @@ public class TungstenServiceImplTest {
         when(removeTungstenPolicyRuleAnswer.getResult()).thenReturn(true);
         when(removeTungstenPolicyRuleAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.removeTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
@@ -1174,10 +1146,10 @@ public class TungstenServiceImplTest {
         when(createTungstenTagAnswer.getResult()).thenReturn(true);
         when(createTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
         when(tungstenTag.getTag()).thenReturn(tag);
-        doReturn(Arrays.asList(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
-        doReturn(Arrays.asList(virtualMachine)).when(tungstenTag).getVirtualMachineList();
-        doReturn(Arrays.asList(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
-        doReturn(Arrays.asList(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
+        doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
+        doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
+        doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
 
         assertNotNull(tungstenService.createTungstenTag(1L, "testTag", "testTagType"));
     }
@@ -1211,13 +1183,13 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagCommand.class), anyLong())).thenReturn(listTungstenTagAnswer);
         when(listTungstenTagAnswer.getResult()).thenReturn(true);
-        when(listTungstenTagAnswer.getTungstenModelList()).thenReturn(Arrays.asList(tungstenTag));
+        when(listTungstenTagAnswer.getTungstenModelList()).thenReturn(List.of(tungstenTag));
         when(tungstenTag.getTag()).thenReturn(tag);
-        doReturn(Arrays.asList(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
-        doReturn(Arrays.asList(virtualMachine)).when(tungstenTag).getVirtualMachineList();
-        doReturn(Arrays.asList(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
-        doReturn(Arrays.asList(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
-        doReturn(Arrays.asList(applicationPolicySet)).when(tungstenTag).getApplicationPolicySetList();
+        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
+        doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
+        doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
+        doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+        doReturn(List.of(applicationPolicySet)).when(tungstenTag).getApplicationPolicySetList();
 
         assertNotNull(tungstenService.listTungstenTags(1L, "948f421c-edde-4518-a391-09299cc25dc2"
         , "8b4637b6-5629-46de-8fb2-d0b0502bfa85", "8d097a79-a38d-4db4-8a41-16f15d9c5afa", "a329662e-1805-4a89-9b05-2b818ea35978",
@@ -1233,7 +1205,7 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagTypeCommand.class), anyLong())).thenReturn(listTungstenTagTypeAnswer);
         when(listTungstenTagTypeAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(tagtype)).when(listTungstenTagTypeAnswer).getApiObjectBaseList();
+        doReturn(List.of(tagtype)).when(listTungstenTagTypeAnswer).getApiObjectBaseList();
 
         assertNotNull(tungstenService.listTungstenTagTypes(1L, "testTagType"));
     }
@@ -1271,7 +1243,7 @@ public class TungstenServiceImplTest {
         when(applyTungstenPolicyAnswer.getResult()).thenReturn(true);
         when(applyTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.applyTungstenPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85", 1, 1));
     }
@@ -1292,13 +1264,13 @@ public class TungstenServiceImplTest {
         when(applyTungstenTagAnswer.getResult()).thenReturn(true);
         when(applyTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
         when(tungstenTag.getTag()).thenReturn(tag);
-        when(tungstenTag.getNetworkPolicyList()).thenReturn(Arrays.asList(networkPolicy));
-        when(tungstenTag.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
-        when(tungstenTag.getVirtualMachineList()).thenReturn(Arrays.asList(virtualMachine));
-        when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(Arrays.asList(virtualMachineInterface));
+        when(tungstenTag.getNetworkPolicyList()).thenReturn(List.of(networkPolicy));
+        when(tungstenTag.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
+        when(tungstenTag.getVirtualMachineList()).thenReturn(List.of(virtualMachine));
+        when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(List.of(virtualMachineInterface));
 
-        assertNotNull(tungstenService.applyTungstenTag(1L, Arrays.asList("948f421c-edde-4518-a391-09299cc25dc2"), Arrays.asList("8b4637b6-5629-46de-8fb2-d0b0502bfa85")
-            , Arrays.asList("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"
+        assertNotNull(tungstenService.applyTungstenTag(1L, List.of("948f421c-edde-4518-a391-09299cc25dc2"), List.of("8b4637b6-5629-46de-8fb2-d0b0502bfa85")
+            , List.of("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"
         , "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652"));
     }
 
@@ -1315,7 +1287,7 @@ public class TungstenServiceImplTest {
         when(removeTungstenPolicyAnswer.getResult()).thenReturn(true);
         when(removeTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.removeTungstenPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
@@ -1336,14 +1308,14 @@ public class TungstenServiceImplTest {
         when(removeTungstenTagAnswer.getResult()).thenReturn(true);
         when(removeTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
         when(tungstenTag.getTag()).thenReturn(tag);
-        when(tungstenTag.getNetworkPolicyList()).thenReturn(Arrays.asList(networkPolicy));
-        when(tungstenTag.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
-        when(tungstenTag.getVirtualMachineList()).thenReturn(Arrays.asList(virtualMachine));
-        when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(Arrays.asList(virtualMachineInterface));
+        when(tungstenTag.getNetworkPolicyList()).thenReturn(List.of(networkPolicy));
+        when(tungstenTag.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
+        when(tungstenTag.getVirtualMachineList()).thenReturn(List.of(virtualMachine));
+        when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(List.of(virtualMachineInterface));
 
-        assertNotNull(tungstenService.removeTungstenTag(1L, Arrays.asList("948f421c-edde-4518-a391-09299cc25dc2"),
-            Arrays.asList("8b4637b6-5629-46de-8fb2-d0b0502bfa85"),
-            Arrays.asList("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", null,
+        assertNotNull(tungstenService.removeTungstenTag(1L, List.of("948f421c-edde-4518-a391-09299cc25dc2"),
+                List.of("8b4637b6-5629-46de-8fb2-d0b0502bfa85"),
+                List.of("8d097a79-a38d-4db4-8a41-16f15d9c5afa"), "a329662e-1805-4a89-9b05-2b818ea35978", null,
             "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"));
     }
 
@@ -1360,7 +1332,7 @@ public class TungstenServiceImplTest {
         when(createTungstenAddressGroupAnswer.getResult()).thenReturn(true);
         when(createTungstenAddressGroupAnswer.getApiObjectBase()).thenReturn(addressGroup);
         when(addressGroup.getPrefix()).thenReturn(subnetListType);
-        when(subnetListType.getSubnet()).thenReturn(Arrays.asList(subnetType));
+        when(subnetListType.getSubnet()).thenReturn(List.of(subnetType));
 
         assertNotNull(tungstenService.createTungstenAddressGroup(1L, "test", "192.168.100.0", 24));
     }
@@ -1379,7 +1351,7 @@ public class TungstenServiceImplTest {
         when(createTungstenServiceGroupAnswer.getResult()).thenReturn(true);
         when(createTungstenServiceGroupAnswer.getApiObjectBase()).thenReturn(serviceGroup);
         when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
-        when(firewallServiceGroupType.getFirewallService()).thenReturn(Arrays.asList(firewallServiceType));
+        when(firewallServiceGroupType.getFirewallService()).thenReturn(List.of(firewallServiceType));
         when(firewallServiceType.getDstPorts()).thenReturn(portType);
 
         assertNotNull(tungstenService.createTungstenServiceGroup(1L, "test", "tcp", 80, 80));
@@ -1402,11 +1374,11 @@ public class TungstenServiceImplTest {
         when(createTungstenFirewallRuleAnswer.getApiObjectBase()).thenReturn(firewallRule);
         when(firewallRule.getActionList()).thenReturn(actionListType);
         when(actionListType.getSimpleAction()).thenReturn("pass");
-        when(firewallRule.getServiceGroup()).thenReturn(Arrays.asList(serviceGroup));
-        when(serviceGroup.getReferredName()).thenReturn(Arrays.asList("service"));
+        when(firewallRule.getServiceGroup()).thenReturn(List.of(serviceGroup));
+        when(serviceGroup.getReferredName()).thenReturn(List.of("service"));
         when(firewallRule.getEndpoint1()).thenReturn(firewallRuleEndpointType1);
         when(firewallRule.getEndpoint2()).thenReturn(firewallRuleEndpointType2);
-        when(firewallRuleEndpointType1.getTags()).thenReturn(Arrays.asList("tag"));
+        when(firewallRuleEndpointType1.getTags()).thenReturn(List.of("tag"));
         when(firewallRuleEndpointType2.getTags()).thenReturn(null);
         when(firewallRuleEndpointType2.getAddressGroup()).thenReturn("address:group");
         when(firewallRule.getMatchTags()).thenReturn(firewallRuleMatchTagsType);
@@ -1427,8 +1399,8 @@ public class TungstenServiceImplTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(createTungstenFirewallPolicyAnswer);
         when(createTungstenFirewallPolicyAnswer.getResult()).thenReturn(true);
         when(createTungstenFirewallPolicyAnswer.getApiObjectBase()).thenReturn(firewallPolicy);
-        when(firewallPolicy.getFirewallRule()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
+        when(firewallPolicy.getFirewallRule()).thenReturn(List.of(firewallSequenceObjectReference));
+        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
 
         assertNotNull(tungstenService.createTungstenFirewallPolicy(1L, "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652","test", 1));
     }
@@ -1445,10 +1417,10 @@ public class TungstenServiceImplTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(createTungstenApplicationPolicySetAnswer);
         when(createTungstenApplicationPolicySetAnswer.getResult()).thenReturn(true);
         when(createTungstenApplicationPolicySetAnswer.getApiObjectBase()).thenReturn(applicationPolicySet);
-        when(applicationPolicySet.getTag()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("tag"));
-        when(applicationPolicySet.getFirewallPolicy()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
+        when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+        when(objectReference.getReferredName()).thenReturn(List.of("tag"));
+        when(applicationPolicySet.getFirewallPolicy()).thenReturn(List.of(firewallSequenceObjectReference));
+        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
 
         assertNotNull(tungstenService.createTungstenApplicationPolicySet(1L, "test"));
     }
@@ -1464,11 +1436,11 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(listTungstenApplicationPolicySetAnswer);
         when(listTungstenApplicationPolicySetAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(applicationPolicySet)).when(listTungstenApplicationPolicySetAnswer).getApiObjectBaseList();
-        when(applicationPolicySet.getTag()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("tag"));
-        when(applicationPolicySet.getFirewallPolicy()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
+        doReturn(List.of(applicationPolicySet)).when(listTungstenApplicationPolicySetAnswer).getApiObjectBaseList();
+        when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+        when(objectReference.getReferredName()).thenReturn(List.of("tag"));
+        when(applicationPolicySet.getFirewallPolicy()).thenReturn(List.of(firewallSequenceObjectReference));
+        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
 
         assertNotNull(tungstenService.listTungstenApplicationPolicySet(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -1483,9 +1455,9 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(listTungstenFirewallPolicyAnswer);
         when(listTungstenFirewallPolicyAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(firewallPolicy)).when(listTungstenFirewallPolicyAnswer).getApiObjectBaseList();
-        when(firewallPolicy.getFirewallRule()).thenReturn(Arrays.asList(firewallSequenceObjectReference));
-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(Arrays.asList("firewallrule"));
+        doReturn(List.of(firewallPolicy)).when(listTungstenFirewallPolicyAnswer).getApiObjectBaseList();
+        when(firewallPolicy.getFirewallRule()).thenReturn(List.of(firewallSequenceObjectReference));
+        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
 
         assertNotNull(tungstenService.listTungstenFirewallPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
@@ -1504,14 +1476,14 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenFirewallRuleCommand.class), anyLong())).thenReturn(listTungstenFirewallRuleAnswer);
         when(listTungstenFirewallRuleAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(firewallRule)).when(listTungstenFirewallRuleAnswer).getApiObjectBaseList();
+        doReturn(List.of(firewallRule)).when(listTungstenFirewallRuleAnswer).getApiObjectBaseList();
         when(firewallRule.getActionList()).thenReturn(actionListType);
         when(actionListType.getSimpleAction()).thenReturn("pass");
-        when(firewallRule.getServiceGroup()).thenReturn(Arrays.asList(serviceGroup));
-        when(serviceGroup.getReferredName()).thenReturn(Arrays.asList("service"));
+        when(firewallRule.getServiceGroup()).thenReturn(List.of(serviceGroup));
+        when(serviceGroup.getReferredName()).thenReturn(List.of("service"));
         when(firewallRule.getEndpoint1()).thenReturn(firewallRuleEndpointType1);
         when(firewallRule.getEndpoint2()).thenReturn(firewallRuleEndpointType2);
-        when(firewallRuleEndpointType1.getTags()).thenReturn(Arrays.asList("tag"));
+        when(firewallRuleEndpointType1.getTags()).thenReturn(List.of("tag"));
         when(firewallRuleEndpointType2.getTags()).thenReturn(null);
         when(firewallRuleEndpointType2.getAddressGroup()).thenReturn("address:group");
         when(firewallRule.getMatchTags()).thenReturn(firewallRuleMatchTagsType);
@@ -1531,9 +1503,10 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenAddressGroupCommand.class), anyLong())).thenReturn(listTungstenAddressGroupAnswer);
         when(listTungstenAddressGroupAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(addressGroup)).when(listTungstenAddressGroupAnswer).getApiObjectBaseList();
+        doReturn(List.of(addressGroup)).when(listTungstenAddressGroupAnswer).getApiObjectBaseList();
         when(addressGroup.getPrefix()).thenReturn(subnetListType);
-        when(subnetListType.getSubnet()).thenReturn(Arrays.asList(subnetType));
+        when(subnetListType.getSubnet()).thenReturn(
+                List.of(subnetType));
 
         assertNotNull(tungstenService.listTungstenAddressGroup(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -1550,9 +1523,9 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenServiceGroupCommand.class), anyLong())).thenReturn(listTungstenServiceGroupAnswer);
         when(listTungstenServiceGroupAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(serviceGroup)).when(listTungstenServiceGroupAnswer).getApiObjectBaseList();
+        doReturn(List.of(serviceGroup)).when(listTungstenServiceGroupAnswer).getApiObjectBaseList();
         when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
-        when(firewallServiceGroupType.getFirewallService()).thenReturn(Arrays.asList(firewallServiceType));
+        when(firewallServiceGroupType.getFirewallService()).thenReturn(List.of(firewallServiceType));
         when(firewallServiceType.getDstPorts()).thenReturn(portType);
 
         assertNotNull(tungstenService.listTungstenServiceGroup(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
@@ -1648,7 +1621,7 @@ public class TungstenServiceImplTest {
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
         when(ipAddressDao.mark(anyLong(), any(Ip.class))).thenReturn(true);
         when(createTungstenSharedNetworkAnswer.getApiObjectBase()).thenReturn(apiObjectBase);
-        when(apiObjectBase.getQualifiedName()).thenReturn(Arrays.asList("network"));
+        when(apiObjectBase.getQualifiedName()).thenReturn(List.of("network"));
         when(tungstenProviderVO.getGateway()).thenReturn("192.168.100.1");
 
         assertTrue(tungstenService.createSharedNetwork(network, vlan));
@@ -1670,8 +1643,8 @@ public class TungstenServiceImplTest {
 
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
-        when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(Arrays.asList(securityGroupVO));
-        when(tungstenProviderDao.findAll()).thenReturn(Arrays.asList(tungstenProviderVO));
+        when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(List.of(securityGroupVO));
+        when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenVmToSecurityGroupCommand.class), anyLong())).thenReturn(addTungstenVmToSecurityGroupAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
@@ -1680,12 +1653,12 @@ public class TungstenServiceImplTest {
         when(addTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
         when(getTungstenSecurityGroupAnswer.getApiObjectBase()).thenReturn(securityGroup);
         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
-        when(nicVO.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Tungsten.toUri("tf"));
-        when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(Arrays.asList(securityGroupRuleVO));
+        when(nicVO.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"));
+        when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(List.of(securityGroupRuleVO));
         when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
         when(nicVO.getIPv6Address()).thenReturn("fd00::1");
         when(nicVO.getSecondaryIp()).thenReturn(true);
-        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(Arrays.asList("192.168.100.200"));
+        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
         when(securityGroupRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
         when(tungstenSecurityGroupRuleDao.persist(any(TungstenSecurityGroupRuleVO.class))).thenReturn(tungstenSecurityGroupRuleVO);
 
@@ -1705,268 +1678,24 @@ public class TungstenServiceImplTest {
 
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
-        when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(Arrays.asList(securityGroupVO));
+        when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(List.of(securityGroupVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenVmFromSecurityGroupCommand.class), anyLong())).thenReturn(removeTungstenVmFromSecurityGroupAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(removeTungstenSecurityGroupRuleAnswer);
         when(removeTungstenVmFromSecurityGroupAnswer.getResult()).thenReturn(true);
         when(removeTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
-        when(nicVO.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.Tungsten.toUri("tf"));
-        when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(Arrays.asList(securityGroupRuleVO));
+        when(nicVO.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"));
+        when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(List.of(securityGroupRuleVO));
         when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
         when(nicVO.getIPv6Address()).thenReturn("fd00::1");
         when(nicVO.getSecondaryIp()).thenReturn(true);
-        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(Arrays.asList("192.168.100.200"));
+        when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
         when(securityGroupRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
         when(tungstenSecurityGroupRuleDao.expunge(anyLong())).thenReturn(true);
-        when(tungstenSecurityGroupRuleDao.listByRuleTarget(anyString())).thenReturn(Arrays.asList(tungstenSecurityGroupRuleVO));
+        when(tungstenSecurityGroupRuleDao.listByRuleTarget(anyString())).thenReturn(List.of(tungstenSecurityGroupRuleVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
 
         assertTrue(tungstenService.removeTungstenVmSecurityGroup(vmInstanceVO));
-    }
-
-    @Test
-    public void createTungstenFabricNetworkRouteTableTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteTable routeTable = mock(RouteTable.class);
-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkRouteTableCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiObjectBase()).thenReturn(routeTable);
-        when(routeTable.getVirtualNetworkBackRefs()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("network"));
-
-        assertNotNull(tungstenService.createTungstenFabricNetworkRouteTable(1L, null, "test"));
-    }
-
-    @Test
-    public void createTungstenFabricInterfaceRouteTableTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        InterfaceRouteTable interfaceRouteTable = mock(InterfaceRouteTable.class);
-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenInterfaceRouteTableCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiObjectBase()).thenReturn(interfaceRouteTable);
-        when(interfaceRouteTable.getVirtualMachineInterfaceBackRefs()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("interface"));
-
-        assertNotNull(tungstenService.createTungstenFabricInterfaceRouteTable(1L, null, "test"));
-    }
-
-    @Test
-    public void listTungstenFabricNetworkRouteTablesTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteTable routeTable = mock(RouteTable.class);
-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNetworkRouteTableCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(routeTable)).when(tungstenAnswer).getApiObjectBaseList();
-        when(routeTable.getVirtualNetworkBackRefs()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("network"));
-
-        assertNotNull(tungstenService.listTungstenFabricNetworkRouteTables(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-        , "8b4637b6-5629-46de-8fb2-d0b0502bfa85", true));
-    }
-
-    @Test
-    public void listTungstenFabricInterfaceRouteTablesTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        InterfaceRouteTable interfaceRouteTable = mock(InterfaceRouteTable.class);
-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenInterfaceRouteTableCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(interfaceRouteTable)).when(tungstenAnswer).getApiObjectBaseList();
-        when(interfaceRouteTable.getVirtualMachineInterfaceBackRefs()).thenReturn(Arrays.asList(objectReference));
-        when(objectReference.getReferredName()).thenReturn(Arrays.asList("interface"));
-
-        assertNotNull(tungstenService.listTungstenFabricInterfaceRouteTables(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-            , "8b4637b6-5629-46de-8fb2-d0b0502bfa85", true));
-    }
-
-    @Test
-    public void addTungstenFabricNetworkStaticRouteTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteType routeType = mock(RouteType.class);
-        CommunityAttributes communityAttributes = mock(CommunityAttributes.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenNetworkStaticRouteCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiPropertyBase()).thenReturn(routeType);
-        when(routeType.getCommunityAttributes()).thenReturn(communityAttributes);
-        when(communityAttributes.getCommunityAttribute()).thenReturn(Arrays.asList("attribute"));
-
-        assertNotNull(tungstenService.addTungstenFabricNetworkStaticRoute(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-        , "192.168.100.0/24", "192.168.100.1", "ip-address", "no-export"));
-    }
-
-    @Test
-    public void addTungstenFabricInterfaceStaticRouteTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteType routeType = mock(RouteType.class);
-        CommunityAttributes communityAttributes = mock(CommunityAttributes.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenInterfaceStaticRouteCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiPropertyBase()).thenReturn(routeType);
-        when(routeType.getCommunityAttributes()).thenReturn(communityAttributes);
-        when(communityAttributes.getCommunityAttribute()).thenReturn(Arrays.asList("attribute"));
-
-        assertNotNull(tungstenService.addTungstenFabricInterfaceStaticRoute(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-            , "192.168.100.0/24", "no-export"));
-    }
-
-    @Test
-    public void listTungstenFabricNetworkStaticRouteTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteType routeType = mock(RouteType.class);
-        CommunityAttributes communityAttributes = mock(CommunityAttributes.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNetworkRouteTableStaticRouteCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(routeType)).when(tungstenAnswer).getApiPropertyBaseList();
-        when(routeType.getCommunityAttributes()).thenReturn(communityAttributes);
-        when(communityAttributes.getCommunityAttribute()).thenReturn(Arrays.asList("attribute"));
-
-        assertNotNull(tungstenService.listTungstenFabricNetworkStaticRoute(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-            , "192.168.100.0/24"));
-    }
-
-    @Test
-    public void listTungstenFabricInterfaceStaticRouteTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteType routeType = mock(RouteType.class);
-        CommunityAttributes communityAttributes = mock(CommunityAttributes.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenInterfaceRouteTableStaticRouteCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        doReturn(Arrays.asList(routeType)).when(tungstenAnswer).getApiPropertyBaseList();
-        when(routeType.getCommunityAttributes()).thenReturn(communityAttributes);
-        when(communityAttributes.getCommunityAttribute()).thenReturn(Arrays.asList("attribute"));
-
-        assertNotNull(tungstenService.listTungstenFabricInterfaceStaticRoute(1L, "948f421c-edde-4518-a391-09299cc25dc2"
-            , "192.168.100.0/24"));
-    }
-
-    @Test
-    public void removeTungstenFabricNetworkStaticRouteTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteType routeType = mock(RouteType.class);
-        CommunityAttributes communityAttributes = mock(CommunityAttributes.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkStaticRouteCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiPropertyBase()).thenReturn(routeType);
-        when(routeType.getCommunityAttributes()).thenReturn(communityAttributes);
-        when(communityAttributes.getCommunityAttribute()).thenReturn(Arrays.asList("attribute"));
-
-        assertNotNull(tungstenService.removeTungstenFabricNetworkStaticRoute(1L, "948f421c-edde-4518-a391-09299cc25dc2", "192.168.100.0/24"));
-    }
-
-    @Test
-    public void removeTungstenFabricInterfaceStaticRouteTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteType routeType = mock(RouteType.class);
-        CommunityAttributes communityAttributes = mock(CommunityAttributes.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenInterfaceStaticRouteCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiPropertyBase()).thenReturn(routeType);
-        when(routeType.getCommunityAttributes()).thenReturn(communityAttributes);
-        when(communityAttributes.getCommunityAttribute()).thenReturn(Arrays.asList("attribute"));
-
-        assertNotNull(tungstenService.removeTungstenFabricInterfaceStaticRoute(1L, "948f421c-edde-4518-a391-09299cc25dc2", "192.168.100.0/24"));
-    }
-
-    @Test
-    public void removeTungstenFabricNetworkRouteTableTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkRouteTableCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-
-        assertTrue(tungstenService.removeTungstenFabricNetworkRouteTable(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
-    }
-
-    @Test
-    public void removeTungstenFabricInterfaceRouteTableTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenInterfaceRouteTableCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-
-        assertTrue(tungstenService.removeTungstenFabricInterfaceRouteTable(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
-    }
-
-    @Test
-    public void addTungstenFabricRouteTableToNetworkTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        RouteTable routeTable = mock(RouteTable.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenRouteTableToNetworkCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiObjectBase()).thenReturn(routeTable);
-
-        assertNotNull(tungstenService.addTungstenFabricRouteTableToNetwork(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
-    }
-
-    @Test
-    public void addTungstenFabricRouteTableToInterfaceTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-        InterfaceRouteTable interfaceRouteTable = mock(InterfaceRouteTable.class);
-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-
-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-        when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenRouteTableToInterfaceCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getApiObjectBase()).thenReturn(interfaceRouteTable);
-
-        assertNotNull(tungstenService.addTungstenFabricRouteTableToInterface(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
-    }
-
-    @Test
-    public void removeTungstenFabricRouteTableFromNetworkTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenRouteTableFromNetworkCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-
-        assertTrue(tungstenService.removeTungstenFabricRouteTableFromNetwork(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
-    }
-
-    @Test
-    public void removeTungstenFabricRouteTableFromInterfaceTest() {
-        TungstenAnswer tungstenAnswer = mock(TungstenAnswer.class);
-
-        when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenRouteTableFromInterfaceCommand.class), anyLong())).thenReturn(tungstenAnswer);
-        when(tungstenAnswer.getResult()).thenReturn(true);
-
-        assertTrue(tungstenService.removeTungstenFabricRouteTableFromInterface(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
 
     @Test
@@ -1982,7 +1711,7 @@ public class TungstenServiceImplTest {
         when(tungstenAnswer.getResult()).thenReturn(true);
         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.createRoutingLogicalRouter(1L, "default-domain:default-project", "testLR"));
     }
@@ -2003,7 +1732,7 @@ public class TungstenServiceImplTest {
         when(tungstenAnswer.getResult()).thenReturn(true);
         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.addNetworkGatewayToLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }
@@ -2019,9 +1748,9 @@ public class TungstenServiceImplTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
         when(tungstenAnswer.getResult()).thenReturn(true);
-        when(tungstenAnswer.getTungstenModelList()).thenReturn(Arrays.asList(tungstenLogicalRouter));
+        when(tungstenAnswer.getTungstenModelList()).thenReturn(List.of(tungstenLogicalRouter));
         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.listRoutingLogicalRouter(1L, null, "948f421c-edde-4518-a391-09299cc25dc2"));
     }
@@ -2043,7 +1772,7 @@ public class TungstenServiceImplTest {
         when(tungstenAnswer.getResult()).thenReturn(true);
         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(Arrays.asList(virtualNetwork));
+        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
 
         assertNotNull(tungstenService.removeNetworkGatewayFromLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
     }

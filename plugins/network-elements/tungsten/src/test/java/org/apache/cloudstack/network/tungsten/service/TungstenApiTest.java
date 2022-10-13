@@ -36,7 +36,6 @@ import net.juniper.tungsten.api.types.FloatingIpPool;
 import net.juniper.tungsten.api.types.GlobalSystemConfig;
 import net.juniper.tungsten.api.types.GlobalVrouterConfig;
 import net.juniper.tungsten.api.types.InstanceIp;
-import net.juniper.tungsten.api.types.InterfaceRouteTable;
 import net.juniper.tungsten.api.types.Loadbalancer;
 import net.juniper.tungsten.api.types.LoadbalancerHealthmonitor;
 import net.juniper.tungsten.api.types.LoadbalancerListener;
@@ -46,8 +45,6 @@ import net.juniper.tungsten.api.types.LogicalRouter;
 import net.juniper.tungsten.api.types.NetworkPolicy;
 import net.juniper.tungsten.api.types.PolicyManagement;
 import net.juniper.tungsten.api.types.Project;
-import net.juniper.tungsten.api.types.RouteTable;
-import net.juniper.tungsten.api.types.RouteType;
 import net.juniper.tungsten.api.types.SecurityGroup;
 import net.juniper.tungsten.api.types.ServiceGroup;
 import net.juniper.tungsten.api.types.Tag;
@@ -73,19 +70,15 @@ public class TungstenApiTest {
 
     private static final Logger s_logger = Logger.getLogger(TungstenApiTest.class);
 
-    private ApiConnector api;
-    private TungstenApi tungstenApi = new TungstenApi();
+    private final TungstenApi tungstenApi = new TungstenApi();
     private Project project;
-    private String defaultDomainName = "default-domain";
-    private String defaultProjectName = "default-project";
-    private String domainUuid;
     private String projectUuid;
-    private String tungstenNetworkName = "TungstenNetworkTest";
-    private String tungstenNetworkUuid = UUID.randomUUID().toString();
-    private String tungstenVmName = "TungstenVmTest";
-    private String tungstenVmUuid = UUID.randomUUID().toString();
-    private String vmiName = "TungstenVirtualMachineInterfaceTest";
-    private String vmiUuid = UUID.randomUUID().toString();
+    private final String tungstenNetworkName = "TungstenNetworkTest";
+    private final String tungstenNetworkUuid = UUID.randomUUID().toString();
+    private final String tungstenVmName = "TungstenVmTest";
+    private final String tungstenVmUuid = UUID.randomUUID().toString();
+    private final String vmiName = "TungstenVirtualMachineInterfaceTest";
+    private final String vmiUuid = UUID.randomUUID().toString();
     private String tungstenPublicNetworkName = "TungstenPublicNetworkTest";
     private String tungstenPublicNetworkUuid = UUID.randomUUID().toString();
     private String tungstenSecurityGroupName = "TungstenSecurityGroup";
@@ -94,21 +87,22 @@ public class TungstenApiTest {
     private String tungstenLoadbalancerName = "TungstenLoadbalancer";
     private String tungstenLoadbalancerListenerName = "TungstenLoadbalancerListener";
     private String tungstenLoadbalancerPoolName = "TungstenLoadbalancerPool";
-    private Comparator<ApiObjectBase> comparator = Comparator.comparing(ApiObjectBase::getUuid);
+    private final Comparator<ApiObjectBase> comparator = Comparator.comparing(ApiObjectBase::getUuid);
 
     @Before
     public void setUp() throws Exception {
         s_logger.debug("Create Tungsten-Fabric api connector mock.");
-        api = new ApiConnectorMock(null, 0);
+        ApiConnector api = new ApiConnectorMock(null, 0);
 
         tungstenApi.setApiConnector(api);
-        domainUuid = UUID.randomUUID().toString();
+        String domainUuid = UUID.randomUUID().toString();
         projectUuid = UUID.randomUUID().toString();
 
         //create Tungsten-Fabric default domain
         s_logger.debug("Create default domain in Tungsten-Fabric.");
         Domain domain = new Domain();
         domain.setUuid(domainUuid);
+        String defaultDomainName = "default-domain";
         domain.setName(defaultDomainName);
         api.create(domain);
 
@@ -116,6 +110,7 @@ public class TungstenApiTest {
         s_logger.debug("Create default project in Tungsten-Fabric.");
         Project project = new Project();
         project.setUuid(projectUuid);
+        String defaultProjectName = "default-project";
         project.setName(defaultProjectName);
         project.setParent(domain);
         api.create(project);
@@ -723,7 +718,7 @@ public class TungstenApiTest {
         s_logger.debug("Update loadbalancer member 1 in Tungsten-Fabric");
         List<TungstenLoadBalancerMember> tungstenLoadBalancerMemberList1 = new ArrayList<>();
         tungstenLoadBalancerMemberList1.add(new TungstenLoadBalancerMember("member1", "192.168.100.100", 80, 1));
-        assertNotNull(tungstenApi.updateLoadBalancerMember(projectUuid, tungstenLoadbalancerPoolName,
+        assertTrue(tungstenApi.updateLoadBalancerMember(projectUuid, tungstenLoadbalancerPoolName,
             tungstenLoadBalancerMemberList1, tungstenApi.getSubnetUuid(tungstenNetworkUuid)));
 
         s_logger.debug("Check if loadbalancer member 2 was updated in Tungsten-Fabric");
@@ -1081,7 +1076,7 @@ public class TungstenApiTest {
         tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Check if tag was applied to network in Tungsten-Fabric");
-        assertTrue(tungstenApi.applyTungstenNetworkTag(Arrays.asList(tungstenNetworkUuid),
+        assertTrue(tungstenApi.applyTungstenNetworkTag(List.of(tungstenNetworkUuid),
             "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
         VirtualNetwork virtualNetwork1 = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
             tungstenNetworkUuid);
@@ -1101,7 +1096,7 @@ public class TungstenApiTest {
 
         s_logger.debug("Check if tag was applied to vm in Tungsten-Fabric");
         assertTrue(
-            tungstenApi.applyTungstenVmTag(Arrays.asList(tungstenVmUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
+            tungstenApi.applyTungstenVmTag(List.of(tungstenVmUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
         VirtualMachine virtualMachine1 = (VirtualMachine) tungstenApi.getTungstenObject(VirtualMachine.class,
             tungstenVmUuid);
         assertEquals("005f0dea-0196-11ec-a1ed-b42e99f6e187", virtualMachine1.getTag().get(0).getUuid());
@@ -1127,7 +1122,7 @@ public class TungstenApiTest {
         tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Check if tag was applied to vmi in Tungsten-Fabric");
-        assertTrue(tungstenApi.applyTungstenNicTag(Arrays.asList(vmiUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
+        assertTrue(tungstenApi.applyTungstenNicTag(List.of(vmiUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
         VirtualMachineInterface virtualMachineInterface1 = (VirtualMachineInterface) tungstenApi.getTungstenObject(
             VirtualMachineInterface.class, vmiUuid);
         assertEquals("005f0dea-0196-11ec-a1ed-b42e99f6e187", virtualMachineInterface1.getTag().get(0).getUuid());
@@ -1176,7 +1171,7 @@ public class TungstenApiTest {
         tungstenApi.createTungstenTag("005f0dea-0196-11ec-a1ed-b42e99f6e187", "tagtype", "tagvalue", "123");
 
         s_logger.debug("Apply tag to network in Tungsten-Fabric");
-        tungstenApi.applyTungstenNetworkTag(Arrays.asList(tungstenNetworkUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
+        tungstenApi.applyTungstenNetworkTag(List.of(tungstenNetworkUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
 
         s_logger.debug("Check if tag was applied to network in Tungsten-Fabric");
         VirtualNetwork virtualNetwork = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
@@ -1184,7 +1179,7 @@ public class TungstenApiTest {
         assertEquals(1, virtualNetwork.getTag().size());
 
         s_logger.debug("Apply tag to vm in Tungsten-Fabric");
-        tungstenApi.applyTungstenVmTag(Arrays.asList(tungstenVmUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
+        tungstenApi.applyTungstenVmTag(List.of(tungstenVmUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
 
         s_logger.debug("Check if tag was applied to vm in Tungsten-Fabric");
         VirtualMachine virtualMachine = (VirtualMachine) tungstenApi.getTungstenObject(VirtualMachine.class,
@@ -1192,7 +1187,7 @@ public class TungstenApiTest {
         assertEquals(1, virtualMachine.getTag().size());
 
         s_logger.debug("Apply tag to nic in Tungsten-Fabric");
-        tungstenApi.applyTungstenNicTag(Arrays.asList(vmiUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
+        tungstenApi.applyTungstenNicTag(List.of(vmiUuid), "005f0dea-0196-11ec-a1ed-b42e99f6e187");
 
         s_logger.debug("Check if tag was applied to nic in Tungsten-Fabric");
         VirtualMachineInterface virtualMachineInterface = (VirtualMachineInterface) tungstenApi.getTungstenObject(
@@ -1208,8 +1203,8 @@ public class TungstenApiTest {
         assertEquals(1, networkPolicy1.getTag().size());
 
         s_logger.debug("remove tag from network, vm, nic, policy in Tungsten-Fabric");
-        assertNotNull(tungstenApi.removeTungstenTag(Arrays.asList(tungstenNetworkUuid), Arrays.asList(tungstenVmUuid),
-            Arrays.asList(vmiUuid), networkPolicy.getUuid(), null, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
+        assertNotNull(tungstenApi.removeTungstenTag(List.of(tungstenNetworkUuid), List.of(tungstenVmUuid),
+                List.of(vmiUuid), networkPolicy.getUuid(), null, "005f0dea-0196-11ec-a1ed-b42e99f6e187"));
 
         s_logger.debug("Check if tag was removed from network in Tungsten-Fabric");
         VirtualNetwork virtualNetwork1 = (VirtualNetwork) tungstenApi.getTungstenObject(VirtualNetwork.class,
@@ -1346,7 +1341,7 @@ public class TungstenApiTest {
 
         s_logger.debug("Check if network policy was listed in Tungsten-Fabric");
         List<? extends ApiObjectBase> networkPolicyList = tungstenApi.listTungstenAddressPolicy(projectUuid, "policy1");
-        assertEquals(Arrays.asList(networkPolicy1), networkPolicyList);
+        assertEquals(List.of(networkPolicy1), networkPolicyList);
     }
 
     @Test
@@ -1358,7 +1353,7 @@ public class TungstenApiTest {
             "policy2", projectUuid);
         List<? extends ApiObjectBase> policyList1 = Arrays.asList(apiObjectBase1, apiObjectBase2);
         policyList1.sort(comparator);
-        List<? extends ApiObjectBase> policyList2 = Arrays.asList(apiObjectBase1);
+        List<? extends ApiObjectBase> policyList2 = List.of(apiObjectBase1);
 
         s_logger.debug("Check if policy was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> policyList3 = tungstenApi.listTungstenPolicy(projectUuid, null);
@@ -1381,7 +1376,7 @@ public class TungstenApiTest {
             "10.0.0.20", false, false, "");
         List<? extends ApiObjectBase> networkList1 = Arrays.asList(virtualNetwork1, virtualNetwork2);
         networkList1.sort(comparator);
-        List<? extends ApiObjectBase> networkList2 = Arrays.asList(virtualNetwork1);
+        List<? extends ApiObjectBase> networkList2 = List.of(virtualNetwork1);
 
         s_logger.debug("Check if network was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> networkList3 = tungstenApi.listTungstenNetwork(projectUuid, null);
@@ -1400,7 +1395,7 @@ public class TungstenApiTest {
         VirtualMachine vm2 = tungstenApi.createTungstenVirtualMachine("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "vm2");
         List<? extends ApiObjectBase> vmList1 = Arrays.asList(vm1, vm2);
         vmList1.sort(comparator);
-        List<? extends ApiObjectBase> vmList2 = Arrays.asList(vm1);
+        List<? extends ApiObjectBase> vmList2 = List.of(vm1);
 
         s_logger.debug("Check if vm was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> vmList3 = tungstenApi.listTungstenVm(projectUuid, null);
@@ -1434,7 +1429,7 @@ public class TungstenApiTest {
             projectUuid, "10.0.0.1", true);
         List<? extends ApiObjectBase> vmiList1 = Arrays.asList(vmi1, vmi2);
         vmiList1.sort(comparator);
-        List<? extends ApiObjectBase> vmiList2 = Arrays.asList(vmi1);
+        List<? extends ApiObjectBase> vmiList2 = List.of(vmi1);
 
         s_logger.debug("Check if vmi was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> vmiList3 = tungstenApi.listTungstenNic(projectUuid, null);
@@ -1466,12 +1461,12 @@ public class TungstenApiTest {
             "tagvalue7", "123");
         ApiObjectBase apiObjectBase8 = tungstenApi.createTungstenTag("98729834-3ebd-413a-adf9-40aff73cf638", "tagtype8",
             "tagvalue8", "123");
-        List<? extends ApiObjectBase> listTag = Arrays.asList(apiObjectBase1);
-        List<? extends ApiObjectBase> listTag1 = Arrays.asList(apiObjectBase1, apiObjectBase2);
-        List<? extends ApiObjectBase> listTag2 = Arrays.asList(apiObjectBase3, apiObjectBase4);
-        List<? extends ApiObjectBase> listTag3 = Arrays.asList(apiObjectBase5, apiObjectBase6);
-        List<? extends ApiObjectBase> listTag4 = Arrays.asList(apiObjectBase7, apiObjectBase8);
-        List<? extends ApiObjectBase> listTag5 = Arrays.asList(apiObjectBase1, apiObjectBase2, apiObjectBase3,
+        List<ApiObjectBase> listTag = Arrays.asList(apiObjectBase1);
+        List<ApiObjectBase> listTag1 = Arrays.asList(apiObjectBase1, apiObjectBase2);
+        List<ApiObjectBase> listTag2 = Arrays.asList(apiObjectBase3, apiObjectBase4);
+        List<ApiObjectBase> listTag3 = Arrays.asList(apiObjectBase5, apiObjectBase6);
+        List<ApiObjectBase> listTag4 = Arrays.asList(apiObjectBase7, apiObjectBase8);
+        List<ApiObjectBase> listTag5 = Arrays.asList(apiObjectBase1, apiObjectBase2, apiObjectBase3,
             apiObjectBase4, apiObjectBase5, apiObjectBase6, apiObjectBase7, apiObjectBase8);
         listTag1.sort(comparator);
         listTag2.sort(comparator);
@@ -1482,24 +1477,24 @@ public class TungstenApiTest {
         s_logger.debug("Create network and apply tag in Tungsten-Fabric");
         tungstenApi.createTungstenNetwork("9291ae28-56cf-448c-b848-f2334b3c86da", "network1", "network1", projectUuid,
             true, false, "10.0.0.0", 24, "10.0.0.1", true, null, "10.0.0.10", "10.0.0.20", false, false, "");
-        tungstenApi.applyTungstenNetworkTag(Arrays.asList("9291ae28-56cf-448c-b848-f2334b3c86da"),
+        tungstenApi.applyTungstenNetworkTag(List.of("9291ae28-56cf-448c-b848-f2334b3c86da"),
             "005f0dea-0196-11ec-a1ed-b42e99f6e187");
-        tungstenApi.applyTungstenNetworkTag(Arrays.asList("9291ae28-56cf-448c-b848-f2334b3c86da"),
+        tungstenApi.applyTungstenNetworkTag(List.of("9291ae28-56cf-448c-b848-f2334b3c86da"),
             "6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe");
 
         s_logger.debug("Create vm and apply tag in Tungsten-Fabric");
         tungstenApi.createTungstenVirtualMachine("124d0792-e890-4b7e-8fe8-1b7a6d63c66a", "vm1");
-        tungstenApi.applyTungstenVmTag(Arrays.asList("124d0792-e890-4b7e-8fe8-1b7a6d63c66a"),
+        tungstenApi.applyTungstenVmTag(List.of("124d0792-e890-4b7e-8fe8-1b7a6d63c66a"),
             "7d5575eb-d029-467e-8b78-6056a8c94a71");
-        tungstenApi.applyTungstenVmTag(Arrays.asList("124d0792-e890-4b7e-8fe8-1b7a6d63c66a"),
+        tungstenApi.applyTungstenVmTag(List.of("124d0792-e890-4b7e-8fe8-1b7a6d63c66a"),
             "88729834-3ebd-413a-adf9-40aff73cf638");
 
         s_logger.debug("Creating vmi and apply tag in Tungsten-Fabric.");
         tungstenApi.createTungstenVmInterface("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", "vmi1", "02:fc:f3:d6:83:c3",
             "9291ae28-56cf-448c-b848-f2334b3c86da", "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", projectUuid, "10.0.0.1", true);
-        tungstenApi.applyTungstenNicTag(Arrays.asList("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d"),
+        tungstenApi.applyTungstenNicTag(List.of("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d"),
             "105f0dea-0196-11ec-a1ed-b42e99f6e187");
-        tungstenApi.applyTungstenNicTag(Arrays.asList("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d"),
+        tungstenApi.applyTungstenNicTag(List.of("c1680d93-2614-4f99-a8c5-d4f11b3dfc9d"),
             "7b062909-ba9d-4cf3-bbd3-7db93cf6b4fe");
 
         s_logger.debug("Creating policy and apply tag in Tungsten-Fabric.");
@@ -1510,38 +1505,38 @@ public class TungstenApiTest {
             "98729834-3ebd-413a-adf9-40aff73cf638");
 
         s_logger.debug("Check if tag was listed with network in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag6 = tungstenApi.listTungstenTag("9291ae28-56cf-448c-b848-f2334b3c86da",
+        List<ApiObjectBase> listTag6 = tungstenApi.listTungstenTag("9291ae28-56cf-448c-b848-f2334b3c86da",
             null, null, null, null, null);
         listTag6.sort(comparator);
         assertEquals(listTag1, listTag6);
 
         s_logger.debug("Check if tag was listed with vm in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag7 = tungstenApi.listTungstenTag(null,
+        List<ApiObjectBase> listTag7 = tungstenApi.listTungstenTag(null,
             "124d0792-e890-4b7e-8fe8-1b7a6d63c66a", null, null, null
         , null);
         listTag7.sort(comparator);
         assertEquals(listTag2, listTag7);
 
         s_logger.debug("Check if tag was listed with nic in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag8 = tungstenApi.listTungstenTag(null, null,
+        List<ApiObjectBase> listTag8 = tungstenApi.listTungstenTag(null, null,
             "c1680d93-2614-4f99-a8c5-d4f11b3dfc9d", null, null,
             null);
         listTag8.sort(comparator);
         assertEquals(listTag3, listTag8);
 
         s_logger.debug("Check if tag was listed with policy in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag9 = tungstenApi.listTungstenTag(null, null, null,
+        List<ApiObjectBase> listTag9 = tungstenApi.listTungstenTag(null, null, null,
             "205f0dea-0196-11ec-a1ed-b42e99f6e187", null, null);
         listTag9.sort(comparator);
         assertEquals(listTag4, listTag9);
 
         s_logger.debug("Check if tag was listed all in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag10 = tungstenApi.listTungstenTag(null, null, null, null, null, null);
+        List<ApiObjectBase> listTag10 = tungstenApi.listTungstenTag(null, null, null, null, null, null);
         listTag10.sort(comparator);
         assertEquals(listTag5, listTag10);
 
         s_logger.debug("Check if tag was listed with uuid in Tungsten-Fabric");
-        List<? extends ApiObjectBase> listTag11 = tungstenApi.listTungstenTag(null, null, null, null,
+        List<ApiObjectBase> listTag11 = tungstenApi.listTungstenTag(null, null, null, null,
             null, "005f0dea-0196-11ec-a1ed-b42e99f6e187");
         listTag11.sort(comparator);
         assertEquals(listTag, listTag11);
@@ -1554,7 +1549,7 @@ public class TungstenApiTest {
         ApiObjectBase tagType2 = tungstenApi.createTungstenTagType("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "tagtype2");
         List<? extends ApiObjectBase> tagTypeList1 = Arrays.asList(tagType1, tagType2);
         tagTypeList1.sort(comparator);
-        List<? extends ApiObjectBase> tagTypeList2 = Arrays.asList(tagType1);
+        List<? extends ApiObjectBase> tagTypeList2 = List.of(tagType1);
 
         s_logger.debug("Check if tag type was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> tagTypeList3 = tungstenApi.listTungstenTagType(null);
@@ -1579,7 +1574,7 @@ public class TungstenApiTest {
         ApiObjectBase apiObjectBase2 = tungstenApi.createTungstenPolicy("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4",
             "policy2", projectUuid);
         List<? extends ApiObjectBase> policyList1 = Arrays.asList(apiObjectBase1, apiObjectBase2);
-        List<? extends ApiObjectBase> policyList2 = Arrays.asList(apiObjectBase1);
+        List<? extends ApiObjectBase> policyList2 = List.of(apiObjectBase1);
         policyList1.sort(comparator);
 
         s_logger.debug("Apply network policy to network in Tungsten-Fabric.");
@@ -1608,7 +1603,7 @@ public class TungstenApiTest {
             "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "aps2");
         List<? extends ApiObjectBase> apsList1 = Arrays.asList(applicationPolicySet1, applicationPolicySet2);
         apsList1.sort(comparator);
-        List<? extends ApiObjectBase> apsList2 = Arrays.asList(applicationPolicySet1);
+        List<? extends ApiObjectBase> apsList2 = List.of(applicationPolicySet1);
 
         s_logger.debug("Check if application policy set was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> apsList3 = tungstenApi.listTungstenApplicationPolicySet(null);
@@ -1636,7 +1631,7 @@ public class TungstenApiTest {
             "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652", "firewallpolicy2", 1);
         List<? extends ApiObjectBase> fwPolicyList1 = Arrays.asList(fwPolicy1, fwPolicy2);
         fwPolicyList1.sort(comparator);
-        List<? extends ApiObjectBase> fwPolicyList2 = Arrays.asList(fwPolicy1);
+        List<? extends ApiObjectBase> fwPolicyList2 = List.of(fwPolicy1);
 
         s_logger.debug("Check if firewall policy set was listed all with application policy set in Tungsten-Fabric");
         List<? extends ApiObjectBase> fwPolicyList3 = tungstenApi.listTungstenFirewallPolicy(
@@ -1692,7 +1687,7 @@ public class TungstenApiTest {
 
         List<? extends ApiObjectBase> fwRuleList1 = Arrays.asList(firewallRule1, firewallRule2);
         fwRuleList1.sort(comparator);
-        List<? extends ApiObjectBase> fwRuleList2 = Arrays.asList(firewallRule1);
+        List<? extends ApiObjectBase> fwRuleList2 = List.of(firewallRule1);
 
         s_logger.debug("Check if firewall rule set was listed all with firewall policy in Tungsten-Fabric");
         List<? extends ApiObjectBase> fwRuleList3 = tungstenApi.listTungstenFirewallRule(
@@ -1715,7 +1710,7 @@ public class TungstenApiTest {
             "serviceGroup2", "tcp", 80, 80);
         List<? extends ApiObjectBase> serviceGroupList1 = Arrays.asList(serviceGroup1, serviceGroup2);
         serviceGroupList1.sort(comparator);
-        List<? extends ApiObjectBase> serviceGroupList2 = Arrays.asList(serviceGroup1);
+        List<? extends ApiObjectBase> serviceGroupList2 = List.of(serviceGroup1);
 
         s_logger.debug("Check if service group was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> serviceGroupList3 = tungstenApi.listTungstenServiceGroup(null);
@@ -1737,7 +1732,7 @@ public class TungstenApiTest {
             "addressGroup2", "10.0.0.0", 24);
         List<? extends ApiObjectBase> addressGroupList1 = Arrays.asList(addressGroup1, addressGroup2);
         addressGroupList1.sort(comparator);
-        List<? extends ApiObjectBase> addressGroupList2 = Arrays.asList(addressGroup1);
+        List<? extends ApiObjectBase> addressGroupList2 = List.of(addressGroup1);
 
         s_logger.debug("Check if service group was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> addressGroupList3 = tungstenApi.listTungstenAddressGroup(null);
@@ -1812,7 +1807,7 @@ public class TungstenApiTest {
             false, false, "");
         List<? extends ApiObjectBase> list1 = Arrays.asList(network1, network2);
         list1.sort(comparator);
-        List<? extends ApiObjectBase> list2 = Arrays.asList(network1);
+        List<? extends ApiObjectBase> list2 = List.of(network1);
 
         s_logger.debug("Check if network was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> list3 = tungstenApi.getTungstenListObject(VirtualNetwork.class, project, null);
@@ -1853,7 +1848,7 @@ public class TungstenApiTest {
         assertFalse(virtualMachineInterface1.getPortSecurityEnabled());
 
         s_logger.debug("Add instance to security group in Tungsten-Fabric.");
-        tungstenApi.addInstanceToSecurityGroup(vmiUuid, Arrays.asList(tungstenSecurityGroupUuid));
+        tungstenApi.addInstanceToSecurityGroup(vmiUuid, List.of(tungstenSecurityGroupUuid));
 
         s_logger.debug("Check if instance was added to security group in Tungsten-Fabric.");
         VirtualMachineInterface virtualMachineInterface2 = (VirtualMachineInterface) tungstenApi.getTungstenObject(
@@ -1883,7 +1878,7 @@ public class TungstenApiTest {
             projectUuid, "10.0.0.1", true);
 
         s_logger.debug("Add instance to security group in Tungsten-Fabric.");
-        tungstenApi.addInstanceToSecurityGroup(vmiUuid, Arrays.asList(tungstenSecurityGroupUuid));
+        tungstenApi.addInstanceToSecurityGroup(vmiUuid, List.of(tungstenSecurityGroupUuid));
 
         s_logger.debug("Check if instance was added to security group in Tungsten-Fabric.");
         VirtualMachineInterface virtualMachineInterface1 = (VirtualMachineInterface) tungstenApi.getTungstenObject(
@@ -1891,7 +1886,7 @@ public class TungstenApiTest {
         assertEquals(1, virtualMachineInterface1.getSecurityGroup().size());
 
         s_logger.debug("Remove instance from security group in Tungsten-Fabric.");
-        assertTrue(tungstenApi.removeInstanceFromSecurityGroup(vmiUuid, Arrays.asList(tungstenSecurityGroupUuid)));
+        assertTrue(tungstenApi.removeInstanceFromSecurityGroup(vmiUuid, List.of(tungstenSecurityGroupUuid)));
 
         s_logger.debug("Check if instance was removed from security group in Tungsten-Fabric.");
         VirtualMachineInterface virtualMachineInterface2 = (VirtualMachineInterface) tungstenApi.getTungstenObject(
@@ -1975,14 +1970,13 @@ public class TungstenApiTest {
             "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "logicalRouter2");
         List<? extends ApiObjectBase> list1 = Arrays.asList(apiObjectBase1, apiObjectBase2);
         list1.sort(comparator);
-        List<? extends ApiObjectBase> list2 = Arrays.asList(apiObjectBase1);
+        List<? extends ApiObjectBase> list2 = List.of(apiObjectBase1);
 
         s_logger.debug("Check if logical router was listed all in Tungsten-Fabric.");
-        List<? extends ApiObjectBase> list3 = tungstenApi.listRoutingLogicalRouter(null, null);
+        List<? extends ApiObjectBase> list3 = tungstenApi.listRoutingLogicalRouter(null);
         list3.sort(comparator);
         assertEquals(list1, list3);
-        List<? extends ApiObjectBase> list4 = tungstenApi.listRoutingLogicalRouter(null,
-            "005f0dea-0196-11ec-a1ed-b42e99f6e187");
+        List<? extends ApiObjectBase> list4 = tungstenApi.listRoutingLogicalRouter("005f0dea-0196-11ec-a1ed-b42e99f6e187");
         assertEquals(list2, list4);
     }
 
@@ -2061,176 +2055,5 @@ public class TungstenApiTest {
         List<? extends ApiObjectBase> list2 = tungstenApi.listConnectedNetworkFromLogicalRouter(logicalRouter);
         list2.sort(comparator);
         assertEquals(list1, list2);
-    }
-
-    @Test
-    public void createNetworkRouteTableTest() {
-        assertNotNull(tungstenApi.createNetworkRouteTable("test", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-    }
-
-    @Test
-    public void createInterfaceRouteTableTest() {
-        assertNotNull(tungstenApi.createInterfaceRouteTable("test", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-    }
-
-    @Test
-    public void removeNetworkRouteTableTest() {
-        assertNotNull(tungstenApi.createNetworkRouteTable("test", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-        assertTrue(tungstenApi.removeNetworkRouteTable("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
-    }
-
-    @Test
-    public void removeInterfaceRouteTableTest() {
-        assertNotNull(tungstenApi.createInterfaceRouteTable("test", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-        assertTrue(tungstenApi.removeInterfaceRouteTable("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
-    }
-
-    @Test
-    public void listTungstenNetworkRouteTableWithUuidTest() {
-        assertNotNull(tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-        assertNotNull(tungstenApi.createNetworkRouteTable("test2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85", null));
-
-        List<RouteTable> routeTableList = (List<RouteTable>) tungstenApi.listTungstenNetworkRouteTable(
-            "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
-        assertEquals(1, routeTableList.size());
-    }
-
-    @Test
-    public void listTungstenNetworkRouteTableWithoutUuidTest() {
-        assertNotNull(tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-        assertNotNull(tungstenApi.createNetworkRouteTable("test2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85", null));
-
-        List<RouteTable> routeTableList = (List<RouteTable>) tungstenApi.listTungstenNetworkRouteTable(null);
-        assertEquals(2, routeTableList.size());
-    }
-
-    @Test
-    public void listTungstenInterfaceRouteTableWithUuidTest() {
-        assertNotNull(tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-        assertNotNull(tungstenApi.createInterfaceRouteTable("test2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85", null));
-
-        List<InterfaceRouteTable> interfaceRouteTableList = (List<InterfaceRouteTable>) tungstenApi.listTungstenInterfaceRouteTable("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
-        assertEquals(1, interfaceRouteTableList.size());
-    }
-
-    @Test
-    public void listTungstenInterfaceRouteTableWithoutUuidTest() {
-        assertNotNull(tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null));
-        assertNotNull(tungstenApi.createInterfaceRouteTable("test2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85", null));
-
-        List<InterfaceRouteTable> interfaceRouteTableList = (List<InterfaceRouteTable>) tungstenApi.listTungstenInterfaceRouteTable(null);
-        assertEquals(2, interfaceRouteTableList.size());
-    }
-
-    @Test
-    public void addNetworkStaticRouteTest() {
-        tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-
-        assertNotNull(tungstenApi.addNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "10.10.10.10",
-            "ip-address", "no-export"));
-    }
-
-    @Test
-    public void addInterfaceStaticRouteTest() {
-        tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-
-        assertNotNull(tungstenApi.addInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "no-export"));
-    }
-
-    @Test
-    public void listNetworkRouteTableStaticRouteWithPrefixTest() {
-        tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "10.10.10.10",
-            "ip-address", "no-export");
-        tungstenApi.addNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.200.0/24", "10.10.10.20",
-            "ip-address", "no-export");
-        List<RouteType> routeTypeList = tungstenApi.listNetworkRouteTableStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24");
-        assertEquals(1, routeTypeList.size());
-        assertEquals("192.168.100.0/24", routeTypeList.get(0).getPrefix());
-    }
-
-    @Test
-    public void listNetworkRouteTableStaticRouteWithoutPrefixTest() {
-        tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "10.10.10.10",
-            "ip-address", "no-export");
-        tungstenApi.addNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.200.0/24", "10.10.10.20",
-            "ip-address", "no-export");
-        List<RouteType> routeTypeList = tungstenApi.listNetworkRouteTableStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        assertEquals(2, routeTypeList.size());
-    }
-
-    @Test
-    public void listInterfaceRouteTableStaticRouteWithPrefixTest() {
-        tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "no-export");
-        tungstenApi.addInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.200.0/24", "no-export");
-        List<RouteType> routeTypeList = tungstenApi.listInterfaceRouteTableStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24");
-        assertEquals(1, routeTypeList.size());
-        assertEquals("192.168.100.0/24", routeTypeList.get(0).getPrefix());
-    }
-
-    @Test
-    public void listInterfaceRouteTableStaticRouteWithoutPrefixTest() {
-        tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "no-export");
-        tungstenApi.addInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.200.0/24", "no-export");
-        List<RouteType> routeTypeList = tungstenApi.listInterfaceRouteTableStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        assertEquals(2, routeTypeList.size());
-    }
-
-    @Test
-    public void removeNetworkStaticRouteTest() {
-        tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "10.10.10.10",
-            "ip-address", "no-export");
-        assertNotNull(tungstenApi.removeNetworkStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24"));
-    }
-
-    @Test
-    public void removeInterfaceStaticRouteTest() {
-        tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24", "no-export");
-        assertNotNull(tungstenApi.removeInterfaceStaticRoute("baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", "192.168.100.0/24"));
-    }
-
-    @Test
-    public void addRouteTableToNetworkTest() {
-        tungstenApi.createTungstenNetwork("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "network1", "network1", projectUuid, true, false, "10.0.0.0", 24, "10.0.0.1", true, null, "10.0.0.10",
-            "10.0.0.20", false, false, "");
-        tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        assertNotNull(tungstenApi.addRouteTableToNetwork("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
-    }
-
-    @Test
-    public void addRouteTableToInterfaceTest() {
-        tungstenApi.createTungstenNetwork(tungstenNetworkUuid, tungstenNetworkName, tungstenNetworkName, projectUuid,
-            true, false, "10.0.0.0", 24, "10.0.0.1", true, null, "10.0.0.10", "10.0.0.20", false, false, "");
-        tungstenApi.createTungstenVirtualMachine(tungstenVmUuid, tungstenVmName);
-        tungstenApi.createTungstenVmInterface(vmiUuid, "vmiTest1", "02:fc:f3:d6:83:c3", tungstenNetworkUuid, tungstenVmUuid, projectUuid, "10.0.0.1", true);
-        tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        assertNotNull(tungstenApi.addRouteTableToInterface(vmiUuid, "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
-    }
-
-    @Test
-    public void removeRouteTableFromNetworkTest() {
-        tungstenApi.createTungstenNetwork("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe",
-            "network1", "network1", projectUuid, true, false, "10.0.0.0", 24, "10.0.0.1", true, null, "10.0.0.10",
-            "10.0.0.20", false, false, "");
-        tungstenApi.createNetworkRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addRouteTableToNetwork("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
-        assertTrue(tungstenApi.removeRouteTableFromNetwork("6b062909-ba9d-4cf3-bbd3-7db93cf6b4fe", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
-    }
-
-    @Test
-    public void removeRouteTableFromInterfaceTest() {
-        tungstenApi.createTungstenNetwork(tungstenNetworkUuid, tungstenNetworkName, tungstenNetworkName, projectUuid,
-            true, false, "10.0.0.0", 24, "10.0.0.1", true, null, "10.0.0.10", "10.0.0.20", false, false, "");
-        tungstenApi.createTungstenVirtualMachine(tungstenVmUuid, tungstenVmName);
-        tungstenApi.createTungstenVmInterface(vmiUuid, "vmiTest1", "02:fc:f3:d6:83:c3", tungstenNetworkUuid, tungstenVmUuid, projectUuid, "10.0.0.1", true);
-        tungstenApi.createInterfaceRouteTable("test1", "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4", null);
-        tungstenApi.addRouteTableToInterface(vmiUuid, "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4");
-        assertTrue(tungstenApi.removeRouteTableFromInterface(vmiUuid, "baf714fa-80a1-454f-9c32-c4d4a6f5c5a4"));
     }
 }

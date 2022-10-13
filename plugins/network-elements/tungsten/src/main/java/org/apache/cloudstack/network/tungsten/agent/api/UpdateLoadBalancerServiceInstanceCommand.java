@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class UpdateLoadBalancerServiceInstanceCommand extends TungstenCommand {
     private String publicNetworkUuid;
     private String floatingPoolName;
@@ -50,5 +52,19 @@ public class UpdateLoadBalancerServiceInstanceCommand extends TungstenCommand {
 
     public void setFloatingIpName(final String floatingIpName) {
         this.floatingIpName = floatingIpName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateLoadBalancerServiceInstanceCommand that = (UpdateLoadBalancerServiceInstanceCommand) o;
+        return Objects.equals(publicNetworkUuid, that.publicNetworkUuid) && Objects.equals(floatingPoolName, that.floatingPoolName) && Objects.equals(floatingIpName, that.floatingIpName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), publicNetworkUuid, floatingPoolName, floatingIpName);
     }
 }

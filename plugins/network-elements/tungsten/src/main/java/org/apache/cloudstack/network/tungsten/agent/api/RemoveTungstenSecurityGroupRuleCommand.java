@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.agent.api;
 
+import java.util.Objects;
+
 public class RemoveTungstenSecurityGroupRuleCommand extends TungstenCommand {
     private final String securityGroupUuid;
     private final String securityGroupRuleUuid;
@@ -31,5 +33,19 @@ public class RemoveTungstenSecurityGroupRuleCommand extends TungstenCommand {
 
     public String getSecurityGroupRuleUuid() {
         return securityGroupRuleUuid;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        RemoveTungstenSecurityGroupRuleCommand that = (RemoveTungstenSecurityGroupRuleCommand) o;
+        return Objects.equals(securityGroupUuid, that.securityGroupUuid) && Objects.equals(securityGroupRuleUuid, that.securityGroupRuleUuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), securityGroupUuid, securityGroupRuleUuid);
     }
 }

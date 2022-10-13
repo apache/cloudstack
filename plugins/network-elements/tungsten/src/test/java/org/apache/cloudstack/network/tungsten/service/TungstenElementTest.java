@@ -41,7 +41,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -240,7 +239,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyStaticNatsAddRuleSuccessTest() throws ResourceUnavailableException {
+    public void applyStaticNatsAddRuleSuccessTest() {
         Network network = mock(Network.class);
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
@@ -248,7 +247,7 @@ public class TungstenElementTest {
         TungstenAnswer assignFloatingIpAnswer = mock(TungstenAnswer.class);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
-        List<StaticNatImpl> staticNatList = Arrays.asList(staticNat);
+        List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(false);
         when(assignFloatingIpAnswer.getResult()).thenReturn(true);
@@ -262,7 +261,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyStaticNatsAddRuleFailTest() throws ResourceUnavailableException {
+    public void applyStaticNatsAddRuleFailTest() {
         Network network = mock(Network.class);
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
@@ -270,7 +269,7 @@ public class TungstenElementTest {
         TungstenAnswer assignFloatingIpAnswer = mock(TungstenAnswer.class);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
-        List<StaticNatImpl> staticNatList = Arrays.asList(staticNat);
+        List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(false);
         when(assignFloatingIpAnswer.getResult()).thenReturn(false);
@@ -284,7 +283,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyStaticNatsRevokeRuleSuccessTest() throws ResourceUnavailableException {
+    public void applyStaticNatsRevokeRuleSuccessTest() {
         Network network = mock(Network.class);
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
@@ -292,7 +291,7 @@ public class TungstenElementTest {
         TungstenAnswer releaseFloatingIpAnswer = mock(TungstenAnswer.class);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
-        List<StaticNatImpl> staticNatList = Arrays.asList(staticNat);
+        List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(true);
         when(releaseFloatingIpAnswer.getResult()).thenReturn(true);
@@ -306,7 +305,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyStaticNatsRevokeRuleFailTest() throws ResourceUnavailableException {
+    public void applyStaticNatsRevokeRuleFailTest() {
         Network network = mock(Network.class);
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
@@ -314,7 +313,7 @@ public class TungstenElementTest {
         TungstenAnswer releaseFloatingIpAnswer = mock(TungstenAnswer.class);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
-        List<StaticNatImpl> staticNatList = Arrays.asList(staticNat);
+        List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(true);
         when(releaseFloatingIpAnswer.getResult()).thenReturn(false);
@@ -328,7 +327,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyLBRulesAddRuleSuccessTest() throws ResourceUnavailableException {
+    public void applyLBRulesAddRuleSuccessTest() {
         User caller = mock(User.class);
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
@@ -337,10 +336,10 @@ public class TungstenElementTest {
         LoadBalancerVMMapVO loadBalancerVMMapVO = mock(LoadBalancerVMMapVO.class);
         LoadBalancerVO loadBalancerVO = mock(LoadBalancerVO.class);
         LoadBalancingRule.LbStickinessPolicy lbStickinessPolicy = mock(LoadBalancingRule.LbStickinessPolicy.class);
-        List<LoadBalancingRule> loadBalancingRuleList1 = Arrays.asList(loadBalancingRule1);
-        List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = Arrays.asList(loadBalancerVMMapVO);
-        List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = Arrays.asList(lbStickinessPolicy);
-        List<LoadBalancerVO> loadBalancerVOList = Arrays.asList(loadBalancerVO);
+        List<LoadBalancingRule> loadBalancingRuleList1 = List.of(loadBalancingRule1);
+        List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = List.of(loadBalancerVMMapVO);
+        List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = List.of(lbStickinessPolicy);
+        List<LoadBalancerVO> loadBalancerVOList = List.of(loadBalancerVO);
         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
@@ -351,7 +350,7 @@ public class TungstenElementTest {
         TungstenAnswer updateTungstenHealthMonitorAnswer = mock(TungstenAnswer.class);
         LoadBalancingRule.LbSslCert lbSslCert = mock(LoadBalancingRule.LbSslCert.class);
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
-        List<Pair<String, String>> pairList = Arrays.asList(new Pair<>("cookieName", "cookieValue"));
+        List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
 
         when(accountMgr.getActiveUser(anyLong())).thenReturn(caller);
         when(caller.getApiKey()).thenReturn("apikey");
@@ -383,8 +382,8 @@ public class TungstenElementTest {
         when(updateTungstenLoadBalancerMemberAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadBalancerListenerAnswer.getResult()).thenReturn(true);
         when(updateTungstenHealthMonitorAnswer.getResult()).thenReturn(true);
-        when(configDao.getValue(eq(Config.NetworkLBHaproxyStatsVisbility.key()))).thenReturn("enabled");
-        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(true);
+        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
+        when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(EncryptionUtil.generateSignature(anyString(), anyString())).thenReturn("generatedString");
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
@@ -394,7 +393,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyLBRulesAddRuleFailTest() throws ResourceUnavailableException {
+    public void applyLBRulesAddRuleFailTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         Ip ip = mock(Ip.class);
@@ -402,17 +401,17 @@ public class TungstenElementTest {
         LoadBalancerVMMapVO loadBalancerVMMapVO = mock(LoadBalancerVMMapVO.class);
         LoadBalancerVO loadBalancerVO = mock(LoadBalancerVO.class);
         LoadBalancingRule.LbStickinessPolicy lbStickinessPolicy = mock(LoadBalancingRule.LbStickinessPolicy.class);
-        List<LoadBalancingRule> loadBalancingRuleList1 = Arrays.asList(loadBalancingRule1);
-        List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = Arrays.asList(loadBalancerVMMapVO);
-        List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = Arrays.asList(lbStickinessPolicy);
-        List<LoadBalancerVO> loadBalancerVOList = Arrays.asList(loadBalancerVO);
+        List<LoadBalancingRule> loadBalancingRuleList1 = List.of(loadBalancingRule1);
+        List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = List.of(loadBalancerVMMapVO);
+        List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = List.of(lbStickinessPolicy);
+        List<LoadBalancerVO> loadBalancerVOList = List.of(loadBalancerVO);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenLoadBalancerMemberAnswer = mock(TungstenAnswer.class);
         TungstenAnswer updateTungstenHealthMonitorAnswer = mock(TungstenAnswer.class);
-        List<Pair<String, String>> pairList = Arrays.asList(new Pair<>("cookieName", "cookieValue"));
+        List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
 
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
@@ -437,7 +436,7 @@ public class TungstenElementTest {
         when(createTungstenNetworkLoadbalancerAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadBalancerPoolAnswer.getResult()).thenReturn(true);
         when(updateTungstenLoadBalancerMemberAnswer.getResult()).thenReturn(true);
-        when(configDao.getValue(eq(Config.NetworkLBHaproxyStatsVisbility.key()))).thenReturn("disabled");
+        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("disabled");
         when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(false);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
@@ -448,15 +447,15 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyLBRulesRevokeRuleFailTest() throws ResourceUnavailableException {
+    public void applyLBRulesRevokeRuleFailTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         Ip ip1 = mock(Ip.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
         LoadBalancerVO loadBalancerVO1 = mock(LoadBalancerVO.class);
-        List<LoadBalancingRule> loadBalancingRuleList1 = Arrays.asList(loadBalancingRule1);
-        List<LoadBalancerVO> loadBalancerVOList1 = Arrays.asList(loadBalancerVO1);
+        List<LoadBalancingRule> loadBalancingRuleList1 = List.of(loadBalancingRule1);
+        List<LoadBalancerVO> loadBalancerVOList1 = List.of(loadBalancerVO1);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
         TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = mock(TungstenAnswer.class);
         TungstenAnswer deleteTungstenLoadBalancerCommand = mock(TungstenAnswer.class);
@@ -480,7 +479,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyLBRulesRevokeRuleSuccessTest() throws ResourceUnavailableException {
+    public void applyLBRulesRevokeRuleSuccessTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         Ip ip = mock(Ip.class);
@@ -491,7 +490,7 @@ public class TungstenElementTest {
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
         TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = mock(TungstenAnswer.class);
         TungstenAnswer deleteTungstenLoadBalancerCommand = mock(TungstenAnswer.class);
-        List<LoadBalancingRule> loadBalancingRuleList = Arrays.asList(loadBalancingRule);
+        List<LoadBalancingRule> loadBalancingRuleList = List.of(loadBalancingRule);
         List<LoadBalancerVO> loadBalancerVOList = Arrays.asList(loadBalancerVO1, loadBalancerVO2);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
@@ -504,7 +503,7 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
         when(deleteTungstenLoadBalancerListenerAnswer.getResult()).thenReturn(true);
         when(deleteTungstenLoadBalancerCommand.getResult()).thenReturn(true);
-        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(true);
+        when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
 
@@ -512,7 +511,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyPFRulesAddRuleSuccessTest() throws ResourceUnavailableException {
+    public void applyPFRulesAddRuleSuccessTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
@@ -520,7 +519,7 @@ public class TungstenElementTest {
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
         TungstenAnswer applyTungstenPortForwardingAnswer = mock(TungstenAnswer.class);
-        List<PortForwardingRule> portForwardingRuleList = Arrays.asList(portForwardingRule);
+        List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
@@ -534,7 +533,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyPFRulesAddRuleFailTest() throws ResourceUnavailableException {
+    public void applyPFRulesAddRuleFailTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
@@ -542,7 +541,7 @@ public class TungstenElementTest {
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
         TungstenAnswer applyTungstenPortForwardingAnswer = mock(TungstenAnswer.class);
-        List<PortForwardingRule> portForwardingRuleList = Arrays.asList(portForwardingRule);
+        List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
@@ -556,7 +555,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyPFRulesRevokeRuleSuccessTest() throws ResourceUnavailableException {
+    public void applyPFRulesRevokeRuleSuccessTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
@@ -564,7 +563,7 @@ public class TungstenElementTest {
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
         TungstenAnswer applyTungstenPortForwardingAnswer = mock(TungstenAnswer.class);
-        List<PortForwardingRule> portForwardingRuleList = Arrays.asList(portForwardingRule);
+        List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
@@ -578,7 +577,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void applyPFRulesRevokeRuleFailTest() throws ResourceUnavailableException {
+    public void applyPFRulesRevokeRuleFailTest() {
         Network network = mock(Network.class);
         Network publicNetwork = mock(Network.class);
         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
@@ -586,7 +585,7 @@ public class TungstenElementTest {
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
         TungstenAnswer applyTungstenPortForwardingAnswer = mock(TungstenAnswer.class);
-        List<PortForwardingRule> portForwardingRuleList = Arrays.asList(portForwardingRule);
+        List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
@@ -600,7 +599,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void preparePublicNetworkTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public void preparePublicNetworkTest() throws ConcurrentOperationException {
         Network network = mock(Network.class);
         NicProfile nicProfile = new NicProfile();
         VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
@@ -624,14 +623,14 @@ public class TungstenElementTest {
         when(createTungstenNetworkPolicyAnswer.getResult()).thenReturn(true);
 
         assertTrue(tungstenElement.prepare(network, nicProfile, virtualMachineProfile, deployDestination, reservationContext));
-        assertEquals(nicProfile.getReservationStrategy(), Nic.ReservationStrategy.Create);
-        assertEquals(nicProfile.getBroadcastType(), Networks.BroadcastDomainType.Tungsten);
-        assertEquals(nicProfile.getBroadCastUri(), Networks.BroadcastDomainType.Tungsten.toUri("tf"));
-        assertEquals(nicProfile.getName(), TungstenUtils.getDefaultVhostInterface());
+        assertEquals(Nic.ReservationStrategy.Create, nicProfile.getReservationStrategy());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN, nicProfile.getBroadcastType());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), nicProfile.getBroadCastUri());
+        assertEquals(TungstenUtils.getDefaultVhostInterface(), nicProfile.getName());
     }
 
     @Test
-    public void prepareManagementNetworkTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public void prepareManagementNetworkTest() throws ConcurrentOperationException {
         Network network = mock(Network.class);
         NicProfile nicProfile = new NicProfile();
         VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
@@ -650,14 +649,14 @@ public class TungstenElementTest {
         when(createTungstenVMAnswer.getResult()).thenReturn(true);
 
         assertTrue(tungstenElement.prepare(network, nicProfile, virtualMachineProfile, deployDestination, reservationContext));
-        assertEquals(nicProfile.getReservationStrategy(), Nic.ReservationStrategy.Create);
-        assertEquals(nicProfile.getBroadcastType(), Networks.BroadcastDomainType.Tungsten);
-        assertEquals(nicProfile.getBroadCastUri(), Networks.BroadcastDomainType.Tungsten.toUri("tf"));
-        assertEquals(nicProfile.getName(), TungstenUtils.getDefaultVhostInterface());
+        assertEquals(Nic.ReservationStrategy.Create, nicProfile.getReservationStrategy());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN, nicProfile.getBroadcastType());
+        assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), nicProfile.getBroadCastUri());
+        assertEquals(TungstenUtils.getDefaultVhostInterface(), nicProfile.getName());
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void prepareWithExceptionTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public void prepareWithExceptionTest() throws ConcurrentOperationException {
         Network network = mock(Network.class);
         NicProfile nicProfile = new NicProfile();
         VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
@@ -791,7 +790,7 @@ public class TungstenElementTest {
     }
 
     @Test
-    public void shutdownProviderInstancesTest() throws ConcurrentOperationException, ResourceUnavailableException {
+    public void shutdownProviderInstancesTest() throws ConcurrentOperationException {
         PhysicalNetworkServiceProvider physicalNetworkServiceProvider = mock(PhysicalNetworkServiceProvider.class);
         ReservationContext reservationContext = mock(ReservationContext.class);
         PhysicalNetworkVO physicalNetworkVO = mock(PhysicalNetworkVO.class);
@@ -888,7 +887,7 @@ public class TungstenElementTest {
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(hostDao.findById(anyLong())).thenReturn(hostVO);
         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
-        when(networkDao.listByZoneSecurityGroup(anyLong())).thenReturn(Arrays.asList(network));
+        when(networkDao.listByZoneSecurityGroup(anyLong())).thenReturn(List.of(network));
 
         tungstenElement.processHostAboutToBeRemoved(1L);
         verify(agentManager, times(1)).easySend(anyLong(), any(SetupTungstenVRouterCommand.class));
@@ -921,7 +920,7 @@ public class TungstenElementTest {
         TungstenAnswer applyNetworkPolicyAnswer = mock(TungstenAnswer.class);
 
         when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Add);
-        when(firewallRuleVO.getSourceCidrList()).thenReturn(Arrays.asList("192.168.100.0/24"));
+        when(firewallRuleVO.getSourceCidrList()).thenReturn(List.of("192.168.100.0/24"));
         when(firewallRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
         when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
@@ -931,7 +930,7 @@ public class TungstenElementTest {
         when(createNetworkPolicyAnswer.getResult()).thenReturn(true);
         when(applyNetworkPolicyAnswer.getResult()).thenReturn(true);
 
-        assertTrue(tungstenElement.applyFWRules(network, Arrays.asList(firewallRuleVO)));
+        assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
     }
 
     @Test
@@ -945,7 +944,7 @@ public class TungstenElementTest {
         Ip ip = mock(Ip.class);
 
         when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Add);
-        when(firewallRuleVO.getSourceCidrList()).thenReturn(Arrays.asList("192.168.100.0/24"));
+        when(firewallRuleVO.getSourceCidrList()).thenReturn(List.of("192.168.100.0/24"));
         when(firewallRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
         when(ipAddressDao.findById(anyLong())).thenReturn(ipAddressVO);
@@ -957,7 +956,7 @@ public class TungstenElementTest {
         when(createNetworkPolicyAnswer.getResult()).thenReturn(true);
         when(applyNetworkPolicyAnswer.getResult()).thenReturn(true);
 
-        assertTrue(tungstenElement.applyFWRules(network, Arrays.asList(firewallRuleVO)));
+        assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
     }
 
     @Test
@@ -974,7 +973,7 @@ public class TungstenElementTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteNetworkPolicyAnswer);
         when(deleteNetworkPolicyAnswer.getResult()).thenReturn(true);
 
-        assertTrue(tungstenElement.applyFWRules(network, Arrays.asList(firewallRuleVO)));
+        assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
     }
 
     @Test

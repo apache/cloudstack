@@ -18,12 +18,12 @@ package org.apache.cloudstack.network.tungsten.service;
 
 import org.apache.cloudstack.network.tungsten.vrouter.IntrospectApiConnector;
 import org.apache.cloudstack.network.tungsten.vrouter.IntrospectApiConnectorFactory;
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 public class TungstenIntrospectApi {
-    private static final Logger S_LOGGER = Logger.getLogger(TungstenIntrospectApi.class);
+    private TungstenIntrospectApi() {
+    }
 
     private static IntrospectApiConnector getIntrospectConnector(String host, String port) {
         return IntrospectApiConnectorFactory.getInstance(host, port);
