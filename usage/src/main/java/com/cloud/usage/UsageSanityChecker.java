@@ -70,7 +70,7 @@ public class UsageSanityChecker {
          * Check for item usage records which are created after it is removed
          */
         try (PreparedStatement pstmt = conn.prepareStatement(checkCase.getSqlTemplate())) {
-            if(checkCase.isCheckId()) {
+            if (checkCase.isCheckId()) {
                 if (lastId > 0) {
                     pstmt.setInt(1, lastId);
                 }
@@ -88,12 +88,12 @@ public class UsageSanityChecker {
     }
 
     private boolean isCheckOkForPstmt(CheckCase checkCase, boolean checkOk, PreparedStatement pstmt) {
-        try(ResultSet rs = pstmt.executeQuery();) {
+        try (ResultSet rs = pstmt.executeQuery();) {
             if (rs.next() && (rs.getInt(1) > 0)) {
                 errors.append(String.format("Error: Found %s %s%n", rs.getInt(1), checkCase.getItemName()));
                 checkOk = false;
             }
-        }catch (Exception e)
+        } catch (Exception e)
         {
             throwPreparedStatementExcecutionException("check is failing", pstmt.toString(), e);
         }
@@ -108,7 +108,7 @@ public class UsageSanityChecker {
 
     protected void checkMaxUsage() throws SQLException {
         int aggregationRange = DEFAULT_AGGREGATION_RANGE;
-        String sql = "SELECT value FROM `cloud`.`configuration` where name = 'usage.stats.job.aggregation.range'";
+        String sql = "SELECT value FROM `cloud`.`configuration` WHERE name = 'usage.stats.job.aggregation.range'";
         try (PreparedStatement pstmt = conn.prepareStatement(sql);)
         {
             aggregationRange = getAggregationRange(aggregationRange, pstmt);
@@ -124,7 +124,7 @@ public class UsageSanityChecker {
     }
 
     private static int getAggregationRange(int aggregationRange, PreparedStatement pstmt) {
-        try(ResultSet rs = pstmt.executeQuery();) {
+        try (ResultSet rs = pstmt.executeQuery();) {
            if (rs.next()) {
                 aggregationRange = rs.getInt(1);
             } else {
@@ -132,7 +132,7 @@ public class UsageSanityChecker {
                    s_logger.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
                }
             }
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             throwPreparedStatementExcecutionException("retrieval aggregate value is failing", pstmt.toString(), e);
         }
         return aggregationRange;
