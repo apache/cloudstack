@@ -17,30 +17,19 @@
 package com.cloud.utils;
 
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO : will determine later
 public class TungstenUtils {
-    private static final String defaultVhostInterface = "vhost0";
-    private static final String defaultForwardingMode = "l3";
-    private static final String userVm = "User";
-    private static final String guestType = "Guest";
-    private static final String securityGroup = "securityGroup";
-
+    private static final String GUEST_TYPE = "Guest";
+    private static final String SECURITY_GROUP = "securityGroup";
     public static final String INGRESS_RULE = "ingress";
     public static final String EGRESS_RULE = "egress";
     public static final String LOCAL = "local";
-
-    public static final String NO_EXPORT = "no-export";
-    public static final String NO_EXPORT_SUBCONFED = "no-export-subconfed";
-    public static final String ACCEPT_OWN = "accept-own";
-    public static final String NO_ADVERTISE = "no-advertise";
-    public static final String NO_REORIGINATE = "no-reoriginate";
-
+    public static final String DEFAULT_VHOST_INTERFACE = "vhost0";
+    public static final String DEFAULT_FORWARDING_MODE = "l3";
     public static final int MAX_CIDR = 32;
     public static final int MAX_IPV6_CIDR = 128;
     public static final int DNS_SERVICE_PORT = 53;
@@ -56,42 +45,36 @@ public class TungstenUtils {
     public static final String ONE_WAY_DIRECTION = ">";
     public static final String TWO_WAY_DIRECTION = "<>";
     public static final String FABRIC_NETWORK_FQN = "default-domain:default-project:ip-fabric";
-    public static final String DEFAULT_FABRIC_NAME = "ip-fabric";
-    public static final String DEFAULT_PROJECT_FQN = "default-domain:default-project";
     public static final String ROUTINGLR_NAME = "routingLR";
     public static final String GUEST_NETWORK_NAME = "guestNetwork";
     public static final String PUBLIC_NETWORK_NAME = "publicNetwork";
     public static final String MANAGEMENT_NETWORK_NAME = "managementNetwork";
     public static final String SHARED_NETWORK_NAME = "sharedNetwork";
+    public static final String SNAT_NETWORK_END_NAME = "right";
+
+    private TungstenUtils() {
+    }
 
     public static String getTapName(final String macAddress) {
         return "tap" + macAddress.replace(":", "");
     }
 
-    public static String getDefaultVhostInterface() {
-        return defaultVhostInterface;
-    }
-
-    public static String getDefaultForwardingMode() {
-        return defaultForwardingMode;
-    }
-
     public static String getVmiName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType.equals(guestType))
+        if (nicId != 0 && trafficType.equals(GUEST_TYPE))
             return "vmi" + trafficType + vmType + nicId;
         else
             return "vmi" + trafficType + vmType + vmName;
     }
 
     public static String getInstanceIpName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType.equals(getGuestType()))
+        if (nicId != 0 && trafficType.equals(GUEST_TYPE))
             return "instanceIp" + trafficType + vmType + nicId;
         else
             return "instanceIp" + trafficType + vmType + vmName;
     }
 
     public static String getV6InstanceIpName(String trafficType, String vmType, String vmName, long nicId) {
-        if (nicId != 0 && trafficType.equals(getGuestType()))
+        if (nicId != 0 && trafficType.equals(GUEST_TYPE))
             return "instanceV6Ip" + trafficType + vmType + nicId;
         else
             return "instanceV6Ip" + trafficType + vmType + vmName;
@@ -125,8 +108,8 @@ public class TungstenUtils {
         return PUBLIC_NETWORK_NAME + zoneId;
     }
 
-    public static String getGuestNetworkName(String networkName) {
-        return GUEST_NETWORK_NAME + networkName + "-" + RandomStringUtils.random(6, true, true);
+    public static String getGuestNetworkName(String networkName, String networkUuid) {
+        return GUEST_NETWORK_NAME + networkName + networkUuid;
     }
 
     public static String getSharedNetworkName(long networkId) {
@@ -137,13 +120,6 @@ public class TungstenUtils {
         return MANAGEMENT_NETWORK_NAME + mvnId;
     }
 
-    public static String getUserVm() {
-        return userVm;
-    }
-
-    public static String getGuestType() {
-        return guestType;
-    }
 
     public static String getVgwName(long zoneId) {
         return "vgw" + zoneId;
@@ -169,10 +145,6 @@ public class TungstenUtils {
 
     public static String getSnatNetworkStartName(List<String> projectFqn, String logicalRouterUuid) {
         return StringUtils.join(projectFqn, "__") + "__snat_" + logicalRouterUuid;
-    }
-
-    public static String getSnatNetworkEndName() {
-        return "right";
     }
 
     public static String getPublicNetworkPolicyName(long publicIpAddressId) {
@@ -292,7 +264,7 @@ public class TungstenUtils {
     }
 
     public static String getSecurityGroupName(String name, long accountId) {
-        return securityGroup + name + accountId;
+        return SECURITY_GROUP + name + accountId;
     }
 
     public static String getSingleIpAddressCidr(String ipAddress) {

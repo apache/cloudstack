@@ -565,7 +565,7 @@ public class TungstenApi {
                         .get(0)
                         .startsWith(
                             TungstenUtils.getSnatNetworkStartName(project.getQualifiedName(), logicalRouterUuid))
-                        && instanceIp.getQualifiedName().get(0).endsWith(TungstenUtils.getSnatNetworkEndName())) {
+                        && instanceIp.getQualifiedName().get(0).endsWith(TungstenUtils.SNAT_NETWORK_END_NAME)) {
                         InstanceIp natInstanceIp = (InstanceIp) apiConnector.findById(InstanceIp.class,
                             instanceIp.getUuid());
                         if (natInstanceIp != null) {

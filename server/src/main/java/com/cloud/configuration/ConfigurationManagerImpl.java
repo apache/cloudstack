@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -5791,12 +5792,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // if network offering is for tungsten check if every item from serviceProviderList has Tungsten-Fabric provider
         // except ConfigDrive
-        if(forTungsten){
-            for(Map.Entry<String, List<String>> item : cmd.getServiceProviders().entrySet()){
-                if(item.getValue().size() == 1 && (item.getValue().contains("Tungsten") || item.getValue().contains("ConfigDrive")))
-                    continue;
-                else
+        if(Boolean.TRUE.equals(forTungsten)){
+            for(Map.Entry<String, List<String>> item : cmd.getServiceProviders().entrySet()) {
+                if (item.getValue().size() != 1 || !(item.getValue().contains("Tungsten") || item.getValue().contains("ConfigDrive"))) {
                     throw new InvalidParameterValueException("Please specify Tungsten-Fabric provider for the " + item.getKey() + " service provider.");
+                }
             }
         }
 
@@ -6371,7 +6371,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
 
-        offeringFinal.setForTungsten(forTungsten);
+        offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);

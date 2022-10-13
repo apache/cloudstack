@@ -1191,7 +1191,7 @@ public class TungstenElement extends AdapterBase
         nic.setBroadcastUri(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"));
 
         if (nic.getName() == null) {
-            nic.setName(TungstenUtils.getDefaultVhostInterface());
+            nic.setName(TungstenUtils.DEFAULT_VHOST_INTERFACE);
         }
     }
 }

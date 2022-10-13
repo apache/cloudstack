@@ -654,7 +654,7 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
         // change default forwarding mode
         TungstenCommand updateTungstenGlobalVrouterConfigCommand = new UpdateTungstenVrouterConfigCommand(
-            TungstenUtils.getDefaultForwardingMode());
+            TungstenUtils.DEFAULT_FORWARDING_MODE);
         TungstenAnswer updateTungstenGlobalVrouterConfigAnswer = tungstenFabricUtils.sendTungstenCommand(updateTungstenGlobalVrouterConfigCommand, zoneId);
 
         if (!updateTungstenGlobalVrouterConfigAnswer.getResult()) {

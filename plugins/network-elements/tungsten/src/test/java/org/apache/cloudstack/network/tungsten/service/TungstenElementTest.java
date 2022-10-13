@@ -626,7 +626,7 @@ public class TungstenElementTest {
         assertEquals(Nic.ReservationStrategy.Create, nicProfile.getReservationStrategy());
         assertEquals(Networks.BroadcastDomainType.TUNGSTEN, nicProfile.getBroadcastType());
         assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), nicProfile.getBroadCastUri());
-        assertEquals(TungstenUtils.getDefaultVhostInterface(), nicProfile.getName());
+        assertEquals(TungstenUtils.DEFAULT_VHOST_INTERFACE, nicProfile.getName());
     }
 
     @Test
@@ -652,7 +652,7 @@ public class TungstenElementTest {
         assertEquals(Nic.ReservationStrategy.Create, nicProfile.getReservationStrategy());
         assertEquals(Networks.BroadcastDomainType.TUNGSTEN, nicProfile.getBroadcastType());
         assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), nicProfile.getBroadCastUri());
-        assertEquals(TungstenUtils.getDefaultVhostInterface(), nicProfile.getName());
+        assertEquals(TungstenUtils.DEFAULT_VHOST_INTERFACE, nicProfile.getName());
     }
 
     @Test(expected = CloudRuntimeException.class)

@@ -305,7 +305,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
         super.reserve(nic, network, vm, dest, context);
         createTungstenVM(nic, network, vm, dest);
         if (nic.getName() == null) {
-            nic.setName(TungstenUtils.getDefaultVhostInterface());
+            nic.setName(TungstenUtils.DEFAULT_VHOST_INTERFACE);
         }
     }
 
@@ -451,7 +451,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
     private void createTungstenNetwork(Network network, String tungstenProjectFqn) {
         Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
         TungstenCommand createTungstenGuestNetworkCommand = new CreateTungstenNetworkCommand(network.getUuid(),
-            TungstenUtils.getGuestNetworkName(network.getName()), network.getName(), tungstenProjectFqn, false, false,
+            TungstenUtils.getGuestNetworkName(network.getName(), network.getUuid()), network.getName(), tungstenProjectFqn, false, false,
             pair.first(), pair.second(), null, network.getMode().equals(Networks.Mode.Dhcp), null, null,
             null, false, false, TungstenUtils.getSubnetName(network.getId()));
 

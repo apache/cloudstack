@@ -40,7 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.security.SecurityGroupManagerImpl;
+import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
@@ -888,7 +888,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Cleanup tungsten security groups
             List<SecurityGroupVO> securityGroupList = _securityGroupDao.listByAccountId(accountId);
             for(SecurityGroupVO securityGroupVO : securityGroupList) {
-                _messageBus.publish(_name, SecurityGroupManagerImpl.MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, securityGroupVO);
+                _messageBus.publish(_name, SecurityGroupService.MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, securityGroupVO);
             }
 
             // Cleanup security groups

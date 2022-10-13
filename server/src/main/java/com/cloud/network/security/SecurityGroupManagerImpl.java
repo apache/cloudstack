@@ -908,7 +908,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             s_logger.debug("Can't update rules for host, ignore", e);
         }
 
-        if(result) {
+        if(Boolean.TRUE.equals(result)) {
             messageBus.publish(_name, MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, rule);
         }
 
