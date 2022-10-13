@@ -1,6 +1,8 @@
-package org.apache.cloudstack.ontapsvm;
+package com.cloud.network;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.network.IpReservation;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -8,47 +10,58 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "ontap_svms")
-public class OntapSvmVO implements OntapSvm {
+@Table(name = "ip_reservation")
+public class IpReservationVO implements IpReservation {
 
-    protected OntapSvmVO() {
+    protected IpReservationVO() {
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    long id;
+    private long id;
 
     @Column(name = "uuid")
-    String uuid = UUID.randomUUID().toString();
+    private String uuid = UUID.randomUUID().toString();
 
-    @Column(name = "name")
-    String name;
+    @Column(name = "start_ip")
+    private String startIp;
 
-    @Column(name = "ip4_address")
-    String iPv4Address;
-
-    @Column(name = "vlan")
-    int vlan;
+    @Column(name = "end_ip")
+    private String endIp;
 
     @Column(name = "network_id")
-    long networkId;
+    private long networkId;
 
     @Column(name = GenericDao.CREATED_COLUMN)
-    Date created;
+    private Date created;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
-    Date removed;
+    private Date removed;
 
-    public OntapSvmVO(String name, String iPv4Address, int vlan, int networkId) {
-        this.name = name;
-        this.iPv4Address = iPv4Address;
-        this.vlan = vlan;
+    public IpReservationVO(String startIp, String endIp, long networkId) {
+        this.startIp = startIp;
+        this.endIp = endIp;
         this.networkId = networkId;
+    }
+
+    @Override
+    public List<String> getIpList() {
+        List<String> ret = new ArrayList<>();
+        long current = NetUtils.ip2Long(getStartIp());
+        long end = NetUtils.ip2Long(getEndIp());
+        while (current <= end) {
+            ret.add(NetUtils.long2Ip(current));
+            current++;
+        }
+
+        return ret;
     }
 
     @Override
@@ -62,33 +75,23 @@ public class OntapSvmVO implements OntapSvm {
     }
 
     @Override
-    public String getName() {
-        return name;
+    public String getStartIp() {
+        return startIp;
     }
 
     @Override
-    public void setName(String name) {
-        this.name = name;
+    public void setStartIp(String startIp) {
+        this.startIp = startIp;
     }
 
     @Override
-    public String getiPv4Address() {
-        return iPv4Address;
+    public String getEndIp() {
+        return endIp;
     }
 
     @Override
-    public void setiPv4Address(String iPv4Address) {
-        this.iPv4Address = iPv4Address;
-    }
-
-    @Override
-    public int getVlan() {
-        return vlan;
-    }
-
-    @Override
-    public void setVlan(int vlan) {
-        this.vlan = vlan;
+    public void setEndIp(String endIp) {
+        this.endIp = endIp;
     }
 
     @Override
@@ -124,12 +127,11 @@ public class OntapSvmVO implements OntapSvm {
     public String toString() {
         return "OntapSvm[" + id +
                 "-" +
-                name +
+                startIp +
                 "-" +
-                iPv4Address +
+                endIp +
                 "-" +
                 networkId +
-                "-" +
-                vlan;
+                "]";
     }
 }

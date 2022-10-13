@@ -34,7 +34,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.ontapsvm.dao.OntapSvmDao;
+import com.cloud.network.dao.IpReservationDao;
+import org.apache.cloudstack.network.IpReservation;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -207,7 +208,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Inject
     private NetworkService _networkService;
     @Inject
-    OntapSvmDao ontapSvmDao;
+    IpReservationDao ipReservationDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     static Long s_privateOfferingId = null;
@@ -1876,8 +1877,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
         ips.addAll(lbIps);
         // Get ips used by Ontap SVMs
-        List<String> svmIps = ontapSvmDao.getIpsForNetwork(network.getId());
-        ips.addAll(svmIps);
+        List<IpReservationVO> reservations = ipReservationDao.getIpReservationsForNetwork(network.getId());
+        for (IpReservation reservation : reservations) {
+            ips.addAll(reservation.getIpList());
+        }
         return ips;
     }
 

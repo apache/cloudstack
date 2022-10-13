@@ -1,22 +1,21 @@
-package org.apache.cloudstack.ontapsvm;
+package org.apache.cloudstack.network;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
+import java.util.List;
 
-public interface OntapSvm extends Identity, InternalIdentity {
-    String getName();
+public interface IpReservation extends Identity, InternalIdentity {
+    List<String> getIpList();
 
-    void setName(String name);
+    String getStartIp();
 
-    String getiPv4Address();
+    void setStartIp(String startIp);
 
-    void setiPv4Address(String iPv4Address);
+    String getEndIp();
 
-    int getVlan();
-
-    void setVlan(int vlan);
+    void setEndIp(String endIp);
 
     long getNetworkId();
 
