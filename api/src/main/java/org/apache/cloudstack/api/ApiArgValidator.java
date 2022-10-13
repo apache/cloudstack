@@ -29,7 +29,7 @@ public enum ApiArgValidator {
     PositiveNumber,
 
     /**
-     * Validates if the parameter is an UUID with the method {@link UuidUtils#validateUUID(String)}.
+     * Validates if the parameter is an UUID with the method {@link UuidUtils#isUuid(String)}.
      */
     UuidString,
 }

@@ -1709,8 +1709,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
 
+
+        publishVolumeCreationUsageEvent(volume);
+
         return volume;
     }
+
+    public void publishVolumeCreationUsageEvent(Volume volume) {
+        Long diskOfferingId = volume.getDiskOfferingId();
+        Long offeringId = null;
+        if (diskOfferingId != null) {
+            DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+            if (offering != null && !offering.isComputeOnly()) {
+                offeringId = offering.getId();
+            }
+        }
+        UsageEventUtils
+                .publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId,
+                        volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplay());
+
+        s_logger.debug(String.format("Volume [%s] has been successfully recovered, thus a new usage event %s has been published.", volume.getUuid(), EventTypes.EVENT_VOLUME_CREATE));
+    }
+
+
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHANGE_DISK_OFFERING, eventDescription = "Changing disk offering of a volume")
