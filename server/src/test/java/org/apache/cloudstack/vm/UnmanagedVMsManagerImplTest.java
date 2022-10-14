@@ -315,7 +315,7 @@ public class UnmanagedVMsManagerImplTest {
         when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), anyBoolean())).thenReturn(pair);
         when(volumeManager.importVolume(Mockito.any(Volume.Type.class), Mockito.anyString(), Mockito.any(DiskOffering.class), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any(VirtualMachine.class), Mockito.any(VirtualMachineTemplate.class),
-                Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), null)).thenReturn(Mockito.mock(DiskProfile.class));
+                Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.eq(-1))).thenReturn(Mockito.mock(DiskProfile.class));
         when(volumeDao.findByInstance(Mockito.anyLong())).thenReturn(volumes);
         List<UserVmResponse> userVmResponses = new ArrayList<>();
         UserVmResponse userVmResponse = new UserVmResponse();
