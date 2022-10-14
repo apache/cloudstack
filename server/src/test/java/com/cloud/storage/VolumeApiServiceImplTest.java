@@ -461,7 +461,7 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L,-1);
     }
 
     // Positive test - attach data volume, to the vm on kvm hypervisor
@@ -471,7 +471,7 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L);
+        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L,-1);
     }
 
     // volume not Ready
