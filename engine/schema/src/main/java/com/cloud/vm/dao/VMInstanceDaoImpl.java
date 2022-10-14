@@ -129,6 +129,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
 
+    private static final String COUNT_VMS_BY_ZONE_AND_STATE_AND_HOST_TAG = "SELECT COUNT(1) FROM vm_instance vi JOIN service_offering so ON vi.service_offering_id=so.id " +
+            "JOIN vm_template vt ON vi.vm_template_id = vt.id WHERE vi.data_center_id = ? AND vi.state = ? AND vi.removed IS NULL AND (so.host_tag = ? OR vt.template_tag = ?)";
+
     @Inject
     protected HostDao _hostDao;
 
@@ -805,6 +808,28 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("zone", zoneId);
         sc.setParameters("state", state);
         return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Long countByZoneAndStateAndHostTag(long dcId, State state, String hostTag) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(COUNT_VMS_BY_ZONE_AND_STATE_AND_HOST_TAG);
+
+            pstmt.setLong(1, dcId);
+            pstmt.setString(2, String.valueOf(state));
+            pstmt.setString(3, hostTag);
+            pstmt.setString(4, hostTag);
+
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (Exception e) {
+            s_logger.warn(String.format("Error counting vms by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
+        }
+        return 0L;
     }
 
     @Override

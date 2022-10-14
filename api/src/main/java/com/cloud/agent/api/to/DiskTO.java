@@ -40,6 +40,7 @@ public class DiskTO {
     public static final String VMDK = "vmdk";
     public static final String EXPAND_DATASTORE = "expandDatastore";
     public static final String TEMPLATE_RESIGN = "templateResign";
+    public static final String SECRET_CONSUMER_DETAIL = "storageMigrateSecretConsumer";
 
     private DataTO data;
     private Long diskSeq;

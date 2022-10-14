@@ -156,9 +156,14 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
 
+
     @SerializedName(ApiConstants.DISK_SIZE_STRICTNESS)
     @Param(description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.17")
     private Boolean diskSizeStrictness;
+
+    @SerializedName(ApiConstants.ENCRYPT)
+    @Param(description = "Whether disks using this offering will be encrypted on primary storage", since = "4.18")
+    private Boolean encrypt;
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "additional key/value details tied with this disk offering", since = "4.17")
@@ -380,6 +385,8 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     public void setDiskSizeStrictness(Boolean diskSizeStrictness) {
         this.diskSizeStrictness = diskSizeStrictness;
     }
+
+    public void setEncrypt(Boolean encrypt) { this.encrypt = encrypt; }
 
     public void setDetails(Map<String, String> details) {
         this.details = details;

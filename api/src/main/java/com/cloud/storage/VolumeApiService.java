@@ -165,4 +165,6 @@ public interface VolumeApiService {
     boolean validateVolumeSizeInBytes(long size);
 
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
+
+    void publishVolumeCreationUsageEvent(Volume volume);
 }

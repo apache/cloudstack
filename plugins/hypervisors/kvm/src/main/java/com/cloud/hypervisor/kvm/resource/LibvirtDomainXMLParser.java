@@ -28,6 +28,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -191,6 +192,15 @@ public class LibvirtDomainXMLParser {
                         Long iopsWriteRateMaxLength = Long.parseLong(iopsWriteRateMaxLengthStr);
                         def.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
                     }
+                }
+
+                NodeList encryption = disk.getElementsByTagName("encryption");
+                if (encryption.getLength() != 0) {
+                    Element encryptionElement = (Element) encryption.item(0);
+                    String passphraseUuid = getAttrValue("secret", "uuid", encryptionElement);
+                    QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(encryptionElement.getAttribute("format"));
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(passphraseUuid, encryptFormat);
+                    def.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
 
                 diskDefs.add(def);

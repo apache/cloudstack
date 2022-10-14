@@ -332,6 +332,22 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
+    private String userData;
+
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.0")
+    private String userDataId;
+
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.0")
+    private String userDataName;
+
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
+    private String userDataPolicy;
+
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0")
+    private String userDataDetails;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
@@ -602,6 +618,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getServiceState() {
         return serviceState;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public void setIsDynamicallyScalable(Boolean isDynamicallyScalable) {
@@ -952,4 +972,41 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
     }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    public String getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(String userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public void setUserDataName(String userDataName) {
+        this.userDataName = userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public void setUserDataPolicy(String userDataPolicy) {
+        this.userDataPolicy = userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
+    }
+
 }
