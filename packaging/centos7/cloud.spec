@@ -554,7 +554,7 @@ fi
 
 mkdir -p /usr/local/libexec
 if [ ! -f "/usr/local/libexec/sanity-check-last-id" ]; then
-    echo 1 >> /usr/local/libexec/sanity-check-last-id
+    echo 1 > /usr/local/libexec/sanity-check-last-id
 fi
 chown cloud:cloud /usr/local/libexec/sanity-check-last-id
 
@@ -695,6 +695,9 @@ pip3 install --upgrade urllib3
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Fri Oct 14 2022 Daan Hoogland <daan.hoogland@gmail.com> 4.18.0
+- initialising sanity check pointer file
+
 * Thu Apr 30 2015 Rohit Yadav <bhaisaab@apache.org> 4.6.0
 - Remove awsapi package
 
