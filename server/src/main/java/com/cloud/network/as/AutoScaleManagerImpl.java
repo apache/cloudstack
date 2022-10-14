@@ -2241,7 +2241,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             lastQuiettime = policyTO.getLastQuietTime().getTime();
         }
         long currentTime = (new Date()).getTime();
-        return (currentTime - lastQuiettime) >= quietTime;
+        return (currentTime - lastQuiettime) >= quietTime * 1000L;
     }
 
     protected AutoScalePolicy.Action checkConditionsForPolicy(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScalePolicyTO policyTO, Network.Provider provider) {
