@@ -54,7 +54,7 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
         String dstPath = null;
         KVMStoragePool secondaryPool = null;
         DataTO src = cmd.getSourceTO();
-        TemplateObjectTO dst = (TemplateObjectTO) cmd.getDestinationTO();
+        DataTO dst = cmd.getDestinationTO();
 
         try {
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -106,7 +106,10 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
 
             final QemuImg qemu = new QemuImg(cmd.getWaitInMillSeconds());
             StorPoolStorageAdaptor.resize( Long.toString(srcDisk.getVirtualSize()), dst.getPath());
-            dst.setSize(srcDisk.getVirtualSize());
+
+            if (dst instanceof TemplateObjectTO) {
+                ((TemplateObjectTO) dst).setSize(srcDisk.getVirtualSize());
+            }
 
             dstPath = dst.getPath();
             StorPoolStorageAdaptor.attachOrDetachVolume("attach", cmd.getObjectType(), dstPath);
