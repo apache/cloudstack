@@ -30,7 +30,13 @@ public class UuidUtils {
         return uuid.substring(0, uuid.indexOf('-'));
     }
 
-    public static boolean validateUUID(String uuid) {
+    /**
+     * Checks if the parameter is a valid UUID (based on {@link UuidUtils#uuidRegex}).
+     * <br/>
+     * Example: 24abcb8f-4211-374f-a2e1-e5c0b7e88a2d -> true
+     *          24abcb8f4211374fa2e1e5c0b7e88a2dda23 -> false
+     */
+    public static boolean isUuid(String uuid) {
         return uuidRegex.matches(uuid);
     }
 
@@ -49,7 +55,7 @@ public class UuidUtils {
                 .append(noHyphen.substring(16, 20)).append("-")
                 .append(noHyphen.substring(20, 32));
         String uuid = stringBuilder.toString();
-        if (!validateUUID(uuid)) {
+        if (!isUuid(uuid)) {
             throw new CloudRuntimeException("Error generating UUID");
         }
         return uuid;

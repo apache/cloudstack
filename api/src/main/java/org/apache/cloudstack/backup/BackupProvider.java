@@ -79,10 +79,11 @@ public interface BackupProvider {
 
     /**
      * Delete an existing backup
-     * @param backup
+     * @param backuo The backup to exclude
+     * @param forced Indicates if backup will be force removed or not
      * @return
      */
-    boolean deleteBackup(Backup backup);
+    boolean deleteBackup(Backup backup, boolean forced);
 
     /**
      * Restore VM from backup
