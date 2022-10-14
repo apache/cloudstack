@@ -141,6 +141,7 @@ public class CreateNetworkOfferingTest extends TestCase {
         NetworkOfferingVO off =
                 configMgr.createNetworkOffering("shared", "shared", TrafficType.Guest, null, false, Availability.Optional, 200, null, false, Network.GuestType.Shared,
                     false, null, false, null, true, false, null, false, null, true, false, false, null, null, false, null);
+        assertNotNull("Shared network offering with specifyVlan=false was created", off);
     }
 
     @Test
