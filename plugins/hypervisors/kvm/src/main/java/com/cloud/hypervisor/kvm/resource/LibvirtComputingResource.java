@@ -133,6 +133,7 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -1111,7 +1112,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         videoRam = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_VIDEO_RAM);
 
         // Reserve 1GB unless admin overrides
-        dom0MinMem = ByteScaleUtils.mebibytesToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
+        long reservedMemory = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB);
+
+        value = (String)params.get(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.key());
+        long clusterReservedMemoryValue = NumbersUtil.parseInt(value, 1024);
+
+        if (clusterReservedMemoryValue != 1024) {
+            reservedMemory = clusterReservedMemoryValue;
+        }
+
+        dom0MinMem = ByteScaleUtils.mebibytesToBytes(reservedMemory);
+
 
         dom0MinCpuCores = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_CPU_CORE_COUNT);
 
@@ -1453,6 +1464,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    private void updateDom0MinMem(PropertiesStorage storage, final Map<String, String> params) {
+        long value = Long.parseLong(params.get(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.key()));
+        s_logger.info("Reserved memory for host is " + value + "MB");
+        dom0MinMem = ByteScaleUtils.mebibytesToBytes(value);
+        if (!StringUtils.isEmpty(String.valueOf(value))) {
+            storage.persist(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.key(), String.valueOf(value));
+        }
+    }
+
     public boolean configureHostParams(final Map<String, String> params) {
         final File file = PropertiesUtil.findConfigFile("agent.properties");
         if (file == null) {
@@ -1468,7 +1488,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (params.get(Config.MigrateWait.toString()) != null) {
-            String value = (String)params.get(Config.MigrateWait.toString());
+            String value = (String) params.get(Config.MigrateWait.toString());
             Integer intValue = NumbersUtil.parseInt(value, -1);
             storage.persist("vm.migrate.wait", String.valueOf(intValue));
             migrateWait = intValue;
@@ -1476,6 +1496,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()) != null) {
             isTungstenEnabled = Boolean.parseBoolean(params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()));
+        }
+
+        if (params.get(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.key()) != null) {
+            updateDom0MinMem(storage, params);
         }
 
         return true;
