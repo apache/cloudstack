@@ -23,6 +23,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeDetailVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -302,45 +306,83 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo) {
         Map<String, SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId());
 
+        boolean result = false;
         for (var infoEntry : snapshotInfos.entrySet()) {
-            if (!deleteSnapshotInfo(infoEntry.getValue(), infoEntry.getKey(), snapshotVo)) {
-                return false;
+            if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(infoEntry.getValue(), infoEntry.getKey(), snapshotVo), false)) {
+                result = true;
             }
         }
 
-        return true;
+        return result;
     }
 
     /**
      * Destroys the snapshot entry and file.
      * @return true if destroy successfully, else false.
      */
-    protected boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, String storage, SnapshotVO snapshotVo) {
+    protected Boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, String storage, SnapshotVO snapshotVo) {
         if (snapshotInfo == null) {
-            s_logger.debug(String.format("Could not find %s entry on a %s. Skipping deletion on %s.", snapshotVo, storage, storage));
-            return true;
+            s_logger.debug(String.format("Could not find %s entry on %s. Skipping deletion on %s.", snapshotVo, storage, storage));
+            return SECONDARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER.equals(storage) ? null : true;
         }
 
         DataStore dataStore = snapshotInfo.getDataStore();
-        storage = String.format("%s {uuid: \"%s\", name: \"%s\"}", storage, dataStore.getUuid(), dataStore.getName());
+        String storageToString = String.format("%s {uuid: \"%s\", name: \"%s\"}", storage, dataStore.getUuid(), dataStore.getName());
 
         try {
             SnapshotObject snapshotObject = castSnapshotInfoToSnapshotObject(snapshotInfo);
             snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
 
-            if (deleteSnapshotChain(snapshotInfo, storage)) {
+            if (SECONDARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER.equals(storage)) {
+
+                verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
+
+                if (deleteSnapshotChain(snapshotInfo, storageToString)) {
+                    s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
+                } else {
+                    s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
+                        storageToString));
+                }
+
                 snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
-                s_logger.debug(String.format("%s was deleted on %s.", snapshotVo, storage));
+                return true;
+            } else if (deleteSnapshotInPrimaryStorage(snapshotInfo, snapshotVo, storageToString, snapshotObject)) {
                 return true;
             }
 
+            s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
             snapshotObject.processEvent(Snapshot.Event.OperationFailed);
-            s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storage));
         } catch (NoTransitionException ex) {
-            s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storage, ex.getMessage()), ex);
+            s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }
 
         return false;
+    }
+
+    protected boolean deleteSnapshotInPrimaryStorage(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo, String storageToString, SnapshotObject snapshotObject) throws NoTransitionException {
+        try {
+            if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
+                snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
+                s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
+                return true;
+            }
+        } catch (CloudRuntimeException ex) {
+            s_logger.warn(String.format("Unable do delete snapshot %s on %s due to [%s]. The reference will be marked as 'Destroying' for future garbage collecting.",
+                    snapshotVo, storageToString, ex.getMessage()), ex);
+        }
+        return false;
+    }
+
+    protected void verifyIfTheSnapshotIsBeingUsedByAnyVolume(SnapshotObject snapshotObject) throws NoTransitionException {
+        List<VolumeDetailVO> volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotObject.getSnapshotId()), null);
+        if (CollectionUtils.isEmpty(volumesFromSnapshot)) {
+            return;
+        }
+
+        snapshotObject.processEvent(Snapshot.Event.OperationFailed);
+        throw new CloudRuntimeException(String.format("Unable to delete snapshot [%s] because it is being used by the following volumes: %s.",
+            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(snapshotObject.getSnapshotVO(), "id", "uuid", "volumeId", "name"),
+            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumesFromSnapshot, "resourceId")));
     }
 
     /**
