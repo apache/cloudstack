@@ -40,6 +40,16 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
     private UserAccountDao _userAccountDao;
 
     @Override
+    public String getName() {
+        return "google";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Google user two factor authentication provider Plugin";
+    }
+
+    @Override
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException {
         String expectedCode = get2FACode(get2FAKey(userAccount));
         if (expectedCode.equals(code)) {

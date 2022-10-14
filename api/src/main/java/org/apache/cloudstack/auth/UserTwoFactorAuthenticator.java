@@ -22,6 +22,22 @@ import com.cloud.utils.component.Adapter;
 
 public interface UserTwoFactorAuthenticator extends Adapter {
 
+    /**
+     * Returns the unique name of the provider
+     * @return returns provider name
+     */
+    String getName();
+
+    /**
+     * Returns description about the user 2FA provider plugin
+     * @return returns description
+     */
+    String getDescription();
+
+    /**
+     * verifies the 2FA code provided by user
+     * @return returns description
+     */
     void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException;
 
 }

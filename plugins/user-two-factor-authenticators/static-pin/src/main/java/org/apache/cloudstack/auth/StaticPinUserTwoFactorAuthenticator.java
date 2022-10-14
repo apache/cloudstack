@@ -31,6 +31,16 @@ public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements 
     private UserAccountDao _userAccountDao;
 
     @Override
+    public String getName() {
+        return "staticpin";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Static Pin user two factor authentication provider Plugin";
+    }
+
+    @Override
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException  {
     }
 }

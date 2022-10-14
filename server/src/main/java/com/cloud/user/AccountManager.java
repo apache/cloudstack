@@ -191,7 +191,7 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Boolean> enable2FA = new ConfigKey<Boolean>("Advanced",
             Boolean.class,
             "enable.two.factor.authentication",
-            "true",
+            "false",
             "Determines whether two factor authentication is enabled or not. This can be done at domain level as well",
             true,
             ConfigKey.Scope.Domain);
@@ -199,7 +199,7 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<String> userTwoFactorAuthenticationProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "user.two.factor.authentication.provider.plugin",
             "GOOGLE",
-            "The user two factor authentication provider plugin. Eg. GOOGLE, STATICPIN", true, ConfigKey.Scope.Domain);
+            "The user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
 
     boolean moveUser(long id, Long domainId, Account newAccount);
 
