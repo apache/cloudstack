@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
-import org.apache.cloudstack.backup.networker.api.Backup;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackups;
 import org.apache.cloudstack.backup.networker.api.ProtectionPolicies;
 import org.apache.cloudstack.backup.networker.api.ProtectionPolicy;
@@ -156,7 +155,7 @@ public class NetworkerClient {
         return response;
     }
 
-    public String getBackupPolicyRetentionInterval(String externalId) {
+    public  String getBackupPolicyRetentionInterval(String externalId) {
         try {
             final HttpResponse response = get("/global/protectionpolicies/?q=comment:" + BACKUP_IDENTIFIER);
             checkResponseOK(response);
@@ -169,7 +168,7 @@ public class NetworkerClient {
                 return null;
             }
             for (final ProtectionPolicy protectionPolicy : protectionPolicies.getProtectionPolicies()) {
-                if (protectionPolicy.getResourceId().getId().equals(externalId)) {
+                if ( protectionPolicy.getResourceId().getId().equals(externalId)) {
                     return protectionPolicy.getPolicyProtectionPeriod();
                 }
             }
@@ -223,11 +222,12 @@ public class NetworkerClient {
         String backupJobCriteria;
 
         try {
-            if (saveTime != null) {
+            if ( saveTime != null ) {
                 Instant instant = Instant.ofEpochSecond(Long.parseLong(saveTime));
                 String completionTime = formatterDateTime.format(Date.from(instant));
                 backupJobCriteria = "+and+saveTime:" + "'" + completionTime + "'";
-            } else {
+            }
+            else {
                 backupJobCriteria = "+and+saveTime:" + searchRange;
             }
             final HttpResponse response = get("/global/backups/?q=name:" + vm.getName() + backupJobCriteria);
@@ -237,6 +237,7 @@ public class NetworkerClient {
 
             networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
             NetworkerBackup networkerLatestBackup = new NetworkerBackup();
+
             if (networkerBackups == null || networkerBackups.getBackups() == null || networkerBackups.getCount() == 0) {
                 return null;
             }
@@ -267,6 +268,7 @@ public class NetworkerClient {
         return null;
     }
 
+
     public NetworkerBackup getNetworkerBackupInfo(String backupId) {
         LOG.debug("Trying to get EMC Networker details for backup " + backupId);
         try {
@@ -276,7 +278,7 @@ public class NetworkerClient {
             jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             NetworkerBackups networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
             NetworkerBackup networkerBackup = networkerBackups.getBackups().get(0);
-            if (networkerBackup.getShortId() == null) {
+            if ( networkerBackup.getShortId() == null ) {
                 return null;
             }
             return networkerBackup;
@@ -310,7 +312,7 @@ public class NetworkerClient {
                         backupsTaken.add(backup.getId());
                     }
                 } catch (ParseException e) {
-                    throw new RuntimeException("Failed to parse EMC Networker backup retention time:  " + e);
+                    throw new RuntimeException("Failed to parse EMC Networker backup retention time:  "+ e);
                 }
             }
             return backupsTaken;

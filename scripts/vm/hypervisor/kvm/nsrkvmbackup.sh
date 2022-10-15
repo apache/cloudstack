@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -16,6 +15,7 @@
 ## KIND, either express or implied.  See the License for the
 ## specific language governing permissions and limitations
 ## under the License.
+
 version=0.9.1
 OPTIND=1
 verb=0
@@ -251,5 +251,3 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  backup_domain "$kvmDName" "$snapPrefix$kvmDName"
 
  exit 0
-
-
