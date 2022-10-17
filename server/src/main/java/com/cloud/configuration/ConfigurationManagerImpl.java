@@ -6755,11 +6755,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return allowNullTag;
     }
 
-    private boolean checkNetworkOfferingTags(List<String> pNtwkTags, boolean allowNullTag, String offeringTags) {
-        if ((offeringTags == null && !allowNullTag) || (offeringTags != null && !pNtwkTags.contains(offeringTags))) {
-            return false;
-        }
-        return true;
+    private boolean checkNetworkOfferingTags(List<String> physicalNetworkTags, boolean allowNullTag, String offeringTags) {
+      return (offeringTags != null || allowNullTag) && (offeringTags == null || physicalNetworkTags.contains(offeringTags));
     }
 
     @Override
