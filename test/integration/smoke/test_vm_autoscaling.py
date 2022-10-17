@@ -58,6 +58,7 @@ MAX_MEMBER = 2
 DEFAULT_EXPUNGE_VM_GRACE_PERIOD = 60
 DEFAULT_DURATION = 120
 DEFAULT_INTERVAL = 30
+DEFAULT_QUIETTIME = 60
 NAME_PREFIX = "AS-VmGroup-"
 
 CONFIG_NAME_DISK_CONTROLLER = "vmware.root.disk.controller"
@@ -232,6 +233,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             cls.regular_user_apiclient,
             action='ScaleUp',
             conditionids=','.join([cls.scale_up_condition.id]),
+            quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
 
@@ -239,6 +241,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             cls.regular_user_apiclient,
             action='ScaleDown',
             conditionids=cls.scale_down_condition.id,
+            quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
 
@@ -294,7 +297,8 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         # 15. Get global config
         check_interval_config = Configurations.list(cls.apiclient, name="autoscale.stats.interval")
-        cls.check_interval = check_interval_config[0].value
+        check_interval = check_interval_config[0].value
+        cls.check_interval_seconds = int(int(check_interval)/1000)
 
         # 16. define VMs not be checked
         cls.excluded_vm_ids = []
@@ -469,13 +473,13 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.logger.debug("=== Running test_01_scale_up_verify ===")
 
         # VM count increases from 0 to MIN_MEMBER
-        sleeptime = int(int(self.check_interval)/1000) * 2
+        sleeptime = self.check_interval_seconds * 2 * MIN_MEMBER
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
         # VM count increases from MIN_MEMBER to MAX_MEMBER
-        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        sleeptime = (self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
         self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER)
@@ -563,7 +567,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
         # VM count increases from MAX_MEMBER to MAX_MEMBER+1
-        sleeptime = int(int(self.check_interval)/1000 + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION)
+        sleeptime = self.check_interval_seconds + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION + DEFAULT_QUIETTIME
         self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, 1))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER + 1)
@@ -655,7 +659,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
         # VM count decreases from MAX_MEMBER+1 to MIN_MEMBER+1
-        sleeptime = int(int(self.check_interval)/1000 + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        sleeptime = (self.check_interval_seconds + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION + DEFAULT_QUIETTIME + DEFAULT_EXPUNGE_VM_GRACE_PERIOD) * (MAX_MEMBER - MIN_MEMBER)
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be destroyed ====" % (sleeptime, MAX_MEMBER - MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER+1)
@@ -787,6 +791,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             self.regular_user_apiclient,
             action='ScaleUp',
             conditionids=scale_up_condition_project.id,
+            quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
 
@@ -794,6 +799,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             self.regular_user_apiclient,
             action='ScaleDown',
             conditionids=scale_down_condition_project.id,
+            quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
 
@@ -825,14 +831,14 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.excluded_vm_ids = []
         # VM count increases from 0 to MIN_MEMBER
-        sleeptime = int(int(self.check_interval)/1000) * 2
+        sleeptime = self.check_interval_seconds * 2
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
                                       project_network.id, project.id)
 
         # VM count increases from MIN_MEMBER to MAX_MEMBER
-        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        sleeptime = (self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
         self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
@@ -988,6 +994,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             action='ScaleUp',
             conditionids=','.join([scale_up_condition_1.id, scale_up_condition_3.id,
                                    scale_up_condition_4.id, scale_up_condition_5.id]),
+            quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
 
@@ -995,6 +1002,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             self.regular_user_apiclient,
             action='ScaleDown',
             conditionids=scale_down_condition_vpc.id,
+            quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
 
@@ -1027,13 +1035,13 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.excluded_vm_ids = []
         # VM count increases from 0 to MIN_MEMBER
-        sleeptime = int(int(self.check_interval)/1000) * 2
+        sleeptime = self.check_interval_seconds * 2
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
 
         # VM count increases from MIN_MEMBER to MAX_MEMBER
-        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        sleeptime = (self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
         self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
@@ -1053,7 +1061,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         autoscaling_vmgroup_vpc.enable(self.regular_user_apiclient)
 
         # VM count decreases from MAX_MEMBER to MAX_MEMBER - 1
-        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION)
+        sleeptime = self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_EXPUNGE_VM_GRACE_PERIOD
         self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be destroyed ====" % (sleeptime, 1))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER - 1, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
