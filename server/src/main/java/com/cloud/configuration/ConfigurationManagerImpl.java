@@ -6737,19 +6737,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private boolean allowNetworkOfferingWithNullTag(Long zoneId, List<String> pNtwkTags) {
+    private boolean allowNetworkOfferingWithNullTag(Long zoneId, List<String> allPhysicalNetworkTags) {
         boolean allowNullTag = false;
-        final List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
-        for (final PhysicalNetworkVO pNtwk : pNtwks) {
-            final List<String> pNtwkTag = pNtwk.getTags();
-            if (pNtwkTag == null || pNtwkTag.isEmpty()) {
+        final List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+        for (final PhysicalNetworkVO physicalNetwork : physicalNetworks) {
+            final List<String> physicalNetworkTags = physicalNetwork.getTags();
+            if (CollectionUtils.isEmpty(physicalNetworkTags)) {
                 if (!allowNullTag) {
                     allowNullTag = true;
                 } else {
                     throw new CloudRuntimeException("There are more than 1 physical network with empty tag in the zone id=" + zoneId);
                 }
             } else {
-                pNtwkTags.addAll(pNtwkTag);
+                allPhysicalNetworkTags.addAll(physicalNetworkTags);
             }
         }
         return allowNullTag;

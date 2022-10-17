@@ -4651,7 +4651,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         for (PhysicalNetworkVO physicalNetworkVO : physicalNetworkVOList) {
             List<String> tags = physicalNetworkVO.getTags();
-            if (tags == null || tags.size() == 0){
+            if (CollectionUtils.isEmpty(tags)) {
                 networkWithoutTagCount++;
             }
         }
@@ -4712,7 +4712,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // Check if there are more than 1 physical network with null tags in same traffic type.
         // If so then dont allow to add traffic type.
         List<String> tags = network.getTags();
-        if (tags == null || tags.size() == 0) {
+        if (CollectionUtils.isEmpty(tags)) {
             checkForPhysicalNetworksWithoutTag(network, trafficType);
         }
 
