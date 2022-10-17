@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.cloudstack.storage.image.db;
+package org.apache.cloudstack.storage.datastore.db;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
@@ -25,7 +25,6 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

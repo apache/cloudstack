@@ -29,10 +29,16 @@
                       http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<context:annotation-config />
+
+  <!-- It is doing a granular scanning to avoid a complex injection hierarchy.  -->
 	<context:component-scan
 		base-package="com.cloud.usage, com.cloud.event.dao, com.cloud.user.dao, com.cloud.configuration.dao, com.cloud.alert.dao, com.cloud.domain.dao, org.apache.cloudstack.framework.config.dao, org.apache.cloudstack.quota,
       org.apache.cloudstack.quota.constant, org.apache.cloudstack.quota.dao, org.apache.cloudstack.quota.vo">
 	</context:component-scan>
+
+  <import resource="META-INF/cloudstack/core/spring-engine-schema-core-common-daos-between-management-and-usage-context.xml"/>
+
+	<bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
 
 	<!-- @DB support -->
 	<bean id="transactionContextBuilder" class="com.cloud.utils.db.TransactionContextBuilder" />

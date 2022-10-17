@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -46,8 +47,20 @@ public class QuotaTariffListCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = false, description = "Usage type of the resource")
     private Integer usageType;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "The effective start date on/after which the quota tariff is effective and older tariffs are no longer used for the usage type. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "The start date of the quota tariff. Use yyyy-MM-dd as the date format, "
+            + "e.g. startDate=2009-06-03.")
     private Date effectiveDate;
+
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = false, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g. "
+            + "endDate=2021-11-03.")
+    private Date endDate;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "The name of the quota tariff.")
+    private String name;
+
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, required = false, description = "False will list only not removed quota tariffs. If set to True, we will "
+            + "list all, including the removed ones. The default is false.")
+    private boolean listAll = false;
 
     public QuotaTariffListCmd() {
         super();
@@ -58,10 +71,10 @@ public class QuotaTariffListCmd extends BaseListCmd {
         final Pair<List<QuotaTariffVO>, Integer> result = _responseBuilder.listQuotaTariffPlans(this);
 
         final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
+
+        s_logger.trace(String.format("Adding quota tariffs [%s] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses)));
+
         for (final QuotaTariffVO resource : result.first()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Result desc=" + resource.getDescription() + " date=" + resource.getEffectiveOn() + " val=" + resource.getCurrencyValue());
-            }
             responses.add(_responseBuilder.createQuotaTariffResponse(resource));
         }
 
@@ -91,6 +104,18 @@ public class QuotaTariffListCmd extends BaseListCmd {
 
     public void setUsageType(Integer usageType) {
         this.usageType = usageType;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isListAll() {
+        return listAll;
     }
 
 }
