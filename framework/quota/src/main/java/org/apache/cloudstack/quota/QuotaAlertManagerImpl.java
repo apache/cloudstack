@@ -82,9 +82,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     boolean _smtpDebug = false;
 
-    final static String ACCOUNT_NAME = "accountName";
-    final static String ACCOUNT_USERS = "accountUsers";
-    final static String DOMAIN_NAME = "domainName";
+    static final String ACCOUNT_NAME = "accountName";
+    static final String ACCOUNT_USERS = "accountUsers";
+    static final String DOMAIN_NAME = "domainName";
 
     public QuotaAlertManagerImpl() {
         super();
@@ -212,8 +212,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final Map<String, String> bodyOptionMap = generateOptionMap(account, userNames, accountDomain, balance, usage, emailType, true);
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName() + "domainID"
-                        + accountDomain.getUuid());
+                s_logger.debug(String.format("Sending quota alert with values: accountName [%s], accountID [%s], accountUsers [%s], domainName [%s], domainID [%s].",
+                        account.getAccountName(), account.getUuid(), userNames, accountDomain.getName(), accountDomain.getUuid()));
             }
 
             final StrSubstitutor subjectSubstitutor = new StrSubstitutor(subjectOptionMap);
