@@ -120,13 +120,11 @@ public class Ipv6ServiceImplTest {
     DomainRouterDao domainRouterDao;
     @Mock
     AccountManager accountManager;
-    @Mock
     NetworkModel networkModel = Mockito.mock(NetworkModelImpl.class);
     @Mock
     IPAddressDao ipAddressDao;
     @Mock
     NetworkOrchestrationService networkOrchestrationService;
-
     FirewallManager firewallManager = Mockito.mock(FirewallManager.class);
 
     @InjectMocks
@@ -145,6 +143,7 @@ public class Ipv6ServiceImplTest {
     final String gateway = "fd17:5:8a43:e2a5::1";
     final String macAddress = "1e:00:4c:00:00:03";
     final String ipv6Address = "fd17:5:8a43:e2a5:1c00:4cff:fe00:3"; // Resulting  IPv6 address using SLAAC
+    final Pair<String, String> ipv6DnsPair = new Pair<>("2001:db8::53:1", "2001:db8::53:2");
     public static final long ACCOUNT_ID = 1;
 
     private AccountVO account;
@@ -485,6 +484,7 @@ public class Ipv6ServiceImplTest {
     @Test
     public void testIpv6NetworkUpdateNicIpv6() {
         Mockito.when(networkOfferingDao.isIpv6Supported(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(networkModel.getNetworkIp6Dns(Mockito.any(Network.class), Mockito.any(DataCenter.class))).thenReturn(ipv6DnsPair);
         NicProfile nicProfile = new NicProfile();
         nicProfile.setBroadcastUri(URI.create(vlan));
         nicProfile.setMacAddress(macAddress);
@@ -502,6 +502,7 @@ public class Ipv6ServiceImplTest {
     @Test
     public void testIpv6NetworkFromPlaceholderUpdateNicIpv6() {
         Mockito.when(networkOfferingDao.isIpv6Supported(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(networkModel.getNetworkIp6Dns(Mockito.any(Network.class), Mockito.any(DataCenter.class))).thenReturn(ipv6DnsPair);
         NicProfile nicProfile = new NicProfile();
         nicProfile.setBroadcastUri(URI.create(vlan));
         nicProfile.setMacAddress(macAddress);
@@ -592,10 +593,10 @@ public class Ipv6ServiceImplTest {
 
     @Test
     public void testCheckNetworkIpv6UpgradeForNoIpv6Vlan() {
-        final long physicalNetworkId = 1L;
+        final long zoneId = 1L;
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(DataCenterGuestIpv6PrefixVO.class)));
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        Mockito.when(network.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(network.getVpcId()).thenReturn(null);
         Mockito.when(ipAddressDao.listByAssociatedNetwork(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(IPAddressVO.class)));
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
@@ -610,16 +611,16 @@ public class Ipv6ServiceImplTest {
 
     @Test
     public void testCheckNetworkIpv6UpgradeForNetwork() {
-        final long physicalNetworkId = 1L;
+        final long zoneId = 1L;
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(DataCenterGuestIpv6PrefixVO.class)));
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        Mockito.when(network.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(network.getVpcId()).thenReturn(null);
         Mockito.when(ipAddressDao.listByAssociatedNetwork(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(IPAddressVO.class)));
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
         Mockito.when(vlanVO.getVlanTag()).thenReturn(vlan);
         Mockito.when(vlanDao.findById(Mockito.anyLong())).thenReturn(vlanVO);
-        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(physicalNetworkId, vlan)).thenReturn(List.of(vlanVO));
+        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(zoneId, vlan)).thenReturn(List.of(vlanVO));
         try {
             ipv6Service.checkNetworkIpv6Upgrade(network);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {

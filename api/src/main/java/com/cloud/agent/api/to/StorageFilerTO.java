@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import com.cloud.agent.api.LogLevel;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 
@@ -24,6 +25,7 @@ public class StorageFilerTO {
     String uuid;
     String host;
     String path;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     String userInfo;
     int port;
     StoragePoolType type;

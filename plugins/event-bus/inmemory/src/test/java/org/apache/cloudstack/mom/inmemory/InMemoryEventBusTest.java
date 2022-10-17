@@ -59,7 +59,7 @@ public class InMemoryEventBusTest {
         assertNotNull(uuid);
 
         String uuidStr = uuid.toString();
-        assertTrue(UuidUtils.validateUUID(uuidStr));
+        assertTrue(UuidUtils.isUuid(uuidStr));
         assertTrue(bus.totalSubscribers() == 1);
 
         bus.unsubscribe(uuid, subscriber);
@@ -96,7 +96,7 @@ public class InMemoryEventBusTest {
 
         String uuidStr = uuid.toString();
 
-        assertTrue(UuidUtils.validateUUID(uuidStr));
+        assertTrue(UuidUtils.isUuid(uuidStr));
         assertTrue(bus.totalSubscribers() == 1);
         //
         bus.unsubscribe(uuid, subscriber);
@@ -138,7 +138,7 @@ public class InMemoryEventBusTest {
         assertNotNull(uuid);
 
         String uuidStr = uuid.toString();
-        assertTrue(UuidUtils.validateUUID(uuidStr));
+        assertTrue(UuidUtils.isUuid(uuidStr));
         assertTrue(bus.totalSubscribers() == 1);
 
         bus.publish(event);

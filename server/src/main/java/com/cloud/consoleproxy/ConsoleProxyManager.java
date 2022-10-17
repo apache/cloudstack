@@ -23,39 +23,39 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
-    public static final int DEFAULT_PROXY_CAPACITY = 50;
-    public static final int DEFAULT_STANDBY_CAPACITY = 10;
-    public static final int DEFAULT_PROXY_VM_RAMSIZE = 1024;            // 1G
-    public static final int DEFAULT_PROXY_VM_CPUMHZ = 500;                // 500 MHz
+    int DEFAULT_PROXY_CAPACITY = 50;
+    int DEFAULT_STANDBY_CAPACITY = 10;
+    int DEFAULT_PROXY_VM_RAMSIZE = 1024;            // 1G
+    int DEFAULT_PROXY_VM_CPUMHZ = 500;                // 500 MHz
 
-    public static final int DEFAULT_PROXY_CMD_PORT = 8001;
-    public static final int DEFAULT_PROXY_VNC_PORT = 0;
-    public static final int DEFAULT_PROXY_URL_PORT = 80;
-    public static final int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;        // 5 minutes
+    int DEFAULT_PROXY_CMD_PORT = 8001;
+    int DEFAULT_PROXY_VNC_PORT = 0;
+    int DEFAULT_PROXY_URL_PORT = 80;
+    int DEFAULT_PROXY_SESSION_TIMEOUT = 300000;        // 5 minutes
 
-    public static final int DEFAULT_NOVNC_PORT = 8080;
+    String ALERT_SUBJECT = "proxy-alert";
+    String CERTIFICATE_NAME = "CPVMCertificate";
 
-    public static final String ALERT_SUBJECT = "proxy-alert";
-    public static final String CERTIFICATE_NAME = "CPVMCertificate";
-
-    public static final ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.default", "true",
+    ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.default", "true",
         "If true, noVNC console will be default console for virtual machines", true);
 
-    public static final ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.sourceip.check.enabled", "false",
+    ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
-    public void setManagementState(ConsoleProxyManagementState state);
+    void setManagementState(ConsoleProxyManagementState state);
 
-    public ConsoleProxyManagementState getManagementState();
+    ConsoleProxyManagementState getManagementState();
 
-    public void resumeLastManagementState();
+    void resumeLastManagementState();
 
-    public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
+    ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
 
-    public boolean stopProxy(long proxyVmId);
+    boolean stopProxy(long proxyVmId);
 
-    public boolean rebootProxy(long proxyVmId);
+    boolean rebootProxy(long proxyVmId);
 
-    public boolean destroyProxy(long proxyVmId);
+    boolean destroyProxy(long proxyVmId);
+
+    int getVncPort();
 
 }

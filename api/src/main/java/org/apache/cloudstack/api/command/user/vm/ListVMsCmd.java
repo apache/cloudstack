@@ -141,6 +141,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             since = "4.17.0")
     private Boolean accumulate;
 
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
+    private Boolean showUserData;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -217,6 +221,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     public Boolean getHaEnabled() {
         return haEnabled;
+    }
+
+    public Boolean getShowUserData() {
+        return this.showUserData;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {

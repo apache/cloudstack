@@ -14,17 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
 
-import org.apache.cloudstack.api.ServerApiException;
+package org.apache.cloudstack.quota.activationrule.presetvariables;
 
-import com.cloud.user.Account;
-import com.cloud.utils.component.Adapter;
+public class Domain extends GenericPresetVariable {
+    private String path;
 
-/**
- * APILimitChecker checks if we should block an API request based on pre-set account based api limit.
- */
-public interface APILimitChecker extends Adapter {
-    // Interface for checking if the account is over its api limit
-    void checkLimit(Account account) throws ServerApiException;
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+        fieldNamesToIncludeInToString.add("path");
+    }
+
 }

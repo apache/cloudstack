@@ -242,6 +242,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.17")
     private Boolean diskOfferingStrictness;
 
+    @Parameter(name = ApiConstants.ENCRYPT_ROOT, type = CommandType.BOOLEAN, description = "VMs using this offering require root volume encryption", since="4.18")
+    private Boolean encryptRoot;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -470,6 +474,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public boolean getDiskOfferingStrictness() {
         return diskOfferingStrictness == null ? false : diskOfferingStrictness;
+    }
+
+    public boolean getEncryptRoot() {
+        if (encryptRoot != null) {
+            return encryptRoot;
+        }
+        return false;
     }
 
     /////////////////////////////////////////////////////

@@ -109,6 +109,8 @@
             value="#{consoleProxyAllocatorsRegistry.registered}" />
     </bean>
 
+    <bean id="consoleAccessManagerImpl" class="org.apache.cloudstack.consoleproxy.ConsoleAccessManagerImpl" />
+
     <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
 
     <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />

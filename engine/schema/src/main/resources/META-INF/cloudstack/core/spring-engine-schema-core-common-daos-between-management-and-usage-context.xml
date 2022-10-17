@@ -1,0 +1,70 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans.xsd
+                      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+                      http://www.springframework.org/schema/context
+                      http://www.springframework.org/schema/context/spring-context.xsd"
+                      >
+
+	<bean id="accountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
+	<bean id="clusterDaoImpl" class="com.cloud.dc.dao.ClusterDaoImpl" />
+	<bean id="clusterDetailsDaoImpl" class="com.cloud.dc.ClusterDetailsDaoImpl" />
+	<bean id="dataCenterDaoImpl" class="com.cloud.dc.dao.DataCenterDaoImpl" />
+	<bean id="dataCenterDetailsDaoImpl" class="com.cloud.dc.dao.DataCenterDetailsDaoImpl" />
+	<bean id="dataCenterIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl" />
+	<bean id="dataCenterLinkLocalIpAddressDaoImpl" class="com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl" />
+	<bean id="dataCenterVnetDaoImpl" class="com.cloud.dc.dao.DataCenterVnetDaoImpl" />
+	<bean id="diskOfferingDaoImpl" class="com.cloud.storage.dao.DiskOfferingDaoImpl" />
+	<bean id="DiskOfferingDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDaoImpl" />
+	<bean id="guestOSDaoImpl" class="com.cloud.storage.dao.GuestOSDaoImpl" />
+	<bean id="hostDaoImpl" class="com.cloud.host.dao.HostDaoImpl" />
+	<bean id="hostDetailsDaoImpl" class="com.cloud.host.dao.HostDetailsDaoImpl" />
+	<bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
+	<bean id="hostPodDaoImpl" class="com.cloud.dc.dao.HostPodDaoImpl" />
+	<bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
+	<bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
+	<bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
+	<bean id="networkOfferingDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" />
+	<bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
+	<bean id="networkOfferingServiceMapDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" />
+	<bean id="nicDaoImpl" class="com.cloud.vm.dao.NicDaoImpl" />
+	<bean id="podVlanDaoImpl" class="com.cloud.dc.dao.PodVlanDaoImpl" />
+	<bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
+	<bean id="resourceTagsDaoImpl" class="com.cloud.tags.dao.ResourceTagsDaoImpl" />
+	<bean id="roleDaoImpl" class="org.apache.cloudstack.acl.dao.RoleDaoImpl" />
+	<bean id="serviceOfferingDaoImpl" class="com.cloud.service.dao.ServiceOfferingDaoImpl" />
+	<bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
+	<bean id="snapshotDaoImpl" class="com.cloud.storage.dao.SnapshotDaoImpl" />
+	<bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDaoImpl" />
+	<bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
+	<bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
+	<bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
+	<bean id="userVmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+	<bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
+	<bean id="vMInstanceDaoImpl" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
+	<bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
+	<bean id="VmTemplateDaoImpl" class="org.apache.cloudstack.quota.dao.VmTemplateDaoImpl" />
+	<bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
+    <bean id="backupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl" />
+</beans>

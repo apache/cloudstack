@@ -530,6 +530,12 @@
                 </a-form-item>
               </a-col>
             </a-row>
+            <a-form-item name="encryptdisk" ref="encryptdisk">
+              <template #label>
+                <tooltip-label :title="$t('label.encrypt')" :tooltip="apiParams.encryptroot.description" />
+              </template>
+              <a-switch v-model:checked="form.encryptdisk" :checked="encryptdisk" @change="val => { encryptdisk = val }" />
+            </a-form-item>
           </span>
           <span v-if="!computeonly">
             <a-form-item>
@@ -651,6 +657,7 @@ export default {
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
+      encryptdisk: false,
       computeonly: true,
       diskOfferingLoading: false,
       diskOfferings: [],
@@ -692,7 +699,8 @@ export default {
         qostype: this.qosType,
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
-        diskofferingstrictness: this.diskofferingstrictness
+        diskofferingstrictness: this.diskofferingstrictness,
+        encryptdisk: this.encryptdisk
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -802,7 +810,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -815,11 +822,9 @@ export default {
       })
     },
     fetchStorageTagData () {
-      const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags', params).then(json => {
+      api('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -831,10 +836,8 @@ export default {
       })
     },
     fetchDeploymentPlannerData () {
-      const params = {}
-      params.listAll = true
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners', params).then(json => {
+      api('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })
@@ -913,7 +916,8 @@ export default {
           offerha: values.offerha === true,
           limitcpuuse: values.limitcpuuse === true,
           dynamicscalingenabled: values.dynamicscalingenabled,
-          diskofferingstrictness: values.diskofferingstrictness
+          diskofferingstrictness: values.diskofferingstrictness,
+          encryptroot: values.encryptdisk
         }
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid

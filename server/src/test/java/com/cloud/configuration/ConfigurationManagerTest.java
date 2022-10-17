@@ -53,6 +53,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -104,6 +106,8 @@ import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.projects.ProjectManager;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -185,6 +189,16 @@ public class ConfigurationManagerTest {
     ConfigurationDao _configDao;
     @Mock
     DiskOfferingVO diskOfferingVOMock;
+    @Mock
+    PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    StoragePoolTagsDao storagePoolTagsDao;
+    @Mock
+    DiskOfferingDao diskOfferingDao;
+    @Mock
+    VolumeVO volumeVO;
+    @Mock
+    StoragePoolVO storagePoolVO;
     @Mock
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
     @Mock
@@ -1021,6 +1035,52 @@ public class ConfigurationManagerTest {
         Mockito.doNothing().when(configurationMgr).updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
         Mockito.verify(configurationMgr, Mockito.times(1)).updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void updateDiskOfferingTagsWithPrimaryStorageTagsEqualNullTestThrowException(){
+        String tags = "tags";
+        List<String> storageTagsNull = new ArrayList<>();
+        List<StoragePoolVO> pools = new ArrayList<>(Arrays.asList(storagePoolVO));
+        List<VolumeVO> volumes = new ArrayList<>(Arrays.asList(volumeVO));
+
+        Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
+        Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsNull);
+        Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
+        Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
+
+        this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void updateDiskOfferingTagsWithPrimaryStorageMissingTagsTestThrowException(){
+        String tags = "tag1,tag2";
+        List<String> storageTagsWithMissingTag = new ArrayList<>(Arrays.asList("tag1"));
+        List<StoragePoolVO> pools = new ArrayList<>(Arrays.asList(storagePoolVO));
+        List<VolumeVO> volumes = new ArrayList<>(Arrays.asList(volumeVO));
+
+        Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
+        Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsWithMissingTag);
+        Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
+        Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
+
+        this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+    }
+
+    @Test
+    public void updateDiskOfferingTagsWithPrimaryStorageWithCorrectTagsTestSuccess(){
+        String tags = "tag1,tag2";
+        List<String> storageTagsWithCorrectTags = new ArrayList<>(Arrays.asList("tag1","tag2"));
+        List<StoragePoolVO> pools = new ArrayList<>(Arrays.asList(storagePoolVO));
+        List<VolumeVO> volumes = new ArrayList<>(Arrays.asList(volumeVO));
+
+        Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
+        Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsWithCorrectTags);
+        Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
+        Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
+
+        this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        Mockito.verify(diskOfferingVOMock, Mockito.times(1)).setTags(tags);
     }
 
     @Test(expected = IllegalArgumentException.class)

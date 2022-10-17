@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
@@ -36,6 +37,7 @@ import com.cloud.utils.Pair;
 
 public interface VpcService {
 
+    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException;
     /**
      * Persists VPC record in the database
      *
@@ -50,7 +52,8 @@ public interface VpcService {
      * @return
      * @throws ResourceAllocationException TODO
      */
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain,
+                         String dns1, String dns2, String ip6Dns1, String ip6Dns2, Boolean displayVpc)
             throws ResourceAllocationException;
 
     /**

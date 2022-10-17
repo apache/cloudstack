@@ -1805,12 +1805,13 @@ public class ApiDBUtils {
         return s_domainRouterJoinDao.newDomainRouterView(vr);
     }
 
-    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, null, caller);
     }
 
-    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Boolean accumulateStats,
+            Boolean showUserData, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, showUserData, caller);
     }
 
     public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {

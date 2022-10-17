@@ -34,6 +34,8 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -79,6 +81,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -119,6 +122,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
@@ -165,6 +169,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao = null;
     @Inject
@@ -2543,7 +2549,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    public List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                          String vmName, String vmHostName, long vmId, String vmUuid,
                                          String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
 
@@ -2551,6 +2557,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final String zoneName = dcVo.getName();
 
         IPAddressVO publicIp = _ipAddressDao.findByAssociatedVmId(vmId);
+        VirtualMachine vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("Cannot generate VM instance data, no VM exists by ID: %d", vmId));
+        }
 
         final List<String[]> vmData = new ArrayList<String[]>();
 
@@ -2561,6 +2571,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
+
+        addUserDataDetailsToCommand(vmData, userDataDetails);
 
         String publicIpAddress = guestIpAddress;
         String publicHostName = StringUtils.unicodeEscape(vmHostName);
@@ -2619,7 +2631,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             vmData.add(new String[]{PASSWORD_DIR, PASSWORD_FILE, password});
         }
         vmData.add(new String[]{METATDATA_DIR, HYPERVISOR_HOST_NAME_FILE, hostname});
+
+        Domain domain = _domainDao.findById(vm.getDomainId());
+        if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
+            s_logger.debug("Adding domain info to cloud metadata");
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_FILE, domain.getName()});
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_ID_FILE, domain.getUuid()});
+        }
+
         return vmData;
+    }
+
+    protected void addUserDataDetailsToCommand(List<String[]> vmData, String userDataDetails) {
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                String key = entry[0].trim();
+                String value = entry[1].trim();
+                vmData.add(new String[]{METATDATA_DIR, key, StringUtils.unicodeEscape(value)});
+            }
+        }
     }
 
     @Override
@@ -2636,5 +2670,47 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public String getValidNetworkCidr(Network guestNetwork) {
         String networkCidr = guestNetwork.getNetworkCidr();
         return networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getDns1())) {
+            return new Pair<>(network.getDns1(), network.getDns2());
+        }
+        return new Pair<>(zone.getDns1(), zone.getDns2());
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getIp6Dns1())) {
+            return new Pair<>(network.getIp6Dns1(), network.getIp6Dns2());
+        }
+        return new Pair<>(zone.getIp6Dns1(), zone.getIp6Dns2());
+    }
+
+    @Override
+    public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
+            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
+        }
+    }
+
+    @Override
+    public void verifyIp6DnsPair(String ip6Dns1, String ip6Dns2) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
+        }
     }
 }
