@@ -27,17 +27,24 @@ import java.util.List;
 @Component
 public class TungstenSecurityGroupRuleDaoImpl extends GenericDaoBase<TungstenSecurityGroupRuleVO, Long>
     implements TungstenSecurityGroupRuleDao {
+    private static final String ID = "id";
+    private static final String UUID = "uuid";
+    private static final String SECURITY_GROUP_ID = "security_group_id";
+    private static final String RULE_TYPE = "rule_type";
+    private static final String RULE_TARGET = "rule_target";
+    private static final String ETHER_TYPE = "ether_type";
+    private static final String DEFAULT_RULE = "default_rule";
     protected final SearchBuilder<TungstenSecurityGroupRuleVO> allFieldsSearch;
 
     protected TungstenSecurityGroupRuleDaoImpl() {
         allFieldsSearch = createSearchBuilder();
-        allFieldsSearch.and("id", allFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("uuid", allFieldsSearch.entity().getUuid(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("security_group_id", allFieldsSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("rule_type", allFieldsSearch.entity().getRuleType(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("rule_target", allFieldsSearch.entity().getRuleTarget(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("ether_type", allFieldsSearch.entity().getEtherType(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("default_rule", allFieldsSearch.entity().isDefaultRule(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(ID, allFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(UUID, allFieldsSearch.entity().getUuid(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(SECURITY_GROUP_ID, allFieldsSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(RULE_TYPE, allFieldsSearch.entity().getRuleType(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(RULE_TARGET, allFieldsSearch.entity().getRuleTarget(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(ETHER_TYPE, allFieldsSearch.entity().getEtherType(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(DEFAULT_RULE, allFieldsSearch.entity().isDefaultRule(), SearchCriteria.Op.EQ);
         allFieldsSearch.done();
     }
 
@@ -45,10 +52,10 @@ public class TungstenSecurityGroupRuleDaoImpl extends GenericDaoBase<TungstenSec
     public TungstenSecurityGroupRuleVO findDefaultSecurityRule(final long securityGroupId, final String ruleType
     , final String etherType) {
         SearchCriteria<TungstenSecurityGroupRuleVO> searchCriteria = allFieldsSearch.create();
-        searchCriteria.setParameters("security_group_id", securityGroupId);
-        searchCriteria.setParameters("rule_type", ruleType);
-        searchCriteria.setParameters("ether_type", etherType);
-        searchCriteria.setParameters("default_rule", true);
+        searchCriteria.setParameters(SECURITY_GROUP_ID, securityGroupId);
+        searchCriteria.setParameters(RULE_TYPE, ruleType);
+        searchCriteria.setParameters(ETHER_TYPE, etherType);
+        searchCriteria.setParameters(DEFAULT_RULE, true);
         return findOneBy(searchCriteria);
     }
 
@@ -56,16 +63,16 @@ public class TungstenSecurityGroupRuleDaoImpl extends GenericDaoBase<TungstenSec
     public TungstenSecurityGroupRuleVO findBySecurityGroupAndRuleTypeAndRuleTarget(final long securityGroupId,
         final String ruleType, final String ruleTarget) {
         SearchCriteria<TungstenSecurityGroupRuleVO> searchCriteria = allFieldsSearch.create();
-        searchCriteria.setParameters("security_group_id", securityGroupId);
-        searchCriteria.setParameters("rule_type", ruleType);
-        searchCriteria.setParameters("rule_target", ruleTarget);
+        searchCriteria.setParameters(SECURITY_GROUP_ID, securityGroupId);
+        searchCriteria.setParameters(RULE_TYPE, ruleType);
+        searchCriteria.setParameters(RULE_TARGET, ruleTarget);
         return findOneBy(searchCriteria);
     }
 
     @Override
     public List<TungstenSecurityGroupRuleVO> listByRuleTarget(final String ruleTarget) {
         SearchCriteria<TungstenSecurityGroupRuleVO> searchCriteria = allFieldsSearch.create();
-        searchCriteria.setParameters("rule_target", ruleTarget);
+        searchCriteria.setParameters(RULE_TARGET, ruleTarget);
         return listBy(searchCriteria);
     }
 }

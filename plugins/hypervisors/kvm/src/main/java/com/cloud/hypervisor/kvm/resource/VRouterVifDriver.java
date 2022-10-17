@@ -18,10 +18,10 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.TungstenUtils;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 import org.libvirt.LibvirtException;
 
 import java.io.File;
@@ -31,7 +31,6 @@ import javax.naming.ConfigurationException;
 
 public class VRouterVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(VRouterVifDriver.class);
-    private int timeout;
     private String createTapDeviceScript;
     private String deleteTapDeviceScript;
 
@@ -42,9 +41,6 @@ public class VRouterVifDriver extends VifDriverBase {
 
         String tungstenScriptsDir = (String) params.get("tungsten.scripts.dir");
         tungstenScriptsDir = tungstenScriptsDir == null ? _libvirtComputingResource.getDefaultTungstenScriptsDir() : tungstenScriptsDir;
-
-        final String value = (String) params.get("scripts.timeout");
-        timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         createTapDeviceScript = Script.findScript(tungstenScriptsDir, "create_tap_device.sh");
         deleteTapDeviceScript = Script.findScript(tungstenScriptsDir, "delete_tap_device.sh");
@@ -65,7 +61,7 @@ public class VRouterVifDriver extends VifDriverBase {
         final String tapDeviceName = TungstenUtils.getTapName(nic.getMac());
         final String script = createTapDeviceScript;
 
-        final Script command = new Script(script, timeout, s_logger);
+        final Script command = new Script(script, Duration.standardSeconds(300), s_logger);
         command.add(tapDeviceName);
 
         final String result = command.execute();
@@ -84,7 +80,7 @@ public class VRouterVifDriver extends VifDriverBase {
         final String tapDeviceName = TungstenUtils.getTapName(iface.getMacAddress());
         final String script = deleteTapDeviceScript;
 
-        final Script command = new Script(script, timeout, s_logger);
+        final Script command = new Script(script, Duration.standardSeconds(300), s_logger);
         command.add(tapDeviceName);
 
         final String result = command.execute();
@@ -95,14 +91,17 @@ public class VRouterVifDriver extends VifDriverBase {
 
     @Override
     public void attach(final LibvirtVMDef.InterfaceDef iface) {
+        // not use
     }
 
     @Override
     public void detach(final LibvirtVMDef.InterfaceDef iface) {
+        // not use
     }
 
     @Override
     public void createControlNetwork(final String privBrName) {
+        // not use
     }
 
     @Override
@@ -113,5 +112,6 @@ public class VRouterVifDriver extends VifDriverBase {
 
     @Override
     public void deleteBr(NicTO nic) {
+        // not use
     }
 }

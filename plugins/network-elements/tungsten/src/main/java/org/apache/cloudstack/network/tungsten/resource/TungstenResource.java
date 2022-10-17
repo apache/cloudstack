@@ -265,10 +265,10 @@ public class TungstenResource implements ServerResource {
 
     @Override
     public Answer executeRequest(Command cmd) {
-        return executeRequest(cmd, numRetries);
+        return executeRequestGroup1(cmd, numRetries);
     }
 
-    public Answer executeRequest(Command cmd, int numRetries) {
+    private Answer executeRequestGroup1(Command cmd, int numRetries) {
         if (cmd instanceof ReadyCommand) {
             return executeRequest((ReadyCommand) cmd);
         } else if (cmd instanceof MaintainCommand) {
@@ -295,7 +295,13 @@ public class TungstenResource implements ServerResource {
             return executeRequest((GetTungstenPolicyCommand) cmd);
         } else if (cmd instanceof ClearTungstenNetworkGatewayCommand) {
             return executeRequest((ClearTungstenNetworkGatewayCommand) cmd);
-        } else if (cmd instanceof CreateTungstenFloatingIpPoolCommand) {
+        } else {
+            return executeRequestGroup2(cmd, numRetries);
+        }
+    }
+
+    private Answer executeRequestGroup2(Command cmd, int numRetries) {
+        if (cmd instanceof CreateTungstenFloatingIpPoolCommand) {
             return executeRequest((CreateTungstenFloatingIpPoolCommand) cmd);
         } else if (cmd instanceof CreateTungstenFloatingIpCommand) {
             return executeRequest((CreateTungstenFloatingIpCommand) cmd);
@@ -323,7 +329,13 @@ public class TungstenResource implements ServerResource {
             return executeRequest((CreateTungstenNetworkLoadbalancerCommand) cmd);
         } else if (cmd instanceof UpdateLoadBalancerServiceInstanceCommand) {
             return executeRequest((UpdateLoadBalancerServiceInstanceCommand) cmd, numRetries);
-        } else if (cmd instanceof DeleteTungstenLoadBalancerCommand) {
+        } else {
+            return executeRequestGroup3(cmd, numRetries);
+        }
+    }
+
+    private Answer executeRequestGroup3(Command cmd, int numRetries) {
+        if (cmd instanceof DeleteTungstenLoadBalancerCommand) {
             return executeRequest((DeleteTungstenLoadBalancerCommand) cmd, numRetries);
         } else if (cmd instanceof DeleteTungstenLoadBalancerListenerCommand) {
             return executeRequest((DeleteTungstenLoadBalancerListenerCommand) cmd, numRetries);
@@ -351,7 +363,13 @@ public class TungstenResource implements ServerResource {
             return executeRequest((DeleteTungstenObjectCommand) cmd, numRetries);
         } else if (cmd instanceof AddTungstenNetworkSubnetCommand) {
             return executeRequest((AddTungstenNetworkSubnetCommand) cmd, numRetries);
-        } else if (cmd instanceof RemoveTungstenNetworkSubnetCommand) {
+        } else {
+            return executeRequestGroup4(cmd, numRetries);
+        }
+    }
+
+    private Answer executeRequestGroup4(Command cmd, int numRetries) {
+        if (cmd instanceof RemoveTungstenNetworkSubnetCommand) {
             return executeRequest((RemoveTungstenNetworkSubnetCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenSecurityGroupCommand) {
             return executeRequest((CreateTungstenSecurityGroupCommand) cmd, numRetries);
@@ -379,7 +397,13 @@ public class TungstenResource implements ServerResource {
             return executeRequest((ListTungstenPolicyCommand) cmd, numRetries);
         } else if (cmd instanceof ListTungstenNetworkCommand) {
             return executeRequest((ListTungstenNetworkCommand) cmd, numRetries);
-        } else if (cmd instanceof ListTungstenNicCommand) {
+        } else {
+            return executeRequestGroup5(cmd, numRetries);
+        }
+    }
+
+    private Answer executeRequestGroup5(Command cmd, int numRetries) {
+        if (cmd instanceof ListTungstenNicCommand) {
             return executeRequest((ListTungstenNicCommand) cmd, numRetries);
         } else if (cmd instanceof ListTungstenVmCommand) {
             return executeRequest((ListTungstenVmCommand) cmd, numRetries);
@@ -407,7 +431,13 @@ public class TungstenResource implements ServerResource {
             return executeRequest((RemoveTungstenPolicyCommand) cmd, numRetries);
         } else if (cmd instanceof RemoveTungstenTagCommand) {
             return executeRequest((RemoveTungstenTagCommand) cmd, numRetries);
-        } else if (cmd instanceof CreateTungstenApplicationPolicySetCommand) {
+        } else {
+            return executeRequestGroup6(cmd, numRetries);
+        }
+    }
+
+    private Answer executeRequestGroup6(Command cmd, int numRetries) {
+        if (cmd instanceof CreateTungstenApplicationPolicySetCommand) {
             return executeRequest((CreateTungstenApplicationPolicySetCommand) cmd, numRetries);
         } else if (cmd instanceof CreateTungstenFirewallPolicyCommand) {
             return executeRequest((CreateTungstenFirewallPolicyCommand) cmd, numRetries);
@@ -435,7 +465,13 @@ public class TungstenResource implements ServerResource {
             return executeRequest((DeleteTungstenFirewallRuleCommand) cmd, numRetries);
         } else if (cmd instanceof DeleteTungstenServiceGroupCommand) {
             return executeRequest((DeleteTungstenServiceGroupCommand) cmd, numRetries);
-        } else if (cmd instanceof DeleteTungstenAddressGroupCommand) {
+        } else {
+            return executeRequestGroup7(cmd, numRetries);
+        }
+    }
+
+    private Answer executeRequestGroup7(Command cmd, int numRetries) {
+        if (cmd instanceof DeleteTungstenAddressGroupCommand) {
             return executeRequest((DeleteTungstenAddressGroupCommand) cmd, numRetries);
         } else if (cmd instanceof UpdateTungstenVrouterConfigCommand) {
             return executeRequest((UpdateTungstenVrouterConfigCommand) cmd, numRetries);
@@ -2267,7 +2303,7 @@ public class TungstenResource implements ServerResource {
 
     private Answer retry(Command cmd, int numRetries) {
         s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetries);
-        return executeRequest(cmd, numRetries);
+        return executeRequestGroup1(cmd, numRetries);
     }
 
     @Override
