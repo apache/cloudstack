@@ -35,7 +35,7 @@ import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -81,6 +81,10 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     protected SMTPMailSender mailSender;
 
     boolean _smtpDebug = false;
+
+    final static String ACCOUNT_NAME = "accountName";
+    final static String ACCOUNT_USERS = "accountUsers";
+    final static String DOMAIN_NAME = "domainName";
 
     public QuotaAlertManagerImpl() {
         super();
@@ -249,15 +253,15 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
 
         if (escapeHtml) {
-            optionMap.put("accountName", StringEscapeUtils.escapeHtml(accountVO.getAccountName()));
-            optionMap.put("accountUsers", StringEscapeUtils.escapeHtml(userNames));
-            optionMap.put("domainName", StringEscapeUtils.escapeHtml(domainVO.getName()));
+            optionMap.put(ACCOUNT_NAME, StringEscapeUtils.escapeHtml(accountVO.getAccountName()));
+            optionMap.put(ACCOUNT_USERS, StringEscapeUtils.escapeHtml(userNames));
+            optionMap.put(DOMAIN_NAME, StringEscapeUtils.escapeHtml(domainVO.getName()));
             return optionMap;
         }
 
-        optionMap.put("accountName", accountVO.getAccountName());
-        optionMap.put("accountUsers", userNames);
-        optionMap.put("domainName", domainVO.getName());
+        optionMap.put(ACCOUNT_NAME, accountVO.getAccountName());
+        optionMap.put(ACCOUNT_USERS, userNames);
+        optionMap.put(DOMAIN_NAME, domainVO.getName());
         return optionMap;
     }
 
