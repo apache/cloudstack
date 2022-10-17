@@ -127,7 +127,6 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.dao.VolumeGroupDao;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -245,7 +244,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
 
-    protected boolean backupSnapshotAfterTakingSnapshot = SnapshotManager.BackupSnapshotAfterTakingSnapshot.value();
+    protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
         return _storagePoolAllocators;

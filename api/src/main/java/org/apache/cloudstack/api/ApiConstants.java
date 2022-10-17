@@ -23,6 +23,7 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
     public static final String ACCUMULATE = "accumulate";
+    public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";

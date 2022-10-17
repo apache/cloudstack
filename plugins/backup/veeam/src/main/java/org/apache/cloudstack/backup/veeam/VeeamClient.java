@@ -83,6 +83,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
+    private static final String FAILED_TO_DELETE = "Failed to delete";
 
     private final URI apiURI;
 
@@ -586,7 +587,7 @@ public class VeeamClient {
                 String.format("$job = Get-VBRJob -Name \"%s\"", jobName),
                 "if ($job) { Set-VBRJobSchedule -Job $job -Daily -At \"11:00\" -DailyKind Weekdays }"
         ));
-        return result.first() && !result.second().isEmpty() && !result.second().contains("Failed to delete");
+        return result.first() && !result.second().isEmpty() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public boolean deleteJobAndBackup(final String jobName) {
@@ -598,7 +599,22 @@ public class VeeamClient {
                 "$repo = Get-VBRBackupRepository",
                 "Sync-VBRBackupRepository -Repository $repo"
         ));
-        return result.first() && !result.second().contains("Failed to delete");
+        return result.first() && !result.second().contains(FAILED_TO_DELETE);
+    }
+
+    public boolean deleteBackup(final String restorePointId) {
+        LOG.debug(String.format("Trying to delete restore point [name: %s].", restorePointId));
+        Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
+                String.format("$restorePoint = Get-VBRRestorePoint ^| Where-Object { $_.Id -eq '%s' }", restorePointId),
+                "if ($restorePoint) { Remove-VBRRestorePoint -Oib $restorePoint -Confirm:$false",
+                    "$repo = Get-VBRBackupRepository",
+                    "Sync-VBRBackupRepository -Repository $repo",
+                "} else { ",
+                    " Write-Output \"Failed to delete\"",
+                    " Exit 1",
+                "}"
+        ));
+        return result.first() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {
