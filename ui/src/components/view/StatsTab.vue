@@ -42,7 +42,7 @@
           </a-button>
           <span v-html="formatedPeriod"></span>
         </span>
-        <a-icon class="info-icon" :title="$t('label.see.more.info.shown.charts')" type="info-circle" @click="onClickShowResourceInfoModal('CHART')"/>
+        <InfoCircleOutlinedn class="info-icon" :title="$t('label.see.more.info.shown.charts')" @click="onClickShowResourceInfoModal('CHART')"/>
       </a-col>
     </a-row>
     <div v-if="loaded">
