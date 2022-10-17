@@ -1669,6 +1669,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // dahn 20140310: I was thinking of making this an assert but
         //                as we hardly ever test with asserts I think
         //                we better make sure at runtime.
+        if (_accountMgr.isRootAdmin(caller.getAccountId())) {
+            return;
+        }
         if (network == null) {
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
