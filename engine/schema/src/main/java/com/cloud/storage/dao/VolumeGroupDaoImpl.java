@@ -26,12 +26,15 @@ import com.cloud.utils.db.SearchCriteria;
 
 public class VolumeGroupDaoImpl extends GenericDaoBase<VolumeGroupVO, Long> implements VolumeGroupDao {
     protected final SearchBuilder<VolumeGroupVO> allFieldsSearch;
+    private static final String VOLUME_ID = "volumeId";
+    private static final String VM_ID = "vmId";
+    private static final String GROUP_NUMBER = "groupNumber";
 
     public VolumeGroupDaoImpl(){
         allFieldsSearch = createSearchBuilder();
-        allFieldsSearch.and("vmId", allFieldsSearch.entity().getVmId(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("volumeId", allFieldsSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        allFieldsSearch.and("groupNumber", allFieldsSearch.entity().getGroupNumber(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(VM_ID, allFieldsSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(VOLUME_ID, allFieldsSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        allFieldsSearch.and(GROUP_NUMBER, allFieldsSearch.entity().getGroupNumber(), SearchCriteria.Op.EQ);
         allFieldsSearch.done();
     }
 
@@ -52,15 +55,15 @@ public class VolumeGroupDaoImpl extends GenericDaoBase<VolumeGroupVO, Long> impl
     @Override
     public void deleteVolumeFromGroup(long volumeId) {
         SearchCriteria<VolumeGroupVO> sc = allFieldsSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         expunge(sc);
     }
 
     @Override
     public VolumeGroupVO findByVmAndVolume(long vmId, long volumeId){
         SearchCriteria<VolumeGroupVO> sc = allFieldsSearch.create();
-        sc.setParameters("vmId", vmId);
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VM_ID, vmId);
+        sc.setParameters(VOLUME_ID, volumeId);
         return findOneBy(sc);
     }
 }

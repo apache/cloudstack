@@ -242,7 +242,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private VolumeDetailsDao _volsDetailsDao;
     @Inject
-    private VolumeGroupDao _volsGroupDao;
+    private VolumeGroupDao volsGroupDao;
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -1704,7 +1704,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         try {
             _volsDao.detachVolume(volume.getId());
-            _volsGroupDao.deleteVolumeFromGroup(volume.getId());
+            volsGroupDao.deleteVolumeFromGroup(volume.getId());
             stateTransitTo(volume, Volume.Event.RecoverRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to recover volume" + volume.getId(), e);
@@ -2776,7 +2776,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
-            _volsGroupDao.deleteVolumeFromGroup(volume.getId());
+            volsGroupDao.deleteVolumeFromGroup(volume.getId());
 
             if (answer != null) {
                 String datastoreName = answer.getContextParam("datastoreName");
@@ -4021,7 +4021,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     DiskTO disk = answer.getDisk();
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), disk.getDiskSeq());
-                    _volsGroupDao.addVolumeToGroup(vm.getId(), volumeToAttach.getId(), deviceId,groupNumber);
+                    volsGroupDao.addVolumeToGroup(vm.getId(), volumeToAttach.getId(), deviceId, groupNumber);
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
@@ -4046,7 +4046,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     deviceId = getDeviceId(vm, deviceId);
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
-                    _volsGroupDao.addVolumeToGroup(vm.getId(), volumeToAttach.getId(), deviceId,groupNumber);
+                    volsGroupDao.addVolumeToGroup(vm.getId(), volumeToAttach.getId(), deviceId, groupNumber);
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 

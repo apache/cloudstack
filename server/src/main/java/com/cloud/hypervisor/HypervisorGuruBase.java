@@ -98,7 +98,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     protected HostDao hostDao;
     @Inject
-    private VolumeGroupDao _volumeGroupDao;
+    private VolumeGroupDao volumeGroupDao;
 
     public static ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
@@ -310,7 +310,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     private List<DiskTO> addGroupsToDisks(long vmId, List<DiskTO> disks){
         disks.forEach((DiskTO disk) -> {
-            VolumeGroupVO volumeGroup = _volumeGroupDao.findByVmAndVolume(vmId, disk.getData().getId());
+            VolumeGroupVO volumeGroup = volumeGroupDao.findByVmAndVolume(vmId, disk.getData().getId());
             if(volumeGroup != null){
                 disk.setGroupNumber(volumeGroup.getGroupNumber());
             }

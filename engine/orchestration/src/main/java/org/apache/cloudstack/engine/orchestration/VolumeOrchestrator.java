@@ -235,7 +235,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Inject
     VolumeApiService _volumeApiService;
     @Inject
-    private VolumeGroupDao _volumeGroupDao;
+    private VolumeGroupDao volumeGroupDao;
     PassphraseDao passphraseDao;
 
     @Inject
@@ -2125,7 +2125,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         if(volumeGroup != null){
             int volGroup = volumeGroup;
-            _volumeGroupDao.addVolumeToGroup(vm.getId(), vol.getId(), vol.getDeviceId(), volGroup);
+            volumeGroupDao.addVolumeToGroup(vm.getId(), vol.getId(), vol.getDeviceId(), volGroup);
         }
 
         return toDiskProfile(vol, offering);
@@ -2150,7 +2150,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         s_logger.debug(String.format("Skipping Destroy for the volume [%s] as it is in [%s] state.", volToString, vol.getState().toString()));
                     } else {
                         volService.unmanageVolume(vol.getId());
-                        _volumeGroupDao.deleteVolumeFromGroup(vol.getId());
+                        volumeGroupDao.deleteVolumeFromGroup(vol.getId());
                     }
                 }
             }
