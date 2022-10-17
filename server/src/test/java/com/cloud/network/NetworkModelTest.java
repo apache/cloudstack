@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.junit.Before;
@@ -114,6 +115,8 @@ public class NetworkModelTest {
     private DomainDao domainDao;
     @Mock
     private ProjectDao projectDao;
+    @Mock
+    private AccountManager _accountMgr;
 
     private static final long ZONE_1_ID = 1L;
     private static final long ZONE_2_ID = 2L;

@@ -1665,42 +1665,50 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public void checkNetworkPermissions(Account caller, Network network) {
-        // dahn 20140310: I was thinking of making this an assert but
-        //                as we hardly ever test with asserts I think
-        //                we better make sure at runtime.
+    public final void checkNetworkPermissions(Account caller, Network network) {
         if (_accountMgr.isRootAdmin(caller.getAccountId())) {
-            return;
-        }
-        if (network == null) {
-            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
-        }
-        // Perform account permission check
-        if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
-            AccountVO networkOwner = _accountDao.findById(network.getAccountId());
-            if (networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                    ", network does not have an owner");
-            if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
-                checkProjectNetworkPermissions(caller, networkOwner, network);
-            } else {
-                List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
-                NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
-                if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
-                }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("root admin is permitted to do stuff on every network");
             }
-
         } else {
-            if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
-                DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
-                if (callerDomain == null) {
-                    throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
-                }
-                throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
-                        callerDomain.getUuid());
+            if (network == null) {
+                throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
             }
+            s_logger.info(String.format("Checking permission for account %s (%s) on network %s (%s)", caller.getAccountName(), caller.getUuid(), network.getName(), network.getUuid()));
+            if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
+                checkSharedNetworkPermissions(caller, network);
+
+            } else {
+                checkIsolatedNetworkPermissions(caller, network);
+            }
+        }
+    }
+
+    private void checkSharedNetworkPermissions(Account caller, Network network) {
+        AccountVO networkOwner = _accountDao.findById(network.getAccountId());
+        if (networkOwner == null)
+            throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
+                ", network does not have an owner");
+        if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
+            checkProjectNetworkPermissions(caller, networkOwner, network);
+        } else {
+            List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
+            NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
+            if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
+                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
+                    ", permission denied");
+            }
+        }
+    }
+
+    private void checkIsolatedNetworkPermissions(Account caller, Network network) {
+        if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
+            DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+            if (callerDomain == null) {
+                throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
+            }
+            throw new PermissionDeniedException("Shared network id=" + ((NetworkVO) network).getUuid() + " is not available in domain id=" +
+                    callerDomain.getUuid());
         }
     }
 
