@@ -1938,6 +1938,7 @@ export default {
     },
     deleteScaleUpCondition (counterId) {
       this.scaleUpConditions = this.scaleUpConditions.filter(condition => condition.counterid !== counterId)
+      this.selectedScaleUpPolicy.conditions = this.scaleUpConditions
     },
     addScaleDownCondition () {
       if (!this.newScaleDownCondition.counterid) {
@@ -1980,6 +1981,7 @@ export default {
     },
     deleteScaleDownCondition (counterId) {
       this.scaleDownConditions = this.scaleDownConditions.filter(condition => condition.counterid !== counterId)
+      this.selectedScaleDownPolicy.conditions = this.scaleDownConditions
     },
     updateSshKeyPairs (names) {
       this.form.keypairs = names
