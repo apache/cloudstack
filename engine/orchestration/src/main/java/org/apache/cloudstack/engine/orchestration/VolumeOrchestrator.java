@@ -2123,9 +2123,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setAttached(new Date());
         vol = _volsDao.persist(vol);
 
-        if(volumeGroup != null){
-            int volGroup = volumeGroup;
-            volumeGroupDao.addVolumeToGroup(vm.getId(), vol.getId(), vol.getDeviceId(), volGroup);
+        if (volumeGroup != null) {
+            volumeGroupDao.addVolumeToGroup(vm.getId(), vol.getId(), vol.getDeviceId(), volumeGroup);
         }
 
         return toDiskProfile(vol, offering);
