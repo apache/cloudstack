@@ -2043,51 +2043,62 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
                 "Scaling down AutoScale VM group " + groupId, groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(),
                 true, 0);
-        final long vmId = removeLBrule(asGroup);
-        if (vmId != -1) {
-            long profileId = asGroup.getProfileId();
-
-            // update group-vm mapping
-            autoScaleVmGroupVmMapDao.remove(groupId, vmId);
-            // update last_quietTime
-            List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
-            for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
-                AutoScalePolicyVO vo = autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
-                if (vo.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
-                    vo.setLastQuietTime(new Date());
-                    autoScalePolicyDao.persist(vo);
-                    break;
-                }
-            }
-
-            // Add an Inactive-dummy record to statistics table
-            createInactiveDummyRecord(asGroup.getId());
-
-            // get expungeVmGracePeriod param
-            AutoScaleVmProfileVO asProfile = autoScaleVmProfileDao.findById(profileId);
-            Integer expungeVmGracePeriod = asProfile.getExpungeVmGracePeriod();
-            if (expungeVmGracePeriod > 0) {
-                try {
-                    Thread.sleep(expungeVmGracePeriod * 1000L);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new CloudRuntimeException(String.format("Error while waiting %s seconds to destroy the VM %s", expungeVmGracePeriod, vmId));
-                }
-            }
-            if (destroyVm(vmId)) {
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
-                        String.format("Destroyed VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
-            } else {
+        try {
+            long vmId = -1;
+            try {
+                vmId = removeLBrule(asGroup);
+            } catch (Exception ex) {
+                s_logger.info("Got exception when remove LB rule for a VM in AutoScale VM group %d: " + groupId, ex);
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
-                        String.format("Failed to destroy VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                        String.format("Failed to remove LB rule for a VM in AutoScale VM group %d", groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                throw ex;
             }
-        } else {
-            s_logger.error("Can not remove LB rule for the VM being destroyed. Do nothing more.");
-            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
-                    String.format("Failed to remove LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
-        }
-        if (!autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
-            s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
+            if (vmId != -1) {
+                long profileId = asGroup.getProfileId();
+
+                // update group-vm mapping
+                autoScaleVmGroupVmMapDao.remove(groupId, vmId);
+                // update last_quietTime
+                List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
+                for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
+                    AutoScalePolicyVO vo = autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
+                    if (vo.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
+                        vo.setLastQuietTime(new Date());
+                        autoScalePolicyDao.persist(vo);
+                        break;
+                    }
+                }
+
+                // Add an Inactive-dummy record to statistics table
+                createInactiveDummyRecord(asGroup.getId());
+
+                // get expungeVmGracePeriod param
+                AutoScaleVmProfileVO asProfile = autoScaleVmProfileDao.findById(profileId);
+                Integer expungeVmGracePeriod = asProfile.getExpungeVmGracePeriod();
+                if (expungeVmGracePeriod > 0) {
+                    try {
+                        Thread.sleep(expungeVmGracePeriod * 1000L);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new CloudRuntimeException(String.format("Error while waiting %s seconds to destroy the VM %s", expungeVmGracePeriod, vmId));
+                    }
+                }
+                if (destroyVm(vmId)) {
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
+                            String.format("Destroyed VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                } else {
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
+                            String.format("Failed to destroy VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                }
+            } else {
+                s_logger.error("Can not remove LB rule for the VM being destroyed. Do nothing more.");
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEDOWN,
+                        String.format("Failed to remove LB rule for a VM in AutoScale VM group %d", groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+            }
+        } finally {
+            if (!autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
+                s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
+            }
         }
     }
 
