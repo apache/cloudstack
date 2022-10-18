@@ -184,7 +184,7 @@ class TestScaleVm(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        self.services["disk_offering"]["disksize"] = 8
+        self.services["disk_offering"]["disksize"] = 2
 
         if self.unsupportedHypervisor:
             self.skipTest("Skipping test because unsupported hypervisor\

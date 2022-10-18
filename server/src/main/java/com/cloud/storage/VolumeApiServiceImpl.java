@@ -1767,7 +1767,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
         }
 
-        if (currentSize != newSize || newMaxIops != volume.getMaxIops() || newMinIops != volume.getMinIops()) {
+        if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
             volumeResizeRequired = true;
             validateVolumeReadyStateAndHypervisorChecks(volume, currentSize, newSize);
         }
@@ -1821,6 +1821,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    /**
+     * This method is to compare long values, in miniops and maxiops a or b can be null or 0.
+     * Use this method to treat 0 and null as same
+     *
+     * @param a
+     * @param b
+     * @return true if a and b are equal excluding 0 and null values.
+     */
+    private boolean compareEqualsIncludingNullOrZero(Long a, Long b) {
+        if ((a != null && a == 0 && b == null) || (a == null && b != null && b == 0)) {
+            return true;
+        }
+
+        if (a == b) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
