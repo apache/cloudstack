@@ -30,13 +30,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.quota.QuotaManager;
@@ -56,6 +60,7 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -113,8 +118,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setUsageDiscriminator(tariff.getUsageDiscriminator());
         response.setTariffValue(tariff.getCurrencyValue());
         response.setEffectiveOn(tariff.getEffectiveOn());
-        response.setDescription(tariff.getDescription());
+        response.setUsageTypeDescription(tariff.getUsageTypeDescription());
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        response.setActivationRule(tariff.getActivationRule());
+        response.setName(tariff.getName());
+        response.setEndDate(tariff.getEndDate());
+        response.setDescription(tariff.getDescription());
+        response.setUuid(tariff.getUuid());
+        response.setRemoved(tariff.getRemoved());
         return response;
     }
 
@@ -354,58 +365,119 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
-        Pair<List<QuotaTariffVO>, Integer> result;
-        Date effectiveDate = cmd.getEffectiveDate() == null ? new Date() : cmd.getEffectiveDate();
-        Date adjustedEffectiveDate = _quotaService.computeAdjustedTime(effectiveDate);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Effective datec=" + effectiveDate + " quotatype=" + cmd.getUsageType() + " Adjusted date=" + adjustedEffectiveDate);
-        }
-        if (cmd.getUsageType() != null) {
-            QuotaTariffVO tariffPlan = _quotaTariffDao.findTariffPlanByUsageType(cmd.getUsageType(), adjustedEffectiveDate);
-            if (tariffPlan != null) {
-                List<QuotaTariffVO> list = new ArrayList<>();
-                list.add(tariffPlan);
-                result = new Pair<>(list, list.size());
-            } else {
-                result = new Pair<>(new ArrayList<>(), 0);
-            }
-        } else {
-            result = _quotaTariffDao.listAllTariffPlans(adjustedEffectiveDate, cmd.getStartIndex(), cmd.getPageSizeVal());
-        }
-        return result;
+        Date startDate = _quotaService.computeAdjustedTime(cmd.getEffectiveDate());
+        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Integer usageType = cmd.getUsageType();
+        String name = cmd.getName();
+        boolean listAll = cmd.isListAll();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        s_logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+                "endDate", "listAll", "name", "page", "pageSize", "usageType")));
+
+        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
     }
 
     @Override
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
-        final int quotaType = cmd.getUsageType();
-        final BigDecimal quotaCost = new BigDecimal(cmd.getValue());
-        final Date effectiveDate = _quotaService.computeAdjustedTime(cmd.getStartDate());
-        final Date now = _quotaService.computeAdjustedTime(new Date());
-        // if effective date is in the past return error
-        if (effectiveDate.compareTo(now) < 0) {
-            throw new InvalidParameterValueException("Incorrect effective date for tariff " + effectiveDate + " is less than now " + now);
-        }
-        QuotaTypes quotaConstant = QuotaTypes.listQuotaTypes().get(quotaType);
-        if (quotaConstant == null) {
-            throw new InvalidParameterValueException("Quota type does not exists " + quotaType);
+        String name = cmd.getName();
+        Double value = cmd.getValue();
+        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        String description = cmd.getDescription();
+        String activationRule = cmd.getActivationRule();
+        Date now = _quotaService.computeAdjustedTime(new Date());
+
+        warnQuotaTariffUpdateDeprecatedFields(cmd);
+
+        QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
+
+        if (currentQuotaTariff == null) {
+            throw new InvalidParameterValueException(String.format("There is no quota tariffs with name [%s].", name));
         }
 
-        QuotaTariffVO result = null;
-        result = new QuotaTariffVO(quotaType);
-        result.setUsageName(quotaConstant.getQuotaName());
-        result.setUsageUnit(quotaConstant.getQuotaUnit());
-        result.setUsageDiscriminator(quotaConstant.getDiscriminator());
-        result.setCurrencyValue(quotaCost);
-        result.setEffectiveOn(effectiveDate);
-        result.setUpdatedOn(now);
-        result.setUpdatedBy(cmd.getEntityOwnerId());
+        Date currentQuotaTariffStartDate = currentQuotaTariff.getEffectiveOn();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Updating Quota Tariff Plan: New value=%s for resource type=%d effective on date=%s", quotaCost, quotaType, effectiveDate));
+        currentQuotaTariff.setRemoved(now);
+
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
+                activationRule);
+        _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
+        return newQuotaTariff;
+    }
+
+    protected void warnQuotaTariffUpdateDeprecatedFields(QuotaTariffUpdateCmd cmd) {
+        String warnMessage = "The parameter 's%s' for API 'quotaTariffUpdate' is no longer needed and it will be removed in future releases.";
+
+        if (cmd.getStartDate() != null) {
+            s_logger.warn(String.format(warnMessage,"startdate"));
         }
-        _quotaTariffDao.addQuotaTariff(result);
 
-        return result;
+        if (cmd.getUsageType() != null) {
+            s_logger.warn(String.format(warnMessage,"usagetype"));
+        }
+    }
+
+    protected QuotaTariffVO persistNewQuotaTariff(QuotaTariffVO currentQuotaTariff, String name, int usageType, Date startDate, Long entityOwnerId, Date endDate, Double value,
+            String description, String activationRule) {
+
+        QuotaTariffVO newQuotaTariff = getNewQuotaTariffObject(currentQuotaTariff, name, usageType);
+
+        newQuotaTariff.setEffectiveOn(startDate);
+        newQuotaTariff.setUpdatedOn(startDate);
+        newQuotaTariff.setUpdatedBy(entityOwnerId);
+
+        validateEndDateOnCreatingNewQuotaTariff(newQuotaTariff, startDate, endDate);
+        validateValueOnCreatingNewQuotaTariff(newQuotaTariff, value);
+        validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setDescription, description);
+        validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setActivationRule, activationRule);
+
+        _quotaTariffDao.addQuotaTariff(newQuotaTariff);
+        return newQuotaTariff;
+    }
+
+    protected QuotaTariffVO getNewQuotaTariffObject(QuotaTariffVO currentQuotaTariff, String name, int usageType) {
+        if (currentQuotaTariff != null) {
+            return new QuotaTariffVO(currentQuotaTariff);
+        }
+
+        QuotaTariffVO newQuotaTariff = new QuotaTariffVO();
+
+        if (!newQuotaTariff.setUsageTypeData(usageType)) {
+            throw new InvalidParameterValueException(String.format("There is no usage type with value [%s].", usageType));
+        }
+
+        newQuotaTariff.setName(name);
+        return newQuotaTariff;
+    }
+
+    protected void validateStringsOnCreatingNewQuotaTariff(Consumer<String> method, String value){
+        if (value != null) {
+            method.accept(value.isBlank() ? null : value);
+        }
+    }
+
+    protected void validateValueOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Double value) {
+        if (value != null) {
+            newQuotaTariff.setCurrencyValue(BigDecimal.valueOf(value));
+        }
+    }
+
+    protected void validateEndDateOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Date startDate, Date endDate) {
+        if (endDate == null) {
+            return;
+        }
+
+        if (endDate.compareTo(startDate) < 0) {
+            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than the start date [%s]", endDate, startDate));
+        }
+
+        Date now = _quotaService.computeAdjustedTime(new Date());
+        if (endDate.compareTo(now) < 0) {
+            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].", endDate, now));
+        }
+
+        newQuotaTariff.setEndDate(endDate);
     }
 
     @Override
@@ -546,4 +618,39 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return Date.from(nextDayLocalDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
     }
 
+    @Override
+    public QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd) {
+        String name = cmd.getName();
+        int usageType = cmd.getUsageType();
+        Date startDate = cmd.getStartDate();
+        Date now = new Date();
+        startDate = _quotaService.computeAdjustedTime(startDate == null ? now : startDate);
+        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Double value = cmd.getValue();
+        String description = cmd.getDescription();
+        String activationRule = cmd.getActivationRule();
+
+        QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
+
+        if (currentQuotaTariff != null) {
+            throw new InvalidParameterValueException(String.format("A quota tariff with name [%s] already exist.", name));
+        }
+
+        if (startDate.compareTo(now) < 0) {
+            throw new InvalidParameterValueException(String.format("The quota tariff's start date [%s] cannot be less than now [%s]", startDate, now));
+        }
+
+        return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+    }
+
+    public boolean deleteQuotaTariff(String quotaTariffUuid) {
+        QuotaTariffVO quotaTariff = _quotaTariffDao.findByUuid(quotaTariffUuid);
+
+        if (quotaTariff == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Quota tariff with the provided UUID does not exist.");
+        }
+
+        quotaTariff.setRemoved(_quotaService.computeAdjustedTime(new Date()));
+        return _quotaTariffDao.updateQuotaTariff(quotaTariff);
+    }
 }

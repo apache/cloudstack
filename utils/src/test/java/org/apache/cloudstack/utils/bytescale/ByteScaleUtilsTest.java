@@ -31,9 +31,16 @@ public class ByteScaleUtilsTest extends TestCase {
 
     @Test
     public void validateBytesToKib() {
-        long kib = 1024L * 3000L;
+        long kib = 3000L;
         long b = 1024 * kib;
         assertEquals(kib, ByteScaleUtils.bytesToKib(b));
+    }
+
+    @Test
+    public void validateBytesToMib() {
+        long mib = 3000L;
+        long b = 1024L * 1024L * mib;
+        assertEquals(mib, ByteScaleUtils.bytesToMib(b));
     }
 
     @Test
