@@ -69,7 +69,7 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
-          name: 'statistics',
+          name: 'metrics',
           resourceType: 'Volume',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
           show: (record) => { return store.getters.features.instancesdisksstatsretentionenabled }
