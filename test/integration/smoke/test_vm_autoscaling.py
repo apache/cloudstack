@@ -52,6 +52,7 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
+from marvin.lib.utils import wait_until
 
 MIN_MEMBER = 1
 MAX_MEMBER = 2
@@ -304,6 +305,10 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls.excluded_vm_ids = []
 
     @classmethod
+    def message(cls, msg):
+        cls.logger.debug("=== " + str(datetime.datetime.now()) + " " + msg)
+
+    @classmethod
     def addOtherDeployParam(cls, otherdeployparams, name, value):
         otherdeployparams.append({
             'name': name,
@@ -378,10 +383,11 @@ class TestVmAutoScaling(cloudstackTestCase):
         for vm in vms:
             if vm.id not in self.excluded_vm_ids:
                 self.excluded_vm_ids.append(vm.id)
-                self.logger.debug("==== Verifying profiles of new VM %s (%s) ====" % (vm.name, vm.id))
+                self.wait_for_vm_start(vm, projectid)
                 self.verifyVmProfile(vm, autoscalevmprofileid, networkid, projectid)
 
     def verifyVmProfile(self, vm, autoscalevmprofileid, networkid=None, projectid=None):
+        self.message("Verifying profiles of new VM %s (%s)" % (vm.name, vm.id))
         datadisksizeInBytes = None
         diskofferingid = None
         rootdisksizeInBytes = None
@@ -467,20 +473,40 @@ class TestVmAutoScaling(cloudstackTestCase):
         else:
             self.assertEquals(affinitygroupids, '')
 
+    def wait_for_vm_start(self, vm=None, project_id=None):
+        """ Wait until vm is Running """
+        def check_user_vm_state():
+            vms = VirtualMachine.list(
+                self.apiclient,
+                id=vm.id,
+                projectid=project_id,
+                listall=True
+            )
+            if isinstance(vms, list):
+                if vms[0].state == 'Running':
+                    return True, vms[0].state
+            return False, vms[0].state
+
+        self.message("Waiting for user VM %s (%s) to be Running" % (vm.name, vm.id))
+        res = wait_until(10, 30, check_user_vm_state)
+        if not res:
+            raise Exception("Failed to wait for user VM %s (%s) to be Running" % (vm.name, vm.id))
+        return res
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_scale_up_verify(self):
         """ Verify scale up of AutoScaling VM Group """
-        self.logger.debug("=== Running test_01_scale_up_verify ===")
+        self.message("Running test_01_scale_up_verify")
 
         # VM count increases from 0 to MIN_MEMBER
-        sleeptime = self.check_interval_seconds * 2 * MIN_MEMBER
-        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
+        sleeptime = DEFAULT_INTERVAL * MIN_MEMBER + 5
+        self.message("Waiting %s seconds for %s VM(s) to be created" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
         # VM count increases from MIN_MEMBER to MAX_MEMBER
-        sleeptime = (self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
-        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
+        sleeptime = (self.check_interval_seconds + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
+        self.message("Waiting %s seconds for other %s VM(s) to be created" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER)
 
@@ -488,7 +514,7 @@ class TestVmAutoScaling(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_update_vmprofile_and_vmgroup(self):
         """ Verify update of AutoScaling VM Group and VM Profile"""
-        self.logger.debug("=== Running test_02_update_vmprofile_and_vmgroup ===")
+        self.message("Running test_02_update_vmprofile_and_vmgroup")
 
         vmprofiles_list = AutoScaleVmProfile.list(
             self.regular_user_apiclient,
@@ -567,15 +593,15 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
         # VM count increases from MAX_MEMBER to MAX_MEMBER+1
-        sleeptime = self.check_interval_seconds + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION + DEFAULT_QUIETTIME
-        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, 1))
+        sleeptime = self.check_interval_seconds + DEFAULT_DURATION + DEFAULT_QUIETTIME
+        self.message("Waiting %s seconds for other %s VM(s) to be created" % (sleeptime, 1))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER + 1)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_03_scale_down_verify(self):
         """ Verify scale down of AutoScaling VM Group """
-        self.logger.debug("=== Running test_03_scale_down_verify ===")
+        self.message("Running test_03_scale_down_verify")
 
         self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
 
@@ -659,15 +685,15 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
         # VM count decreases from MAX_MEMBER+1 to MIN_MEMBER+1
-        sleeptime = (self.check_interval_seconds + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION + DEFAULT_QUIETTIME + DEFAULT_EXPUNGE_VM_GRACE_PERIOD) * (MAX_MEMBER - MIN_MEMBER)
-        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be destroyed ====" % (sleeptime, MAX_MEMBER - MIN_MEMBER))
+        sleeptime = (self.check_interval_seconds + DEFAULT_DURATION + DEFAULT_QUIETTIME + DEFAULT_EXPUNGE_VM_GRACE_PERIOD) * (MAX_MEMBER - MIN_MEMBER)
+        self.message("Waiting %s seconds for %s VM(s) to be destroyed" % (sleeptime, MAX_MEMBER - MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER+1)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_04_stop_remove_vm_in_vmgroup(self):
         """ Verify removal of VM in AutoScaling VM Group"""
-        self.logger.debug("=== Running test_04_remove_vm_in_vmgroup ===")
+        self.message("Running test_04_remove_vm_in_vmgroup")
 
         vms = VirtualMachine.list(
             self.regular_user_apiclient,
@@ -718,10 +744,12 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
+        VirtualMachine.delete(vm, self.apiclient, expunge=True)
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_05_remove_vmgroup(self):
         """ Verify removal of AutoScaling VM Group"""
-        self.logger.debug("=== Running test_05_remove_vmgroup ===")
+        self.message("Running test_05_remove_vmgroup")
 
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=True, expected=True)
@@ -729,7 +757,7 @@ class TestVmAutoScaling(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="false")
     def test_06_autoscaling_vmgroup_on_project_network(self):
         """ Testing VM autoscaling on project network """
-        self.logger.debug("=== Running test_06_autoscaling_vmgroup_on_project_network ===")
+        self.message("Running test_06_autoscaling_vmgroup_on_project_network")
 
         # Create project
         project = Project.create(
@@ -831,15 +859,15 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.excluded_vm_ids = []
         # VM count increases from 0 to MIN_MEMBER
-        sleeptime = self.check_interval_seconds * 2
-        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
+        sleeptime = DEFAULT_INTERVAL * MIN_MEMBER + 5
+        self.message("Waiting %s seconds for %s VM(s) to be created" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
                                       project_network.id, project.id)
 
         # VM count increases from MIN_MEMBER to MAX_MEMBER
-        sleeptime = (self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
-        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
+        sleeptime = (self.check_interval_seconds + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
+        self.message("Waiting %s seconds for other %s VM(s) to be created" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
                                       project_network.id, project.id)
@@ -890,7 +918,7 @@ class TestVmAutoScaling(cloudstackTestCase):
     @attr(tags=["advanced"], required_hardware="false")
     def test_07_autoscaling_vmgroup_on_vpc_network(self):
         """ Testing VM autoscaling on vpc network """
-        self.logger.debug("=== Running test_07_autoscaling_vmgroup_on_vpc_network ===")
+        self.message("Running test_07_autoscaling_vmgroup_on_vpc_network")
 
         # Create vpc offering
         networkOffering = NetworkOffering.list(
@@ -1035,14 +1063,14 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.excluded_vm_ids = []
         # VM count increases from 0 to MIN_MEMBER
-        sleeptime = self.check_interval_seconds * 2
-        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
+        sleeptime = DEFAULT_INTERVAL * MIN_MEMBER + 5
+        self.message("Waiting %s seconds for %s VM(s) to be created" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
 
         # VM count increases from MIN_MEMBER to MAX_MEMBER
-        sleeptime = (self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
-        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
+        sleeptime = (self.check_interval_seconds + DEFAULT_DURATION + DEFAULT_QUIETTIME) * (MAX_MEMBER - MIN_MEMBER)
+        self.message("Waiting %s seconds for other %s VM(s) to be created" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
 
@@ -1061,8 +1089,8 @@ class TestVmAutoScaling(cloudstackTestCase):
         autoscaling_vmgroup_vpc.enable(self.regular_user_apiclient)
 
         # VM count decreases from MAX_MEMBER to MAX_MEMBER - 1
-        sleeptime = self.check_interval_seconds + DEFAULT_INTERVAL + DEFAULT_DURATION + DEFAULT_EXPUNGE_VM_GRACE_PERIOD
-        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be destroyed ====" % (sleeptime, 1))
+        sleeptime = self.check_interval_seconds + DEFAULT_DURATION + DEFAULT_EXPUNGE_VM_GRACE_PERIOD
+        self.message("Waiting %s seconds for other %s VM(s) to be destroyed" % (sleeptime, 1))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER - 1, autoscaling_vmgroup_vpc.id, autoscaling_vmprofile_vpc.id, vpc_network.id)
 
