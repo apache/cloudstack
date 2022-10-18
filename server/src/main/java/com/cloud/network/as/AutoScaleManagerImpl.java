@@ -1988,6 +1988,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
             try {
                 startNewVM(vmId);
+                createInactiveDummyRecord(asGroup.getId());
                 if (assignLBruleToNewVm(vmId, asGroup)) {
                     // update last_quietTime
                     List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao
@@ -2195,7 +2196,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     protected void updateHostAndVmIdsMap(Map<Long, List<Long>> hostAndVmIdsMap, AutoScaleVmGroupVmMapVO asGroupVmVO) {
         Long vmId = asGroupVmVO.getInstanceId();
         UserVmVO vm = userVmDao.findById(vmId);
-        Long vmHostId = vm.getHostId() != null ? vm.getHostId() : DEFAULT_HOST_ID;
+        Long vmHostId = DEFAULT_HOST_ID;
+        if (VirtualMachine.State.Running.equals(vm.getState())) {
+            vmHostId = vm.getHostId();
+        } else if (VirtualMachine.State.Migrating.equals(vm.getState())) {
+            vmHostId = vm.getLastHostId();
+        }
         List<Long> vmIds = hostAndVmIdsMap.get(vmHostId);
         if (vmIds == null) {
             vmIds = new ArrayList<>();
@@ -2850,7 +2856,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             AutoScaleVmGroupVO vmGroup = autoScaleVmGroupDao.findById(groupId);
             s_logger.debug("Scheduling monitor task for autoscale vm group " + vmGroup);
             vmGroupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VmGroup-Monitor-" + groupId));
-            vmGroupExecutor.scheduleAtFixedRate(new MonitorTask(groupId), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
+            vmGroupExecutor.scheduleWithFixedDelay(new MonitorTask(groupId), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
             vmGroupMonitorMaps.put(groupId, vmGroupExecutor);
         }
     }
