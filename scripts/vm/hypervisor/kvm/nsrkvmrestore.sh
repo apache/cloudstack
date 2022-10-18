@@ -206,7 +206,6 @@ elif [[ -n "$ssid" && -n "$volumeUuid" ]]; then
       exit 250
 else
   exit 255
-<<<<<<< HEAD
 fi
 
 if [ ! -d "$logDir" ]; then

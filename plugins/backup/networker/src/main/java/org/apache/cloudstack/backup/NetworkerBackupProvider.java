@@ -33,8 +33,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SSHCmdHelper;
-import com.cloud.utils.ssh.SshException;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -63,11 +62,13 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import com.cloud.utils.script.Script;
 
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
     private static final Logger LOG = Logger.getLogger(NetworkerBackupProvider.class);
+
     public ConfigKey<String> NetworkerUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.networker.url", "https://localhost:9090/nwrestapi/v3",
             "The EMC Networker API URL.", true, ConfigKey.Scope.Zone);
@@ -212,70 +213,58 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         String username = null;
         String password = null;
-        String privateKey = null;
 
         if (host != null && host.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
             hostDao.loadDetails(host);
             password = host.getDetail("password");
             username = host.getDetail("username");
-            privateKey = configDao.getValue("ssh.privatekey");
         }
-        if ((password == null && privateKey == null) || username == null) {
+        if ( password == null  || username == null) {
             throw new CloudRuntimeException("Cannot find login credentials for HYPERVISOR " + Objects.requireNonNull(host).getUuid());
         }
 
-        return new Ternary<>(username, password, privateKey);
+        return new Ternary<>(username, password, null);
     }
 
-    private String executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
-
-        SSHCmdHelper.SSHCmdResult result;
+    private String executeBackupCommand(HostVO host, String username, String password, String command) {
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";
         Pattern saveTimePattern = Pattern.compile(nstRegex);
 
-
-
-        final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password, privateKey);
-        if (connection == null) {
-            throw new CloudRuntimeException(String.format("Failed to connect to SSH at HYPERVISOR %s via IP address [%s].", host, host.getPrivateIpAddress()));
-        }
         try {
-            result = SSHCmdHelper.sshExecuteCmdOneShot(connection, command);
-            if (result.getReturnCode() != 0) {
-                throw new CloudRuntimeException(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, result.getStdErr()));
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+                    username, null, password, command, 120000, 120000, 3600000);
+            if (!response.first()) {
+                LOG.error(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, response.second()));
+            } else {
+                LOG.debug(String.format("Networker Backup Results: %s", response.second()));
             }
-            LOG.debug("BACKUP RESULT: " + result);
-            Matcher saveTimeMatcher = saveTimePattern.matcher(result.getStdOut());
+            Matcher saveTimeMatcher = saveTimePattern.matcher(response.second());
             if (saveTimeMatcher.find()) {
+                LOG.debug(String.format("Got saveTimeMatcher: %s", saveTimeMatcher.group(1)));
                 return saveTimeMatcher.group(1);
             }
-        } catch (final SshException e) {
-            throw new CloudRuntimeException(String.format("Command execution on host %s took longer than expected: %s", host, e.getMessage()));
+        } catch (final Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to take backup on host %s due to: %s", host.getName(), e.getMessage()));
         }
 
         return null;
     }
-    private boolean executeRestoreCommand(HostVO host, String username, String password, String privateKey, String command) {
+    private boolean executeRestoreCommand(HostVO host, String username, String password, String command) {
 
-        SSHCmdHelper.SSHCmdResult result;
-
-
-        final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password, privateKey);
-        if (connection == null) {
-            throw new CloudRuntimeException(String.format("Failed to connect to SSH at HYPERVISOR %s via IP address [%s].", host, host.getPrivateIpAddress()));
-        }
         try {
-            result = SSHCmdHelper.sshExecuteCmdOneShot(connection, command);
-            if (result.getReturnCode() != 0) {
-                throw new CloudRuntimeException(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, result.getStdErr()));
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+                username, null, password, command, 120000, 120000, 3600000);
+
+            if (!response.first()) {
+                LOG.error(String.format("Restore Script failed on HYPERVISOR %s due to: %s", host, response.second()));
+            } else {
+                LOG.debug(String.format("Networker Restore Results: %s",response.second()));
+                return true;
             }
-            LOG.debug("BACKUP RESULT: " + result);
-            return true;
-        } catch (final SshException e) {
-            throw new CloudRuntimeException(String.format("Command execution on host %s took longer than expected: %s", host, e.getMessage()));
+        } catch (final Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to restore backup on host %s due to: %s", host.getName(), e.getMessage()));
         }
+        return false;
     }
 
     private NetworkerClient getClient(final Long zoneId) {
@@ -335,7 +324,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
+        String backupRestorePath = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
         String networkerServer;
         HostVO hostVO;
 
@@ -343,6 +332,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final String externalBackupId = backup.getExternalId();
         final NetworkerBackup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
         final String SSID = networkerBackup.getShortId();
+
+        LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -359,17 +350,20 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
         }
-        String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh" +
-                " -s " + networkerServer +
-                " -S " + SSID;
+
+        final Script script = new Script(backupRestorePath);
+        script.add("-s");
+        script.add(networkerServer);
+        script.add("-S");
+        script.add(SSID);
 
         if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
-            command = command + " -v ";
+            script.add("-v");
 
         Date restoreJobStart = new Date();
         LOG.debug("Starting Restore for VM ID " + vm.getUuid() + " and SSID" + SSID + " at " + restoreJobStart);
 
-        if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), credentials.third(), command) ) {
+        if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), script.toString()) ) {
             Date restoreJobEnd = new Date();
             LOG.debug("Restore Job for SSID " + SSID + " completed successfully at " + restoreJobEnd);
             return true;
@@ -381,7 +375,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
-        LOG.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
+        String backupRestorePath = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
 
         String networkerServer;
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
@@ -396,6 +390,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final String clusterName = networkerBackup.getClientHostname();
         final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
         Long restoredVolumeDiskSize = 0L;
+
+        LOG.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -438,21 +434,27 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
         }
 
-        String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh" +
-                " -s " + networkerServer +
-                " -c " + clusterName +
-                " -d " + destinationNetworkerClient +
-                " -n " + restoredVolume.getUuid() +
-                " -p " + dataStore.getLocalPath() +
-                " -a " + volume.getUuid();
+        final Script script = new Script(backupRestorePath);
+        script.add("-s");
+        script.add(networkerServer);
+        script.add("-c");
+        script.add(clusterName);
+        script.add("-d");
+        script.add(destinationNetworkerClient);
+        script.add("-n");
+        script.add(restoredVolume.getUuid());
+        script.add("-p");
+        script.add(dataStore.getLocalPath());
+        script.add("-a");
+        script.add(volume.getUuid());
 
         if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
-            command = command + " -v ";
+            script.add("-v");
 
         Date restoreJobStart = new Date();
         LOG.debug("Starting Restore for Volume UUID " + volume.getUuid() + " and SSID" + SSID + " at " + restoreJobStart);
 
-        if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), credentials.third(), command) ) {
+        if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), script.toString()) ) {
             Date restoreJobEnd = new Date();
             LOG.debug("Restore Job for SSID " + SSID + " completed successfully at " + restoreJobEnd);
             return new Pair<>(true,restoredVolume.getUuid());
@@ -465,7 +467,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public boolean takeBackup(VirtualMachine vm) {
-
+        String backupCommandPath = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh";
         String networkerServer;
         String clusterName;
 
@@ -491,26 +493,33 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         // Get Cluster
         clusterName = getVMHypervisorCluster(hostVO);
-
-        String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh" +
-                " -s " + networkerServer +
-                " -R '" + backupRentionPeriod + "'" +
-                " -P " + NetworkerMediaPool.valueIn(vm.getDataCenterId()) +
-                " -c " + clusterName +
-                " -u " + vm.getUuid() +
-                " -t " + vm.getName();
+        final Script script = new Script(backupCommandPath);
+        script.add("-s");
+        script.add(networkerServer);
+        script.add("-R");
+        script.add("'"+backupRentionPeriod+"'");
+        script.add("-P");
+        script.add(NetworkerMediaPool.valueIn(vm.getDataCenterId()));
+        script.add("-c");
+        script.add(clusterName);
+        script.add("-u");
+        script.add(vm.getUuid());
+        script.add("-t");
+        script.add(vm.getName());
         if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
-            command = command + " -v ";
+            script.add("-v");
 
         LOG.debug("Starting backup for VM ID " + vm.getUuid() + " on Networker provider");
         Date backupJobStart = new Date();
 
-        String saveTime = executeBackupCommand(hostVO, credentials.first(), credentials.second(), credentials.third(), command);
+        String saveTime = executeBackupCommand(hostVO, credentials.first(), credentials.second(), script.toString());
+        LOG.info ("EMC Networker finished backup job for vm " + vm.getName() + " with saveset Time: " + saveTime);
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backupDao.persist(backup);
             return true;
         } else {
+            LOG.error("Could not register backup for vm " + vm.getName() + " with saveset Time: " + saveTime);
             // We need to handle this rare situation where backup is successful but can't be registered properly.
             return false;
         }

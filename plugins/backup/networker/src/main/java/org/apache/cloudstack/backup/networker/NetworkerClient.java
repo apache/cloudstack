@@ -237,8 +237,8 @@ public class NetworkerClient {
 
             networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
             NetworkerBackup networkerLatestBackup = new NetworkerBackup();
-
-            if (networkerBackups == null || networkerBackups.getBackups() == null || networkerBackups.getCount() == 0) {
+            LOG.debug("Found backups " + networkerBackups.getBackups() + " With Criteria: " + backupJobCriteria);
+            if ( networkerBackups.getBackups() == null || networkerBackups.getCount() == 0 ) {
                 return null;
             }
             if (networkerBackups.getCount() == 1) {
