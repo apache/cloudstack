@@ -625,8 +625,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineGuru guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
 
-        userVmDetailsDao.removeDetails(vm.getId());
-
         userVmDeployAsIsDetailsDao.removeDetails(vm.getId());
 
         // Remove comments (if any)

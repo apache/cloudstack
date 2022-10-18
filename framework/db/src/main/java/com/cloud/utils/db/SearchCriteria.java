@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchBase.Condition;
 import com.cloud.utils.db.SearchBase.Select;
@@ -155,6 +157,12 @@ public class SearchCriteria<K> {
         }
 
         return fields;
+    }
+
+    public void setParametersIfNotNull(String conditionName, Object... params) {
+        if (ArrayUtils.isNotEmpty(params) && (params.length > 1 || params[0] != null)) {
+            setParameters(conditionName, params);
+        }
     }
 
     public void setParameters(String conditionName, Object... params) {

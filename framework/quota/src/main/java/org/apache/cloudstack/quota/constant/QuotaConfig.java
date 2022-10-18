@@ -57,6 +57,9 @@ public interface QuotaConfig {
     public static final ConfigKey<String> QuotaSmtpUseStartTLS = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useStartTLS", "false",
             "If set to true and if we enable security via quota.usage.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
+    public static final ConfigKey<Long> QuotaActivationRuleTimeout = new ConfigKey<>("Advanced", Long.class, "quota.activationrule.timeout", "2000", "The maximum runtime,"
+            + " in milliseconds, to execute the quota tariff's activation rule; if it is reached, a timeout will happen.", true);
+
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT
     }
