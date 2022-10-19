@@ -1417,7 +1417,7 @@ public class VirtualMachineMO extends BaseMO {
             unitNumber = getFreeUnitNumberOnIDEController(controllerKey);
         } else {
             if (StringUtils.isNotBlank(diskController)) {
-                controllerKey = getScsiDiskControllerKey(diskController,groupNumber);
+                controllerKey = getScsiDiskControllerKey(diskController, groupNumber);
             } else {
                 controllerKey = getScsiDeviceControllerKey(groupNumber);
             }
@@ -2370,16 +2370,16 @@ public class VirtualMachineMO extends BaseMO {
             DiskControllerType diskControllerType = DiskControllerType.getType(diskController);
             for (VirtualDevice device : devices) {
                 if ((diskControllerType == DiskControllerType.lsilogic || diskControllerType == DiskControllerType.scsi)
-                        && device instanceof VirtualLsiLogicController && isValidScsiDiskController((VirtualLsiLogicController)device,groupNumber)) {
+                        && device instanceof VirtualLsiLogicController && isValidScsiDiskController((VirtualLsiLogicController)device, groupNumber)) {
                     return ((VirtualLsiLogicController)device).getKey();
                 } else if ((diskControllerType == DiskControllerType.lsisas1068 || diskControllerType == DiskControllerType.scsi)
-                        && device instanceof VirtualLsiLogicSASController && isValidScsiDiskController((VirtualLsiLogicSASController)device,groupNumber)) {
+                        && device instanceof VirtualLsiLogicSASController && isValidScsiDiskController((VirtualLsiLogicSASController)device, groupNumber)) {
                     return ((VirtualLsiLogicSASController)device).getKey();
                 } else if ((diskControllerType == DiskControllerType.pvscsi || diskControllerType == DiskControllerType.scsi)
-                        && device instanceof ParaVirtualSCSIController && isValidScsiDiskController((ParaVirtualSCSIController)device,groupNumber)) {
+                        && device instanceof ParaVirtualSCSIController && isValidScsiDiskController((ParaVirtualSCSIController)device, groupNumber)) {
                     return ((ParaVirtualSCSIController)device).getKey();
                 } else if ((diskControllerType == DiskControllerType.buslogic || diskControllerType == DiskControllerType.scsi)
-                        && device instanceof VirtualBusLogicController && isValidScsiDiskController((VirtualBusLogicController)device,groupNumber)) {
+                        && device instanceof VirtualBusLogicController && isValidScsiDiskController((VirtualBusLogicController)device, groupNumber)) {
                     return ((VirtualBusLogicController)device).getKey();
                 }
             }

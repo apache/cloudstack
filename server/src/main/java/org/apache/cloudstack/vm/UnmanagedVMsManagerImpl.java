@@ -693,7 +693,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         StoragePool storagePool = getStoragePool(disk, zone, cluster);
 
-        if ( useControllerConfiguration ){
+        if (Boolean.TRUE.equals(useControllerConfiguration)) {
             volumeGroup = disk.getControllerUnit();
         }
 
@@ -913,7 +913,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
-                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap, final Map<String,Integer> diskVolumeGroupMap,
+                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap, final Map<String, Integer> diskVolumeGroupMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
                                                 final Map<String, String> details, final boolean migrateAllowed, final boolean forced, boolean useControllerConfiguration) {
         UserVm userVm = null;
@@ -1007,7 +1007,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             long deviceId = 1L;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
                 Integer volumeGroup = -1;
-                if(diskVolumeGroupMap != null && !diskVolumeGroupMap.isEmpty()){
+                if (diskVolumeGroupMap != null && !diskVolumeGroupMap.isEmpty()) {
                     volumeGroup = diskVolumeGroupMap.get(disk.getDiskId());
                 }
                 if (disk.getCapacity() == null || disk.getCapacity() == 0) {
