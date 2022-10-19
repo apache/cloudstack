@@ -2389,7 +2389,7 @@ public class VirtualMachineMO extends BaseMO {
         throw new IllegalStateException("Scsi disk controller of type " + diskController + " not found among configured devices.");
     }
 
-    public int getScsiDiskControllerKeyNoException(String diskController, int scsiUnitNumber,int groupNumber) throws Exception {
+    public int getScsiDiskControllerKeyNoException(String diskController, int scsiUnitNumber, int groupNumber) throws Exception {
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
         if (CollectionUtils.isNotEmpty(devices) && scsiUnitNumber >= 0) {
