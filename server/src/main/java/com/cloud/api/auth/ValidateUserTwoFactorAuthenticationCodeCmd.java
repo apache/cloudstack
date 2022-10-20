@@ -17,6 +17,7 @@
 package com.cloud.api.auth;
 
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,8 +28,10 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -36,11 +39,15 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
-@APICommand(name = ApiConstants.TWOFACTORAUTHENTICATION, description = "Checks the 2fa code for the user.", requestHasSensitiveInfo = false, responseObject = SuccessResponse.class, entityType = {})
-public class TwoFactorAuthenticationCmd extends BaseCmd implements APIAuthenticator {
+@APICommand(name = ValidateUserTwoFactorAuthenticationCodeCmd.APINAME, description = "Checks the 2fa code for the user.", requestHasSensitiveInfo = false,
+        responseObject = SuccessResponse.class, entityType = {}, since = "4.18.0")
+public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implements APIAuthenticator {
 
-    public static final Logger s_logger = Logger.getLogger(TwoFactorAuthenticationCmd.class.getName());
-    private static final String s_name = "twofactorauthenticationresponse";
+    public static final String APINAME = "validateusertwofactorauthenticationcode";
+    public static final Logger s_logger = Logger.getLogger(ValidateUserTwoFactorAuthenticationCodeCmd.class.getName());
+
+    @Inject
+    private AccountManager accountManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,17 +71,32 @@ public class TwoFactorAuthenticationCmd extends BaseCmd implements APIAuthentica
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
     public long getEntityOwnerId() {
-        return Account.Type.NORMAL.ordinal();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletRequest req, HttpServletResponse resp) throws ServerApiException {
-        return null;
+        String twoFactorAuthenticationCode = null;
+        if (params.containsKey(ApiConstants.TWOFACTORAUTHENTICATIONCODE)) {
+            twoFactorAuthenticationCode = ((String[])params.get(ApiConstants.TWOFACTORAUTHENTICATIONCODE))[0];
+        }
+        if (twoFactorAuthenticationCode.isEmpty()) {
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Code for two factor authentication is required");
+        }
+
+        Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
+        Long domainId = owner.getDomainId();
+        Long accountId = owner.getAccountId();
+
+        accountManager.verifyUsingTwoFactorAuthenticationCode(twoFactorAuthenticationCode, domainId, accountId);
+
+        // We should not reach here and if we do we throw an exception
+        throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Unable to authenticate using two factor code");
     }
 
     @Override

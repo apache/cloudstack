@@ -204,4 +204,6 @@ public interface AccountManager extends AccountService, Configurable {
     boolean moveUser(long id, Long domainId, Account newAccount);
 
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
+
+    void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId);
 }

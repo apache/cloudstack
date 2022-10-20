@@ -333,6 +333,10 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
+    }
+
+    @Override
     public boolean deleteUserAccount(long arg0) {
         // TODO Auto-generated method stub
         return false;

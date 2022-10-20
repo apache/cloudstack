@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
 import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
@@ -305,7 +306,8 @@ public class ApiServlet extends HttpServlet {
                 UserAccount userAccount = accountMgr.getUserAccountById(userId);
                 boolean is2FAenabled = userAccount.is2faEnabled();
                 if (is2FAenabled) {
-                    if (command != null && !command.equals(ApiConstants.TWOFACTORAUTHENTICATION) ) {
+                    APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
+                    if ((command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) || apiAuthenticator == null ) {
                         if (session != null) {
                             invalidateHttpSession(session, String.format("request verification failed for %s from %s", userId, remoteAddress.getHostAddress()));
                         }
@@ -317,7 +319,7 @@ public class ApiServlet extends HttpServlet {
                         HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
 
                     } else {
-
+                        apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                     }
                 }
             }

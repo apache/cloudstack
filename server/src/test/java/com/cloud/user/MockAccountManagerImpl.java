@@ -144,6 +144,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
+
+    }
+
+    @Override
     public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;

@@ -1005,7 +1005,6 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
-    public static final String TWOFACTORAUTHENTICATION = "twofactorauthentication";
     public static final String SETUPTWOFACTORAUTHENTICATION = "setup2fa";
     public static final String TWOFACTORAUTHENTICATIONCODE = "2facode";
     public static final String LOGIN = "login";

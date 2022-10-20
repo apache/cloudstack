@@ -3175,6 +3175,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId) {
+
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountService.getActiveAccountById(caller.getId());
+
+        checkAccess(caller, null, true, owner);
+
+        UserTwoFactorAuthenticator userTwoFactorAuthenticator = getUserTwoFactorAuthenticator(domainId, userAccountId);
+        UserAccount userAccount = _accountService.getUserAccountById(userAccountId);
+        userTwoFactorAuthenticator.check2FA(code, userAccount);
+    }
+
+    @Override
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
         if (userAccountId != null) {
             UserAccount userAccount = _accountService.getUserAccountById(userAccountId);
