@@ -374,15 +374,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 if (storagePool.isPresent()) {
                     storage = (StoragePool)this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary);
                     s_logger.debug(String.format("VM [%s] has a preferred storage pool [%s]. Volume Orchestrator found this storage using Storage Pool Allocator [%s] and will"
-                            + " use it.", vm, storage, allocator));
+                            + " use it.", vm, storage, allocator.getClass().getSimpleName()));
                 } else {
                     storage = (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
                     s_logger.debug(String.format("VM [%s] does not have a preferred storage pool or it cannot be used. Volume Orchestrator will use the available Storage Pool"
-                            + " [%s], which was discovered using Storage Pool Allocator [%s].", vm, storage, allocator));
+                            + " [%s], which was discovered using Storage Pool Allocator [%s].", vm, storage, allocator.getClass().getSimpleName()));
                 }
                 return storage;
             }
-            s_logger.debug(String.format("Could not find any available Storage Pool using Storage Pool Allocator [%s].", allocator));
+            s_logger.debug(String.format("Could not find any available Storage Pool using Storage Pool Allocator [%s].", allocator.getClass().getSimpleName()));
         }
         s_logger.info("Volume Orchestrator could not find any available Storage Pool.");
         return null;
