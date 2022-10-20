@@ -588,12 +588,12 @@ generating links for external access."
 WHERE   name = 'secstorage.encrypt.copy';
 
 -- allow isolated networks without services to be used as is.
-UPDATE networks ntwk
+UPDATE `cloud`.`networks` ntwk
   SET ntwk.state = 'Implemented'
   WHERE ntwk.network_offering_id in
-    (SELECT id FROM network_offerings ntwkoff
-      WHERE (SELECT count(*) FROM ntwk_offering_service_map ntwksrvcmp WHERE ntwksrvcmp.network_offering_id = ntwkoff.id) = 0
-        AND ntwkoff.is_persistent = TRUE) AND
+    (SELECT id FROM `cloud`.`network_offerings` ntwkoff
+      WHERE (SELECT count(*) FROM `cloud`.`ntwk_offering_service_map` ntwksrvcmp WHERE ntwksrvcmp.network_offering_id = ntwkoff.id) = 0
+        AND ntwkoff.is_persistent = 1) AND
     ntwk.state = 'Setup' AND
     ntwk.removed is NULL AND
     ntwk.guest_type = 'Isolated';
