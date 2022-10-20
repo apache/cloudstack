@@ -21,7 +21,9 @@ import com.cloud.vm.ReservationContext;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
@@ -35,6 +37,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     ReservationContext _context;
     List<Long> preferredHostIds = new ArrayList<>();
     boolean migrationPlan;
+    Map<Long, HostPriority> hostPriorities = new HashMap<>();
 
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
@@ -124,4 +127,29 @@ public class DataCenterDeployment implements DeploymentPlan {
                 "migrationPlan");
     }
 
+    @Override
+    public void addHostPriority(Long hostId, HostPriority priority) {
+        HostPriority currentPriority = hostPriorities.get(hostId);
+        if (currentPriority == null || HostPriority.NORMAL.equals(currentPriority)) {
+            hostPriorities.put(hostId, priority);
+        } else if (!HostPriority.PROHIBITED.equals(currentPriority)) {
+            if (HostPriority.HIGH.equals(priority)) {
+                HostPriority newPriority = HostPriority.LOW.equals(currentPriority) ? HostPriority.NORMAL : HostPriority.HIGH;
+                hostPriorities.put(hostId, newPriority);
+            } else if (HostPriority.LOW.equals(priority)) {
+                HostPriority newPriority = HostPriority.HIGH.equals(currentPriority) ? HostPriority.NORMAL : HostPriority.LOW;
+                hostPriorities.put(hostId, newPriority);
+            }
+        }
+    }
+
+    @Override
+    public Map<Long, HostPriority> getHostPriorities() {
+        return hostPriorities;
+    }
+
+    @Override
+    public void setHostPriorities(Map<Long, HostPriority> priorities) {
+        this.hostPriorities = priorities;
+    }
 }

@@ -20,10 +20,19 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.vm.ReservationContext;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  */
 public interface DeploymentPlan {
+
+    enum HostPriority {
+        HIGH,
+        NORMAL,
+        LOW,
+        PROHIBITED
+    }
+
     // TODO: This interface is not fully developed. It really
     // number of parameters to be specified.
 
@@ -73,4 +82,10 @@ public interface DeploymentPlan {
     List<Long> getPreferredHosts();
 
     boolean isMigrationPlan();
+
+    void addHostPriority(Long hostId, HostPriority priority);
+
+    Map<Long, HostPriority> getHostPriorities();
+
+    void setHostPriorities(Map<Long, HostPriority> priorities);
 }

@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -382,6 +383,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
+            s_logger.debug("Deploy hosts with priorities " + plan.getHostPriorities() + " , hosts have NORMAL priority by default");
         }
 
         // call planners
@@ -1222,6 +1224,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             // cluster.
             DataCenterDeployment potentialPlan =
                     new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
+            potentialPlan.setHostPriorities(plan.getHostPriorities());
 
             Pod pod = _podDao.findById(clusterVO.getPodId());
             if (CollectionUtils.isNotEmpty(avoid.getPodsToAvoid()) && avoid.getPodsToAvoid().contains(pod.getId())) {
@@ -1588,7 +1591,37 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (suitableHosts.isEmpty()) {
             s_logger.debug("No suitable hosts found");
         }
+
+        // re-order hosts by priority
+        reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
+
         return suitableHosts;
+    }
+
+    @Override
+    public void reorderHostsByPriority(Map<Long, DeploymentPlan.HostPriority> priorities, List<Host> hosts) {
+        s_logger.debug("Re-ordering hosts " + hosts + " by priorities " + priorities);
+
+        List<Host> highPriorityHosts = hosts.stream()
+                .filter(host -> DeploymentPlan.HostPriority.HIGH.equals(priorities.get(host.getId())))
+                .collect(Collectors.toList());
+        List<Host> lowPriorityHosts = hosts.stream()
+                .filter(host -> DeploymentPlan.HostPriority.LOW.equals(priorities.get(host.getId())))
+                .collect(Collectors.toList());
+        List<Host> prohibitedPriorityHosts = hosts.stream()
+                .filter(host -> DeploymentPlan.HostPriority.PROHIBITED.equals(priorities.get(host.getId())))
+                .collect(Collectors.toList());
+        List<Host> normalPriorityHosts = hosts.stream()
+                .filter(host -> priorities.get(host.getId()) == null || DeploymentPlan.HostPriority.NORMAL.equals(priorities.get(host.getId())))
+                .collect(Collectors.toList());
+
+        hosts.clear();
+        hosts.addAll(highPriorityHosts);
+        hosts.addAll(normalPriorityHosts);
+        hosts.addAll(lowPriorityHosts);
+        hosts.addAll(prohibitedPriorityHosts);
+
+        s_logger.debug("Hosts after re-ordering are: " + hosts);
     }
 
     protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
