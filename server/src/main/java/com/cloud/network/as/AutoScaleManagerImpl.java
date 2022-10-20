@@ -1969,58 +1969,61 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             s_logger.error(String.format("Can not update vmgroup state from %s to %s, groupId: %s", oldState, newState, groupId));
             return;
         }
-        for (int i = 0; i < numVm; i++) {
-            ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
-                    "Scaling Up AutoScale VM group " + groupId, groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(),
-                    true, 0);
-            long vmId = createNewVM(asGroup);
-            if (vmId == -1) {
-                s_logger.error("Can not deploy new VM for scaling up in the group "
-                    + asGroup.getId() + ". Waiting for next round");
-                break;
-            }
-            // persist to DB
-            AutoScaleVmGroupVmMapVO groupVmMapVO = new AutoScaleVmGroupVmMapVO(asGroup.getId(), vmId);
-            autoScaleVmGroupVmMapDao.persist(groupVmMapVO);
-
-            // Add an Inactive-dummy record to statistics table
-            createInactiveDummyRecord(asGroup.getId());
-
-            try {
-                startNewVM(vmId);
-                createInactiveDummyRecord(asGroup.getId());
-                if (assignLBruleToNewVm(vmId, asGroup)) {
-                    // update last_quietTime
-                    List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao
-                        .listByVmGroupId(groupId);
-                    for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
-                        AutoScalePolicyVO vo = autoScalePolicyDao
-                            .findById(groupPolicyVO.getPolicyId());
-                        if (vo.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
-                            vo.setLastQuietTime(new Date());
-                            autoScalePolicyDao.persist(vo);
-                            break;
-                        }
-                    }
-                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
-                            String.format("Started and assigned LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
-                } else {
-                    s_logger.error("Can not assign LB rule for this new VM");
-                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
-                            String.format("Failed to assign LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+        try {
+            for (int i = 0; i < numVm; i++) {
+                ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                        "Scaling Up AutoScale VM group " + groupId, groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(),
+                        true, 0);
+                long vmId = createNewVM(asGroup);
+                if (vmId == -1) {
+                    s_logger.error("Can not deploy new VM for scaling up in the group "
+                            + asGroup.getId() + ". Waiting for next round");
                     break;
                 }
-            } catch (ServerApiException e) {
-                s_logger.error("Can not deploy new VM for scaling up in the group "
-                    + asGroup.getId() + ". Waiting for next round");
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
-                        String.format("Failed to start VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
-                destroyVm(vmId);
-                break;
+                // persist to DB
+                AutoScaleVmGroupVmMapVO groupVmMapVO = new AutoScaleVmGroupVmMapVO(asGroup.getId(), vmId);
+                autoScaleVmGroupVmMapDao.persist(groupVmMapVO);
+
+                // Add an Inactive-dummy record to statistics table
+                createInactiveDummyRecord(asGroup.getId());
+
+                try {
+                    startNewVM(vmId);
+                    createInactiveDummyRecord(asGroup.getId());
+                    if (assignLBruleToNewVm(vmId, asGroup)) {
+                        // update last_quietTime
+                        List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = autoScaleVmGroupPolicyMapDao
+                                .listByVmGroupId(groupId);
+                        for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
+                            AutoScalePolicyVO vo = autoScalePolicyDao
+                                    .findById(groupPolicyVO.getPolicyId());
+                            if (vo.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
+                                vo.setLastQuietTime(new Date());
+                                autoScalePolicyDao.persist(vo);
+                                break;
+                            }
+                        }
+                        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                                String.format("Started and assigned LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                    } else {
+                        s_logger.error("Can not assign LB rule for this new VM");
+                        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                                String.format("Failed to assign LB rule for VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                        break;
+                    }
+                } catch (ServerApiException e) {
+                    s_logger.error("Can not deploy new VM for scaling up in the group "
+                            + asGroup.getId() + ". Waiting for next round");
+                    ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, asGroup.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_AUTOSCALEVMGROUP_SCALEUP,
+                            String.format("Failed to start VM %d in AutoScale VM group %d", vmId, groupId), groupId, ApiCommandResourceType.AutoScaleVmGroup.toString(), 0);
+                    destroyVm(vmId);
+                    break;
+                }
             }
-        }
-        if (!autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
-            s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
+        } finally {
+            if (!autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
+                s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
+            }
         }
     }
 
