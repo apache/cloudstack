@@ -2576,9 +2576,14 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Map<String, Double> countersMap = new HashMap<>();
         Map<String, Integer> countersNumberMap = new HashMap<>();
 
-        // update counter maps in memory
-        if (!updateCountersMap(groupTO, countersMap, countersNumberMap)) {
-            return;
+        try {
+            // update counter maps in memory
+            if (!updateCountersMap(groupTO, countersMap, countersNumberMap)) {
+                return;
+            }
+        } finally {
+            // Remove old statistics from database
+            cleanupAsVmGroupStatistics(groupTO);
         }
 
         // get scale action
@@ -2591,9 +2596,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 doScaleDown(asGroup.getId());
             }
         }
-
-        // Remove old statistics from database
-        cleanupAsVmGroupStatistics(groupTO);
     }
 
     protected void getVmStatsFromHosts(AutoScaleVmGroupTO groupTO) {
@@ -2842,14 +2844,21 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     protected void cleanupAsVmGroupStatistics(AutoScaleVmGroupTO groupTO) {
+        Integer cleanupDelay = AutoScaleStatsCleanupDelay.value();
+        Integer maxDelaySecs = cleanupDelay;
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
-            Integer cleanupDelay = AutoScaleStatsCleanupDelay.value();
             Integer duration = policyTO.getDuration();
             Integer delaySecs = cleanupDelay >= duration ?  cleanupDelay : duration;
             Date beforeDate = new Date(System.currentTimeMillis() - ((long)delaySecs * 1000));
             s_logger.debug(String.format("Removing stats for policy %d in as group %d, before %s", policyTO.getId(), groupTO.getId(), beforeDate));
             asGroupStatisticsDao.removeByGroupAndPolicy(groupTO.getId(), policyTO.getId(), beforeDate);
+            if (delaySecs > maxDelaySecs) {
+                maxDelaySecs = delaySecs;
+            }
         }
+        Date beforeDate = new Date(System.currentTimeMillis() - ((long)maxDelaySecs * 1000));
+        s_logger.debug(String.format("Removing stats for other policies in as group %d, before %s", groupTO.getId(), beforeDate));
+        asGroupStatisticsDao.removeByGroupId(groupTO.getId(), beforeDate);
     }
 
     protected void scheduleMonitorTasks() {

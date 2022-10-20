@@ -25,6 +25,8 @@ import com.cloud.utils.db.GenericDao;
 public interface AutoScaleVmGroupStatisticsDao extends GenericDao<AutoScaleVmGroupStatisticsVO, Long> {
     boolean removeByGroupId(long vmGroupId);
 
+    boolean removeByGroupId(long vmGroupId, Date beforeDate);
+
     boolean removeByGroupAndPolicy(long vmGroupId, long policyId, Date beforeDate);
 
     List<AutoScaleVmGroupStatisticsVO> listDummyRecordsByVmGroup(long vmGroupId, Date afterDate);

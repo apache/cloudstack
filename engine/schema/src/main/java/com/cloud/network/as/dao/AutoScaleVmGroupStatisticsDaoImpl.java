@@ -57,6 +57,16 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     }
 
     @Override
+    public boolean removeByGroupId(long vmGroupId, Date beforeDate) {
+        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
+        sc.setParameters("vmGroupId", vmGroupId);
+        if (beforeDate != null) {
+            sc.setParameters("createdLT", beforeDate);
+        }
+        return expunge(sc) > 0;
+    }
+
+    @Override
     public boolean removeByGroupAndPolicy(long vmGroupId, long policyId, Date beforeDate) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         sc.setParameters("vmGroupId", vmGroupId);

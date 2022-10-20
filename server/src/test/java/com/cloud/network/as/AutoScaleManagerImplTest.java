@@ -2307,6 +2307,7 @@ public class AutoScaleManagerImplTest {
         autoScaleManagerImplSpy.cleanupAsVmGroupStatistics(groupTO);
 
         Mockito.verify(asGroupStatisticsDao).removeByGroupAndPolicy(eq(vmGroupId), eq(scaleUpPolicyId), any());
+        Mockito.verify(asGroupStatisticsDao).removeByGroupId(eq(vmGroupId), any());
     }
 
     @Test

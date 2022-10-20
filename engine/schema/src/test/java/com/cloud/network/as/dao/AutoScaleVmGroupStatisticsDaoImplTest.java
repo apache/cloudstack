@@ -89,6 +89,16 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
     }
 
     @Test
+    public void testRemoveByGroupId3() {
+        PowerMockito.doReturn(-1).when(AutoScaleVmGroupStatisticsDaoImplSpy).expunge(Mockito.any(SearchCriteria.class));
+        boolean result = AutoScaleVmGroupStatisticsDaoImplSpy.removeByGroupId(groupId, date);
+        Assert.assertFalse(result);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("vmGroupId", groupId);
+        Mockito.verify(searchCriteriaAutoScaleVmGroupStatisticsVOMock).setParameters("createdLT", date);
+
+    }
+
+    @Test
     public void testRemoveByGroupAndPolicy1() {
         PowerMockito.doReturn(2).when(AutoScaleVmGroupStatisticsDaoImplSpy).expunge(Mockito.any(SearchCriteria.class));
 
