@@ -333,8 +333,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                     pairsUsageAndQuotaUsage.add(new Pair<>(usageRecord, null));
                     continue;
                 }
-                
-                isQuotaEnabledForAccountDomain
 
                 Pair<List<QuotaTariffVO>, Boolean> pairQuotaTariffsPerUsageTypeAndHasActivationRule = mapQuotaTariffsPerUsageType.get(usageType);
                 List<QuotaTariffVO> quotaTariffs = pairQuotaTariffsPerUsageTypeAndHasActivationRule.first();
