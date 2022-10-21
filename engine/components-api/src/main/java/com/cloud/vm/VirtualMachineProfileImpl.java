@@ -89,7 +89,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         if (_vm != null) {
             return _vm.toString();
         }
-        return null;
+        return "";
     }
 
     @Override
