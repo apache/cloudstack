@@ -360,4 +360,8 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     public void setType(String type) {
         this.type = type;
     }
+
+    public String getType() {
+        return type;
+    }
 }
