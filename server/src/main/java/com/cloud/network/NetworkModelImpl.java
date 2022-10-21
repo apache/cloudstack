@@ -147,6 +147,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
+    public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -1695,8 +1696,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
             NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
             if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
-                    ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));
             }
         }
     }
@@ -1721,13 +1721,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
         if (projectAccountUser != null) {
             if (!_projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), networkOwner.getId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO)network).getUuid()));
             }
         } else {
             if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), networkOwner.getId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
-                        ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));
             }
         }
     }

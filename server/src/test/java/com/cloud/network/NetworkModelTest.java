@@ -310,6 +310,21 @@ public class NetworkModelTest {
         networkModel.checkNetworkPermissions(caller, network);
     }
 
+    @Test
+    public void testCheckNetworkPermissionsForAdmin() {
+        long accountId = 1L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(accountId);
+        when(caller.getType()).thenReturn(Account.Type.ADMIN);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(network.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(caller);
+        when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(List.of(network));
+        when(networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId())).thenReturn(mock(NetworkPermissionVO.class));
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
     @Test(expected = CloudRuntimeException.class)
     public void testCheckNetworkPermissionsNullNetwork() {
         AccountVO caller = mock(AccountVO.class);
