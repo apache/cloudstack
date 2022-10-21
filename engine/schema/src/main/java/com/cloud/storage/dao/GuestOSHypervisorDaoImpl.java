@@ -157,7 +157,7 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         sc.and(sc.entity().getGuestOsName(), SearchCriteria.Op.EQ, guestOsName);
         sc.and(sc.entity().getHypervisorType(), SearchCriteria.Op.EQ, hypervisorType);
         sc.and().op(sc.entity().getHypervisorVersion(), SearchCriteria.Op.GTEQ, minHypervisorVersion);
-        sc.or(sc.entity().getHypervisorVersion(), SearchCriteria.Op.NEQ, "default");
+        sc.or(sc.entity().getHypervisorVersion(), SearchCriteria.Op.EQ, "default");
         sc.cp();
         return sc.list();
     }
