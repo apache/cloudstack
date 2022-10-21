@@ -59,18 +59,19 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
         throw new CloudAuthenticationException("two-factor authentication has failed for the user");
     }
 
-    public static String get2FAKey(UserAccount userAccount) {
+    private String get2FAKey(UserAccount userAccount) {
         return userAccount.getKeyFor2fa();
     }
 
-    public static String get2FACode(String secretKey) {
+    private String get2FACode(String secretKey) {
         Base32 base32 = new Base32();
         byte[] bytes = base32.decode(secretKey);
         String hexKey = Hex.encodeHexString(bytes);
         return TOTP.getOTP(hexKey);
     }
 
-    public static void setup2FAKey(UserAccount userAccount) {
+    @Override
+    public String setup2FAKey(UserAccount userAccount) {
         if (StringUtils.isNotEmpty(userAccount.getKeyFor2fa())) {
             throw new CloudRuntimeException(String.format("2FA key is already setup for the user account %s", userAccount.getAccountName()));
         }
@@ -80,5 +81,6 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
         Base32 base32 = new Base32();
         String key = base32.encodeToString(bytes);
         userAccount.setKeyFor2fa(key);
+        return key;
     }
 }

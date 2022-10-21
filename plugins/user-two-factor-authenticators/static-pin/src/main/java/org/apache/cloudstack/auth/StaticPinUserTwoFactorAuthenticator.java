@@ -43,4 +43,9 @@ public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements 
     @Override
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException  {
     }
+
+    @Override
+    public String setup2FAKey(UserAccount userAccount) {
+        return null;
+    }
 }

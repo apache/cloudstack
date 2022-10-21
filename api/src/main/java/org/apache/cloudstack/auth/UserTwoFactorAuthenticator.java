@@ -40,4 +40,6 @@ public interface UserTwoFactorAuthenticator extends Adapter {
      */
     void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException;
 
+    String setup2FAKey(UserAccount userAccount);
+
 }

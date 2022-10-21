@@ -22,9 +22,11 @@ import java.net.InetAddress;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.springframework.stereotype.Component;
@@ -146,6 +148,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     @Override
     public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
 
+    }
+
+    @Override
+    public UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd) {
+        return null;
     }
 
     @Override

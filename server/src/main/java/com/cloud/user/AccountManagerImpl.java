@@ -40,9 +40,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.security.SecurityGroupVO;
-import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -62,6 +59,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
@@ -81,6 +79,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -113,6 +112,8 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -164,6 +165,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -3197,6 +3199,25 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         final String name = userTwoFactorAuthenticationProviderPlugin.valueIn(domainId);
         return getUserTwoFactorAuthenticator(name);
+    }
+
+    @Override
+    public UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd) {
+        String providerName = cmd.getProvider();
+
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountService.getActiveAccountById(caller.getId());
+
+        checkAccess(caller, null, true, owner);
+
+        UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
+        UserAccount userAccount = _accountService.getUserAccountById(owner.getId());
+        String code = provider.setup2FAKey(userAccount);
+        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
+        response.setId(owner.getUuid());
+        response.setSecretCode(code);
+
+        return response;
     }
 
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final String name) {
