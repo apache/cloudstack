@@ -326,7 +326,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                     pairsUsageAndQuotaUsage.add(new Pair<>(usageRecord, null));
                     continue;
                 }
-                
+
                 if (!QuotaConfig.QuotaAccountEnabled.valueIn(account.getAccountId())) {
                     s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because account [%s] has the quota plugin disabled.",
                             usageRecord.toString(), accountToString));
