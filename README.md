@@ -1,4 +1,4 @@
-# Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apache_cloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
+# Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
 ![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
@@ -29,13 +29,20 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 
 * See our [case studies](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Case+Studies) highlighting successful deployments of Apache CloudStack.
 
-* See the up-to-date list of current [users](http://cloudstack.apache.org/users.html).
+* See the up-to-date list of current [users](https://cloudstack.apache.org/users.html).
 
-* If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](http://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
+* If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](https://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
+
+## Demo
+
+![Screenshot](ui/docs/screenshot-dashboard.png)
+
+See the project user-interface QA website that runs CloudStack against simulator hypervisor:
+http://qa.cloudstack.cloud:8080/client
 
 ## Getting Started
 
-* Download a released [version](http://cloudstack.apache.org/downloads.html)
+* Download a released [version](https://cloudstack.apache.org/downloads.html)
 * Build from source with the instructions in the [INSTALL.md](INSTALL.md) file.
 
 ## Getting Source Repository
@@ -52,15 +59,21 @@ The Github mirror is strictly read only and provides convenience to users and
 developers to explore the code and for the community to accept contributions
 via Github pull requests.
 
-## Links
+## Documentation
 
-* [Documentation](http://docs.cloudstack.apache.org)
+* [Project Documentation](https://docs.cloudstack.apache.org)
+* [Release notes](https://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
-* [Release notes](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](https://cloudstack.apache.org/api.html)
 * How to [contribute](CONTRIBUTING.md)
-* Check the [YouTube channel](https://www.youtube.com/ApacheCloudStack) for presentations, interviews, and more
+
+## News and Events
+
+* [Blog](https://blogs.apache.org/cloudstack)
+* [Twitter](https://twitter.com/cloudstack)
+* [Events and meetup](http://cloudstackcollab.org/)
+* [YouTube channel](https://www.youtube.com/ApacheCloudStack)
 
 ## Getting Involved and Contributing
 
@@ -83,13 +96,7 @@ Mailing lists:
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
 Report and/or check bugs on [Github](https://github.com/apache/cloudstack/issues) and check our
-developer [page](http://cloudstack.apache.org/developers.html) for contributing code.
-
-## News and Events
-
-* [Blog](https://blogs.apache.org/cloudstack)
-* [Twitter](https://twitter.com/cloudstack)
-* [Events and meetup](http://cloudstackcollab.org/)
+developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
 
 ## Reporting Security Vulnerabilities
 

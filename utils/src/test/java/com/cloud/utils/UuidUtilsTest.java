@@ -27,16 +27,26 @@ import org.junit.Test;
 public class UuidUtilsTest {
 
     @Test
-    public void testValidateUUIDPass() throws Exception {
+    public void isUuidTestAllLowerCaseReturnTrue() {
         String serviceUuid = "f81a9aa3-1f7d-466f-b04b-f2b101486bae";
-
-        assertTrue(UuidUtils.validateUUID(serviceUuid));
+        assertTrue(UuidUtils.isUuid(serviceUuid));
     }
 
     @Test
-    public void testValidateUUIDFail() throws Exception {
-        String serviceUuid = "6fc6ce7-d503-4f95-9e68-c9cd281b13df";
+    public void isUuidTestAllUpperCaseReturnTrue() {
+        String serviceUuid = "F81A9AA3-1F7D-466F-B04B-F2B101486BAE";
+        assertTrue(UuidUtils.isUuid(serviceUuid));
+    }
 
-        assertFalse(UuidUtils.validateUUID(serviceUuid));
+    @Test
+    public void isUuidTestAlternatingCaseReturnTrue() {
+        String serviceUuid = "f81A9Aa3-1f7d-466F-B04b-f2b101486BaE";
+        assertTrue(UuidUtils.isUuid(serviceUuid));
+    }
+
+    @Test
+    public void isUuidTestNotUuidReturnFalse() {
+        String serviceUuid = "6fc6ce7-d503-4f95-9e68-c9cd281b13df";
+        assertFalse(UuidUtils.isUuid(serviceUuid));
     }
 }

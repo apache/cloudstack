@@ -161,6 +161,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "disk_size_strictness")
     boolean diskSizeStrictness;
 
+    @Column(name = "encrypt")
+    private boolean encrypt;
+
     public DiskOfferingJoinVO() {
     }
 
@@ -346,7 +349,10 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return vsphereStoragePolicy;
     }
 
+
     public boolean getDiskSizeStrictness() {
         return diskSizeStrictness;
     }
+
+    public boolean getEncrypt() { return encrypt; }
 }

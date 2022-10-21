@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -559,6 +560,19 @@ public class LibvirtVMDef {
     }
 
     public static class DiskDef {
+        public static class LibvirtDiskEncryptDetails {
+            String passphraseUuid;
+            QemuObject.EncryptFormat encryptFormat;
+
+            public LibvirtDiskEncryptDetails(String passphraseUuid, QemuObject.EncryptFormat encryptFormat) {
+                this.passphraseUuid = passphraseUuid;
+                this.encryptFormat = encryptFormat;
+            }
+
+            public String getPassphraseUuid() { return this.passphraseUuid; }
+            public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
+        }
+
         public enum DeviceType {
             FLOPPY("floppy"), DISK("disk"), CDROM("cdrom"), LUN("lun");
             String _type;
@@ -714,6 +728,7 @@ public class LibvirtVMDef {
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
         private IoDriver ioDriver;
+        private LibvirtDiskEncryptDetails encryptDetails;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -962,6 +977,8 @@ public class LibvirtVMDef {
             return _diskFmtType;
         }
 
+        public void setDiskFormatType(DiskFmtType type) { _diskFmtType = type; }
+
         public void setBytesReadRate(Long bytesReadRate) {
             _bytesReadRate = bytesReadRate;
         }
@@ -1026,6 +1043,10 @@ public class LibvirtVMDef {
             this._serial = serial;
         }
 
+        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
+
+        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -1072,13 +1093,15 @@ public class LibvirtVMDef {
                 diskBuilder.append(" protocol='" + _diskProtocol + "'");
                 diskBuilder.append(" name='" + _sourcePath + "'");
                 diskBuilder.append(">\n");
-                diskBuilder.append("<host name='");
-                diskBuilder.append(_sourceHost);
-                if (_sourcePort != 0) {
-                    diskBuilder.append("' port='");
-                    diskBuilder.append(_sourcePort);
+                for (String sourceHost : _sourceHost.split(",")) {
+                    diskBuilder.append("<host name='");
+                    diskBuilder.append(sourceHost.replace("[", "").replace("]", ""));
+                    if (_sourcePort != 0) {
+                        diskBuilder.append("' port='");
+                        diskBuilder.append(_sourcePort);
+                    }
+                    diskBuilder.append("'/>\n");
                 }
-                diskBuilder.append("'/>\n");
                 diskBuilder.append("</source>\n");
                 if (_authUserName != null) {
                     diskBuilder.append("<auth username='" + _authUserName + "'>\n");
@@ -1093,7 +1116,13 @@ public class LibvirtVMDef {
             diskBuilder.append("/>\n");
 
             if (_serial != null && !_serial.isEmpty() && _deviceType != DeviceType.LUN) {
-                diskBuilder.append("<serial>" + _serial + "</serial>");
+                diskBuilder.append("<serial>" + _serial + "</serial>\n");
+            }
+
+            if (encryptDetails != null) {
+                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'>\n");
+                diskBuilder.append("<secret type='passphrase' uuid='" + encryptDetails.passphraseUuid + "' />\n");
+                diskBuilder.append("</encryption>\n");
             }
 
             if ((_deviceType != DeviceType.CDROM) &&

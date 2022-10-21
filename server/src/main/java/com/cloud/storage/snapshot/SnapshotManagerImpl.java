@@ -97,6 +97,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
@@ -110,6 +111,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
@@ -172,6 +174,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Inject
     DomainDao _domainDao;
     @Inject
+    DiskOfferingDao diskOfferingDao;
+    @Inject
     StorageManager _storageMgr;
     @Inject
     SnapshotScheduler _snapSchedMgr;
@@ -227,7 +231,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
     }
 
     @Override
@@ -846,6 +850,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
         }
 
+        // For now, volumes with encryption don't support snapshot schedules, because they will fail when VM is running
+        DiskOfferingVO diskOffering = diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
+        if (diskOffering == null) {
+            throw new InvalidParameterValueException(String.format("Failed to find disk offering for the volume [%s]", volume.getUuid()));
+        } else if(diskOffering.getEncrypt()) {
+            throw new UnsupportedOperationException(String.format("Encrypted volumes don't support snapshot schedules, cannot create snapshot policy for the volume [%s]", volume.getUuid()));
+        }
+
         String volumeDescription = volume.getVolumeDescription();
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
@@ -1238,7 +1250,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupSnapToSecondary = BackupSnapshotAfterTakingSnapshot.value() == null || BackupSnapshotAfterTakingSnapshot.value();
+            boolean backupSnapToSecondary = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
             if (backupSnapToSecondary) {
                 backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);

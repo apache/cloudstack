@@ -23,6 +23,11 @@ import javax.inject.Inject;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
+import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.VMTemplateVO;
@@ -105,6 +110,8 @@ public class VolumeObject implements VolumeInfo {
     DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Inject
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
+    @Inject
+    PassphraseDao passphraseDao;
 
     private Object payload;
     private MigrationOptions migrationOptions;
@@ -664,10 +671,12 @@ public class VolumeObject implements VolumeInfo {
     }
 
     protected void updateVolumeInfo(VolumeObjectTO newVolume, VolumeVO volumeVo, boolean setVolumeSize, boolean setFormat) {
-        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "poolId");
+        String previousValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "encryptFormat", "poolId");
 
         volumeVo.setPath(newVolume.getPath());
         Long newVolumeSize = newVolume.getSize();
+
+        volumeVo.setEncryptFormat(newVolume.getEncryptFormat());
 
         if (newVolumeSize != null && setVolumeSize) {
             volumeVo.setSize(newVolumeSize);
@@ -678,7 +687,7 @@ public class VolumeObject implements VolumeInfo {
         volumeVo.setPoolId(getDataStore().getId());
         volumeDao.update(volumeVo.getId(), volumeVo);
 
-        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "poolId");
+        String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "encryptFormat", "poolId");
         s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
@@ -863,5 +872,62 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setExternalUuid(String externalUuid) {
         volumeVO.setExternalUuid(externalUuid);
+    }
+
+    @Override
+    public Long getPassphraseId() {
+        return volumeVO.getPassphraseId();
+    }
+
+    @Override
+    public void setPassphraseId(Long id) {
+        volumeVO.setPassphraseId(id);
+    }
+
+    /**
+     * Removes passphrase reference from underlying volume. Also removes the associated passphrase entry if it is the last user.
+     */
+    public void deletePassphrase() {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                Long passphraseId = volumeVO.getPassphraseId();
+                if (passphraseId != null) {
+                    volumeVO.setPassphraseId(null);
+                    volumeDao.persist(volumeVO);
+
+                    s_logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
+                    List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
+
+                    if (volumes != null && !volumes.isEmpty()) {
+                        s_logger.debug("Other volumes use this passphrase, skipping deletion");
+                        return;
+                    }
+
+                    s_logger.debug(String.format("Deleting passphrase %s", passphraseId));
+                    passphraseDao.remove(passphraseId);
+                }
+            }
+        });
+    }
+
+    /**
+     * Looks up passphrase from underlying volume.
+     * @return passphrase as bytes
+     */
+    public byte[] getPassphrase() {
+        PassphraseVO passphrase = passphraseDao.findById(volumeVO.getPassphraseId());
+        if (passphrase != null) {
+            return passphrase.getPassphrase();
+        }
+        return new byte[0];
+    }
+
+    @Override
+    public String getEncryptFormat() { return volumeVO.getEncryptFormat(); }
+
+    @Override
+    public void setEncryptFormat(String encryptFormat) {
+        volumeVO.setEncryptFormat(encryptFormat);
     }
 }

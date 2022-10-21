@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -152,6 +153,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @Inject
     private NetworkOfferingDao networkOfferingDao;
     @Inject
+    private UserDataDao userDataDao;
+    @Inject
     EntityManager entityManager;
 
     private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
@@ -165,6 +168,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.VM_SNAPSHOT, ApiCommandResourceType.VmSnapshot);
         s_typeMap.put(EntityType.INSTANCE_GROUP, ApiCommandResourceType.None);
         s_typeMap.put(EntityType.SSH_KEYPAIR, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.USER_DATA, ApiCommandResourceType.None);
         s_typeMap.put(EntityType.NETWORK, ApiCommandResourceType.Network);
         s_typeMap.put(EntityType.VPC, ApiCommandResourceType.Vpc);
         s_typeMap.put(EntityType.PUBLIC_IP_ADDRESS, ApiCommandResourceType.IpAddress);
@@ -507,6 +511,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 return instanceGroupDao.findByUuid(entityUuid);
             case SSH_KEYPAIR:
                 return sshKeyPairDao.findByUuid(entityUuid);
+            case USER_DATA:
+                return userDataDao.findByUuid(entityUuid);
             case NETWORK:
                 return networkDao.findByUuid(entityUuid);
             case VPC:

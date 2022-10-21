@@ -28,6 +28,7 @@ public class ConsoleProxyInfo {
     private int proxyPort;
     private String proxyImageUrl;
     private int proxyUrlPort = 8000;
+    private String proxyName;
 
     public ConsoleProxyInfo(int proxyUrlPort) {
         this.proxyUrlPort = proxyUrlPort;
@@ -99,5 +100,13 @@ public class ConsoleProxyInfo {
 
     public void setSslEnabled(boolean sslEnabled) {
         this.sslEnabled = sslEnabled;
+    }
+
+    public String getProxyName() {
+        return proxyName;
+    }
+
+    public void setProxyName(String proxyName) {
+        this.proxyName = proxyName;
     }
 }

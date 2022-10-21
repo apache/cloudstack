@@ -38,6 +38,8 @@ import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
@@ -72,6 +74,13 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             + "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
+
+    private static final String LIST_ACCOUNT_RESOURCES_IN_PERIOD = "SELECT zone.uuid as zone_uuid, domain.uuid as domain_uuid\n "
+            + "FROM    cloud_usage.cloud_usage cloud_usage\n "
+            + "INNER   JOIN cloud.data_center zone ON (zone.id = cloud_usage.zone_id)\n "
+            + "INNER   JOIN cloud.domain domain ON (domain.id = cloud_usage.domain_id)\n "
+            + "WHERE   cloud_usage.usage_type = ? AND cloud_usage.account_id = ? AND cloud_usage.start_date >= ? AND cloud_usage.end_date <= ? "
+            + "GROUP   BY cloud_usage.usage_id ";
 
     public UsageDaoImpl() {
     }
@@ -486,30 +495,61 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         });
     }
 
-    public Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(final long accountId, final long domainId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Getting usage records for account: " + accountId + ", domainId: " + domainId);
-        }
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<? extends UsageVO>, Integer>>() {
-            @Override
-            public Pair<List<? extends UsageVO>, Integer> doInTransaction(final TransactionStatus status) {
-                Pair<List<UsageVO>, Integer> usageRecords = new Pair<List<UsageVO>, Integer>(new ArrayList<UsageVO>(), 0);
-                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, 0L, Long.MAX_VALUE);
-                QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
-                if (accountId != -1) {
-                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
-                }
-                if (domainId != -1) {
-                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
-                }
-                qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
-                qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Getting usage records" + usageFilter.getOrderBy());
-                }
-                usageRecords = searchAndCountAllRecords(qb.create(), usageFilter);
-                return new Pair<List<? extends UsageVO>, Integer>(usageRecords.first(), usageRecords.second());
+    @Override
+    public Pair<List<UsageVO>, Integer> listUsageRecordsPendingForQuotaAggregation(long accountId, long domainId) {
+        s_logger.debug(String.format("Retrieving pending usage records for accountId [%s] and domainId [%s].", accountId, domainId));
+
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Pair<List<UsageVO>, Integer>>) status -> {
+            Filter usageFilter = new Filter(UsageVO.class, "startDate", true, null, null);
+            QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
+
+            if (accountId != -1) {
+                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
             }
+
+            if (domainId != -1) {
+                qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+            }
+
+            qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
+            qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
+
+            return searchAndCountAllRecords(qb.create(), usageFilter);
         });
+    }
+
+    @Override
+    public List<Pair<String, String>> listAccountResourcesInThePeriod(long accountId, int usageType, Date startDate, Date endDate) {
+        String startDateString = DateUtil.getOutputString(startDate);
+        String endDateString = DateUtil.getOutputString(endDate);
+
+        s_logger.debug(String.format("Retrieving account resources between [%s] and [%s] for accountId [%s] and usageType [%s].", startDateString, endDateString, accountId,
+                usageType));
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareStatement(LIST_ACCOUNT_RESOURCES_IN_PERIOD)) {
+            List<Pair<String, String>> accountResourcesOfTheLastDay = new ArrayList<>();
+
+            pstmt.setInt(1, usageType);
+            pstmt.setLong(2, accountId);
+            pstmt.setTimestamp(3, new Timestamp(startDate.getTime()));
+            pstmt.setTimestamp(4, new Timestamp(endDate.getTime()));
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String zoneUuid = rs.getString("zone_uuid");
+                    String domainUuid = rs.getString("domain_uuid");
+
+                    accountResourcesOfTheLastDay.add(new Pair<>(zoneUuid, domainUuid));
+                }
+            }
+
+            return accountResourcesOfTheLastDay;
+        } catch (SQLException e) {
+            s_logger.error(String.format("Failed to retrieve account resources between [%s] and [%s] for accountId [%s] and usageType [%s] due to [%s]. Returning an empty list of"
+                    + " resources.", startDateString, endDateString, accountId, usageType, e.getMessage()), e);
+
+            return new ArrayList<>();
+        }
     }
 }

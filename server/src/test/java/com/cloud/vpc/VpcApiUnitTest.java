@@ -42,7 +42,7 @@ import junit.framework.TestCase;
 public class VpcApiUnitTest extends TestCase {
     @Inject
     VpcManagerImpl _vpcService = null;
-    VpcVO _vo = new VpcVO(1, "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain", false, false, false);
+    VpcVO _vo = new VpcVO(1, "new vpc", "new vpc", 1, 1, 1, "0.0.0.0/0", "vpc domain", false, false, false, null, null, null, null);
 
     @Override
     @Before

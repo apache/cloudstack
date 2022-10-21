@@ -237,7 +237,13 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
+        <a-form-item>
+          <a-alert v-if="!isVirtualRouterForAtLeastOneService" type="warning" style="margin-bottom: 10px">
+            <template #message>
+              <span v-if="guestType === 'l2'" v-html="$t('message.vr.alert.upon.network.offering.creation.l2')" />
+              <span v-else v-html="$t('message.vr.alert.upon.network.offering.creation.others')" />
+            </template>
+          </a-alert>
           <template #label>
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
@@ -614,7 +620,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -649,11 +654,9 @@ export default {
       }
     },
     fetchSupportedServiceData () {
-      const params = {}
-      params.listAll = true
       this.supportedServiceLoading = true
       this.supportedServices = []
-      api('listSupportedNetworkServices', params).then(json => {
+      api('listSupportedNetworkServices').then(json => {
         this.supportedServices = json.listsupportednetworkservicesresponse.networkservice
         for (var i in this.supportedServices) {
           var networkServiceObj = this.supportedServices[i]
