@@ -639,4 +639,88 @@ public class UriUtils {
         expandedVlans.add(Integer.parseInt(parts[1]));
         return expandedVlans;
     }
+
+    public static class UriInfo {
+        String scheme;
+        String storageHost;
+        String storagePath;
+        String userInfo;
+        int port = -1;
+
+        public UriInfo() {
+        }
+
+        public UriInfo(String scheme, String storageHost, String storagePath, String userInfo, int port) {
+            this.scheme = scheme;
+            this.storageHost = storageHost;
+            this.storagePath = storagePath;
+            this.userInfo = userInfo;
+            this.port = port;
+        }
+
+        public String getScheme() {
+            return scheme;
+        }
+
+        public String getStorageHost() {
+            return storageHost;
+        }
+
+        public String getStoragePath() {
+            return storagePath;
+        }
+
+        public String getUserInfo() {
+            return userInfo;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s://%s%s%s%s", scheme,
+                    userInfo == null ? "" : userInfo + "@",
+                    storageHost,
+                    port == -1 ? "" : ":" + port,
+                    storagePath == null ? "" : storagePath);
+        }
+    }
+
+    public static UriInfo getUriInfo(String url) {
+        try {
+            if (url == null) {
+                return new UriInfo();
+            }
+            if (url.startsWith("rbd://")) {
+                return getRbdUrlInfo(url);
+            }
+            URI uri = new URI(UriUtils.encodeURIComponent(url));
+            return new UriInfo(uri.getScheme(), uri.getHost(), uri.getPath(), uri.getUserInfo(), uri.getPort());
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(url + " is not a valid uri");
+        }
+    }
+
+    private static UriInfo getRbdUrlInfo(String url) {
+        int secondSlash = StringUtils.ordinalIndexOf(url, "/", 2);
+        int thirdSlash = StringUtils.ordinalIndexOf(url, "/", 3);
+        int firstAt = StringUtils.indexOf(url, "@");
+        int lastColon = StringUtils.lastIndexOf(url,":");
+        int lastSquareBracket = StringUtils.lastIndexOf(url,"]");
+        int startOfHost = Math.max(secondSlash, firstAt) + 1;
+        int endOfHost = lastColon < startOfHost ? (thirdSlash > 0 ? thirdSlash : url.length() + 1) :
+                (lastSquareBracket > lastColon ? lastSquareBracket + 1 : lastColon);
+        String storageHosts = StringUtils.substring(url, startOfHost, endOfHost);
+        String firstHost = storageHosts.split(",")[0];
+        String strBeforeHosts = StringUtils.substring(url, 0, startOfHost);
+        String strAfterHosts = StringUtils.substring(url, endOfHost);
+        try {
+            URI uri = new URI(UriUtils.encodeURIComponent(strBeforeHosts + firstHost + strAfterHosts));
+            return new UriInfo(uri.getScheme(), storageHosts, uri.getPath(), uri.getUserInfo(), uri.getPort());
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(url + " is not a valid uri for RBD");
+        }
+    }
 }

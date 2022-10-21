@@ -284,7 +284,10 @@
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'RBD'">
-          <a-form-item name="radosmonitor" ref="radosmonitor" :label="$t('label.rados.monitor')">
+          <a-form-item name="radosmonitor" ref="radosmonitor">
+            <template #label>
+              <tooltip-label :title="$t('label.rados.monitor')" :tooltip="$t('label.rados.monitor.description')"/>
+            </template>
             <a-input v-model:value="form.radosmonitor" :placeholder="$t('label.rados.monitor')" />
           </a-form-item>
           <a-form-item name="radospool" ref="radospool" :label="$t('label.rados.pool')">
