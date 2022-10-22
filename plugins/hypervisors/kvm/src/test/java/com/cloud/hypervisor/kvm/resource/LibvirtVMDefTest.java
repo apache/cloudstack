@@ -239,6 +239,72 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testDiskDefWithMultipleHosts() {
+        String path = "/mnt/primary1";
+        String host = "10.11.12.13,10.11.12.14,10.11.12.15";
+        int port = 3300;
+        String authUsername = "admin";
+        String uuid = "40b3f216-36b5-11ed-9357-9b4e21b0ed91";
+        int devId = 2;
+
+        DiskDef diskdef = new DiskDef();
+        diskdef.defNetworkBasedDisk(path, host, port, authUsername,
+                uuid, devId, DiskDef.DiskBus.VIRTIO, DiskDef.DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+
+        assertEquals(path, diskdef.getDiskPath());
+        assertEquals(DiskDef.DiskType.NETWORK, diskdef.getDiskType());
+        assertEquals(DiskDef.DiskFmtType.RAW, diskdef.getDiskFormatType());
+
+        String expected = "<disk  device='disk' type='network'>\n" +
+                "<driver name='qemu' type='raw' cache='none' />\n" +
+                "<source  protocol='rbd' name='/mnt/primary1'>\n" +
+                "<host name='10.11.12.13' port='3300'/>\n" +
+                "<host name='10.11.12.14' port='3300'/>\n" +
+                "<host name='10.11.12.15' port='3300'/>\n" +
+                "</source>\n" +
+                "<auth username='admin'>\n" +
+                "<secret type='ceph' uuid='40b3f216-36b5-11ed-9357-9b4e21b0ed91'/>\n" +
+                "</auth>\n" +
+                "<target dev='vdc' bus='virtio'/>\n" +
+                "</disk>\n";
+
+        assertEquals(expected, diskdef.toString());
+    }
+
+    @Test
+    public void testDiskDefWithMultipleHostsIpv6() {
+        String path = "/mnt/primary1";
+        String host = "[fc00:1234::1],[fc00:1234::2],[fc00:1234::3]";
+        int port = 3300;
+        String authUsername = "admin";
+        String uuid = "40b3f216-36b5-11ed-9357-9b4e21b0ed91";
+        int devId = 2;
+
+        DiskDef diskdef = new DiskDef();
+        diskdef.defNetworkBasedDisk(path, host, port, authUsername,
+                uuid, devId, DiskDef.DiskBus.VIRTIO, DiskDef.DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+
+        assertEquals(path, diskdef.getDiskPath());
+        assertEquals(DiskDef.DiskType.NETWORK, diskdef.getDiskType());
+        assertEquals(DiskDef.DiskFmtType.RAW, diskdef.getDiskFormatType());
+
+        String expected = "<disk  device='disk' type='network'>\n" +
+                "<driver name='qemu' type='raw' cache='none' />\n" +
+                "<source  protocol='rbd' name='/mnt/primary1'>\n" +
+                "<host name='fc00:1234::1' port='3300'/>\n" +
+                "<host name='fc00:1234::2' port='3300'/>\n" +
+                "<host name='fc00:1234::3' port='3300'/>\n" +
+                "</source>\n" +
+                "<auth username='admin'>\n" +
+                "<secret type='ceph' uuid='40b3f216-36b5-11ed-9357-9b4e21b0ed91'/>\n" +
+                "</auth>\n" +
+                "<target dev='vdc' bus='virtio'/>\n" +
+                "</disk>\n";
+
+        assertEquals(expected, diskdef.toString());
+    }
+
+    @Test
     public void testDiskDefWithBurst() {
         String filePath = "/var/lib/libvirt/images/disk.qcow2";
         String diskLabel = "vda";

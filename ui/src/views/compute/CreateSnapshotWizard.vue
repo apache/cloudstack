@@ -119,7 +119,7 @@ export default {
     fetchData () {
       this.loading = true
 
-      api('listVolumes', { virtualMachineId: this.resource.id })
+      api('listVolumes', { virtualMachineId: this.resource.id, listall: true })
         .then(json => {
           this.listVolumes = json.listvolumesresponse.volume || []
         })

@@ -61,7 +61,6 @@ import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -552,8 +551,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public boolean updateQuotaEmailTemplate(QuotaEmailTemplateUpdateCmd cmd) {
         final String templateName = cmd.getTemplateName();
-        final String templateSubject = StringEscapeUtils.escapeJavaScript(cmd.getTemplateSubject());
-        final String templateBody = StringEscapeUtils.escapeJavaScript(cmd.getTemplateBody());
+        final String templateSubject = cmd.getTemplateSubject();
+        final String templateBody = cmd.getTemplateBody();
         final String locale = cmd.getLocale();
 
         final List<QuotaEmailTemplatesVO> templates = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(templateName);
