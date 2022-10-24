@@ -3616,7 +3616,7 @@ public class NetscalerResource implements ServerResource {
 
     private String generateAutoScaleServiceGroupName(final LoadBalancerTO lbTO) {
         /*
-         *  ServiceGroup name in NetScaler wont support long names. Providing special name.
+         *  ServiceGroup name in NetScaler won't support long names. Providing special name.
          *  Need for introducing uuid because every vmgroup creation should be distinguished.
          *  Ex. (1) create a vm group, delete a vmgroup, create a vmgroup on same lb ip and port
          *  This will reuse all vms from the original vm group in step (1)

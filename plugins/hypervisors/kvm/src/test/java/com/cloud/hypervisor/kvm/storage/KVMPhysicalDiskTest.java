@@ -28,6 +28,26 @@ public class KVMPhysicalDiskTest extends TestCase {
                      "rbd:volume1:mon_host=ceph-monitor\\:8000:auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30");
     }
 
+    public void testRBDStringBuilder2() {
+        String monHosts = "ceph-monitor1,ceph-monitor2,ceph-monitor3";
+        int monPort = 3300;
+        String expected = "rbd:volume1:" +
+                "mon_host=ceph-monitor1\\:3300\\;ceph-monitor2\\:3300\\;ceph-monitor3\\:3300:" +
+                "auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+        String actualResult = KVMPhysicalDisk.RBDStringBuilder(monHosts, monPort, "admin", "supersecret", "volume1");
+        assertEquals(expected, actualResult);
+    }
+
+    public void testRBDStringBuilder3() {
+        String monHosts = "[fc00:1234::1],[fc00:1234::2],[fc00:1234::3]";
+        int monPort = 3300;
+        String expected = "rbd:volume1:" +
+                "mon_host=[fc00\\:1234\\:\\:1]\\:3300\\;[fc00\\:1234\\:\\:2]\\:3300\\;[fc00\\:1234\\:\\:3]\\:3300:" +
+                "auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+        String actualResult = KVMPhysicalDisk.RBDStringBuilder(monHosts, monPort, "admin", "supersecret", "volume1");
+        assertEquals(expected, actualResult);
+    }
+
     public void testAttributes() {
         String name = "3bc186e0-6c29-45bf-b2b0-ddef6f91f5ef";
         String path = "/" + name;

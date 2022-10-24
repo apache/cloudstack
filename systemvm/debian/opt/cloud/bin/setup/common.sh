@@ -885,6 +885,12 @@ parse_cmd_line() {
         logrotatefrequency)
           export LOGROTATE_FREQUENCY=$VALUE
           ;;
+        useHttpsToUpload)
+          export USEHTTPS=$VALUE
+          ;;
+        vncport)
+          export VNCPORT=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}

@@ -98,7 +98,7 @@
         </span>
 
         <span v-if="record.hasannotations">
-          <span v-if="record.id && $route.path !== '/ssh'">
+          <span v-if="record.id">
             <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.id, query: { tab: 'comments' } }"><message-filled style="padding-left: 10px" size="small"/></router-link>
           </span>
@@ -110,7 +110,7 @@
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
         <span v-else>
-          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id && $route.path !== '/ssh'">{{ text }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
         </span>
       </span>
@@ -511,7 +511,7 @@ export default {
   },
   methods: {
     quickViewEnabled () {
-      return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
+      return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup',
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
@@ -521,7 +521,7 @@ export default {
         .test(this.$route.path)
     },
     enableGroupAction () {
-      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'

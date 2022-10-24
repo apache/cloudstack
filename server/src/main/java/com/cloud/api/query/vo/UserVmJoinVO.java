@@ -379,6 +379,21 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "affinity_group_description")
     private String affinityGroupDescription;
 
+    @Column(name = "user_data_id")
+    private Long userDataId;
+
+    @Column(name = "user_data_uuid")
+    private String userDataUuid;
+
+    @Column(name = "user_data_name")
+    private String userDataName;
+
+    @Column(name = "user_data_policy")
+    private String userDataPolicy;
+
+    @Column(name = "user_data_details")
+    private String userDataDetails;
+
     transient String password;
 
     @Transient
@@ -875,6 +890,26 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public String getUserDataUUid() {
+        return userDataUuid;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
     }
 
 }

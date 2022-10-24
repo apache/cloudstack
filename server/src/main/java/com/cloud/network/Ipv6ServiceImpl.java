@@ -205,7 +205,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     private Pair<String, ? extends Vlan> assignPublicIpv6ToNetworkInternal(Network network, String vlanId, String nicMacAddress) throws InsufficientAddressCapacityException {
-        final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
+        final List<VlanVO> ranges = vlanDao.listIpv6RangeByZoneIdAndVlanId(network.getDataCenterId(), vlanId);
         if (CollectionUtils.isEmpty(ranges)) {
             s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
             InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
@@ -447,8 +447,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             } else {
                 nic.setFormat(Networks.AddressFormat.Ip6);
             }
-            nic.setIPv6Dns1(dc.getIp6Dns1());
-            nic.setIPv6Dns2(dc.getIp6Dns2());
+            Pair<String, String> dns = networkModel.getNetworkIp6Dns(network, dc);
+            nic.setIPv6Dns1(dns.first());
+            nic.setIPv6Dns2(dns.second());
         }
     }
 
@@ -501,7 +502,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
         for (IPAddressVO address : addresses) {
             VlanVO vlan = vlanDao.findById(address.getVlanId());
-            final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlan.getVlanTag());
+            final List<VlanVO> ranges = vlanDao.listIpv6RangeByZoneIdAndVlanId(network.getDataCenterId(), vlan.getVlanTag());
             if (CollectionUtils.isEmpty(ranges)) {
                 s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlan.getVlanTag()));
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());

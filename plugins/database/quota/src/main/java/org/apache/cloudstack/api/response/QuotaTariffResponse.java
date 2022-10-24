@@ -47,16 +47,40 @@ public class QuotaTariffResponse extends BaseResponse {
     private BigDecimal tariffValue;
 
     @SerializedName("effectiveDate")
-    @Param(description = "the date on/after which this quota value will be effective")
+    @Param(description = "the start date of the quota tariff")
     private Date effectiveOn = null;
+
+    @SerializedName("usageTypeDescription")
+    @Param(description = "usage type description")
+    private String usageTypeDescription;
+
+    @SerializedName("currency")
+    @Param(description = "currency")
+    private String currency;
+
+    @SerializedName("endDate")
+    @Param(description = "the end date of the quota tariff")
+    private Date endDate;
+
+    @SerializedName("activationRule")
+    @Param(description = "activation rule of the quota tariff")
+    private String activationRule;
+
+    @SerializedName("name")
+    @Param(description = "name")
+    private String name;
 
     @SerializedName("description")
     @Param(description = "description")
     private String description;
 
-    @SerializedName("currency")
-    @Param(description = "currency")
-    private String currency;
+    @SerializedName("uuid")
+    @Param(description = "uuid")
+    private String uuid;
+
+    @SerializedName("removed")
+    @Param(description = "when the quota tariff was removed")
+    private Date removed;
 
     public QuotaTariffResponse() {
         super();
@@ -108,12 +132,12 @@ public class QuotaTariffResponse extends BaseResponse {
         this.tariffValue = tariffValue;
     }
 
-    public String getDescription() {
-        return description;
+    public String getUsageTypeDescription() {
+        return usageTypeDescription;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setUsageTypeDescription(String usageTypeDescription) {
+        this.usageTypeDescription = usageTypeDescription;
     }
 
     public Date getEffectiveOn() {
@@ -131,4 +155,53 @@ public class QuotaTariffResponse extends BaseResponse {
     public void setCurrency(String currency) {
         this.currency = currency;
     }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getActivationRule() {
+        return activationRule;
+    }
+
+    public void setActivationRule(String activationRule) {
+        this.activationRule = activationRule;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
 }

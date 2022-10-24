@@ -533,6 +533,14 @@
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.userdataname">
+          <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+          <div class="resource-detail-item__details">
+            <solution-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
+            <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.owner">
           <div class="resource-detail-item__label">{{ $t('label.owners') }}</div>
           <div class="resource-detail-item__details">
@@ -764,7 +772,10 @@ export default {
     }
   },
   watch: {
-    '$route.fullPath': function () {
+    '$route.fullPath': function (path) {
+      if (path === '/user/login') {
+        return
+      }
       this.getIcons()
     },
     resource: {
@@ -772,21 +783,13 @@ export default {
       handler (newData, oldData) {
         if (newData === oldData) return
         this.newResource = newData
-        this.resourceType = this.$route.meta.resourceType
         this.showKeys = false
         this.setData()
 
-        if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
-          if ('tags' in this.resource) {
-            this.tags = this.resource.tags
-          } else if (this.resourceType) {
-            this.getTags()
-          }
-        }
         if ('apikey' in this.resource) {
           this.getUserKeys()
         }
-        this.getIcons()
+        this.updateResourceAdditionalData()
       }
     },
     async templateIcon () {
@@ -798,7 +801,7 @@ export default {
     eventBus.on('handle-close', (showModal) => {
       this.showUploadModal(showModal)
     })
-    this.getIcons()
+    this.updateResourceAdditionalData()
   },
   computed: {
     tagsSupportingResourceTypes () {
@@ -808,7 +811,7 @@ export default {
         'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
     },
     name () {
-      return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+      return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
     },
     keypairs () {
@@ -834,6 +837,18 @@ export default {
     }
   },
   methods: {
+    updateResourceAdditionalData () {
+      if (!this.resource) return
+      this.resourceType = this.$route.meta.resourceType
+      if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
+        if ('tags' in this.resource) {
+          this.tags = this.resource.tags
+        } else if (this.resourceType) {
+          this.getTags()
+        }
+      }
+      this.getIcons()
+    },
     showUploadModal (show) {
       if (show) {
         if (this.$showIcon()) {

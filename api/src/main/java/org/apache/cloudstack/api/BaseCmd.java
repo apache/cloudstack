@@ -381,7 +381,7 @@ public abstract class BaseCmd {
     }
 
     /**
-     * display flag is used to control the display of the resource only to the end user. It doesnt affect Root Admin.
+     * display flag is used to control the display of the resource only to the end user. It doesn't affect Root Admin.
      * @return display flag
      */
     public boolean isDisplay(){

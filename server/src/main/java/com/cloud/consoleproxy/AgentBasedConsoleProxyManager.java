@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -67,6 +68,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     protected ConsoleProxyDao _cpDao;
     @Inject
     protected KeystoreManager _ksMgr;
+    @Inject
+    protected ConsoleAccessManager consoleAccessManager;
 
     @Inject
     ConfigurationDao _configDao;
@@ -77,8 +80,9 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
     public class AgentBasedAgentHook extends AgentHookBase {
 
-        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
+        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
+                                   AgentManager agentMgr, KeysManager keysMgr, ConsoleAccessManager consoleAccessManager) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr, consoleAccessManager);
         }
 
         @Override
@@ -121,7 +125,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
 
-        _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _keysMgr));
+        _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr,
+                _agentMgr, _keysMgr, consoleAccessManager));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         if (s_logger.isInfoEnabled()) {
@@ -180,6 +185,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Override
     public boolean destroyProxy(long proxyVmId) {
         return false;
+    }
+
+    @Override
+    public int getVncPort() {
+        return _consoleProxyPort;
     }
 
     @Override

@@ -40,6 +40,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1832,7 +1833,7 @@ public class HypervisorHostHelper {
             return ovfString;
         }
         try {
-            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
             final Document doc = factory.newDocumentBuilder().parse(new ByteArrayInputStream(ovfString.getBytes()));
             final DocumentTraversal traversal = (DocumentTraversal) doc;
             final NodeIterator iterator = traversal.createNodeIterator(doc.getDocumentElement(), NodeFilter.SHOW_ELEMENT, null, true);
@@ -1851,7 +1852,7 @@ public class HypervisorHostHelper {
             final DOMSource domSource = new DOMSource(doc);
             final StringWriter writer = new StringWriter();
             final StreamResult result = new StreamResult(writer);
-            final TransformerFactory tf = TransformerFactory.newInstance();
+            final TransformerFactory tf = ParserUtils.getSaferTransformerFactory();
             final Transformer transformer = tf.newTransformer();
             transformer.transform(domSource, result);
             return writer.toString();
@@ -2302,7 +2303,7 @@ public class HypervisorHostHelper {
         String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
-            s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
+            s_logger.info(String.format("vSphere datastore base folder [%s] does not exist on datastore [%s]. We will create it.", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
             dsMo.makeDirectory(folderPath, mor);
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
             dsMo.makeDirectory(hiddenFolderPath, mor);
@@ -2338,5 +2339,16 @@ public class HypervisorHostHelper {
             }
         }
         return hardwareVersion;
+    }
+
+    public static VirtualMachineMO findVmOnHypervisorHostOrPeer(VmwareHypervisorHost hypervisorHost, String vmName) throws Exception {
+        VirtualMachineMO vmMo = hypervisorHost.findVmOnHyperHost(vmName);
+        if (vmMo == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Unable to find the VM on host %s, try within datacenter", hypervisorHost.getHyperHostName()));
+            }
+            vmMo = hypervisorHost.findVmOnPeerHyperHost(vmName);
+        }
+        return vmMo;
     }
 }

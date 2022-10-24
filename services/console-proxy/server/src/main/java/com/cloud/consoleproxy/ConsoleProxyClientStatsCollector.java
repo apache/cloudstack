@@ -20,6 +20,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -31,8 +32,14 @@ import com.google.gson.GsonBuilder;
 public class ConsoleProxyClientStatsCollector {
 
     ArrayList<ConsoleProxyConnection> connections;
+    ArrayList<String> removedSessions;
 
     public ConsoleProxyClientStatsCollector() {
+    }
+
+    public void setRemovedSessions(List<String> removed) {
+        removedSessions = new ArrayList<>();
+        removedSessions.addAll(removed);
     }
 
     public ConsoleProxyClientStatsCollector(Hashtable<String, ConsoleProxyClient> connMap) {
@@ -67,6 +74,7 @@ public class ConsoleProxyClientStatsCollector {
                 conn.tag = client.getClientTag();
                 conn.createTime = client.getClientCreateTime();
                 conn.lastUsedTime = client.getClientLastFrontEndActivityTime();
+                conn.setSessionUuid(client.getSessionUuid());
                 conns.add(conn);
             }
         }
@@ -81,6 +89,15 @@ public class ConsoleProxyClientStatsCollector {
         public String tag;
         public long createTime;
         public long lastUsedTime;
+        protected String sessionUuid;
+
+        public String getSessionUuid() {
+            return sessionUuid;
+        }
+
+        public void setSessionUuid(String sessionUuid) {
+            this.sessionUuid = sessionUuid;
+        }
 
         public ConsoleProxyConnection() {
         }

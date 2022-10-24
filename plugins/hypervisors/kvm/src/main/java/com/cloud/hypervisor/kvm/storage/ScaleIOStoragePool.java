@@ -20,6 +20,8 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
+import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 
 import com.cloud.storage.Storage;
@@ -34,8 +36,9 @@ public class ScaleIOStoragePool implements KVMStoragePool {
     private long capacity;
     private long used;
     private long available;
+    private Map<String, String> details;
 
-    public ScaleIOStoragePool(String uuid, String host, int port, String path, Storage.StoragePoolType poolType, StorageAdaptor adaptor) {
+    public ScaleIOStoragePool(String uuid, String host, int port, String path, Storage.StoragePoolType poolType, Map<String, String> poolDetails, StorageAdaptor adaptor) {
         this.uuid = uuid;
         sourceHost = host;
         sourcePort = port;
@@ -45,15 +48,34 @@ public class ScaleIOStoragePool implements KVMStoragePool {
         capacity = 0;
         used = 0;
         available = 0;
+        details = poolDetails;
+        addSDCDetails();
+    }
+
+    private void addSDCDetails() {
+        if (details == null || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
+            return;
+        }
+
+        String storageSystemId = details.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
+        if (sdcId != null) {
+            details.put(ScaleIOGatewayClient.SDC_ID, sdcId);
+        } else {
+            String sdcGuId = ScaleIOUtil.getSdcGuid();
+            if (sdcGuId != null) {
+                details.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+            }
+        }
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        return null;
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        return this.storageAdaptor.createPhysicalDisk(volumeUuid, this, format, provisioningType, size, passphrase);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         return null;
     }
 
@@ -177,5 +199,10 @@ public class ScaleIOStoragePool implements KVMStoragePool {
     @Override
     public boolean supportsConfigDriveIso() {
         return false;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return this.details;
     }
 }

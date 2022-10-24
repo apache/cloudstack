@@ -22,11 +22,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,8 +44,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
@@ -58,7 +60,7 @@ public class LibvirtDomainXMLParser {
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
         try {
-            builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
 
             InputSource is = new InputSource();
             is.setCharacterStream(new StringReader(domXML));
@@ -81,7 +83,7 @@ public class LibvirtDomainXMLParser {
                     String protocol = getAttrValue("source", "protocol", disk);
                     String authUserName = getAttrValue("auth", "username", disk);
                     String poolUuid = getAttrValue("secret", "uuid", disk);
-                    String host = getAttrValue("host", "name", disk);
+                    String host = LibvirtStoragePoolXMLParser.getStorageHosts(disk);
                     int port = 0;
                     String xmlPort = getAttrValue("host", "port", disk);
                     if (StringUtils.isNotBlank(xmlPort)) {
@@ -190,6 +192,15 @@ public class LibvirtDomainXMLParser {
                         Long iopsWriteRateMaxLength = Long.parseLong(iopsWriteRateMaxLengthStr);
                         def.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
                     }
+                }
+
+                NodeList encryption = disk.getElementsByTagName("encryption");
+                if (encryption.getLength() != 0) {
+                    Element encryptionElement = (Element) encryption.item(0);
+                    String passphraseUuid = getAttrValue("secret", "uuid", encryptionElement);
+                    QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(encryptionElement.getAttribute("format"));
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(passphraseUuid, encryptFormat);
+                    def.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
 
                 diskDefs.add(def);

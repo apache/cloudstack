@@ -25,9 +25,9 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size);
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size);
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
     public boolean connectPhysicalDisk(String volumeUuid, Map<String, String> details);
 
@@ -72,4 +72,6 @@ public interface KVMStoragePool {
     public boolean createFolder(String path);
 
     public boolean supportsConfigDriveIso();
+
+    public Map<String, String> getDetails();
 }
