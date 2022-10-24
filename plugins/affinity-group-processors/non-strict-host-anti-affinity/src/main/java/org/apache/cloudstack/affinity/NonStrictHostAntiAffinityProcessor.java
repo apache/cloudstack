@@ -16,13 +16,9 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.deploy.DeploymentPlan;
 
 public class NonStrictHostAntiAffinityProcessor extends NonStrictHostAffinityProcessor {
-
-    private static final Logger s_logger = Logger.getLogger(NonStrictHostAntiAffinityProcessor.class);
 
     @Override
     protected DeploymentPlan.HostPriority addHostPriority(DeploymentPlan plan, Long hostId) {

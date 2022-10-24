@@ -45,7 +45,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private final Logger LOGGER = Logger.getLogger(this.getClass());
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
     @Inject
     protected UserVmDao vmDao;
     @Inject
@@ -77,8 +77,8 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
         AffinityGroupVO group = affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
         }
 
         List<Long> groupVMIds = affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
@@ -95,15 +95,15 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     protected void processVmInAffinityGroup(DeploymentPlan plan, VMInstanceVO groupVM) {
         if (groupVM.getHostId() != null) {
             DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getHostId());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
             }
         } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
             if (secondsSinceLastUpdate < vmCapacityReleaseInterval) {
                 DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getLastHostId());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
                             " is present on the host, in Stopped state but has reserved capacity");
                 }
             }
