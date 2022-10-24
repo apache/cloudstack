@@ -88,22 +88,27 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
             VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
             if (groupVM != null && !groupVM.isRemoved()) {
                 if (groupVM.getHostId() != null) {
-                    plan.addHostPriority(groupVM.getHostId(), DeploymentPlan.HostPriority.HIGH);
+                    DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getHostId());
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Marked host " + groupVM.getHostId() + " to higher priority, since VM " + groupVM.getId() + " is present on the host");
+                        s_logger.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
                     }
                 } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
                     long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
                     if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                        plan.addHostPriority(groupVM.getLastHostId(), DeploymentPlan.HostPriority.HIGH);
+                        DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getLastHostId());
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Marked host " + groupVM.getLastHostId() + " to higher priority, since VM " + groupVM.getId() +
+                            s_logger.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
                                     " is present on the host, in Stopped state but has reserved capacity");
                         }
                     }
                 }
             }
         }
+    }
+
+    protected DeploymentPlan.HostPriority addHostPriority(DeploymentPlan plan, Long hostId) {
+        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
+        return plan.getHostPriorities().get(hostId);
     }
 
     @Override
