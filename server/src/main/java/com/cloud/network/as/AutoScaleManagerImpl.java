@@ -2277,10 +2277,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
             Double sum = countersMap.get(key);
             Integer number = countersNumberMap.get(key);
-            s_logger.debug(String.format("Checking policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), sum, number));
+            s_logger.debug(String.format("Checking policyId = %d, conditionId = %d, counter = \"%s\", sum = %f, number = %s", policyTO.getId(), conditionTO.getId(), counter.getName(), sum, number));
             if (number == null || number == 0) {
                 bValid = false;
-                s_logger.debug(String.format("Skipping policyId = %d, conditionId = %d, counter = %s because the number is %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), number));
+                s_logger.debug(String.format("Skipping policyId = %d, conditionId = %d, counter = \"%s\" because the number is %s", policyTO.getId(), conditionTO.getId(), counter.getName(), number));
                 break;
             }
             Double avg = sum / number;
