@@ -45,26 +45,26 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private static final Logger s_logger = Logger.getLogger(NonStrictHostAffinityProcessor.class);
+    private final Logger LOGGER = Logger.getLogger(this.getClass());
     @Inject
-    protected UserVmDao _vmDao;
+    protected UserVmDao vmDao;
     @Inject
-    protected VMInstanceDao _vmInstanceDao;
+    protected VMInstanceDao vmInstanceDao;
     @Inject
-    protected AffinityGroupDao _affinityGroupDao;
+    protected AffinityGroupDao affinityGroupDao;
     @Inject
-    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
-    private int _vmCapacityReleaseInterval;
+    protected AffinityGroupVMMapDao affinityGroupVMMapDao;
+    private int vmCapacityReleaseInterval;
     @Inject
-    protected ConfigurationDao _configDao;
+    protected ConfigurationDao configDao;
 
     @Inject
-    protected VMReservationDao _reservationDao;
+    protected VMReservationDao reservationDao;
 
     @Override
     public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
+        List<AffinityGroupVMMapVO> vmGroupMappings = affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
             if (vmGroupMapping != null) {
@@ -75,32 +75,36 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     }
 
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
-        AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
+        AffinityGroupVO group = affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
         }
 
-        List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
+        List<Long> groupVMIds = affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
         groupVMIds.remove(vm.getId());
 
         for (Long groupVMId : groupVMIds) {
-            VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
+            VMInstanceVO groupVM = vmInstanceDao.findById(groupVMId);
             if (groupVM != null && !groupVM.isRemoved()) {
-                if (groupVM.getHostId() != null) {
-                    DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getHostId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
-                    }
-                } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
-                    long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
-                    if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                        DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getLastHostId());
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
-                                    " is present on the host, in Stopped state but has reserved capacity");
-                        }
-                    }
+                processVmInAffinityGroup(plan, groupVM);
+            }
+        }
+    }
+
+    protected void processVmInAffinityGroup(DeploymentPlan plan, VMInstanceVO groupVM) {
+        if (groupVM.getHostId() != null) {
+            DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getHostId());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
+            }
+        } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
+            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
+            if (secondsSinceLastUpdate < vmCapacityReleaseInterval) {
+                DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getLastHostId());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
+                            " is present on the host, in Stopped state but has reserved capacity");
                 }
             }
         }
@@ -114,7 +118,7 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
+        vmCapacityReleaseInterval = NumbersUtil.parseInt(configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
         return true;
     }
 
