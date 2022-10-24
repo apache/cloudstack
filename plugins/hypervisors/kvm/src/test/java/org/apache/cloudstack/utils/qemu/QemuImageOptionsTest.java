@@ -33,9 +33,9 @@ public class QemuImageOptionsTest {
         String imagePath = "/path/to/file";
         String secretName = "secretname";
         return Arrays.asList(new Object[][] {
-            { null, imagePath, null, new String[]{"--image-opts","file.filename=/path/to/file"} },
+            { null, imagePath, null, new String[]{ imagePath } },
             { QemuImg.PhysicalDiskFormat.QCOW2, imagePath, null, new String[]{"--image-opts",String.format("driver=qcow2,file.filename=%s", imagePath)} },
-            { QemuImg.PhysicalDiskFormat.RAW, imagePath, secretName, new String[]{"--image-opts",String.format("driver=raw,file.filename=%s", imagePath)} },
+            { QemuImg.PhysicalDiskFormat.RAW, imagePath, secretName, new String[]{ imagePath } },
             { QemuImg.PhysicalDiskFormat.QCOW2, imagePath, secretName, new String[]{"--image-opts", String.format("driver=qcow2,encrypt.key-secret=%s,file.filename=%s", secretName, imagePath)} },
             { QemuImg.PhysicalDiskFormat.LUKS, imagePath, secretName, new String[]{"--image-opts", String.format("driver=luks,file.filename=%s,key-secret=%s", imagePath, secretName)} }
         });

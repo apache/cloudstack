@@ -120,7 +120,7 @@ public interface UserVmManager extends UserVmService {
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-                                Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList, Map<String, Map<Integer, String>> extraDhcpOptionsMap) throws ResourceUnavailableException, InsufficientCapacityException;
+                                Long userDataId, String userDataDetails, Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList, Map<String, Map<Integer, String>> extraDhcpOptionsMap) throws ResourceUnavailableException, InsufficientCapacityException;
 
     //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
     //find a common place for all the scaling and upgrading code of both user and systemvms.

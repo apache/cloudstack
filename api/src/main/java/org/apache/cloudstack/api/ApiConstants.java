@@ -23,6 +23,7 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
     public static final String ACCUMULATE = "accumulate";
+    public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";
@@ -415,6 +416,12 @@ public class ApiConstants {
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USER_DATA = "userdata";
+
+    public static final String USER_DATA_NAME = "userdataname";
+    public static final String USER_DATA_ID = "userdataid";
+    public static final String USER_DATA_POLICY = "userdatapolicy";
+    public static final String USER_DATA_DETAILS = "userdatadetails";
+    public static final String USER_DATA_PARAMS = "userdataparams";
     public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";
     public static final String USER_SOURCE = "usersource";

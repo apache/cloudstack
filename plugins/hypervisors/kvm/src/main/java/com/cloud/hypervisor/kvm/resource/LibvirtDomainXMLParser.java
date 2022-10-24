@@ -83,7 +83,7 @@ public class LibvirtDomainXMLParser {
                     String protocol = getAttrValue("source", "protocol", disk);
                     String authUserName = getAttrValue("auth", "username", disk);
                     String poolUuid = getAttrValue("secret", "uuid", disk);
-                    String host = getAttrValue("host", "name", disk);
+                    String host = LibvirtStoragePoolXMLParser.getStorageHosts(disk);
                     int port = 0;
                     String xmlPort = getAttrValue("host", "port", disk);
                     if (StringUtils.isNotBlank(xmlPort)) {

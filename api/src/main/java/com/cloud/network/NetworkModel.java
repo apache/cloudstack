@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,6 +85,9 @@ public interface NetworkModel {
             .put(CLOUD_DOMAIN_ID_FILE, CLOUD_DOMAIN_ID_FILE)
             .put(HYPERVISOR_HOST_NAME_FILE, HYPERVISOR_HOST_NAME_FILE)
             .build();
+
+    List<String> metadataFileNames = new ArrayList<>(Arrays.asList(SERVICE_OFFERING_FILE, AVAILABILITY_ZONE_FILE, LOCAL_HOSTNAME_FILE, LOCAL_IPV4_FILE, PUBLIC_HOSTNAME_FILE, PUBLIC_IPV4_FILE,
+            INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, HYPERVISOR_HOST_NAME_FILE));
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",
             "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
@@ -325,7 +329,7 @@ public interface NetworkModel {
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
 
-    List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                   String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname);
 
     String getValidNetworkCidr(Network guestNetwork);
