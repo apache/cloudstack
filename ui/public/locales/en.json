@@ -730,6 +730,7 @@
 "label.forced": "Force",
 "label.forceencap": "Force UDP encapsulation of ESP packets",
 "label.forgedtransmits": "Forged transmits",
+"label.forgetlasthost": "Forget Last Host",
 "label.format": "Format",
 "label.free": "Free",
 "label.friday": "Friday",

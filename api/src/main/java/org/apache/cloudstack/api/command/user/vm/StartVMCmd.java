@@ -82,6 +82,13 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
                since = "3.0.1")
     private Long hostId;
 
+    @Parameter(name = ApiConstants.FORGET_LAST_HOST,
+            type = CommandType.BOOLEAN,
+            description = "False by default, CloudStack will try to start the VM on the last host where it run if destination host is not specified. " +
+                    "If true, CloudStack will forget the last host and start the VM by normal process.",
+            since = "4.18.0")
+    private Boolean forgetLastHost;
+
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
@@ -110,6 +117,10 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     public Boolean getBootIntoSetup() {
         return bootIntoSetup;
+    }
+
+    public Boolean getForgetLastHost() {
+        return forgetLastHost;
     }
 
     // ///////////////////////////////////////////////////
