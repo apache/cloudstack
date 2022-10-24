@@ -1667,11 +1667,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public final void checkNetworkPermissions(Account caller, Network network) {
-        if (_accountMgr.isRootAdmin(caller.getAccountId())) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("root admin is permitted to do stuff on every network");
-            }
-        } else {
+        if (! _accountMgr.isRootAdmin(caller.getAccountId())) {
             if (network == null) {
                 throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
             }
@@ -1681,6 +1677,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
             } else {
                 checkIsolatedNetworkPermissions(caller, network);
+            }
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("root admin is permitted to do stuff on every network");
             }
         }
     }
