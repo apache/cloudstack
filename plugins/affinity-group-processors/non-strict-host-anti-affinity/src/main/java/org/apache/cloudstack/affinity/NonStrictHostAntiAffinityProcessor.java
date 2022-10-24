@@ -90,14 +90,14 @@ public class NonStrictHostAntiAffinityProcessor extends AffinityProcessorBase im
                 if (groupVM.getHostId() != null) {
                     plan.addHostPriority(groupVM.getHostId(), DeploymentPlan.HostPriority.LOW);
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Marked host " + groupVM.getHostId() + " to as low priority, since VM " + groupVM.getId() + " is present on the host");
+                        s_logger.debug("Marked host " + groupVM.getHostId() + " to lower priority, since VM " + groupVM.getId() + " is present on the host");
                     }
                 } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
                     long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
                     if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                         plan.addHostPriority(groupVM.getLastHostId(), DeploymentPlan.HostPriority.LOW);
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Marked host " + groupVM.getLastHostId() + " as low priority, since VM " + groupVM.getId() +
+                            s_logger.debug("Marked host " + groupVM.getLastHostId() + " to lower priority, since VM " + groupVM.getId() +
                                     " is present on the host, in Stopped state but has reserved capacity");
                         }
                     }
