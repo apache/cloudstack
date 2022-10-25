@@ -17,13 +17,14 @@
 # under the License.
 username=$1
 new_passwd=$2
+expected="successfully."
 
 passwd ${username} << EOD
 ${new_passwd}
 ${new_passwd}
 EOD
 
-if [[ $(echo $?) ]]; then
+if [[ $(echo $?) -eq 0 ]]; then
    exit 0
 else
    exit 1
