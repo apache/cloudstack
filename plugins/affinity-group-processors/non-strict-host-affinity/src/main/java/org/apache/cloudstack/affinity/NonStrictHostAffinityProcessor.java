@@ -54,12 +54,13 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     protected AffinityGroupDao affinityGroupDao;
     @Inject
     protected AffinityGroupVMMapDao affinityGroupVMMapDao;
-    private int vmCapacityReleaseInterval;
     @Inject
     protected ConfigurationDao configDao;
 
     @Inject
     protected VMReservationDao reservationDao;
+
+    private int vmCapacityReleaseInterval;
 
     @Override
     public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {

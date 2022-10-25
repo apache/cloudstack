@@ -36,9 +36,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -132,5 +134,39 @@ public class NonStrictHostAntiAffinityProcessorTest {
         Assert.assertEquals(DeploymentPlan.HostPriority.LOW, plan.getHostPriorities().get(host2Id));
         Assert.assertNotNull(plan.getHostPriorities().get(host3Id));
         Assert.assertEquals(DeploymentPlan.HostPriority.NORMAL, plan.getHostPriorities().get(host3Id));
+    }
+
+    @Test
+    public void testProcessWithNotRunningVM() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        when(vm.getId()).thenReturn(vmId);
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        when(vmProfile.getVirtualMachine()).thenReturn(vm);
+
+        List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+        vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+
+        DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+        ExcludeList avoid = new ExcludeList();
+
+        AffinityGroupVO affinityGroupVO = Mockito.mock(AffinityGroupVO.class);
+        when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+        when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+        List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+        VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+        when(vm2.getHostId()).thenReturn(null);
+        when(vm2.getLastHostId()).thenReturn(host2Id);
+        when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+        when(vm2.getUpdateTime()).thenReturn(new Date());
+
+        ReflectionTestUtils.setField(processor, "vmCapacityReleaseInterval", 3600);
+        processor.process(vmProfile, plan, avoid);
+
+        Assert.assertEquals(1, plan.getHostPriorities().size());
+        Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+        Assert.assertEquals(DeploymentPlan.HostPriority.LOW, plan.getHostPriorities().get(host2Id));
     }
 }
