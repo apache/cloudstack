@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -1028,5 +1029,47 @@ public class DeploymentPlanningManagerImplTest {
                 return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
             }
         }
+    }
+
+    @Test
+    public void testReorderHostsByPriority() {
+        Map<Long, DeploymentPlan.HostPriority> priorities = new LinkedHashMap<>();
+        priorities.put(1L, DeploymentPlan.HostPriority.LOW);
+        priorities.put(2L, DeploymentPlan.HostPriority.HIGH);
+        priorities.put(3L, DeploymentPlan.HostPriority.NORMAL);
+        priorities.put(5L, DeploymentPlan.HostPriority.HIGH);
+        priorities.put(6L, DeploymentPlan.HostPriority.LOW);
+        priorities.put(8L, DeploymentPlan.HostPriority.LOW);
+
+        Host host1 = Mockito.mock(Host.class);
+        Mockito.when(host1.getId()).thenReturn(1L);
+        Host host2 = Mockito.mock(Host.class);
+        Mockito.when(host2.getId()).thenReturn(2L);
+        Host host3 = Mockito.mock(Host.class);
+        Mockito.when(host3.getId()).thenReturn(3L);
+        Host host4 = Mockito.mock(Host.class);
+        Mockito.when(host4.getId()).thenReturn(4L);
+        Host host5 = Mockito.mock(Host.class);
+        Mockito.when(host5.getId()).thenReturn(5L);
+        Host host6 = Mockito.mock(Host.class);
+        Mockito.when(host6.getId()).thenReturn(6L);
+        Host host7 = Mockito.mock(Host.class);
+        Mockito.when(host7.getId()).thenReturn(7L);
+        Host host8 = Mockito.mock(Host.class);
+        Mockito.when(host8.getId()).thenReturn(8L);
+
+        List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3, host4, host5, host6, host7, host8));
+        _dpm.reorderHostsByPriority(priorities, hosts);
+
+        Assert.assertEquals(8, hosts.size());
+
+        Assert.assertEquals(2, hosts.get(0).getId());
+        Assert.assertEquals(5, hosts.get(1).getId());
+        Assert.assertEquals(3, hosts.get(2).getId());
+        Assert.assertEquals(4, hosts.get(3).getId());
+        Assert.assertEquals(7, hosts.get(4).getId());
+        Assert.assertEquals(1, hosts.get(5).getId());
+        Assert.assertEquals(6, hosts.get(6).getId());
+        Assert.assertEquals(8, hosts.get(7).getId());
     }
 }
