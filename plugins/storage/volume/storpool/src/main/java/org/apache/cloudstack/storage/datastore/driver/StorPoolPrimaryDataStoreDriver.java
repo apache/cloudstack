@@ -713,35 +713,15 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     VolumeObjectTO srcTO = (VolumeObjectTO)srcData.getTO();
                     StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc SRC path=%s DST canonicalName=%s ", srcTO.getPath(), dstData.getDataStore().getClass().getCanonicalName());
                     PrimaryDataStoreTO checkStoragePool = dstData.getTO().getDataStore() instanceof PrimaryDataStoreTO ? (PrimaryDataStoreTO)dstData.getTO().getDataStore() : null;
-                    final String name = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
+                    final String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
 
                     if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.StorPool)) {
-                        SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-                        String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
-
-                        String vmUuid = null;
-                        String vcPolicyTag = null;
-
-                        VMInstanceVO vm = null;
-                        if (srcInfo.getInstanceId() != null) {
-                            vm = vmInstanceDao.findById(srcInfo.getInstanceId());
-                        }
-
-                        if (vm != null) {
-                            vmUuid = vm.getUuid();
-                            vcPolicyTag = getVcPolicyTag(vm.getId());
-                        }
-
-                        if (vm != null && vm.getState().equals(State.Running)) {
-                            // migrate volume to another StorPool template
-                            answer = migrateVolume(srcData, dstData, name, conn);
-                        } else {
-                            //copy volume to another pool
-                            answer = copyVolume(srcInfo, srcTO, conn, baseOn, vmUuid, vcPolicyTag);
-                        }
+                        //live migrate from one StorPool storage to another
+                        //migrate volume to StorPool storage
+                        answer = migrateVolumeToStorPool(srcData, dstData, srcInfo, srcTO, volumeName);
                     } else {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(srcData.getDataStore().getUuid(), srcData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-                        final SpApiResponse resp = StorPoolUtil.volumeSnapshot(name, srcTO.getUuid(), srcInfo.getInstanceId() != null ? getVMInstanceUUID(srcInfo.getInstanceId()) : null, "temporary", null, conn);
+                        final SpApiResponse resp = StorPoolUtil.volumeSnapshot(volumeName, srcTO.getUuid(), srcInfo.getInstanceId() != null ? getVMInstanceUUID(srcInfo.getInstanceId()) : null, "temporary", null, conn);
                         String snapshotName = StorPoolUtil.getSnapshotNameFromResponse(resp, true, StorPoolUtil.GLOBAL_ID);
                         if (resp.getError() == null) {
                             srcTO.setPath(StorPoolUtil.devPath(
@@ -802,6 +782,35 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CopyCommandResult res = new CopyCommandResult(null, answer);
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private Answer migrateVolumeToStorPool(DataObject srcData, DataObject dstData, VolumeInfo srcInfo,
+            VolumeObjectTO srcTO, final String volumeName) {
+        Answer answer;
+        SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
+        String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
+
+        String vmUuid = null;
+        String vcPolicyTag = null;
+
+        VMInstanceVO vm = null;
+        if (srcInfo.getInstanceId() != null) {
+            vm = vmInstanceDao.findById(srcInfo.getInstanceId());
+        }
+
+        if (vm != null) {
+            vmUuid = vm.getUuid();
+            vcPolicyTag = getVcPolicyTag(vm.getId());
+        }
+
+        if (vm != null && vm.getState().equals(State.Running)) {
+            // migrate volume to another StorPool template
+            answer = migrateVolume(srcData, dstData, volumeName, conn);
+        } else {
+            //copy volume to another pool
+            answer = copyVolume(srcInfo, srcTO, conn, baseOn, vmUuid, vcPolicyTag);
+        }
+        return answer;
     }
 
     private Answer copyVolume(VolumeInfo srcInfo, VolumeObjectTO srcTO, SpConnectionDesc conn, String baseOn, String vmUuid, String vcPolicyTag) {
