@@ -19,10 +19,14 @@ import javax.inject.Inject;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.UserAccount;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.AdapterBase;
+
+import java.util.Random;
 
 public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements UserTwoFactorAuthenticator {
     public static final Logger s_logger = Logger.getLogger(StaticPinUserTwoFactorAuthenticator.class);
@@ -42,10 +46,29 @@ public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements 
 
     @Override
     public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException  {
+        String expectedCode = getStaticPin(userAccount);
+        if (expectedCode.equals(code)) {
+            s_logger.info("2FA matches user's input");
+            return;
+        }
+        throw new CloudAuthenticationException("two-factor authentication code provided is invalid");
+    }
+
+    private String getStaticPin(UserAccount userAccount) {
+        return userAccount.getKeyFor2fa();
     }
 
     @Override
     public String setup2FAKey(UserAccount userAccount) {
-        return null;
+        if (StringUtils.isNotEmpty(userAccount.getKeyFor2fa())) {
+            throw new CloudRuntimeException(String.format("2FA key is already setup for the user account %s", userAccount.getAccountName()));
+        }
+        long seed = System.currentTimeMillis();
+        Random rng = new Random(seed);
+        long number = (rng.nextLong() % 900000) + 100000;
+        String key = Long.toString(number);
+        userAccount.setKeyFor2fa(key);
+
+        return key;
     }
 }
