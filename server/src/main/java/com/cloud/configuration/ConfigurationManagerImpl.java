@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -274,6 +275,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
@@ -284,7 +286,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6Network;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -448,6 +451,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
     public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
+    private Set<String> resourceCountRoutersTypeValues;
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -503,6 +507,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
         overProvisioningFactorsForValidation();
+        populateConfigValuesForRouterResourceCountValidation();
         initMessageBusListener();
         return true;
     }
@@ -564,6 +569,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
+    }
+
+    private void populateConfigValuesForRouterResourceCountValidation() {
+        resourceCountRoutersTypeValues = new HashSet<>();
+        resourceCountRoutersTypeValues.add(VirtualMachineManager.COUNT_ALL_VR_RESOURCES);
+        resourceCountRoutersTypeValues.add(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES);
     }
 
     private void initMessageBusListener() {
@@ -1132,6 +1143,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
             s_logger.error(errMsg);
             return errMsg;
+        }
+
+        if (VirtualMachineManager.ResourceCountRoutersType.key().equalsIgnoreCase(name)) {
+            if (!resourceCountRoutersTypeValues.contains(value) || isBlank(value)) {
+                final String msg = "Possible values are - delta or all";
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
         }
 
         if (value == null) {

@@ -319,6 +319,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private static final List<HypervisorType> SupportedHypervisorsForVolResize = Arrays.asList(HypervisorType.KVM, HypervisorType.XenServer,
             HypervisorType.VMware, HypervisorType.Any, HypervisorType.None);
+    private static final List<HypervisorType> SupportedHypervisorsForRootDiskSizeOverride = Arrays.asList(HypervisorType.KVM, HypervisorType.XenServer,
+            HypervisorType.VMware, HypervisorType.Any, HypervisorType.None, HypervisorType.Simulator);
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
     private List<HypervisorType> supportingDefaultHV;
@@ -1050,6 +1052,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
         if (!SupportedHypervisorsForVolResize.contains(hypervisorType)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support volume resize");
+        }
+
+        if (!SupportedHypervisorsForRootDiskSizeOverride.contains(hypervisorType)) {
+            throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support  rootdisksize override");
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
