@@ -24,6 +24,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.net.NetUtils;
@@ -139,6 +141,6 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
 
     @Override
     public String toString() {
-        return String.format("Load Balancer {uuid: \"%s\", name: \"%s\"}", getUuid(), name);
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name");
     }
 }
