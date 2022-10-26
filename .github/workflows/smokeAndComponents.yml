@@ -179,6 +179,10 @@ jobs:
           path: $HOME/.m2
           key: '${{ runner.os }}-${{ hashFiles(''TODO'') }}'
       - uses: actions/checkout@v2
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
       - run: sudo rm -rf /usr/share/dotnet
       - run: sudo rm -rf /opt/ghc
       - run: sudo rm -rf "/usr/local/share/boost"
