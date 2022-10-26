@@ -179,6 +179,10 @@ jobs:
           path: $HOME/.m2
           key: '${{ runner.os }}-${{ hashFiles(''TODO'') }}'
       - uses: actions/checkout@v2
+      - run: sudo rm -rf /usr/share/dotnet
+      - run: sudo rm -rf /opt/ghc
+      - run: sudo rm -rf "/usr/local/share/boost"
+      - run: sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - run: ./tools/travis/before_install.sh
       - run: ./tools/travis/install.sh
       - run: ./tools/travis/before_script.sh
