@@ -234,7 +234,7 @@ public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Id
         return sortKey;
     }
 
-     public DataCenter.Type type() {
+     public DataCenter.Type getType() {
         return type;
     }
 }
