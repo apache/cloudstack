@@ -260,11 +260,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
     public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
-            "vr.public.interface.mtu", "1500", "MTU set on the VR's public facing interfaces",
+            "vr.public.interface.max.mtu", "1500", "MTU set on the VR's public facing interfaces",
             true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
-            "vr.private.interface.mtu", "1500", "MTU set on the VR's private interfaces",
+            "vr.private.interface.max.mtu", "1500", "MTU set on the VR's private interfaces",
             true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Boolean> AllowUsersToSpecifyVmMtu = new ConfigKey<>("Advanced", Boolean.class,
