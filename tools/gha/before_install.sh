@@ -24,6 +24,7 @@
 echo -e "#### System Information ####"
 echo -e "\nO.S. information:"
 echo $(uname -a)
+cat /etc/os-release
 
 echo -e "\nWho am I:"
 whoami
@@ -73,9 +74,9 @@ echo -e "\nInstalling Development tools: "
 RETRY_COUNT=3
 
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1397BC53640DB551
-sudo sh -c 'echo "deb http://mirrors.kernel.org/ubuntu bionic-updates main" >> /etc/apt/sources.list'
+# should not be necessary anymore: sudo sh -c 'echo "deb http://mirrors.kernel.org/ubuntu bionic-updates main" >> /etc/apt/sources.list'
 sudo apt-get update -q -y > /dev/null
-sudo apt-get -q -y -t bionic-updates install openjdk-11-jdk
+sudo apt-get -q -y -t jammy-updates install openjdk-11-jdk
 sudo apt-get -q -y install uuid-runtime genisoimage netcat > /dev/null
 if [[ $? -ne 0 ]]; then
   echo -e "\napt-get packages failed to install"

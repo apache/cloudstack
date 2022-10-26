@@ -187,7 +187,7 @@ jobs:
       - run: sudo rm -rf /opt/ghc
       - run: sudo rm -rf "/usr/local/share/boost"
       - run: sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-      - run: ./tools/travis/before_install.sh
+      - run: ./tools/gha/before_install.sh
       - run: ./tools/travis/install.sh
       - run: ./tools/travis/before_script.sh
       - run: ./tools/travis/script.sh ${{ matrix.tests}}
