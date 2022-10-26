@@ -1709,8 +1709,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
 
+
+        publishVolumeCreationUsageEvent(volume);
+
         return volume;
     }
+
+    public void publishVolumeCreationUsageEvent(Volume volume) {
+        Long diskOfferingId = volume.getDiskOfferingId();
+        Long offeringId = null;
+        if (diskOfferingId != null) {
+            DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+            if (offering != null && !offering.isComputeOnly()) {
+                offeringId = offering.getId();
+            }
+        }
+        UsageEventUtils
+                .publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId,
+                        volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplay());
+
+        s_logger.debug(String.format("Volume [%s] has been successfully recovered, thus a new usage event %s has been published.", volume.getUuid(), EventTypes.EVENT_VOLUME_CREATE));
+    }
+
+
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHANGE_DISK_OFFERING, eventDescription = "Changing disk offering of a volume")
@@ -1945,6 +1966,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    private void setNewIopsLimits(VolumeVO volume, DiskOfferingVO newDiskOffering, Long[] newMinIops, Long[] newMaxIops) {
+        if (Boolean.TRUE.equals(newDiskOffering.isCustomizedIops())) {
+            newMinIops[0] = newMinIops[0] != null ? newMinIops[0] : volume.getMinIops();
+            newMaxIops[0] = newMaxIops[0] != null ? newMaxIops[0] : volume.getMaxIops();
+
+            validateIops(newMinIops[0], newMaxIops[0], volume.getPoolType());
+        } else {
+            newMinIops[0] = newDiskOffering.getMinIops();
+            newMaxIops[0] = newDiskOffering.getMaxIops();
+        }
+    }
+
     private void validateVolumeResizeWithNewDiskOfferingAndLoad(VolumeVO volume, DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, Long[] newSize, Long[] newMinIops, Long[] newMaxIops, Integer[] newHypervisorSnapshotReserve) {
         if (newDiskOffering.getRemoved() != null) {
             throw new InvalidParameterValueException("Requested disk offering has been removed.");
@@ -1993,19 +2026,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } else {
                 newSize[0] = newDiskOffering.getDiskSize();
             }
-            if (newDiskOffering.isCustomizedIops() != null && newDiskOffering.isCustomizedIops()) {
-                newMinIops[0] = newMinIops[0] != null ? newMinIops[0] : volume.getMinIops();
-                newMaxIops[0] = newMaxIops[0] != null ? newMaxIops[0] : volume.getMaxIops();
-
-                validateIops(newMinIops[0], newMaxIops[0], volume.getPoolType());
-            } else {
-                newMinIops[0] = newDiskOffering.getMinIops();
-                newMaxIops[0] = newDiskOffering.getMaxIops();
-            }
 
             // if the hypervisor snapshot reserve value is null, it must remain null (currently only KVM uses null and null is all KVM uses for a value here)
             newHypervisorSnapshotReserve[0] = volume.getHypervisorSnapshotReserve() != null ? newDiskOffering.getHypervisorSnapshotReserve() : null;
         }
+
+        setNewIopsLimits(volume, newDiskOffering, newMinIops, newMaxIops);
 
         if (existingDiskOffering.getDiskSizeStrictness() && !(volume.getSize().equals(newSize[0]))) {
             throw new InvalidParameterValueException(String.format("Resize volume for %s is not allowed since disk offering's size is fixed", volume.getName()));

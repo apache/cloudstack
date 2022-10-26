@@ -18,6 +18,7 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;

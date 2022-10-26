@@ -109,7 +109,7 @@ public class ParamProcessWorker implements DispatchWorker {
     private void validateUuidString(final Object param, final String argName) {
         String value = String.valueOf(param);
 
-        if (!UuidUtils.validateUUID(value)) {
+        if (!UuidUtils.isUuid(value)) {
             throwInvalidParameterValueException(argName);
         }
     }
@@ -467,7 +467,7 @@ public class ParamProcessWorker implements DispatchWorker {
         // If annotation's empty, the cmd existed before 3.x try conversion to long
         final boolean isPre3x = annotation.since().isEmpty();
         // Match against Java's UUID regex to check if input is uuid string
-        final boolean isUuid = UuidUtils.validateUUID(uuid);
+        final boolean isUuid = UuidUtils.isUuid(uuid);
         // Enforce that it's uuid for newly added apis from version 3.x
         if (!isPre3x && !isUuid)
             return null;

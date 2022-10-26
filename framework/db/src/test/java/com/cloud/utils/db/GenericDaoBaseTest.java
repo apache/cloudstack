@@ -39,6 +39,8 @@ public class GenericDaoBaseTest {
     private static final String INTEGRITY_CONSTRAINT_VIOLATION = "23000";
     private static final int DUPLICATE_ENTRY_ERRO_CODE = 1062;
 
+    GenericDaoBase genericDaoBaseMock = Mockito.mock(GenericDaoBase.class, Mockito.CALLS_REAL_METHODS);
+
     @Before
     public void prepareTests() throws SQLException {
         Mockito.when(resultSet.getObject(1)).thenReturn(false);
@@ -182,4 +184,34 @@ public class GenericDaoBaseTest {
         GenericDaoBase.handleEntityExistsException(mockedSQLException);
     }
 
+    @Test
+    public void checkCountOfRecordsAgainstTheResultSetSizeTestCountHigherThanResultSetSize() {
+        int count = 10;
+        int resultSetSize = 5;
+
+        int result = genericDaoBaseMock.checkCountOfRecordsAgainstTheResultSetSize(count, resultSetSize);
+
+        Assert.assertEquals(count, result);
+    }
+
+    @Test
+    public void checkCountOfRecordsAgainstTheResultSetSizeTestCountEqualToResultSetSize() {
+        int count = 10;
+        int resultSetSize = 10;
+
+        int result = genericDaoBaseMock.checkCountOfRecordsAgainstTheResultSetSize(count, resultSetSize);
+
+        Assert.assertEquals(count, result);
+        Assert.assertEquals(resultSetSize, result);
+    }
+
+    @Test
+    public void checkCountOfRecordsAgainstTheResultSetSizeTestCountSmallerThanResultSetSize() {
+        int count = 5;
+        int resultSetSize = 10;
+
+        int result = genericDaoBaseMock.checkCountOfRecordsAgainstTheResultSetSize(count, resultSetSize);
+
+        Assert.assertEquals(resultSetSize, result);
+    }
 }

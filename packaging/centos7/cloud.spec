@@ -65,6 +65,8 @@ Requires: python
 Requires: python3
 Requires: bash
 Requires: gawk
+Requires: which
+Requires: file
 Requires: bzip2
 Requires: gzip
 Requires: unzip
@@ -83,7 +85,7 @@ Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: iptables-services
 Requires: qemu-img
-Requires: haveged
+Requires: rng-tools
 Requires: python3-pip
 Requires: python3-setuptools
 Group:     System Environment/Libraries
@@ -355,6 +357,7 @@ install -D agent/target/transformed/cloudstack-agent.logrotate ${RPM_BUILD_ROOT}
 install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/lib/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 cp plugins/storage/volume/storpool/target/*.jar  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
+cp plugins/storage/volume/linstor/target/*.jar  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 
 # Usage server
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
@@ -441,7 +444,7 @@ pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-
 pip3 install urllib3
 
 /usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
-/usr/bin/systemctl enable --now haveged > /dev/null 2>&1 || true
+/usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
