@@ -16,11 +16,15 @@
 // under the License.
 package com.cloud.api.auth;
 
+import com.cloud.api.ApiServlet;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,11 +47,14 @@ import java.util.Map;
         responseObject = SuccessResponse.class, entityType = {}, since = "4.18.0")
 public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implements APIAuthenticator {
 
-    public static final String APINAME = "validateusertwofactorauthenticationcode";
+    public static final String APINAME = "validateUserTwoFactorAuthenticationCode";
     public static final Logger s_logger = Logger.getLogger(ValidateUserTwoFactorAuthenticationCodeCmd.class.getName());
 
     @Inject
     private AccountManager accountManager;
+
+    @Inject
+    ApiServerService _apiServer;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -93,15 +100,30 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
         Long domainId = owner.getDomainId();
         Long accountId = owner.getAccountId();
 
-        accountManager.verifyUsingTwoFactorAuthenticationCode(twoFactorAuthenticationCode, domainId, accountId);
-
+        String serializedResponse = null;
+        try {
+            accountManager.verifyUsingTwoFactorAuthenticationCode(twoFactorAuthenticationCode, domainId, accountId);
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            setResponseObject(response);
+            return ApiResponseSerializer.toSerializedString(response, responseType);
+        } catch (final CloudAuthenticationException ex) {
+            ApiServlet.invalidateHttpSession(session, "fall through to API key,");
+            String msg = String.format("%s", ex.getMessage() != null ?
+                    ex.getMessage() :
+                    "failed to authenticate user, check if two factor authentication code is correct");
+            auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + msg);
+            serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), msg, params, responseType);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(msg);
+            }
+        }
         // We should not reach here and if we do we throw an exception
-        throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Unable to authenticate using two factor code");
+        throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
     }
 
     @Override
     public APIAuthenticationType getAPIType() {
-        return APIAuthenticationType.LOGIN_API;
+        return APIAuthenticationType.LOGIN_2FA_API;
     }
 
     @Override

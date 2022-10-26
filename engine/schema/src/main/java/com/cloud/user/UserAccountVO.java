@@ -110,7 +110,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     private String externalEntity = null;
 
     @Column(name = "is_2fa_enabled")
-    boolean is2faEnabled;
+    private boolean is2faEnabled;
 
     @Column(name = "user_2fa_provider")
     private String user2faProvider;
@@ -321,26 +321,32 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         this.externalEntity = externalEntity;
     }
 
+    @Override
     public boolean is2faEnabled() {
         return is2faEnabled;
     }
 
+    @Override
     public void set2faEnabled(boolean is2faEnabled) {
         this.is2faEnabled = is2faEnabled;
     }
 
+    @Override
     public String getKeyFor2fa() {
         return keyFor2fa;
     }
 
+    @Override
     public void setKeyFor2fa(String keyFor2fa) {
         this.keyFor2fa = keyFor2fa;
     }
 
+    @Override
     public String getUser2faProvider() {
         return user2faProvider;
     }
 
+    @Override
     public void setUser2faProvider(String user2faProvider) {
         this.user2faProvider = user2faProvider;
     }

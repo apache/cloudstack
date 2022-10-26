@@ -33,7 +33,7 @@ import javax.inject.Inject;
         responseObject = SuccessResponse.class, entityType = {}, since = "4.18.0")
 public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
 
-    public static final String APINAME = "setupusertwofactorauthentication";
+    public static final String APINAME = "setupUserTwoFactorAuthentication";
     public static final Logger s_logger = Logger.getLogger(SetupUserTwoFactorAuthenticationCmd.class.getName());
 
     @Inject

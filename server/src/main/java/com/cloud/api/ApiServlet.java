@@ -221,7 +221,7 @@ public class ApiServlet extends HttpServlet {
                         logName));
             }
 
-            if (command != null) {
+            if (command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
 
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
@@ -299,13 +299,15 @@ public class ApiServlet extends HttpServlet {
 
             if (isNew && s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("new session: %s", session));
-                // 1. 2fa enabled
-                // 2. except login command with 2fa code
-                // 3. login command and 2fa is succeeded
-                s_logger.trace("Checking if two factor authentication is enabled, if enabled it will be verified");
+            }
+
+            if (!isNew && !command.equalsIgnoreCase(ApiConstants.LIST_IDPS)) {
+                s_logger.debug("Checking if two factor authentication is enabled, if enabled it will be verified");
+                userId = (Long)session.getAttribute("userid");
                 UserAccount userAccount = accountMgr.getUserAccountById(userId);
                 boolean is2FAenabled = userAccount.is2faEnabled();
-                if (is2FAenabled) {
+                boolean is2FAverified = (boolean) session.getAttribute("2FAverified");
+                if (is2FAenabled && !is2FAverified) {
                     APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                     if ((command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) || apiAuthenticator == null ) {
                         if (session != null) {
@@ -317,9 +319,11 @@ public class ApiServlet extends HttpServlet {
                                 apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "two factor authentication is not done", params,
                                         responseType);
                         HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-
                     } else {
-                        apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
+                        String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
+                        session.setAttribute("2FAverified", true);
+                        HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                        return;
                     }
                 }
             }

@@ -56,7 +56,7 @@ public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements Use
             s_logger.info("2FA matches user's input");
             return;
         }
-        throw new CloudAuthenticationException("two-factor authentication has failed for the user");
+        throw new CloudAuthenticationException("two-factor authentication code provided is invalid");
     }
 
     private String get2FAKey(UserAccount userAccount) {

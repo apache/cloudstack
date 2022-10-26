@@ -107,7 +107,7 @@ public class UserVO implements User, Identity, InternalIdentity {
     private String externalEntity;
 
     @Column(name = "is_2fa_enabled")
-    boolean is2faEnabled;
+    private boolean is2faEnabled;
 
     @Column(name = "user_2fa_provider")
     private String user2faProvider;
