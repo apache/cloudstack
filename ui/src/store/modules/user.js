@@ -393,6 +393,9 @@ const user = {
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
+    },
+    SetLoginFlag ({ commit }, loggedIn) {
+      commit('SET_LOGIN_FLAG', loggedIn)
     }
   }
 }

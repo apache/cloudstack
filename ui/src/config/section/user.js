@@ -107,6 +107,15 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ConfigureSamlSsoAuth.vue')))
     },
     {
+      // update API name
+      api: 'updateUser',
+      icon: 'scan-outlined',
+      label: 'label.action.register.2FA.user.auth',
+      dataView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/RegisterTwoFactorAuth.vue')))
+    },
+    {
       api: 'deleteUser',
       icon: 'delete-outlined',
       label: 'label.action.delete.user',
