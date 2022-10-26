@@ -22,7 +22,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -46,12 +45,19 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "two factor authentication code", required = true)
     private String provider;
 
+    @Parameter(name = ApiConstants.ENABLE, type = CommandType.BOOLEAN, description = "Enabled by default, provide false to disable 2FA")
+    private Boolean enable;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getProvider() {
         return provider;
+    }
+
+    public Boolean getEnable() {
+        return enable != null? true:enable;
     }
 
     @Override

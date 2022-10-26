@@ -3213,19 +3213,31 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, null, true, owner);
 
-        UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
-        UserAccountVO userAccount = _userAccountDao.findById(owner.getId());
-        String code = provider.setup2FAKey(userAccount);
+        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
+        if (cmd.getEnable()) {
+            UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
+            UserAccountVO userAccount = _userAccountDao.findById(owner.getId());
+            String code = provider.setup2FAKey(userAccount);
+
+            UserVO user = _userDao.createForUpdate();
+            user.setKeyFor2fa(code);
+            user.setUser2faProvider(provider.getName());
+            user.setTwoFactorAuthenticationEnabled(true);
+            _userDao.update(owner.getId(), user);
+
+            response.setId(owner.getUuid());
+            response.setSecretCode(code);
+
+            return response;
+        }
 
         UserVO user = _userDao.createForUpdate();
-        user.setKeyFor2fa(code);
-        user.setUser2faProvider(provider.getName());
-        user.setTwoFactorAuthenticationEnabled(true);
+        user.setKeyFor2fa(null);
+        user.setUser2faProvider(null);
+        user.setTwoFactorAuthenticationEnabled(false);
         _userDao.update(owner.getId(), user);
 
-        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         response.setId(owner.getUuid());
-        response.setSecretCode(code);
 
         return response;
     }
