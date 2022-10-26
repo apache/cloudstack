@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,7 +34,8 @@ import javax.inject.Inject;
 
 import java.util.Date;
 
-@APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.7.0",
+requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffUpdateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaTariffUpdateCmd.class);
     private static final String s_name = "quotatariffupdateresponse";
@@ -41,20 +43,34 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     @Inject
     QuotaResponseBuilder _responseBuilder;
 
-    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = true, description = "Integer value for the usage type of the resource")
+    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, description = "Integer value for the usage type of the resource")
     private Integer usageType;
 
-    @Parameter(name = "value", type = CommandType.DOUBLE, required = true,  description = "The quota tariff value of the resource as per the default unit")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, description = "The quota tariff value of the resource as per the default unit.")
     private Double value;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "The effective start date on/after which the quota tariff is effective and older tariffs are no longer used for the usage type. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Use yyyy-MM-dd as"
+            + " the date format, e.g. startDate=2009-06-03.")
     private Date startDate;
 
-    public int getUsageType() {
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
+            + " endDate=2009-06-03.")
+    private Date endDate;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description. Inform empty to remove the description.")
+    private String description;
+
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. Inform empty to remove the activation rule.")
+    private String activationRule;
+
+    public Integer getUsageType() {
         return usageType;
     }
 
-    public void setUsageType(int usageType) {
+    public void setUsageType(Integer usageType) {
         this.usageType = usageType;
     }
 
@@ -72,6 +88,22 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
 
     public void setStartDate(Date startDate) {
         this.startDate = startDate == null ? null : new Date(startDate.getTime());
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getActivationRule() {
+        return activationRule;
     }
 
     public QuotaTariffUpdateCmd() {

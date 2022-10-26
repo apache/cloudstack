@@ -57,6 +57,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
+import com.cloud.user.UserData;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
@@ -67,6 +68,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -89,12 +91,14 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -132,6 +136,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.eq;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@PrepareForTest(CallContext.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class TemplateManagerImplTest {
 
@@ -185,6 +190,9 @@ public class TemplateManagerImplTest {
 
     @Inject
     HypervisorGuruManager _hvGuruMgr;
+
+    @Inject
+    AccountManager _accountMgr;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -504,6 +512,80 @@ public class TemplateManagerImplTest {
 
         VMTemplateVO template = templateManager.createPrivateTemplateRecord(mockCreateCmd, mockTemplateOwner);
         assertTrue("Template in a region store should have cross zones set", template.isCrossZones());
+    }
+
+    @Test
+    public void testLinkUserDataToTemplate() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(null);
+        when(cmd.getUserdataId()).thenReturn(2L);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_tmpltDao.findById(anyLong())).thenReturn(template);
+
+        VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
+
+        Assert.assertEquals(template, resultTemplate);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testLinkUserDataToTemplateByProvidingBothISOAndTemplateId() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(1L);
+        when(cmd.getUserdataId()).thenReturn(2L);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_tmpltDao.findById(1L)).thenReturn(template);
+
+        templateManager.linkUserDataToTemplate(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testLinkUserDataToTemplateByNotProvidingBothISOAndTemplateId() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(null);
+        when(cmd.getIsoId()).thenReturn(null);
+        when(cmd.getUserdataId()).thenReturn(2L);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_tmpltDao.findById(1L)).thenReturn(template);
+
+        templateManager.linkUserDataToTemplate(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testLinkUserDataToTemplateWhenNoTemplate() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(null);
+        when(cmd.getUserdataId()).thenReturn(2L);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        when(_tmpltDao.findById(anyLong())).thenReturn(null);
+
+        templateManager.linkUserDataToTemplate(cmd);
+    }
+
+    @Test
+    public void testUnLinkUserDataToTemplate() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(null);
+        when(cmd.getUserdataId()).thenReturn(null);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getId()).thenReturn(1L);
+        when(_tmpltDao.findById(1L)).thenReturn(template);
+
+        VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
+
+        Assert.assertEquals(template, resultTemplate);
     }
 
     @Configuration

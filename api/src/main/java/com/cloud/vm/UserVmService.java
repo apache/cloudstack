@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
@@ -103,6 +104,8 @@ public interface UserVmService {
      */
     UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
+    UserVm resetVMUserData(ResetVMUserDataCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
+
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException, ResourceAllocationException;
 
@@ -146,6 +149,12 @@ public interface UserVmService {
      *
      *
      *
+     * @param sshKeyPair
+     *            - name of the ssh key pair used to login to the virtual
+     *            machine
+     * @param cpuSpeed
+     * @param memory
+     * @param cpuNumber
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -181,9 +190,8 @@ public interface UserVmService {
      *            base64 encoded before adding it to the request. Currently only
      *            HTTP GET is supported. Using HTTP GET (via querystring), you
      *            can send up to 2KB of data after base64 encoding
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
+     * @param userDataId
+     * @param userDataDetails
      * @param requestedIps
      *            TODO
      * @param defaultIp
@@ -191,19 +199,16 @@ public interface UserVmService {
      * @param displayVm
      *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
-     * @param cpuSpeed
-     * @param memory
-     * @param cpuNumber
      * @param customId
      * @param dhcpOptionMap
      *           - Maps the dhcp option code and the dhcp value to the network uuid
-     * @return UserVm object if successful.
      * @param dataDiskTemplateToDiskOfferingMap
      *            - Datadisk template to Disk offering Map
      *             an optional parameter that creates additional data disks for the virtual machine
      *             For each of the templates in the map, a data disk will be created from the corresponding
      *             disk offering obtained from the map
      *
+     * @return UserVm object if successful.
      * @throws InsufficientCapacityException
      *             if there is insufficient capacity to deploy the VM.
      * @throws ConcurrentOperationException
@@ -214,11 +219,11 @@ public interface UserVmService {
      *             available.
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
-        Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
-        String userData, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
-        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId) throws InsufficientCapacityException,
+                                                  Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
+                                                  String userData, Long userDataId, String userDataDetails, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
+                                                  List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
+                                                  Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
+                                                  Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -227,6 +232,7 @@ public interface UserVmService {
      *
      *
      *
+     * @param type
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -264,6 +270,8 @@ public interface UserVmService {
      *            base64 encoded before adding it to the request. Currently only
      *            HTTP GET is supported. Using HTTP GET (via querystring), you
      *            can send up to 2KB of data after base64 encoding
+     * @param userDataId
+     * @param userDataDetails
      * @param requestedIps
      *            TODO
      * @param defaultIps
@@ -279,7 +287,6 @@ public interface UserVmService {
      *             an optional parameter that creates additional data disks for the virtual machine
      *             For each of the templates in the map, a data disk will be created from the corresponding
      *             disk offering obtained from the map
-     * @param type
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -292,10 +299,10 @@ public interface UserVmService {
      *             available.
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
-        List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
-        HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
-        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, String vmType) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+                                                     List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+                                                     HTTPMethod httpmethod, String userData, Long userDataId, String userDataDetails, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
+                                                     List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
+                                                     Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, String vmType) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
@@ -303,6 +310,12 @@ public interface UserVmService {
      *
      *
      *
+     * @param sshKeyPair
+     *            - name of the ssh key pair used to login to the virtual
+     *            machine
+     * @param cpuSpeed
+     * @param memory
+     * @param cpuNumber
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -337,9 +350,8 @@ public interface UserVmService {
      *            base64 encoded before adding it to the request. Currently only
      *            HTTP GET is supported. Using HTTP GET (via querystring), you
      *            can send up to 2KB of data after base64 encoding
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
+     * @param userDataId
+     * @param userDataDetails
      * @param requestedIps
      *            TODO
      * @param defaultIps
@@ -347,9 +359,6 @@ public interface UserVmService {
      * @param displayVm
      *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
-     * @param cpuSpeed
-     * @param memory
-     * @param cpuNumber
      * @param customId
      * @param dhcpOptionMap
      *             - Map that maps the DhcpOption code and their value on the Network uuid
@@ -370,10 +379,10 @@ public interface UserVmService {
      *             available.
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
-        String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
-        List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
-        Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> templateOvfPropertiesMap, boolean dynamicScalingEnabled, String vmType, Long overrideDiskOfferingId)
+                                        String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
+                                        Long userDataId, String userDataDetails, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
+                                        Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
+                                        Map<String, String> templateOvfPropertiesMap, boolean dynamicScalingEnabled, String vmType, Long overrideDiskOfferingId)
 
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 

@@ -51,6 +51,9 @@
           <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
+          <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
+            <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
+          </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
           </div>
@@ -98,6 +101,18 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    items: {
+      type: Object,
+      default: () => {}
+    },
+    bordered: {
+      type: Boolean,
+      default: false
+    },
+    tab: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -154,6 +169,10 @@ export default {
     }
   },
   methods: {
+    decodeUserData (userdata) {
+      const decodedData = Buffer.from(userdata, 'base64')
+      return decodedData.toString('utf-8')
+    },
     fetchProjectAdmins () {
       if (!this.dataResource.owner) {
         return false

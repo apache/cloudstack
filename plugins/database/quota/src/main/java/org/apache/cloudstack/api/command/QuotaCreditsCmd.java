@@ -129,9 +129,6 @@ public class QuotaCreditsCmd extends BaseCmd {
         if (getMinBalance() != null) {
             _quotaService.setMinBalance(accountId, getMinBalance());
         }
-        else {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please set a value for min balance");
-        }
 
         final QuotaCreditsResponse response = _responseBuilder.addQuotaCredits(accountId, getDomainId(), getValue(), CallContext.current().getCallingUserId(), getQuotaEnforce());
         response.setResponseName(getCommandName());

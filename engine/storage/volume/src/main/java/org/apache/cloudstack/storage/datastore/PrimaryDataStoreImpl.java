@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -72,6 +73,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     protected PrimaryDataStoreDriver driver;
     protected StoragePoolVO pdsv;
+    protected StoragePoolVO parentStoragePool;
     @Inject
     protected PrimaryDataStoreDao dataStoreDao;
     protected PrimaryDataStoreLifeCycle lifeCycle;
@@ -104,6 +106,9 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         this.provider = provider;
         this.uuid = pdsv.getUuid();
         this.name = pdsv.getName();
+        if (pdsv.getParent() != null && pdsv.getParent() > 0L) {
+            this.parentStoragePool = dataStoreDao.findById(pdsv.getParent());
+        }
     }
 
     public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver, DataStoreProvider provider) {
@@ -451,5 +456,18 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
             return primaryTO;
         }
         return to;
+    }
+
+    @Override
+    public StoragePoolType getParentPoolType() {
+        if (this.parentStoragePool != null) {
+            return this.parentStoragePool.getPoolType();
+        }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
     }
 }

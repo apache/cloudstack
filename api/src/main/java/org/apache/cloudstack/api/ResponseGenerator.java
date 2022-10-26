@@ -118,6 +118,7 @@ import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
@@ -201,8 +202,8 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.resource.RollingMaintenanceManager;
-import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceIcon;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.ImageStore;
@@ -216,9 +217,10 @@ import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
@@ -490,6 +492,8 @@ public interface ResponseGenerator {
     ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds);
 
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
+
+    UserDataResponse createUserDataResponse(UserData userData);
 
     BackupResponse createBackupResponse(Backup backup);
 

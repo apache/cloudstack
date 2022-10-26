@@ -65,9 +65,9 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
     }
 
     @Override
-    public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
+    public boolean areServicesSupportedByVpcOffering(long vpcOfferingId, Service... services) {
         SearchCriteria<VpcOfferingServiceMapVO> sc = MultipleServicesSearch.create();
-        sc.setParameters("vpcOffId", networkOfferingId);
+        sc.setParameters("vpcOffId", vpcOfferingId);
 
         if (services != null) {
             String[] servicesStr = new String[services.length];

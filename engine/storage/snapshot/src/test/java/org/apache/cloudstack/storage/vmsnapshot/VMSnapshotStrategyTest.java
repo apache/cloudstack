@@ -27,6 +27,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
@@ -92,6 +93,8 @@ public class VMSnapshotStrategyTest extends TestCase {
     VMSnapshotDao vmSnapshotDao;
     @Inject
     HostDao hostDao;
+    @Inject
+    PrimaryDataStoreDao primaryDataStoreDao;
 
     @Override
     @Before
@@ -303,6 +306,11 @@ public class VMSnapshotStrategyTest extends TestCase {
         @Bean
         public HostDao hostDao() {
             return Mockito.mock(HostDao.class);
+        }
+
+        @Bean
+        public PrimaryDataStoreDao primaryDataStoreDao() {
+            return Mockito.mock(PrimaryDataStoreDao.class);
         }
     }
 }

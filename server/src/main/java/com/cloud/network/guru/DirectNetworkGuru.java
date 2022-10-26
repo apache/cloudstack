@@ -20,9 +20,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -36,8 +36,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -54,8 +52,12 @@ import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -217,6 +219,19 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             if (userSpecified.getRouterIpv6() != null) {
                 config.setRouterIpv6(userSpecified.getRouterIpv6());
             }
+
+            if (StringUtils.isNotBlank(userSpecified.getDns1())) {
+                config.setDns1(userSpecified.getDns1());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getDns2())) {
+                config.setDns2(userSpecified.getDns2());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getIp6Dns1())) {
+                config.setIp6Dns1(userSpecified.getIp6Dns1());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getIp6Dns2())) {
+                config.setIp6Dns2(userSpecified.getIp6Dns2());
+            }
         }
 
         boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
@@ -240,11 +255,13 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        Pair<String, String> ip4Dns = _networkModel.getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip6Dns = _networkModel.getNetworkIp6Dns(network, dc);
         if (profile != null) {
-            profile.setIPv4Dns1(dc.getDns1());
-            profile.setIPv4Dns2(dc.getDns2());
-            profile.setIPv6Dns1(dc.getIp6Dns1());
-            profile.setIPv6Dns2(dc.getIp6Dns2());
+            profile.setIPv4Dns1(ip4Dns.first());
+            profile.setIPv4Dns2(ip4Dns.second());
+            profile.setIPv6Dns1(ip6Dns.first());
+            profile.setIPv6Dns2(ip6Dns.second());
         }
     }
 
@@ -413,7 +430,12 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
-        networkProfile.setDns1(dc.getDns1());
-        networkProfile.setDns2(dc.getDns2());
+        Network network = _networkModel.getNetwork(networkProfile.getId());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        networkProfile.setDns1(dns.first());
+        networkProfile.setDns2(dns.second());
+        dns = _networkModel.getNetworkIp6Dns(network, dc);
+        networkProfile.setIp6Dns1(dns.first());
+        networkProfile.setIp6Dns2(dns.second());
     }
 }

@@ -25,6 +25,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
 
+import java.util.Date;
 import java.util.List;
 
 public interface UsageDao extends GenericDao<UsageVO, Long> {
@@ -58,5 +59,7 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
 
     UsageVO persistUsage(final UsageVO usage);
 
-    Pair<List<? extends UsageVO>, Integer> getUsageRecordsPendingQuotaAggregation(long accountId, long domainId);
+    Pair<List<UsageVO>, Integer> listUsageRecordsPendingForQuotaAggregation(long accountId, long domainId);
+
+    List<Pair<String, String>> listAccountResourcesInThePeriod(long accountId, int usageType, Date startDate, Date endDate);
 }

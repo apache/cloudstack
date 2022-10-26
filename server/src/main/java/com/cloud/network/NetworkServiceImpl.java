@@ -74,6 +74,7 @@ import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -370,6 +371,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private Map<String, String> _configs;
 
+    private void verifyDedicatedGuestVlansWithExistingDatacenterVlans(PhysicalNetwork physicalNetwork, Account vlanOwner, int startVlan, int endVlan) {
+        for (int i = startVlan; i <= endVlan; i++) {
+            List<DataCenterVnetVO> dataCenterVnet = _dcVnetDao.findVnet(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), Integer.toString(i));
+            if (CollectionUtils.isEmpty(dataCenterVnet)) {
+                throw new InvalidParameterValueException(String.format("Guest vlan %d from this range %d-%d is not present in the system for physical network ID: %s", i, startVlan, endVlan, physicalNetwork.getUuid()));
+            }
+            // Verify guest vlans in the range don't belong to a network of a different account
+            if (dataCenterVnet.get(0).getAccountId() != null && dataCenterVnet.get(0).getAccountId() != vlanOwner.getAccountId()) {
+                throw new InvalidParameterValueException("Guest vlan from this range " + dataCenterVnet.get(0).getVnet() + " is allocated to a different account."
+                        + " Can only dedicate a range which has no allocated vlans or has vlans allocated to the same account ");
+            }
+        }
+    }
+
     /* Get a list of IPs, classify them by service */
     protected Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
         Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
@@ -555,6 +570,70 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         return result;
+    }
+
+    private void checkNetworkDns(boolean isIpv6, NetworkOffering networkOffering, Long vpcId,
+        String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
+        if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2)) {
+            if (GuestType.L2.equals(networkOffering.getGuestType())) {
+                throw new InvalidParameterValueException(String.format("DNS can not be specified %s networks", GuestType.L2));
+            }
+            if (vpcId != null) {
+                throw new InvalidParameterValueException("DNS can not be specified for a VPC tier");
+            }
+            if (!areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.Dns)) {
+                throw new InvalidParameterValueException("DNS can not be specified for networks with network offering that do not support DNS service");
+            }
+        }
+        if (!isIpv6 && !StringUtils.isAllEmpty(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("IPv6 DNS cannot be specified for IPv4 only network");
+        }
+        _networkModel.verifyIp4DnsPair(ip4Dns1, ip4Dns2);
+        _networkModel.verifyIp6DnsPair(ip6Dns1, ip6Dns2);
+    }
+
+    protected boolean checkAndUpdateNetworkDns(NetworkVO network, NetworkOffering networkOffering, String newIp4Dns1,
+        String newIp4Dns2, String newIp6Dns1, String newIp6Dns2) {
+        String ip4Dns1 = network.getDns1();
+        String ip4Dns2 = network.getDns2();
+        String ip6Dns1 = network.getIp6Dns1();
+        String ip6Dns2 = network.getIp6Dns2();
+        if (ObjectUtils.allNull(newIp4Dns1, newIp4Dns2, newIp6Dns1, newIp6Dns2)) {
+            if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2) &&
+                    !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.Dns)) {
+                network.setDns1(null);
+                network.setDns2(null);
+                network.setIp6Dns1(null);
+                network.setIp6Dns2(null);
+                return true;
+            }
+            return false;
+        }
+        if (StringUtils.equals(ip4Dns1, StringUtils.trimToNull(newIp4Dns1)) && StringUtils.equals(ip4Dns2, StringUtils.trimToNull(newIp4Dns2)) &&
+                StringUtils.equals(ip6Dns1, StringUtils.trimToNull(newIp6Dns1)) && StringUtils.equals(ip6Dns2, StringUtils.trimToNull(newIp6Dns2))) {
+            return false;
+        }
+        boolean isIpv6 = (GuestType.Shared.equals(network.getGuestType()) &&
+                StringUtils.isNotEmpty(network.getIp6Cidr())) ||
+                _networkOfferingDao.isIpv6Supported(networkOffering.getId());
+        if (newIp4Dns1 != null) {
+            ip4Dns1 = StringUtils.trimToNull(newIp4Dns1);
+        }
+        if (newIp4Dns2 != null) {
+            ip4Dns2 = StringUtils.trimToNull(newIp4Dns2);
+        }
+        if (newIp6Dns1 != null) {
+            ip6Dns1 = StringUtils.trimToNull(newIp6Dns1);
+        }
+        if (newIp6Dns2 != null) {
+            ip6Dns2 = StringUtils.trimToNull(newIp6Dns2);
+        }
+        checkNetworkDns(isIpv6, networkOffering, network.getVpcId(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+        network.setDns1(ip4Dns1);
+        network.setDns2(ip4Dns2);
+        network.setIp6Dns1(ip6Dns1);
+        network.setIp6Dns2(ip6Dns2);
+        return true;
     }
 
     @Override
@@ -1075,7 +1154,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (networkId != null) {
             guestNetwork = getNetwork(networkId);
         }
-        if (ipVO.isSourceNat() && guestNetwork != null && guestNetwork.getState() != Network.State.Allocated) {
+        Vpc vpc = null;
+        if (ipVO.getVpcId() != null) {
+            vpc = _vpcMgr.getActiveVpc(ipVO.getVpcId());
+        }
+        if (ipVO.isSourceNat() && ((guestNetwork != null && guestNetwork.getState() != Network.State.Allocated) || vpc != null)) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
@@ -1101,6 +1184,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
+            _resourceTagDao.removeByIdAndType(ipAddressId, ResourceObjectType.PublicIpAddress);
             if (guestNetwork != null) {
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
@@ -1254,6 +1338,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String externalId = cmd.getExternalId();
         String isolatedPvlanType = cmd.getIsolatedPvlanType();
         Long associatedNetworkId = cmd.getAssociatedNetworkId();
+        String ip4Dns1 = cmd.getIp4Dns1();
+        String ip4Dns2 = cmd.getIp4Dns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1467,7 +1555,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
             }
 
-            if(StringUtils.isAllBlank(zone.getIp6Dns1(), zone.getIp6Dns2())) {
+            if(StringUtils.isAllBlank(ip6Dns1, ip6Dns2, zone.getIp6Dns1(), zone.getIp6Dns2())) {
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
 
@@ -1590,9 +1678,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     cidr, startIP, endIP);
         }
 
+        checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIp, routerIpv6, associatedNetwork);
+                externalId, routerIp, routerIpv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
@@ -1734,7 +1824,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
-                                  final Network associatedNetwork) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1793,7 +1883,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1803,7 +1893,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
                     }
 
                     if (createVlan && network != null) {
@@ -2568,6 +2658,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String customId = cmd.getCustomId();
         boolean updateInSequence = cmd.getUpdateInSequence();
         boolean forced = cmd.getForced();
+        String ip4Dns1 = cmd.getIp4Dns1();
+        String ip4Dns2 = cmd.getIp4Dns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
 
         boolean restartNetwork = false;
 
@@ -2694,6 +2788,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 //Setting the new network's isReduntant to the new network offering's RedundantRouter.
                 network.setRedundant(_networkOfferingDao.findById(networkOfferingId).isRedundantRouter());
             }
+        }
+
+        if (checkAndUpdateNetworkDns(network, networkOfferingChanged ? networkOffering : oldNtwkOff, ip4Dns1, ip4Dns2,
+                ip6Dns1, ip6Dns2)) {
+            restartNetwork = true;
         }
 
         final Map<String, String> newSvcProviders = networkOfferingChanged
@@ -4068,18 +4167,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        // Verify guest vlans in the range don't belong to a network of a different account
-        for (int i = startVlan; i <= endVlan; i++) {
-            List<DataCenterVnetVO> allocatedVlans = _dcVnetDao.listAllocatedVnetsInRange(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), startVlan, endVlan);
-            if (allocatedVlans != null && !allocatedVlans.isEmpty()) {
-                for (DataCenterVnetVO allocatedVlan : allocatedVlans) {
-                    if (allocatedVlan.getAccountId() != vlanOwner.getAccountId()) {
-                        throw new InvalidParameterValueException("Guest vlan from this range " + allocatedVlan.getVnet() + " is allocated to a different account."
-                                + " Can only dedicate a range which has no allocated vlans or has vlans allocated to the same account ");
-                    }
-                }
-            }
-        }
+        verifyDedicatedGuestVlansWithExistingDatacenterVlans(physicalNetwork, vlanOwner, startVlan, endVlan);
 
         List<AccountGuestVlanMapVO> guestVlanMaps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(physicalNetworkId);
         // Verify if vlan range is already dedicated
