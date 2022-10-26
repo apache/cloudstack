@@ -120,7 +120,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 avoid.addPool(pool.getId());
             }
         }
-        s_logger.debug(String.format("LocalStoragePoolAllocator returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
+        logEndOfSearch(suitablePools);
 
         return suitablePools;
     }

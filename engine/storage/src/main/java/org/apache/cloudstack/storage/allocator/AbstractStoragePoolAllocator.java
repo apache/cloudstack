@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.allocator;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -387,6 +388,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             boolean bypassStorageTypeCheck){
         s_logger.trace(String.format("%s is looking for storage pools that match the VM's disk profile [%s], virtual machine profile [%s] and "
                 + "deployment plan [%s]. Returning up to [%d] and bypassStorageTypeCheck [%s].", this.getClass().getSimpleName(), dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck));
+    }
+
+    protected void logEndOfSearch(List<StoragePool> storagePoolList) {
+        s_logger.debug(String.format("%s is returning [%s] suitable storage pools [%s].", this.getClass().getSimpleName(), storagePoolList.size(),
+                Arrays.toString(storagePoolList.toArray())));
     }
 
 }
