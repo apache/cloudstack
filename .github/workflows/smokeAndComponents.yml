@@ -179,10 +179,10 @@ jobs:
           path: $HOME/.m2
           key: '${{ runner.os }}-${{ hashFiles(''TODO'') }}'
       - uses: actions/checkout@v2
-      - run: travis_wait 30 ./tools/travis/before_install.sh
+      - run: ./tools/travis/before_install.sh
       - run: ./tools/travis/install.sh
-      - run: travis_wait 30 ./tools/travis/before_script.sh
-      - run: 'travis_wait 40 ./tools/travis/script.sh ${{ matrix.tests}}'
+      - run: ./tools/travis/before_script.sh
+      - run: ./tools/travis/script.sh ${{ matrix.tests}}
       - run: ./tools/travis/after_script.sh
       - run: ./tools/travis/after_success.sh
 
