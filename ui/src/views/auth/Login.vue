@@ -278,7 +278,15 @@ export default {
             loginParams.domain = '/'
           }
           this.Login(loginParams)
-            .then((res) => this.loginSuccess(res))
+            .then((res) => {
+              if (store.getters.twoFaEnabled) {
+                this.$notification.destroy()
+                this.$store.commit('SET_COUNT_NOTIFY', 0)
+                this.$router.push({ path: '/dashboard' }).catch(() => {})
+              } else {
+                this.loginSuccess(res)
+              }
+            })
             .catch(err => {
               this.requestFailed(err)
               this.state.loginBtn = false
@@ -298,6 +306,7 @@ export default {
     loginSuccess (res) {
       this.$notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
+      this.$store.commit('SET_LOGIN_FLAG', true)
       this.$router.push({ path: '/dashboard' }).catch(() => {})
     },
     requestFailed (err) {

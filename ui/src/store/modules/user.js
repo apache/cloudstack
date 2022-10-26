@@ -58,8 +58,10 @@ const user = {
     darkMode: false,
     defaultListViewPageSize: 20,
     countNotify: 0,
+    loginFlag: false,
     logoutFlag: false,
-    customColumns: {}
+    customColumns: {},
+    twoFaEnabled: false
   },
 
   mutations: {
@@ -131,6 +133,12 @@ const user = {
     },
     SET_LOGOUT_FLAG: (state, flag) => {
       state.logoutFlag = flag
+    },
+    SET_2FA_ENABLED: (state, flag) => {
+      state.twoFaEnabled = flag
+    },
+    SET_LOGIN_FLAG: (state, flag) => {
+      state.loginFlag = flag
     }
   },
 
@@ -172,7 +180,9 @@ const user = {
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
-
+          // TODO: get value from session and set - currently hard-coding it
+          commit('SET_2FA_ENABLED', true)
+          commit('SET_LOGIN_FLAG', false)
           notification.destroy()
 
           resolve()
@@ -300,6 +310,8 @@ const user = {
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
         commit('SET_LOGOUT_FLAG', true)
+        commit('SET_2FA_ENABLED', false)
+        commit('SET_LOGIN_FLAG', false)
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)

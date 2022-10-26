@@ -43,7 +43,9 @@ const getters = {
   defaultListViewPageSize: state => state.user.defaultListViewPageSize,
   countNotify: state => state.user.countNotify,
   customColumns: state => state.user.customColumns,
-  logoutFlag: state => state.user.logoutFlag
+  logoutFlag: state => state.user.logoutFlag,
+  twoFaEnabled: state => state.user.twoFaEnabled,
+  loginFlag: state => state.user.loginFlag
 }
 
 export default getters

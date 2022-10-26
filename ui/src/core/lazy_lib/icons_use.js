@@ -112,6 +112,7 @@ import {
   MinusCircleOutlined,
   MinusOutlined,
   MinusSquareOutlined,
+  MobileOutlined,
   MoreOutlined,
   NotificationOutlined,
   NumberOutlined,
@@ -261,6 +262,7 @@ export default {
     app.component('MinusCircleOutlined', MinusCircleOutlined)
     app.component('MinusOutlined', MinusOutlined)
     app.component('MinusSquareOutlined', MinusSquareOutlined)
+    app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)

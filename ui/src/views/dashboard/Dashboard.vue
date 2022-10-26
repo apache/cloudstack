@@ -17,7 +17,10 @@
 
 <template>
   <div class="page-header-index-wide">
-    <div v-if="showOnboarding">
+    <div v-if="!$store.getters.loginFlag">
+      <two-fa />
+    </div>
+    <div v-else-if="showOnboarding">
       <onboarding-dashboard />
     </div>
     <div v-else-if="$store.getters.userInfo.roletype === 'Admin' && !project">
@@ -35,13 +38,15 @@ import store from '@/store'
 import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
 import OnboardingDashboard from './OnboardingDashboard'
+import TwoFa from './TwoFa'
 
 export default {
   name: 'Dashboard',
   components: {
     CapacityDashboard,
     UsageDashboard,
-    OnboardingDashboard
+    OnboardingDashboard,
+    TwoFa
   },
   provide: function () {
     return {
@@ -56,6 +61,7 @@ export default {
     }
   },
   created () {
+    console.log(this.$store.getters.twoFaEnabled)
     this.fetchData()
   },
   mounted () {
