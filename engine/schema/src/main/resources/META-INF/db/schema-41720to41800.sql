@@ -1520,3 +1520,7 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 -- Increases the precision of the column `quota_used` from 15 to 20, keeping the scale of 8.
 
 ALTER TABLE `cloud_usage`.`quota_usage` MODIFY COLUMN quota_used decimal(20,8) unsigned NOT NULL;
+
+ALTER TABLE `cloud`.`user` ADD COLUMN `is_user_2fa_enabled` tinyint NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`user` ADD COLUMN `key_for_2fa` varchar(255) default NULL;
+ALTER TABLE `cloud`.`user` ADD COLUMN `user_2fa_provider` varchar(255) default NULL;
