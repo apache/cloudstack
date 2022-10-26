@@ -47,7 +47,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         "\tuser haproxy", "\tgroup haproxy", "\tstats socket /run/haproxy/admin.sock", "\tdaemon"};
 
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
-        "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
+        "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
 
@@ -603,7 +603,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result.add(blankLine);
         final List<String> dSection = Arrays.asList(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
-            dSection.set(7, "\tno option forceclose");
+            dSection.set(7, "\tno option httpclose");
         }
 
         if (s_logger.isDebugEnabled()) {
