@@ -91,7 +91,7 @@ public interface User extends OwnedBy, InternalIdentity {
 
     public void setExternalEntity(String entity);
 
-    public boolean is2faEnabled();
+    public boolean isTwoFactorAuthenticationEnabled();
 
     public String getKeyFor2fa();
 }

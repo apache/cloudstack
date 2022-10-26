@@ -305,7 +305,7 @@ public class ApiServlet extends HttpServlet {
                 s_logger.debug("Checking if two factor authentication is enabled, if enabled it will be verified");
                 userId = (Long)session.getAttribute("userid");
                 UserAccount userAccount = accountMgr.getUserAccountById(userId);
-                boolean is2FAenabled = userAccount.is2faEnabled();
+                boolean is2FAenabled = userAccount.isTwoFactorAuthenticationEnabled();
                 boolean is2FAverified = (boolean) session.getAttribute("2FAverified");
                 if (is2FAenabled && !is2FAverified) {
                     APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);

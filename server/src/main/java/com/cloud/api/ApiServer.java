@@ -1135,7 +1135,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
-            session.setAttribute("2FAenabled", Boolean.toString(userAcct.is2faEnabled()));
+            session.setAttribute("2FAenabled", Boolean.toString(userAcct.isTwoFactorAuthenticationEnabled()));
             session.setAttribute("2FAverified", false);
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that

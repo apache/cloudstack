@@ -106,8 +106,8 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "external_entity", length = 65535)
     private String externalEntity;
 
-    @Column(name = "is_2fa_enabled")
-    private boolean is2faEnabled;
+    @Column(name = "two_factor_authentication_enabled")
+    private boolean twoFactorAuthenticationEnabled;
 
     @Column(name = "user_2fa_provider")
     private String user2faProvider;
@@ -326,12 +326,12 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.externalEntity = externalEntity;
     }
 
-    public boolean is2faEnabled() {
-        return is2faEnabled;
+    public boolean isTwoFactorAuthenticationEnabled() {
+        return twoFactorAuthenticationEnabled;
     }
 
-    public void set2faEnabled(boolean is2faEnabled) {
-        this.is2faEnabled = is2faEnabled;
+    public void setTwoFactorAuthenticationEnabled(boolean twoFactorAuthenticationEnabled) {
+        this.twoFactorAuthenticationEnabled = twoFactorAuthenticationEnabled;
     }
 
     public String getKeyFor2fa() {
