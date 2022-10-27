@@ -65,5 +65,5 @@ public interface DeploymentPlanningManager extends Manager {
 
     void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids);
 
-    void reorderHostsByPriority(Map<Long, DeploymentPlan.HostPriority> priorities, List<Host> hosts);
+    void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts);
 }

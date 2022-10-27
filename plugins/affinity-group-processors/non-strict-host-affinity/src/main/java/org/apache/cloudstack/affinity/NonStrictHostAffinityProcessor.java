@@ -95,14 +95,14 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
 
     protected void processVmInAffinityGroup(DeploymentPlan plan, VMInstanceVO groupVM) {
         if (groupVM.getHostId() != null) {
-            DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getHostId());
+            Integer priority = addHostPriority(plan, groupVM.getHostId());
             if (logger.isDebugEnabled()) {
                 logger.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
             }
         } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
             if (secondsSinceLastUpdate < vmCapacityReleaseInterval) {
-                DeploymentPlan.HostPriority priority = addHostPriority(plan, groupVM.getLastHostId());
+                Integer priority = addHostPriority(plan, groupVM.getLastHostId());
                 if (logger.isDebugEnabled()) {
                     logger.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
                             " is present on the host, in Stopped state but has reserved capacity");
@@ -111,7 +111,7 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
         }
     }
 
-    protected DeploymentPlan.HostPriority addHostPriority(DeploymentPlan plan, Long hostId) {
+    protected Integer addHostPriority(DeploymentPlan plan, Long hostId) {
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
         return plan.getHostPriorities().get(hostId);
     }

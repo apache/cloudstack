@@ -17,6 +17,7 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1602,29 +1602,23 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     @Override
-    public void reorderHostsByPriority(Map<Long, DeploymentPlan.HostPriority> priorities, List<Host> hosts) {
+    public void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts) {
         s_logger.debug("Re-ordering hosts " + hosts + " by priorities " + priorities);
 
-        List<Host> highPriorityHosts = hosts.stream()
-                .filter(host -> DeploymentPlan.HostPriority.HIGH.equals(priorities.get(host.getId())))
-                .collect(Collectors.toList());
-        List<Host> lowPriorityHosts = hosts.stream()
-                .filter(host -> DeploymentPlan.HostPriority.LOW.equals(priorities.get(host.getId())))
-                .collect(Collectors.toList());
-        List<Host> prohibitedPriorityHosts = hosts.stream()
-                .filter(host -> DeploymentPlan.HostPriority.PROHIBITED.equals(priorities.get(host.getId())))
-                .collect(Collectors.toList());
-        List<Host> normalPriorityHosts = hosts.stream()
-                .filter(host -> priorities.get(host.getId()) == null || DeploymentPlan.HostPriority.NORMAL.equals(priorities.get(host.getId())))
-                .collect(Collectors.toList());
-
-        hosts.clear();
-        hosts.addAll(highPriorityHosts);
-        hosts.addAll(normalPriorityHosts);
-        hosts.addAll(lowPriorityHosts);
-        hosts.addAll(prohibitedPriorityHosts);
+        Collections.sort(hosts, new Comparator<>() {
+                    @Override
+                    public int compare(Host host1, Host host2) {
+                        int res = getHostPriority(priorities, host1.getId()).compareTo(getHostPriority(priorities, host2.getId()));
+                        return -res;
+                    }
+                }
+        );
 
         s_logger.debug("Hosts after re-ordering are: " + hosts);
+    }
+
+    private Integer getHostPriority(Map<Long, Integer> priorities, Long hostId) {
+        return priorities.get(hostId) != null ? priorities.get(hostId) : DeploymentPlan.DEFAULT_HOST_PRIORITY;
     }
 
     protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,

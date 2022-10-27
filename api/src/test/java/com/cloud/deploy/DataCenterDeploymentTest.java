@@ -29,29 +29,29 @@ public class DataCenterDeploymentTest extends TestCase {
 
     DataCenterDeployment plan = new DataCenterDeployment(zoneId);
 
-    private void verifyHostPriority(DeploymentPlan.HostPriority priority) {
+    private void verifyHostPriority(Integer priority) {
         Assert.assertEquals(priority, plan.getHostPriorities().get(hostId));
     }
 
     public void testHostPriorities() {
         verifyHostPriority(null);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.NORMAL);
-        verifyHostPriority(DeploymentPlan.HostPriority.NORMAL);
+        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.DEFAULT);
+        verifyHostPriority(0);
 
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
-        verifyHostPriority(DeploymentPlan.HostPriority.HIGH);
+        verifyHostPriority(1);
 
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.LOW);
-        verifyHostPriority(DeploymentPlan.HostPriority.NORMAL);
+        verifyHostPriority(0);
 
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.LOW);
-        verifyHostPriority(DeploymentPlan.HostPriority.LOW);
+        verifyHostPriority(-1);
 
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
-        verifyHostPriority(DeploymentPlan.HostPriority.NORMAL);
+        verifyHostPriority(0);
 
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
-        verifyHostPriority(DeploymentPlan.HostPriority.HIGH);
+        verifyHostPriority(1);
     }
 }

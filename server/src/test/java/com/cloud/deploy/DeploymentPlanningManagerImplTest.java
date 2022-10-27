@@ -1033,13 +1033,13 @@ public class DeploymentPlanningManagerImplTest {
 
     @Test
     public void testReorderHostsByPriority() {
-        Map<Long, DeploymentPlan.HostPriority> priorities = new LinkedHashMap<>();
-        priorities.put(1L, DeploymentPlan.HostPriority.LOW);
-        priorities.put(2L, DeploymentPlan.HostPriority.HIGH);
-        priorities.put(3L, DeploymentPlan.HostPriority.NORMAL);
-        priorities.put(5L, DeploymentPlan.HostPriority.HIGH);
-        priorities.put(6L, DeploymentPlan.HostPriority.LOW);
-        priorities.put(8L, DeploymentPlan.HostPriority.LOW);
+        Map<Long, Integer> priorities = new LinkedHashMap<>();
+        priorities.put(1L, 3);
+        priorities.put(2L, -6);
+        priorities.put(3L, 5);
+        priorities.put(5L, 8);
+        priorities.put(6L, -1);
+        priorities.put(8L, 5);
 
         Host host1 = Mockito.mock(Host.class);
         Mockito.when(host1.getId()).thenReturn(1L);
@@ -1063,13 +1063,13 @@ public class DeploymentPlanningManagerImplTest {
 
         Assert.assertEquals(8, hosts.size());
 
-        Assert.assertEquals(2, hosts.get(0).getId());
-        Assert.assertEquals(5, hosts.get(1).getId());
-        Assert.assertEquals(3, hosts.get(2).getId());
-        Assert.assertEquals(4, hosts.get(3).getId());
-        Assert.assertEquals(7, hosts.get(4).getId());
-        Assert.assertEquals(1, hosts.get(5).getId());
+        Assert.assertEquals(5, hosts.get(0).getId());
+        Assert.assertEquals(3, hosts.get(1).getId());
+        Assert.assertEquals(8, hosts.get(2).getId());
+        Assert.assertEquals(1, hosts.get(3).getId());
+        Assert.assertEquals(4, hosts.get(4).getId());
+        Assert.assertEquals(7, hosts.get(5).getId());
         Assert.assertEquals(6, hosts.get(6).getId());
-        Assert.assertEquals(8, hosts.get(7).getId());
+        Assert.assertEquals(2, hosts.get(7).getId());
     }
 }

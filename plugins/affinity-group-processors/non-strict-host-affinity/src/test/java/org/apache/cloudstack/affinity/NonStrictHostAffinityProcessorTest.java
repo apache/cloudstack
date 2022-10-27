@@ -96,7 +96,7 @@ public class NonStrictHostAffinityProcessorTest {
 
         Assert.assertEquals(1, plan.getHostPriorities().size());
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
-        Assert.assertEquals(DeploymentPlan.HostPriority.HIGH, plan.getHostPriorities().get(host2Id));
+        Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class NonStrictHostAffinityProcessorTest {
         when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
 
         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
-        plan.addHostPriority(host2Id, DeploymentPlan.HostPriority.NORMAL);
+        plan.addHostPriority(host2Id, DeploymentPlan.HostPriority.DEFAULT);
         plan.addHostPriority(host3Id, DeploymentPlan.HostPriority.LOW);
         ExcludeList avoid = new ExcludeList();
 
@@ -131,9 +131,9 @@ public class NonStrictHostAffinityProcessorTest {
 
         Assert.assertEquals(2, plan.getHostPriorities().size());
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
-        Assert.assertEquals(DeploymentPlan.HostPriority.HIGH, plan.getHostPriorities().get(host2Id));
+        Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
         Assert.assertNotNull(plan.getHostPriorities().get(host3Id));
-        Assert.assertEquals(DeploymentPlan.HostPriority.NORMAL, plan.getHostPriorities().get(host3Id));
+        Assert.assertEquals(Integer.valueOf(0), plan.getHostPriorities().get(host3Id));
     }
 
     @Test
@@ -167,6 +167,6 @@ public class NonStrictHostAffinityProcessorTest {
 
         Assert.assertEquals(1, plan.getHostPriorities().size());
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
-        Assert.assertEquals(DeploymentPlan.HostPriority.HIGH, plan.getHostPriorities().get(host2Id));
+        Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
     }
 }

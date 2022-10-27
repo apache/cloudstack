@@ -21,7 +21,7 @@ import com.cloud.deploy.DeploymentPlan;
 public class NonStrictHostAntiAffinityProcessor extends NonStrictHostAffinityProcessor {
 
     @Override
-    protected DeploymentPlan.HostPriority addHostPriority(DeploymentPlan plan, Long hostId) {
+    protected Integer addHostPriority(DeploymentPlan plan, Long hostId) {
         plan.addHostPriority(hostId, DeploymentPlan.HostPriority.LOW);
         return plan.getHostPriorities().get(hostId);
     }

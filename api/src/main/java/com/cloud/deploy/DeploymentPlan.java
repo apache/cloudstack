@@ -26,9 +26,11 @@ import java.util.Map;
  */
 public interface DeploymentPlan {
 
+    Integer DEFAULT_HOST_PRIORITY = 0;
+
     enum HostPriority {
         HIGH,
-        NORMAL,
+        DEFAULT,
         LOW,
         PROHIBITED
     }
@@ -85,7 +87,7 @@ public interface DeploymentPlan {
 
     void addHostPriority(Long hostId, HostPriority priority);
 
-    Map<Long, HostPriority> getHostPriorities();
+    Map<Long, Integer> getHostPriorities();
 
-    void setHostPriorities(Map<Long, HostPriority> priorities);
+    void setHostPriorities(Map<Long, Integer> priorities);
 }

@@ -37,7 +37,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     ReservationContext _context;
     List<Long> preferredHostIds = new ArrayList<>();
     boolean migrationPlan;
-    Map<Long, HostPriority> hostPriorities = new HashMap<>();
+    Map<Long, Integer> hostPriorities = new HashMap<>();
 
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
@@ -129,27 +129,28 @@ public class DataCenterDeployment implements DeploymentPlan {
 
     @Override
     public void addHostPriority(Long hostId, HostPriority priority) {
-        HostPriority currentPriority = hostPriorities.get(hostId);
-        if (currentPriority == null || HostPriority.NORMAL.equals(currentPriority)) {
-            hostPriorities.put(hostId, priority);
-        } else if (!HostPriority.PROHIBITED.equals(currentPriority)) {
-            if (HostPriority.HIGH.equals(priority)) {
-                HostPriority newPriority = HostPriority.LOW.equals(currentPriority) ? HostPriority.NORMAL : HostPriority.HIGH;
-                hostPriorities.put(hostId, newPriority);
-            } else if (HostPriority.LOW.equals(priority)) {
-                HostPriority newPriority = HostPriority.HIGH.equals(currentPriority) ? HostPriority.NORMAL : HostPriority.LOW;
-                hostPriorities.put(hostId, newPriority);
-            }
+        Integer currentPriority = hostPriorities.get(hostId);
+        if (currentPriority == null) {
+            currentPriority = DEFAULT_HOST_PRIORITY;
+        }
+        if (HostPriority.HIGH.equals(priority)) {
+            hostPriorities.put(hostId, currentPriority + 1);
+        } else if (HostPriority.LOW.equals(priority)) {
+            hostPriorities.put(hostId, currentPriority - 1);
+        } else if (HostPriority.DEFAULT.equals(priority)) {
+            hostPriorities.put(hostId, DEFAULT_HOST_PRIORITY);
+        } else if (HostPriority.PROHIBITED.equals(priority)) {
+            hostPriorities.put(hostId, Integer.MIN_VALUE);
         }
     }
 
     @Override
-    public Map<Long, HostPriority> getHostPriorities() {
+    public Map<Long, Integer> getHostPriorities() {
         return hostPriorities;
     }
 
     @Override
-    public void setHostPriorities(Map<Long, HostPriority> priorities) {
+    public void setHostPriorities(Map<Long, Integer> priorities) {
         this.hostPriorities = priorities;
     }
 }
