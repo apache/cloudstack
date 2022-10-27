@@ -60,6 +60,9 @@ public interface QuotaConfig {
     public static final ConfigKey<Long> QuotaActivationRuleTimeout = new ConfigKey<>("Advanced", Long.class, "quota.activationrule.timeout", "2000", "The maximum runtime,"
             + " in milliseconds, to execute the quota tariff's activation rule; if it is reached, a timeout will happen.", true);
 
+    ConfigKey<Boolean> QuotaAccountEnabled = new ConfigKey<>("Advanced", Boolean.class, "quota.account.enabled", "true", "Indicates whether Quota plugin is enabled or not for " +
+            "the account.", true, ConfigKey.Scope.Account);
+
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT
     }
