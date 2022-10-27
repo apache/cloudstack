@@ -471,6 +471,14 @@
                     </a-button>
                   </div>
                   <div class="form">
+                    <a-form-item>
+                      <template #label>
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.name')" :tooltip="createAutoScalePolicyApiParams.name.description"/>
+                      </template>
+                      <a-input v-model:value="selectedScaleUpPolicy.name"></a-input>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </a-form-item>
                     <a-form-item name="scaleupduration" ref="scaleupduration">
                       <template #label>
                         <span class="form__required">*</span>
@@ -606,6 +614,14 @@
                     </a-button>
                   </div>
                   <div class="form">
+                    <a-form-item>
+                      <template #label>
+                        <span class="form__required">*</span>
+                        <tooltip-label :title="$t('label.name')" :tooltip="createAutoScalePolicyApiParams.name.description"/>
+                      </template>
+                      <a-input v-model:value="selectedScaleDownPolicy.name"></a-input>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </a-form-item>
                     <a-form-item name="scaledownduration" ref="scaledownduration">
                       <template #label>
                         <span class="form__required">*</span>
@@ -2206,6 +2222,13 @@ export default {
           return
         }
         for (const policy of this.scaleUpPolicies) {
+          if (!policy.name || policy.name.length === 0) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.scaleup.policy.name.continue')
+            })
+            return
+          }
           if (!policy.scaleupduration || parseInt(policy.scaleupduration) <= 0) {
             this.$notification.error({
               message: this.$t('message.request.failed'),
@@ -2237,6 +2260,13 @@ export default {
           return
         }
         for (const policy of this.scaleDownPolicies) {
+          if (!policy.name || policy.name.length === 0) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.scaledown.policy.name.continue')
+            })
+            return
+          }
           if (!policy.scaledownduration || parseInt(policy.scaledownduration) <= 0) {
             this.$notification.error({
               message: this.$t('message.request.failed'),
