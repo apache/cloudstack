@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -236,6 +238,7 @@ public class LibvirtVMDef {
         private int vcpu = -1;
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
+        private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
 
         public void setMemorySize(long mem) {
             this.memory = mem;
@@ -276,7 +279,18 @@ public class LibvirtVMDef {
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
-            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this.memoryBalloning ? "virtio" : "none"));
+            if (this.memoryBalloning) {
+                response.append("<devices>\n" +
+                        "<memballoon model='virtio'>" +
+                        (memoryBalloonStatsPeriod > 0 ? "<stats period='" + memoryBalloonStatsPeriod + "'/>" : "") +
+                        "</memballoon>\n" +
+                        "</devices>\n");
+            } else {
+                response.append("<devices>\n" +
+                        "<memballoon model='none'/>\n" +
+                        "</devices>\n");
+            }
+
             response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
         }
