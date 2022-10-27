@@ -152,7 +152,7 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
         # 3. Deploy vm-2 with the group. It will be started on different host if there are multiple hosts.
         # 4. Migrate vm-2 to same host as vm-1
         # 5. Stop vm-2, start vm-2. It will be started on same host as vm-1
-        # 6. Stop vm-2, start vm-2 with forgetlasthost=true.  It will be started on different host as vm-1
+        # 6. Stop vm-2, start vm-2 with considerlasthost=false.  It will be started on different host as vm-1
 
         self.logger.debug("=== Running test_01_non_strict_host_anti_affinity ===")
 
@@ -223,7 +223,7 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
                          vm_2_host_id,
                          msg="Both VMs of affinity group %s are on the different host" % self.affinity_group.name)
 
-        # 6. Stop vm-2, start vm-2 with forgetlasthost=true.  It will be started on different host as vm-1
+        # 6. Stop vm-2, start vm-2 with considerlasthost=false.  It will be started on different host as vm-1
         cmd = stopVirtualMachine.stopVirtualMachineCmd()
         cmd.id = self.virtual_machine_2.id
         cmd.forced = True
@@ -231,7 +231,7 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
 
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.virtual_machine_2.id
-        cmd.forgetlasthost = True
+        cmd.considerlasthost = False
         self.apiclient.startVirtualMachine(cmd)
 
         vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
@@ -249,7 +249,7 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
         # 3. Deploy vm-4 with the group. It will be started on same host.
         # 4. Migrate vm-4 to different host as vm-3
         # 5. Stop vm-4, start vm-4. It will be started on different host as vm-3
-        # 6. Stop vm-4, start vm-4 with forgetlasthost=true.  It will be started on same host as vm-3
+        # 6. Stop vm-4, start vm-4 with considerlasthost=false.  It will be started on same host as vm-3
 
         self.logger.debug("=== Running test_02_non_strict_host_affinity ===")
 
@@ -319,7 +319,7 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
                             vm_4_host_id,
                             msg="Both VMs of affinity group %s are on the same host" % self.affinity_group.name)
 
-        # 6. Stop vm-4, start vm-4 with forgetlasthost=true.  It will be started on same host as vm-3
+        # 6. Stop vm-4, start vm-4 with considerlasthost=false.  It will be started on same host as vm-3
         cmd = stopVirtualMachine.stopVirtualMachineCmd()
         cmd.id = self.virtual_machine_4.id
         cmd.forced = True
@@ -327,7 +327,7 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
 
         cmd = startVirtualMachine.startVirtualMachineCmd()
         cmd.id = self.virtual_machine_4.id
-        cmd.forgetlasthost = True
+        cmd.considerlasthost = False
         self.apiclient.startVirtualMachine(cmd)
 
         vm_4_host_id = self.get_vm_host_id(self.virtual_machine_4.id)

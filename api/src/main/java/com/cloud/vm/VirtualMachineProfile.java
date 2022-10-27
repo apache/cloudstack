@@ -75,7 +75,7 @@ public interface VirtualMachineProfile {
         public static final Param BootType = new Param("BootType");
         public static final Param BootIntoSetup = new Param("enterHardwareSetup");
         public static final Param PreserveNics = new Param("PreserveNics");
-        public static final Param ForgetLastHost = new Param("ForgetLastHost");
+        public static final Param ConsiderLastHost = new Param("ConsiderLastHost");
 
         private String name;
 

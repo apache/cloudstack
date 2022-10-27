@@ -293,8 +293,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         String uefiFlag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.UefiFlag);
-        String forgetLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ForgetLastHost);
-        boolean forgetLastHostBool = forgetLastHostStr != null && Boolean.TRUE.toString().equalsIgnoreCase(forgetLastHostStr);
 
         if (plan.getHostId() != null && haVmTag == null) {
             Long hostIdSpecified = plan.getHostId();
@@ -410,7 +408,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             planner = getDeploymentPlannerByName(plannerName);
         }
 
-        if (vm.getLastHostId() != null && haVmTag == null && !forgetLastHostBool) {
+        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
+        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
+                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
+        if (considerLastHost) {
             s_logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
 
             HostVO host = _hostDao.findById(vm.getLastHostId());

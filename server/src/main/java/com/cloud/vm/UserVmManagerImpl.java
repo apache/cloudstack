@@ -3203,8 +3203,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (uefiDetail != null) {
             addVmUefiBootOptionsToParams(additonalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
-        if (cmd.getForgetLastHost() != null) {
-            additonalParams.put(VirtualMachineProfile.Param.ForgetLastHost, cmd.getForgetLastHost().toString());
+        if (cmd.getConsiderLastHost() != null) {
+            additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
