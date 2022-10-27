@@ -1600,7 +1600,7 @@
 "label.userdatadetails": "Userdata details",
 "label.userdataparams": "Userdata parameters",
 "label.userdatapolicy": "Userdata link policy",
-"label.userdata.text": "Manual Userdata",
+"label.userdata.text": "Manual Userdata entry",
 "label.userdata.registered": "Stored Userdata",
 "label.userdata.do.override": "Userdata override",
 "label.userdata.do.append": "Userdata append",
