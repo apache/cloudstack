@@ -486,3 +486,20 @@ export const genericUtilPlugin = {
     }
   }
 }
+
+export function createPathBasedOnVmType (vmtype, virtualmachineid) {
+  let path = ''
+  switch (vmtype) {
+    case 'ConsoleProxy':
+    case 'SecondaryStorageVm':
+      path = '/systemvm/'
+      break
+    case 'DomainRouter':
+      path = '/router/'
+      break
+    default:
+      path = '/vm/'
+  }
+
+  return path + virtualmachineid
+}

@@ -2090,6 +2090,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
+        boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -2134,14 +2135,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-        sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
-        sb.cp();
 
-        // display UserVM volumes only
-        sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
-        sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
-        sb.cp();
+        if (!shouldListSystemVms) {
+            sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+            sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
+            sb.cp();
+
+            sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
+            sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
+            sb.cp();
+        }
 
         // now set the SC criteria...
         SearchCriteria<VolumeJoinVO> sc = sb.create();
@@ -2166,7 +2169,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         setIdsListToSearchCriteria(sc, ids);
 
-        sc.setParameters("systemUse", 1);
+        if (!shouldListSystemVms) {
+            sc.setParameters("systemUse", 1);
+            sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+        }
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
@@ -2214,8 +2220,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
         }
-        // Don't return DomR and ConsoleProxy volumes
-        sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
 
         if (state != null) {
             sc.setParameters("state", state);
@@ -2238,6 +2242,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
         return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+    }
+
+    private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
+        return Boolean.TRUE.equals(cmd.getListSystemVms()) && _accountMgr.isRootAdmin(callerId);
     }
 
     @Override
