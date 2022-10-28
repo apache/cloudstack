@@ -111,8 +111,8 @@ public class NonStrictHostAntiAffinityProcessorTest {
         when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
 
         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
-        plan.addHostPriority(host2Id, DeploymentPlan.HostPriority.DEFAULT);
-        plan.addHostPriority(host3Id, DeploymentPlan.HostPriority.HIGH);
+        plan.adjustHostPriority(host2Id, DeploymentPlan.HostPriorityAdjustment.DEFAULT);
+        plan.adjustHostPriority(host3Id, DeploymentPlan.HostPriorityAdjustment.HIGHER);
         ExcludeList avoid = new ExcludeList();
 
         AffinityGroupVO affinityGroupVO = Mockito.mock(AffinityGroupVO.class);

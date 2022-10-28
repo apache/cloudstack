@@ -1040,6 +1040,7 @@ public class DeploymentPlanningManagerImplTest {
         priorities.put(5L, 8);
         priorities.put(6L, -1);
         priorities.put(8L, 5);
+        priorities.put(9L, DataCenterDeployment.PROHIBITED_HOST_PRIORITY);
 
         Host host1 = Mockito.mock(Host.class);
         Mockito.when(host1.getId()).thenReturn(1L);
@@ -1057,8 +1058,10 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(host7.getId()).thenReturn(7L);
         Host host8 = Mockito.mock(Host.class);
         Mockito.when(host8.getId()).thenReturn(8L);
+        Host host9 = Mockito.mock(Host.class);
+        Mockito.when(host9.getId()).thenReturn(9L);
 
-        List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3, host4, host5, host6, host7, host8));
+        List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3, host4, host5, host6, host7, host8, host9));
         _dpm.reorderHostsByPriority(priorities, hosts);
 
         Assert.assertEquals(8, hosts.size());

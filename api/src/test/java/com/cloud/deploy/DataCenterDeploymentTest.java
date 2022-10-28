@@ -36,22 +36,22 @@ public class DataCenterDeploymentTest extends TestCase {
     public void testHostPriorities() {
         verifyHostPriority(null);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.DEFAULT);
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.DEFAULT);
         verifyHostPriority(0);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.HIGHER);
         verifyHostPriority(1);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.LOW);
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.LOWER);
         verifyHostPriority(0);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.LOW);
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.LOWER);
         verifyHostPriority(-1);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.HIGHER);
         verifyHostPriority(0);
 
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.HIGHER);
         verifyHostPriority(1);
     }
 }

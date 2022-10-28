@@ -95,24 +95,26 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
 
     protected void processVmInAffinityGroup(DeploymentPlan plan, VMInstanceVO groupVM) {
         if (groupVM.getHostId() != null) {
-            Integer priority = addHostPriority(plan, groupVM.getHostId());
+            Integer priority = adjustHostPriority(plan, groupVM.getHostId());
             if (logger.isDebugEnabled()) {
-                logger.debug("Marked host " + groupVM.getHostId() + " to " + priority + " priority, since VM " + groupVM.getId() + " is present on the host");
+                logger.debug(String.format("Updated host %s priority to %s , since VM %s is present on the host",
+                        groupVM.getHostId(), priority, groupVM.getId()));
             }
         } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
             if (secondsSinceLastUpdate < vmCapacityReleaseInterval) {
-                Integer priority = addHostPriority(plan, groupVM.getLastHostId());
+                Integer priority = adjustHostPriority(plan, groupVM.getLastHostId());
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Marked host " + groupVM.getLastHostId() + " to " + priority + " priority, since VM " + groupVM.getId() +
-                            " is present on the host, in Stopped state but has reserved capacity");
+                    logger.debug(String.format("Updated host %s priority to %s , since VM %s" +
+                            " is present on the host, in %s state but has reserved capacity",
+                            groupVM.getLastHostId(), priority, groupVM.getId(), groupVM.getState()));
                 }
             }
         }
     }
 
-    protected Integer addHostPriority(DeploymentPlan plan, Long hostId) {
-        plan.addHostPriority(hostId, DeploymentPlan.HostPriority.HIGH);
+    protected Integer adjustHostPriority(DeploymentPlan plan, Long hostId) {
+        plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.HIGHER);
         return plan.getHostPriorities().get(hostId);
     }
 

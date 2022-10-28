@@ -128,19 +128,21 @@ public class DataCenterDeployment implements DeploymentPlan {
     }
 
     @Override
-    public void addHostPriority(Long hostId, HostPriority priority) {
+    public void adjustHostPriority(Long hostId, HostPriorityAdjustment adjustment) {
         Integer currentPriority = hostPriorities.get(hostId);
         if (currentPriority == null) {
             currentPriority = DEFAULT_HOST_PRIORITY;
+        } else if (currentPriority.equals(PROHIBITED_HOST_PRIORITY)) {
+            return;
         }
-        if (HostPriority.HIGH.equals(priority)) {
-            hostPriorities.put(hostId, currentPriority + 1);
-        } else if (HostPriority.LOW.equals(priority)) {
-            hostPriorities.put(hostId, currentPriority - 1);
-        } else if (HostPriority.DEFAULT.equals(priority)) {
+        if (HostPriorityAdjustment.HIGHER.equals(adjustment)) {
+            hostPriorities.put(hostId, currentPriority + ADJUST_HOST_PRIORITY_BY);
+        } else if (HostPriorityAdjustment.LOWER.equals(adjustment)) {
+            hostPriorities.put(hostId, currentPriority - ADJUST_HOST_PRIORITY_BY);
+        } else if (HostPriorityAdjustment.DEFAULT.equals(adjustment)) {
             hostPriorities.put(hostId, DEFAULT_HOST_PRIORITY);
-        } else if (HostPriority.PROHIBITED.equals(priority)) {
-            hostPriorities.put(hostId, Integer.MIN_VALUE);
+        } else if (HostPriorityAdjustment.PROHIBIT.equals(adjustment)) {
+            hostPriorities.put(hostId, PROHIBITED_HOST_PRIORITY);
         }
     }
 

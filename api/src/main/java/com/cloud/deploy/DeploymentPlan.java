@@ -27,12 +27,14 @@ import java.util.Map;
 public interface DeploymentPlan {
 
     Integer DEFAULT_HOST_PRIORITY = 0;
+    Integer PROHIBITED_HOST_PRIORITY = Integer.MIN_VALUE;
+    Integer ADJUST_HOST_PRIORITY_BY = 1;
 
-    enum HostPriority {
-        HIGH,
+    enum HostPriorityAdjustment {
+        HIGHER,
         DEFAULT,
-        LOW,
-        PROHIBITED
+        LOWER,
+        PROHIBIT
     }
 
     // TODO: This interface is not fully developed. It really
@@ -85,7 +87,7 @@ public interface DeploymentPlan {
 
     boolean isMigrationPlan();
 
-    void addHostPriority(Long hostId, HostPriority priority);
+    void adjustHostPriority(Long hostId, HostPriorityAdjustment priority);
 
     Map<Long, Integer> getHostPriorities();
 
