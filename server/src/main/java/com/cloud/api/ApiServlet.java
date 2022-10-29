@@ -306,7 +306,7 @@ public class ApiServlet extends HttpServlet {
                 userId = (Long)session.getAttribute("userid");
                 UserAccount userAccount = accountMgr.getUserAccountById(userId);
                 boolean is2FAenabled = userAccount.isTwoFactorAuthenticationEnabled();
-                boolean is2FAverified = (boolean) session.getAttribute("2FAverified");
+                boolean is2FAverified = (boolean) session.getAttribute(ApiConstants.IS_2FA_VERIFIED);
                 if (is2FAenabled && !is2FAverified) {
                     APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                     if ((command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) || apiAuthenticator == null ) {
@@ -321,7 +321,7 @@ public class ApiServlet extends HttpServlet {
                         HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
                     } else {
                         String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
-                        session.setAttribute("2FAverified", true);
+                        session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
                         HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
                         return;
                     }
