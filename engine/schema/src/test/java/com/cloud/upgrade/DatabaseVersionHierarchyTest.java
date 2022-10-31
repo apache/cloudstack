@@ -26,7 +26,6 @@ import com.cloud.upgrade.dao.Upgrade41520to41600;
 import com.cloud.upgrade.dao.Upgrade41710to41800;
 import com.cloud.upgrade.dao.Upgrade481to490;
 import org.apache.cloudstack.utils.CloudStackVersion;
-import org.junit.Before;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
