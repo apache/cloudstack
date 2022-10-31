@@ -167,7 +167,7 @@ public class DatabaseUpgradeCheckerTest {
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
         assertNotNull(upgrades);
-        assertTrue(upgrades.length == 2);
+        assertEquals("We should have 2 upgrade steps", 2, upgrades.length);
         assertTrue(upgrades[1] instanceof NoopDbUpgrade);
 
     }
