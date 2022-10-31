@@ -27,6 +27,7 @@ import com.cloud.upgrade.dao.Upgrade41710to41800;
 import com.cloud.upgrade.dao.Upgrade481to490;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.junit.Before;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -36,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DatabaseVersionHierarchyTest {
 
-    private DatabaseVersionHierarchy hierarchy;
+    private static DatabaseVersionHierarchy hierarchy;
 
-    class DummyUpgrade implements DbUpgrade {
+    static class DummyUpgrade implements DbUpgrade {
         @Override
         public String[] getUpgradableVersionRange() {
             return new String[0];
@@ -71,8 +72,8 @@ class DatabaseVersionHierarchyTest {
 
     }
 
-    @Before
-    public void init() {
+    @BeforeAll
+    static void init() {
         DatabaseVersionHierarchy.DatabaseVersionHierarchyBuilder builder = DatabaseVersionHierarchy.builder()
                 .next("0.0.5", new DummyUpgrade())
                 .next("1.0.0.0", new DummyUpgrade())
@@ -95,28 +96,23 @@ class DatabaseVersionHierarchyTest {
     }
 
     @Test
-    public void getRecentVersionMiddle() {
-        init();
+    void getRecentVersionMiddle() {
         assertEquals("2.0.0", hierarchy.getRecentVersion(CloudStackVersion.parse("2.2.2")).toString());
     }
     @Test
-    public void getRecentVersionEarly() {
-        init();
+    void getRecentVersionEarly() {
         assertEquals(null, hierarchy.getRecentVersion(CloudStackVersion.parse("0.0.2")));
     }
     @Test
-    public void getRecentVersionStart() {
-        init();
+    void getRecentVersionStart() {
         assertEquals(null, hierarchy.getRecentVersion(CloudStackVersion.parse("0.0.5")));
     }
     @Test
-    public void getRecentVersionJust() {
-        init();
+    void getRecentVersionJust() {
         assertEquals("0.0.5", hierarchy.getRecentVersion(CloudStackVersion.parse("0.0.9")).toString());
     }
     @Test
-    public void getRecentVersionExact() {
-        init();
+    void getRecentVersionExact() {
         assertEquals("0.0.5", hierarchy.getRecentVersion(CloudStackVersion.parse("1.0.0.0")).toString());
     }
 }
