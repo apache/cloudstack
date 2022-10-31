@@ -1938,7 +1938,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Boolean isSystem = cmd.getIsSystem();
         String aclType = cmd.getAclType();
         Long projectId = cmd.getProjectId();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
         String path = null;
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         List<String> supportedServicesStr = cmd.getSupportedServices();
