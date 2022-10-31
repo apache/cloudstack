@@ -424,6 +424,6 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod, AutomaticCertRenewal, CABackgroundJobDelay, CertExpiryAlertPeriod};
+        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod, AutomaticCertRenewal, AllowHostIPInSysVMAgentCert, CABackgroundJobDelay, CertExpiryAlertPeriod};
     }
 }
