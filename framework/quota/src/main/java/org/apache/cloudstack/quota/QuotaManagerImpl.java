@@ -320,9 +320,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             for (UsageVO usageRecord : usageRecords) {
                 int usageType = usageRecord.getUsageType();
 
-                if (usageTypesToAvoidCalculation.contains(usageType)) {
-                    s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because the calculation of the types [%s] has not been implemented yet.",
-                            usageRecord.toString(), usageTypesToAvoidCalculation));
+                if (Boolean.FALSE.equals(shouldCalculateUsageRecord(account,usageRecord))) {
                     pairsUsageAndQuotaUsage.add(new Pair<>(usageRecord, null));
                     continue;
                 }
@@ -343,6 +341,21 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
 
         return persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(pairsUsageAndQuotaUsage);
+    }
+
+    protected boolean shouldCalculateUsageRecord(AccountVO accountVO, UsageVO usageRecord) {
+        if (usageTypesToAvoidCalculation.contains(usageRecord.getUsageType())) {
+            s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because the calculation of the types [%s] has not been implemented yet.",
+                    usageRecord, usageTypesToAvoidCalculation));
+            return false;
+        }
+
+        if (Boolean.FALSE.equals(QuotaConfig.QuotaAccountEnabled.valueIn(accountVO.getAccountId()))) {
+            s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because account [%s] has the quota plugin disabled.",
+                    usageRecord, accountVO.reflectionToString()));
+            return false;
+        }
+        return true;
     }
 
     protected List<QuotaUsageVO> persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(List<Pair<UsageVO, QuotaUsageVO>> pairsUsageAndQuotaUsage) {

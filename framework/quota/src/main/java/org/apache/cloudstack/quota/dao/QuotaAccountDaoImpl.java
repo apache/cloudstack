@@ -16,8 +16,10 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -36,7 +38,15 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
 
     @Override
     public List<QuotaAccountVO> listAllQuotaAccount() {
-        return listAllQuotaAccount(null, null).first();
+        List<QuotaAccountVO> accountsWithQuotaEnabled = new ArrayList<>();
+        for (QuotaAccountVO account : listAllQuotaAccount(null, null).first()) {
+            if (Boolean.TRUE.equals(getQuotaAccountEnabled(account.getAccountId()))) {
+                accountsWithQuotaEnabled.add(account);
+                continue;
+            }
+            s_logger.trace(String.format("Account [%s] has the quota plugin disabled. Thus, it will not receive quota emails.", account));
+        }
+        return accountsWithQuotaEnabled;
     }
 
     @Override
@@ -80,4 +90,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
         });
     }
 
+    public Boolean getQuotaAccountEnabled(Long accountId) {
+        return QuotaConfig.QuotaAccountEnabled.valueIn(accountId);
+    }
 }

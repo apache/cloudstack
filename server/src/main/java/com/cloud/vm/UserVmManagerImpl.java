@@ -6288,6 +6288,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.findById(vmId);
     }
 
+    @Override
+    public VirtualMachine getVm(long vmId) {
+        return _vmInstanceDao.findById(vmId);
+    }
+
     private VMInstanceVO preVmStorageMigrationCheck(Long vmId) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();

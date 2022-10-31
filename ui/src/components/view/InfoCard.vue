@@ -370,7 +370,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
             <desktop-outlined />
-            <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
             <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
           </div>
         </div>
@@ -705,6 +705,7 @@
 
 <script>
 import { api } from '@/api'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
@@ -837,6 +838,7 @@ export default {
     }
   },
   methods: {
+    createPathBasedOnVmType: createPathBasedOnVmType,
     updateResourceAdditionalData () {
       if (!this.resource) return
       this.resourceType = this.$route.meta.resourceType

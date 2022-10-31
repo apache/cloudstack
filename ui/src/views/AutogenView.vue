@@ -847,6 +847,10 @@ export default {
         delete params.showunique
       }
 
+      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
+        params.listsystemvms = true
+      }
+
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
