@@ -27,7 +27,7 @@
       :src="$config.banner"
       class="user-layout-logo"
       alt="logo">
-    <h1 style="text-align: center; font-size: 24px; color: gray"> two-factor authentication </h1>
+    <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
     <br />
     <br />
     <a-form
@@ -57,7 +57,9 @@
   </a-form>
 </template>
 <script>
-import { ref, reactive } from 'vue'
+
+import { api } from '@/api'
+import { ref, reactive, toRaw } from 'vue'
 
 export default {
   name: 'TwoFa',
@@ -78,6 +80,19 @@ export default {
       })
     },
     handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        console.log(values.secretkey)
+        api('validateUserTwoFactorAuthenticationCode', { '2facode': values.secretkey }).then(response => {
+          console.log(response)
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
+        })
+      })
+
       // Add logic to set loginFlag to true
       this.$store.dispatch('SetLoginFlag', true)
     }

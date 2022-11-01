@@ -19,8 +19,8 @@ package com.cloud.api.auth;
 import com.cloud.api.ApiServlet;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -96,13 +96,12 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Code for two factor authentication is required");
         }
 
-        Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
-        Long domainId = owner.getDomainId();
-        Long accountId = owner.getAccountId();
+        final long currentUserId = (Long) session.getAttribute("userid");
+        final UserAccount currentUserAccount = _accountService.getUserAccountById(currentUserId);
 
         String serializedResponse = null;
         try {
-            accountManager.verifyUsingTwoFactorAuthenticationCode(twoFactorAuthenticationCode, domainId, accountId);
+            accountManager.verifyUsingTwoFactorAuthenticationCode(twoFactorAuthenticationCode, currentUserAccount.getDomainId(), currentUserId);
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
             return ApiResponseSerializer.toSerializedString(response, responseType);

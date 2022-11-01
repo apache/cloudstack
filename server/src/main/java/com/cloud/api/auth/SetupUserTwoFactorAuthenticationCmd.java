@@ -57,13 +57,15 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
     }
 
     public Boolean getEnable() {
-        return enable != null? true:enable;
+        return enable == null ? true : enable;
     }
 
     @Override
     public void execute() throws ServerApiException {
         UserTwoFactorAuthenticationSetupResponse response = accountManager.setupUserTwoFactorAuthentication(this);
-        this.setResponseObject(response);
+        response.setObjectName("setup2fa");
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 
     @Override

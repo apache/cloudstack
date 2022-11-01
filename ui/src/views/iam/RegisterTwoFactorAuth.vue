@@ -16,36 +16,71 @@
 // under the License.
 
 <template>
-  <h3> {{ $t('label.configure.app') }} </h3>
-  <div> {{ $t('message.two.fa.auth.register.account') }} </div>
-  <vue-qrious
-    class="center-align"
-    :value="resource.id"
-    @change="onDataUrlChange"
-  />
-  <br />
-  <div> {{ $t('message.two.fa.static.pin.part1') }} <a @click="generateStaticPin"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
-  <br />
-  <h3> {{ $t('label.enter.code') }} </h3>
-  <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
-    <a-input v-model:value="pin" />
-    <div :span="24">
-      <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
+  <div style="width:500px;height=500px">
+  <h3> {{ $t('label.select.2fa.provider') }} </h3>
+  <a-form
+    :rules="rules"
+    layout="vertical">
+    <div class="form-layout" v-ctrl-enter="submitPin">
+      <a-select
+        v-model:value="selectedProvider"
+        optionFilterProp="label"
+        :filterOption="(input, option) => {
+          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+        }"
+        style="width: 100%"
+        @change="val => { handleSelectChange(val) }">
+        <a-select-option
+          v-for="(opt) in providers"
+          :key="opt.name"
+          :disabled="opt.enabled === false">
+            {{ opt.name }}
+        </a-select-option>
+      </a-select>
     </div>
+    <div v-if="selectedProvider === 'google'">
+      <br />
+      <div> {{ $t('message.two.fa.auth.register.account') }} </div>
+      <vue-qrious
+        class="center-align"
+        :value="pin"
+        @change="onDataUrlChange"
+      />
+    </div>
+    <div v-else-if="selectedProvider === 'staticpin'">
+      <div> <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
+    </div>
+    <div v-else-if="selectedProvider !== null && selectedProvider !== 'staticpin'">
+      <div> {{ $t('message.two.fa.static.pin.part1') }} <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
+    </div>
+    <div v-if="selectedProvider">
+      <br />
+      <h3> {{ $t('label.enter.code') }} </h3>
+      <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
+        <a-input v-model:value="pin" />
+        <div :span="24">
+          <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </div>
+
+    <a-modal
+      v-if="showPin"
+      :visible="showPin"
+      :title="$t('label.two.factor.secret')"
+      :closable="true"
+      :footer="null"
+      @cancel="onCloseModal"
+      centered
+      width="450px">
+      <div> {{ pin }} </div>
+    </a-modal>
   </a-form>
-  <a-modal
-    v-if="showPin"
-    :visible="showPin"
-    :title="$t('label.two.factor.secret')"
-    :closable="true"
-    :footer="null"
-    @cancel="onCloseModal"
-    centered
-    width="450px">
-    <div> {{ pin }} </div>
-  </a-modal>
+  </div>
 </template>
 <script>
+
+import { api } from '@/api'
 import VueQrious from 'vue-qrious'
 export default {
   name: 'RegisterTwoFactorAuth',
@@ -62,12 +97,38 @@ export default {
     return {
       dataUrl: '',
       pin: '',
-      showPin: false
+      showPin: false,
+      providers: [],
+      selectedProvider: null
     }
+  },
+  mounted () {
+    this.list2FAProviders()
   },
   methods: {
     onDataUrlChange (dataUrl) {
       this.dataUrl = dataUrl
+    },
+    handleSelectChange (val) {
+      this.selectedProvider = val
+      this.setup2FAProvider()
+    },
+    setup2FAProvider () {
+      api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
+        console.log(response)
+        this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
+        this.showPin = true
+      }).catch(error => {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+        })
+      })
+    },
+    list2FAProviders () {
+      api('listUserTwoFactorAuthenticatorProviders', {}).then(response => {
+        this.providers = response.listusertwofactorauthenticatorprovidersresponse.providers || []
+      })
     },
     submitPin () {
       // call api
@@ -82,6 +143,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
   .center-align {
     display: block;
