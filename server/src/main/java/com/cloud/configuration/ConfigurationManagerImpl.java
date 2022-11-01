@@ -2732,9 +2732,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // physical network and providers setup.
             zoneFinal.setAllocationState(Grouping.AllocationState.Disabled);
         }
-        if (isEdge) {
-            zoneFinal.setType(DataCenter.Type.Edge);
-        }
+        zoneFinal.setType(isEdge ? DataCenter.Type.Edge : DataCenter.Type.Core);
 
         return Transaction.execute(new TransactionCallback<DataCenterVO>() {
             @Override
