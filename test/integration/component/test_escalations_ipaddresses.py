@@ -1479,7 +1479,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.assertEqual(
             vm_created.id,
             list_lbruleinstance_applied_false[0].id,
-            "Failed to list Instance available to asign a Load Balancer Rule"
+            "Failed to list Instance available to assign a Load Balancer Rule"
         )
         # Assigning Instance created to Load Balancer Rule
         LoadBalancerRule.assign(
@@ -1566,7 +1566,7 @@ class TestIpAddresses(cloudstackTestCase):
         self.assertEqual(
             vm_created.id,
             list_lbruleinstance_applied_false[0].id,
-            "Failed to list Instance available to asign a Load Balancer Rule"
+            "Failed to list Instance available to assign a Load Balancer Rule"
         )
         # Destroying the VM Launched
         vm_created.delete(self.apiClient)

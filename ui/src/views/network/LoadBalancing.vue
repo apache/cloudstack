@@ -1280,7 +1280,7 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
-          successMessage: this.$t('message.success.asign.vm'),
+          successMessage: this.$t('message.success.assign.vm'),
           successMethod: () => {
             this.parentToggleLoading()
             this.fetchData()

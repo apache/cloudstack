@@ -65,7 +65,7 @@ public class LdapConfiguration implements Configurable{
             String.class,
             "ldap.user.memberof.attribute",
             "memberof",
-            "the reverse membership attibute for group members",
+            "the reverse membership attribute for group members",
             true,
             ConfigKey.Scope.Domain);
 

@@ -133,7 +133,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         command.add(name + ".ovf");        // OVF file should be the first file in OVA archive
         command.add(name + "-disk0.vmdk");
 
-        s_logger.info("Package OVA with commmand: " + command.toString());
+        s_logger.info("Package OVA with command: " + command.toString());
         command.execute();
     }
 

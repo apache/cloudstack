@@ -3331,7 +3331,7 @@
   "message.enabling.zone": "\u6B63\u5728\u542F\u7528\u8D44\u6E90\u57DF",
   "message.enabling.zone.dots": "\u6B63\u5728\u542F\u7528\u8D44\u6E90\u57DF...",
 
-  "message.enter.seperated.list.multiple.cidrs": "\u5982\u679C\u5B58\u5728\u591A\u4E2A CIDR\uFF0C\u8BF7\u8F93\u5165\u7528\u9017\u53F7\u5206\u9694\u7684 CIDR \u5217\u8868",
+  "message.enter.separated.list.multiple.cidrs": "\u5982\u679C\u5B58\u5728\u591A\u4E2A CIDR\uFF0C\u8BF7\u8F93\u5165\u7528\u9017\u53F7\u5206\u9694\u7684 CIDR \u5217\u8868",
   "message.enter.token": "\u8BF7\u8F93\u5165\u60A8\u5728\u9080\u8BF7\u7535\u5B50\u90AE\u4EF6\u4E2D\u6536\u5230\u7684\u4EE4\u724C\u3002",
 
   "message.enter.valid.nic.ip": "\u8BF7\u8F93\u5165\u7F51\u5361\u6709\u6548\u7684 IP \u5730\u5740",
@@ -3454,8 +3454,8 @@
   "message.error.vlan.range": "\u8BF7\u8F93\u5165\u6709\u6548\u7684 VLAN/VNI \u8303\u56F4",
 
   "message.error.volume.name": "\u8BF7\u8F93\u5165\u5377\u540D",
-  "message.error.volumne": "\u8BF7\u8F93\u5165\u5377\u5BB9\u91CF",
-  "message.error.volumne.group": "\u8BF7\u8F93\u5165\u5377\u7EC4",
+  "message.error.volume": "\u8BF7\u8F93\u5165\u5377\u5BB9\u91CF",
+  "message.error.volume.group": "\u8BF7\u8F93\u5165\u5377\u7EC4",
   "message.error.zone": "\u8BF7\u9009\u62E9\u4E00\u4E2A\u8D44\u6E90\u57DF",
   "message.error.zone.combined": "\u6240\u6709\u5206\u533A\u4E0D\u80FD\u4E0E\u4EFB\u4F55\u5176\u4ED6\u5206\u533A\u5408\u5E76",
   "message.error.zone.for.cluster": "\u8BF7\u4E3A Kubernetes \u96C6\u7FA4\u9009\u62E9\u533A\u57DF",
@@ -3778,7 +3778,7 @@
   "message.success.add.vpn.customer.gateway": "\u5DF2\u6210\u529F\u6DFB\u52A0 VPN \u5BA2\u6237\u7F51\u5173",
   "message.success.add.vpn.gateway": "\u5DF2\u6210\u529F\u6DFB\u52A0 VPN \u7F51\u5173",
 
-  "message.success.asign.vm": "\u5DF2\u6210\u529F\u5206\u914D\u865A\u62DF\u673A",
+  "message.success.assign.vm": "\u5DF2\u6210\u529F\u5206\u914D\u865A\u62DF\u673A",
   "message.success.assigned.vms": "\u5DF2\u6210\u529F\u5206\u914D\u865A\u62DF\u673A",
   "message.success.certificate.upload": "\u8BC1\u4E66\u5DF2\u6210\u529F\u4E0A\u8F7D",
   "message.success.change.affinity.group": "\u5DF2\u6210\u529F\u66F4\u6539\u5173\u8054\u7EC4",
