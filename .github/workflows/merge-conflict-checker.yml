@@ -21,8 +21,13 @@ on:
   pull_request_target:
     types: [synchronize]
 
+permissions:  # added using https://github.com/step-security/secure-workflows
+  contents: read
+
 jobs:
   triage:
+    permissions:
+      pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
     runs-on: ubuntu-latest
     steps:
     - name: Conflict Check

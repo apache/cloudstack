@@ -18,11 +18,13 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -38,7 +40,7 @@ public class LibvirtStoragePoolXMLParser {
     public LibvirtStoragePoolDef parseStoragePoolXML(String poolXML) {
         DocumentBuilder builder;
         try {
-            builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
 
             InputSource is = new InputSource();
             is.setCharacterStream(new StringReader(poolXML));
@@ -52,7 +54,7 @@ public class LibvirtStoragePoolXMLParser {
             String poolName = getTagValue("name", rootElement);
 
             Element source = (Element)rootElement.getElementsByTagName("source").item(0);
-            String host = getAttrValue("host", "name", source);
+            String host = getStorageHosts(source);
             String format = getAttrValue("format", "type", source);
 
             if (type.equalsIgnoreCase("rbd") || type.equalsIgnoreCase("powerflex")) {
@@ -122,5 +124,14 @@ public class LibvirtStoragePoolXMLParser {
         }
         Element node = (Element)tagNode.item(0);
         return node.getAttribute(attr);
+    }
+
+    protected static String getStorageHosts(Element parentElement) {
+        List<String> storageHosts = new ArrayList<>();
+        NodeList hosts = parentElement.getElementsByTagName("host");
+        for (int j = 0; j < hosts.getLength(); j++) {
+            storageHosts.add(((Element) hosts.item(j)).getAttribute("name"));
+        }
+        return StringUtils.join(storageHosts, ",");
     }
 }

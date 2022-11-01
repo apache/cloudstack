@@ -50,7 +50,7 @@ public class QuotaTariffUpdateCmdTest extends TestCase {
         QuotaTariffVO tariff = new QuotaTariffVO();
         tariff.setEffectiveOn(new Date());
         tariff.setCurrencyValue(new BigDecimal(100));
-        tariff.setUsageType(QuotaTypes.MEMORY);
+        tariff.setUsageType(QuotaTypes.VOLUME);
 
         Mockito.when(responseBuilder.updateQuotaTariffPlan(Mockito.eq(cmd))).thenReturn(null);
         try {

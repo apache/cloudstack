@@ -18,6 +18,7 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;
@@ -61,7 +62,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
-        fixWrongPoolUuid(conn);
+        fixWrongDatastoreClusterPoolUuid(conn);
     }
 
     @Override
@@ -90,10 +91,11 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    public void fixWrongPoolUuid(Connection conn) {
-        LOG.debug("Replacement of faulty pool uuids");
+    public void fixWrongDatastoreClusterPoolUuid(Connection conn) {
+        LOG.debug("Replacement of faulty pool uuids on datastorecluster");
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT id,uuid FROM storage_pool "
-                + "WHERE uuid NOT LIKE \"%-%-%-%\" AND removed IS NULL;"); ResultSet rs = pstmt.executeQuery()) {
+                + "WHERE uuid NOT LIKE \"%-%-%-%\" AND removed IS NULL "
+                + "AND pool_type = 'DatastoreCluster';"); ResultSet rs = pstmt.executeQuery()) {
             PreparedStatement updateStmt = conn.prepareStatement("update storage_pool set uuid = ? where id = ?");
             while (rs.next()) {
                     UUID poolUuid = new UUID(

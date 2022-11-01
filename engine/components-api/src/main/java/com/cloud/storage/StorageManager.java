@@ -147,7 +147,7 @@ public interface StorageManager extends StorageService {
             "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
 
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
-            "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
+            "Maximum wait time (in minutes) for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
             "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",
@@ -163,6 +163,44 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Cluster,
             null);
+    ConfigKey<Boolean> VmwareCreateCloneFull = new ConfigKey<>(Boolean.class,
+            "vmware.create.full.clone",
+            "Storage",
+            "false",
+            "If set to true, creates VMs as full clones on ESX hypervisor",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+    ConfigKey<Boolean> VmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
+            "vmware.allow.parallel.command.execution",
+            "Advanced",
+            "false",
+            "allow commands to be executed in parallel in spite of 'vmware.create.full.clone' being set to true.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    /**
+     * should we execute in sequence not involving any storages?
+     * @return tru if commands should execute in sequence
+     */
+    static boolean shouldExecuteInSequenceOnVmware() {
+        return shouldExecuteInSequenceOnVmware(null, null);
+    }
+
+    static boolean shouldExecuteInSequenceOnVmware(Long srcStoreId, Long dstStoreId) {
+        final Boolean fullClone = getFullCloneConfiguration(srcStoreId) || getFullCloneConfiguration(dstStoreId);
+        final Boolean allowParallel = getAllowParallelExecutionConfiguration();
+        return fullClone && !allowParallel;
+    }
+
+    static Boolean getAllowParallelExecutionConfiguration() {
+        return VmwareAllowParallelExecution.value();
+    }
+
+    static Boolean getFullCloneConfiguration(Long storeId) {
+        return VmwareCreateCloneFull.valueIn(storeId);
+    }
 
     /**
      * Returns a comma separated list of tags for the specified storage pool

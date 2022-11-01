@@ -98,7 +98,6 @@ export default {
       if (this.resource && this.resource.zoneid) {
         params.id = this.resource.zoneid
       }
-      params.listAll = true
       this.actionZonesLoading = true
       return api('listZones', params).then(json => {
         this.actionZones = json.listzonesresponse.zone

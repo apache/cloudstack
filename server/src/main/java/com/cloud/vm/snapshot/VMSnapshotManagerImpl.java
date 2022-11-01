@@ -388,6 +388,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 s_logger.debug(message);
                 throw new CloudRuntimeException(message);
             }
+
+            // disallow KVM snapshots for VMs if root volume is encrypted (Qemu crash)
+            if (rootVolume.getPassphraseId() != null && userVmVo.getState() == VirtualMachine.State.Running && Boolean.TRUE.equals(snapshotMemory)) {
+                throw new UnsupportedOperationException("Cannot create VM memory snapshots on KVM from encrypted root volumes");
+            }
+
         }
 
         // check access

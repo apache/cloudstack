@@ -55,7 +55,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpu, memory and cpunumber. example details[i].name=value")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
     private Map<String, String> details;
 
     /////////////////////////////////////////////////////

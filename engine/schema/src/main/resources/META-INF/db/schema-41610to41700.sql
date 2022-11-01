@@ -887,9 +887,8 @@ left join `cloud`.`mshost_status` on
     ((`cloud`.`mshost`.`uuid` = `cloud`.`mshost_status`.`ms_id`)));
 
 -- Alter event table to add resource_id and resource_type
-ALTER TABLE `cloud`.`event`
-    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the event' AFTER `domain_id`,
-    ADD COLUMN `resource_type` varchar(32) COMMENT 'Type of the resource associated with the event' AFTER `resource_id`;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event','resource_id', 'bigint unsigned COMMENT "ID of the resource associated with the event" AFTER `domain_id`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event','resource_type', 'VARCHAR(32) COMMENT "Type of the resource associated with the event" AFTER `resource_id`');
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS

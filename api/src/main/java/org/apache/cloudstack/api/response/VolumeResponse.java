@@ -96,6 +96,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "state of the virtual machine")
     private String virtualMachineState;
 
+    @SerializedName(ApiConstants.VM_TYPE)
+    @Param(description = "type of the virtual machine")
+    private String vmType;
+
     @SerializedName(ApiConstants.PROVISIONINGTYPE)
     @Param(description = "provisioning type used to create volumes.")
     private String provisioningType;
@@ -331,6 +335,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
+    }
+
+    public void setVmType(String vmType) {
+        this.vmType = vmType;
     }
 
     public void setDeviceId(Long deviceId) {
@@ -664,6 +672,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public String getState() {
         return state;
+    }
+
+    public String getVmType() {
+        return vmType;
     }
 
     public String getAccountName() {

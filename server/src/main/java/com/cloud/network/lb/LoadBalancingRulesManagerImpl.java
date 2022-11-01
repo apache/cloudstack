@@ -33,6 +33,8 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
@@ -47,6 +49,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -407,7 +410,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavaliable:", e);
+            s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -682,7 +685,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             applyLoadBalancerConfig(cmd.getLbRuleId());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply Stickiness policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavaliable:", e);
+            s_logger.warn("Unable to apply Stickiness policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -728,7 +731,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             applyLoadBalancerConfig(cmd.getLbRuleId());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply healthcheck policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavaliable:", e);
+            s_logger.warn("Unable to apply healthcheck policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -783,7 +786,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.persist(loadBalancer);
                     s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting sticky policy: " + stickinessPolicyId);
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         } else {
@@ -851,7 +854,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.persist(loadBalancer);
                     s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting healthcheck policy: " + healthCheckPolicyId);
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         } else {
@@ -1121,7 +1124,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             applyLoadBalancerConfig(loadBalancerId);
             success = true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
             success = false;
         } finally {
             if (!success) {
@@ -1240,7 +1243,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbCertMapDao.remove(certMap.getId());
                 s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " while adding cert");
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         return success;
     }
@@ -1288,7 +1291,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbDao.persist(loadBalancer);
                 s_logger.debug("Rolled back certificate removal lb id " + lbRuleId);
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
             if (!success) {
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove certificate from load balancer rule id " + lbRuleId);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
@@ -1411,7 +1414,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbDao.persist(loadBalancer);
                 s_logger.debug("LB Rollback rule id: " + loadBalancerId + " while removing vm instances");
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         if (!success) {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + vmIds);
@@ -1559,7 +1562,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.persist(lb);
                     s_logger.debug("LB Rollback rule id: " + loadBalancerId + " while deleting LB rule.");
                 } else {
-                    s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                    s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 }
                 return false;
             }
@@ -1589,6 +1592,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
         Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientAddressCapacityException {
+            return createPublicLoadBalancerRule(xId, name, description, srcPortStart, srcPortEnd, defPortStart, defPortEnd, ipAddrId, protocol, algorithm, networkId, lbOwnerId, openFirewall, lbProtocol, forDisplay, null);
+        }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
+    public LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
+            Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay, List<String> cidrList) throws NetworkRuleConflictException,
+            InsufficientAddressCapacityException {
         Account lbOwner = _accountMgr.getAccount(lbOwnerId);
 
         if (srcPortStart != srcPortEnd) {
@@ -1634,6 +1645,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
         }
 
+        String cidrString = generateCidrString(cidrList);
+
         boolean performedIpAssoc = false;
         try {
             if (ipVO.getAssociatedWithNetworkId() == null) {
@@ -1655,7 +1668,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
-                    lbProtocol, forDisplay);
+                    lbProtocol, forDisplay, cidrString);
         } catch (Exception ex) {
             s_logger.warn("Failed to create load balancer due to ", ex);
             if (ex instanceof NetworkRuleConflictException) {
@@ -1684,12 +1697,40 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         return result;
     }
+   /**
+    * Transforms the cidrList from a List of Strings to a String which contains all the CIDRs from cidrList separated by whitespaces. This is used to facilitate both the persistence
+    * in the DB and also later when building the configuration String in the getRulesForPool method of the HAProxyConfigurator class.
+   */
+    protected String generateCidrString(List<String> cidrList) {
+        if (cidrList == null) {
+            s_logger.trace("The given CIDR list is null, therefore we will return null.");
+            return null;
+        }
+        String cidrString;
+        StringBuilder sb = new StringBuilder();
+        for (String cidr: cidrList) {
+            cidr = validateCidr(cidr);
+            sb.append(cidr).append(' ');
+        }
+        cidrString = sb.toString();
+        s_logger.trace(String.format("From the cidrList [%s] we generated the following CIDR String [%s].", cidrList, cidrString));
+        return StringUtils.trim(cidrString);
+    }
 
+    private String validateCidr(String cidr) {
+        cidr = StringUtils.trim(cidr);
+        boolean validCidr = NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp6Cidr(cidr);
+        boolean validIp = NetUtils.isValidIp4(cidr) || NetUtils.isValidIp6(cidr);
+        if (!validCidr && !validIp) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("CIDR [%s] is invalid.", cidr));
+        }
+        return cidr;
+    }
     @DB
     @Override
     public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort,
  final long sourceIpId,
-            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay)
+            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay, String cidrList)
             throws NetworkRuleConflictException {
 
         if (!NetUtils.isValidPort(destPort)) {
@@ -1733,7 +1774,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO newRule =
             new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
-                ipAddr.getAllocatedInDomainId(), lbProtocol);
+                ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
 
         // verify rule is supported by Lb provider of the network
         Ip sourceIp = getSourceIp(newRule);
@@ -1749,7 +1790,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             public LoadBalancerVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 LoadBalancerVO newRule =
                     new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
-                        ipAddr.getAllocatedInDomainId(), lbProtocol);
+                        ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
 
                 if (forDisplay != null) {
                     newRule.setDisplay(forDisplay);
@@ -2105,6 +2146,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
         Boolean forDisplay = cmd.getDisplay();
+        String lbProtocol = cmd.getLbProtocol();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -2131,6 +2173,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (forDisplay != null) {
             lb.setDisplay(forDisplay);
+        }
+
+        if (StringUtils.isNotBlank(lbProtocol)) {
+            lb.setLbProtocol(lbProtocol);
         }
 
         // Validate rule in LB provider
@@ -2170,7 +2216,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                     s_logger.debug("LB Rollback rule id: " + lbRuleId + " while updating LB rule.");
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         }

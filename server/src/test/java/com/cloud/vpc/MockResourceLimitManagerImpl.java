@@ -21,6 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.user.ResourceReservation;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource.ResourceType;
@@ -169,6 +171,11 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     @Override
     public void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public ResourceReservation getReservation(Account account, Boolean displayResource, ResourceType type, Long delta) {
+        throw new CloudRuntimeException("no reservation implemented for mock resource management.");
     }
 
     /* (non-Javadoc)

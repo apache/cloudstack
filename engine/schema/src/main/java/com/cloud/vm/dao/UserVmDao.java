@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -42,14 +43,17 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 
     /**
      * Updates display name and group for vm; enables/disables ha
-     * @param id vm id.
-     * @param userData updates the userData of the vm
-     * @param displayVm updates the displayvm attribute signifying whether it has to be displayed to the end user or not.
+     *
+     * @param id              vm id.
+     * @param userData        updates the userData of the vm
+     * @param userDataId
+     * @param userDataDetails
+     * @param displayVm       updates the displayvm attribute signifying whether it has to be displayed to the end user or not.
      * @param customId
-     * @param hostName TODO
+     * @param hostName        TODO
      * @param instanceName
      */
-    void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, boolean displayVm, boolean isDynamicallyScalable, String customId, String hostName, String instanceName);
+    void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, Long userDataId, String userDataDetails, boolean displayVm, boolean isDynamicallyScalable, String customId, String hostName, String instanceName);
 
     List<UserVmVO> findDestroyedVms(Date date);
 
@@ -92,4 +96,11 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByIsoId(Long isoId);
 
     List<Pair<Pair<String, VirtualMachine.Type>, Pair<Long, String>>> getVmsDetailByNames(Set<String> vmNames, String detail);
+
+    List<Ternary<Integer, Integer, Integer>> countVmsBySize(long dcId, int limit);
+
+    int getActiveAccounts(final long dcId);
+
+    List<UserVmVO> findByUserDataId(long userdataId);
+
 }

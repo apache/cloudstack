@@ -59,6 +59,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -80,6 +81,7 @@ import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
+import org.libvirt.VcpuInfo;
 import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.ArgumentCaptor;
 import org.mockito.BDDMockito;
@@ -214,8 +216,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {MemStat.class, SshHelper.class, AgentPropertiesFileHandler.class})
@@ -2154,7 +2154,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(poolManager);
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
-        when(primary.createPhysicalDisk(diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), diskCharacteristics.getSize())).thenReturn(vol);
+        when(primary.createPhysicalDisk(diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), diskCharacteristics.getSize(), null)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2213,7 +2213,7 @@ public class LibvirtComputingResourceTest {
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
         when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
-        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0)).thenReturn(vol);
+        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0,null)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4853,7 +4853,12 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
         final StorageVol v = Mockito.mock(StorageVol.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -4866,9 +4871,11 @@ public class LibvirtComputingResourceTest {
         try {
             when(libvirtUtilitiesHelper.getConnection()).thenReturn(conn);
             when(conn.storageVolLookupByPath(path)).thenReturn(v);
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
+            when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(info);
 
             when(conn.getLibVirVersion()).thenReturn(10010l);
-
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4880,10 +4887,11 @@ public class LibvirtComputingResourceTest {
         assertTrue(answer.getResult());
 
         verify(libvirtComputingResourceMock, times(1)).getStoragePoolMgr();
+        verify(libvirtComputingResourceMock, times(2)).getLibvirtUtilitiesHelper();
 
-        verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
         try {
             verify(libvirtUtilitiesHelper, times(1)).getConnection();
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmInstance);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4904,13 +4912,28 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
 
+        when(pool.getType()).thenReturn(StoragePoolType.Linstor);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
         when(vol.getPath()).thenReturn(path);
         when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
         when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
+            when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(info);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4921,9 +4944,10 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResourceMock, times(1)).getStoragePoolMgr();
         verify(libvirtComputingResourceMock, times(0)).getResizeScriptType(storagePool, vol);
 
-        verify(libvirtComputingResourceMock, times(0)).getLibvirtUtilitiesHelper();
+        verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
         try {
             verify(libvirtUtilitiesHelper, times(0)).getConnection();
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmInstance);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4962,6 +4986,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.Filesystem);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -4992,6 +5017,7 @@ public class LibvirtComputingResourceTest {
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -5038,6 +5064,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenThrow(CloudRuntimeException.class);
@@ -5596,6 +5623,9 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void getMemoryFreeInKBsTestDomainReturningIncompleteArray() throws LibvirtException {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
 
         MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();

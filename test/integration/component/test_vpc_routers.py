@@ -323,7 +323,7 @@ class TestVPCRoutersBasic(cloudstackTestCase):
         )
         if len(hosts) < 2:
             self.skipTest(
-                "No host available for migration. Test requires atleast 2 hosts")
+                "No host available for migration. Test requires at least 2 hosts")
 
         # Remove the host of current VM from the hosts list
         hosts[:] = [host for host in hosts if host.id != router.hostid]
@@ -975,7 +975,7 @@ class TestVPCRouterOneNetwork(cloudstackTestCase):
         )
         if len(hosts) < 2:
             self.skipTest(
-                "No host available for migration. Test requires atleast 2 hosts")
+                "No host available for migration. Test requires at least 2 hosts")
 
         # Remove the host of current VM from the hosts list
         hosts[:] = [host for host in hosts if host.id != router.hostid]

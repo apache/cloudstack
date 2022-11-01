@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 
+import com.cloud.storage.Storage;
+
 public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     DataObject create(DataObject dataObject, String configuration);
 
@@ -38,4 +40,6 @@ public interface PrimaryDataStore extends DataStore, PrimaryDataStoreInfo {
     SnapshotInfo getSnapshot(long snapshotId);
 
     DiskFormat getDefaultDiskType();
+
+    Storage.StoragePoolType getParentPoolType();
 }

@@ -22,6 +22,7 @@ public class ByteScaleUtils {
 
     public static final long KiB = 1024;
     public static final long MiB = KiB * 1024;
+    public static final long GiB = MiB * 1024;
 
     private ByteScaleUtils() {}
 
@@ -43,5 +44,15 @@ public class ByteScaleUtils {
      */
     public static long bytesToKib(long b) {
         return b / KiB;
+    }
+
+    /**
+     * Converts bytes to mebibytes.
+     *
+     * @param b The value in bytes to convert to mebibytes.
+     * @return The parameter divided by 1024 * 1024 (1 MiB).
+     */
+    public static long bytesToMib(long b) {
+        return b / MiB;
     }
 }

@@ -362,7 +362,7 @@ class TestPublicIp(cloudstackTestCase):
         Step 7: Try to display public ip address from shared networks
         Step 8: It should not return any result
         Step 9: Try to display ip address of domain1 from domain2
-        Step 10: Ensure that it doesnt not return any result
+        Step 10: Ensure that it doesn't not return any result
         :return:
         """
         # Step 1. Create isolated network
@@ -467,7 +467,7 @@ class TestPublicIp(cloudstackTestCase):
             # Step 10
             self.fail("Domain should not access public ip of sibling domain")
         except Exception as e:
-            self.info("Got exception as expected since domain2 cant access network of domain1")
+            self.info("Got exception as expected since domain2 can't access network of domain1")
 
     @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_03_list_publicip_user_domain(self):
@@ -604,7 +604,7 @@ class TestPublicIp(cloudstackTestCase):
             # Step 14
             self.fail("Domain should not access public ip of sibling domain")
         except Exception as e:
-            self.info("Got exception as expected since domain2 cant access network of domain1")
+            self.info("Got exception as expected since domain2 can't access network of domain1")
 
     @attr(tags=["advanced", "basic", "sg"], required_hardware="false")
     def test_04_list_publicip_all_subdomains(self):
@@ -764,7 +764,7 @@ class TestPublicIp(cloudstackTestCase):
             # Step 6
             self.fail("Domain should not access public ip of sibling domain")
         except Exception as e:
-            self.info("Got exception as expected since domain2 cant access network of domain1")
+            self.info("Got exception as expected since domain2 can't access network of domain1")
 
         self.vpc_off.update(self.apiclient, state='Disabled')
         self.cleanup.append(vpc_1)
@@ -826,7 +826,7 @@ class TestPublicIp(cloudstackTestCase):
             # Step 6
             self.fail("Domain should not access public ip of sibling domain")
         except Exception as e:
-            self.info("Got exception as expected since domain2 cant access network of domain1")
+            self.info("Got exception as expected since domain2 can't access network of domain1")
 
     def get_free_ipaddress(self, vlanId, domainId, account):
         ipaddresses = PublicIPAddress.list(

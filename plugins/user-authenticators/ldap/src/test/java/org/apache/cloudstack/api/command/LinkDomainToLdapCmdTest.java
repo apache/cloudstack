@@ -60,7 +60,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
 
     @Test
     public void execute() throws Exception {
-//      test with valid params and with admin who doesnt exist in cloudstack
+//      test with valid params and with admin who doesn't exist in cloudstack
         Long domainId = 1L;
         String type = "GROUP";
         String ldapDomain = "CN=test,DC=ccp,DC=Citrix,DC=com";

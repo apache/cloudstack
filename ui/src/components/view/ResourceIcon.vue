@@ -43,6 +43,10 @@ export default {
       }
     },
     getDimensions () {
+      const num = Number(this.size)
+      if (Number.isInteger(num) && num > 0) {
+        return num
+      }
       switch (this.size) {
         case '4x':
           return 56

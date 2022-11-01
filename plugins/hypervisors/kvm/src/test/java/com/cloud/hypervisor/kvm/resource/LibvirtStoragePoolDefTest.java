@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource;
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.AuthenticationType;
+import org.junit.Test;
 
 public class LibvirtStoragePoolDefTest extends TestCase {
 
@@ -101,5 +102,36 @@ public class LibvirtStoragePoolDefTest extends TestCase {
                              "</auth>\n</source>\n</pool>\n";
 
         assertEquals(expectedXml, pool.toString());
+    }
+
+    @Test
+    public void testRbdStoragePoolWithMultipleHostsIpv6() {
+        PoolType type = PoolType.RBD;
+        String name = "myRBDPool";
+        String uuid = "1583a25a-b192-436c-93e6-0ef60b198a32";
+        String host = "[fc00:1234::1],[fc00:1234::2],[fc00:1234::3]";
+        int port = 3300;
+        String authUsername = "admin";
+        AuthenticationType auth = AuthenticationType.CEPH;
+        String dir  = "rbd";
+        String secretUuid = "28909c4f-314e-4db7-a6b3-5eccd9dcf973";
+
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, port, dir, authUsername, auth, secretUuid);
+
+        String expected = "<pool type='rbd'>\n" +
+                "<name>myRBDPool</name>\n" +
+                "<uuid>1583a25a-b192-436c-93e6-0ef60b198a32</uuid>\n" +
+                "<source>\n" +
+                "<host name='[fc00:1234::1]' port='3300'/>\n" +
+                "<host name='[fc00:1234::2]' port='3300'/>\n" +
+                "<host name='[fc00:1234::3]' port='3300'/>\n" +
+                "<name>rbd</name>\n" +
+                "<auth username='admin' type='ceph'>\n" +
+                "<secret uuid='28909c4f-314e-4db7-a6b3-5eccd9dcf973'/>\n" +
+                "</auth>\n" +
+                "</source>\n" +
+                "</pool>\n";
+
+        assertEquals(expected, pool.toString());
     }
 }
