@@ -3215,6 +3215,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         if (cmd.getEnable()) {
+            if (StringUtils.isEmpty(providerName)) {
+                throw new InvalidParameterValueException("Provider name is mandatory to setup 2FA");
+            }
             UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
             UserAccountVO userAccount = _userAccountDao.findById(owner.getId());
             String code = provider.setup2FAKey(userAccount);
@@ -3226,6 +3229,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _userDao.update(owner.getId(), user);
 
             response.setId(owner.getUuid());
+            response.setUsername(owner.getName());
             response.setSecretCode(code);
 
             return response;
@@ -3238,6 +3242,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         _userDao.update(owner.getId(), user);
 
         response.setId(owner.getUuid());
+        response.setUsername(owner.getName());
 
         return response;
     }

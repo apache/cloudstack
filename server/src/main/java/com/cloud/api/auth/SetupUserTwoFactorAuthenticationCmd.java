@@ -42,7 +42,7 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "two factor authentication code", required = true)
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "two factor authentication code")
     private String provider;
 
     @Parameter(name = ApiConstants.ENABLE, type = CommandType.BOOLEAN, description = "Enabled by default, provide false to disable 2FA")

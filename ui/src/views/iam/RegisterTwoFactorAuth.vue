@@ -43,7 +43,7 @@
       <div> {{ $t('message.two.fa.auth.register.account') }} </div>
       <vue-qrious
         class="center-align"
-        :value="pin"
+        :value="googleUrl"
         @change="onDataUrlChange"
       />
     </div>
@@ -57,7 +57,7 @@
       <br />
       <h3> {{ $t('label.enter.code') }} </h3>
       <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
-        <a-input v-model:value="pin" />
+        <a-input v-model:value="code" />
         <div :span="24">
           <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
         </div>
@@ -95,8 +95,10 @@ export default {
   },
   data () {
     return {
+      googleUrl: '',
       dataUrl: '',
       pin: '',
+      code: '',
       showPin: false,
       providers: [],
       selectedProvider: null
@@ -117,6 +119,10 @@ export default {
       api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
         console.log(response)
         this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
+        if (this.selectedProvider === 'google') {
+          this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
+          this.googleUrl = 'otpauth://totp/CloudStack:' + this.username + '?secret=' + this.pin + '&issuer=CloudStack'
+        }
         this.showPin = true
       }).catch(error => {
         this.$notification.error({
@@ -131,11 +137,18 @@ export default {
       })
     },
     submitPin () {
-      // call api
+      api('validateUserTwoFactorAuthenticationCode', { '2facode': this.code }).then(response => {
+        console.log(response)
+      }).catch(error => {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+        })
+      })
+      this.closeAction()
     },
-    generateStaticPin () {
-      this.pin = Math.floor(100000 + Math.random() * 900000)
-      this.showPin = true
+    closeAction () {
+      this.$emit('close-action')
     },
     onCloseModal () {
       this.showPin = false

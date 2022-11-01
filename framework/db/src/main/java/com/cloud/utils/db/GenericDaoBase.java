@@ -839,9 +839,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
 
             int result = pstmt.executeUpdate();
-            if (sql.toString().contains("user")) {
-                s_logger.debug("HARI " + pstmt.toString());
-            }
             txn.commit();
             ub.clear();
             return result;
