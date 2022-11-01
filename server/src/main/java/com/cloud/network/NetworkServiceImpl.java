@@ -3786,7 +3786,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 vnetsInDb.addAll(tempVnets);
             }
 
-            //sorting the vnets in Db to generate a coma seperated list of  the vnet string.
+            //sorting the vnets in Db to generate a coma separated list of  the vnet string.
             if (vnetsInDb.size() != 0) {
                 comaSeperatedStingOfVnetRanges = generateVnetString(new ArrayList<String>(vnetsInDb));
             }
@@ -3859,7 +3859,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 return vlanTokens;
             }
             if (VnetRange.length < 2) {
-                throw new InvalidParameterValueException("Please provide valid vnet range. vnet range should be a coma seperated list of vlan ranges. example 500-500,600-601" + rangeMessage);
+                throw new InvalidParameterValueException("Please provide valid vnet range. vnet range should be a coma separated list of vlan ranges. example 500-500,600-601" + rangeMessage);
             }
 
             if (VnetRange[0] == null || VnetRange[1] == null) {
@@ -3871,7 +3871,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 EndVnet = Integer.parseInt(VnetRange[1]);
             } catch (NumberFormatException e) {
                 s_logger.warn("Unable to parse vnet range:", e);
-                throw new InvalidParameterValueException("Please provide valid vnet range. The vnet range should be a coma seperated list example 2001-2012,3000-3005." + rangeMessage);
+                throw new InvalidParameterValueException("Please provide valid vnet range. The vnet range should be a coma separated list example 2001-2012,3000-3005." + rangeMessage);
             }
             if (StartVnet < minVnet || EndVnet > maxVnet) {
                 throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage);
