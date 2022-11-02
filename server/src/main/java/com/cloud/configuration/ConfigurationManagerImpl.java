@@ -1407,7 +1407,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if (!DataCenter.Type.Edge.equals(zone.type())) {
+        if (!DataCenter.Type.Edge.equals(zone.getType())) {
             String cidrAddress;
             long cidrSize;
             // Get the individual cidrAddress and cidrSize values, if the CIDR is
@@ -2174,7 +2174,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         String cidr = null;
-        if (!DataCenter.Type.Edge.equals(zone.type())) {
+        if (!DataCenter.Type.Edge.equals(zone.getType())) {
             if (!NetUtils.isValidIp4(startIp)) {
                 throw new InvalidParameterValueException("The start IP is invalid");
             }
@@ -2206,9 +2206,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public HostPodVO createPod(final long userId, final String podName, final DataCenter zone, final String gateway, final String cidr, String startIp, String endIp, final String allocationStateStr,
             final boolean skipGatewayOverlapCheck) {
-        final String cidrAddress = DataCenter.Type.Edge.equals(zone.type()) ? "" : getCidrAddress(cidr);
-        final int cidrSize = DataCenter.Type.Edge.equals(zone.type()) ? 0 : getCidrSize(cidr);
-        if (DataCenter.Type.Edge.equals(zone.type())) {
+        final String cidrAddress = DataCenter.Type.Edge.equals(zone.getType()) ? "" : getCidrAddress(cidr);
+        final int cidrSize = DataCenter.Type.Edge.equals(zone.getType()) ? 0 : getCidrSize(cidr);
+        if (DataCenter.Type.Edge.equals(zone.getType())) {
             startIp = null;
             endIp = null;
         }
@@ -2628,7 +2628,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                     final Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
 
-                    if (allocationState == Grouping.AllocationState.Enabled && !DataCenter.Type.Edge.equals(zone.type())) {
+                    if (allocationState == Grouping.AllocationState.Enabled && !DataCenter.Type.Edge.equals(zone.getType())) {
                         // check if zone has necessary trafficTypes before enabling
                         try {
                             PhysicalNetwork mgmtPhyNetwork;

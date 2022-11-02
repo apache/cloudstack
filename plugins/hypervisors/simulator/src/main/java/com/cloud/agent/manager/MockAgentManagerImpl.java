@@ -112,7 +112,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     private Pair<String, Long> getPodCidr(long podId, long dcId) {
         try {
             DataCenterVO zone = dcDao.findById(dcId);
-            if (DataCenter.Type.Edge.equals(zone.type())) {
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
                 s_logger.info("Pod belongs to an edge zone hence CIDR cannot be found, returning 172.100.0.0/24");
                 return new Pair<>("172.100.0.0", 24L);
             }

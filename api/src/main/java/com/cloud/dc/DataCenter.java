@@ -88,5 +88,5 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Partition {
 
     int getSortKey();
 
-    Type type();
+    Type getType();
 }

@@ -45,6 +45,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "the Zone name for the router")
     private String zoneName;
 
+    @SerializedName(ApiConstants.ZONE_TYPE)
+    @Param(description = "the type of the zone for the router", since = "4.18.0")
+    private String zoneType;
+
     @SerializedName(ApiConstants.DNS1)
     @Param(description = "the first DNS for the router")
     private String dns1;
@@ -264,6 +268,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
     }
 
     public void setDns1(String dns1) {

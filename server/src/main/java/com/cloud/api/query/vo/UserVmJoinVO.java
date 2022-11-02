@@ -164,6 +164,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "data_center_name")
     private String dataCenterName = null;
 
+    @Column(name = "data_center_type")
+    private String dataCenterType;
+
     @Column(name = "security_group_enabled")
     private boolean securityGroupEnabled;
 
@@ -594,6 +597,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getDataCenterName() {
         return dataCenterName;
+    }
+
+    public String getDataCenterType() {
+        return dataCenterType;
     }
 
     public boolean isSecurityGroupEnabled() {

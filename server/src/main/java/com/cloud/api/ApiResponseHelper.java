@@ -1584,6 +1584,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setZoneName(zone.getName());
                 vmResponse.setDns1(zone.getDns1());
                 vmResponse.setDns2(zone.getDns2());
+                vmResponse.setZoneType(zone.getType().toString());
             }
 
             vmResponse.setHasAnnotation(annotationDao.hasAnnotations(vm.getUuid(), AnnotationService.EntityType.SYSTEM_VM.name(),

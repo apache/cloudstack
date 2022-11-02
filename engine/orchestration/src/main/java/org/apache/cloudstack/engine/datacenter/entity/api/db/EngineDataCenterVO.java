@@ -520,7 +520,7 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     }
 
     @Override
-    public DataCenter.Type type() {
+    public DataCenter.Type getType() {
         return type;
     }
 }

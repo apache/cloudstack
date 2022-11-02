@@ -54,6 +54,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "the Zone name for the system VM")
     private String zoneName;
 
+    @SerializedName(ApiConstants.ZONE_TYPE)
+    @Param(description = "the type of the zone for the system VM", since = "4.18.0")
+    private String zoneType;
+
     @SerializedName("dns1")
     @Param(description = "the first DNS for the system VM")
     private String dns1;
@@ -213,6 +217,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+
+    public void setZoneType(String zoneType) {
+        this.zoneType = zoneType;
     }
 
     public String getDns1() {

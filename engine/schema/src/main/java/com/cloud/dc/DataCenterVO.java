@@ -477,7 +477,7 @@ public class DataCenterVO implements DataCenter {
     }
 
     @Override
-    public DataCenter.Type type() {
+    public DataCenter.Type getType() {
         return type;
     }
 
