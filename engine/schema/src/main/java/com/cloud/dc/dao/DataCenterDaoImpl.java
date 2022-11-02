@@ -28,6 +28,7 @@ import javax.persistence.TableGenerator;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
@@ -409,9 +410,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     public List<DataCenterVO> listEnabledNonEdgeZones() {
         SearchCriteria<DataCenterVO> sc = ZoneAllocationAndTypeSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
-        // TODO
-        String edgeStr = "edge";
-        sc.setParameters("type", edgeStr);
+        sc.setParameters("type", DataCenter.Type.Edge);
         return listBy(sc);
     }
 
