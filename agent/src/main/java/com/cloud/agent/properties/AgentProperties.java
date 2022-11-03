@@ -65,9 +65,9 @@ public class AgentProperties{
     /**
      * The time interval (in seconds) at which the balloon driver will get memory stats updates. This is equivalent to Libvirt's <code>--period</code> parameter when using the dommemstat command.
      * Data type: Integer.<br>
-     * Default value: <code>60</code>
+     * Default value: <code>0</code>
      */
-    public static final Property<Integer> VM_MEMBALLOON_STATS_PERIOD = new Property<>("vm.memballoon.stats.period", 60);
+    public static final Property<Integer> VM_MEMBALLOON_STATS_PERIOD = new Property<>("vm.memballoon.stats.period", 0);
 
     public static class Property <T>{
         private final String name;

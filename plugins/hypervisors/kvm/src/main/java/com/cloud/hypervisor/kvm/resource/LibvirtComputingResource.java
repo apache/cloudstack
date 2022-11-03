@@ -1304,34 +1304,53 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Sets the balloon driver of each VM to get the memory stats at the time interval defined in the agent.properties file.
+     * Gets the ID list of the VMs to set memory balloon stats period.
      * @param conn the Libvirt connection.
+     * @return the list of VM IDs.
      */
-    protected void setupMemoryBalloonStatsPeriod(Connect conn) {
+    protected List<Integer> getVmsToSetMemoryBalloonStatsPeriod(Connect conn) {
         Integer[] vmIds = null;
         try {
             vmIds = ArrayUtils.toObject(conn.listDomains());
         } catch (final LibvirtException e) {
             s_logger.error("Unable to get the list of Libvirt domains on this host.", e);
-            return;
+            return null;
         }
         List<Integer> vmIdList = Arrays.asList(vmIds);
         s_logger.debug(String.format("We have found a total of [%s] VMs (Libvirt domains) on this host: [%s].", vmIdList.size(), vmIdList.toString()));
 
         if (vmIdList.isEmpty()) {
-            s_logger.debug("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
-            return;
+            s_logger.info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
+            return null;
         }
+        return vmIdList;
+    }
 
-        Integer currentVmBalloonStatsPeriod = null;
+    /**
+     * Gets the current VM balloon stats period from the agent.properties file.
+     * @return the current VM balloon stats period.
+     */
+    protected Integer getCurrentVmBalloonStatsPeriod() {
         if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE)) {
-            currentVmBalloonStatsPeriod = 0;
-            s_logger.debug(String.format("The [%s] property is set to 'true', so the memory balloon stats period will be set to 0 for all VMs.",
+            s_logger.info(String.format("The [%s] property is set to 'true', so the memory balloon stats period will be set to 0 for all VMs.",
                     AgentProperties.VM_MEMBALLOON_DISABLE.getName()));
-        } else {
-            currentVmBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
+            return 0;
         }
+        Integer vmBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
+        if(vmBalloonStatsPeriod == 0) {
+            s_logger.info(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
+                    + "Adjust (increase) the value of this parameter to correct this.", AgentProperties.VM_MEMBALLOON_STATS_PERIOD.getName()));
+        }
+        return vmBalloonStatsPeriod;
+    }
 
+    /**
+     * Sets the balloon driver of each VM to get the memory stats at the time interval defined in the agent.properties file.
+     * @param conn the Libvirt connection.
+     */
+    protected void setupMemoryBalloonStatsPeriod(Connect conn) {
+        List<Integer> vmIdList = getVmsToSetMemoryBalloonStatsPeriod(conn);
+        Integer currentVmBalloonStatsPeriod = getCurrentVmBalloonStatsPeriod();
         for (Integer vmId : vmIdList) {
             Domain dm = null;
             try {

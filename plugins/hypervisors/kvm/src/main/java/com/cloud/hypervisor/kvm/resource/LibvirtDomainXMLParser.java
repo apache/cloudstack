@@ -198,17 +198,7 @@ public class LibvirtDomainXMLParser {
                 diskDefs.add(def);
             }
 
-            NodeList memBalloons = devices.getElementsByTagName("memballoon");
-            if ((memBalloons != null) && (memBalloons.getLength() != 0)) {
-                Element memBalloon = (Element)memBalloons.item(0);
-                String model = memBalloon.getAttribute("model");
-                MemBalloonDef def = new MemBalloonDef();
-                if (model.equalsIgnoreCase("virtio")) {
-                    String statsPeriod = getAttrValue("stats", "period", memBalloon);
-                    def.defVirtioMemBalloon(statsPeriod);
-                }
-                memBalloonDef = def;
-            }
+            memBalloonDef = parseMemBalloonTag(devices);
 
             NodeList nics = devices.getElementsByTagName("interface");
             for (int i = 0; i < nics.getLength(); i++) {
@@ -344,6 +334,25 @@ public class LibvirtDomainXMLParser {
             s_logger.debug(e.toString());
         }
         return false;
+    }
+
+    /**
+     * Parse the memballoon tag.
+     * @param devices the devices tag.
+     * @return the MemBalloonDef.
+     */
+    private MemBalloonDef parseMemBalloonTag(Element devices) {
+        MemBalloonDef def = new MemBalloonDef();
+        NodeList memBalloons = devices.getElementsByTagName("memballoon");
+        if ((memBalloons != null) && (memBalloons.getLength() != 0)) {
+            Element memBalloon = (Element)memBalloons.item(0);
+            String model = memBalloon.getAttribute("model");
+            if (model.equalsIgnoreCase("virtio")) {
+                String statsPeriod = getAttrValue("stats", "period", memBalloon);
+                def.defVirtioMemBalloon(statsPeriod);
+            }
+        }
+        return def;
     }
 
     private static String getTagValue(String tag, Element eElement) {

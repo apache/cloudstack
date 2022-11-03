@@ -60,6 +60,7 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -5915,31 +5916,83 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void setupMemoryBalloonStatsPeriodTestLibvirtError () throws LibvirtException {
+    public void getVmsToSetMemoryBalloonStatsPeriodTestLibvirtError() throws LibvirtException {
         Mockito.when(connMock.listDomains()).thenThrow(LibvirtException.class);
 
-        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+        libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
 
         Mockito.verify(loggerMock).error(Mockito.anyString(), Mockito.any());
     }
 
     @Test
-    public void setupMemoryBalloonStatsPeriodTestWithNoVMs () throws LibvirtException {
+    public void getVmsToSetMemoryBalloonStatsPeriodTestWithNoVMs() throws LibvirtException {
         Mockito.when(connMock.listDomains()).thenReturn(new int[0]);
 
-        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+        libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
 
-        Mockito.verify(loggerMock).debug(Mockito.eq("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host."));
+        Mockito.verify(loggerMock).info(Mockito.eq("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host."));
+    }
+
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestWhenSuccessfullyGetVmIds() throws LibvirtException {
+        int[] fakeList = new int[]{1};
+        List<Integer> expected = Arrays.asList(ArrayUtils.toObject(fakeList));
+        Mockito.when(connMock.listDomains()).thenReturn(fakeList);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestWhenMemBalloonIsDisabled() {
+        Integer expected = 0;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(true);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestWhenStatsPeriodIsZero() {
+        Integer expected = 0;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(0);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Mockito.verify(loggerMock).info(Mockito.eq(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
+                + "Adjust (increase) the value of this parameter to correct this.", AgentProperties.VM_MEMBALLOON_STATS_PERIOD.getName())));
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestSuccess() {
+        Integer expected = 60;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(60);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Assert.assertEquals(expected, result);
+    }
+
+    private void prepareMocksToSetupMemoryBalloonStatsPeriod(Integer currentVmBalloonStatsPeriod) throws LibvirtException {
+        Integer[] fakeList = ArrayUtils.toObject(new int[]{1});
+        Mockito.doReturn(Arrays.asList(fakeList)).when(libvirtComputingResourceSpy).getVmsToSetMemoryBalloonStatsPeriod(Mockito.eq(connMock));
+        Mockito.doReturn(currentVmBalloonStatsPeriod).when(libvirtComputingResourceSpy).getCurrentVmBalloonStatsPeriod();
+        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
+        Mockito.when(domainMock.getName()).thenReturn("fake-VM-name");
+        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
     }
 
     @Test
     public void setupMemoryBalloonStatsPeriodTestMemBalloonPropertyDisabled() throws LibvirtException {
-        Mockito.when(connMock.listDomains()).thenReturn(new int[]{1});
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(true);
-        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
-        Mockito.when(domainMock.getName()).thenReturn("fake-VM-name");
-        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
+        prepareMocksToSetupMemoryBalloonStatsPeriod(0);
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("60");
         Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
@@ -5954,12 +6007,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void setupMemoryBalloonStatsPeriodTestErrorWhenSetNewPeriod() throws LibvirtException {
-        Mockito.when(connMock.listDomains()).thenReturn(new int[]{1});
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(60);
-        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
-        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("0");
         Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
@@ -5975,13 +6023,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void setupMemoryBalloonStatsPeriodTestSetNewPeriodSuccessfully() throws LibvirtException {
-        Mockito.when(connMock.listDomains()).thenReturn(new int[]{1});
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(60);
-        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
-        Mockito.when(domainMock.getName()).thenReturn("fake-VM-name");
-        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("0");
         Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
@@ -5998,13 +6040,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void setupMemoryBalloonStatsPeriodTestSkipVm() throws LibvirtException {
-        Mockito.when(connMock.listDomains()).thenReturn(new int[]{1});
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(60);
-        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
-        Mockito.when(domainMock.getName()).thenReturn("fake-VM-name");
-        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defNoneMemBalloon();
         Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
