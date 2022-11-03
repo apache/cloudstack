@@ -4926,7 +4926,7 @@ public class LibvirtComputingResourceTest {
         when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
         when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
 
-        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
             when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
