@@ -17,10 +17,7 @@
 
 <template>
   <div class="page-header-index-wide">
-    <div v-if="!$store.getters.loginFlag">
-      <two-fa />
-    </div>
-    <div v-else-if="showOnboarding">
+    <div v-if="showOnboarding">
       <onboarding-dashboard />
     </div>
     <div v-else-if="$store.getters.userInfo.roletype === 'Admin' && !project">

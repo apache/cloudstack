@@ -223,15 +223,6 @@ export function asyncRouterMap () {
         },
         component: () => import('@/views/dashboard/Dashboard')
       },
-      // {
-      //   path: '/2FA',
-      //   name: 'TwoFA',
-      //   meta: {
-      //     title: 'label.2fa',
-      //     hidden: true
-      //   },
-      //   component: () => import('@/views/dashboard/2FA')
-      // },
 
       generateRouterMap(compute),
       generateRouterMap(storage),
@@ -249,6 +240,16 @@ export function asyncRouterMap () {
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
+
+      {
+        path: '/2FA',
+        name: 'TwoFa',
+        meta: {
+          title: 'label.2fa',
+          hidden: true
+        },
+        component: () => import('@/views/dashboard/TwoFa')
+      },
 
       {
         path: '/exception',

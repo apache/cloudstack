@@ -17,8 +17,7 @@
 
 <template>
   <a-layout class="layout" :class="[device]">
-
-    <a-affix style="z-index: 200" v-if="$store.getters.loginFlag">
+    <a-affix style="z-index: 200">
       <template v-if="isSideMenu()">
         <a-drawer
           v-if="isMobile()"
@@ -80,7 +79,7 @@
 
     <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
       <!-- layout header -->
-      <a-affix style="z-index: 100" v-if="$store.getters.loginFlag">
+      <a-affix style="z-index: 100">
         <global-header
           :mode="layoutMode"
           :menus="menus"
@@ -158,10 +157,7 @@ export default {
         return '0'
       }
       if (this.sidebarOpened) {
-        if (this.$store.getters.loginFlag) {
-          return '256px'
-        }
-        return '0'
+        return '256px'
       }
       return '80px'
     }

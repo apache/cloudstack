@@ -64,8 +64,8 @@ import { ref, reactive, toRaw } from 'vue'
 export default {
   name: 'TwoFa',
   data () {
-    console.log('here')
     return {
+      twoFAresponse: false
     }
   },
   created () {
@@ -84,6 +84,10 @@ export default {
         const values = toRaw(this.form)
         console.log(values.secretkey)
         api('validateUserTwoFactorAuthenticationCode', { '2facode': values.secretkey }).then(response => {
+          this.twoFAresponse = true
+          if (this.twoFAresponse) {
+            this.$router.push({ path: '/dashboard' }).catch(() => {})
+          }
           console.log(response)
         }).catch(error => {
           this.$notification.error({
