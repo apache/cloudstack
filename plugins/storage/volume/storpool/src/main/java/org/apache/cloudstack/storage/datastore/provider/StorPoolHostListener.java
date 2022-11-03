@@ -118,12 +118,18 @@ public class StorPoolHostListener implements HypervisorHostListener {
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         StoragePoolHostVO poolHost = storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
+        boolean isPoolConnectedToTheHost = poolHost != null;
 
         if (answer == null) {
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            removePoolOnHost(poolHost, isPoolConnectedToTheHost);
             throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command" + pool.getId());
         }
 
         if (!answer.getResult()) {
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            removePoolOnHost(poolHost, isPoolConnectedToTheHost);
+
             if (answer.getDetails() != null) {
                 if (answer.getDetails().equals("objectDoesNotExist")) {
                     StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
@@ -140,8 +146,6 @@ public class StorPoolHostListener implements HypervisorHostListener {
                 pool.getId());
         }
 
-        StorPoolUtil.spLog("hostConnect: hostId=%d, poolId=%d", hostId, poolId);
-
         StorPoolModifyStoragePoolAnswer mspAnswer = (StorPoolModifyStoragePoolAnswer)answer;
         if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
             String datastoreName = mspAnswer.getLocalDatastoreName();
@@ -155,7 +159,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
             }
         }
 
-        if (poolHost == null) {
+        if (!isPoolConnectedToTheHost) {
             poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
             storagePoolHostDao.persist(poolHost);
         } else {
@@ -164,8 +168,14 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         StorPoolHelper.setSpClusterIdIfNeeded(hostId, mspAnswer.getClusterId(), clusterDao, hostDao, clusterDetailsDao);
 
-        log.info("Connection established between storage pool " + pool + " and host " + hostId);
+        StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
         return true;
+    }
+
+    private void removePoolOnHost(StoragePoolHostVO poolHost, boolean isPoolConnectedToTheHost) {
+        if (isPoolConnectedToTheHost) {
+            storagePoolHostDao.remove(poolHost.getId());
+        }
     }
 
     private synchronized StoragePoolDetailVO verifyVolumeIsOnCluster(long poolId, SpConnectionDesc conn, long clusterId) {
