@@ -631,7 +631,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 Long snapshotSize = templStoragePoolVO.getTemplateSize();
                 long size = vinfo.getSize();
-                if (size < snapshotSize) {
+                if (snapshotSize != null && size < snapshotSize) {
                     StorPoolUtil.spLog(String.format("provided size is too small for snapshot. Provided %d, snapshot %d. Using snapshot size", size, snapshotSize));
                     size = snapshotSize;
                 }
