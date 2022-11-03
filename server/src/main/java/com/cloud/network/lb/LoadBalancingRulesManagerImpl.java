@@ -410,7 +410,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavaliable:", e);
+            s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -685,7 +685,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             applyLoadBalancerConfig(cmd.getLbRuleId());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply Stickiness policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavaliable:", e);
+            s_logger.warn("Unable to apply Stickiness policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -731,7 +731,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             applyLoadBalancerConfig(cmd.getLbRuleId());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply healthcheck policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavaliable:", e);
+            s_logger.warn("Unable to apply healthcheck policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -786,7 +786,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.persist(loadBalancer);
                     s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting sticky policy: " + stickinessPolicyId);
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         } else {
@@ -854,7 +854,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.persist(loadBalancer);
                     s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting healthcheck policy: " + healthCheckPolicyId);
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         } else {
@@ -1124,7 +1124,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             applyLoadBalancerConfig(loadBalancerId);
             success = true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
             success = false;
         } finally {
             if (!success) {
@@ -1243,7 +1243,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbCertMapDao.remove(certMap.getId());
                 s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " while adding cert");
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         return success;
     }
@@ -1291,7 +1291,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbDao.persist(loadBalancer);
                 s_logger.debug("Rolled back certificate removal lb id " + lbRuleId);
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
             if (!success) {
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove certificate from load balancer rule id " + lbRuleId);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
@@ -1414,7 +1414,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbDao.persist(loadBalancer);
                 s_logger.debug("LB Rollback rule id: " + loadBalancerId + " while removing vm instances");
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         if (!success) {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + vmIds);
@@ -1562,7 +1562,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.persist(lb);
                     s_logger.debug("LB Rollback rule id: " + loadBalancerId + " while deleting LB rule.");
                 } else {
-                    s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                    s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 }
                 return false;
             }
@@ -2216,7 +2216,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                     s_logger.debug("LB Rollback rule id: " + lbRuleId + " while updating LB rule.");
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         }

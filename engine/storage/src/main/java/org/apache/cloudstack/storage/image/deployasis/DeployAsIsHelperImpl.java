@@ -169,6 +169,10 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
                 hypervisor.toString(), minimumHypervisorVersion);
 
         if (CollectionUtils.isNotEmpty(guestOsMappings)) {
+            if (LOGGER.isDebugEnabled()) {
+                String msg = String.format("number of hypervisor mappings for guest os \"%s\" is: %d", guestOsType, guestOsMappings.size());
+                LOGGER.debug(msg);
+            }
             Long guestOsId = null;
             if (guestOsMappings.size() == 1) {
                 GuestOSHypervisorVO mapping = guestOsMappings.get(0);
@@ -190,7 +194,7 @@ public class DeployAsIsHelperImpl implements DeployAsIsHelper {
             }
             return guestOsId;
         } else {
-            throw new CloudRuntimeException("Did not find a guest OS with type " + guestOsType);
+            throw new CloudRuntimeException(String.format("Did not find a guest OS (%s) with type \"%s\" and minimal hypervisor hardware version %s.", guestOsDescription, guestOsType, minimumHardwareVersion));
         }
     }
 

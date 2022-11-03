@@ -289,7 +289,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                               domainid=self.account.domainid,
                               listall=True)
         self.assertIsInstance(routers, list,
-                              "List routers should return a valid repsonse")
+                              "List routers should return a valid response")
         return routers[0]
 
     def create_VPN(self, public_ip):

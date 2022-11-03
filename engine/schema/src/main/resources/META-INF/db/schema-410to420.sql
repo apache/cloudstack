@@ -2021,7 +2021,7 @@ CREATE TABLE `cloud`.`network_acl_item` (
   `icmp_code` int(10) COMMENT 'The ICMP code (if protocol=ICMP). A value of -1 means all codes for the given ICMP type.',
   `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
   `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
-  `cidr` varchar(255) COMMENT 'comma seperated cidr list',
+  `cidr` varchar(255) COMMENT 'comma separated cidr list',
   `number` int(10) NOT NULL COMMENT 'priority number of the acl item',
   `action` varchar(10) NOT NULL COMMENT 'rule action, allow or deny',
   PRIMARY KEY  (`id`),
