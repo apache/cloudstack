@@ -19,6 +19,7 @@
 
 package com.cloud.storage.resource;
 
+import com.cloud.serializer.GsonHelper;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
@@ -48,6 +49,7 @@ import com.google.gson.Gson;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
     private static final Logger s_logger = Logger.getLogger(StorageSubsystemCommandHandlerBase.class);
+    protected static final Gson s_gogger = GsonHelper.getGsonLogger();
     protected StorageProcessor processor;
 
     public StorageSubsystemCommandHandlerBase(StorageProcessor processor) {
@@ -175,7 +177,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
 
     private void logCommand(Command cmd) {
         try {
-            s_logger.debug(String.format("Executing command %s: [%s].", cmd.getClass().getSimpleName(), new Gson().toJson(cmd)));
+            s_logger.debug(String.format("Executing command %s: [%s].", cmd.getClass().getSimpleName(), s_gogger.toJson(cmd)));
         } catch (Exception e) {
             s_logger.debug(String.format("Executing command %s.", cmd.getClass().getSimpleName()));
         }

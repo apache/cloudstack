@@ -85,7 +85,7 @@ public final class StorPoolCopyVolumeToSecondaryCommandWrapper extends CommandWr
             }
             SP_LOG("StorpoolCopyVolumeToSecondaryCommandWrapper.execute: dstName=%s, dstProvisioningType=%s, srcSize=%s, dstUUID=%s, srcUUID=%s " ,dst.getName(), dst.getProvisioningType(), src.getSize(),dst.getUuid(), src.getUuid());
 
-                KVMPhysicalDisk newDisk = destPool.createPhysicalDisk(dst.getUuid(), dst.getProvisioningType(), src.getSize());
+                KVMPhysicalDisk newDisk = destPool.createPhysicalDisk(dst.getUuid(), dst.getProvisioningType(), src.getSize(), null);
                 SP_LOG("NewDisk path=%s, uuid=%s ", newDisk.getPath(), dst.getUuid());
                 String destPath = newDisk.getPath();
                 newDisk.setPath(dst.getUuid());

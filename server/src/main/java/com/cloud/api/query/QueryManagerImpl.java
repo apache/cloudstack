@@ -965,7 +965,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (_accountMgr.isRootAdmin(caller.getId())) {
             respView = ResponseView.Full;
         }
-        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), cmd.getAccumulate(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
+        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), cmd.getAccumulate(), cmd.getShowUserData(),
+                result.first().toArray(new UserVmJoinVO[result.first().size()]));
 
         response.setResponses(vmResponses, result.second());
         return response;
@@ -2081,6 +2082,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
+        boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -2125,14 +2127,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-        sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
-        sb.cp();
 
-        // display UserVM volumes only
-        sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
-        sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
-        sb.cp();
+        if (!shouldListSystemVms) {
+            sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+            sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
+            sb.cp();
+
+            sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
+            sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
+            sb.cp();
+        }
 
         // now set the SC criteria...
         SearchCriteria<VolumeJoinVO> sc = sb.create();
@@ -2157,7 +2161,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         setIdsListToSearchCriteria(sc, ids);
 
-        sc.setParameters("systemUse", 1);
+        if (!shouldListSystemVms) {
+            sc.setParameters("systemUse", 1);
+            sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+        }
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
@@ -2205,8 +2212,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
         }
-        // Don't return DomR and ConsoleProxy volumes
-        sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
 
         if (state != null) {
             sc.setParameters("state", state);
@@ -2229,6 +2234,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
         return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+    }
+
+    private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
+        return Boolean.TRUE.equals(cmd.getListSystemVms()) && _accountMgr.isRootAdmin(callerId);
     }
 
     @Override
@@ -2947,6 +2956,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long zoneId = cmd.getZoneId();
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
+        Boolean encrypt = cmd.getEncrypt();
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -2992,6 +3002,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+
+        if (encrypt != null) {
+            sc.addAnd("encrypt", SearchCriteria.Op.EQ, encrypt);
         }
 
         if (zoneId != null) {
@@ -3117,6 +3131,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuNumber = cmd.getCpuNumber();
         Integer memory = cmd.getMemory();
         Integer cpuSpeed = cmd.getCpuSpeed();
+        Boolean encryptRoot = cmd.getEncryptRoot();
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -3226,6 +3241,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // note that for non-root users, isSystem is always false when
             // control comes to here
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+        }
+
+        if (encryptRoot != null) {
+            sc.addAnd("encryptRoot", SearchCriteria.Op.EQ, encryptRoot);
         }
 
         if (name != null) {

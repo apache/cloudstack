@@ -89,6 +89,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         Long clusterId = (Long) dsInfos.get("clusterId");
         String storagePoolName = (String) dsInfos.get("name");
         String providerName = (String) dsInfos.get("providerName");
+        Long capacityIops = (Long) dsInfos.get("capacityIops");
         String tags = (String) dsInfos.get("tags");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
@@ -145,9 +146,12 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         }
 
         long capacityBytes = LinstorUtil.getCapacityBytes(url, resourceGroup);
-
         if (capacityBytes <= 0) {
             throw new IllegalArgumentException("'capacityBytes' must be present and greater than 0.");
+        }
+
+        if (capacityIops != null) {
+            parameters.setCapacityIops(capacityIops);
         }
 
         parameters.setHost(url);
@@ -161,7 +165,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         parameters.setManaged(false);
         parameters.setCapacityBytes(capacityBytes);
         parameters.setUsedBytes(0);
-        parameters.setCapacityIops(0L);
+        parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(HypervisorType.KVM);
         parameters.setTags(tags);
         parameters.setDetails(details);

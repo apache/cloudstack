@@ -152,7 +152,6 @@ export default {
   methods: {
     fetchData () {
       const params = {}
-      params.listAll = true
       params.page = this.page
       params.pageSize = this.pageSize
       params.accountid = this.resource.id

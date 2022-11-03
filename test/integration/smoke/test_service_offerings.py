@@ -70,7 +70,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "smoke",
             "basic",
             "eip",
-            "sg"],
+            "sg", "diskencrypt"],
         required_hardware="false")
     def test_01_create_service_offering(self):
         """Test to create service offering"""
@@ -130,6 +130,11 @@ class TestCreateServiceOffering(cloudstackTestCase):
             list_service_response[0].name,
             self.services["service_offerings"]["tiny"]["name"],
             "Check name in createServiceOffering"
+        )
+        self.assertEqual(
+            list_service_response[0].encryptroot,
+            False,
+            "Ensure encrypt is false by default"
         )
         return
 
@@ -302,6 +307,53 @@ class TestCreateServiceOffering(cloudstackTestCase):
                 self.services["service_offerings"]["tiny"],
                 cacheMode="invalid_cache_mode_type"
             )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg",
+            "diskencrypt"],
+        required_hardware="false")
+    def test_05_create_service_offering_with_root_encryption_type(self):
+        """Test to create service offering with root encryption"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"],
+            name="tiny-encrypted-root",
+            encryptRoot=True
+        )
+        self.cleanup.append(service_offering)
+
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
+
+        list_service_response = list_service_offering(
+            self.apiclient,
+            id=service_offering.id
+        )
+
+        self.assertNotEqual(
+            len(list_service_response),
+            0,
+            "Check Service offering is created"
+        )
+
+        self.assertEqual(
+            list_service_response[0].encryptroot,
+            True,
+            "Check encrypt root is true"
+        )
         return
 
 

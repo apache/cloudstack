@@ -28,20 +28,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.hypervisor.vmware.mo.DatastoreFile;
-import com.vmware.vim25.FileInfo;
-import com.vmware.vim25.FileQueryFlags;
-import com.vmware.vim25.HostDatastoreBrowserSearchResults;
-import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.TaskInfo;
-import com.vmware.vim25.TaskInfoState;
-import com.vmware.vim25.VirtualDisk;
-
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
@@ -65,10 +55,12 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
@@ -78,9 +70,11 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -89,6 +83,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
+import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TaskInfoState;
+import com.vmware.vim25.VirtualDisk;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
@@ -1134,6 +1136,28 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return size;
     }
 
+    private boolean isVolumeOnDatastoreCluster(VolumeObjectTO volumeObjectTO) {
+        DataStoreTO dsTO = volumeObjectTO.getDataStore();
+        if (!(dsTO instanceof PrimaryDataStoreTO)) {
+            return false;
+        }
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO)dsTO;
+        return Storage.StoragePoolType.DatastoreCluster.equals(primaryDataStoreTO.getPoolType()) ||
+                Storage.StoragePoolType.DatastoreCluster.equals(primaryDataStoreTO.getParentPoolType());
+    }
+
+    private void syncVolume(VmwareHostService hostService, VirtualMachineMO virtualMachineMO, VmwareContext context,
+                             VmwareHypervisorHost hypervisorHost, VolumeObjectTO volumeTO) throws Exception {
+        if (hostService.getStorageProcessor() == null) return;
+        VmwareStorageProcessor storageProcessor = hostService.getStorageProcessor();
+        DiskTO disk = new DiskTO();
+        Map<String, String> map = new HashMap<>();
+        map.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+        disk.setDetails(map);
+        disk.setData(volumeTO);
+        storageProcessor.getSyncedVolume(virtualMachineMO, context, hypervisorHost, disk, volumeTO);
+    }
+
     @Override
     public CreateVMSnapshotAnswer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd) {
         List<VolumeObjectTO> volumeTOs = cmd.getVolumeTOs();
@@ -1181,15 +1205,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     return new CreateVMSnapshotAnswer(cmd, false, "Unable to create snapshot due to esxi internal failed");
                 }
 
-                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
-
-                setVolumeToPathAndSize(volumeTOs, mapNewDisk, context, hyperHost, cmd.getVmName());
+                setVolumeToPathAndSize(volumeTOs, vmMo, hostService, context, hyperHost);
 
                 return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), volumeTOs);
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg);
+            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg, e);
 
             try {
                 if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
@@ -1248,29 +1270,37 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return mapNewDisk;
     }
 
-    private void setVolumeToPathAndSize(List<VolumeObjectTO> volumeTOs, Map<String, String> mapNewDisk, VmwareContext context, VmwareHypervisorHost hyperHost, String vmName)
+    private void setVolumeToPathAndSize(List<VolumeObjectTO> volumeTOs, VirtualMachineMO vmMo, VmwareHostService hostService, VmwareContext context, VmwareHypervisorHost hyperHost)
             throws Exception {
+        String vmName = vmMo.getVmName();
         for (VolumeObjectTO volumeTO : volumeTOs) {
-            String oldPath = volumeTO.getPath();
+            String path = volumeTO.getPath();
+            String baseName;
+            String datastoreUuid = volumeTO.getDataStore().getUuid();
 
-            final String baseName;
-
-            // if this is managed storage
-            if (oldPath.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
-                oldPath = oldPath.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
-
-                // remove '[' and ']'
-                baseName = oldPath.substring(1, oldPath.length() - 1);
-            } else {
+            if (isVolumeOnDatastoreCluster(volumeTO)) {
+                syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
+                path = volumeTO.getPath();
                 baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
+                datastoreUuid = volumeTO.getDataStoreUuid();
+            } else {
+                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
+                // if this is managed storage
+                if (path.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
+                    path = path.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
+
+                    // remove '[' and ']'
+                    baseName = path.substring(1, path.length() - 1);
+                } else {
+                    baseName = VmwareHelper.trimSnapshotDeltaPostfix(path);
+                }
+                path = mapNewDisk.get(baseName);
+                volumeTO.setPath(path);
             }
 
-            String newPath = mapNewDisk.get(baseName);
-
             // get volume's chain size for this VM snapshot; exclude current volume vdisk
-            DataStoreTO store = volumeTO.getDataStore();
-            ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, store);
-            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, newPath, vmName);
+            ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, datastoreUuid);
+            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, path, vmName);
 
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
                 // add memory snapshot size
@@ -1278,11 +1308,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             volumeTO.setSize(size);
-            volumeTO.setPath(newPath);
         }
     }
 
-    private ManagedObjectReference getDatastoreAsManagedObjectReference(String baseName, VmwareHypervisorHost hyperHost, DataStoreTO store) throws Exception {
+    private ManagedObjectReference getDatastoreAsManagedObjectReference(String baseName, VmwareHypervisorHost hyperHost, String storeUuid) throws Exception {
         try {
             // if baseName equates to a datastore name, this should be managed storage
             ManagedObjectReference morDs = hyperHost.findDatastoreByName(baseName);
@@ -1295,7 +1324,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
 
         // not managed storage, so use the standard way of getting a ManagedObjectReference for a datastore
-        return HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
+        return HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storeUuid);
     }
 
     @Override
@@ -1335,15 +1364,13 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 // after removed snapshot, the volumes' paths have been changed for the VM, needs to report new paths to manager
 
-                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
-
-                setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
+                setVolumeToPathAndSize(listVolumeTo, vmMo, hostService, context, hyperHost);
 
                 return new DeleteVMSnapshotAnswer(cmd, listVolumeTo);
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg);
+            s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg, e);
 
             return new DeleteVMSnapshotAnswer(cmd, false, msg);
         }
@@ -1403,9 +1430,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 if (result) {
-                    Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
-
-                    setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
+                    setVolumeToPathAndSize(listVolumeTo, vmMo, hostService, context, hyperHost);
 
                     if (!snapshotMemory) {
                         vmState = VirtualMachine.PowerState.PowerOff;
@@ -1418,7 +1443,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = "revert vm " + vmName + " to snapshot " + snapshotName + " failed due to " + e.getMessage();
-            s_logger.error(msg);
+            s_logger.error(msg, e);
 
             return new RevertToVMSnapshotAnswer(cmd, false, msg);
         }

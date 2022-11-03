@@ -95,7 +95,7 @@ public class VirtualMachineModel extends ModelObjectBase {
                  *
                  * In other fix I added the validate UUID method to the UuidUtil classes.
                  */
-                if (UuidUtils.validateUUID(serviceUuid)) {
+                if (UuidUtils.isUuid(serviceUuid)) {
                     /* link the object with the service instance */
                     buildServiceInstance(controller, serviceUuid);
                 } else {

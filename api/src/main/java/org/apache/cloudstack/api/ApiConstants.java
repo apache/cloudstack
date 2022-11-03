@@ -23,6 +23,7 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
     public static final String ACCUMULATE = "accumulate";
+    public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";
@@ -109,6 +110,9 @@ public class ApiConstants {
     public static final String CUSTOM_JOB_ID = "customjobid";
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
+    public static final String ENCRYPT = "encrypt";
+    public static final String ENCRYPT_ROOT = "encryptroot";
+    public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -412,6 +416,12 @@ public class ApiConstants {
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USER_DATA = "userdata";
+
+    public static final String USER_DATA_NAME = "userdataname";
+    public static final String USER_DATA_ID = "userdataid";
+    public static final String USER_DATA_POLICY = "userdatapolicy";
+    public static final String USER_DATA_DETAILS = "userdatadetails";
+    public static final String USER_DATA_PARAMS = "userdataparams";
     public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";
     public static final String USER_SOURCE = "usersource";
@@ -445,6 +455,7 @@ public class ApiConstants {
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
+    public static final String VM_TYPE = "vmtype";
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
@@ -609,6 +620,7 @@ public class ApiConstants {
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
     public static final String LIST_ALL = "listall";
+    public static final String LIST_SYSTEM_VMS = "listsystemvms";
     public static final String IP_RANGES = "ipranges";
     public static final String IPV6_ROUTING = "ip6routing";
     public static final String IPV6_ROUTES = "ip6routes";

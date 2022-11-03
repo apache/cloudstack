@@ -217,7 +217,7 @@ public abstract class VsmResponse {
             LSSerializer lss = ls.createLSSerializer();
             System.out.println(lss.writeToString(_docResponse));
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error parsing the repsonse : " + e.toString());
+            s_logger.error("Error parsing the response : " + e.toString());
         }
     }
 }

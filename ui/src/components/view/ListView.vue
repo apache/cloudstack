@@ -168,7 +168,7 @@
       {{ text }}
     </template>
     <template #vmname="{ text, record }">
-      <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
+      <router-link :to="{ path: createPathBasedOnVmType(record.vmtype, record.virtualmachineid) }">{{ text }}</router-link>
     </template>
     <template #virtualmachinename="{ text, record }">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
@@ -193,6 +193,9 @@
       <status :text="text ? text : ''" displayText />
     </template>
     <template #agentstate="{ text }">
+      <status :text="text ? text : ''" displayText />
+    </template>
+    <template #quotastate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
     <template #vlan="{ text, record }">
@@ -416,6 +419,7 @@ import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 
 export default {
   name: 'ListView',
@@ -510,8 +514,9 @@ export default {
     }
   },
   methods: {
+    createPathBasedOnVmType: createPathBasedOnVmType,
     quickViewEnabled () {
-      return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
+      return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup',
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
@@ -521,7 +526,7 @@ export default {
         .test(this.$route.path)
     },
     enableGroupAction () {
-      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'

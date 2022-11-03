@@ -33,6 +33,10 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
+      name: 'volume',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/VolumesTab.vue')))
+    },
+    {
       name: 'events',
       resourceType: 'SystemVm',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
