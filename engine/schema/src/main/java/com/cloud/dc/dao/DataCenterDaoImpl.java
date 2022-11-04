@@ -64,7 +64,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
-    protected SearchBuilder<DataCenterVO> ZoneAllocationAndTypeSearch;
+    protected SearchBuilder<DataCenterVO> ZoneAllocationAndNotTypeSearch;
 
     @Inject
     protected DataCenterIpAddressDao _ipAllocDao = null;
@@ -338,10 +338,10 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
         DisabledZonesSearch.done();
 
-        ZoneAllocationAndTypeSearch = createSearchBuilder();
-        ZoneAllocationAndTypeSearch.and("allocationState", ZoneAllocationAndTypeSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
-        ZoneAllocationAndTypeSearch.and("type", ZoneAllocationAndTypeSearch.entity().getDescription(), SearchCriteria.Op.NLIKE);
-        ZoneAllocationAndTypeSearch.done();
+        ZoneAllocationAndNotTypeSearch = createSearchBuilder();
+        ZoneAllocationAndNotTypeSearch.and("allocationState", ZoneAllocationAndNotTypeSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        ZoneAllocationAndNotTypeSearch.and("type", ZoneAllocationAndNotTypeSearch.entity().getType(), SearchCriteria.Op.NLIKE);
+        ZoneAllocationAndNotTypeSearch.done();
 
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
@@ -408,7 +408,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public List<DataCenterVO> listEnabledNonEdgeZones() {
-        SearchCriteria<DataCenterVO> sc = ZoneAllocationAndTypeSearch.create();
+        SearchCriteria<DataCenterVO> sc = ZoneAllocationAndNotTypeSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
         sc.setParameters("type", DataCenter.Type.Edge);
         return listBy(sc);
