@@ -345,10 +345,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
         }
-        /*String networkerRestoreScr = Script.findScript(" /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm","nsrkvmrestore.sh");
-        if (networkerRestoreScr == null) {
-            throw new RuntimeException("Unable to find nsrkvmrestore.sh");
-        }*/
         String networkerRestoreScr = "/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
         final Script script = new Script(networkerRestoreScr);
         script.add("-s");
@@ -430,10 +426,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
         }
-        /*String networkerRestoreScr = Script.findScript(" /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm","nsrkvmrestore.sh");
-        if (networkerRestoreScr == null) {
-            throw new RuntimeException("Unable to find nsrkvmrestore.sh");
-        }*/
         String networkerRestoreScr = "/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
         final Script script = new Script(networkerRestoreScr);
         script.add("-s");
@@ -493,11 +485,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         // Get Cluster
         clusterName = getVMHypervisorCluster(hostVO);
-
-        /*String networkerBackupScr = Script.findScript(" scripts/vm/hypervisor/kvm","nsrkvmbackup.sh");
-        if (networkerBackupScr == null) {
-            throw new RuntimeException("Unable to find nsrkvmbackup.sh");
-        }*/
         String networkerBackupScr = "/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh";
         final Script script = new Script(networkerBackupScr);
         script.add("-s");
