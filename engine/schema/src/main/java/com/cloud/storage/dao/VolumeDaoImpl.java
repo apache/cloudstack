@@ -760,7 +760,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
     }
     @Override
-    public VolumeVO getInstanceRootVolume(long instanceId, String instanceUuid) {
+    public VolumeVO getInstanceRootVolume(long instanceId) {
         SearchCriteria<VolumeVO> sc = RootDiskStateSearch.create();
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("vType", Volume.Type.ROOT);
