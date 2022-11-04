@@ -32,15 +32,21 @@ export default {
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   related: [{
     name: 'pod',
     title: 'label.pods',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }, {
     name: 'cluster',
     title: 'label.clusters',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }, {
     name: 'host',
     title: 'label.hosts',
@@ -52,7 +58,10 @@ export default {
   }, {
     name: 'imagestore',
     title: 'label.secondary.storage',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }],
   resourceType: 'Zone',
   tabs: [{

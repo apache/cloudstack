@@ -200,29 +200,35 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item
-        name="account"
-        ref="account"
-        :label="$t('label.account')"
-        v-bind="formItemLayout"
-        v-if="isDedicated">
-        <a-input v-model:value="form.account" />
-      </a-form-item>
-      <a-form-item
-        name="localstorageenabled"
-        ref="localstorageenabled"
-        :label="$t('label.local.storage.enabled')"
-        v-bind="formItemLayout">
-        <a-switch v-model:checked="form.localstorageenabled" :disabled="this.isEdgeZone"/>
-      </a-form-item>
-      <a-form-item
-        name="localstorageenabledforsystemvm"
-        ref="localstorageenabledforsystemvm"
-        :label="$t('label.local.storage.enabled.system.vms')"
-        v-if="!this.isEdgeZone"
-        v-bind="formItemLayout">
-        <a-switch v-model:checked="form.localstorageenabledforsystemvm" />
-      </a-form-item>
+      <a-alert style="margin-top: 5px" type="warning" v-if="this.isEdgeZone">
+        <template #message>
+          <span v-html="$t('message.zone.edge.local.storage')" />
+        </template>
+      </a-alert>
+      <div v-else>
+        <a-form-item
+          name="account"
+          ref="account"
+          :label="$t('label.account')"
+          v-bind="formItemLayout"
+          v-if="isDedicated">
+          <a-input v-model:value="form.account" />
+        </a-form-item>
+        <a-form-item
+          name="localstorageenabled"
+          ref="localstorageenabled"
+          :label="$t('label.local.storage.enabled')"
+          v-bind="formItemLayout">
+          <a-switch v-model:checked="form.localstorageenabled"/>
+        </a-form-item>
+        <a-form-item
+          name="localstorageenabledforsystemvm"
+          ref="localstorageenabledforsystemvm"
+          :label="$t('label.local.storage.enabled.system.vms')"
+          v-bind="formItemLayout">
+          <a-switch v-model:checked="form.localstorageenabledforsystemvm" />
+        </a-form-item>
+      </div>
     </a-form>
     <div class="form-action">
       <a-button
@@ -257,7 +263,6 @@ export default {
     }
   },
   data: () => ({
-    description: 'message.desc.zone',
     formItemLayout: {
       labelCol: { span: 8 },
       wrapperCol: { span: 12 }
@@ -336,6 +341,9 @@ export default {
     },
     isEdgeZone () {
       return this.isAdvancedZone && (this.prefillContent?.isEdge || false)
+    },
+    description () {
+      return this.isEdgeZone ? 'message.desc.zone.edge' : 'message.desc.zone'
     },
     name () {
       return this.prefillContent?.name || null

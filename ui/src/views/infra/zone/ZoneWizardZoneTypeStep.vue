@@ -74,7 +74,7 @@
                     v-focus="true"
                   />
                 </a-form-item>
-                <span>{{ $t('label.edge') }}</span>
+                <span>{{ $t('label.edge.zone') }}</span>
               </a-col>
               <a-col :md="18" :lg="18" style="margin-top: 15px;">
                 <a-card class="zone-support">{{ $t(zoneDescription.Edge) }}</a-card>

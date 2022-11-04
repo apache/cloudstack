@@ -548,7 +548,7 @@ export default {
         }
         if (this.currentForm !== 'Upload') {
           listhyperVisors.push({
-            name: 'Any'
+            name: 'Simulator'
           })
         }
         this.hyperVisor.opts = listhyperVisors
