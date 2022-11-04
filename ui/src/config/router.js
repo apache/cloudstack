@@ -242,16 +242,6 @@ export function asyncRouterMap () {
       generateRouterMap(cloudian),
 
       {
-        path: '/2FA',
-        name: 'TwoFa',
-        meta: {
-          title: 'label.2fa',
-          hidden: true
-        },
-        component: () => import('@/views/dashboard/TwoFa')
-      },
-
-      {
         path: '/exception',
         name: 'exception',
         component: shallowRef(RouteView),
@@ -318,6 +308,15 @@ export const constantRouterMap = [
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/Login')
       }
     ]
+  },
+  {
+    path: '/2FA',
+    name: 'TwoFa',
+    meta: {
+      title: 'label.2fa',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/TwoFa')
   },
   {
     path: '/403',

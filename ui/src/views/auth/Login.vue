@@ -301,7 +301,6 @@ export default {
       this.$store.commit('SET_LOGIN_FLAG', true)
       console.log(store.getters.twoFaEnabled)
       if (store.getters.twoFaEnabled === true) {
-        console.log('hari1')
         this.$router.push({ path: '/2FA' }).catch(() => {})
       } else {
         console.log('hari2')
