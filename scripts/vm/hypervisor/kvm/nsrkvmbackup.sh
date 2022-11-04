@@ -112,6 +112,16 @@ sanity_checks() {
                 log -e "\n\tYour QEMU version $hvVersion is unsupported. Consider upgrading at least to latest QEMU at branch 2"
                 exit 4
         fi
+
+        log -ne "\t[4] Checking Permissions \t\t"
+        if groups $USER | grep -q '\blibvirt\b'; then
+            log -n "Success"
+            log -ne "\t\t User $USER is part of libvirt group"
+            echo
+        else
+            log "Failure - User $USER is not part of libvirt group"
+            exit 6
+        fi
         log "Environment Sanity Checks successfully passed"
 }
 
@@ -135,7 +145,7 @@ backup_domain() {
                 if [[ $SOURCE != "-" ]]; then
                         TRGSRC+=(["$TARGET"]="$SOURCE")
                 fi
-        done < <(virsh domblklist "$name" --details | grep file | grep -v 'cdrom' | grep -v 'floppy' | sed 's/  */,/g' |  cut -d',' -f 4-)
+        done < <(virsh -c qemu:///system domblklist "$name" --details | grep file | grep -v 'cdrom' | grep -v 'floppy' | sed 's/  */,/g' |  cut -d',' -f 4-)
         diskspec=""
         for target in "${!TRGSRC[@]}"; do
           log -e "\tDisk for $target is at ${TRGSRC[${target}]}"
@@ -143,12 +153,12 @@ backup_domain() {
           disks="$disks ${TRGSRC[${target}]} "
         done
 
-        cmd="$(virsh snapshot-create-as --domain "$name" --name "$snapName" --no-metadata --atomic --quiesce --disk-only "$diskspec")"
+        cmd="$(virsh -c qemu:///system snapshot-create-as --domain "$name" --name "$snapName" --no-metadata --atomic --quiesce --disk-only "$diskspec")"
         retVal=$?
         log "$cmd"
         if [ "$retVal" -ne 0 ]; then
                 log "Agent not responding, trying to snapshot directly"
-                cmd="$(virsh snapshot-create-as --domain "$name" --name "$snapName" --no-metadata --atomic --disk-only "$diskspec")"
+                cmd="$(virsh -c qemu:///system snapshot-create-as --domain "$name" --name "$snapName" --no-metadata --atomic --disk-only "$diskspec")"
                 retVal=$?
                 if [ "$retVal" -ne 0 ]; then
                         log "Failed to create snapshot for $name"
@@ -167,10 +177,10 @@ backup_domain() {
         fi
 
         #Merge changes and conclude
-        SNAPSHOTS="$(virsh domblklist "$name" --details | grep file | grep -v 'cdrom' | grep -v 'floppy' | awk '{print $4}')"
+        SNAPSHOTS="$(virsh -c qemu:///system domblklist "$name" --details | grep file | grep -v 'cdrom' | grep -v 'floppy' | awk '{print $4}')"
         for target in "${!TRGSRC[@]}"; do
                 log "Merging Snasphots for $target"
-                cmd="$(virsh blockcommit "$name" "$target" --active --pivot)"
+                cmd="$(virsh -c qemu:///system blockcommit "$name" "$target" --active --pivot)"
                 retVal=$?
                 log "$cmd"
                 if [ $retVal -ne 0 ]; then
@@ -181,7 +191,7 @@ backup_domain() {
         #Clean snapshots
         for snapshot in $SNAPSHOTS; do
              log "Deleting Snapshot $snapshot"
-             cmd=$(rm "$snapshot")
+             cmd=$(rm -f "$snapshot")
              retVal=$?
              log "$cmd"
              if [ $retVal -ne 0 ]; then
@@ -236,12 +246,9 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  # Perform Initial sanity checks
  sanity_checks
 
- target_name=$(virsh domname "$kvmDUuid")
- target_uuid=$(virsh domuuid "$kvmDName")
-
- log -e "\nLooking for domain to backup"
- if [[ "$kvmDName" == "$target_name" && "$kvmDUuid" == "$target_uuid" ]]; then
-         log "Domain $kvmDName with UUID $kvmDUuid found...."
+ log -e "\nLooking for domain $kvmDName with UUID $kvmDUuid"
+ if [[ "$kvmDName" == $(virsh -c qemu:///system domname "$kvmDUuid" | head -1) && "$kvmDUuid" == $(virsh -c qemu:///system domuuid "$kvmDName" | head -1) ]]; then
+         log "Domain found...."
  else
          log "Domain not found on this host. Aborting....."
          log "Check for the location of the Instance in the cloudstack management console"

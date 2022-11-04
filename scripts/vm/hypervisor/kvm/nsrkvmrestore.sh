@@ -19,7 +19,6 @@
 version=0.9.1
 OPTIND=1
 OPTIND=1
-dryRun=0
 verb=0
 logDir="/nsr/logs/cloudstack/"
 clusterClient=""
@@ -43,7 +42,7 @@ log () {
      fi
 }
 
-vercomp(){
+vercomp() {
        local a b IFS=. -; set -f
        printf -v a %08d $1; printf -v b %08d $3
        test $a "$2" $b
@@ -111,18 +110,15 @@ sanity_checks() {
                 log -e "\n\tYour QEMU version $hvVersion is unsupported. Consider upgrading at least to latest QEMU at branch 2"
                 exit 4
         fi
-
-
         log "Environment Sanity Checks successfully passed"
 }
-
 echo "
 Cloudstack B&R Framework - EMC Networker backup script
 Version $version
 "
 restore_all_volumes() {
         log "Preparing restore for SAVESET $ssid"
-        cmd="$(recover -s "$networkerServer" -S "$ssid" -iY)"
+        cmd="$(sudo recover -s "$networkerServer" -S "$ssid" -iY)"
         retVal=$?
         log "$cmd"
         if [ "$retVal" -ne 0 ]; then

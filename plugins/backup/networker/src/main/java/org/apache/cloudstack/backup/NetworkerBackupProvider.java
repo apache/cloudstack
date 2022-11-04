@@ -43,7 +43,6 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.xml.utils.URI;
@@ -102,9 +101,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private HostDao hostDao;
-
-    @Inject
-    private ConfigurationDao configDao;
 
     @Inject
     private ClusterDao clusterDao;
@@ -324,7 +320,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        String backupRestorePath = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
         String networkerServer;
         HostVO hostVO;
 
@@ -350,8 +345,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
         }
-
-        final Script script = new Script(backupRestorePath);
+        /*String networkerRestoreScr = Script.findScript(" /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm","nsrkvmrestore.sh");
+        if (networkerRestoreScr == null) {
+            throw new RuntimeException("Unable to find nsrkvmrestore.sh");
+        }*/
+        String networkerRestoreScr = "/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
+        final Script script = new Script(networkerRestoreScr);
         script.add("-s");
         script.add(networkerServer);
         script.add("-S");
@@ -375,8 +374,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
-        String backupRestorePath = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
-
         String networkerServer;
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
         VMInstanceVO backupSourceVm = vmInstanceDao.findById(backup.getVmId());
@@ -433,8 +430,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
         }
-
-        final Script script = new Script(backupRestorePath);
+        /*String networkerRestoreScr = Script.findScript(" /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm","nsrkvmrestore.sh");
+        if (networkerRestoreScr == null) {
+            throw new RuntimeException("Unable to find nsrkvmrestore.sh");
+        }*/
+        String networkerRestoreScr = "/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmrestore.sh";
+        final Script script = new Script(networkerRestoreScr);
         script.add("-s");
         script.add(networkerServer);
         script.add("-c");
@@ -467,7 +468,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public boolean takeBackup(VirtualMachine vm) {
-        String backupCommandPath = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh";
         String networkerServer;
         String clusterName;
 
@@ -493,7 +493,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         // Get Cluster
         clusterName = getVMHypervisorCluster(hostVO);
-        final Script script = new Script(backupCommandPath);
+
+        /*String networkerBackupScr = Script.findScript(" scripts/vm/hypervisor/kvm","nsrkvmbackup.sh");
+        if (networkerBackupScr == null) {
+            throw new RuntimeException("Unable to find nsrkvmbackup.sh");
+        }*/
+        String networkerBackupScr = "/usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh";
+        final Script script = new Script(networkerBackupScr);
         script.add("-s");
         script.add(networkerServer);
         script.add("-R");
