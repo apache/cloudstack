@@ -47,8 +47,8 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -133,7 +133,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
-    private VMTemplatePoolDao vmTemplatePoolDao;
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -677,9 +677,9 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                         EndPoint ep = selector.select(srcData, dstData);
 
-                        if( ep == null) {
-                            StorPoolUtil.spLog("select(srcData, dstData) returned NULL. trying srcOnly");
-                            ep = selector.select(srcData); // Storpool is zone
+                        if( ep == null || storagePoolHostDao.findByPoolHost(dstData.getId(), ep.getId()) == null) {
+                            StorPoolUtil.spLog("select(srcData, dstData) returned NULL or the destination pool is not connected to the selected host. Trying dstData");
+                            ep = selector.select(dstData); // Storpool is zone
                         }
                         if (ep == null) {
                             err = "No remote endpoint to send command, check if host or ssvm is down?";

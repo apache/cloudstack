@@ -122,6 +122,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         if (answer == null) {
             StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
             removePoolOnHost(poolHost, isPoolConnectedToTheHost);
             throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command" + pool.getId());
         }
@@ -131,11 +132,8 @@ public class StorPoolHostListener implements HypervisorHostListener {
             removePoolOnHost(poolHost, isPoolConnectedToTheHost);
 
             if (answer.getDetails() != null) {
-                if (answer.getDetails().equals("objectDoesNotExist")) {
-                    StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
-                    storagePoolDetailsDao.remove(volumeOnPool.getId());
-                    return false;
-                } else if (answer.getDetails().equals("spNotFound")) {
+                if (answer.getDetails().equals("objectDoesNotExist") || answer.getDetails().equals("spNotFound")) {
+                    deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
                     return false;
                 }
 
@@ -170,6 +168,11 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
         return true;
+    }
+
+    private void deleteVolumeWhenHostCannotConnectPool(SpConnectionDesc conn, StoragePoolDetailVO volumeOnPool) {
+        StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
+        storagePoolDetailsDao.remove(volumeOnPool.getId());
     }
 
     private void removePoolOnHost(StoragePoolHostVO poolHost, boolean isPoolConnectedToTheHost) {
