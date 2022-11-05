@@ -271,6 +271,8 @@ public class AgentShell implements IAgentShell, Daemon {
         setHost(host);
 
         _guid = getGuid(guid);
+        _properties.setProperty(AgentProperties.GUID.getName(), _guid);
+
         _port = getPortOrWorkers(port, AgentProperties.PORT);
         _workers = getWorkers(workers);
         _zone = getZoneOrPod(zone, AgentProperties.ZONE);

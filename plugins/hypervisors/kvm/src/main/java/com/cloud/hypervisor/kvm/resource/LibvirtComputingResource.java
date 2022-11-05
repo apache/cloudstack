@@ -1219,8 +1219,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String[] localStorageRelativePaths = localStoragePath.split(CONFIG_VALUES_SEPARATOR);
         String[] localStorageUUIDStrings = localStorageUUIDString.split(CONFIG_VALUES_SEPARATOR);
         if (localStorageRelativePaths.length != localStorageUUIDStrings.length) {
-            s_logger.error(String.format("The path and UUID of the local storage pools have different length. Path: [%s], UUID: [%s].", localStoragePath, localStorageUUIDString));
-            throw new ConfigurationException(String.format("The path and UUID of the local storage pools have different length. Path: [%s], UUID: [%s].", localStoragePath, localStorageUUIDString));
+            String errorMessage = String.format("The path and UUID of the local storage pools have different length. Path: [%s], UUID: [%s].", localStoragePath,
+                localStorageUUIDString);
+            s_logger.error(errorMessage);
+            throw new ConfigurationException(errorMessage);
         }
         for (String localStorageRelativePath : localStorageRelativePaths) {
             final File storagePath = new File(localStorageRelativePath);
@@ -1255,7 +1257,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storage.configure("Storage", new HashMap<String, Object>());
         Long longValue = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT);
         if (longValue != null) {
-            storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
+            storage.persist(AgentProperties.ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT.getName(), String.valueOf(longValue));
         }
 
         if (params.get(Config.MigrateWait.toString()) != null) {

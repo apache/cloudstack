@@ -268,6 +268,37 @@ public class AgentProperties{
     public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<>("network.bridge.type", "native");
 
     /**
+     * Sets the driver used to plug and unplug NICs from the bridges.<br>
+     * A sensible default value will be selected based on the network.bridge.type but can be overridden here.<br>
+     * Value for native = com.cloud.hypervisor.kvm.resource.BridgeVifDriver<br>
+     * Value for openvswitch = com.cloud.hypervisor.kvm.resource.OvsVifDriver<br>
+     * Value to enable direct networking in libvirt = com.cloud.hypervisor.kvm.resource.DirectVifDriver (should not be used on hosts that run system VMs)<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> LIBVIRT_VIF_DRIVER = new Property<>("libvirt.vif.driver", null, String.class);
+
+    /**
+     * Setting to enable direct networking in libvirt.<br>
+     * Should not be used on hosts that run system VMs.<br>
+     * For more information see the agent.properties file.<br>
+     * Possible values: private | bridge | vepa <br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> NETWORK_DIRECT_SOURCE_MODE = new Property<>("network.direct.source.mode", null, String.class);
+
+    /**
+     * Setting to enable direct networking in libvirt.<br>
+     * Should not be used on hosts that run system VMs.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> NETWORK_DIRECT_DEVICE = new Property<>("network.direct.device", null, String.class);
+
+    /**
      * Sets DPDK Support on OpenVSwitch.<br>
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
@@ -328,37 +359,6 @@ public class AgentProperties{
     public static final Property<String> HYPERVISOR_URI = new Property<>("hypervisor.uri", null, String.class);
 
     /**
-     * Sets the driver used to plug and unplug NICs from the bridges.<br>
-     * A sensible default value will be selected based on the network.bridge.type but can be overridden here.<br>
-     * Value for native = com.cloud.hypervisor.kvm.resource.BridgeVifDriver<br>
-     * Value for openvswitch = com.cloud.hypervisor.kvm.resource.OvsVifDriver<br>
-     * Value to enable direct networking in libvirt = com.cloud.hypervisor.kvm.resource.DirectVifDriver (should not be used on hosts that run system VMs)<br>
-     * For more information see the agent.properties file.<br>
-     * Data type: String.<br>
-     * Default value: <code>null</code>
-     */
-    public static final Property<String> LIBVIRT_VIF_DRIVER = new Property<>("libvirt.vif.driver", null, String.class);
-
-    /**
-     * Setting to enable direct networking in libvirt.<br>
-     * Should not be used on hosts that run system VMs.<br>
-     * For more information see the agent.properties file.<br>
-     * Possible values: private | bridge | vepa <br>
-     * Data type: String.<br>
-     * Default value: <code>null</code>
-     */
-    public static final Property<String> NETWORK_DIRECT_SOURCE_MODE = new Property<>("network.direct.source.mode", null, String.class);
-
-    /**
-     * Setting to enable direct networking in libvirt.<br>
-     * Should not be used on hosts that run system VMs.<br>
-     * For more information see the agent.properties file.<br>
-     * Data type: String.<br>
-     * Default value: <code>null</code>
-     */
-    public static final Property<String> NETWORK_DIRECT_DEVICE = new Property<>("network.direct.device", null, String.class);
-
-    /**
      * Setting to enable the CPU model to KVM guest globally.<br>
      * Possible values: custom | host-model | host-passthrough <br>
      * For more information on each value see the agent.properties file.<br>
@@ -380,7 +380,7 @@ public class AgentProperties{
      * In case of arm64 (aarch64), this will change the machine type to 'virt' and add a SCSI and a USB controller in the domain XML.<br>
      * Possible values: x86_64 | aarch64 <br>
      * Data type: String.<br>
-     * Default value: <code>null</code> (will set as the default of the host's OS).
+     * Default value: <code>null</code> (will set use the architecture of the VM's OS).
      */
     public static final Property<String> GUEST_CPU_ARCH = new Property<>("guest.cpu.arch", null, String.class);
 
