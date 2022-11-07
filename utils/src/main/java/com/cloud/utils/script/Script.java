@@ -205,19 +205,20 @@ public class Script implements Callable<String> {
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
 
-        if (_logger.isDebugEnabled()) {
-            _logger.debug("Executing: " + buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]);
-        }
+        String commandLine = buildCommandLine(command);
+        _logger.debug(String.format("Executing command [%s].", commandLine.split(KeyStoreUtils.KS_FILENAME)[0]));
 
         try {
+            _logger.trace(String.format("Creating process for command [%s].", commandLine));
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             if (_workDir != null)
                 pb.directory(new File(_workDir));
 
+            _logger.trace(String.format("Starting process for command [%s].", commandLine));
             _process = pb.start();
             if (_process == null) {
-                _logger.warn("Unable to execute: " + buildCommandLine(command));
+                _logger.warn(String.format("Unable to execute command [%s] because no process was created.", commandLine));
                 return "Unable to execute the command: " + command[0];
             }
 
@@ -226,40 +227,48 @@ public class Script implements Callable<String> {
             _thread = Thread.currentThread();
             ScheduledFuture<String> future = null;
             if (_timeout > 0) {
+                _logger.trace(String.format("Scheduling the execution of command [%s] with a timeout of [%s] milliseconds.", commandLine, _timeout));
                 future = s_executors.schedule(this, _timeout, TimeUnit.MILLISECONDS);
             }
 
+            long processPid = _process.pid();
             Task task = null;
             if (interpreter != null && interpreter.drain()) {
+                _logger.trace(String.format("Executing interpreting task of process [%s] for command [%s].", processPid, commandLine));
                 task = new Task(interpreter, ir);
                 s_executors.execute(task);
             }
 
             while (true) {
-                _logger.debug("Executing while with timeout : " + _timeout);
+                _logger.trace(String.format("Attempting process [%s] execution for command [%s] with timeout [%s].", processPid, commandLine, _timeout));
                 try {
-                    //process execution completed within timeout period
                     if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
-                        //process completed successfully
+                        _logger.trace(String.format("Process [%s] execution for command [%s] completed within timeout period [%s].", processPid, commandLine,
+                                _timeout));
                         if (_process.exitValue() == 0) {
-                            _logger.debug("Execution is successful.");
+                            _logger.debug(String.format("Successfully executed process [%s] for command [%s].", processPid, commandLine));
                             if (interpreter != null) {
-                                return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                                if (interpreter.drain()) {
+                                    _logger.trace(String.format("Returning task result of process [%s] for command [%s].", processPid, commandLine));
+                                    return task.getResult();
+                                }
+                                _logger.trace(String.format("Returning interpretation of process [%s] for command [%s].", processPid, commandLine));
+                                return interpreter.interpret(ir);
                             } else {
                                 // null return exitValue apparently
+                                _logger.trace(String.format("Process [%s] for command [%s] exited with value [%s].", processPid, commandLine,
+                                        _process.exitValue()));
                                 return String.valueOf(_process.exitValue());
                             }
-                        } else { //process failed
+                        } else {
+                            _logger.warn(String.format("Execution of process [%s] for command [%s] failed.", processPid, commandLine));
                             break;
                         }
-                    } //timeout
+                    }
                 } catch (InterruptedException e) {
                     if (!_isTimeOut) {
-                        /*
-                         * This is not timeout, we are interrupted by others,
-                         * continue
-                         */
-                        _logger.debug("We are interrupted but it's not a timeout, just continue");
+                        _logger.debug(String.format("Exception [%s] occurred; however, it was not a timeout. Therefore, proceeding with the execution of process [%s] for command "
+                                + "[%s].", e.getMessage(), processPid, commandLine), e);
                         continue;
                     }
                 } finally {
@@ -269,21 +278,21 @@ public class Script implements Callable<String> {
                     Thread.interrupted();
                 }
 
-                //timeout without completing the process
                 TimedOutLogger log = new TimedOutLogger(_process);
                 Task timedoutTask = new Task(log, ir);
 
+                _logger.trace(String.format("Running timed out task of process [%s] for command [%s].", processPid, commandLine));
                 timedoutTask.run();
                 if (!_passwordCommand) {
-                    _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
+                    _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid, commandLine, timedoutTask.getResult()));
                 } else {
-                    _logger.warn("Timed out: " + buildCommandLine(command));
+                    _logger.warn(String.format("Process [%s] for command [%s] timed out.", processPid, commandLine));
                 }
 
                 return ERR_TIMEOUT;
             }
 
-            _logger.debug("Exit value is " + _process.exitValue());
+            _logger.debug(String.format("Exit value of process [%s] for command [%s] is [%s].", processPid, commandLine, _process.exitValue()));
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
@@ -294,18 +303,19 @@ public class Script implements Callable<String> {
                 error = String.valueOf(_process.exitValue());
             }
 
-            if (_logger.isDebugEnabled()) {
-                _logger.debug(error);
-            }
+            _logger.warn(String.format("Process [%s] for command [%s] encountered the error: [%s].", processPid, commandLine, error));
+
             return error;
         } catch (SecurityException ex) {
-            _logger.warn("Security Exception....not running as root?", ex);
+            _logger.warn(String.format("Exception [%s] occurred. This may be due to an attempt of executing command [%s] as non root.", ex.getMessage(), commandLine),
+                    ex);
             return stackTraceAsString(ex);
         } catch (Exception ex) {
-            _logger.warn("Exception: " + buildCommandLine(command), ex);
+            _logger.warn(String.format("Exception [%s] occurred when attempting to run command [%s].", ex.getMessage(), commandLine), ex);
             return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
+                _logger.trace(String.format("Destroying process [%s] for command [%s].", _process.pid(), commandLine));
                 IOUtils.closeQuietly(_process.getErrorStream());
                 IOUtils.closeQuietly(_process.getOutputStream());
                 IOUtils.closeQuietly(_process.getInputStream());
