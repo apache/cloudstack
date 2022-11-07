@@ -140,7 +140,7 @@
         <div class="form__item" ref="newConditionCounterId">
           <div class="form__label">
             <span class="form__required">*</span>
-            <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+            <tooltip-label :title="$t('label.counter')" :tooltip="$t('label.counter.name')"/>
           </div>
           <a-select
             style="width: 100%"
@@ -180,7 +180,7 @@
         <div class="form__item" ref="newConditionThreshold">
           <div class="form__label">
             <span class="form__required">*</span>
-            <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+            <tooltip-label :title="$t('label.threshold')" :tooltip="$t('label.threshold.description')"/>
           </div>
           <a-input v-model:value="newCondition.threshold" type="number"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
@@ -234,7 +234,7 @@
         <div class="update-condition__item">
           <div class="update-condition__label">
             <span class="form__required">*</span>
-            <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+            <tooltip-label :title="$t('label.threshold')" :tooltip="$t('label.threshold.description')"/>
           </div>
           <a-input v-focus="true" v-model:value="updateConditionDetails.threshold" type="number" />
         </div>
@@ -278,7 +278,7 @@
         <div class="update-condition__item">
           <div class="update-condition__label">
             <span class="form__required">*</span>
-            <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+            <tooltip-label :title="$t('label.counter')" :tooltip="$t('label.counter.name')"/>
           </div>
           <a-select
             style="width: 100%"
@@ -315,7 +315,7 @@
         <div class="update-condition__item">
           <div class="update-condition__label">
             <span class="form__required">*</span>
-            <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+            <tooltip-label :title="$t('label.threshold')" :tooltip="$t('label.threshold.description')"/>
           </div>
           <a-input v-model:value="newPolicy.threshold" type="number"></a-input>
         </div>

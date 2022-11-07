@@ -52,7 +52,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold. Valid values are EQ, GT, LT, GE, LE.")
     private String relationalOperator;
 
-    @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Threshold value.")
+    @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Value for which the Counter will be evaluated with the Operator selected.")
     private Long threshold;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the condition. " + "Must be used with the domainId parameter.")

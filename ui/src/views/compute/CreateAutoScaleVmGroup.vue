@@ -499,7 +499,7 @@
                     <div class="form__item" ref="newScaleUpConditionCounterId">
                       <div class="form__label">
                         <span class="form__required">*</span>
-                        <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+                        <tooltip-label :title="$t('label.counter')" :tooltip="$t('label.counter.name')"/>
                       </div>
                       <a-select
                         style="width: 100%"
@@ -539,7 +539,7 @@
                     <div class="form__item" ref="newScaleUpConditionThreshold">
                       <div class="form__label">
                         <span class="form__required">*</span>
-                        <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+                        <tooltip-label :title="$t('label.threshold')" :tooltip="$t('label.threshold.description')"/>
                       </div>
                       <a-input v-model:value="newScaleUpCondition.threshold" type="number"></a-input>
                       <span class="error-text">{{ $t('label.invalid.number') }}</span>
@@ -642,7 +642,7 @@
                     <div class="form__item" ref="newScaleDownConditionCounterId">
                       <div class="form__label">
                         <span class="form__required">*</span>
-                        <tooltip-label :title="$t('label.counter')" :tooltip="createConditionApiParams.counterid.description"/>
+                        <tooltip-label :title="$t('label.counter')" :tooltip="$t('label.counter.name')"/>
                       </div>
                       <a-select
                         style="width: 100%"
@@ -682,7 +682,7 @@
                     <div class="form__item" ref="newScaleDownConditionThreshold">
                       <div class="form__label">
                         <span class="form__required">*</span>
-                        <tooltip-label :title="$t('label.threshold')" :tooltip="createConditionApiParams.threshold.description"/>
+                        <tooltip-label :title="$t('label.threshold')" :tooltip="$t('label.threshold.description')"/>
                       </div>
                       <a-input v-model:value="newScaleDownCondition.threshold" type="number"></a-input>
                       <span class="error-text">{{ $t('label.invalid.number') }}</span>

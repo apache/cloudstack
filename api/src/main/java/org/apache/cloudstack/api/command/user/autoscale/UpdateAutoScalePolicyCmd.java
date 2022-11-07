@@ -55,12 +55,12 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
             since = "4.18.0")
     private String name;
 
-    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration for which the conditions have to be true before action is taken")
+    @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration in which the conditions have to be true before action is taken")
     private Integer duration;
 
     @Parameter(name = ApiConstants.QUIETTIME,
                type = CommandType.INTEGER,
-               description = "the cool down period for which the policy should not be evaluated after the action has been taken")
+               description = "the cool down period in which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
 
     @Parameter(name = ApiConstants.CONDITION_IDS,
