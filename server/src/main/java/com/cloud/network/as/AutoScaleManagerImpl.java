@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.as;
 
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1883,7 +1884,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
         return VM_HOSTNAME_PREFIX + "-" + asGroup.getName() + "-" + asGroup.getNextVmSeq() + "-" +
-                RandomStringUtils.random(6, true, false).toLowerCase();
+                RandomStringUtils.random(6, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
     }
 
     private String getCurrentTimeStampString() {
