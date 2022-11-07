@@ -69,27 +69,27 @@
           <div class="form__label">
             <tooltip-label :title="$t('label.name')" :tooltip="createAutoScalePolicyApiParams.name.description"/>
           </div>
-          <a-input v-model:value="policy.name"></a-input>
+          <a-input v-model:value="policy.name" :disabled="!this.isEditable"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">
             <span class="form__required">*</span>
             <tooltip-label :title="$t('label.duration')" :tooltip="createAutoScalePolicyApiParams.duration.description"/>
           </div>
-          <a-input v-model:value="policy.duration" type="number"></a-input>
+          <a-input v-model:value="policy.duration" type="number" :disabled="!this.isEditable"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">
             <span class="form__required">*</span>
             <tooltip-label :title="$t('label.quiettime')" :tooltip="createAutoScalePolicyApiParams.quiettime.description"/>
           </div>
-          <a-input v-model:value="policy.quiettime" type="number"></a-input>
+          <a-input v-model:value="policy.quiettime" type="number" :disabled="!this.isEditable"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.action') }}</div>
           <a-button ref="submit" :disabled="!('updateAutoScalePolicy' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="updateAutoScalePolicy(null, null)">
             <template #icon><edit-outlined /></template>
-            {{ $t('label.apply') }}
+            {{ isEditOrApply() }}
           </a-button>
         </div>
       </div>
@@ -353,6 +353,7 @@ export default {
       filterColumns: ['Action'],
       loading: true,
       policies: [],
+      isEditable: false,
       policy: {
         duration: null,
         quiettime: null,
@@ -481,6 +482,11 @@ export default {
     },
     switchPolicy () {
       this.policy = this.policies.filter(policy => policy.id === this.selectedPolicyId)[0]
+      this.isEditable = false
+    },
+    isEditOrApply () {
+      if (this.isEditable) return this.$t('label.apply')
+      else return this.$t('label.edit')
     },
     handleCancel () {
       this.parentFetchData()
@@ -722,6 +728,7 @@ export default {
       })
 
       this.selectedPolicyId = this.policies[this.policies.length - 1].id
+      this.isEditable = false
     },
     createAutoScalePolicy (params) {
       this.loading = true
@@ -745,6 +752,10 @@ export default {
       })
     },
     updateAutoScalePolicy (conditionIdToAdd, conditionIdToRemove) {
+      if (conditionIdToAdd === null && conditionIdToRemove === null && !this.isEditable) {
+        this.isEditable = true
+        return
+      }
       if (this.loading) return
       this.loading = true
 
@@ -809,6 +820,7 @@ export default {
       this.updateConditionModalVisible = false
       this.updateConditionModalLoading = false
       this.addPolicyModalVisible = false
+      this.isEditable = false
     },
     capitalise (val) {
       return val.toUpperCase()
