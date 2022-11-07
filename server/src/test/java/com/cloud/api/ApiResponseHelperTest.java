@@ -52,6 +52,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.cloud.domain.DomainVO;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -81,6 +82,9 @@ public class ApiResponseHelperTest {
 
     @Mock
     NetworkServiceMapDao ntwkSrvcDaoMock;
+
+    @Mock
+    AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDaoMock;
 
     @Spy
     @InjectMocks
@@ -243,12 +247,14 @@ public class ApiResponseHelperTest {
         when(ApiDBUtils.findLoadBalancerById(anyLong())).thenReturn(null);
         when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
         when(ApiDBUtils.findDomainById(anyLong())).thenReturn(new DomainVO());
+        when(ApiDBUtils.countAvailableVmsByGroupId(anyLong())).thenReturn(9);
 
         AutoScaleVmGroupResponse response = apiResponseHelper.createAutoScaleVmGroupResponse(vmGroup);
         assertEquals("test", response.getName());
         assertEquals(5, response.getMinMembers());
         assertEquals(6, response.getMaxMembers());
         assertEquals(8, response.getInterval());
+        assertEquals(9, response.getAvailableVirtualMachineCount());
         assertEquals(AutoScaleVmGroup.State.ENABLED.toString(), response.getState());
 
         assertNull(response.getNetworkName());

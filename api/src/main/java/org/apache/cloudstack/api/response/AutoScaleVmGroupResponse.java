@@ -83,6 +83,10 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     @Param(description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private int maxMembers;
 
+    @SerializedName(ApiConstants.AVAILABLE_VIRTUAL_MACHINE_COUNT)
+    @Param(description = "the number of available virtual machines (in Running, Starting, Stopping or Migrating state) in the vmgroup", since = "4.18.0")
+    private int availableVirtualMachineCount;
+
     @SerializedName(ApiConstants.INTERVAL)
     @Param(description = "the frequency at which the conditions have to be evaluated")
     private int interval;
@@ -188,6 +192,10 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
         this.maxMembers = maxMembers;
     }
 
+    public void setAvailableVirtualMachineCount(int availableVirtualMachineCount) {
+        this.availableVirtualMachineCount = availableVirtualMachineCount;
+    }
+
     public void setState(String state) {
         this.state = state;
     }
@@ -247,6 +255,10 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
 
     public int getMaxMembers() {
         return maxMembers;
+    }
+
+    public int getAvailableVirtualMachineCount() {
+        return availableVirtualMachineCount;
     }
 
     public int getInterval() {

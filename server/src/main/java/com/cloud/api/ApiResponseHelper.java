@@ -3393,6 +3393,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (profile != null) {
             response.setProfileId(profile.getUuid());
         }
+        response.setAvailableVirtualMachineCount(ApiDBUtils.countAvailableVmsByGroupId(vmGroup.getId()));
         LoadBalancerVO fw = ApiDBUtils.findLoadBalancerById(vmGroup.getLoadBalancerId());
         if (fw != null) {
             response.setLoadBalancerId(fw.getUuid());
