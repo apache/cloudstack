@@ -450,6 +450,7 @@
                 :title="$t('label.scaleup.policies')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
+                  <label>{{ $t('message.scaleup.policies') }}</label>
                   <a-divider/>
                   <div class="form">
                     <strong>{{ $t('label.scaleup.policy') }} &nbsp;&nbsp;&nbsp;</strong>
@@ -589,6 +590,7 @@
                 :title="$t('label.scaledown.policies')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
+                  <label>{{ $t('message.scaledown.policies') }}</label>
                   <a-divider/>
                   <div class="form">
                     <strong>{{ $t('label.scaledown.policy') }} &nbsp;&nbsp;&nbsp;</strong>
@@ -1768,6 +1770,9 @@ export default {
       this.fetchScaleUpConditions()
     },
     removeScaleUpPolicy () {
+      if (this.scaleUpPolicies.length === 1) {
+        return
+      }
       this.scaleUpPolicies = this.scaleUpPolicies.filter(policy => policy.id !== this.selectedScaleUpPolicyId)
       this.selectedScaleUpPolicyId = this.scaleUpPolicies[this.scaleUpPolicies.length - 1].id
       this.fetchScaleUpConditions()
@@ -1790,6 +1795,9 @@ export default {
       this.fetchScaleDownConditions()
     },
     removeScaleDownPolicy () {
+      if (this.scaleDownPolicies.length === 1) {
+        return
+      }
       this.scaleDownPolicies = this.scaleDownPolicies.filter(policy => policy.id !== this.selectedScaleDownPolicyId)
       this.selectedScaleDownPolicyId = this.scaleDownPolicies[this.scaleDownPolicies.length - 1].id
       this.fetchScaleDownConditions()
