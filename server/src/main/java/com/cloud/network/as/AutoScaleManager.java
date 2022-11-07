@@ -28,8 +28,8 @@ public interface AutoScaleManager extends AutoScaleService {
 
     ConfigKey<Integer> AutoScaleStatsCleanupDelay = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "autoscale.stats.cleanup.delay",
-            "21600",
-            "Determines how long (in seconds) to wait before actually removing auto scaling statistics from database. The default value is 21600 (6 hours).",
+            "7200",
+            "Determines how long (in seconds) to wait before actually removing auto scaling statistics from database. The default value is 7200 (2 hours).",
             false);
 
     ConfigKey<Integer> AutoScaleStatsWorker = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
