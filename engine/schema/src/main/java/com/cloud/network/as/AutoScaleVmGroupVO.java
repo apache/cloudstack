@@ -95,6 +95,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Column(name = "next_vm_seq")
+    private long nextVmSeq = 1L;
+
     public AutoScaleVmGroupVO() {
     }
 
@@ -247,6 +250,14 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    public long getNextVmSeq() {
+        return nextVmSeq;
+    }
+
+    public void setNextVmSeq(long nextVmSeq) {
+        this.nextVmSeq = nextVmSeq;
     }
 
     @Override

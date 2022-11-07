@@ -39,6 +39,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -1733,7 +1734,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             List<Long> affinityGroupIdList = getVmAffinityGroupId(deployParams);
             updateVmDetails(deployParams, customParameters);
 
-            String vmHostName = VM_HOSTNAME_PREFIX + "-" + asGroup.getName() + "-" + getCurrentTimeStampString();
+            String vmHostName = getNextVmHostName(asGroup);
+            asGroup.setNextVmSeq(asGroup.getNextVmSeq() + 1);
+            autoScaleVmGroupDao.persist(asGroup);
+
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
                         vmHostName, diskOfferingId, dataDiskSize, null,
@@ -1875,6 +1879,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 s_logger.warn("Cannot parse rootdisksize from otherdeployparams in AutoScale Vm profile");
             }
         }
+    }
+
+    private String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
+        return VM_HOSTNAME_PREFIX + "-" + asGroup.getName() + "-" + asGroup.getNextVmSeq() + "-" +
+                RandomStringUtils.random(6, true, false).toLowerCase();
     }
 
     private String getCurrentTimeStampString() {

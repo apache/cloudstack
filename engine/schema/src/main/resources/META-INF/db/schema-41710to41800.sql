@@ -298,6 +298,9 @@ BEGIN
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
 UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
 
+-- Add column 'next_vm_seq' to 'autoscale_vmgroups' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'next_vm_seq', 'BIGINT UNSIGNED NOT NULL DEFAULT 1');
+
 -- Add column 'user_data' to 'autoscale_vmprofiles' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmprofiles', 'user_data', 'TEXT(32768) AFTER `counter_params`');
 
