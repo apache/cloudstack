@@ -60,6 +60,14 @@ router.beforeEach((to, from, next) => {
       console.log('hari3')
       next({ path: '/dashboard' })
       NProgress.done()
+    } else if (to.path === '/2FA') {
+      if (store.getters.twoFaEnabled && !store.getters.loginFlag) {
+        console.log('Do Two-factor authentication')
+        next()
+      } else {
+        next({ path: '/dashboard' })
+        NProgress.done()
+      }
     } else {
       console.log('hari4')
       if (Object.keys(store.getters.apis).length === 0) {

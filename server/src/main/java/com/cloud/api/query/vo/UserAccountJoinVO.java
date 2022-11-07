@@ -130,6 +130,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     @Enumerated(value = EnumType.STRING)
     private User.Source source;
 
+    @Column(name = "two_factor_authentication_enabled")
+    boolean twoFactorAuthenticationEnabled;
+
     public UserAccountJoinVO() {
     }
 
@@ -273,5 +276,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public User.Source getSource() {
         return source;
+    }
+
+    public boolean isTwoFactorAuthenticationEnabled() {
+        return twoFactorAuthenticationEnabled;
     }
 }

@@ -17,18 +17,21 @@
 package com.cloud.api.auth;
 
 import com.cloud.user.AccountManager;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = SetupUserTwoFactorAuthenticationCmd.APINAME, description = "Setup the 2fa for the user.", requestHasSensitiveInfo = false,
+@APICommand(name = SetupUserTwoFactorAuthenticationCmd.APINAME, description = "Setup the 2fa for the user.", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User}, requestHasSensitiveInfo = false,
         responseObject = UserTwoFactorAuthenticationSetupResponse.class, entityType = {}, since = "4.18.0")
 public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
 
@@ -48,6 +51,9 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENABLE, type = CommandType.BOOLEAN, description = "Enabled by default, provide false to disable 2FA")
     private Boolean enable;
 
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, entityType = UserResponse.class, description = "optional: the id of the user for which 2FA has to be disabled")
+    private Long userId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -58,6 +64,10 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
 
     public Boolean getEnable() {
         return enable == null ? true : enable;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     @Override
@@ -76,6 +86,11 @@ public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.User;
     }
 
 }

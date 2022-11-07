@@ -180,9 +180,7 @@ const user = {
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
-          // TODO: get value from session and set - currently hard-coding it
-          // commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
-          commit('SET_2FA_ENABLED', true)
+          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
           commit('SET_LOGIN_FLAG', false)
           notification.destroy()
 

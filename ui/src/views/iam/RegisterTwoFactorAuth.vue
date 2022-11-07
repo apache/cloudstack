@@ -38,43 +38,45 @@
         </a-select-option>
       </a-select>
     </div>
-    <div v-if="selectedProvider === 'google'">
-      <br />
-      <div> {{ $t('message.two.fa.auth.register.account') }} </div>
-      <vue-qrious
-        class="center-align"
-        :value="googleUrl"
-        @change="onDataUrlChange"
-      />
-    </div>
-    <div v-else-if="selectedProvider === 'staticpin'">
-      <div> <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
-    </div>
-    <div v-else-if="selectedProvider !== null && selectedProvider !== 'staticpin'">
-      <div> {{ $t('message.two.fa.static.pin.part1') }} <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
-    </div>
-    <div v-if="selectedProvider">
-      <br />
-      <h3> {{ $t('label.enter.code') }} </h3>
-      <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
-        <a-input v-model:value="code" />
-        <div :span="24">
-          <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </div>
+    <div v-if="show2FAdetails">
+      <div v-if="selectedProvider === 'google'">
+        <br />
+        <div> {{ $t('message.two.fa.auth.register.account') }} </div>
+        <vue-qrious
+          class="center-align"
+          :value="googleUrl"
+          @change="onDataUrlChange"
+        />
+      </div>
+      <div v-else-if="selectedProvider === 'staticpin'">
+        <div> <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
+      </div>
+      <div v-else-if="selectedProvider !== null && selectedProvider !== 'staticpin'">
+        <div> {{ $t('message.two.fa.static.pin.part1') }} <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
+      </div>
+      <div v-if="selectedProvider">
+        <br />
+        <h3> {{ $t('label.enter.code') }} </h3>
+        <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
+          <a-input v-model:value="code" />
+          <div :span="24">
+            <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
 
-    <a-modal
-      v-if="showPin"
-      :visible="showPin"
-      :title="$t('label.two.factor.secret')"
-      :closable="true"
-      :footer="null"
-      @cancel="onCloseModal"
-      centered
-      width="450px">
-      <div> {{ pin }} </div>
-    </a-modal>
+      <a-modal
+        v-if="showPin"
+        :visible="showPin"
+        :title="$t('label.two.factor.secret')"
+        :closable="true"
+        :footer="null"
+        @cancel="onCloseModal"
+        centered
+        width="450px">
+        <div> {{ pin }} </div>
+      </a-modal>
+    </div>
   </a-form>
   </div>
 </template>
@@ -100,6 +102,7 @@ export default {
       pin: '',
       code: '',
       showPin: false,
+      show2FAdetails: false,
       providers: [],
       selectedProvider: null
     }
@@ -124,6 +127,7 @@ export default {
           this.googleUrl = 'otpauth://totp/CloudStack:' + this.username + '?secret=' + this.pin + '&issuer=CloudStack'
         }
         this.showPin = true
+        this.show2FAdetails = true
       }).catch(error => {
         this.$notification.error({
           message: this.$t('message.request.failed'),

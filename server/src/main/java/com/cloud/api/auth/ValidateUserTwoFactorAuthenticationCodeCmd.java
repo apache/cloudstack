@@ -21,6 +21,7 @@ import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserAccount;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 @APICommand(name = ValidateUserTwoFactorAuthenticationCodeCmd.APINAME, description = "Checks the 2fa code for the user.", requestHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User},
         responseObject = SuccessResponse.class, entityType = {}, since = "4.18.0")
 public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implements APIAuthenticator {
 

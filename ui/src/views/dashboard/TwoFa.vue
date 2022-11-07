@@ -86,6 +86,9 @@ export default {
         api('validateUserTwoFactorAuthenticationCode', { '2facode': values.secretkey }).then(response => {
           this.twoFAresponse = true
           if (this.twoFAresponse) {
+            this.$notification.destroy()
+            this.$store.commit('SET_COUNT_NOTIFY', 0)
+            this.$store.commit('SET_LOGIN_FLAG', true)
             this.$router.push({ path: '/dashboard' }).catch(() => {})
           }
           console.log(response)
@@ -96,9 +99,6 @@ export default {
           })
         })
       })
-
-      // Add logic to set loginFlag to true
-      this.$store.dispatch('SetLoginFlag', true)
     }
   }
 }

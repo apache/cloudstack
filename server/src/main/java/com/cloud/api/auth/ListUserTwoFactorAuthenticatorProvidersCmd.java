@@ -18,6 +18,7 @@ package com.cloud.api.auth;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,6 +33,7 @@ import java.util.List;
 
 @APICommand(name = ListUserTwoFactorAuthenticatorProvidersCmd.APINAME,
         description = "Lists user two factor authenticator providers",
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User},
         responseObject = UserTwoFactorAuthenticatorProviderResponse.class, since = "4.18.0")
 public class ListUserTwoFactorAuthenticatorProvidersCmd extends BaseCmd {
 

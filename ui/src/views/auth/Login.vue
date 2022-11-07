@@ -298,12 +298,10 @@ export default {
     loginSuccess (res) {
       this.$notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
-      this.$store.commit('SET_LOGIN_FLAG', true)
-      console.log(store.getters.twoFaEnabled)
       if (store.getters.twoFaEnabled === true) {
         this.$router.push({ path: '/2FA' }).catch(() => {})
       } else {
-        console.log('hari2')
+        this.$store.commit('SET_LOGIN_FLAG', true)
         this.$router.push({ path: '/dashboard' }).catch(() => {})
       }
     },

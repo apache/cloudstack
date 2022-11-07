@@ -3211,40 +3211,70 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
-        checkAccess(caller, null, true, owner);
-
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         if (cmd.getEnable()) {
+            checkAccess(caller, null, true, owner);
+            Long userId = CallContext.current().getCallingUserId();
+
             if (StringUtils.isEmpty(providerName)) {
                 throw new InvalidParameterValueException("Provider name is mandatory to setup 2FA");
             }
             UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
-            UserAccountVO userAccount = _userAccountDao.findById(owner.getId());
+            UserAccountVO userAccount = _userAccountDao.findById(userId);
+            UserVO userVO = _userDao.findById(userId);
             String code = provider.setup2FAKey(userAccount);
 
             UserVO user = _userDao.createForUpdate();
             user.setKeyFor2fa(code);
             user.setUser2faProvider(provider.getName());
             user.setTwoFactorAuthenticationEnabled(true);
-            _userDao.update(owner.getId(), user);
+            _userDao.update(userId, user);
 
-            response.setId(owner.getUuid());
-            response.setUsername(owner.getName());
+            response.setId(userVO.getUuid());
+            response.setUsername(userAccount.getUsername());
             response.setSecretCode(code);
 
             return response;
         }
 
+        // Admin can disable 2FA of the users
+        UserVO userVO = null;
+        Long userId = cmd.getUserId();
+        if (userId != null) {
+            userVO = validateUser(userId, caller.getDomainId());
+            if (userVO == null) {
+                throw new InvalidParameterValueException("Unable to find user= " + userVO.getUsername() + " in domain id = " + caller.getDomainId());
+            }
+            owner = _accountService.getActiveAccountById(userId);
+        } else {
+            userVO = _userDao.findById(caller.getId());
+        }
+        checkAccess(caller, null, true, owner);
+
         UserVO user = _userDao.createForUpdate();
         user.setKeyFor2fa(null);
         user.setUser2faProvider(null);
         user.setTwoFactorAuthenticationEnabled(false);
-        _userDao.update(owner.getId(), user);
+        _userDao.update(userVO.getId(), user);
 
-        response.setId(owner.getUuid());
-        response.setUsername(owner.getName());
+        response.setId(userVO.getUuid());
+        response.setUsername(userVO.getUsername());
 
         return response;
+    }
+
+    private UserVO validateUser(Long userId, Long domainId) {
+        UserVO user = null;
+        if (userId != null) {
+            user = _userDao.findById(userId);
+            if (user == null) {
+                throw new InvalidParameterValueException("Invalid user ID provided");
+            }
+            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
+                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
+            }
+        }
+        return user;
     }
 
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final String name) {
