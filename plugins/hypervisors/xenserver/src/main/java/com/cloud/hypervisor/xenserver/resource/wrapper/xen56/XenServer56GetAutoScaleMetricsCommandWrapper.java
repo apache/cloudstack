@@ -61,11 +61,13 @@ public final class XenServer56GetAutoScaleMetricsCommandWrapper extends CommandW
 
             for (VirtualRouterAutoScale.AutoScaleMetrics metrics : command.getMetrics()) {
                 switch (metrics.getCounter()) {
-                    case NETWORK_RECEIVED_AVERAGE_BPS:
-                        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP, Double.valueOf(bytesReceived)));
+                    case NETWORK_RECEIVED_AVERAGE_MBPS:
+                        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP,
+                                Double.valueOf(bytesReceived) / VirtualRouterAutoScale.MBITS_To_BYTES));
                         break;
-                    case NETWORK_TRANSMIT_AVERAGE_BPS:
-                        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP, Double.valueOf(bytesSent)));
+                    case NETWORK_TRANSMIT_AVERAGE_MBPS:
+                        values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP,
+                                Double.valueOf(bytesSent) / VirtualRouterAutoScale.MBITS_To_BYTES));
                         break;
                     case LB_AVERAGE_CONNECTIONS:
                         values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, Double.valueOf(lbConnections)));

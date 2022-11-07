@@ -38,8 +38,8 @@ public class VirtualRouterAutoScaleTest {
 
     @Test
     public void testVirtualRouterAutoScaleCounters() {
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, "public.network.received.average.Bps");
-        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, "public.network.transmit.average.Bps");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, "public.network.received.average.mbps");
+        testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, "public.network.transmit.average.mbps");
         testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, "virtual.network.lb.average.connections");
         testVirtualRouterAutoScaleCounter(null, "invalid");
     }

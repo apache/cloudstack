@@ -41,6 +41,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
+import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
 import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
@@ -57,8 +58,8 @@ public class XenServer56WrapperTest {
     @Mock
     private XenServer56Resource xenServer56Resource;
 
-    final static long[] vpcStats = { 1L, 2L };
-    final static long[] networkStats = { 3L, 4L };
+    final static long[] vpcStats = { 1000L, 2000L };
+    final static long[] networkStats = { 3000L, 4000L };
     final static long[] lbStats = { 5L };
 
     @Test
@@ -174,8 +175,8 @@ public class XenServer56WrapperTest {
     public void testGetAutoScaleMetricsCommandForVpc() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, 1L, 2L, 3L, 4));
 
         final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", true, "10.10.10.10", 8080, metrics);
 
@@ -194,12 +195,12 @@ public class XenServer56WrapperTest {
 
         assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
-            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
-                assertEquals(Double.valueOf(vpcStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
-                assertEquals(Double.valueOf(vpcStats[1]), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(vpcStats[0]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(vpcStats[1]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
             }
         }
     }
@@ -208,8 +209,8 @@ public class XenServer56WrapperTest {
     public void testGetAutoScaleMetricsCommandForNetwork() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, 1L, 2L, 3L, 4));
 
         final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", false, "10.10.10.10", 8080, metrics);
 
@@ -230,12 +231,12 @@ public class XenServer56WrapperTest {
 
         assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
-            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
-                assertEquals(Double.valueOf(networkStats[0]), value.getValue());
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
-                assertEquals(Double.valueOf(networkStats[1]), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(networkStats[0]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(networkStats[1]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
             }
         }
     }

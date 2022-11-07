@@ -2245,7 +2245,7 @@ public class AutoScaleManagerImplTest {
         when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
         when(scaleUpCounterTO.getSource()).thenReturn(Counter.Source.CPU);
         when(scaleUpCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
-        when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS.toString());
+        when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS.toString());
 
         AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
         ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
@@ -2255,15 +2255,15 @@ public class AutoScaleManagerImplTest {
         when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
         when(scaleDownCounterTO.getSource()).thenReturn(Counter.Source.VIRTUALROUTER);
         when(scaleDownCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
-        when(scaleDownCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS.toString());
+        when(scaleDownCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS.toString());
 
         when(groupTO.getPolicies()).thenReturn(Arrays.asList(scaleUpPolicyTO, scaleDownPolicyTO));
 
         List<VirtualRouterAutoScale.AutoScaleMetrics> result = autoScaleManagerImplSpy.setGetAutoScaleMetricsCommandMetrics(groupTO);
 
         Assert.assertEquals(2, result.size());
-        Assert.assertEquals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, result.get(0).getCounter());
-        Assert.assertEquals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, result.get(1).getCounter());
+        Assert.assertEquals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, result.get(0).getCounter());
+        Assert.assertEquals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, result.get(1).getCounter());
     }
 
     @Test
@@ -2284,8 +2284,8 @@ public class AutoScaleManagerImplTest {
 
         List<VirtualRouterAutoScale.AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, scaleUpPolicyId, 2L, counterId, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, scaleUpPolicyId, 2L, counterId, 4));
-        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, scaleDownPolicyId, 2L, counterId, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, scaleUpPolicyId, 2L, counterId, 4));
+        metrics.add(new VirtualRouterAutoScale.AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, scaleDownPolicyId, 2L, counterId, 4));
         List<VirtualRouterAutoScale.AutoScaleMetricsValue> values = new ArrayList<>();
         values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(0), AutoScaleValueType.INSTANT_VM, Double.valueOf(1)));
         values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics.get(1), AutoScaleValueType.INSTANT_VM, Double.valueOf(2)));

@@ -14,15 +14,18 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
 import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
 
-import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(PowerMockRunner.class)
-public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
+public class LibvirtGetAutoScaleMetricsCommandWrapperTest {
 
     @Spy
     LibvirtGetAutoScaleMetricsCommandWrapper libvirtGetAutoScaleMetricsCommandWrapperSpy = Mockito.spy(LibvirtGetAutoScaleMetricsCommandWrapper.class);
@@ -47,16 +50,16 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
     @Mock
     GetAutoScaleMetricsCommand getAutoScaleMetricsCommandMock;
 
-    final static long[] vpcStats = { 1L, 2L };
-    final static long[] networkStats = { 3L, 4L };
+    final static long[] vpcStats = { 1000L, 2000L };
+    final static long[] networkStats = { 3000L, 4000L };
     final static long[] lbStats = { 5L };
 
     @Before
     public void init() {
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, 1L, 2L, 3L, 4));
 
         Mockito.when(getAutoScaleMetricsCommandMock.getMetrics()).thenReturn(metrics);
     }
@@ -77,11 +80,11 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
         assertEquals(values.size(), 3);
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
-                assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(vpcStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(vpcStats[1]));
+                assertEquals(Double.valueOf(lbStats[0]), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(vpcStats[0]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(vpcStats[1]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
             }
         }
 
@@ -104,11 +107,11 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
         assertEquals(values.size(), 3);
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
-                assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(networkStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_BPS)) {
-                assertEquals(value.getValue(), Double.valueOf(networkStats[1]));
+                assertEquals(Double.valueOf(lbStats[0]), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(networkStats[0]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(networkStats[1]) / VirtualRouterAutoScale.MBITS_To_BYTES), value.getValue());
             }
         }
 

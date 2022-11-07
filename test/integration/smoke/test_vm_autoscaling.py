@@ -199,9 +199,9 @@ class TestVmAutoScaling(cloudstackTestCase):
                 cls.counter_cpu_id = counter.id
             elif counter.source == 'MEMORY':
                 cls.counter_memory_id = counter.id
-            elif counter.source == 'VIRTUALROUTER' and counter.value == 'public.network.received.average.Bps':
+            elif counter.source == 'VIRTUALROUTER' and counter.value == 'public.network.received.average.mbps':
                 cls.counter_network_received_id = counter.id
-            elif counter.source == 'VIRTUALROUTER' and counter.value == 'public.network.transmit.average.Bps':
+            elif counter.source == 'VIRTUALROUTER' and counter.value == 'public.network.transmit.average.mbps':
                 cls.counter_network_transmit_id = counter.id
             elif counter.source == 'VIRTUALROUTER' and counter.value == 'virtual.network.lb.average.connections':
                 cls.counter_lb_connection_id = counter.id

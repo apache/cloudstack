@@ -21,9 +21,11 @@ package com.cloud.network.router;
  */
 public interface VirtualRouterAutoScale {
 
+    static final int MBITS_To_BYTES = 1024 * 1024 / 8;
+
     enum VirtualRouterAutoScaleCounter {
-        NETWORK_RECEIVED_AVERAGE_BPS("public.network.received.average.Bps"),
-        NETWORK_TRANSMIT_AVERAGE_BPS("public.network.transmit.average.Bps"),
+        NETWORK_RECEIVED_AVERAGE_MBPS("public.network.received.average.mbps"),
+        NETWORK_TRANSMIT_AVERAGE_MBPS("public.network.transmit.average.mbps"),
         LB_AVERAGE_CONNECTIONS("virtual.network.lb.average.connections");
 
         String value;
