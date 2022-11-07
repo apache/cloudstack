@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;
@@ -57,7 +58,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Optional name for Guest OS")
     private String osName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Optional map of (key/value pairs)")
     private Map details;
 
 
@@ -79,7 +80,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
 
     public Map getDetails() {
         Map<String, String> detailsMap = new HashMap<String, String>();
-        if (!details.isEmpty()) {
+        if (MapUtils.isNotEmpty(details)) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
