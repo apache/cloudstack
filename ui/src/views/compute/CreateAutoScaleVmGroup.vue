@@ -289,7 +289,15 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
+                    <span>
+                      {{ $t('label.data.disk') }}
+                      <a-switch
+                        v-model:checked="showDiskOfferingOption"
+                        @change="updateDiskOffering(0)"
+                        style="margin-left: 10px;"/>
+                    </span>
                     <disk-offering-selection
+                      v-if="showDiskOfferingOption"
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
                       :zoneId="zoneId"
@@ -1126,6 +1134,7 @@ export default {
       showDetails: false,
       showRootDiskSizeChanger: false,
       showOverrideDiskOfferingOption: false,
+      showDiskOfferingOption: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0,
       hasError: false,
@@ -1339,6 +1348,8 @@ export default {
           this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
         } else if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
+        } else {
+          this.vm.disksizetotalgb = null
         }
 
         if (this.diskSize) {

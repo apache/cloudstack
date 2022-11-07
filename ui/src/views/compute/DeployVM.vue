@@ -1372,6 +1372,8 @@ export default {
           this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
         } else if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
+        } else {
+          this.vm.disksizetotalgb = null
         }
 
         if (this.diskSize) {
