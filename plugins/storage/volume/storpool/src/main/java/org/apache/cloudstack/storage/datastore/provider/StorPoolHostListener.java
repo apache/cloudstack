@@ -131,12 +131,9 @@ public class StorPoolHostListener implements HypervisorHostListener {
             StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
             removePoolOnHost(poolHost, isPoolConnectedToTheHost);
 
-            if (answer.getDetails() != null) {
-                if (answer.getDetails().equals("objectDoesNotExist") || answer.getDetails().equals("spNotFound")) {
-                    deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
-                    return false;
-                }
-
+            if (answer.getDetails() != null && isStorPoolVolumeOrStorageNotExistsOnHost(answer)) {
+                deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
+                return false;
             }
             String msg = "Unable to attach storage pool" + poolId + " to the host" + hostId;
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
@@ -168,6 +165,10 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
         return true;
+    }
+
+    private boolean isStorPoolVolumeOrStorageNotExistsOnHost(final Answer answer) {
+        return answer.getDetails().equals("objectDoesNotExist") || answer.getDetails().equals("spNotFound");
     }
 
     private void deleteVolumeWhenHostCannotConnectPool(SpConnectionDesc conn, StoragePoolDetailVO volumeOnPool) {
