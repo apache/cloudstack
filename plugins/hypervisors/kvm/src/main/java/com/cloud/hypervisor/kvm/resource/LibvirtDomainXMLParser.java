@@ -354,7 +354,7 @@ public class LibvirtDomainXMLParser {
     private MemBalloonDef parseMemBalloonTag(Element devices) {
         MemBalloonDef def = new MemBalloonDef();
         NodeList memBalloons = devices.getElementsByTagName("memballoon");
-        if ((memBalloons != null) && (memBalloons.getLength() != 0)) {
+        if (memBalloons != null && memBalloons.getLength() != 0) {
             Element memBalloon = (Element)memBalloons.item(0);
             String model = memBalloon.getAttribute("model");
             if (model.equalsIgnoreCase("virtio")) {
