@@ -31,7 +31,7 @@ public class AutoScaleManagerTest {
         Assert.assertEquals("Advanced", config.category());
         Assert.assertEquals(Integer.class, config.type());
         Assert.assertEquals("autoscale.stats.interval", config.key());
-        Assert.assertEquals("60000", config.defaultValue());
+        Assert.assertEquals("60", config.defaultValue());
         Assert.assertFalse(config.isDynamic());
     }
 

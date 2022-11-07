@@ -22,8 +22,8 @@ public interface AutoScaleManager extends AutoScaleService {
 
     ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "autoscale.stats.interval",
-            "60000",
-            "The interval (in milliseconds) when VM auto scaling statistics are processed to determine and perform scale action. Less than 1 means disabled.",
+            "60",
+            "The interval (in seconds) when VM auto scaling statistics are processed to determine and perform scale action. Less than 1 means disabled.",
             false);
 
     ConfigKey<Integer> AutoScaleStatsCleanupDelay = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,

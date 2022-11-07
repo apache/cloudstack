@@ -298,8 +298,7 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         # 15. Get global config
         check_interval_config = Configurations.list(cls.apiclient, name="autoscale.stats.interval")
-        check_interval = check_interval_config[0].value
-        cls.check_interval_seconds = int(int(check_interval)/1000)
+        cls.check_interval_seconds = int(check_interval_config[0].value)
 
         # 16. define VMs not be checked
         cls.excluded_vm_ids = []
