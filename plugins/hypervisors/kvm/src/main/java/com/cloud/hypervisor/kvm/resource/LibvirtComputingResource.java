@@ -1319,19 +1319,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return the list of VM IDs.
      */
     protected List<Integer> getVmsToSetMemoryBalloonStatsPeriod(Connect conn) {
+        List<Integer> vmIdList = new ArrayList<Integer>();
         Integer[] vmIds = null;
         try {
             vmIds = ArrayUtils.toObject(conn.listDomains());
         } catch (final LibvirtException e) {
             s_logger.error("Unable to get the list of Libvirt domains on this host.", e);
-            return null;
+            return vmIdList;
         }
-        List<Integer> vmIdList = Arrays.asList(vmIds);
+        vmIdList.addAll(Arrays.asList(vmIds));
         s_logger.debug(String.format("We have found a total of [%s] VMs (Libvirt domains) on this host: [%s].", vmIdList.size(), vmIdList.toString()));
 
         if (vmIdList.isEmpty()) {
             s_logger.info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
-            return null;
         }
         return vmIdList;
     }

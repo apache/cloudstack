@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
@@ -287,7 +286,7 @@ public class LibvirtVMDef {
             } else {
                 memBalloonDef.defNoneMemBalloon();
             }
-            response.append(String.format("<devices>\n%s\n</devices>\n", memBalloonDef.toString()));
+            response.append(String.format("<devices>%n%s%n</devices>%n", memBalloonDef.toString()));
 
             response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
@@ -1190,15 +1189,15 @@ public class LibvirtVMDef {
 
         public enum MemBalloonModel {
             NONE("none"), VIRTIO("virtio");
-            String _model;
+            String model;
 
             MemBalloonModel(String model) {
-                _model = model;
+                this.model = model;
             }
 
             @Override
             public String toString() {
-                return _model;
+                return model;
             }
         }
 
