@@ -240,7 +240,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_16_enableZone(self):
         """
-        Enable Zone that is diabled
+        Enable Zone that is disabled
             Validate that listZones() returns the  allocationstate as "Enabled"
         """
         self.debug("Zone to be enabled: " + self.zone.id)
@@ -354,7 +354,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_26_enablePod(self):
         """
-        Enable Pod that is diabled
+        Enable Pod that is disabled
             Validate that listPods() returns the  allocationstate as "Enabled"
         """
         self.debug("Pod to be enabled: " + self.zone.id)
@@ -470,7 +470,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_36_enableCluster(self):
         """
-        Enable Cluster that is diabled
+        Enable Cluster that is disabled
             Validate that listClusters() returns the  allocationstate as "Enabled"
         """
         self.debug("Cluster to be enabled: " + self.cluster.id)
@@ -612,7 +612,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_47_enableHost(self):
         """
-        Enable Host that is diabled
+        Enable Host that is disabled
             Validate that listHosts() returns the  allocationstate as "Enabled"
         """
         self.debug("Host to be enabled: " + self.host.id)

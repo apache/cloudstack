@@ -468,7 +468,7 @@
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
-                            v-model:cheked="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:checked="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                           />
                         </span>
