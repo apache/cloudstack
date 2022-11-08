@@ -296,8 +296,15 @@ BEGIN
 
 -- Add column 'supports_vm_autoscaling' to 'network_offerings' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
-UPDATE `cloud`.`network_offerings` SET supports_vm_autoscaling = 1 WHERE unique_name = 'DefaultIsolatedNetworkOfferingWithSourceNatService';
-UPDATE `cloud`.`network_offerings` SET supports_vm_autoscaling = 1 WHERE unique_name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';
+
+-- Update column 'supports_vm_autoscaling' to 1 if network offerings support Lb
+UPDATE `cloud`.`network_offerings`
+JOIN `cloud`.`ntwk_offering_service_map`
+ON network_offerings.id = ntwk_offering_service_map.network_offering_id
+SET network_offerings.supports_vm_autoscaling = 1
+WHERE ntwk_offering_service_map.service = 'Lb'
+    AND ntwk_offering_service_map.provider IN ('VirtualRouter', 'VpcVirtualRouter', 'Netscaler')
+    AND network_offerings.removed IS NULL;
 
 -- Add column 'name' to 'autoscale_vmgroups' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
