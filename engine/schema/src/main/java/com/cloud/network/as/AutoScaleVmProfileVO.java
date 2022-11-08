@@ -186,6 +186,10 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return paramsList;
     }
 
+    public String getCounterParamsString() {
+        return this.counterParams;
+    }
+
     public void setCounterParams(String counterParam) {
         this.counterParams = counterParam;
     }

@@ -84,6 +84,20 @@ public class AutoScaleVmGroupVmMapDaoImplTest {
     }
 
     @Test
+    public void testCountByGroup() throws Exception {
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVmMapVOMock).setParameters(Mockito.anyString(), Mockito.any());
+        PowerMockito.doReturn(6).when(AutoScaleVmGroupVmMapDaoImplSpy, "getCountIncludingRemoved", Mockito.any(SearchCriteria.class));
+
+        long groupId = 4L;
+
+        int result = AutoScaleVmGroupVmMapDaoImplSpy.countByGroup(groupId);
+
+        Assert.assertEquals(6, result);
+
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVmMapVOMock).setParameters("vmGroupId", groupId);
+    }
+
+    @Test
     public void testListByGroup() throws Exception {
         Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVmMapVOMock).setParameters(Mockito.anyString(), Mockito.any());
         PowerMockito.doReturn(listAutoScaleVmGroupVmMapVOMock).when(AutoScaleVmGroupVmMapDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class));

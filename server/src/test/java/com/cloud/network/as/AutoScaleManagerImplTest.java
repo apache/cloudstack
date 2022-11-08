@@ -324,6 +324,7 @@ public class AutoScaleManagerImplTest {
     private static final Long scaleUpCounterId = 36L;
     private static final Long scaleDownConditionId = 37L;
     private static final Long scaleDownCounterId = 38L;
+    private static final Long nextVmSeq = 39L;
 
     @Mock
     DataCenterVO zoneMock;
@@ -1142,6 +1143,7 @@ public class AutoScaleManagerImplTest {
     public void testCreateNewVM1() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(nextVmSeq);
 
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
@@ -1175,12 +1177,14 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any());
+        Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 1);
     }
 
     @Test
     public void testCreateNewVM2() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(nextVmSeq + 1);
 
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
@@ -1215,12 +1219,14 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any());
+        Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 2);
     }
 
     @Test
     public void testCreateNewVM3() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(nextVmSeq + 2);
 
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
@@ -1255,6 +1261,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any());
+        Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 3);
     }
 
     @Test
