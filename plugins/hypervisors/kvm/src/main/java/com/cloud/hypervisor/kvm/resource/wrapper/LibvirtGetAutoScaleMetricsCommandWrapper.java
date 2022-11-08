@@ -60,10 +60,10 @@ public class LibvirtGetAutoScaleMetricsCommandWrapper extends CommandWrapper<Get
         for (AutoScaleMetrics metrics : command.getMetrics()) {
             switch (metrics.getCounter()) {
                 case NETWORK_RECEIVED_AVERAGE_MBPS:
-                    values.add(new AutoScaleMetricsValue(metrics, AutoScaleValueType.AGGREGATED_VM_GROUP, Double.valueOf(bytesReceived) / VirtualRouterAutoScale.MBITS_To_BYTES));
+                    values.add(new AutoScaleMetricsValue(metrics, AutoScaleValueType.AGGREGATED_VM_GROUP, Double.valueOf(bytesReceived) / VirtualRouterAutoScale.MBITS_TO_BYTES));
                     break;
                 case NETWORK_TRANSMIT_AVERAGE_MBPS:
-                    values.add(new AutoScaleMetricsValue(metrics, AutoScaleValueType.AGGREGATED_VM_GROUP, Double.valueOf(bytesSent) / VirtualRouterAutoScale.MBITS_To_BYTES));
+                    values.add(new AutoScaleMetricsValue(metrics, AutoScaleValueType.AGGREGATED_VM_GROUP, Double.valueOf(bytesSent) / VirtualRouterAutoScale.MBITS_TO_BYTES));
                     break;
                 case LB_AVERAGE_CONNECTIONS:
                     values.add(new AutoScaleMetricsValue(metrics, AutoScaleValueType.INSTANT_VM, Double.valueOf(lbConnections)));
