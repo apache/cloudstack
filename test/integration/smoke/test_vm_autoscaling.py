@@ -134,6 +134,12 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls._cleanup.append(cls.disk_offering_custom_new)
 
         # 3. Create network offering for isolated networks
+        cls.services["isolated_network_offering"]["serviceCapabilityList"] = {
+            "Lb": {
+                "SupportedLbIsolation": 'dedicated',
+                "VmAutoScaling": 'true'
+            },
+        }
         cls.network_offering_isolated = NetworkOffering.create(
             cls.apiclient,
             cls.services["isolated_network_offering"]

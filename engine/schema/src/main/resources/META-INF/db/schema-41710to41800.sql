@@ -294,6 +294,11 @@ CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
 BEGIN
     DECLARE CONTINUE HANDLER FOR 1091, 1025 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
+-- Add column 'supports_vm_autoscaling' to 'network_offerings' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
+UPDATE `cloud`.`network_offerings` SET supports_vm_autoscaling = 1 WHERE unique_name = 'DefaultIsolatedNetworkOfferingWithSourceNatService';
+UPDATE `cloud`.`network_offerings` SET supports_vm_autoscaling = 1 WHERE unique_name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';
+
 -- Add column 'name' to 'autoscale_vmgroups' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
 UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
@@ -365,6 +370,73 @@ CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (
   INDEX `i_autoscale_vmgroup_statistics__policy_id`(`policy_id`),
   INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Update Network offering view with supports_vm_autoscaling
+DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
+CREATE VIEW `cloud`.`network_offering_view` AS
+    SELECT
+        `network_offerings`.`id` AS `id`,
+        `network_offerings`.`uuid` AS `uuid`,
+        `network_offerings`.`name` AS `name`,
+        `network_offerings`.`unique_name` AS `unique_name`,
+        `network_offerings`.`display_text` AS `display_text`,
+        `network_offerings`.`nw_rate` AS `nw_rate`,
+        `network_offerings`.`mc_rate` AS `mc_rate`,
+        `network_offerings`.`traffic_type` AS `traffic_type`,
+        `network_offerings`.`tags` AS `tags`,
+        `network_offerings`.`system_only` AS `system_only`,
+        `network_offerings`.`specify_vlan` AS `specify_vlan`,
+        `network_offerings`.`service_offering_id` AS `service_offering_id`,
+        `network_offerings`.`conserve_mode` AS `conserve_mode`,
+        `network_offerings`.`created` AS `created`,
+        `network_offerings`.`removed` AS `removed`,
+        `network_offerings`.`default` AS `default`,
+        `network_offerings`.`availability` AS `availability`,
+        `network_offerings`.`dedicated_lb_service` AS `dedicated_lb_service`,
+        `network_offerings`.`shared_source_nat_service` AS `shared_source_nat_service`,
+        `network_offerings`.`sort_key` AS `sort_key`,
+        `network_offerings`.`redundant_router_service` AS `redundant_router_service`,
+        `network_offerings`.`state` AS `state`,
+        `network_offerings`.`guest_type` AS `guest_type`,
+        `network_offerings`.`elastic_ip_service` AS `elastic_ip_service`,
+        `network_offerings`.`eip_associate_public_ip` AS `eip_associate_public_ip`,
+        `network_offerings`.`elastic_lb_service` AS `elastic_lb_service`,
+        `network_offerings`.`specify_ip_ranges` AS `specify_ip_ranges`,
+        `network_offerings`.`inline` AS `inline`,
+        `network_offerings`.`is_persistent` AS `is_persistent`,
+        `network_offerings`.`internal_lb` AS `internal_lb`,
+        `network_offerings`.`public_lb` AS `public_lb`,
+        `network_offerings`.`egress_default_policy` AS `egress_default_policy`,
+        `network_offerings`.`concurrent_connections` AS `concurrent_connections`,
+        `network_offerings`.`keep_alive_enabled` AS `keep_alive_enabled`,
+        `network_offerings`.`supports_streched_l2` AS `supports_streched_l2`,
+        `network_offerings`.`supports_public_access` AS `supports_public_access`,
+        `network_offerings`.`supports_vm_autoscaling` AS `supports_vm_autoscaling`,
+        `network_offerings`.`for_vpc` AS `for_vpc`,
+        `network_offerings`.`service_package_id` AS `service_package_id`,
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        `offering_details`.value AS internet_protocol
+    FROM
+        `cloud`.`network_offerings`
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `domain_details` ON `domain_details`.`network_offering_id` = `network_offerings`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
+    GROUP BY
+        `network_offerings`.`id`;
 
 -- UserData as first class resource (PR #6202)
 CREATE TABLE `cloud`.`user_data` (

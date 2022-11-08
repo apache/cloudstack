@@ -141,7 +141,9 @@ import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleValueType;
 import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
@@ -269,6 +271,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private SSHKeyPairDao sshKeyPairDao;
     @Inject
     private AffinityGroupDao affinityGroupDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
@@ -328,6 +332,17 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }.getType();
         List<AutoScaleCounter> result = gson.fromJson(capability, listType);
         return result;
+    }
+
+    public void validateNetworkCapability(long networkId) {
+        Network network = networkDao.findById(networkId);
+        if (network == null) {
+            throw new CloudRuntimeException(String.format("Unable to find network with id: %s ", networkId));
+        }
+        NetworkOffering offering = networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+        if (!offering.isSupportsVmAutoScaling()) {
+            throw new InvalidParameterValueException("Vm AutoScaling is not supported by this network.");
+        }
     }
 
     public void validateAutoScaleCounters(long networkid, List<Counter> counters, List<Pair<String, String>> counterParamPassed) {
@@ -1228,6 +1243,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), autoScaleVmProfileDao);
 
         LoadBalancerVO loadBalancer = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), lbDao);
+        validateNetworkCapability(loadBalancer.getNetworkId());
         validateAutoScaleCounters(loadBalancer.getNetworkId(), counters, profileVO.getCounterParams());
 
         Network.Provider provider = getLoadBalancerServiceProvider(vmGroup.getLoadBalancerId());

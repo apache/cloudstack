@@ -181,17 +181,22 @@ export default {
         {
           dataIndex: 'type',
           title: this.$t('label.guestiptype'),
-          width: '30%'
+          width: '15%'
         },
         {
           dataIndex: 'vpcName',
           title: this.$t('label.vpc'),
-          width: '30%',
+          width: '20%',
           filters: vpcFilter,
           filteredValue: _.get(this.filteredInfo, 'id'),
           onFilter: (value, record) => {
             return record.vpcid === value
           }
+        },
+        {
+          dataIndex: 'supportsvmautoscaling',
+          title: this.$t('label.supportsvmautoscaling'),
+          width: '25%'
         }
       ]
     },
@@ -218,6 +223,7 @@ export default {
         return {
           ...network,
           ...{
+            supportsvmautoscaling: network.supportsvmautoscaling ? 'Yes' : 'No',
             vpcName: _.get(vpc, 'displaytext')
           }
         }

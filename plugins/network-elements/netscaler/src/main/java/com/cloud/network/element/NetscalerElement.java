@@ -527,6 +527,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
         Gson gson = new Gson();
         String autoScaleCounterList = gson.toJson(counterList);
         lbCapabilities.put(Capability.AutoScaleCounters, autoScaleCounterList);
+        lbCapabilities.put(Capability.VmAutoScaling, "true");
 
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();

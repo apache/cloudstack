@@ -281,6 +281,13 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item
+          name="vmautoscalingcapability"
+          ref="vmautoscalingcapability"
+          :label="$t('label.supportsvmautoscaling')"
+          v-if="lbServiceChecked && ['Netscaler', 'VirtualRouter', 'VpcVirtualRouter'].includes(lbServiceProvider)">
+          <a-switch v-model:checked="form.vmautoscalingcapability" />
+        </a-form-item>
+        <a-form-item
           name="elasticlb"
           ref="elasticlb"
           :label="$t('label.service.lb.elasticlbcheckbox')"
@@ -948,6 +955,12 @@ export default {
             delete params.associatepublicip
           }
           if (supportedServices.includes('Lb')) {
+            if ('vmautoscalingcapability' in values) {
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'VmAutoScaling'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.vmautoscalingcapability
+              serviceCapabilityIndex++
+            }
             if (values.elasticlb === true) {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'

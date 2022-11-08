@@ -541,6 +541,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final Gson gson = new Gson();
         final String autoScaleCounterList = gson.toJson(counterList);
         lbCapabilities.put(Capability.AutoScaleCounters, autoScaleCounterList);
+        lbCapabilities.put(Capability.VmAutoScaling, "true");
         capabilities.put(Service.Lb, lbCapabilities);
 
         // Set capabilities for Firewall service

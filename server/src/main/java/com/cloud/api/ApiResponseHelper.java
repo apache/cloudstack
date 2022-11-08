@@ -2180,6 +2180,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 inline.setValue(offering.isInline() ? "true" : "false");
                 lbCapResponse.add(inline);
 
+                CapabilityResponse vmAutoScaling = new CapabilityResponse();
+                vmAutoScaling.setName(Capability.VmAutoScaling.getName());
+                vmAutoScaling.setValue(offering.isSupportsVmAutoScaling() ? "true" : "false");
+                lbCapResponse.add(vmAutoScaling);
+
                 svcRsp.setCapabilities(lbCapResponse);
             } else if (Service.SourceNat == service) {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
@@ -2525,6 +2530,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
         response.setCreated(network.getCreated());
+        response.setSupportsVmAutoScaling(networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId()).isSupportsVmAutoScaling());
 
         Long bytesReceived = 0L;
         Long bytesSent = 0L;

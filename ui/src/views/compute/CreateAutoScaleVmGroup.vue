@@ -329,6 +329,7 @@
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="zone && zone.networktype !== 'Basic'">
                 <template #description>
+                  <label>{{ $t('message.autoscale.vm.networks') }}</label>
                   <div v-if="zoneSelected">
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
                       <instance-nics-network-select-list-view
@@ -2205,6 +2206,15 @@ export default {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.select.network')
+          })
+          return
+        }
+
+        const defaultNetwork = this.networks.filter(network => network.id === this.defaultNetworkId)[0]
+        if (defaultNetwork.supportsvmautoscaling !== true) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.select.network.supports.vm.autoscaling')
           })
           return
         }

@@ -68,6 +68,8 @@ import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCou
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -221,6 +223,8 @@ public class AutoScaleManagerImplTest {
     @Mock
     NetworkDao networkDao;
     @Mock
+    NetworkOfferingDao networkOfferingDao;
+    @Mock
     ServiceOfferingDao serviceOfferingDao;
     @Mock
     DiskOfferingDao diskOfferingDao;
@@ -328,6 +332,7 @@ public class AutoScaleManagerImplTest {
     private static final Long scaleDownConditionId = 37L;
     private static final Long scaleDownCounterId = 38L;
     private static final Long nextVmSeq = 39L;
+    private static final Long networkOfferingId = 40L;
 
     @Mock
     DataCenterVO zoneMock;
@@ -339,6 +344,8 @@ public class AutoScaleManagerImplTest {
     VMTemplateVO templateMock;
     @Mock
     NetworkVO networkMock;
+    @Mock
+    NetworkOfferingVO networkOfferingMock;
     @Mock
     CounterVO counterMock;
     @Mock
@@ -901,6 +908,11 @@ public class AutoScaleManagerImplTest {
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         PowerMockito.doReturn(Network.Provider.VirtualRouter).when(autoScaleManagerImplSpy).getLoadBalancerServiceProvider(loadBalancerId);
         PowerMockito.doNothing().when(autoScaleManagerImplSpy).validateAutoScaleCounters(anyLong(), any(), any());
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+        when(networkDao.findById(networkId)).thenReturn(networkMock);
+        when(networkMock.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        when(networkOfferingDao.findByIdIncludingRemoved(networkOfferingId)).thenReturn(networkOfferingMock);
+        when(networkOfferingMock.isSupportsVmAutoScaling()).thenReturn(true);
 
         when(autoScaleVmGroupDao.persist(any())).thenReturn(asVmGroupMock);
 
@@ -987,6 +999,11 @@ public class AutoScaleManagerImplTest {
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         PowerMockito.doReturn(Network.Provider.VirtualRouter).when(autoScaleManagerImplSpy).getLoadBalancerServiceProvider(loadBalancerId);
         PowerMockito.doNothing().when(autoScaleManagerImplSpy).validateAutoScaleCounters(anyLong(), any(), any());
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+        when(networkDao.findById(networkId)).thenReturn(networkMock);
+        when(networkMock.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        when(networkOfferingDao.findByIdIncludingRemoved(networkOfferingId)).thenReturn(networkOfferingMock);
+        when(networkOfferingMock.isSupportsVmAutoScaling()).thenReturn(true);
 
         when(autoScaleVmGroupDao.persist(any())).thenReturn(asVmGroupMock);
 
