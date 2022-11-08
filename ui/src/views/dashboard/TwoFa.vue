@@ -89,6 +89,12 @@ export default {
             this.$store.commit('SET_COUNT_NOTIFY', 0)
             this.$store.commit('SET_LOGIN_FLAG', true)
             this.$router.push({ path: '/dashboard' }).catch(() => {})
+
+            this.$message.success({
+              content: `${this.$t('label.action.enable.two.factor.authentication')}`,
+              duration: 2
+            })
+            this.$emit('refresh-data')
           }
           console.log(response)
         }).catch(error => {

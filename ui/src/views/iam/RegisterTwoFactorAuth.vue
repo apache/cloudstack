@@ -142,7 +142,11 @@ export default {
     },
     submitPin () {
       api('validateUserTwoFactorAuthenticationCode', { '2facode': this.code }).then(response => {
-        console.log(response)
+        this.$message.success({
+          content: `${this.$t('label.action.enable.two.factor.authentication')}`,
+          duration: 2
+        })
+        this.$emit('refresh-data')
       }).catch(error => {
         this.$notification.error({
           message: this.$t('message.request.failed'),

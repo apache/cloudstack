@@ -109,6 +109,7 @@
 "label.action.edit.instance": "Edit instance",
 "label.action.edit.iso": "Edit ISO",
 "label.action.edit.zone": "Edit zone",
+"label.action.enable.two.factor.authentication": "Enable Two factor authentication",
 "label.action.enable.account": "Enable account",
 "label.action.enable.cluster": "Enable cluster",
 "label.action.enable.maintenance.mode": "Enable maintenance mode",

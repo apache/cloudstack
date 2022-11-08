@@ -125,10 +125,13 @@ export default {
       dataView: true,
       groupAction: true,
       popup: true,
-      args: ['enable'],
+      args: ['enable', 'userid'],
       mapping: {
         enable: {
           value: (record) => { return false }
+        },
+        userid: {
+          value: (record) => { return record.id }
         }
       },
       show: (record, store) => {
