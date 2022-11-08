@@ -3247,7 +3247,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             owner = _accountService.getActiveAccountById(userId);
         } else {
-            userVO = _userDao.findById(caller.getId());
+            userId = CallContext.current().getCallingUserId();
+            userVO = _userDao.findById(userId);
         }
         checkAccess(caller, null, true, owner);
 

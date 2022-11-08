@@ -313,7 +313,7 @@ export const constantRouterMap = [
     path: '/2FA',
     name: 'TwoFa',
     meta: {
-      title: 'label.2fa',
+      title: 'label.two.factor.authentication',
       hidden: true
     },
     component: () => import('@/views/dashboard/TwoFa')

@@ -16,7 +16,6 @@
 // under the License.
 
 <template>
-  <!-- <a-card class="center-align" style="width: 600px; height: 720px"> -->
   <a-form>
     <img
       v-if="$config.banner"
