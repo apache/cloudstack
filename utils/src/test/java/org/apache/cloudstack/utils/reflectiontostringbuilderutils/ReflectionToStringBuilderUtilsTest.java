@@ -175,8 +175,10 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
     public void validateGetNonSelectedFieldsObjectIsNotACollectionAndValidSelectedFieldsMustReturnNonSelectedFields(){
         String fieldToRemove = classToReflectRemovedField;
         String[] expectedResult = classToReflectFieldsNamesArray;
+        Arrays.sort(expectedResult);
 
         String[] result = ReflectionToStringBuilderUtils.getNonSelectedFields("test", fieldToRemove);
+        Arrays.sort(result);
         Assert.assertArrayEquals(expectedResult, result);
     }
 
@@ -184,8 +186,10 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
     public void validateGetNonSelectedFieldsObjectIsACollectionAndValidSelectedFieldsMustReturnNonSelectedFields(){
         String fieldToRemove = classToReflectRemovedField;
         String[] expectedResult = classToReflectFieldsNamesArray;
+        Arrays.sort(expectedResult);
 
         String[] result = ReflectionToStringBuilderUtils.getNonSelectedFields(Arrays.asList("test1", "test2"), fieldToRemove);
+        Arrays.sort(result);
         Assert.assertArrayEquals(expectedResult, result);
     }
 
