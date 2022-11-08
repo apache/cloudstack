@@ -14,45 +14,45 @@
 
 package org.apache.cloudstack.utils.bytescale;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ByteScaleUtilsTest extends TestCase {
+public class ByteScaleUtilsTest {
 
     @Test
     public void validateMibToBytes() {
         long mib = 3000L;
-        long b = 1024L * 1024L * mib;
-        assertEquals(b, ByteScaleUtils.mibToBytes(mib));
+        long bytes = 1024L * 1024L * mib;
+        Assert.assertEquals(bytes, ByteScaleUtils.mibToBytes(mib));
     }
 
     @Test
-    public void validateBytesToKib() {
+    public void validateBytesToKiB() {
         long kib = 3000L;
-        long b = 1024 * kib;
-        assertEquals(kib, ByteScaleUtils.bytesToKib(b));
+        long bytes = 1024 * kib;
+        Assert.assertEquals(kib, ByteScaleUtils.bytesToKiB(bytes));
     }
 
     @Test
-    public void validateBytesToMib() {
+    public void validateBytesToMiB() {
         long mib = 3000L;
-        long b = 1024L * 1024L * mib;
-        assertEquals(mib, ByteScaleUtils.bytesToMib(b));
+        long bytes = 1024L * 1024L * mib;
+        Assert.assertEquals(mib, ByteScaleUtils.bytesToMiB(bytes));
     }
 
     @Test
     public void validateMibToBytesIfIntTimesIntThenMustExtrapolateIntMaxValue() {
         int mib = 3000;
-        long b = 1024L * 1024L * mib;
-        assertEquals(b, ByteScaleUtils.mibToBytes(mib));
+        long bytes = 1024L * 1024L * mib;
+        Assert.assertEquals(bytes, ByteScaleUtils.mibToBytes(mib));
     }
 
     @Test
-    public void validateBytesToKibIfIntByIntThenMustExtrapolateIntMaxValue(){
-        int b = Integer.MAX_VALUE;
-        assertEquals(b, ByteScaleUtils.bytesToKib(b * 1024L));
+    public void validateBytesToKiBIfIntByIntThenMustExtrapolateIntMaxValue(){
+        int bytes = Integer.MAX_VALUE;
+        Assert.assertEquals(bytes, ByteScaleUtils.bytesToKiB(bytes * 1024L));
     }
 }
