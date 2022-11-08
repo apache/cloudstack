@@ -1319,7 +1319,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return the list of VM IDs.
      */
     protected List<Integer> getVmsToSetMemoryBalloonStatsPeriod(Connect conn) {
-        List<Integer> vmIdList = new ArrayList<Integer>();
+        List<Integer> vmIdList = new ArrayList<>();
         Integer[] vmIds = null;
         try {
             vmIds = ArrayUtils.toObject(conn.listDomains());
@@ -1341,7 +1341,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return the current VM balloon stats period.
      */
     protected Integer getCurrentVmBalloonStatsPeriod() {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE)) {
+        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE))) {
             s_logger.info(String.format("The [%s] property is set to 'true', so the memory balloon stats period will be set to 0 for all VMs.",
                     AgentProperties.VM_MEMBALLOON_DISABLE.getName()));
             return 0;
