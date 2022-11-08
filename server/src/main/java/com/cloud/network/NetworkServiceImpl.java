@@ -1644,8 +1644,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (domainId != null && associatedNetwork.getDomainId() != domainId) {
             throw new InvalidParameterValueException("The new network and associated network MUST be in same domain");
         }
-        if (cidr != null && associatedNetwork.getCidr() != null && NetUtils.isNetworksOverlap(cidr, associatedNetwork.getCidr())) {
-            throw new InvalidParameterValueException("The cidr overlaps with associated network: " + associatedNetwork.getName());
+        if (cidr != null && associatedNetwork.getCidr() != null) {
+            String[] guestVmCidrPair = associatedNetwork.getCidr().split("\\/");
+            String[] cidrIpRange = NetUtils.getIpRangeFromCidr(guestVmCidrPair[0], Long.valueOf(guestVmCidrPair[1]));
+            if (StringUtils.isNoneBlank(startIp, endIp) && NetUtils.ipRangesOverlap(startIp, endIp, cidrIpRange[0], cidrIpRange[1])) {
+                throw new InvalidParameterValueException(String.format("The IP range (%s-%s) overlaps with cidr of associated network: %s (%s)",
+                        startIp, endIp, associatedNetwork.getName(), associatedNetwork.getCidr()));
+            }
         }
         List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);
         for (NetworkDetailVO networkDetailVO : associatedNetworks) {
