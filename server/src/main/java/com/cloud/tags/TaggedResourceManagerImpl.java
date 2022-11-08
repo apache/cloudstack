@@ -318,8 +318,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     private void informStoragePoolForVmTags(long vmId, String key, String value) {
         List<VolumeVO> volumeVos = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumeVos) {
-            DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+            Long poolId = volume.getPoolId();
+            DataStore dataStore = retrieveDatastore(poolId);
             if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+                s_logger.info(String.format("No data store found for VM %d with pool ID %d.", vmId, poolId));
                 continue;
             }
             PrimaryDataStoreDriver dataStoreDriver = (PrimaryDataStoreDriver) dataStore.getDriver();
@@ -327,5 +329,12 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                 dataStoreDriver.provideVmTags(vmId, volume.getId(), value);
             }
         }
+    }
+
+    protected DataStore retrieveDatastore(Long poolId) {
+        if (poolId == null) {
+            return null;
+        }
+        return dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
     }
 }
