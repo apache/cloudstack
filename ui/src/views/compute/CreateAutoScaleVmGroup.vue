@@ -2225,6 +2225,15 @@ export default {
           return
         }
 
+        const regex = /^([a-zA-Z0-9-]){0,255}$/
+        if (!values.name || values.name.length === 0 || !regex.test(values.name)) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.invalid.autoscale.vmgroup.name')
+          })
+          return
+        }
+
         if (this.scaleUpPolicies.length === 0) {
           this.$notification.error({
             message: this.$t('message.request.failed'),

@@ -282,7 +282,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
             PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS, PARAM_NETWORK_IDS);
 
-    private static final String VM_HOSTNAME_PREFIX = "autoScaleVm";
+    protected static final String VM_HOSTNAME_PREFIX = "autoScaleVm-";
+    protected static final int VM_HOSTNAME_RANDOM_SUFFIX_LENGTH = 6;
 
     private static final Long DEFAULT_HOST_ID = -1L;
 
@@ -1168,6 +1169,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @DB
     protected AutoScaleVmGroupVO checkValidityAndPersist(final AutoScaleVmGroupVO vmGroup, final List<Long> passedScaleUpPolicyIds,
         final List<Long> passedScaleDownPolicyIds) {
+
+        checkAutoScaleVmGroupName(vmGroup.getName());
+
         int minMembers = vmGroup.getMinMembers();
         int maxMembers = vmGroup.getMaxMembers();
         int interval = vmGroup.getInterval();
@@ -1882,8 +1886,26 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     private String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
-        return VM_HOSTNAME_PREFIX + "-" + asGroup.getName() + "-" + asGroup.getNextVmSeq() + "-" +
-                RandomStringUtils.random(6, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
+        String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
+                RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
+        // Truncate vm group name because max length of vm name is 63
+        int subStringLength = Math.min(asGroup.getName().length(), 63 - VM_HOSTNAME_PREFIX.length() - vmHostNameSuffix.length());
+        return VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
+    }
+
+    private void checkAutoScaleVmGroupName(String groupName) {
+        String errorMessage = "";
+        if (groupName == null || groupName.length() > 255 || groupName.length() < 1) {
+            errorMessage = "AutoScale Vm Group name must be between 1 and 255 characters long";
+        } else if (!groupName.toLowerCase().matches("[a-z0-9-]*")) {
+            errorMessage = "AutoScale Vm Group name may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner), " +
+                    "the digits '0' through '9' and the hyphen ('-')";
+        }
+        if (StringUtils.isNotBlank(errorMessage)) {
+            s_logger.warn(errorMessage);
+            throw new InvalidParameterValueException("Invalid AutoScale VM group name. It can contain the ASCII letters 'a' through 'z', " +
+                    "'A' through 'Z', the digits '0' through '9' and the hyphen ('-'), must be between 1 and 255 characters long.");
+        }
     }
 
     private boolean startNewVM(long vmId) {

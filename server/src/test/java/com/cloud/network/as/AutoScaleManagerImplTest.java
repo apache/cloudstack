@@ -153,8 +153,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.ArgumentMatchers.nullable;
-
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -294,6 +294,9 @@ public class AutoScaleManagerImplTest {
 
     private static final Long vmGroupId = 22L;
     private static final String vmGroupName = "test-vmgroup";
+    private static final String vmGroupNameWithMaxLength = "12345678901234567890123456789012345678901234567890" +
+            "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890" +
+            "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345";
     private static final String vmGroupUuid = "2222-2222-1111";
     private static final int minMembers = 2;
     private static final int maxMembers = 3;
@@ -952,12 +955,13 @@ public class AutoScaleManagerImplTest {
         UpdateAutoScaleVmGroupCmd cmd = new UpdateAutoScaleVmGroupCmd();
 
         ReflectionTestUtils.setField(cmd, "id", vmGroupId);
-        ReflectionTestUtils.setField(cmd, "name", vmGroupName + "-new");
+        ReflectionTestUtils.setField(cmd, "name", vmGroupNameWithMaxLength);
         ReflectionTestUtils.setField(cmd, "minMembers", minMembers + 1);
         ReflectionTestUtils.setField(cmd, "maxMembers", maxMembers + 1);
         ReflectionTestUtils.setField(cmd, "interval", interval);
 
         when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
+        when(asVmGroupMock.getName()).thenReturn(vmGroupNameWithMaxLength);
         when(asVmGroupMock.getInterval()).thenReturn(interval);
         when(asVmGroupMock.getMaxMembers()).thenReturn(maxMembers);
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
@@ -992,7 +996,7 @@ public class AutoScaleManagerImplTest {
 
         Assert.assertEquals(asVmGroupMock, vmGroup);
 
-        Mockito.verify(asVmGroupMock).setName(vmGroupName + "-new");
+        Mockito.verify(asVmGroupMock).setName(vmGroupNameWithMaxLength);
         Mockito.verify(asVmGroupMock).setMinMembers(minMembers + 1);
         Mockito.verify(asVmGroupMock).setMaxMembers(maxMembers + 1);
         Mockito.verify(asVmGroupMock).setInterval(interval);
@@ -1003,7 +1007,7 @@ public class AutoScaleManagerImplTest {
         UpdateAutoScaleVmGroupCmd cmd = new UpdateAutoScaleVmGroupCmd();
 
         ReflectionTestUtils.setField(cmd, "id", vmGroupId);
-        ReflectionTestUtils.setField(cmd, "name", vmGroupName + "new");
+        ReflectionTestUtils.setField(cmd, "name", vmGroupName + "-new");
         ReflectionTestUtils.setField(cmd, "minMembers", minMembers + 1);
         ReflectionTestUtils.setField(cmd, "maxMembers", maxMembers + 1);
         ReflectionTestUtils.setField(cmd, "interval", interval);
@@ -1014,6 +1018,34 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getMinMembers()).thenReturn(minMembers);
         when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
+
+        AutoScaleVmGroup vmGroup = autoScaleManagerImplSpy.updateAutoScaleVmGroup(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateAutoScaleVmGroupFail2() {
+        UpdateAutoScaleVmGroupCmd cmd = new UpdateAutoScaleVmGroupCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", vmGroupId);
+        String newName = vmGroupName + "!";
+        ReflectionTestUtils.setField(cmd, "name", newName);
+        when(asVmGroupMock.getName()).thenReturn(newName);
+
+        when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
+
+        AutoScaleVmGroup vmGroup = autoScaleManagerImplSpy.updateAutoScaleVmGroup(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateAutoScaleVmGroupFail3() {
+        UpdateAutoScaleVmGroupCmd cmd = new UpdateAutoScaleVmGroupCmd();
+
+        ReflectionTestUtils.setField(cmd, "id", vmGroupId);
+        String newName = vmGroupNameWithMaxLength + "6";
+        ReflectionTestUtils.setField(cmd, "name", newName);
+        when(asVmGroupMock.getName()).thenReturn(newName);
+
+        when(autoScaleVmGroupDao.findById(vmGroupId)).thenReturn(asVmGroupMock);
 
         AutoScaleVmGroup vmGroup = autoScaleManagerImplSpy.updateAutoScaleVmGroup(cmd);
     }
@@ -1144,6 +1176,7 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
         when(asVmGroupMock.getNextVmSeq()).thenReturn(nextVmSeq);
+        when(asVmGroupMock.getName()).thenReturn(vmGroupName);
 
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
@@ -1174,7 +1207,10 @@ public class AutoScaleManagerImplTest {
 
         Assert.assertEquals((long) virtualMachineId, result);
 
-        Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+        String vmHostNamePattern = autoScaleManagerImplSpy.VM_HOSTNAME_PREFIX + vmGroupName +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(),
+                matches(vmHostNamePattern), matches(vmHostNamePattern),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 1);
@@ -1185,6 +1221,7 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
         when(asVmGroupMock.getNextVmSeq()).thenReturn(nextVmSeq + 1);
+        when(asVmGroupMock.getName()).thenReturn(vmGroupName);
 
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
@@ -1216,8 +1253,11 @@ public class AutoScaleManagerImplTest {
 
         Assert.assertEquals((long) virtualMachineId, result);
 
-        Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+        String vmHostNamePattern = autoScaleManagerImplSpy.VM_HOSTNAME_PREFIX + vmGroupName +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(),
+                matches(vmHostNamePattern), matches(vmHostNamePattern),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 2);
     }
@@ -1227,6 +1267,7 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
         when(asVmGroupMock.getNextVmSeq()).thenReturn(nextVmSeq + 2);
+        when(asVmGroupMock.getName()).thenReturn(vmGroupNameWithMaxLength);
 
         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
         when(asVmProfileMock.getTemplateId()).thenReturn(templateId);
@@ -1258,7 +1299,10 @@ public class AutoScaleManagerImplTest {
 
         Assert.assertEquals((long) virtualMachineId, result);
 
-        Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+        String vmHostNamePattern = autoScaleManagerImplSpy.VM_HOSTNAME_PREFIX + vmGroupNameWithMaxLength.substring(0, 41) +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(),
+                matches(vmHostNamePattern), matches(vmHostNamePattern),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 3);

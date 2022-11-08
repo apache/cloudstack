@@ -2314,6 +2314,7 @@
 "message.error.internallb.instance.port": "Please specify a instance port.",
 "message.error.internallb.name": "Please specify a name for the internal LB.",
 "message.error.internallb.source.port": "Please specify a source port.",
+"message.error.invalid.autoscale.vmgroup.name": "Invalid AutoScale VM group name. It can contain the ASCII letters 'a' through 'z', 'A' through 'Z', the digits '0' through '9' and the hyphen ('-'), must be between 1 and 255 characters long.",
 "message.error.ip.range": "Please enter valid range.",
 "message.error.ipv4.address": "Please enter a valid IPv4 address.",
 "message.error.ipv4.dns1": "Please enter IpV4 DNS 1.",
