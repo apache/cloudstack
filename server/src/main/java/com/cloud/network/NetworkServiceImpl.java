@@ -161,10 +161,12 @@ import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -364,6 +366,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     Ipv6Service ipv6Service;
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
+    @Inject
+    VpcGatewayDao vpcGatewayDao;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1652,21 +1656,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         startIp, endIp, associatedNetwork.getName(), associatedNetwork.getCidr()));
             }
         }
-        List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);
-        for (NetworkDetailVO networkDetailVO : associatedNetworks) {
-            NetworkVO associatedNetwork2 = _networksDao.findById(networkDetailVO.getResourceId());
-            if (associatedNetwork2 != null) {
-                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(associatedNetwork2.getId());
-                if (vlans.isEmpty()) {
-                    continue;
-                }
-                String startIP2 = vlans.get(0).getIpRange().split("-")[0];
-                String endIP2 = vlans.get(0).getIpRange().split("-")[1];
-                if (StringUtils.isNoneBlank(startIp, startIP2) && NetUtils.ipRangesOverlap(startIp, endIp, startIP2, endIP2)) {
-                    throw new InvalidParameterValueException("The startIp/endIp overlaps with network: " + associatedNetwork2.getName());
-                }
-            }
-        }
+        // Check IP range overlap on shared networks and vpc private gateways associated to the same network
+        checkIpRangeOverlapWithAssociatedNetworks(associatedNetworkId, startIp, endIp);
+
         associatedNetwork = implementedNetworkInCreation(caller, zone, associatedNetwork);
         if (associatedNetwork == null || (associatedNetwork.getState() != Network.State.Implemented && associatedNetwork.getState() != Network.State.Setup)) {
             throw new InvalidParameterValueException("Unable to implement associated network " + associatedNetwork);
@@ -2824,6 +2816,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             + "specify guestVmCidr to be: " + network.getNetworkCidr());
                 }
             }
+
+            // Check IP range overlap on shared networks and vpc private gateways associated to this network
+            checkIpRangeOverlapWithAssociatedNetworks(networkId, cidrIpRange[0], cidrIpRange[1]);
 
             // When reservation is applied for the first time, network_cidr will be null
             // Populate it with the actual network cidr
@@ -5388,6 +5383,30 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return accountIds;
+    }
+
+    private void checkIpRangeOverlapWithAssociatedNetworks(Long associatedNetworkId, String startIp, String endIp) {
+        List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);
+        for (NetworkDetailVO networkDetailVO : associatedNetworks) {
+            NetworkVO associatedNetwork2 = _networksDao.findById(networkDetailVO.getResourceId());
+            if (associatedNetwork2 != null) {
+                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(associatedNetwork2.getId());
+                if (vlans.isEmpty()) {
+                    VpcGatewayVO vpcGateway = vpcGatewayDao.getVpcGatewayByNetworkId(associatedNetwork2.getId());
+                    if (vpcGateway != null && NetUtils.ipRangesOverlap(startIp, endIp, vpcGateway.getIp4Address(), vpcGateway.getIp4Address())) {
+                        throw new InvalidParameterValueException(String.format("The startIp/endIp (%s - %s) overlaps with vpc private gateway %s (%s): ",
+                                startIp, endIp, associatedNetwork2.getName(), vpcGateway.getIp4Address()));
+                    }
+                    continue;
+                }
+                String startIP2 = vlans.get(0).getIpRange().split("-")[0];
+                String endIP2 = vlans.get(0).getIpRange().split("-")[1];
+                if (StringUtils.isNoneBlank(startIp, startIP2) && NetUtils.ipRangesOverlap(startIp, endIp, startIP2, endIP2)) {
+                    throw new InvalidParameterValueException(String.format("The startIp/endIp (%s - %s) overlaps with network %s (%s - %s)",
+                            startIp, endIp, associatedNetwork2.getName(), startIP2, endIP2));
+                }
+            }
+        }
     }
 
     @Override

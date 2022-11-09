@@ -578,6 +578,7 @@
 "label.change.service.offering": "Change service offering",
 "label.change.offering.for.volume": "Change disk offering for the volume",
 "label.change.value": "Change value",
+"label.changecidr": "Change CIDR",
 "label.character": "Character",
 "label.chassis": "Chassis",
 "label.checksum": "Checksum",
