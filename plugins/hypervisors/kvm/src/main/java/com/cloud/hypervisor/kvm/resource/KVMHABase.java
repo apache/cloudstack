@@ -18,6 +18,8 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
@@ -34,7 +36,7 @@ public class KVMHABase {
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
     protected long _heartBeatUpdateTimeout = 60000;
-    protected long _heartBeatUpdateFreq = 60000;
+    protected long _heartBeatUpdateFreq = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
     protected long _heartBeatUpdateMaxTries = 5;
     protected long _heartBeatUpdateRetrySleep = 10000;
 
