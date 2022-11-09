@@ -3035,6 +3035,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<DiskOfferingJoinVO> zoneSC = sb.create();
             zoneSC.setParameters("zoneId", String.valueOf(zoneId));
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+            }
         }
 
         DiskOffering currentDiskOffering = null;

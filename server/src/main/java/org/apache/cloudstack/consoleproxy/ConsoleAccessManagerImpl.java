@@ -16,11 +16,35 @@
 // under the License.
 package org.apache.cloudstack.consoleproxy;
 
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmVncTicketAnswer;
 import com.cloud.agent.api.GetVmVncTicketCommand;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -45,26 +69,6 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.security.keys.KeysManager;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
@@ -84,6 +88,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private AgentManager agentManager;
     @Inject
     private ConsoleProxyManager consoleProxyManager;
+    @Inject
+    DataCenterDao dataCenterDao;
 
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
@@ -132,6 +138,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             if (!checkSessionPermission(vm, account)) {
                 return new ConsoleEndpoint(false, null, "Permission denied");
+            }
+
+            DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
+            if (zone != null && DataCenter.Type.Edge.equals(zone.getType())) {
+                String errorMsg = "Console access is not supported for Edge zones";
+                s_logger.error(errorMsg);
+                return new ConsoleEndpoint(false, errorMsg);
             }
 
             String sessionUuid = UUID.randomUUID().toString();

@@ -221,6 +221,7 @@ export default {
       api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
           if (this.zones.length > 0) {
             this.onZoneChange(this.zones[0].id)
           }

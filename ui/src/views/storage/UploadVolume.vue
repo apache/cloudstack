@@ -211,8 +211,8 @@ export default {
       api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.zones = this.zones.filter(zone => zone.type !== 'Edge')
-        this.selectedZoneId = this.zones[0].id || ''
-        this.fetchDiskOfferings(this.selectedZoneId)
+        this.form.zoneId = this.zones[0].id || ''
+        this.fetchDiskOfferings(this.form.zoneId)
       }).finally(() => {
         this.loading = false
       })
