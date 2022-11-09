@@ -147,6 +147,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
@@ -221,7 +222,7 @@ import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
  *         pool | the parent of the storage pool hierarchy * }
  **/
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
-    private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
+    protected static Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
     private static final String CONFIG_VALUES_SEPARATOR = ",";
 
@@ -447,6 +448,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
 
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
+
+    protected LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+
+    /**
+     * Virsh command to set the memory balloon stats period.<br><br>
+     * 1st parameter: the VM ID or name;<br>
+     * 2nd parameter: the period (in seconds).
+     */
+    private static final String COMMAND_SET_MEM_BALLOON_STATS_PERIOD = "virsh dommemstat %s --period %s --live";
 
     protected long getHypervisorLibvirtVersion() {
         return _hypervisorLibvirtVersion;
@@ -1298,7 +1308,82 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.info("iscsi session clean up is disabled");
         }
 
+        setupMemoryBalloonStatsPeriod(conn);
+
         return true;
+    }
+
+    /**
+     * Gets the ID list of the VMs to set memory balloon stats period.
+     * @param conn the Libvirt connection.
+     * @return the list of VM IDs.
+     */
+    protected List<Integer> getVmsToSetMemoryBalloonStatsPeriod(Connect conn) {
+        List<Integer> vmIdList = new ArrayList<>();
+        Integer[] vmIds = null;
+        try {
+            vmIds = ArrayUtils.toObject(conn.listDomains());
+        } catch (final LibvirtException e) {
+            s_logger.error("Unable to get the list of Libvirt domains on this host.", e);
+            return vmIdList;
+        }
+        vmIdList.addAll(Arrays.asList(vmIds));
+        s_logger.debug(String.format("We have found a total of [%s] VMs (Libvirt domains) on this host: [%s].", vmIdList.size(), vmIdList.toString()));
+
+        if (vmIdList.isEmpty()) {
+            s_logger.info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
+        }
+        return vmIdList;
+    }
+
+    /**
+     * Gets the current VM balloon stats period from the agent.properties file.
+     * @return the current VM balloon stats period.
+     */
+    protected Integer getCurrentVmBalloonStatsPeriod() {
+        if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE))) {
+            s_logger.info(String.format("The [%s] property is set to 'true', so the memory balloon stats period will be set to 0 for all VMs.",
+                    AgentProperties.VM_MEMBALLOON_DISABLE.getName()));
+            return 0;
+        }
+        Integer vmBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
+        if (vmBalloonStatsPeriod == 0) {
+            s_logger.info(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
+                    + "Adjust (increase) the value of this parameter to correct this.", AgentProperties.VM_MEMBALLOON_STATS_PERIOD.getName()));
+        }
+        return vmBalloonStatsPeriod;
+    }
+
+    /**
+     * Sets the balloon driver of each VM to get the memory stats at the time interval defined in the agent.properties file.
+     * @param conn the Libvirt connection.
+     */
+    protected void setupMemoryBalloonStatsPeriod(Connect conn) {
+        List<Integer> vmIdList = getVmsToSetMemoryBalloonStatsPeriod(conn);
+        Integer currentVmBalloonStatsPeriod = getCurrentVmBalloonStatsPeriod();
+        for (Integer vmId : vmIdList) {
+            Domain dm = null;
+            try {
+                dm = conn.domainLookupByID(vmId);
+                parser.parseDomainXML(dm.getXMLDesc(0));
+                MemBalloonDef memBalloon = parser.getMemBalloon();
+                if (!MemBalloonDef.MemBalloonModel.VIRTIO.equals(memBalloon.getMemBalloonModel())) {
+                    s_logger.debug(String.format("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [%s] and name [%s] because this VM has no memory"
+                            + " balloon.", vmId, dm.getName()));
+                }
+                String setMemBalloonStatsPeriodCommand = String.format(COMMAND_SET_MEM_BALLOON_STATS_PERIOD, vmId, currentVmBalloonStatsPeriod);
+                String setMemBalloonStatsPeriodResult = Script.runSimpleBashScript(setMemBalloonStatsPeriodCommand);
+                if (StringUtils.isNotBlank(setMemBalloonStatsPeriodResult)) {
+                    s_logger.error(String.format("Unable to set up memory balloon stats period for VM (Libvirt Domain) with ID [%s] due to an error when running the [%s] "
+                            + "command. Output: [%s].", vmId, setMemBalloonStatsPeriodCommand, setMemBalloonStatsPeriodResult));
+                    continue;
+                }
+                s_logger.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM (Libvirt Domain) with ID [%s] and name [%s].",
+                        currentVmBalloonStatsPeriod, vmId, dm.getName()));
+            } catch (final LibvirtException e) {
+                s_logger.warn("Failed to set up memory balloon stats period." + e.getMessage());
+            }
+        }
     }
 
     private void enableSSLForKvmAgent(final Map<String, Object> params) {

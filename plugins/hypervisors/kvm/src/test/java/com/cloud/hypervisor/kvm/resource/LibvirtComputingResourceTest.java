@@ -61,8 +61,10 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -164,6 +166,8 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -181,6 +185,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef.GuestType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
@@ -213,7 +218,7 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class, SshHelper.class})
+@PrepareForTest(value = {MemStat.class, SshHelper.class, AgentPropertiesFileHandler.class, AgentProperties.class, Script.class})
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
@@ -223,6 +228,13 @@ public class LibvirtComputingResourceTest {
     VirtualMachineTO vmTO;
     @Mock
     LibvirtVMDef vmDef;
+    @Mock
+    Logger loggerMock;
+    @Mock
+    Connect connMock;
+    @Mock
+    LibvirtDomainXMLParser parserMock;
+
     @Spy
     private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(LibvirtComputingResource.class);
 
@@ -245,8 +257,10 @@ public class LibvirtComputingResourceTest {
     @Before
     public void setup() throws Exception {
         libvirtComputingResourceSpy._qemuSocketsPath = new File("/var/run/qemu");
+        libvirtComputingResourceSpy.parser = parserMock;
         Scanner scanner = new Scanner(memInfo);
         PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+        LibvirtComputingResource.s_logger = loggerMock;
     }
 
     /**
@@ -5928,4 +5942,142 @@ public class LibvirtComputingResourceTest {
         configLocalStorageTests(params);
     }
 
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestLibvirtError() throws LibvirtException {
+        Mockito.when(connMock.listDomains()).thenThrow(LibvirtException.class);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).error(Mockito.anyString(), Mockito.any());
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestWithNoVMs() throws LibvirtException {
+        Mockito.when(connMock.listDomains()).thenReturn(new int[0]);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestWhenSuccessfullyGetVmIds() throws LibvirtException {
+        int[] fakeList = new int[]{1};
+        List<Integer> expected = Arrays.asList(ArrayUtils.toObject(fakeList));
+        Mockito.when(connMock.listDomains()).thenReturn(fakeList);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestWhenMemBalloonIsDisabled() {
+        Integer expected = 0;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(true);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestWhenStatsPeriodIsZero() {
+        Integer expected = 0;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(0);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Mockito.verify(loggerMock).info(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
+                + "Adjust (increase) the value of this parameter to correct this.", AgentProperties.VM_MEMBALLOON_STATS_PERIOD.getName()));
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestSuccess() {
+        Integer expected = 60;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(60);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Assert.assertEquals(expected, result);
+    }
+
+    private void prepareMocksToSetupMemoryBalloonStatsPeriod(Integer currentVmBalloonStatsPeriod) throws LibvirtException {
+        Integer[] fakeList = ArrayUtils.toObject(new int[]{1});
+        Mockito.doReturn(Arrays.asList(fakeList)).when(libvirtComputingResourceSpy).getVmsToSetMemoryBalloonStatsPeriod(connMock);
+        Mockito.doReturn(currentVmBalloonStatsPeriod).when(libvirtComputingResourceSpy).getCurrentVmBalloonStatsPeriod();
+        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
+        Mockito.when(domainMock.getName()).thenReturn("fake-VM-name");
+        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestMemBalloonPropertyDisabled() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(0);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("60");
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+        PowerMockito.mockStatic(Script.class);
+        PowerMockito.when(Script.runSimpleBashScript(Mockito.any())).thenReturn(null);
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).debug("The memory balloon stats period [0] has been set successfully for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name].");
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestErrorWhenSetNewPeriod() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("0");
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+        PowerMockito.mockStatic(Script.class);
+        PowerMockito.when(Script.runSimpleBashScript(Mockito.eq("virsh dommemstat 1 --period 60 --live"))).thenReturn("some-fake-error");
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).error("Unable to set up memory balloon stats period for VM (Libvirt Domain) with ID [1] due to an error when running the [virsh "
+                + "dommemstat 1 --period 60 --live] command. Output: [some-fake-error].");
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestSetNewPeriodSuccessfully() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("0");
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+        PowerMockito.mockStatic(Script.class);
+        PowerMockito.when(Script.runSimpleBashScript(Mockito.eq("virsh dommemstat 1 --period 60 --live"))).thenReturn(null);
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        PowerMockito.verifyStatic(Script.class);
+        Script.runSimpleBashScript("virsh dommemstat 1 --period 60 --live");
+        Mockito.verify(loggerMock, Mockito.never()).error(Mockito.anyString());
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestSkipVm() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defNoneMemBalloon();
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).debug("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name] because this"
+                + " VM has no memory balloon.");
+    }
 }
