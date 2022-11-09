@@ -23,36 +23,36 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class ByteScaleUtilsTest {
 
     @Test
-    public void validateMibToBytes() {
+    public void validateMebibytesToBytes() {
         long mib = 3000L;
         long bytes = 1024L * 1024L * mib;
-        Assert.assertEquals(bytes, ByteScaleUtils.mibToBytes(mib));
+        Assert.assertEquals(bytes, ByteScaleUtils.mebibytesToBytes(mib));
     }
 
     @Test
-    public void validateBytesToKiB() {
+    public void validateBytesToKibibytes() {
         long kib = 3000L;
         long bytes = 1024 * kib;
-        Assert.assertEquals(kib, ByteScaleUtils.bytesToKiB(bytes));
+        Assert.assertEquals(kib, ByteScaleUtils.bytesToKibibytes(bytes));
     }
 
     @Test
-    public void validateBytesToMiB() {
+    public void validateBytesToMebibytes() {
         long mib = 3000L;
         long bytes = 1024L * 1024L * mib;
-        Assert.assertEquals(mib, ByteScaleUtils.bytesToMiB(bytes));
+        Assert.assertEquals(mib, ByteScaleUtils.bytesToMebibytes(bytes));
     }
 
     @Test
-    public void validateMibToBytesIfIntTimesIntThenMustExtrapolateIntMaxValue() {
+    public void validateMebibytesToBytesIfIntTimesIntThenMustExtrapolateIntMaxValue() {
         int mib = 3000;
         long bytes = 1024L * 1024L * mib;
-        Assert.assertEquals(bytes, ByteScaleUtils.mibToBytes(mib));
+        Assert.assertEquals(bytes, ByteScaleUtils.mebibytesToBytes(mib));
     }
 
     @Test
-    public void validateBytesToKiBIfIntByIntThenMustExtrapolateIntMaxValue(){
+    public void validateBytesToKibibytesIfIntByIntThenMustExtrapolateIntMaxValue(){
         int bytes = Integer.MAX_VALUE;
-        Assert.assertEquals(bytes, ByteScaleUtils.bytesToKiB(bytes * 1024L));
+        Assert.assertEquals(bytes, ByteScaleUtils.bytesToKibibytes(bytes * 1024L));
     }
 }

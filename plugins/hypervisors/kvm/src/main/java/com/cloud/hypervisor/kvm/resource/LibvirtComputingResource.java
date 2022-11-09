@@ -2729,7 +2729,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!_noMemBalloon);
 
-        Long maxRam = ByteScaleUtils.bytesToKiB(vmTO.getMaxRam());
+        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
 
         grd.setMemorySize(maxRam);
         grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
@@ -2748,7 +2748,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
             return maxRam;
         } else {
-            return ByteScaleUtils.bytesToKiB(vmTO.getMinRam());
+            return ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
         }
     }
 

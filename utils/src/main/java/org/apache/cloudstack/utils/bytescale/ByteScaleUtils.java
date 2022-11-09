@@ -27,12 +27,12 @@ public class ByteScaleUtils {
     private ByteScaleUtils() {}
 
     /**
-     * Converts mebibyte to bytes.
+     * Converts mebibytes to bytes.
      *
      * @param mib The value to convert to bytes (eq: 1, 2, 3, ..., 42,...).
-     * @return The parameter multiplied by 2²⁰ (1048576 | 1024 * 1024 | 1 MiB | ).
+     * @return The parameter multiplied by 2²⁰ (1048576 | 1024 * 1024 | 1 mebibyte).
      */
-    public static long mibToBytes(long mib) {
+    public static long mebibytesToBytes(long mib) {
         return mib * MiB;
     }
 
@@ -40,19 +40,19 @@ public class ByteScaleUtils {
      * Converts bytes to kibibyte.
      *
      * @param bytes The value in bytes to convert to kibibyte.
-     * @return The parameter divided by 2¹⁰ (1024 | 1 KiB).
+     * @return The parameter divided by 2¹⁰ (1024 | 1 kibibyte).
      */
-    public static long bytesToKiB(long bytes) {
+    public static long bytesToKibibytes(long bytes) {
         return bytes / KiB;
     }
 
     /**
-     * Converts bytes to mebibyte.
+     * Converts bytes to mebibytes.
      *
-     * @param bytes The value in bytes to convert to mebibyte.
-     * @return The parameter divided by 2²⁰ (1048576 | 1024 * 1024 | 1 MiB).
+     * @param bytes The value in bytes to convert to mebibytes.
+     * @return The parameter divided by 2²⁰ (1048576 | 1024 * 1024 | 1 mebibyte).
      */
-    public static long bytesToMiB(long bytes) {
+    public static long bytesToMebibytes(long bytes) {
         return bytes / MiB;
     }
 }
