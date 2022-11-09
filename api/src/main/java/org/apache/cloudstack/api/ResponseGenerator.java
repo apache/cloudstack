@@ -431,7 +431,7 @@ public interface ResponseGenerator {
      * @param result
      * @return
      */
-    PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result);
+    PrivateGatewayResponse createPrivateGatewayResponse(ResponseView view, PrivateGateway result);
 
     /**
      * @param result
