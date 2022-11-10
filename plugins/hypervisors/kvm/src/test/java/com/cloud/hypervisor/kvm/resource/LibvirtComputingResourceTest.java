@@ -5756,13 +5756,13 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResource._noMemBalloon = false;
 
         long maxMemory = 2048;
-        long minMemory = ByteScaleUtils.mibToBytes(64);
+        long minMemory = ByteScaleUtils.mebibytesToBytes(64);
 
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
         Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
 
         long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
-        Assert.assertEquals(ByteScaleUtils.bytesToKib(minMemory), currentMemory);
+        Assert.assertEquals(ByteScaleUtils.bytesToKibibytes(minMemory), currentMemory);
         Mockito.verify(vmTo).getMinRam();
     }
 
