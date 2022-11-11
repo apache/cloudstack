@@ -1282,7 +1282,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
                 path = volumeTO.getPath();
                 baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
-                datastoreUuid = volumeTO.getDataStoreUuid();
+                if (volumeTO.getDataStoreUuid() != null) {
+                    datastoreUuid = volumeTO.getDataStoreUuid();
+                }
             } else {
                 Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
                 // if this is managed storage
