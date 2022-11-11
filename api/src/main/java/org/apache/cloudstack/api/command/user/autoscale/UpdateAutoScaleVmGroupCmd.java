@@ -66,7 +66,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
                description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private Integer maxMembers;
 
-    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency in which the conditions have to be evaluated")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency in which the performance counters to be collected")
     private Integer interval;
 
     @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
