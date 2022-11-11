@@ -84,7 +84,7 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.CONSIDER_LAST_HOST,
             type = CommandType.BOOLEAN,
-            description = "True by default, CloudStack will try to start the VM on the last host where it run if destination host is not specified. " +
+            description = "True by default, CloudStack will firstly try to start the VM on the last host where it run on before stopping, if destination host is not specified. " +
                     "If false, CloudStack will not consider the last host and start the VM by normal process.",
             since = "4.18.0")
     private Boolean considerLastHost;
