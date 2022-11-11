@@ -1960,7 +1960,7 @@ export default {
 
       this.newScaleUpCondition = {
         counterid: null,
-        relationaloperator: null,
+        relationaloperator: 'GT',
         threshold: null
       }
     },
@@ -2003,7 +2003,7 @@ export default {
 
       this.newScaleDownCondition = {
         counterid: null,
-        relationaloperator: null,
+        relationaloperator: 'LT',
         threshold: null
       }
     },
