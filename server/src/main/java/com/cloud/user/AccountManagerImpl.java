@@ -2049,7 +2049,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
         if (newAccount.getDomainId() != domainId) {
             // not in scope
-            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in another domain is not supported!");
         }
     }
 

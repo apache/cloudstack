@@ -26,7 +26,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
 /**
- * Interface to query how to move data around and to commision the moving
+ * Interface to query how to move data around and to commission the moving
  */
 public interface DataMotionStrategy {
     /**

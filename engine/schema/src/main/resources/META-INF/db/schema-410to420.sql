@@ -1484,7 +1484,7 @@ UPDATE `cloud`.`load_balancing_rules` SET `scheme`='Public';
 
 
 
--- Add details talbe for the network offering
+-- Add details table for the network offering
 CREATE TABLE `cloud`.`network_offering_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id',

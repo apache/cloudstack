@@ -1153,7 +1153,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newSize = newSize << 30;
             } else {
                 if (cmd.getSize() != null) {
-                    throw new InvalidParameterValueException("You cannnot pass in a custom disk size to a non-custom disk offering.");
+                    throw new InvalidParameterValueException("You cannot pass in a custom disk size to a non-custom disk offering.");
                 }
 
                 newSize = newDiskOffering.getDiskSize();

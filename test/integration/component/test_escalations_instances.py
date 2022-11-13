@@ -4279,7 +4279,7 @@ class TestInstances(cloudstackTestCase):
     def test_25_ip_reallocation_ES1377(self):
         """
         @Desc: Test to verify dnsmasq dhcp conflict issue due to
-               /ect/hosts not getting udpated
+               /ect/hosts not getting updated
         @Steps:
         Step1: Create a network for the user
         Step2: List the network and check that it is created for the user

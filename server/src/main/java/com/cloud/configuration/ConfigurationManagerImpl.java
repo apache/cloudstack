@@ -6128,7 +6128,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     associatePublicIP = value.contains("true");
                 } else {
                     throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " and " + Capability.AssociatePublicIP.getName()
-                            + " capabilitiy can be sepcified for static nat service");
+                            + " capability can be sepcified for static nat service");
                 }
             }
             if (!eipEnabled && associatePublicIP) {
@@ -6779,7 +6779,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final int networkCount = _networkDao.getNetworkCountByNetworkOffId(offeringId);
         if (networkCount > 0) {
             throw new InvalidParameterValueException("Can't delete network offering " + offeringId + " as its used by " + networkCount + " networks. "
-                    + "To make the network offering unavaiable, disable it");
+                    + "To make the network offering unavailable, disable it");
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());

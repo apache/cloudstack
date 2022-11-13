@@ -578,7 +578,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                                                     domainid=self.parent_domain.id,networkofferingid=self.shared_network_offering_sg.id,
                                                     zoneid=self.zone.id,subdomainaccess=True)
         except Exception as e:
-            self.fail("Exception whle creating domain wide shared network: %s" % e)
+            self.fail("Exception while creating domain wide shared network: %s" % e)
 
         self.debug("Created shared network: %s" % self.shared_network_sg.id)
 

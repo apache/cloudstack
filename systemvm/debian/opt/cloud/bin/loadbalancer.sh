@@ -144,7 +144,7 @@ fw_entry() {
     local lb_vif_list=$(get_lb_vif_list)
     for vif in $lb_vif_list; do
 
-#TODO : The below delete will be used only when we upgrade the from older verion to the newer one , the below delete become obsolute in the future.
+#TODO : The below delete will be used only when we upgrade the from older version to the newer one , the below delete become obsolute in the future.
       sudo iptables -D INPUT -i $vif  -p tcp -d $pubIp --dport $dport -j ACCEPT 2> /dev/null
 
       sudo iptables -A load_balancer_$vif  -p tcp -d $pubIp --dport $dport -j ACCEPT
@@ -161,7 +161,7 @@ fw_entry() {
   sudo iptables -A lb_stats -s $cidrs -p tcp -m state --state NEW -d $pubIp --dport $dport -j ACCEPT
 
 
-#TODO : The below delete in the for-loop  will be used only when we upgrade the from older verion to the newer one , the below delete become obsolute in the future.
+#TODO : The below delete in the for-loop  will be used only when we upgrade the from older version to the newer one , the below delete become obsolute in the future.
   for i in $r
   do
     local pubIp=$(echo $i | cut -d: -f1)

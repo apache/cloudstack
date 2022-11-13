@@ -480,7 +480,7 @@ def checkVolumeSize(ssh_handle=None,
     @Desc : provides facility to verify the volume size against the size to verify
     @Input: 1. ssh_handle : machine against which to execute the disk size cmd
             2. volume_name : The name of the volume against which to verify the size
-            3. cmd_inp : Input command used to veify the size
+            3. cmd_inp : Input command used to verify the size
             4. size_to_verify: size against which to compare.
     @Output: Returns FAILED in case of an issue, else SUCCESS
     '''
