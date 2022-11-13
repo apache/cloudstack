@@ -590,7 +590,7 @@ export default {
           }
 
           // ***** Virtual Router ***** (begin) *****
-          if (!this.isEdgeZone && !this.stepData.stepMove.includes('advVirtualRouter' + physicalNetwork.id)) {
+          if (!this.stepData.stepMove.includes('advVirtualRouter' + physicalNetwork.id)) {
             const listParams = {}
             listParams.name = 'VirtualRouter'
             listParams.physicalNetworkId = physicalNetwork.id
