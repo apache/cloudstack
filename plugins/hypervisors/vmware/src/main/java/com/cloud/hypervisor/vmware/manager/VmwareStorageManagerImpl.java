@@ -1451,7 +1451,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl, String nfsVersion) throws Exception {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
-        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);
+        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStorage(volumeId);
 
         return deleteDir(volumeMountRoot);
     }
@@ -1465,7 +1465,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
+    private static String getVolumeRelativeDirInSecStorage(long volumeId) {
         return "volumes/" + volumeId;
     }
 }

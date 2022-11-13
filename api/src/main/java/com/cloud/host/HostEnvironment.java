@@ -33,7 +33,7 @@ public class HostEnvironment {
     public String storageNetwork;
     public String storageGateway;
     public String storageVlan;
-    public String secondaryStroageIpAddress;
+    public String secondaryStorageIpAddress;
 
     public String storage2IpAddress;
     public String storage2Network;
