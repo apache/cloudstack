@@ -96,7 +96,7 @@ The children should have:
 - `tabs`: Array of custom components that will get rendered as tabs in the
   resource view
 - `component`: The custom component for rendering the route view
-- `related`: A list of associated entitiy types that can be listed via passing
+- `related`: A list of associated entity types that can be listed via passing
   the current resource's id as a parameter in their respective list APIs
 - `actions`: Array of actions that can be performed on the resource
 
