@@ -120,4 +120,3 @@ class TestBaremetal(cloudstackTestCase):
         cmd.endip = "10.1.1.40"
         cmd.forVirtualNetwork="false"
         self.apiclient.createVlanIpRange(cmd)
-

@@ -71,4 +71,3 @@ class DashboardPage(CloudStackPage):
                 li.click()
                 time.sleep(3)
                 return
-

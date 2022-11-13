@@ -551,4 +551,3 @@ def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
             break
 
     return wait_result, return_val
-

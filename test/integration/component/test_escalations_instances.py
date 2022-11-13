@@ -4492,6 +4492,3 @@ class TestInstances(cloudstackTestCase):
                 "Warning: Exception in expunging vms vm3 and vm4 : %s" %
                 e)
         return
-
-
-
