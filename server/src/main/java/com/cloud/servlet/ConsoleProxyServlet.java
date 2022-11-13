@@ -556,7 +556,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             }
             return equalSig;
         } catch (Exception ex) {
-            s_logger.error("unable to verifty request signature", ex);
+            s_logger.error("unable to verify request signature", ex);
         }
         return false;
     }

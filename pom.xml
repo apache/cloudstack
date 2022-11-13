@@ -41,7 +41,7 @@
     </scm>
 
     <issueManagement>
-        <system>Github</system>
+        <system>GitHub</system>
         <url>https://github.com/apache/cloudstack/issues</url>
     </issueManagement>
 

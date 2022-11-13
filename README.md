@@ -51,13 +51,13 @@ Apache CloudStack project uses Git. The official Git repository is at:
 
     https://gitbox.apache.org/repos/asf/cloudstack.git
 
-And a mirror is hosted on Github:
+And a mirror is hosted on GitHub:
 
     https://github.com/apache/cloudstack
 
-The Github mirror is strictly read only and provides convenience to users and
+The GitHub mirror is strictly read only and provides convenience to users and
 developers to explore the code and for the community to accept contributions
-via Github pull requests.
+via GitHub pull requests.
 
 ## Documentation
 
@@ -95,7 +95,7 @@ Mailing lists:
 - [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
-Report and/or check bugs on [Github](https://github.com/apache/cloudstack/issues) and check our
+Report and/or check bugs on [GitHub](https://github.com/apache/cloudstack/issues) and check our
 developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
 
 ## Reporting Security Vulnerabilities

@@ -2,7 +2,7 @@
 
 The modern CloudStack UI is role-based progressive app that uses VueJS and Ant Design.
 
-Javascript, VueJS references:
+JavaScript, VueJS references:
 - https://www.w3schools.com/js/
 - https://www.geeksforgeeks.org/javascript-tutorial/
 - https://vuejs.org/v2/guide/

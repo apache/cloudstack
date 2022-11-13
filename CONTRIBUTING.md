@@ -3,7 +3,7 @@ Contributing to Apache CloudStack (ACS)
 
 Summary
 -------
-This document covers how to contribute to the ACS project. ACS uses github PRs to manage code contributions. 
+This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions. 
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project and you will submit a Pull Request for your changes to be added.
 
 _Lets get started!!!_
