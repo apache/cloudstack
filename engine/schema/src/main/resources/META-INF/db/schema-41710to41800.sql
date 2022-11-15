@@ -587,6 +587,18 @@ SET     description = "Use SSL method used to encrypt copy traffic between zones
 generating links for external access."
 WHERE   name = 'secstorage.encrypt.copy';
 
+-- allow isolated networks without services to be used as is.
+UPDATE `cloud`.`networks` ntwk
+  SET ntwk.state = 'Implemented'
+  WHERE ntwk.network_offering_id in
+    (SELECT id FROM `cloud`.`network_offerings` ntwkoff
+      WHERE (SELECT count(*) FROM `cloud`.`ntwk_offering_service_map` ntwksrvcmp WHERE ntwksrvcmp.network_offering_id = ntwkoff.id) = 0
+        AND ntwkoff.is_persistent = 1) AND
+    ntwk.state = 'Setup' AND
+    ntwk.removed is NULL AND
+    ntwk.guest_type = 'Isolated';
+
+-- Tungsten Fabric Plugin --
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_tungsten', 'int(1) unsigned DEFAULT "0" COMMENT "is tungsten enabled for the resource"');
 
 -- Network offering with multi-domains and multi-zones
