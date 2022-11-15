@@ -71,7 +71,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -585,7 +584,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
-        options.put(BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(BackupSnapshotAfterTakingSnapshot.value()));
+        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         Answer answer = null;

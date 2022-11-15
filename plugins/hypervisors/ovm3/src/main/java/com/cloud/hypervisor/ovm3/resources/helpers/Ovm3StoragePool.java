@@ -251,7 +251,7 @@ public class Ovm3StoragePool {
     }
 
     /**
-     * Adding members to a pool, this is seperate from cluster configuration in
+     * Adding members to a pool, this is separate from cluster configuration in
      * OVM.
      *
      * @return

@@ -176,7 +176,7 @@ public class KVMGuruTest {
 
         long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1l);
 
-        Assert.assertEquals(ByteScaleUtils.mibToBytes(maxCustomOfferingMemory), result);
+        Assert.assertEquals(ByteScaleUtils.mebibytesToBytes(maxCustomOfferingMemory), result);
     }
 
     @Test
@@ -190,12 +190,12 @@ public class KVMGuruTest {
         Mockito.when(vmServiceOfferingMaxRAMSize.value()).thenReturn(maxMemoryConfig);
         long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1l);
 
-        Assert.assertEquals(ByteScaleUtils.mibToBytes(maxMemoryConfig), result);
+        Assert.assertEquals(ByteScaleUtils.mebibytesToBytes(maxMemoryConfig), result);
     }
 
     @Test
     public void validateGetVmMaxMemoryReturnMaxHostMemory(){
-        long maxHostMemory = ByteScaleUtils.mibToBytes(2000);
+        long maxHostMemory = ByteScaleUtils.mebibytesToBytes(2000);
         Mockito.when(serviceOfferingVoMock.getDetail(ApiConstants.MAX_MEMORY)).thenReturn(null);
 
         ConfigKey<Integer> vmServiceOfferingMaxRAMSize = Mockito.mock(ConfigKey.class);

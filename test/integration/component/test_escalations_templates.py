@@ -861,6 +861,3 @@ class TestTemplates(cloudstackTestCase):
             )
         del self.services["privatetemplate"]["ostype"]
         return
-
-
-

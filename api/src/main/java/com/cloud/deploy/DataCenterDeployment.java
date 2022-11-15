@@ -18,6 +18,7 @@ package com.cloud.deploy;
 
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.vm.ReservationContext;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,6 +116,12 @@ public class DataCenterDeployment implements DeploymentPlan {
     @Override
     public boolean isMigrationPlan() {
         return migrationPlan;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "_dcId", "_podId", "_clusterId", "_poolId", "_hostid", "_physicalNetworkId",
+                "migrationPlan");
     }
 
 }

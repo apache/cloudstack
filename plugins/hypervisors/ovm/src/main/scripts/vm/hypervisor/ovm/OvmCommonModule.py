@@ -156,4 +156,3 @@ def makeOwnerFileName():
     hostIp = successToMap(get_master_ip())['ip']
     ownerFileName = OWNER_FILE_PREFIX + hostIp.replace('.', '_')
     return ownerFileName
-

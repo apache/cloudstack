@@ -952,7 +952,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
              * @param nics the list of nics present
              * @param finalNetwork the network to add the nics to
              * @throws InsufficientVirtualNetworkCapacityException great
-             * @throws InsufficientAddressCapacityException also magnificent, as the name sugests
+             * @throws InsufficientAddressCapacityException also magnificent, as the name suggests
              */
             private void createExtraNics(int size, List<NicProfile> nics, Network finalNetwork) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
                 if (nics.size() != size) {

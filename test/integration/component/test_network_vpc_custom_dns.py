@@ -729,4 +729,3 @@ class TestVpcCustomDns(cloudstackTestCase):
         self.deployNetworkTierVm()
         self.checkVpcBasic()
         self.checkVpcRouter()
-

@@ -597,3 +597,14 @@ CREATE TABLE `cloud`.`volume_stats` (
     `volume_stats_data` text NOT NULL,
     PRIMARY KEY(`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- allow isolated networks without services to be used as is.
+UPDATE `cloud`.`networks` ntwk
+  SET ntwk.state = 'Implemented'
+  WHERE ntwk.network_offering_id in
+    (SELECT id FROM `cloud`.`network_offerings` ntwkoff
+      WHERE (SELECT count(*) FROM `cloud`.`ntwk_offering_service_map` ntwksrvcmp WHERE ntwksrvcmp.network_offering_id = ntwkoff.id) = 0
+        AND ntwkoff.is_persistent = 1) AND
+    ntwk.state = 'Setup' AND
+    ntwk.removed is NULL AND
+    ntwk.guest_type = 'Isolated';

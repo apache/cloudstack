@@ -610,6 +610,9 @@ class CsIP:
                             if "nw_type" in address and address["nw_type"] == "guest":
                                 route.add_network_route(self.dev, str(address["network"]))
 
+                if self.get_type() in ["public"]:
+                    CsRule(self.dev).addRule("from " + str(self.address["network"]))
+
                 route.add_network_route(self.dev, str(self.address["network"]))
 
             CsHelper.execute("sudo ip route flush cache")

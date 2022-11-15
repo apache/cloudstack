@@ -254,7 +254,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             ExternalLoadBalancerDeviceVO zoneGslbProvider =
                 _externalLoadBalancerDeviceDao.findGslbServiceProvider(physicalNetworkId, ntwkDevice.getNetworkServiceProvder());
             if (zoneGslbProvider != null) {
-                throw new CloudRuntimeException("There is a GSLB service provider configured in the zone alredy.");
+                throw new CloudRuntimeException("There is a GSLB service provider configured in the zone already.");
             }
         }
 

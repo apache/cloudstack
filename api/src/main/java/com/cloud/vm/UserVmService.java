@@ -434,6 +434,8 @@ public interface UserVmService {
 
     UserVm getUserVm(long vmId);
 
+    VirtualMachine getVm(long vmId);
+
     /**
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds.
      * Only Root

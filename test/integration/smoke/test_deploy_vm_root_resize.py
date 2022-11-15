@@ -394,6 +394,3 @@ class TestDeployVmRootSize(cloudstackTestCase):
             self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
         else:
             self.debug("test 02 does not support hypervisor type " + self.hypervisor)
-
-
-

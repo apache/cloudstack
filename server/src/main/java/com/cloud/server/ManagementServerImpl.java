@@ -4228,7 +4228,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
 
             if (cmd.getCertIndex() == null) {
-                throw new InvalidParameterValueException("index can't be empty, if it's a certifciation chain");
+                throw new InvalidParameterValueException("index can't be empty, if it's a certification chain");
             }
         }
 

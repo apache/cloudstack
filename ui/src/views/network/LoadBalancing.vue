@@ -1147,7 +1147,7 @@ export default {
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resouce: rule.id, state: 'failed' })
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'failed' })
             }
             if (this.selectedRowKeys.length === 0) {
               this.parentToggleLoading()
@@ -1280,7 +1280,7 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
-          successMessage: this.$t('message.success.asign.vm'),
+          successMessage: this.$t('message.success.assign.vm'),
           successMethod: () => {
             this.parentToggleLoading()
             this.fetchData()

@@ -621,4 +621,3 @@ class TestMulipleNicSupport(cloudstackTestCase):
             self.fail("Exception occurred: %s" % e)
 
         self.verify_network_rules(self.virtual_machine1.id)
-

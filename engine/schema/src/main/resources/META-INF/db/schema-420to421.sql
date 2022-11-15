@@ -237,7 +237,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
 update  `cloud`.`volumes` v,  `cloud`.`volume_host_ref` vhr  set v.format=vhr.format where v.id=vhr.volume_id and v.format is null;
 
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'baremetal.ipmi.lan.interface', 'default', 'option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule "default" means using default option of ipmitool');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'baremetal.ipmi.lan.interface', 'default', 'option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value "default" means using default option of ipmitool');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'baremetal.ipmi.fail.retry', 'default', "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure");
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.hung.wokervm.timeout', '7200', 'Worker VM timeout in seconds');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Alert", 'DEFAULT', 'management-server', "alert.smtp.connectiontimeout", "30000", "Socket connection timeout value in milliseconds. -1 for infinite timeout.");

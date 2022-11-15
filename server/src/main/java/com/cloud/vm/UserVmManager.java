@@ -76,7 +76,7 @@ public interface UserVmManager extends UserVmService {
      */
     boolean stopVirtualMachine(long userId, long vmId);
 
-    HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, int timout);
+    HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, int timeout);
 
     boolean deleteVmGroup(long groupId);
 
