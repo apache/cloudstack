@@ -65,7 +65,7 @@ public class MockSink extends BaseElement {
         ByteBuffer expectedBuf = bufs[packetNumber];
         if (!Arrays.equals(expectedBuf.toByteArray(), buf.toByteArray())) {
             dump(buf, expectedBuf);
-            throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not equal to expected buffer.\n  Actual bufer: " + buf
+            throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not equal to expected buffer.\n  Actual buffer: " + buf
                     + ",\n  expected buffer: " + expectedBuf + ".");
         }
 

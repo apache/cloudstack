@@ -270,6 +270,8 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     Pair<List<T>, Integer> searchAndCount(SearchCriteria<T> sc, Filter filter);
 
+    Pair<List<T>, Integer> searchAndCount(SearchCriteria<T> sc, Filter filter, boolean includeRemoved);
+
     /**
      * @param sc
      * @param filter

@@ -44,6 +44,7 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
@@ -118,7 +119,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.resource.StorageProcessor;
-import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
@@ -1046,7 +1046,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
             } else if (primaryPool.getType() != StoragePoolType.RBD) {
                 String snapshotPath = snapshot.getPath();
-                String backupSnapshotAfterTakingSnapshot = cmd.getOptions() == null ? null : cmd.getOptions().get(BackupSnapshotAfterTakingSnapshot.key());
+                String backupSnapshotAfterTakingSnapshot = cmd.getOptions() == null ? null : cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
 
                 if (backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) {
                     try {

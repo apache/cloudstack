@@ -410,7 +410,7 @@ wants a VM from source to migrate into this planned VM.")]
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("For storage migration, this could be set to TRUE or FALSE\nto determine wheither, " +
-            "at the end of a storage migration, when the\nsource host is beeing clean up, the " +
+            "at the end of a storage migration, when the\nsource host is being clean up, the " +
             "read only VHDs should be removedor not.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
         public bool RetainVhdCopiesOnSource {

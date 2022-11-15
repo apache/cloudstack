@@ -123,9 +123,10 @@ EOF
     mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
   fi
 
-  # Setup hourly lograte in systemd timer
-  sed -i 's/OnCalendar=daily/OnCalendar=hourly/g' /usr/lib/systemd/system/logrotate.timer
-  sed -i 's/AccuracySec=12h/AccuracySec=5m/g' /usr/lib/systemd/system/logrotate.timer
+  # As ACS is changing the file, the description will also change to make it clear that ACS is handling this.
+  sed -i "s#^Description=.*#Description=Cloudstack configuration time for rotation of log files#g" /usr/lib/systemd/system/logrotate.timer
+  sed -i "s#^OnCalendar=.*#OnCalendar=$LOGROTATE_FREQUENCY#g" /usr/lib/systemd/system/logrotate.timer
+  sed -i 's#^AccuracySec=.*#AccuracySec=5m#g' /usr/lib/systemd/system/logrotate.timer
 
   # reload daemon
   /usr/bin/systemctl daemon-reload

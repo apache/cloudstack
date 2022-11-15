@@ -43,6 +43,6 @@ public class QuotaTypesTest extends TestCase {
     @Test
     public void testQuotaTypeDescription() {
         assertNull(QuotaTypes.getDescription(-1));
-        assertNotNull(QuotaTypes.getDescription(QuotaTypes.MEMORY));
+        assertNotNull(QuotaTypes.getDescription(QuotaTypes.VOLUME));
     }
 }

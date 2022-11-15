@@ -37,8 +37,8 @@ class ShellExceutedFailedException(Exception):
 errCode = {
        # OvmDispatch is not class, these error codes are reserved
        "OvmDispatch.InvalidCallMethodFormat":OvmDispatcherStub+1,
-       "OvmDispatch.InvaildClass":OvmDispatcherStub+2,
-       "OvmDispatch.InvaildFunction":OvmDispatcherStub+3,
+       "OvmDispatch.InvalidClass":OvmDispatcherStub+2,
+       "OvmDispatch.InvalidFunction":OvmDispatcherStub+3,
        "OvmVm.reboot":OvmDispatcherStub+4,
 
        "OvmHost.registerAsPrimary":OvmHostErrCodeStub+1,

@@ -28,11 +28,11 @@ The usage is as follows
 4.	After upgrade  run usage_schema_comparision.sh to compare cloud usage all tables schema between fresh and upgraded setup
 	NOTE: this script requires step 1 output in current working directory
 
-5.      Run test_config_between_fresh_and_upgraded_setup.sh  to comapre table global configuration values between fresh and upgraded setup 
+5.      Run test_config_between_fresh_and_upgraded_setup.sh  to compare table global configuration values between fresh and upgraded setup
 	NOTE: this script requires step 1 output in current working directory
 
 
-6.      Run test_config_before_and_after_upgrade.sh  to comapre table global configuration values between before upgraded and after upgraded setup
+6.      Run test_config_before_and_after_upgrade.sh  to compare table global configuration values between before upgraded and after upgraded setup
 	NOTE: this script requires step 2  output in current working directory
 
 

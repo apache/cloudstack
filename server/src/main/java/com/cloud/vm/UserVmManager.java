@@ -90,7 +90,7 @@ public interface UserVmManager extends UserVmService {
 
     HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds);
 
-    HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, int timout);
+    HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, int timeout);
 
     boolean deleteVmGroup(long groupId);
 

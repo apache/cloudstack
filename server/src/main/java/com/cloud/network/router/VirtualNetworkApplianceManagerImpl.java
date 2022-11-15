@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -289,6 +290,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private static final String FILESYSTEM_WRITABLE_TEST = "filesystem.writable.test";
     private static final String READONLY_FILESYSTEM_ERROR = "Read-only file system";
     private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
+    /**
+     * Used regex to ensure that the value that will be passed to the VR is an acceptable value
+     */
+    public static final String LOGROTATE_REGEX = "((?i)(hourly)|(daily)|(monthly))|(\\*|\\d{2})\\:(\\*|\\d{2})\\:(\\*|\\d{2})";
 
     @Inject private EntityManager _entityMgr;
     @Inject private DataCenterDao _dcDao;
@@ -2126,11 +2131,34 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
+        String routerLogrotateFrequency = RouterLogrotateFrequency.valueIn(router.getDataCenterId());
+        if (!checkLogrotateTimerPattern(routerLogrotateFrequency)) {
+            s_logger.debug(String.format("Setting [%s] with value [%s] do not match with the used regex [%s], or any acceptable value ('hourly', 'daily', 'monthly'); " +
+                            "therefore, we will use the default value [%s] to configure the logrotate service on the virtual router.",RouterLogrotateFrequency.key(),
+                    routerLogrotateFrequency, LOGROTATE_REGEX, RouterLogrotateFrequency.defaultValue()));
+            routerLogrotateFrequency = RouterLogrotateFrequency.defaultValue();
+        }
+        s_logger.debug(String.format("The setting [%s] with value [%s] for the zone with UUID [%s], will be used to configure the logrotate service frequency" +
+                " on the virtual router.", RouterLogrotateFrequency.key(), routerLogrotateFrequency, dc.getUuid()));
+        buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
 
         return true;
+    }
+
+    /**
+     * @param routerLogrotateFrequency The string to be checked if matches with any acceptable values.
+     * Checks if the value in the global configuration is an acceptable value to be informed to the Virtual Router.
+     * @return true if the passed value match with any acceptable value based on the regex ((?i)(hourly)|(daily)|(monthly))|(\*|\d{2})\:(\*|\d{2})\:(\*|\d{2})
+     */
+    protected boolean checkLogrotateTimerPattern(String routerLogrotateFrequency) {
+        if (Pattern.matches(LOGROTATE_REGEX, routerLogrotateFrequency)) {
+            return true;
+        }
+        return false;
     }
 
     protected StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
@@ -3298,7 +3326,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
-                ExposeDnsAndBootpServer
+                ExposeDnsAndBootpServer,
+                RouterLogrotateFrequency
         };
     }
 

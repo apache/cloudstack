@@ -247,10 +247,10 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             Preconditions.checkNotNull(initiatorGroup, "initiatorGroup should not be Null");
 
             // We create an initiator for every host in this cluster and add it to the
-            // initator group
+            // initiator group
             addClusterHostsToInitiatorGroup(conn, clusterId, initiatorGroupName);
 
-            // assgin the initiatorgroup to appInstance
+            // assign the initiatorgroup to appInstance
 
             if (!isInitiatorGroupAssignedToAppInstance(conn, initiatorGroup, appInstance)) {
                 DateraUtil.assignGroupToAppInstance(conn, initiatorGroupName, appInstanceName);

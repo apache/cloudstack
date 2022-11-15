@@ -376,4 +376,3 @@ class TestMetrics(cloudstackTestCase):
             return True
         except ValueError:
             return False
-

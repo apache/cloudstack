@@ -375,14 +375,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         pstmt = txn.prepareAutoCloseStatement(sql);
                         rs1 = pstmt.executeQuery();
                         while (rs1.next()) {
-                            String resouce = rs1.getString(1); //resource column
-                            if (resouce == null)
+                            String resource = rs1.getString(1); //resource column
+                            if (resource == null)
                                 continue;
-                            if (resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56SP2Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer600Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer602Resource")) {
+                            if (resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56SP2Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer600Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer602Resource")) {
                                 pvdriverversion = "xenserver56";
                                 break;
                             }

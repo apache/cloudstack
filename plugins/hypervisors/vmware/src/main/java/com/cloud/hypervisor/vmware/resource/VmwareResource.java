@@ -3858,7 +3858,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     // BroadcastDomainType recogniizes and handles this.
                     return BroadcastDomainType.getValue(nicTo.getBroadcastUri());
                 else
-                    // for pvlan, the broacast uri will be of the form pvlan://<vlanid>-i<pvlanid>
+                    // for pvlan, the broadcast uri will be of the form pvlan://<vlanid>-i<pvlanid>
                     // TODO consider the spread of functionality between BroadcastDomainType and NetUtils
                     return NetUtils.getPrimaryPvlanFromUri(nicTo.getBroadcastUri());
             } else {

@@ -25,6 +25,7 @@ import java.util.List;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
@@ -180,6 +181,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>" +
                      "</video>" +
                      "<memballoon model='virtio'>" +
+                     "<stats period='60'/>" +
                      "<alias name='balloon0'/>" +
                      "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>" +
                      "</memballoon>" +
@@ -237,6 +239,10 @@ public class LibvirtDomainXMLParserTest extends TestCase {
             assertEquals(Integer.valueOf(i + 3), ifs.get(i).getSlot());
             assertEquals("vnet" + i, ifs.get(i).getDevName());
         }
+
+        MemBalloonDef memBalloon = parser.getMemBalloon();
+        assertEquals(MemBalloonDef.MemBalloonModel.VIRTIO, memBalloon.getMemBalloonModel());
+        assertEquals("60", memBalloon.getMemBalloonStatsPeriod());
 
         List<RngDef> rngs = parser.getRngs();
         assertEquals("/dev/random", rngs.get(0).getPath());
