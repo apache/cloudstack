@@ -1270,7 +1270,7 @@ public enum Config {
             "task.cleanup.retry.interval",
             "600",
             "Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.",
-            "Seconds"),
+            null),
 
     // Account Default Limits
     DefaultMaxAccountUserVms(
