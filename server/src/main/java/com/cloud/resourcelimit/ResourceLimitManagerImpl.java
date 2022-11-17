@@ -119,6 +119,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
+    public static final String OFFERINGS_NAME = "offerings";
 
     @Inject
     private AccountManager _accountMgr;
@@ -170,7 +171,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VlanDao _vlanDao;
 
     @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
+    private ServiceOfferingDao serviceOfferingDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -1003,12 +1004,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ServiceOffering defaultRouterOffering = null;
         String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
         if (globalRouterOffering != null) {
-            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
+            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
         }
         if (defaultRouterOffering == null) {
-            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
         }
-        GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = _serviceOfferingDao.createSearchBuilder(SumCount.class);
+        GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
         cpuSearch.select("sum", Func.SUM, cpuSearch.entity().getCpu());
         cpuSearch.select("count", Func.COUNT, (Object[])null);
         SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
@@ -1016,23 +1017,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("type", join1.entity().getType(), Op.IN);
         join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
         join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
-        cpuSearch.join("offerings", join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        cpuSearch.join(OFFERINGS_NAME, join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         cpuSearch.done();
 
         SearchCriteria<SumCount> sc = cpuSearch.create();
-        sc.setJoinParameters("offerings", "accountId", accountId);
-        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.DomainRouter); // domain routers
+        sc.setJoinParameters(OFFERINGS_NAME, "accountId", accountId);
+        sc.setJoinParameters(OFFERINGS_NAME, "type", VirtualMachine.Type.DomainRouter); // domain routers
 
-        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRunningVMsonly.value())) {
+            sc.setJoinParameters(OFFERINGS_NAME, "state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
         } else {
-            sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc.setJoinParameters(OFFERINGS_NAME, "state", State.Destroyed, State.Error, State.Expunging);
         }
-        sc.setJoinParameters("offerings", "displayVm", 1);
-        List<SumCount> cpus = _serviceOfferingDao.customSearch(sc, null);
+        sc.setJoinParameters(OFFERINGS_NAME, "displayVm", 1);
+        List<SumCount> cpus = serviceOfferingDao.customSearch(sc, null);
         if (cpus != null) {
             // Calculate the VR CPU resource count depending on the global setting
-            if (VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId())) {
+            if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId()))) {
                 cputotal += cpus.get(0).sum;
 
                 // Get the diff of current router offering with default offering
@@ -1075,12 +1076,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         ServiceOffering defaultRouterOffering = null;
         String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
         if (globalRouterOffering != null) {
-            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
+            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
         }
         if (defaultRouterOffering == null) {
-            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
         }
-        GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = _serviceOfferingDao.createSearchBuilder(SumCount.class);
+        GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
         memorySearch.select("sum", Func.SUM, memorySearch.entity().getRamSize());
         memorySearch.select("count", Func.COUNT, (Object[])null);
         SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
@@ -1088,24 +1089,24 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("type", join1.entity().getType(), Op.IN);
         join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
         join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
-        memorySearch.join("offerings", join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        memorySearch.join(OFFERINGS_NAME, join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         memorySearch.done();
 
         SearchCriteria<SumCount> sc = memorySearch.create();
-        sc.setJoinParameters("offerings", "accountId", accountId);
-        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.DomainRouter); // domain routers
-        sc.setJoinParameters("offerings", "displayVm", 1);
+        sc.setJoinParameters(OFFERINGS_NAME, "accountId", accountId);
+        sc.setJoinParameters(OFFERINGS_NAME, "type", VirtualMachine.Type.DomainRouter); // domain routers
+        sc.setJoinParameters(OFFERINGS_NAME, "displayVm", 1);
 
-        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRunningVMsonly.value())) {
+            sc.setJoinParameters(OFFERINGS_NAME, "state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
         } else {
-            sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc.setJoinParameters(OFFERINGS_NAME, "state", State.Destroyed, State.Error, State.Expunging);
         }
-        sc.setJoinParameters("offerings", "displayVm", 1);
-        List<SumCount> memory = _serviceOfferingDao.customSearch(sc, null);
+        sc.setJoinParameters(OFFERINGS_NAME, "displayVm", 1);
+        List<SumCount> memory = serviceOfferingDao.customSearch(sc, null);
         if (memory != null) {
             // Calculate VR memory count depending on global setting
-            if (VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId())) {
+            if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId()))) {
                 ramtotal += memory.get(0).sum;
                 if (VirtualMachineManager.ResourceCountRoutersType.valueIn(domain.getId())
                     .equalsIgnoreCase(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES)) {

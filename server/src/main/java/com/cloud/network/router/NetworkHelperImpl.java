@@ -268,7 +268,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         final Account owner = _accountMgr.getAccount(router.getAccountId());
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
-        if (VirtualMachineManager.ResourceCountRouters.valueIn(router.getDomainId())) {
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(router.getDomainId()))) {
             _itMgr.decrementVrResourceCount(routerOffering, owner, true);
         }
 
@@ -513,7 +513,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         // Increment the resource count with router offering.
         // If router can't be deployed or started, decrement the resources.
         // If resource.count.running.vms is false then increment resource count
-        if (VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId())) {
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
             _itMgr.incrementVrResourceCount(routerOffering,
                     owner, true);
         }
@@ -568,7 +568,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                     continue;
                 } else {
                     // If VR can't be deployed then decrement the resource count
-                    if (VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId())) {
+                    if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
                         _itMgr.decrementVrResourceCount(routerOffering, owner,true);
                     }
                     throw ex;
@@ -589,7 +589,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                         continue;
                     } else {
                         // If router can't be started then decrement the resource count
-                        if (VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId())) {
+                        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
                             _itMgr.decrementVrResourceCount(routerOffering, owner,true);
                         }
                         throw ex;

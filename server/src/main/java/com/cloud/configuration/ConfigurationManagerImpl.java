@@ -1145,12 +1145,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return errMsg;
         }
 
-        if (VirtualMachineManager.ResourceCountRoutersType.key().equalsIgnoreCase(name)) {
-            if (!resourceCountRoutersTypeValues.contains(value) || isBlank(value)) {
-                final String msg = "Possible values are - delta or all";
-                s_logger.error(msg);
-                throw new InvalidParameterValueException(msg);
-            }
+        if (VirtualMachineManager.ResourceCountRoutersType.key().equalsIgnoreCase(name)
+                && (!resourceCountRoutersTypeValues.contains(value) || isBlank(value))) {
+            final String msg = "Possible values are - delta or all";
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
         }
 
         if (value == null) {

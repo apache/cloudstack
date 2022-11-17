@@ -71,19 +71,19 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
             "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
-    ConfigKey<Boolean> ResourceCountRunningVMsonly = new ConfigKey<Boolean>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
+    ConfigKey<Boolean> ResourceCountRunningVMsonly = new ConfigKey<>("Advanced", Boolean.class, "resource.count.running.vms.only", "false",
             "Count the resources of only running VMs in resource limitation.", true);
 
-    ConfigKey<Boolean> AllowExposeHypervisorHostnameAccountLevel = new ConfigKey<Boolean>("Advanced", Boolean.class, "account.allow.expose.host.hostname",
+    ConfigKey<Boolean> AllowExposeHypervisorHostnameAccountLevel = new ConfigKey<>("Advanced", Boolean.class, "account.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Account);
 
-    ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
+    ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
 
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
-    static final ConfigKey<Integer> VmServiceOfferingMaxCPUCores = new ConfigKey<Integer>("Advanced",
+    static final ConfigKey<Integer> VmServiceOfferingMaxCPUCores = new ConfigKey<>("Advanced",
             Integer.class,
             "vm.serviceoffering.cpu.cores.max",
             "0",
@@ -91,7 +91,7 @@ public interface VirtualMachineManager extends Manager {
             true
     );
 
-    static final ConfigKey<Integer> VmServiceOfferingMaxRAMSize = new ConfigKey<Integer>("Advanced",
+    static final ConfigKey<Integer> VmServiceOfferingMaxRAMSize = new ConfigKey<>("Advanced",
             Integer.class,
             "vm.serviceoffering.ram.size.max",
             "0",
@@ -266,8 +266,7 @@ public interface VirtualMachineManager extends Manager {
 
     static String getHypervisorHostname(String name) {
         final Account caller = CallContext.current().getCallingAccount();
-        String destHostname = (AllowExposeHypervisorHostname.value() && AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? name : null;
-        return destHostname;
+        return (AllowExposeHypervisorHostname.value() && AllowExposeHypervisorHostnameAccountLevel.valueIn(caller.getId())) ? name : null;
     }
 
     /**

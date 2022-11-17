@@ -369,7 +369,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private AnnotationDao annotationDao;
     @Inject
-    private ConfigurationDao _configDao;
+    private ConfigurationDao configDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1046,15 +1046,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // check resource count if ResourceCountRunningVMsonly.value() = true
         final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
         if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-            resourceCountIncrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceCountIncrement(owner.getAccountId(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
 
-        // Increment the VR resource count if the global setting is set to true
-        // and resource.count.running.vms is also true
-        if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
-                ResourceCountRouters.valueIn(owner.getDomainId())) {
-            incrementVrResourceCount(offering, owner, false);
-        }
+        changeVrCountResourceBy(vm.type, owner.getDomainId(), offering, owner, false);
 
         boolean canRetry = true;
         ExcludeList avoids = null;
@@ -1358,13 +1353,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } finally {
             if (startedVm == null) {
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    resourceCountDecrement(owner.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                    resourceCountDecrement(owner.getAccountId(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
                 }
-                // Decrement VR resource count if the VR can't be started
-                if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
-                        ResourceCountRouters.valueIn(owner.getDomainId())) {
-                    decrementVrResourceCount(offering, owner, false);
-                }
+
+                changeVrCountResourceBy(vm.type, owner.getDomainId(), offering, owner, true);
 
                 if (canRetry) {
                     try {
@@ -1415,7 +1407,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     /**
      * Function to increment the VR resource count
-     *
      * If the global setting resource.count.router is true then the VR
      * resource count will be considered as well
      * If the global setting resource.count.router.type is "all" then
@@ -1435,11 +1426,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // count only if resource.count.running.vms is false else
         // we increment it during VR start/stop. Same applies for
         // decrementing resource count.
-        if (isDeployOrDestroy == ResourceCountRunningVMsonly.value()) {
+        if (isDeployOrDestroy == Boolean.TRUE.equals(ResourceCountRunningVMsonly.value())) {
             return;
         }
         ServiceOffering defaultRouterOffering = null;
-        String globalRouterOffering = _configDao.getValue("router.service.offering");
+        String globalRouterOffering = configDao.getValue("router.service.offering");
         if (globalRouterOffering != null) {
             defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
         }
@@ -1486,8 +1477,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Incrementing the CPU count with value " + cpuCount + " and " +
                     "RAM value with " + memoryCount);
         }
-        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(cpuCount));
-        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(memoryCount));
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, Long.valueOf(cpuCount));
+        _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, Long.valueOf(memoryCount));
     }
 
     /**
@@ -1501,12 +1492,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void decrementVrResourceCount(ServiceOffering offering,
                                          Account owner,
                                          boolean isDeployOrDestroy) {
-        if (isDeployOrDestroy == ResourceCountRunningVMsonly.value()) {
+        if (isDeployOrDestroy == Boolean.TRUE.equals(ResourceCountRunningVMsonly.value())) {
             return;
         }
 
         ServiceOffering defaultRouterOffering = null;
-        String globalRouterOffering = _configDao.getValue("router.service.offering");
+        String globalRouterOffering = configDao.getValue("router.service.offering");
         if (globalRouterOffering != null) {
             defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
         }
@@ -1534,19 +1525,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.error("Decrementing cpu resource count with value " + cpuCount +
                     " and memory resource with value " + memoryCount);
         }
-        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, new Long(cpuCount));
-        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, new Long(memoryCount));
+        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, Long.valueOf(cpuCount));
+        _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, Long.valueOf(memoryCount));
     }
 
     private void resetVmNicsDeviceId(Long vmId) {
         final List<NicVO> nics = _nicsDao.listByVmId(vmId);
-        Collections.sort(nics, new Comparator<NicVO>() {
-            @Override
-            public int compare(NicVO nic1, NicVO nic2) {
-                Long nicDevId1 = Long.valueOf(nic1.getDeviceId());
-                Long nicDevId2 = Long.valueOf(nic2.getDeviceId());
-                return nicDevId1.compareTo(nicDevId2);
-            }
+        Collections.sort(nics, (nic1, nic2) -> {
+            Long nicDevId1 = (long) nic1.getDeviceId();
+            Long nicDevId2 = (long) nic2.getDeviceId();
+            return nicDevId1.compareTo(nicDevId2);
         });
         int deviceId = 0;
         for (final NicVO nic : nics) {
@@ -2237,15 +2225,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
                     //update resource count if stop successfully
-                    resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                    resourceCountDecrement(vm.getAccountId(),Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
                 }
 
                 final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
-                // Decrement VR resource count once the VR is stopped
-                if (VirtualMachine.Type.DomainRouter.equals(vm.type) &&
-                        ResourceCountRouters.valueIn(vm.getDomainId())) {
-                    decrementVrResourceCount(offering, owner,false);
-                }
+                changeVrCountResourceBy(vm.type, vm.getDomainId(), offering, owner, true);
             } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
             }
@@ -2253,6 +2237,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String message = String.format("Unable to stop %s due to [%s].", vm.toString(), e.getMessage());
             s_logger.warn(message, e);
             throw new CloudRuntimeException(message, e);
+        }
+    }
+
+    private void changeVrCountResourceBy(VirtualMachine.Type type, long domainId, ServiceOffering offering, Account owner, boolean decrement) {
+        if (VirtualMachine.Type.DomainRouter.equals(type) && Boolean.TRUE.equals(ResourceCountRouters.valueIn(domainId))) {
+            if(decrement) {
+                decrementVrResourceCount(offering, owner, true);
+            } else {
+                incrementVrResourceCount(offering, owner, true);
+            }
         }
     }
 
