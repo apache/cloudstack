@@ -721,6 +721,13 @@ public class AgentProperties{
      */
     public static final Property<Integer> VM_MEMBALLOON_STATS_PERIOD = new Property<>("vm.memballoon.stats.period", 0);
 
+    /**
+     * The number of iothreads
+     * Data type: Integer.<br>
+     * Default value: <code>0</code>
+     */
+    public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
+
     public static class Property <T>{
         private String name;
         private T defaultValue;

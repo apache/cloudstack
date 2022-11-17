@@ -113,6 +113,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.IoDriver;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
@@ -130,6 +131,8 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
+import com.cloud.vm.VmDetailConstants;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -1284,11 +1287,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
-                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails)
+                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails, boolean isIothreadsEnabled)
             throws LibvirtException, InternalErrorException {
         attachOrDetachDisk(conn, attach, vmName, attachingDisk, devId, serial, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength,
                 bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate,
-                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l);
+                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l, isIothreadsEnabled);
     }
 
     /**
@@ -1323,7 +1326,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
                                                    final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails,
-                                                   long waitDetachDevice)
+                                                   long waitDetachDevice, boolean isIothreadsEnabled)
             throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
@@ -1448,6 +1451,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if(cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
+                if (isIothreadsEnabled) {
+                    diskdef.setIoDriver(IoDriver.NATIVE);
+                    if (busT == DiskDef.DiskBus.VIRTIO) {
+                        diskdef.setIothreads(isIothreadsEnabled);
+                    }
+                }
             }
 
             attachOrDetachDevice(conn, attach, vmName, diskdef, waitDetachDevice);
@@ -1481,11 +1490,12 @@ public class KVMStorageProcessor implements StorageProcessor {
             final String volCacheMode = vol.getCacheMode() == null ? null : vol.getCacheMode().toString();
             s_logger.debug(String.format("Attaching physical disk %s with format %s", phyDisk.getPath(), phyDisk.getFormat()));
 
+            boolean isIothreadsEnabled = disk.getDetails() != null && disk.getDetails().containsKey(VmDetailConstants.IOTHREADS);
             attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(), serial,
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, encryptDetails);
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, encryptDetails, isIothreadsEnabled);
 
             return new AttachAnswer(disk);
         } catch (final LibvirtException e) {
@@ -1521,7 +1531,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice);
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice, false);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 

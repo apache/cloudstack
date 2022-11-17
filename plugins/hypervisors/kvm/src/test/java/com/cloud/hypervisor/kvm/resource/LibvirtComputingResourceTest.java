@@ -644,7 +644,7 @@ public class LibvirtComputingResourceTest {
     public void testCreateSCSIDef() {
         VirtualMachineTO to = createDefaultVM(false);
 
-        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus());
+        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus(), false);
         Document domainDoc = parse(scsiDef.toString());
         verifyScsi(to, domainDoc, "");
     }
@@ -5869,7 +5869,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
         Mockito.when(libvirtComputingResourceSpy.getHypervisorLibvirtVersion()).thenReturn(hypervisorLibvirtVersion);
         Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
-        libvirtComputingResourceSpy.setDiskIoDriver(diskDef);
+        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, false);
         return diskDef;
     }
 

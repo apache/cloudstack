@@ -105,12 +105,14 @@ public class LibvirtVMDef {
         private String _machine;
         private String _nvram;
         private String _nvramTemplate;
+        private String _iothreads;
 
         public static final String GUEST_LOADER_SECURE = "guest.loader.secure";
         public static final String GUEST_LOADER_LEGACY = "guest.loader.legacy";
         public static final String GUEST_NVRAM_PATH = "guest.nvram.path";
         public static final String GUEST_NVRAM_TEMPLATE_SECURE = "guest.nvram.template.secure";
         public static final String GUEST_NVRAM_TEMPLATE_LEGACY = "guest.nvram.template.legacy";
+        private int ioThreadsNum = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
 
         public void setGuestType(GuestType type) {
             _type = type;
@@ -167,6 +169,14 @@ public class LibvirtVMDef {
             this._bootmode = bootmode;
         }
 
+        public String getIothreads() {
+            return _iothreads;
+        }
+
+        public void setIothreads(String iothreads) {
+            this._iothreads = iothreads;
+        }
+
         @Override
         public String toString() {
             if (_type == GuestType.KVM) {
@@ -219,6 +229,9 @@ public class LibvirtVMDef {
                     guestDef.append("<smbios mode='sysinfo'/>\n");
                 }
                 guestDef.append("</os>\n");
+                if (_iothreads != null) {
+                    guestDef.append(String.format("<iothreads>%s</iothreads>", ioThreadsNum));
+                }
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {
                 StringBuilder guestDef = new StringBuilder();
@@ -571,6 +584,8 @@ public class LibvirtVMDef {
     }
 
     public static class DiskDef {
+        private int ioThreadsNum = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
+
         public static class LibvirtDiskEncryptDetails {
             String passphraseUuid;
             QemuObject.EncryptFormat encryptFormat;
@@ -740,6 +755,7 @@ public class LibvirtVMDef {
         private DiscardType _discard = DiscardType.IGNORE;
         private IoDriver ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
+        private boolean iothreads;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -759,6 +775,14 @@ public class LibvirtVMDef {
 
         public void setDeviceType(DeviceType deviceType) {
             _deviceType = deviceType;
+        }
+
+        public boolean getIothreads() {
+            return iothreads;
+        }
+
+        public void setIothreads(boolean iothreads) {
+            this.iothreads = iothreads;
         }
 
         public void defFileBasedDisk(String filePath, String diskLabel, DiskBus bus, DiskFmtType diskFmtType) {
@@ -1097,9 +1121,12 @@ public class LibvirtVMDef {
                 }
 
                 if(ioDriver != null) {
-                    diskBuilder.append(String.format("io='%s'", ioDriver));
+                    diskBuilder.append(String.format("io='%s' ", ioDriver));
                 }
 
+                if (iothreads && _bus == DiskBus.VIRTIO) {
+                    diskBuilder.append(String.format("iothread='%s' ", ioThreadsNum));
+                }
                 diskBuilder.append("/>\n");
             }
 
@@ -1901,12 +1928,15 @@ public class LibvirtVMDef {
     }
 
     public static class SCSIDef {
+        private int ioThreadsNum = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
+
         private short index = 0;
         private int domain = 0;
         private int bus = 0;
         private int slot = 9;
         private int function = 0;
         private int queues = 0;
+        private boolean isIOthreadsEnabled;
 
         public SCSIDef(short index, int domain, int bus, int slot, int function, int queues) {
             this.index = index;
@@ -1915,6 +1945,16 @@ public class LibvirtVMDef {
             this.slot = slot;
             this.function = function;
             this.queues = queues;
+        }
+
+        public SCSIDef(short index, int domain, int bus, int slot, int function, int queues, boolean ioThreadsEnabled) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+            this.queues = queues;
+            this.isIOthreadsEnabled = ioThreadsEnabled;
         }
 
         public SCSIDef() {
@@ -1928,9 +1968,17 @@ public class LibvirtVMDef {
             scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index));
             scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
                     this.domain, this.bus, this.slot, this.function ) );
-            if (this.queues > 0) {
-                scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
+            if (this.queues > 0 || isIOthreadsEnabled) {
+                scsiBuilder.append("<driver");
+                if (queues > 0) {
+                    scsiBuilder.append(String.format(" queues='%s'", queues));
+                }
+                if (isIOthreadsEnabled) {
+                    scsiBuilder.append(String.format(" iothread='%s'", ioThreadsNum));
+                }
+                scsiBuilder.append("/>\n");
             }
+
             scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }

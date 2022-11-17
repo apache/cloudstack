@@ -2507,7 +2507,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (busT == DiskDef.DiskBus.SCSI) {
-            devices.addDevice(createSCSIDef(vcpus));
+            Map<String, String> details = vmTO.getDetails();
+
+            boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
+            devices.addDevice(createSCSIDef(vcpus, isIothreadsEnabled));
         }
         return devices;
     }
@@ -2545,8 +2548,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Creates Virtio SCSI controller. <br>
      * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
      */
-    protected SCSIDef createSCSIDef(int vcpus) {
-        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
+    protected SCSIDef createSCSIDef(int vcpus, boolean isIothreadsEnabled) {
+        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus, isIothreadsEnabled);
     }
 
     protected ConsoleDef createConsoleDef() {
@@ -2673,12 +2676,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setGuestArch(_guestCpuArch != null ? _guestCpuArch : vmTO.getArch());
         guest.setMachineType(isGuestAarch64() ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
-        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
-            guest.setBootType(GuestDef.BootType.UEFI);
-            guest.setBootMode(GuestDef.BootMode.LEGACY);
-            guest.setMachineType(Q35);
-            if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setBootMode(GuestDef.BootMode.SECURE);
+        if (MapUtils.isNotEmpty(customParams)) {
+            if (customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
+                guest.setBootType(GuestDef.BootType.UEFI);
+                guest.setBootMode(GuestDef.BootMode.LEGACY);
+                guest.setMachineType(Q35);
+                if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                    guest.setBootMode(GuestDef.BootMode.SECURE);
+                }
+            }
+            if (customParams.containsKey(VmDetailConstants.IOTHREADS)) {
+                guest.setIothreads(VmDetailConstants.IOTHREADS);
             }
         }
         guest.setUuid(uuid);
@@ -2823,6 +2831,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (isUefiEnabled) {
             isSecureBoot = isSecureMode(details.get(GuestDef.BootType.UEFI.toString()));
         }
+
+        boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
         if (vmSpec.getOs().toLowerCase().contains("window")) {
             isWindowsTemplate =true;
         }
@@ -2913,7 +2923,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setDiscard(DiscardType.UNMAP);
                 }
 
-                setDiskIoDriver(disk);
+                setDiskIoDriver(disk, iothreadsEnabled);
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -3055,8 +3065,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
-    protected void setDiskIoDriver(DiskDef disk) {
-        if (enableIoUring) {
+    protected void setDiskIoDriver(DiskDef disk, boolean iothreadsEnabled) {
+        if (iothreadsEnabled) {
+            disk.setIoDriver(DiskDef.IoDriver.NATIVE);
+            disk.setIothreads(iothreadsEnabled);
+        } else if (enableIoUring) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
     }

@@ -4012,6 +4012,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 details.put(DiskTO.PROTOCOL_TYPE, (volumeToAttach.getPoolType() != null) ? volumeToAttach.getPoolType().toString() : null);
                 details.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(volumeToAttachStoragePool.getId())));
 
+                _userVmDao.loadDetails(vm);
+                if (vm.getHypervisorType() == HypervisorType.KVM) {
+                    if (vm.getDetails() != null && vm.getDetail(VmDetailConstants.IOTHREADS) != null) {
+                        details.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
+                    }
+                }
+
                 if (chapInfo != null) {
                     details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
                     details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
@@ -4026,7 +4033,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
 
-                _userVmDao.loadDetails(vm);
                 Map<String, String> controllerInfo = new HashMap<String, String>();
                 controllerInfo.put(VmDetailConstants.ROOT_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER));
                 controllerInfo.put(VmDetailConstants.DATA_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER));
