@@ -67,7 +67,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     protected KVMGuru() {
         super();
     }
-
+    public static final ConfigKey<Boolean> KvmEnableMetadata = new ConfigKey<Boolean>(Boolean.class, "kvm.enable.metadata", "Advanced", "false", 
+            "When set to true this will enable libvirt exporter and include metadata", true, ConfigKey.Scope.Global, null);
     /**
      * Retrieve host max CPU speed
      */
@@ -220,7 +221,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxMemoryConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
         if (customOfferingMaxMemory != null) {
             s_logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
-            maxMemory = ByteScaleUtils.mebibytesToBytes(customOfferingMaxMemory);
+            maxMemory = ByteScaleUtils.mibToBytes(customOfferingMaxMemory);
         } else {
             String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
 
@@ -228,7 +229,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
               serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
 
             if (maxMemoryConfig > 0) {
-                maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfig);
+                maxMemory = ByteScaleUtils.mibToBytes(maxMemoryConfig);
             } else {
                 s_logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
                 maxMemory = maxHostMemory;
@@ -286,7 +287,12 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
         return new Pair<>(false, hostId);
     }
-
+    @Override public String getConfigComponentName() {
+        return KVMGuru.class.getSimpleName();
+    }
+    @Override public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {KvmEnableMetadata};
+    }
     @Override
     public boolean trackVmHostChange() {
         return false;
