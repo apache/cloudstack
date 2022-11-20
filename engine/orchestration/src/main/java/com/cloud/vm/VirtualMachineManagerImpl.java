@@ -1049,7 +1049,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             resourceCountIncrement(owner.getAccountId(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
 
-        changeVrCountResourceBy(vm.type, owner.getDomainId(), offering, owner, false);
+        updateVrCountResourceBy(vm.type, owner.getDomainId(), offering, owner, false);
 
         boolean canRetry = true;
         ExcludeList avoids = null;
@@ -1356,7 +1356,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     resourceCountDecrement(owner.getAccountId(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
                 }
 
-                changeVrCountResourceBy(vm.type, owner.getDomainId(), offering, owner, true);
+                updateVrCountResourceBy(vm.type, owner.getDomainId(), offering, owner, true);
 
                 if (canRetry) {
                     try {
@@ -1455,7 +1455,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return Pair.of(cpuCount.longValue(), memoryCount.longValue());
     }
 
-    private void validateResouceCount(Pair<Long, Long> cpuMemoryCount, Account owner) {
+    private void validateResourceCount(Pair<Long, Long> cpuMemoryCount, Account owner) {
         final Long cpuCount = cpuMemoryCount.first();
         final Long memoryCount = cpuMemoryCount.second();
         try {
@@ -1466,7 +1466,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memoryCount);
             }
         } catch (ResourceAllocationException ex) {
-            throw new CloudRuntimeException("Unable to deploy/start routers due to " + ex.getMessage());
+            throw new CloudRuntimeException(String.format("Unable to deploy/start routers due to {}", ex.getMessage()));
         }
     }
 
@@ -1477,7 +1477,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * @param owner the account
      */
     private void calculateResourceCount(Pair<Long, Long> cpuMemoryCount, Account owner, boolean isIncrement) {
-        validateResouceCount(cpuMemoryCount, owner);
+        validateResourceCount(cpuMemoryCount, owner);
         final Long cpuCount = cpuMemoryCount.first();
         final Long memoryCount = cpuMemoryCount.second();
 
@@ -2245,7 +2245,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
-                changeVrCountResourceBy(vm.type, vm.getDomainId(), offering, owner, true);
+                updateVrCountResourceBy(vm.type, vm.getDomainId(), offering, owner, true);
             } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
             }
@@ -2256,7 +2256,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void changeVrCountResourceBy(VirtualMachine.Type type, long domainId, ServiceOffering offering, Account owner, boolean decrement) {
+    private void updateVrCountResourceBy(VirtualMachine.Type type, long domainId, ServiceOffering offering, Account owner, boolean decrement) {
         if (VirtualMachine.Type.DomainRouter.equals(type) && Boolean.TRUE.equals(ResourceCountRouters.valueIn(domainId))) {
             if(decrement) {
                 decrementVrResourceCount(offering, owner, true);
