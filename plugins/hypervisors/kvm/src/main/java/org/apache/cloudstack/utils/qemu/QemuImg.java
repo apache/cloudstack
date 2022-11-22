@@ -166,6 +166,7 @@ public class QemuImg {
      *
      * @param qemuImgPath
      *            An alternative path to the qemu-img binary.
+     * @return void
      */
     public QemuImg(final String qemuImgPath) throws LibvirtException {
         this(0, false, false);
@@ -186,6 +187,7 @@ public class QemuImg {
      * @param options
      *            Options for the create. Takes a Map<String, String> with key value
      *            pairs which are passed on to qemu-img without validation.
+     * @return void
      */
     public void create(final QemuImgFile file, final QemuImgFile backingFile, final Map<String, String> options) throws QemuImgException {
         create(file, backingFile, options, null);
