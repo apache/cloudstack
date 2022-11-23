@@ -16,10 +16,14 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.Map;
+import java.util.List;
+
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkDetailsDao extends GenericDao<NetworkDetailVO, Long>, ResourceDetailsDao<NetworkDetailVO> {
+
     boolean isNetworkUsageHidden(long networkId);
 }

@@ -226,6 +226,8 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -417,6 +419,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     AccountDetailsDao _accountDetailsDao;
     @Inject
     DomainDetailsDao _domainDetailsDao;
+    @Inject
+    NetworkDetailsDao _networkDetailsDao;
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -785,6 +789,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 break;
 
+            case Network:
+                final NetworkVO network = _networkDao.findById(resourceId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("unable to find network by id " + resourceId);
+                }
+                NetworkDetailVO networkDetailVO = _networkDetailsDao.findDetail(resourceId, name);
+                if (networkDetailVO == null) {
+                    networkDetailVO = new NetworkDetailVO(resourceId, name, value, true);
+                    _networkDetailsDao.persist(networkDetailVO);
+                } else {
+                    networkDetailVO.setValue(value);
+                    _networkDetailsDao.update(networkDetailVO.getId(), networkDetailVO);
+                }
+                break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -987,6 +1006,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             id = imageStoreId;
             paramCountCheck++;
         }
+//        if (networkId != null) {
+//            scope = ConfigKey.Scope.Network.toString();
+//            id = networkId;
+//            paramCountCheck++;
+//        }
 
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
@@ -1040,6 +1064,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long accountId = cmd.getAccountId();
         final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long networkId = cmd.getNetworkId();
+
         ConfigKey<?> configKey = null;
         Optional optionalValue;
         String defaultValue;
@@ -1073,6 +1099,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         scopeMap.put(ConfigKey.Scope.Account.toString(), accountId);
         scopeMap.put(ConfigKey.Scope.StoragePool.toString(), storagepoolId);
         scopeMap.put(ConfigKey.Scope.ImageStore.toString(), imageStoreId);
+        scopeMap.put(ConfigKey.Scope.Network.toString(), networkId);
 
         ParamCountPair paramCountPair = getParamCount(scopeMap);
         id = paramCountPair.getId();
@@ -1161,6 +1188,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
                 }
                 optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
+                newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
+                break;
+
+            case Network:
+                final NetworkVO network = _networkDao.findById(id);
+                if (network == null) {
+                    throw new InvalidParameterValueException("unable to find network by id " + id);
+                }
+
+                NetworkDetailVO networkDetailVO = _networkDetailsDao.findDetail(id, name);
+                if (networkDetailVO != null) {
+                    _networkDetailsDao.remove(networkDetailVO.getId());
+                }
+
+                optionalValue = Optional.ofNullable(configKey.valueIn(id));
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 

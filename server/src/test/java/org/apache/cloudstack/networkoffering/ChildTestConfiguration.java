@@ -54,6 +54,7 @@ import com.cloud.network.dao.FirewallRulesDcidrsDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkServiceMapDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
@@ -322,6 +323,11 @@ public class
     @Bean
     public DomainDetailsDao domainDetailsDao() {
         return Mockito.mock(DomainDetailsDao.class);
+    }
+
+    @Bean
+    public NetworkDetailsDao networkDetailsDao() {
+        return Mockito.mock(NetworkDetailsDao.class);
     }
 
     @Bean
