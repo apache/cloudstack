@@ -4013,10 +4013,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 details.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(volumeToAttachStoragePool.getId())));
 
                 _userVmDao.loadDetails(vm);
-                if (vm.getHypervisorType() == HypervisorType.KVM) {
-                    if (vm.getDetails() != null && vm.getDetail(VmDetailConstants.IOTHREADS) != null) {
-                        details.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
-                    }
+                if (isIothreadsSupported(vm)) {
+                    details.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
                 }
 
                 if (chapInfo != null) {
@@ -4128,6 +4126,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
+    }
+
+    private boolean isIothreadsSupported(UserVmVO vm) {
+        return vm.getHypervisorType() == HypervisorType.KVM
+                && vm.getDetails() != null
+                && vm.getDetail(VmDetailConstants.IOTHREADS) != null;
     }
 
     private void provideVMInfo(DataStore dataStore, long vmId, Long volumeId) {
