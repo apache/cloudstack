@@ -709,8 +709,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     final String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
 
                     if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.StorPool)) {
-                        //live migrate from one StorPool storage to another
-                        //migrate volume to StorPool storage
                         answer = migrateVolumeToStorPool(srcData, dstData, srcInfo, srcTO, volumeName);
                     } else {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(srcData.getDataStore().getUuid(), srcData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
@@ -777,6 +775,15 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(res);
     }
 
+    /**
+     * Live migrate/copy volume from one StorPool storage to another
+     * @param srcData The source volume data
+     * @param dstData The destination volume data
+     * @param srcInfo The source volume info
+     * @param srcTO The source Volume TO
+     * @param volumeName The name of the volume
+     * @return Answer
+     */
     private Answer migrateVolumeToStorPool(DataObject srcData, DataObject dstData, VolumeInfo srcInfo,
             VolumeObjectTO srcTO, final String volumeName) {
         Answer answer;
@@ -797,15 +804,23 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (vm != null && vm.getState().equals(State.Running)) {
-            // migrate volume to another StorPool template
             answer = migrateVolume(srcData, dstData, volumeName, conn);
         } else {
-            //copy volume to another pool
             answer = copyVolume(srcInfo, srcTO, conn, baseOn, vmUuid, vcPolicyTag);
         }
         return answer;
     }
 
+    /**
+     * Copy the volume from StorPool primary storage to another StorPool primary storage
+     * @param srcInfo The source volume info
+     * @param srcTO The source Volume TO
+     * @param conn StorPool connection
+     * @param baseOn The name of an already existing volume that the new volume is to be a copy of.
+     * @param vmUuid The UUID of the VM
+     * @param vcPolicyTag The VC policy tag
+     * @return Answer
+     */
     private Answer copyVolume(VolumeInfo srcInfo, VolumeObjectTO srcTO, SpConnectionDesc conn, String baseOn, String vmUuid, String vcPolicyTag) {
         //uuid tag will be the same as srcData.uuid
         String volumeName = srcInfo.getUuid();
@@ -825,6 +840,14 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return new CopyCmdAnswer(srcTO);
     }
 
+    /**
+     * Live migrate the StorPool's volume to another StorPool template
+     * @param srcData The source data volume
+     * @param dstData The destination data volume
+     * @param name The volume's name
+     * @param conn StorPool's connection
+     * @return Answer
+     */
     private Answer migrateVolume(DataObject srcData, DataObject dstData, String name, SpConnectionDesc conn) {
         Answer answer;
         SpApiResponse resp = StorPoolUtil.volumeUpdateTemplate(name, conn);
