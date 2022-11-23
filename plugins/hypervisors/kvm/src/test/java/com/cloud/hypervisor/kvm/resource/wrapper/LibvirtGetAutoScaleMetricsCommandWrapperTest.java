@@ -77,7 +77,7 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest {
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
         List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
 
-        assertEquals(values.size(), 3);
+        assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());
@@ -104,7 +104,7 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest {
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
         List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
 
-        assertEquals(values.size(), 3);
+        assertEquals(3, values.size());
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
                 assertEquals(Double.valueOf(lbStats[0]), value.getValue());

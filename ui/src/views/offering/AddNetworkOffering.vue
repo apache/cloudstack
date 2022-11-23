@@ -568,6 +568,7 @@ export default {
         maclearning: this.macLearningValue,
         sourcenattype: 'peraccount',
         inlinemode: 'false',
+        vmautoscalingcapability: true,
         isolation: 'dedicated',
         conservemode: true,
         availability: 'optional',
