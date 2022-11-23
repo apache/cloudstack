@@ -417,8 +417,25 @@ public class RouterDeploymentDefinition {
         }
     }
 
+    protected void findNetworkServiceOfferingId() {
+        String networkRouterOffering = VirtualNetworkApplianceManager.NetworkVirtualRouterServiceOffering.valueIn(guestNetwork.getId());
+        if (networkRouterOffering != null) {
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(networkRouterOffering);
+            if (serviceOffering != null && "domainrouter".equals(serviceOffering.getSystemVmType())) {
+                boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+                if (isLocalStorage == diskOffering.isUseLocalStorage()) {
+                    serviceOfferingId = serviceOffering.getId();
+                }
+            }
+        }
+    }
+
     protected void findServiceOfferingId() {
         serviceOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        if (serviceOfferingId == null) {
+            findNetworkServiceOfferingId();
+        }
         if (serviceOfferingId == null) {
             findAccountServiceOfferingId(guestNetwork.getAccountId());
         }
