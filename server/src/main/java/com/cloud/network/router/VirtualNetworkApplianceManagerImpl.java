@@ -3341,7 +3341,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
-                RouterLogrotateFrequency
+                RouterLogrotateFrequency,
+                NetworkVirtualRouterServiceOffering
         };
     }
 

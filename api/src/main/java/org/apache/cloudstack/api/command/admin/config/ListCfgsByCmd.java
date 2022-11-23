@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
@@ -105,6 +106,12 @@ public class ListCfgsByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "lists configuration by parent name (primarily used for UI)", since = "4.18.0")
     private String parentName;
 
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "the ID of the Network to update the parameter value for corresponding network")
+    private Long networkId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -161,6 +168,10 @@ public class ListCfgsByCmd extends BaseListCmd {
         return super.getPageSize();
     }
 
+    public Long getNetworkId() {
+        return networkId;
+    }
+
     @Override
     public Long getPageSizeVal() {
         Long defaultPageSize = 500L;
@@ -201,6 +212,9 @@ public class ListCfgsByCmd extends BaseListCmd {
         }
         if (getImageStoreId() != null){
             cfgResponse.setScope("imagestore");
+        }
+        if (getNetworkId() != null) {
+            cfgResponse.setScope("network");
         }
     }
 
