@@ -138,16 +138,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
-        URI uri = null;
-        boolean multi = false;
+        UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
+
+        String scheme = uriInfo.getScheme();
+        String storageHost = uriInfo.getStorageHost();
+        String storagePath = uriInfo.getStoragePath();
         try {
-            String urlType = url.substring(0, 3);
-            if (urlType.equals("rbd") && url.contains(",")) {
-                multi = true;
-                url = url.replaceAll(",", "/");
-            }
-            uri = new URI(UriUtils.encodeURIComponent(url));
-            if (uri.getScheme() == null) {
+            if (scheme == null) {
                 throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
                 String uriHost = uri.getHost();
@@ -167,23 +164,12 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("rbd")) {
-                String uriHost = uri.getHost();
-                String uriPath = uri.getPath();
-                if (uriPath == null) {
+            } else if (scheme.equalsIgnoreCase("rbd")) {
+                if (storagePath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
                 }
-                if (multi) {
-                    String multiHost = uriHost + (uriPath.substring(0, uriPath.lastIndexOf("/")).replaceAll("/", ","));
-                    String[] hostArr = multiHost.split(",");
-                    if (hostArr.length > 5) {
-                        throw new InvalidParameterValueException("RADOS monitor can support up to 5 hosts.");
-                    }
-                }
-            } else if (uri.getScheme().equalsIgnoreCase("gluster")) {
-                String uriHost = uri.getHost();
-                String uriPath = uri.getPath();
-                if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
+            } else if (scheme.equalsIgnoreCase("gluster")) {
+                if (storageHost == null || storagePath == null || storageHost.trim().isEmpty() || storagePath.trim().isEmpty()) {
                     throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
                 }
             }
