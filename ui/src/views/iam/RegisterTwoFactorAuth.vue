@@ -17,67 +17,72 @@
 
 <template>
   <div style="width:500px;height=500px">
-  <h3> {{ $t('label.select.2fa.provider') }} </h3>
-  <a-form
-    :rules="rules"
-    layout="vertical">
-    <div class="form-layout" v-ctrl-enter="submitPin">
-      <a-select
-        v-model:value="selectedProvider"
-        optionFilterProp="label"
-        :filterOption="(input, option) => {
-          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-        }"
-        style="width: 100%"
-        @change="val => { handleSelectChange(val) }">
-        <a-select-option
-          v-for="(opt) in providers"
-          :key="opt.name"
-          :disabled="opt.enabled === false">
-            {{ opt.name }}
-        </a-select-option>
-      </a-select>
-    </div>
-    <div v-if="show2FAdetails">
-      <div v-if="selectedProvider === 'google'">
-        <br />
-        <div> {{ $t('message.two.fa.auth.register.account') }} </div>
-        <vue-qrious
-          class="center-align"
-          :value="googleUrl"
-          @change="onDataUrlChange"
-        />
+    <h3> {{ $t('label.select.2fa.provider') }} </h3>
+    <a-form
+      :rules="rules"
+      @close="onCloseModalDisable2FA()"
+      layout="vertical">
+      <div class="form-layout form-align" v-ctrl-enter="submitPin">
+         <a-select
+          v-model:value="selectedProvider"
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          style="width: 100%"
+          @change="val => { handleSelectChange(val) }">
+          <a-select-option
+            v-for="(opt) in providers"
+            :key="opt.name"
+            :disabled="opt.enabled === false">
+              {{ opt.name }}
+          </a-select-option>
+        </a-select>
+        <div :span="24" v-if="selectedProvider">
+          <a-button ref="submit" type="primary" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
+        </div>
       </div>
-      <div v-else-if="selectedProvider === 'staticpin'">
-        <div> <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
-      </div>
-      <div v-else-if="selectedProvider !== null && selectedProvider !== 'staticpin'">
-        <div> {{ $t('message.two.fa.static.pin.part1') }} <a @click="setup2FAProvider"> {{ $t('message.two.fa.static.pin.part2') }}</a></div>
-      </div>
-      <div v-if="selectedProvider">
-        <br />
-        <h3> {{ $t('label.enter.code') }} </h3>
-        <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
-          <a-input v-model:value="code" />
-          <div :span="24">
-            <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
-          </div>
-        </a-form>
-      </div>
+      <div v-if="show2FAdetails">
+        <div v-if="selectedProvider !== 'staticpin'">
+          <br />
+          <p v-html="$t('message.two.fa.register.account')"></p>
+          <vue-qrious
+            class="center-align"
+            :value="googleUrl"
+            @change="onDataUrlChange"
+          />
+          <div style="text-align: center"> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.setup.key') }}</a></div>
+        </div>
+        <div v-if="selectedProvider === 'staticpin'">
+          <br>
+          <p v-html="$t('message.two.fa.staticpin')"></p>
+          <br>
+          <div> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.static.pin') }}</a></div>
+        </div>
+        <div v-if="selectedProvider">
+          <br />
+          <h3> {{ $t('label.enter.code') }} </h3>
+          <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
+            <a-input v-model:value="code" />
+            <div :span="24">
+              <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.ok') }}</a-button>
+            </div>
+          </a-form>
+        </div>
 
-      <a-modal
-        v-if="showPin"
-        :visible="showPin"
-        :title="$t('label.two.factor.secret')"
-        :closable="true"
-        :footer="null"
-        @cancel="onCloseModal"
-        centered
-        width="450px">
-        <div> {{ pin }} </div>
-      </a-modal>
-    </div>
-  </a-form>
+        <a-modal
+          v-if="showPin"
+          :visible="showPin"
+          :title="$t(selectedProvider === 'staticpin'? 'label.two.factor.authentication.static.pin' : 'label.two.factor.authentication.secret.key')"
+          :closable="true"
+          :footer="null"
+          @cancel="onCloseModal"
+          centered
+          width="450px">
+          <div> {{ pin }} </div>
+        </a-modal>
+      </div>
+    </a-form>
   </div>
 </template>
 <script>
@@ -103,6 +108,7 @@ export default {
       code: '',
       showPin: false,
       show2FAdetails: false,
+      twoFAenabled: false,
       providers: [],
       selectedProvider: null
     }
@@ -116,18 +122,35 @@ export default {
     },
     handleSelectChange (val) {
       this.selectedProvider = val
-      this.setup2FAProvider()
     },
     setup2FAProvider () {
-      api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
-        console.log(response)
-        this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
-        if (this.selectedProvider === 'google') {
-          this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
-          this.googleUrl = 'otpauth://totp/CloudStack:' + this.username + '?secret=' + this.pin + '&issuer=CloudStack'
-        }
-        this.showPin = true
-        this.show2FAdetails = true
+      if (!this.twoFAenabled) {
+        api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
+          console.log(response)
+          this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
+          if (this.selectedProvider === 'google') {
+            this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
+            this.googleUrl = 'otpauth://totp/CloudStack:' + this.username + '?secret=' + this.pin + '&issuer=CloudStack'
+            this.showPin = false
+          }
+          if (this.selectedProvider === 'staticpin') {
+            this.showPin = true
+          }
+          this.show2FAdetails = true
+          this.twoFAenabled = true
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
+        })
+      }
+    },
+    disable2FAProvider () {
+      api('setupUserTwoFactorAuthentication', { enable: false }).then(response => {
+        this.showPin = false
+        this.show2FAdetails = false
+        this.twoFAenabled = false
       }).catch(error => {
         this.$notification.error({
           message: this.$t('message.request.failed'),
@@ -158,8 +181,14 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
+    showConfiguredPin () {
+      this.showPin = true
+    },
     onCloseModal () {
       this.showPin = false
+    },
+    onCloseModalDisable2FA () {
+      this.disable2FAProvider()
     }
   }
 }
@@ -170,6 +199,10 @@ export default {
     display: block;
     margin-left: auto;
     margin-right: auto;
+  }
+  .form-align {
+    display: flex;
+    flex-direction: row;
   }
   .container {
     display: flex;

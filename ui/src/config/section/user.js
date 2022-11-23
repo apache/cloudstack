@@ -109,7 +109,7 @@ export default {
     {
       api: 'setupUserTwoFactorAuthentication',
       icon: 'scan-outlined',
-      label: 'label.action.register.2FA.user.auth',
+      label: 'label.action.setup.2FA.user.auth',
       dataView: true,
       popup: true,
       show: (record, store) => {
