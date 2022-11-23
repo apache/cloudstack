@@ -309,4 +309,3 @@ if __name__ == '__main__':
     else:
         logging.debug("Unknown command: " + cmd)
         sys.exit(1)
-

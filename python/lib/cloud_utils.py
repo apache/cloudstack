@@ -679,4 +679,3 @@ class MigrationContext:
 	def rollback(self):raise NotImplementedError
 	def get_schema_level(self):raise NotImplementedError
 	def set_schema_level(self,l):raise NotImplementedError
-

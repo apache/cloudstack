@@ -762,5 +762,3 @@ class TestRegisteredUserdata(cloudstackTestCase):
             self.apiclient,
             templateid=self.template.id
         )
-
-

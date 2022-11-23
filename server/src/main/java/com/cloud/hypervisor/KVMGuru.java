@@ -220,7 +220,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxMemoryConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
         if (customOfferingMaxMemory != null) {
             s_logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
-            maxMemory = ByteScaleUtils.mibToBytes(customOfferingMaxMemory);
+            maxMemory = ByteScaleUtils.mebibytesToBytes(customOfferingMaxMemory);
         } else {
             String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
 
@@ -228,7 +228,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
               serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
 
             if (maxMemoryConfig > 0) {
-                maxMemory = ByteScaleUtils.mibToBytes(maxMemoryConfig);
+                maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfig);
             } else {
                 s_logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
                 maxMemory = maxHostMemory;

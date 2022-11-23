@@ -124,4 +124,3 @@ class TestIsolatedNetworkInvalidGw(cloudstackTestCase):
                 netmask="255.0.255.0",
             )
         return
-

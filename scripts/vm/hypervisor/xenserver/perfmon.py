@@ -258,4 +258,3 @@ def get_vm_group_perfmon(args={}):
                 else:
                     result += ',' + str(vm_count) +  '.' +  str(counter_count) + ':' + str(average_memory)
     return result
-

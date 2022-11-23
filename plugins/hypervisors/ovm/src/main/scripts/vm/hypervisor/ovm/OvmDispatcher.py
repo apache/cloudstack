@@ -45,17 +45,17 @@ def OvmDispatch(methodName, *params):
     global ExposedClass
     p = methodName.split('.')
     if len(p) != 2:
-        logger.error(OvmDispatch, "%s is not a vaild format, should be classname.methodname"%p)
-        raise Fault(dispatchErrCode('InvalidCallMethodFormat'), "%s is not a vaild format, should be classname.methodname"%p)
+        logger.error(OvmDispatch, "%s is not a valid format, should be classname.methodname"%p)
+        raise Fault(dispatchErrCode('InvalidCallMethodFormat'), "%s is not a valid format, should be classname.methodname"%p)
     clzName = p[0]
     funcName = p[1]
     if clzName not in ExposedClass.keys():
         logger.error(OvmDispatch, "class %s is not exposed by agent"%clzName)
-        raise Fault(dispatchErrCode('InvaildClass'), "class %s is not exposed by agent"%clzName)
+        raise Fault(dispatchErrCode('InvalidClass'), "class %s is not exposed by agent"%clzName)
     clz = ExposedClass[clzName]
     if not hasattr(clz, funcName):
         logger.error(OvmDispatch, "class %s has no function %s"%(clzName, funcName))
-        raise Fault(dispatchErrCode('InvaildFunction'), "class %s has no function %s"%(clzName, funcName))
+        raise Fault(dispatchErrCode('InvalidFunction'), "class %s has no function %s"%(clzName, funcName))
     logger.debug(OvmDispatch, "Entering %s.%s ===>"%(clzName, funcName))
     rs = getattr(clz, funcName)(*params)
     logger.debug(OvmDispatch, "Exited %s.%s <==="%(clzName, funcName))

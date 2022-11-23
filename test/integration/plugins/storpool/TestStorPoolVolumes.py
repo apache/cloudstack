@@ -2149,5 +2149,3 @@ class TestStoragePool(cloudstackTestCase):
         host, port = cfg['SP_API_HTTP'].split(':')
         auth = cfg['SP_AUTH_TOKEN']
         return host, int(port), auth
-
-
