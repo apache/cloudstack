@@ -195,7 +195,7 @@ public interface AccountManager extends AccountService, Configurable {
             "enable.two.factor.authentication",
             "false",
             "Determines whether two factor authentication is enabled or not. This can be done at domain level as well",
-            true,
+            false,
             ConfigKey.Scope.Domain);
 
     ConfigKey<String> userTwoFactorAuthenticationProviderPlugin = new ConfigKey<>("Advanced", String.class,

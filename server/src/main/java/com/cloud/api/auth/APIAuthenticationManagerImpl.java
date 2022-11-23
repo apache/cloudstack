@@ -80,11 +80,10 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
         cmdList.add(DefaultLoginAPIAuthenticatorCmd.class);
         cmdList.add(DefaultLogoutAPIAuthenticatorCmd.class);
 
-        if(enable2FA.value()) {
-            cmdList.add(ListUserTwoFactorAuthenticatorProvidersCmd.class);
-            cmdList.add(ValidateUserTwoFactorAuthenticationCodeCmd.class);
-            cmdList.add(SetupUserTwoFactorAuthenticationCmd.class);
-        }
+        cmdList.add(ListUserTwoFactorAuthenticatorProvidersCmd.class);
+        cmdList.add(ValidateUserTwoFactorAuthenticationCodeCmd.class);
+        cmdList.add(SetupUserTwoFactorAuthenticationCmd.class);
+
 
         for (PluggableAPIAuthenticator apiAuthenticator: _apiAuthenticators) {
             List<Class<?>> commands = apiAuthenticator.getAuthCommands();

@@ -3215,15 +3215,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (cmd.getEnable()) {
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
+            UserAccountVO userAccount = _userAccountDao.findById(userId);
+            UserVO userVO = _userDao.findById(userId);
+
+            if (!enable2FA.valueIn(userAccount.getDomainId())) {
+                throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
+            }
 
             if (StringUtils.isEmpty(providerName)) {
                 throw new InvalidParameterValueException("Provider name is mandatory to setup 2FA");
             }
             UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
-            UserAccountVO userAccount = _userAccountDao.findById(userId);
-            UserVO userVO = _userDao.findById(userId);
             String code = provider.setup2FAKey(userAccount);
-
             UserVO user = _userDao.createForUpdate();
             user.setKeyFor2fa(code);
             user.setUser2faProvider(provider.getName());

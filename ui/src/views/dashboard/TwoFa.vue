@@ -35,12 +35,12 @@
       :rules="rules"
       @finish="handleSubmit"
       layout="vertical">
-      <a-form-item name="secretkey" ref="secretkey">
+      <a-form-item name="code" ref="code">
         <a-input
           class="center-align"
           style="width: 400px"
-          v-model:value="form.secretkey"
-          placeholder="secret key" />
+          v-model:value="form.code"
+          placeholder="xxxxxxx" />
       </a-form-item>
       <div :span="24" class="center-align top-padding">
           <a-button
@@ -51,7 +51,7 @@
             @click="handleSubmit">{{ $t('label.verify') }}
           </a-button>
         </div>
-      <div class="note"> {{ $t('message.two.fa.auth') }} </div>
+      <p style="text-align: center" v-html="$t('message.two.fa.auth')"></p>
     </a-form>
   </a-form>
 </template>
@@ -75,14 +75,13 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        secretkey: [{ required: true, message: this.$t('message.error.secret.key') }]
+        code: [{ required: true, message: this.$t('message.error.authentication.code') }]
       })
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        console.log(values.secretkey)
-        api('validateUserTwoFactorAuthenticationCode', { '2facode': values.secretkey }).then(response => {
+        api('validateUserTwoFactorAuthenticationCode', { '2facode': values.code }).then(response => {
           this.twoFAresponse = true
           if (this.twoFAresponse) {
             this.$notification.destroy()
