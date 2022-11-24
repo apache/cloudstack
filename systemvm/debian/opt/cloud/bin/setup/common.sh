@@ -586,6 +586,8 @@ setup_vpc_mgmt_route() {
       if [ $exist -eq 0 ]
       then
           sudo ip route add $rule
+          # workaround to activate vSwitch under VMware
+          timeout 3 ping -n -c 3 $LOCAL_GW || true
       fi
     fi
   fi
