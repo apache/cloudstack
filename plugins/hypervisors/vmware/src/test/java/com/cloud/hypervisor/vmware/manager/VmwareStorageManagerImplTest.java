@@ -100,5 +100,4 @@ public class VmwareStorageManagerImplTest {
     public void testSetVolumeToPathAndSizeDatastoreClusterDifferentChildStore() {
         testCommon(Storage.StoragePoolType.PreSetup, Storage.StoragePoolType.DatastoreCluster, true);
     }
-
 }
