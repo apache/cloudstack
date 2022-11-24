@@ -38,7 +38,7 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 ![Screenshot](ui/docs/screenshot-dashboard.png)
 
 See the project user-interface QA website that runs CloudStack against simulator hypervisor:
-http://qa.cloudstack.cloud:8080/client
+https://qa.cloudstack.cloud/simulator
 
 ## Getting Started
 
