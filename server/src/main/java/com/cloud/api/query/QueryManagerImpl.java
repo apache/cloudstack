@@ -274,6 +274,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private static final String ID_FIELD = "id";
 
+    private static final String SYSTEM_USE = "systemUse";
+
     @Inject
     private AccountManager _accountMgr;
 
@@ -1020,7 +1022,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             isRootAdmin = true;
         }
 
-        Object groupId = cmd.getGroupId();
+        Long groupId = cmd.getGroupId();
         Object networkId = cmd.getNetworkId();
         if (HypervisorType.getType(hypervisor) == HypervisorType.None && hypervisor != null) {
             // invalid hypervisor type input
@@ -1080,7 +1082,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
 
-        if (groupId != null && (Long)groupId != -1) {
+        if (groupId != null && groupId != -1) {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
         }
 
@@ -1138,7 +1140,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
         }
 
-        if (groupId != null && (Long)groupId != -1) {
+        if (groupId != null && groupId != -1) {
             sc.setParameters("instanceGroupId", groupId);
         }
 
@@ -2082,6 +2084,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
+        Boolean forSystemVms = cmd.getForSystemVm();
         boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
 
         Long zoneId = cmd.getZoneId();
@@ -2129,11 +2132,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
 
         if (!shouldListSystemVms) {
-            sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-            sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
-            sb.cp();
-
-            sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
+            sb.and().op(SYSTEM_USE, sb.entity().isSystemUse(), SearchCriteria.Op.IN);
+            sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.IN);
             sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
             sb.cp();
         }
@@ -2162,8 +2162,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         setIdsListToSearchCriteria(sc, ids);
 
         if (!shouldListSystemVms) {
-            sc.setParameters("systemUse", 1);
-            sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+            sc.setParameters(SYSTEM_USE, 0);
+            sc.setParameters("type", VirtualMachine.Type.User);
+            // Display all volumes for ROOT admin
+            if (forSystemVms != null && forSystemVms && caller.getType() == Account.Type.ADMIN) {
+                sc.setParameters(SYSTEM_USE, 0, 1);
+                sc.setParameters("type",
+                        VirtualMachine.Type.User, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+            }
         }
 
         if (tags != null && !tags.isEmpty()) {
@@ -2233,7 +2239,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vrIds[i++] = v.getId();
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
-        return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
     }
 
     private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
@@ -2981,6 +2987,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (account.getType() == Account.Type.NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
                 }
+            } else {
+                sc.addAnd(SYSTEM_USE, SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
             }
         }
 
@@ -3240,7 +3248,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (isSystem != null) {
             // note that for non-root users, isSystem is always false when
             // control comes to here
-            sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+            sc.addAnd(SYSTEM_USE, SearchCriteria.Op.EQ, isSystem);
         }
 
         if (encryptRoot != null) {

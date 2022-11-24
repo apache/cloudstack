@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
@@ -95,6 +96,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "list volumes of systemvms and routervm", since = "4.17", authorized = {
+            RoleType.Admin})
+    private Boolean forSystemVm;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -141,6 +146,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     public Boolean getListSystemVms() {
         return listSystemVms;
+    }
+
+    public Boolean getForSystemVm() {
+        return BooleanUtils.isTrue(forSystemVm);
     }
 
     @Override
