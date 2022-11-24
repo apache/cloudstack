@@ -576,6 +576,21 @@ setup_vpc_apache2() {
   setup_apache2_common
 }
 
+setup_vpc_mgmt_route() {
+  rule=$MGMTNET via $LOCAL_GW dev eth${1}
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];
+    then
+      exist=`ip route show $rule | wc -l`
+      if [ $exist -eq 0 ]
+      then
+          sudo ip route add $rule
+      fi
+    fi
+  fi
+}
+
 clean_ipalias_config() {
   rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
   rm -f /etc/apache2/sites-available/ipAlias*
