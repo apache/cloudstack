@@ -56,7 +56,7 @@ public interface UserVmManager extends UserVmService {
             "Set display of VMs OVF properties as part of VM details", true);
 
     ConfigKey<Boolean> DestroyRootVolumeOnVmDestruction = new ConfigKey<Boolean>("Advanced", Boolean.class, "destroy.root.volume.on.vm.destruction", "false",
-            "Destroys the VM's root volume when the VM is destroyed. When set to true, volume cleanup task will not expunge destroyed volumes, but the VM cleanup task will.",
+            "Destroys the VM's root volume when the VM is destroyed.",
             true, ConfigKey.Scope.Domain);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;

@@ -1328,10 +1328,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
-                        if (Type.ROOT.equals(vol.getVolumeType()) && userVmManager.getDestroyRootVolumeOnVmDestruction(vol.getDomainId())) {
-                            s_logger.debug(String.format("ROOT volume [%s] will not be expunged because domain configuration [%s] for domain [%s] is set to 'true'.",
-                                    vol.getUuid(), UserVmManager.DestroyRootVolumeOnVmDestruction, vol.getDomainId()));
-                            continue;
+                        if (Type.ROOT.equals(vol.getVolumeType())) {
+                             VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vol.getInstanceId());
+                             if (vmInstanceVO != null && vmInstanceVO.getState() == State.Destroyed) {
+                                 s_logger.debug(String.format("ROOT volume [%s] will not be expunged because the VM is [%s], therefore this volume will be expunged with the VM"
+                                         + " cleanup job.", vol.getUuid(), vmInstanceVO.getState()));
+                                 continue;
+                             }
                         }
 
                         try {
