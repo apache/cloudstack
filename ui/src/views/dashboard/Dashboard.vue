@@ -35,7 +35,7 @@ import store from '@/store'
 import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
 import OnboardingDashboard from './OnboardingDashboard'
-import TwoFa from './TwoFa'
+import VerifyTwoFa from './VerifyTwoFa'
 
 export default {
   name: 'Dashboard',
@@ -43,7 +43,7 @@ export default {
     CapacityDashboard,
     UsageDashboard,
     OnboardingDashboard,
-    TwoFa
+    VerifyTwoFa
   },
   provide: function () {
     return {

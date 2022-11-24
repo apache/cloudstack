@@ -190,11 +190,19 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
-    ConfigKey<Boolean> enable2FA = new ConfigKey<Boolean>("Advanced",
+    ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
             Boolean.class,
-            "enable.two.factor.authentication",
+            "enable.user.two.factor.authentication",
             "false",
-            "Determines whether two factor authentication is enabled or not. This can be done at domain level as well",
+            "Determines whether two factor authentication is enabled or not. This can be configured at domain level also",
+            false,
+            ConfigKey.Scope.Domain);
+
+    ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "mandate.user.two.factor.authentication",
+            "false",
+            "Determines whether to make the two factor authentication mandatory or not. This can be configured at domain level also",
             false,
             ConfigKey.Scope.Domain);
 

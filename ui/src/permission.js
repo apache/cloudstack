@@ -57,10 +57,9 @@ router.beforeEach((to, from, next) => {
   const validLogin = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {
     if (to.path === '/user/login') {
-      console.log('hari3')
       next({ path: '/dashboard' })
       NProgress.done()
-    } else if (to.path === '/2FA') {
+    } else if (to.path === '/verify2FA') {
       if (store.getters.twoFaEnabled && !store.getters.loginFlag) {
         console.log('Do Two-factor authentication')
         next()
@@ -69,7 +68,6 @@ router.beforeEach((to, from, next) => {
         NProgress.done()
       }
     } else {
-      console.log('hari4')
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {

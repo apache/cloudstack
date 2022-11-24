@@ -45,6 +45,7 @@ const getters = {
   customColumns: state => state.user.customColumns,
   logoutFlag: state => state.user.logoutFlag,
   twoFaEnabled: state => state.user.twoFaEnabled,
+  twoFaProvider: state => state.user.twoFaProvider,
   loginFlag: state => state.user.loginFlag
 }
 

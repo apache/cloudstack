@@ -310,13 +310,13 @@ export const constantRouterMap = [
     ]
   },
   {
-    path: '/2FA',
-    name: 'TwoFa',
+    path: '/verify2FA',
+    name: 'VerifyTwoFa',
     meta: {
       title: 'label.two.factor.authentication',
       hidden: true
     },
-    component: () => import('@/views/dashboard/TwoFa')
+    component: () => import('@/views/dashboard/VerifyTwoFa')
   },
   {
     path: '/403',

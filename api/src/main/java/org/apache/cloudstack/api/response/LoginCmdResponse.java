@@ -78,6 +78,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "Is two factor authentication verified")
     private String is2FAverified;
 
+    @SerializedName(value = ApiConstants.TWOFACTORAUTHENTICATIONPROVIDER)
+    @Param(description = "Two factor authentication provider")
+    private String twoFAprovider;
+
     public String getUsername() {
         return username;
     }
@@ -186,5 +190,13 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void set2FAverfied(String is2FAverified) {
         this.is2FAverified = is2FAverified;
+    }
+
+    public String get2FAprovider() {
+        return twoFAprovider;
+    }
+
+    public void set2FAprovider(String twoFAprovider) {
+        this.twoFAprovider = twoFAprovider;
     }
 }

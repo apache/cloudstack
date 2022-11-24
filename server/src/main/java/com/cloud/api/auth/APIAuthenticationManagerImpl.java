@@ -32,8 +32,6 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 
-import static com.cloud.user.AccountManager.enable2FA;
-
 @SuppressWarnings("unchecked")
 public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuthenticationManager {
     public static final Logger s_logger = Logger.getLogger(APIAuthenticationManagerImpl.class.getName());

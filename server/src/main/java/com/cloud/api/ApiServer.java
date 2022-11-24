@@ -1075,6 +1075,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.IS_2FA_VERIFIED.equalsIgnoreCase(attrName)) {
                     response.set2FAverfied(attrObj.toString());
                 }
+                if (ApiConstants.TWOFACTORAUTHENTICATIONPROVIDER.equalsIgnoreCase(attrName)) {
+                    response.set2FAprovider(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1140,6 +1143,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(userAcct.isTwoFactorAuthenticationEnabled()));
             session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
+            session.setAttribute(ApiConstants.TWOFACTORAUTHENTICATIONPROVIDER, userAcct.getUser2faProvider());
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back
