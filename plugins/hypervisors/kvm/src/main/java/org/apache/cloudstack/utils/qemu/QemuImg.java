@@ -151,10 +151,10 @@ public class QemuImg {
     }
 
     /**
-     * Sets the timeout for the scripts executed by this QemuImg object.
+     * Sets the timeout of the scripts executed by this QemuImg object.
      *
      * @param timeout
-     *            The timeout for the object.
+     *            The timeout of the object.
      * @return void
      */
     public void setTimeout(final int timeout) {
