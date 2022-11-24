@@ -1506,18 +1506,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * If the global setting resource.count.router.type is "all" then
      * all VR resource count will be considered else the diff between
      * the current VR service offering and the default offering will
-     * be considered
+     * be considered.
+     * During router deployment/destroy, we increment the resource
+     * count only if resource.count.running.vms is false else
+     * we increment it during VR start/stop. Same applies for
+     * decrementing resource count.
      *
-     * @param offering
-     * @param owner
-     * @param isDeployOrDestroy
+     * @param offering VR service offering
+     * @param owner account
+     * @param isDeployOrDestroy true if router is being deployed/destroyed
      */
     @Override
     public void incrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) {
-        // During router deployment/destroy, we increment the resource
-        // count only if resource.count.running.vms is false else
-        // we increment it during VR start/stop. Same applies for
-        // decrementing resource count.
         if (isDeployOrDestroy == Boolean.TRUE.equals(ResourceCountRunningVMsonly.value())) {
             return;
         }
