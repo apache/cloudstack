@@ -1147,7 +1147,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (VirtualMachineManager.ResourceCountRoutersType.key().equalsIgnoreCase(name)
                 && (!resourceCountRoutersTypeValues.contains(value) || isBlank(value))) {
-            final String msg = "Possible values are - delta or all";
+            final String msg = "Possible values are: delta or all.";
             s_logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }

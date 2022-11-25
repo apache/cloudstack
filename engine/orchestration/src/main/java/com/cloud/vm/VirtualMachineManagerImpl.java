@@ -1406,7 +1406,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Method to return the service offering by the given configuration.
+     * Returns the service offering by the given configuration.
      *
      * @param configName name of the config
      * @return the service offering found or null if not found
@@ -1427,7 +1427,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Count VR resources for domain if global setting is true
+     * Counts VR resources for the domain if global setting is true.
      * if value is "all" count all VR resources else get diff of
      * current VR offering and default VR offering
      *
@@ -2258,7 +2258,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void updateVrCountResourceBy(VirtualMachine.Type type, long domainId, ServiceOffering offering, Account owner, boolean decrement) {
         if (VirtualMachine.Type.DomainRouter.equals(type) && Boolean.TRUE.equals(ResourceCountRouters.valueIn(domainId))) {
-            if(decrement) {
+            if (decrement) {
                 decrementVrResourceCount(offering, owner, true);
             } else {
                 incrementVrResourceCount(offering, owner, true);

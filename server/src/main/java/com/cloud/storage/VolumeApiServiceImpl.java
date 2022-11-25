@@ -1051,11 +1051,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
         if (!SupportedHypervisorsForVolResize.contains(hypervisorType)) {
-            throw new InvalidParameterValueException(String.format("Hypervisor %s does not support volume resize", hypervisorType));
+            throw new InvalidParameterValueException(String.format("Hypervisor %s does not support volume resize.", hypervisorType));
         }
 
         if (!SupportedHypervisorsForRootDiskSizeOverride.contains(hypervisorType)) {
-            throw new InvalidParameterValueException(String.format("Hypervisor %s does not support  rootdisksize override", hypervisorType));
+            throw new InvalidParameterValueException(String.format("Hypervisor %s does not support rootdisksize override.", hypervisorType));
         }
 
         if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {

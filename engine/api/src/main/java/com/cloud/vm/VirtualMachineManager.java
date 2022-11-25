@@ -87,7 +87,7 @@ public interface VirtualMachineManager extends Manager {
             Integer.class,
             "vm.serviceoffering.cpu.cores.max",
             "0",
-            "Maximum CPU cores for vm service offering. If 0 - no limitation",
+            "Maximum number of CPU cores for VM service offering. If 0 - no limitation",
             true
     );
 
@@ -95,7 +95,7 @@ public interface VirtualMachineManager extends Manager {
             Integer.class,
             "vm.serviceoffering.ram.size.max",
             "0",
-            "Maximum RAM size in MB for vm service offering. If 0 - no limitation",
+            "Maximum RAM size in MB for VM service offering. If 0 - no limitation",
             true
     );
 
@@ -104,7 +104,7 @@ public interface VirtualMachineManager extends Manager {
             true, ConfigKey.Scope.Domain);
 
     ConfigKey<String> ResourceCountRoutersType = new ConfigKey<>("Advanced", String.class, "resource.count.routers.type", "all",
-            "Possible values are all and delta. If value is all then entire VR cpu and ram are counted else diff " +
+            "Possible values are all and delta. If the value is all then the entire VR CPU and RAM are counted, otherwise the difference " +
                     "between current VR offering and default VR offering is considered", true, ConfigKey.Scope.Domain);
 
     interface Topics {

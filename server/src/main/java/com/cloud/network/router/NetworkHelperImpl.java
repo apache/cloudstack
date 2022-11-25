@@ -512,7 +512,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         // Increment the resource count with router offering.
         // If router can't be deployed or started, decrement the resources.
-        // If resource.count.running.vms is false then increment resource count
+        // If resource.count.running.vms is false, increment resource count.
         if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
             _itMgr.incrementVrResourceCount(routerOffering,
                     owner, true);
