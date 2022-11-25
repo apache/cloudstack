@@ -94,7 +94,7 @@ function KeyboardMapper() {
 //		  	shift : <shift state match condition>,		-- match on shift state
 //			guestos : <guest os match condition>,		-- match on guestos type
 //			browser: <browser type match condition>,	-- match on browser
-//			browserVersion: <brower version match condition>	-- match on browser version
+//			browserVersion: <browser version match condition>	-- match on browser version
 //		}
 //
 KeyboardMapper.KEYBOARD_TYPE_RAW = 0;

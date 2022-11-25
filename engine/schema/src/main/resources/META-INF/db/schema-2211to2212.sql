@@ -44,7 +44,7 @@ ALTER TABLE `cloud`.`host` MODIFY COLUMN  `storage_ip_address` char(40);
 ALTER TABLE `cloud`.`resource_count` ADD UNIQUE `i_resource_count__type_accountId`(`type`, `account_id`);
 ALTER TABLE `cloud`.`resource_count` ADD UNIQUE `i_resource_count__type_domaintId`(`type`, `domain_id`);
 
-UPDATE configuration set description='Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default' WHERE name='network.loadbalancer.haproxy.stats.visibility' ;
+UPDATE configuration set description='Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default' WHERE name='network.loadbalancer.haproxy.stats.visibility' ;
 
 UPDATE nics SET strategy="Managed" WHERE (ip4_address, network_id) IN (SELECT public_ip_address, source_network_id FROM user_ip_address WHERE source_nat=1) AND vm_type="DomainRouter";
 

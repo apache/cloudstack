@@ -70,7 +70,7 @@ public interface LoadBalancingRulesService {
      *            the command specifying the stickiness method name, params (name,value pairs), policy name and
      *            description.
      * @return the newly created stickiness policy if successful, null otherwise
-     * @thows NetworkRuleConflictException
+     * @throws NetworkRuleConflictException
      */
     public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws NetworkRuleConflictException;
 
@@ -87,7 +87,7 @@ public interface LoadBalancingRulesService {
      *            (name,value pairs), policy name and description.
      * @return the newly created stickiness policy if successful, null
      *         otherwise
-     * @thows NetworkRuleConflictException
+     * @throws NetworkRuleConflictException
      */
     public HealthCheckPolicy createLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd);
 

@@ -546,4 +546,3 @@ class TestIsolatedNetworkDelete(cloudstackTestCase):
         )
         cls._cleanup.append(network)
         return network
-

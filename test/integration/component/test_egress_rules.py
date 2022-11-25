@@ -2125,6 +2125,3 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
                                     domainid=self.account.domainid
                                     )
         return
-
-
-

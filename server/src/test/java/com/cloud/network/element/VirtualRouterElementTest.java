@@ -249,7 +249,7 @@ public class VirtualRouterElementTest {
     public void testGetRouters2(){
         Network networkUpdateInprogress=new NetworkVO(2l,null,null,null,1l,1l,1l,1l,"d","d","d",null,1l,1l,null,true,null,true);
         mockDAOs((NetworkVO)networkUpdateInprogress,testOffering);
-        //alwyas return backup routers first when both primary and backup need update.
+        //always return backup routers first when both primary and backup need update.
         List<DomainRouterVO> routers=virtualRouterElement.getRouters(networkUpdateInprogress);
         assertTrue(routers.size()==1);
         assertTrue(routers.get(0).getRedundantState()==RedundantState.BACKUP && routers.get(0).getUpdateState()==VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
@@ -259,7 +259,7 @@ public class VirtualRouterElementTest {
     public void testGetRouters3(){
         Network network=new NetworkVO(3l,null,null,null,1l,1l,1l,1l,"d","d","d",null,1l,1l,null,true,null,true);
         mockDAOs((NetworkVO)network,testOffering);
-        //alwyas return backup routers first when both primary and backup need update.
+        //always return backup routers first when both primary and backup need update.
         List<DomainRouterVO> routers=virtualRouterElement.getRouters(network);
         assertTrue(routers.size()==4);
     }

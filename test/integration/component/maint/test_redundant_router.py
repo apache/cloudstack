@@ -1641,7 +1641,7 @@ class TestRvRRedundancy(cloudstackTestCase):
             if retry == 0:
                 break
             time.sleep(self.testdata["sleep"])
-            self.info("wating for backup router to become primary router name:"+new_backup_router.name)
+            self.info("waiting for backup router to become primary router name:"+new_backup_router.name)
             primary_router, backup_router = self.get_primary_and_backupRouter()
         if retry == 0:
             self.fail("timed out while waiting for new backup router to change state to PRIMARY.")

@@ -74,7 +74,7 @@ public class ClientMCSChannelJoinRequestServerMCSChannelConfirmPDUs extends OneT
         // Channel Join Request PDU the connection SHOULD be dropped.
 
         // Initiator: 1007 (6+1001)
-        // int initator=buf.readUnsignedShort();
+        // int initiator=buf.readUnsignedShort();
         buf.skipBytes(2);
 
         // Requested channel

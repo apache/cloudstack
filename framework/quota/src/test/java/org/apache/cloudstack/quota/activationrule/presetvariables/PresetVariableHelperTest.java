@@ -657,7 +657,7 @@ public class PresetVariableHelperTest {
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForVolume(usageVoMock, result);
 
-        Long expectedSize = ByteScaleUtils.bytesToMib(expected.getSize());
+        Long expectedSize = ByteScaleUtils.bytesToMebibytes(expected.getSize());
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getDiskOffering(), result.getDiskOffering());
@@ -693,7 +693,7 @@ public class PresetVariableHelperTest {
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForVolume(usageVoMock, result);
 
-        Long expectedSize = ByteScaleUtils.bytesToMib(expected.getSize());
+        Long expectedSize = ByteScaleUtils.bytesToMebibytes(expected.getSize());
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getDiskOffering(), result.getDiskOffering());
@@ -824,7 +824,7 @@ public class PresetVariableHelperTest {
             Value result = new Value();
             presetVariableHelperSpy.loadPresetVariableValueForTemplateAndIso(usageVoMock, result);
 
-            Long expectedSize = ByteScaleUtils.bytesToMib(expected.getSize());
+            Long expectedSize = ByteScaleUtils.bytesToMebibytes(expected.getSize());
 
             assertPresetVariableIdAndName(expected, result);
             Assert.assertEquals(expected.getOsName(), result.getOsName());
@@ -872,7 +872,7 @@ public class PresetVariableHelperTest {
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForSnapshot(usageVoMock, result);
 
-        Long expectedSize = ByteScaleUtils.bytesToMib(expected.getSize());
+        Long expectedSize = ByteScaleUtils.bytesToMebibytes(expected.getSize());
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getSnapshotType(), result.getSnapshotType());

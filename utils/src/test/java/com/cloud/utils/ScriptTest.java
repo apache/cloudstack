@@ -42,7 +42,7 @@ public class ScriptTest {
         script.add("bar");
         OutputInterpreter.AllLinesParser resultParser = new OutputInterpreter.AllLinesParser();
         String result = script.execute(resultParser);
-        // With allLinesParser, result is not comming from the return value
+        // With allLinesParser, result is not coming from the return value
         Assert.assertNull(result);
         Assert.assertEquals("bar\n", resultParser.getLines());
     }

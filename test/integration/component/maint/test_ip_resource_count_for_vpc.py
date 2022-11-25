@@ -349,5 +349,3 @@ class TestIPResourceCountVPC(cloudstackTestCase):
         account_list = Account.list(self.apiclient, id=self.account.id)
         totalip = account_list[0].iptotal
         self.assertTrue(totalip - totalip_1 == 3, "publicip count is 3")
-
-
