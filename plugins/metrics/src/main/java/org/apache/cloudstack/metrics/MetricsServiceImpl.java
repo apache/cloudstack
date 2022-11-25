@@ -71,6 +71,7 @@ import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 import org.apache.cloudstack.response.ZoneMetricsResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -537,8 +538,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             StatsResponse response = new StatsResponse();
             response.setTimestamp(volumeStats.getTimestamp());
             VmDiskStatsEntry statsEntry = gson.fromJson(volumeStats.getVolumeStatsData(), VmDiskStatsEntry.class);
-            response.setDiskKbsRead(statsEntry.getBytesRead());
-            response.setDiskKbsWrite(statsEntry.getBytesWrite());
+            response.setDiskKbsRead(ByteScaleUtils.bytesToKibibytes(statsEntry.getBytesRead()));
+            response.setDiskKbsWrite(ByteScaleUtils.bytesToKibibytes(statsEntry.getBytesWrite()));
             response.setDiskIORead(statsEntry.getIORead());
             response.setDiskIOWrite(statsEntry.getIOWrite());
             statsResponseList.add(response);
