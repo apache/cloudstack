@@ -23,6 +23,7 @@
       layout="vertical">
       <div class="form-layout form-align" v-ctrl-enter="submitPin">
          <a-select
+          :disabled="twoFAenabled === true"
           v-model:value="selectedProvider"
           optionFilterProp="label"
           :filterOption="(input, option) => {

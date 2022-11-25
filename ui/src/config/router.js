@@ -319,6 +319,15 @@ export const constantRouterMap = [
     component: () => import('@/views/dashboard/VerifyTwoFa')
   },
   {
+    path: '/setup2FA',
+    name: 'SetupTwoFaAtLogin',
+    meta: {
+      title: 'label.two.factor.authentication',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/SetupTwoFaAtLogin')
+  },
+  {
     path: '/403',
     component: () => import(/* webpackChunkName: "forbidden" */ '@/views/exception/403')
   },

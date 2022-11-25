@@ -16,44 +16,42 @@
 // under the License.
 
 <template>
-  <a-form>
-    <img
-      v-if="$config.banner"
-      :style="{
-        width: $config.theme['@banner-width'],
-        height: $config.theme['@banner-height']
-      }"
-      :src="$config.banner"
-      class="user-layout-logo"
-      alt="logo">
-    <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
-    <br />
-    <br />
-    <a-form
-      :ref="formRef"
-      :model="form"
-      :rules="rules"
-      @finish="handleSubmit"
-      layout="vertical">
-      <a-form-item name="code" ref="code">
-        <a-input
-          class="center-align"
-          style="width: 400px"
-          v-model:value="form.code"
-          placeholder="xxxxxxx" />
-      </a-form-item>
-      <div :span="24" class="center-align top-padding">
-          <a-button
-            :loading="loading"
-            ref="submit"
-            type="primary"
+  <div class="center">
+    <a-form>
+      <img
+        v-if="$config.banner"
+        :src="$config.banner"
+        class="user-layout-logo"
+        alt="logo">
+      <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
+      <br />
+      <br />
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
+        layout="vertical">
+        <a-form-item name="code" ref="code">
+          <a-input
             class="center-align"
-            @click="handleSubmit">{{ $t('label.verify') }}
-          </a-button>
-        </div>
-      <p style="text-align: center" v-html="$t('message.two.fa.auth')"></p>
+            style="width: 400px"
+            v-model:value="form.code"
+            placeholder="xxxxxxx" />
+        </a-form-item>
+        <div :span="24" class="center-align top-padding">
+            <a-button
+              :loading="loading"
+              ref="submit"
+              type="primary"
+              class="center-align"
+              @click="handleSubmit">{{ $t('label.verify') }}
+            </a-button>
+          </div>
+        <p style="text-align: center" v-html="$t('message.two.fa.auth')"></p>
+      </a-form>
     </a-form>
-  </a-form>
+  </div>
 </template>
 <script>
 
@@ -61,7 +59,7 @@ import { api } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 
 export default {
-  name: 'TwoFa',
+  name: 'VerifyTwoFa',
   data () {
     return {
       twoFAresponse: false
@@ -95,7 +93,6 @@ export default {
             })
             this.$emit('refresh-data')
           }
-          console.log(response)
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -108,6 +105,16 @@ export default {
 }
 </script>
 <style lang="less" scoped>
+  .center {
+    position: fixed;
+    top: 42.5%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+
+    background-color: #D3D3D3;
+    padding: 70px 50px 70px 50px;
+    z-index: 100;
+  }
   .center-align {
     display: block;
     margin-left: auto;

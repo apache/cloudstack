@@ -35,6 +35,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
 import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.ApiConstants;
@@ -301,7 +303,9 @@ public class ApiServlet extends HttpServlet {
                 s_logger.trace(String.format("new session: %s", session));
             }
 
-            if (!isNew && !command.equalsIgnoreCase(ApiConstants.LIST_IDPS)) {
+            if (!isNew && !command.equalsIgnoreCase(ApiConstants.LIST_IDPS)
+                    && !command.equalsIgnoreCase(ListUserTwoFactorAuthenticatorProvidersCmd.APINAME)
+                    && !command.equalsIgnoreCase(SetupUserTwoFactorAuthenticationCmd.APINAME)) {
                 s_logger.debug("Checking if two factor authentication is enabled, if enabled it will be verified");
                 userId = (Long)session.getAttribute("userid");
                 UserAccount userAccount = accountMgr.getUserAccountById(userId);

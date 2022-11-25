@@ -59,7 +59,7 @@ router.beforeEach((to, from, next) => {
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
       NProgress.done()
-    } else if (to.path === '/verify2FA') {
+    } else if (to.path === '/verify2FA' || to.path === '/setup2FA') {
       if (store.getters.twoFaEnabled && !store.getters.loginFlag) {
         console.log('Do Two-factor authentication')
         next()

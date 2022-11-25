@@ -36,6 +36,7 @@ import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
 import OnboardingDashboard from './OnboardingDashboard'
 import VerifyTwoFa from './VerifyTwoFa'
+import SetupTwoFaAtLogin from './SetupTwoFaAtLogin'
 
 export default {
   name: 'Dashboard',
@@ -43,7 +44,8 @@ export default {
     CapacityDashboard,
     UsageDashboard,
     OnboardingDashboard,
-    VerifyTwoFa
+    VerifyTwoFa,
+    SetupTwoFaAtLogin
   },
   provide: function () {
     return {

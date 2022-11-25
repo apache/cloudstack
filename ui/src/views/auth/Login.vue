@@ -300,6 +300,8 @@ export default {
       this.$store.commit('SET_COUNT_NOTIFY', 0)
       if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '') {
         this.$router.push({ path: '/verify2FA' }).catch(() => {})
+      } else if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider === '') {
+        this.$router.push({ path: '/setup2FA' }).catch(() => {})
       } else {
         this.$store.commit('SET_LOGIN_FLAG', true)
         this.$router.push({ path: '/dashboard' }).catch(() => {})
