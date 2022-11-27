@@ -3128,7 +3128,7 @@
                                     var jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];
                                     args.response.success({
                                         data: {
-                                            totalCPU: jsonObj.cpunumber + " x " + cloudStack.converters.convertHz(jsonObj.cpuspeed),
+                                            totalCPU: jsonObj.cpunumber + " Cores",
                                             cpuused: jsonObj.cpuused,
                                             networkkbsread: (jsonObj.networkkbsread == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbsread * 1024),
                                             networkkbswrite: (jsonObj.networkkbswrite == null) ? "N/A" : cloudStack.converters.convertBytes(jsonObj.networkkbswrite * 1024),

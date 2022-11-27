@@ -3335,8 +3335,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 elapsedTime = now.getTimeInMillis() - oldStats._timestamp.getTimeInMillis();
                 double utilization = (info.cpuTime - oldStats._usedTime) / ((double)elapsedTime * 1000000);
 
-                final NodeInfo node = conn.nodeInfo();
-                utilization = utilization / node.cpus;
+                utilization = utilization / info.nrVirtCpu;
                 if (utilization > 0) {
                     stats.setCPUUtilization(utilization * 100);
                 }
