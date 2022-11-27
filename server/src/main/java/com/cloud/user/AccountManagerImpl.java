@@ -3214,38 +3214,50 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
-        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         if (cmd.getEnable()) {
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
-            UserAccountVO userAccount = _userAccountDao.findById(userId);
-            UserVO userVO = _userDao.findById(userId);
 
-            if (!enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) {
-                throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
-            }
-
-            if (StringUtils.isEmpty(providerName)) {
-                throw new InvalidParameterValueException("Provider name is mandatory to setup 2FA");
-            }
-            UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
-            String code = provider.setup2FAKey(userAccount);
-            UserVO user = _userDao.createForUpdate();
-            user.setKeyFor2fa(code);
-            user.setUser2faProvider(provider.getName());
-            user.setTwoFactorAuthenticationEnabled(true);
-            _userDao.update(userId, user);
-
-            response.setId(userVO.getUuid());
-            response.setUsername(userAccount.getUsername());
-            response.setSecretCode(code);
-
+            UserTwoFactorAuthenticationSetupResponse response = enableTwoFactorAuthentication(userId, providerName);
             return response;
         }
 
         // Admin can disable 2FA of the users
-        UserVO userVO = null;
         Long userId = cmd.getUserId();
+        UserTwoFactorAuthenticationSetupResponse response = disableTwoFactorAuthentication(userId, caller, owner);
+
+        return response;
+    }
+
+    private UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
+        UserAccountVO userAccount = _userAccountDao.findById(userId);
+        UserVO userVO = _userDao.findById(userId);
+
+        if (!enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) {
+            throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
+        }
+
+        if (StringUtils.isEmpty(providerName)) {
+            throw new InvalidParameterValueException("Provider name is mandatory to setup 2FA");
+        }
+        UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
+        String code = provider.setup2FAKey(userAccount);
+        UserVO user = _userDao.createForUpdate();
+        user.setKeyFor2fa(code);
+        user.setUser2faProvider(provider.getName());
+        user.setTwoFactorAuthenticationEnabled(true);
+        _userDao.update(userId, user);
+
+        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
+        response.setId(userVO.getUuid());
+        response.setUsername(userAccount.getUsername());
+        response.setSecretCode(code);
+
+        return response;
+    }
+
+    private UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
+        UserVO userVO = null;
         if (userId != null) {
             userVO = validateUser(userId, caller.getDomainId());
             if (userVO == null) {
@@ -3264,6 +3276,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         user.setTwoFactorAuthenticationEnabled(false);
         _userDao.update(userVO.getId(), user);
 
+        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         response.setId(userVO.getUuid());
         response.setUsername(userVO.getUsername());
 
