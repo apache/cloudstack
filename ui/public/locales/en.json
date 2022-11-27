@@ -2972,7 +2972,7 @@
 "message.two.fa.auth": "Open the two factor authentication application on your device to view your authentication code",
 "message.two.fa.auth": "<br>1. Open the authenticator application on your device <br>2. Enter the authentication code of the user to verify",
 "message.two.fa.register.account": "1. Open the authenticator application on your device <br>2. Scan the below QR code to add the user <br>3. If you cannot scan the QR code, enter the setup key manually <br>4. Verification of the 2FA code is mandatory to complete the 2FA setup",
-"message.two.fa.staticpin": "1. Use the generated static pin as 2FA code for two factor authentication<br>2. Verification of the 2FA code is mandatory to complete the 2FA setup",
+"message.two.fa.staticpin": "1. Use the generated static pin as 2FA code for two factor authentication<br>2. Save this static pin/2FA code and do not share<br>3. Verification of the 2FA code is mandatory to complete the 2FA setup",
 "message.two.fa.view.setup.key": "Click here to view the setup key",
 "message.two.fa.view.static.pin": "Click here to view the static pin",
 "message.update.ipaddress.processing": "Updating IP Address...",

@@ -34,12 +34,34 @@
           <a-select-option
             v-for="(opt) in providers"
             :key="opt.name"
-            :disabled="opt.enabled === false">
+            :value="opt.name">
+            <div>
+              <span v-if="opt.name === 'google'">
+                <google-outlined />
+              </span>
+              <span v-if="opt.name === 'staticpin'">
+                <google-outlined />
+              </span>
               {{ opt.name }}
+            </div>
           </a-select-option>
         </a-select>
         <div :span="24" v-if="selectedProvider">
           <a-button ref="submit" type="primary" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
+          <tooltip-button
+            tooltipPlacement="top"
+            :tooltip="$t('label.accept.project.invitation')"
+            icon="check-outlined"
+            size="small"
+            @onClick="setup2FAProvider()"/>
+          <tooltip-button
+            tooltipPlacement="top"
+            :tooltip="$t('label.decline.invitation')"
+            type="primary"
+            :danger="true"
+            icon="close-outlined"
+            size="small"
+            @onClick="setup2FAProvider()"/>
         </div>
       </div>
       <div v-if="twoFAenabled">

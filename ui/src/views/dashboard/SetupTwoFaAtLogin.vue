@@ -46,8 +46,7 @@
           @change="val => { handleSelectChange(val) }">
           <a-select-option
             v-for="(opt) in providers"
-            :key="opt.name"
-            :disabled="opt.enabled === false">
+            :key="opt.name">
               {{ opt.name }}
           </a-select-option>
         </a-select>
