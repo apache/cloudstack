@@ -86,6 +86,9 @@ public interface QueryService {
     static final ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
+    ConfigKey<Boolean> RestrictPublicTemplateAccessToDomain = new ConfigKey<>("Advanced", Boolean.class, "restrict.public.template.access.to.domain", "false",
+            "Prevents a domain from seeing the public templates of another sibling domain. Does not prevent seeing parent or child templates", true, ConfigKey.Scope.Global);
+
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);

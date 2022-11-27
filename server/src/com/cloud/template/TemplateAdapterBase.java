@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -171,15 +172,15 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             sshkeyEnabled = Boolean.FALSE;
         }
 
-        boolean isAdmin = _accountMgr.isRootAdmin(templateOwner.getId());
+        boolean isRootAdmin = _accountMgr.isRootAdmin(templateOwner.getId());
         boolean isRegionStore = false;
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
         if (stores != null && stores.size() > 0) {
             isRegionStore = true;
         }
 
-        if (!isAdmin && zoneIdList == null && !isRegionStore ) {
-            // domain admin and user should also be able to register template on a region store
+        if (!isRootAdmin && zoneIdList == null && !isRegionStore ) {
+            // Root admin and user should also be able to register template on a region store
             throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
 
@@ -190,11 +191,14 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         // check whether owner can create public templates
         boolean allowPublicUserTemplates = TemplateManager.AllowPublicUserTemplates.valueIn(templateOwner.getId());
-        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
+        boolean isAdmin = _accountMgr.isAdmin(templateOwner.getId());
+        boolean isAdminWhoCanUploadPublicTemplates = isRootAdmin || (isAdmin && QueryService.RestrictPublicTemplateAccessToDomain.value());
+
+        if (!isAdminWhoCanUploadPublicTemplates && !allowPublicUserTemplates && isPublic) {
             throw new InvalidParameterValueException("Only private templates/ISO can be created.");
         }
 
-        if (!isAdmin || featured == null) {
+        if (!isAdminWhoCanUploadPublicTemplates || featured == null) {
             featured = Boolean.FALSE;
         }
 
