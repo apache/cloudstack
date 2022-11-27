@@ -29,6 +29,9 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.user.AccountService;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -196,6 +199,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     SnapshotManager _snapshotMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    private AccountService _accountService;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -844,6 +849,85 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid(), volumeVo.isDisplayVolume());
 
         return volumeVo;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ASSIGN, eventDescription = "assigning volume", async = false)
+    public VolumeVO assignVolume(AssignVolumeCmd cmd) throws ResourceAllocationException {
+        // VERIFICATIONS and VALIDATIONS
+
+        // Verify the two users
+        Account caller = CallContext.current().getCallingAccount();
+        if (!_accountMgr.isRootAdmin(caller.getId())
+                && !_accountMgr.isDomainAdmin(caller.getId())) { // only root and domain admins can assign Volumes
+            throw new InvalidParameterValueException("Only domain admins are allowed to assign VMs and not " + caller.getType());
+        }
+
+        VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
+        if (volume == null) {
+            throw new InvalidParameterValueException("There is no volume by that id " + cmd.getVolumeId());
+        } else if (volume.getInstanceId() != null) {
+            throw new InvalidParameterValueException("Volume is currently attached to a vm, detatch first");
+        } else if (volume.getVolumeType() != Volume.Type.DATADISK) {
+            throw new InvalidParameterValueException("Only able to assign data volumes");
+        } else if (volume.getState() != Volume.State.Ready && volume.getState() != Volume.State.Allocated) {
+            throw new InvalidParameterValueException("Can't assign a volume that is not ready or allocated");
+        }
+
+        final Account oldAccount = _accountService.getActiveAccountById(volume.getAccountId());
+        if (oldAccount == null) {
+            throw new InvalidParameterValueException("Invalid account for Volume " + volume.getAccountId() + " in domain.");
+        }
+        final Account newAccount = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        if (newAccount == null) {
+            throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountName() + " in domain " + cmd.getDomainId());
+        }
+
+        if (newAccount.getState() == Account.State.disabled) {
+            throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
+        }
+
+        // Check caller has access to both the old and new account
+        _accountMgr.checkAccess(caller, null, true, oldAccount);
+        _accountMgr.checkAccess(caller, null, true, newAccount);
+
+        // Make sure the accounts are not same
+        if (oldAccount.getAccountId() == newAccount.getAccountId()) {
+            throw new InvalidParameterValueException("The new account is the same as the old account. Account id =" + oldAccount.getAccountId());
+        }
+
+        List<SnapshotVO> snapshots = _snapshotDao.listByStatusNotIn(volume.getId(), Snapshot.State.Destroyed,Snapshot.State.Error);
+        if (snapshots != null && snapshots.size() > 0) {
+            throw new InvalidParameterValueException(
+                    "Snapshots exists for volume: "+ volume.getName()+ ", remove snapshots for volume before assigning to another user.");
+        }
+
+        // Check if volume and primary storage space are with in resource limits
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume, 1);
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.primary_storage, volume.getSize());
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+                _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
+                volume.setAccountId(newAccount.getAccountId());
+                volume.setDomainId(newAccount.getDomainId());
+                _volsDao.persist(volume);
+                _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
+                _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
+                        volume.getUuid(), volume.isDisplayVolume());
+            }
+        });
+
+        s_logger.info("AssignVolume: volume " + volume.getName() + " now belongs to account " + newAccount.getAccountName());
+
+        return volume;
     }
 
     @Override

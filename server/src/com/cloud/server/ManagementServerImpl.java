@@ -472,6 +472,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
@@ -2889,6 +2890,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MigrateVolumeCmd.class);
         cmdList.add(ResizeVolumeCmd.class);
         cmdList.add(UploadVolumeCmd.class);
+        cmdList.add(AssignVolumeCmd.class);
         cmdList.add(CreateStaticRouteCmd.class);
         cmdList.add(CreateVPCCmd.class);
         cmdList.add(DeleteStaticRouteCmd.class);

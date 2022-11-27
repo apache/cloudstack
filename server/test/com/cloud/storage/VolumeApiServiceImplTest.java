@@ -22,6 +22,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -30,12 +31,18 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.user.AccountService;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -141,6 +148,10 @@ public class VolumeApiServiceImplTest {
     private AccountDao accountDaoMock;
     @Mock
     private HostDao hostdaoMock;
+    @Mock
+    private AccountService accountServiceMock;
+    @Mock
+    private SnapshotDao snapshotDaoMock;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
@@ -877,5 +888,160 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
 
         volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assignVolumeAsNonAdminThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assignVolumeThatIsStillAttachedThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+        setupAccountsForVolumeAssignment();
+        VolumeVO volume = setupTestVolume(1L);
+        volume.setInstanceId(1L);
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assignVolumeThatIsARootDiskThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+        setupAccountsForVolumeAssignment();
+        VolumeVO volume = setupTestVolume(1L);
+        volume.setVolumeType(Volume.Type.ROOT);
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assignVolumeThatIsNotReadyOrAllocatedThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+        setupAccountsForVolumeAssignment();
+        VolumeVO volume = setupTestVolume(1L);
+        volume.setState(Volume.State.Creating);
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void assignVolumeWhereUserDoesNotHaveAccessToNewAccountThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        Pair<AccountVO, AccountVO> accounts = setupAccountsForVolumeAssignment();
+        setupTestVolume(1L);
+
+        doThrow(new PermissionDeniedException("Access check failed")).when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), same(accounts.second()));
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void assignVolumeWhereUserDoesNotHaveAccessToOldAccountThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        Pair<AccountVO, AccountVO> accounts = setupAccountsForVolumeAssignment();
+        setupTestVolume(1L);
+
+        doThrow(new PermissionDeniedException("Access check failed")).when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), same(accounts.first()));
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assignVolumeWhereAccountsAreSameThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        Pair<AccountVO, AccountVO> accounts = setupAccountsForVolumeAssignment();
+        setupTestVolume(1L);
+
+        accounts.first().setId(accounts.second().getId());
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assignVolumeWhereVolumeHasSnapshotsThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        setupAccountsForVolumeAssignment();
+        setupTestVolume(1L);
+
+        when(snapshotDaoMock.listByStatusNotIn(1L, Snapshot.State.Destroyed, Snapshot.State.Error))
+                .thenReturn(Collections.singletonList(new SnapshotVO(1L, 1L, 1L, 1L, 1L, "snapshot", (short)1, "snapshot", 1024*1024, 0L, 0L, HypervisorType.KVM, Snapshot.LocationType.SECONDARY)));
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = ResourceAllocationException.class)
+    public void assignVolumeWhereResourceCountLimitIsExceededThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        Pair<AccountVO, AccountVO> accounts = setupAccountsForVolumeAssignment();
+        setupTestVolume(1L);
+
+        doThrow(new ResourceAllocationException("Resources Exceeded", ResourceType.volume)).when(resourceLimitServiceMock).checkResourceLimit(same(accounts.second()), eq(ResourceType.volume), any());
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    @Test(expected = ResourceAllocationException.class)
+    public void assignVolumeWhereResourceSizeLimitIsExceededThrows() throws Exception {
+        AssignVolumeCmd cmd = createAssignVolumeCmd();
+
+        Pair<AccountVO, AccountVO> accounts = setupAccountsForVolumeAssignment();
+        setupTestVolume(1L);
+
+        doThrow(new ResourceAllocationException("Resources Exceeded", ResourceType.volume)).when(resourceLimitServiceMock).checkResourceLimit(same(accounts.second()), eq(ResourceType.primary_storage), any());
+
+        volumeApiServiceImpl.assignVolume(cmd);
+    }
+
+    private static AssignVolumeCmd createAssignVolumeCmd() throws NoSuchFieldException, IllegalAccessException {
+        AssignVolumeCmd cmd = new AssignVolumeCmd();
+        Class<?> _class = cmd.getClass();
+
+        Field volumeId = _class.getDeclaredField("volumeId");
+        volumeId.setAccessible(true);
+        volumeId.set(cmd, 1L);
+
+        Field accountName = _class.getDeclaredField("accountName");
+        accountName.setAccessible(true);
+        accountName.set(cmd, "account");
+
+        Field domainIdField = _class.getDeclaredField("domainId");
+        domainIdField.setAccessible(true);
+        domainIdField.set(cmd, 1L);
+        return cmd;
+    }
+
+    private Pair<AccountVO, AccountVO> setupAccountsForVolumeAssignment() {
+        Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+
+        AccountVO oldAccount = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        AccountVO newAccount = new AccountVO("testaccount", 1, "networkdomain", (short)1, UUID.randomUUID().toString());
+        oldAccount.setId(1);
+        newAccount.setId(2);
+
+        when(accountManagerMock.isRootAdmin(anyLong())).thenReturn(true);
+        when(accountServiceMock.getActiveAccountById(1)).thenReturn(oldAccount);
+        when(accountManagerMock.finalizeOwner(any(Account.class), anyString(), anyLong(), anyLong())).thenReturn(newAccount);
+        CallContext.register(user, caller);
+
+        Pair<AccountVO, AccountVO> accounts = new Pair<>(oldAccount, newAccount);
+        return accounts;
+    }
+
+    private VolumeVO setupTestVolume(Long volumeId) throws NoSuchFieldException, IllegalAccessException {
+        VolumeVO volume = new VolumeVO("test", 1L, 1L, 1L, 1L, null, null, "abc123", Storage.ProvisioningType.THIN, 1024*1024, Volume.Type.DATADISK);
+        Field volumeIdField = volume.getClass().getDeclaredField("id");
+        volumeIdField.setAccessible(true);
+        volumeIdField.set(volume, volumeId);
+        when(volumeDaoMock.findById(volumeId)).thenReturn(volume);
+        return volume;
     }
 }

@@ -12721,6 +12721,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -231px -678px;
 }
 
+.assignVolumeToAnotherAccount .icon {
+  background-position: -232px -97px;
+}
+
+.assignVolumeToAnotherAccount:hover .icon {
+  background-position: -231px -678px;
+}
+
 .create .icon,
 .createTemplate .icon,
 .enableSwift .icon,

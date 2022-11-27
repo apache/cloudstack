@@ -1905,6 +1905,192 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
+                            },
+
+                            assignVolumeToAnotherAccount: {
+                                label: 'label.assign.volume.another',
+                                createForm: {
+                                    title: 'label.assign.volume.another',
+                                    desc: 'message.assign.volume.another',
+                                    fields: {
+                                        accountType: {
+                                            label: 'Account Type',
+                                            select: function(args) {
+                                                var items = [];
+                                                items.push({id: 'account', description: 'Account'});
+                                                items.push({id: 'project', description: 'Project'});
+                                                args.response.success({data: items});
+
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    var $account = $form.find('.form-item[rel=account]');
+                                                    var $project = $form.find('.form-item[rel=project]');
+
+                                                    var accountType = $(this).val();
+                                                    if (accountType == 'account') { // Account
+                                                        $account.css('display', 'inline-block');
+                                                        $project.hide();
+                                                    } else if (accountType == 'project') { // Project
+                                                        $project.css('display', 'inline-block');
+                                                        $account.hide();
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        domainid: {
+                                            label: 'label.domain',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL('listDomains'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
+                                                    success: function(json) {
+                                                        var array1 = [];
+                                                        var domains = json.listdomainsresponse.domain;
+                                                        if (domains != null && domains.length > 0) {
+                                                            for (var i = 0; i < domains.length; i++) {
+                                                                array1.push({
+                                                                    id: domains[i].id,
+                                                                    description: domains[i].path
+                                                                });
+                                                            }
+                                                        }
+                                                        array1.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: array1
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        account: {
+                                            label: 'label.account',
+                                            dependsOn: 'domainid',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                var dataObj = {
+                                                    domainId: args.domainid,
+                                                    state: 'Enabled',
+                                                    listAll: false,
+                                                };
+                                                $.ajax({
+                                                    url: createURL('listAccounts', {
+                                                        ignoreProject: true
+                                                    }),
+                                                    data: dataObj,
+                                                    success: function(json) {
+                                                        accountObjs = json.listaccountsresponse.account;
+                                                        var items = [{
+                                                            id: null,
+                                                            description: ''
+                                                        }];
+                                                        $(accountObjs).each(function() {
+                                                            items.push({
+                                                                id: this.name,
+                                                                description: this.name
+                                                            });
+                                                        })
+                                                        items.sort(function(a, b) {
+                                                            return a.description.localeCompare(b.description);
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                        },
+                                        project: {
+                                            label: 'label.project',
+                                            dependsOn: 'domainid',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function(args) {
+                                                var dataObj = {
+                                                    domainId: args.domainid,
+                                                    state: 'Active',
+                                                    listAll: true,
+                                                };
+                                                $.ajax({
+                                                    url: createURL('listProjects', {
+                                                        ignoreProject: true
+                                                    }),
+                                                    data: dataObj,
+                                                    success: function(json) {
+                                                        projectObjs = json.listprojectsresponse.project;
+                                                        var items = [{
+                                                            id: null,
+                                                            description: ''
+                                                        }];
+                                                        $(projectObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        })
+
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            },
+                                        },
+                                    }
+                                },
+                                action: function(args) {
+                                    var dataObj = {
+                                        volumeid: args.context.volumes[0].id,
+                                        domainid: args.data.domainid,
+                                    };
+                                    var ignoreProject = false;
+                                    if (args.data.accountType == 'account') {
+                                        ignoreProject = true;
+                                        $.extend(dataObj, {
+                                            account: args.data.account
+                                        });
+                                    } else if (args.data.accountType == 'project') {
+                                        $.extend(dataObj, {
+                                            projectid: args.data.project
+                                        });
+                                    }
+
+                                    $.ajax({
+                                        url: createURL('assignVolume', {
+                                            ignoreProject: ignoreProject
+                                        }),
+                                        data: dataObj,
+                                        success: function(json) {
+                                            var item = json.assignvolumeresponse.volume;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        },
+                                        error: function(data) {
+                                            args.response.error(parseXMLHttpResponse(data));
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.assign.volume.another';
+                                    }
+                                },
+                                notification: {
+                                    poll: function(args) {
+                                        args.complete();
+                                    }
+                                }
                             }
                         },
                         tabs: {
@@ -3058,6 +3244,10 @@
                     allowedActions.push("attachDisk");
                 }
             }
+        }
+
+        if ((jsonObj.state === "Allocated" || jsonObj.state === "Ready") && jsonObj.type === "DATADISK" && jsonObj.virtualmachineid == null && (isAdmin() || isDomainAdmin())) {
+            allowedActions.push("assignVolumeToAnotherAccount")
         }
 
         return allowedActions;
