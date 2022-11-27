@@ -324,9 +324,30 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private int _cleanupInterval;
     private List<String> apiNameList;
 
-    private static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
+    protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
 
     private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
+
+    static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "enable.user.two.factor.authentication",
+            "false",
+            "Determines whether two factor authentication is enabled or not. This can be configured at domain level also",
+            false,
+            ConfigKey.Scope.Domain);
+
+    ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "mandate.user.two.factor.authentication",
+            "false",
+            "Determines whether to make the two factor authentication mandatory or not. This can be configured at domain level also",
+            false,
+            ConfigKey.Scope.Domain);
+
+    ConfigKey<String> userTwoFactorAuthenticationProviderPlugin = new ConfigKey<>("Advanced", String.class,
+            "user.two.factor.authentication.provider.plugin",
+            "GOOGLE",
+            "The user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
 
     protected AccountManagerImpl() {
         super();
@@ -3229,7 +3250,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return response;
     }
 
-    private UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
+    protected UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
         UserAccountVO userAccount = _userAccountDao.findById(userId);
         UserVO userVO = _userDao.findById(userId);
 
@@ -3256,7 +3277,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return response;
     }
 
-    private UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
+    protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
         UserVO userVO = null;
         if (userId != null) {
             userVO = validateUser(userId, caller.getDomainId());

@@ -21,11 +21,16 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +39,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import static org.mockito.ArgumentMatchers.nullable;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.domain.Domain;
@@ -92,6 +98,13 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Mock
     PasswordPolicyImpl passwordPolicyMock;
 
+    @Mock
+    ConfigKey<Boolean> enableUserTwoFactorAuthenticationMock;
+
+    @Before
+    public void setUp() throws Exception {
+        enableUserTwoFactorAuthenticationMock = Mockito.mock(ConfigKey.class);
+    }
 
     @Before
     public void beforeTest() {
@@ -777,5 +790,102 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(userAccountVO.getId()).thenReturn(accountId);
         accountManagerImpl.updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccountVO, true, allowedAttempts);
         Mockito.verify(accountManagerImpl).updateLoginAttempts(Mockito.eq(accountId), Mockito.eq(allowedAttempts), Mockito.eq(true));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testEnableUserTwoFactorAuthenticationWhenDomainlevelSettingisDisabled() {
+        Long userId = 1L;
+
+        UserAccountVO userAccount = Mockito.mock(UserAccountVO.class);
+        UserVO userVO = Mockito.mock(UserVO.class);
+
+        Mockito.when(userAccountDaoMock.findById(userId)).thenReturn(userAccount);
+        Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+        Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+
+        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+        AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+
+        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
+
+        accountManagerImpl.enableTwoFactorAuthentication(userId, "google");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testEnableUserTwoFactorAuthenticationWhenProviderNameIsNull() {
+        Long userId = 1L;
+
+        UserAccountVO userAccount = Mockito.mock(UserAccountVO.class);
+        UserVO userVO = Mockito.mock(UserVO.class);
+
+        Mockito.when(userAccountDaoMock.findById(userId)).thenReturn(userAccount);
+        Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+        Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+
+        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+        AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+
+        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+
+        accountManagerImpl.enableTwoFactorAuthentication(userId, null);
+    }
+
+    @Test
+    public void testEnableUserTwoFactorAuthentication() {
+        Long userId = 1L;
+
+        UserAccountVO userAccount = Mockito.mock(UserAccountVO.class);
+        UserVO userVO = Mockito.mock(UserVO.class);
+
+        Mockito.when(userAccountDaoMock.findById(userId)).thenReturn(userAccount);
+        Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+        Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+
+        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+        AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+
+        UserTwoFactorAuthenticator googleProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
+        Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.containsKey("google")).thenReturn( true);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.get("google")).thenReturn( googleProvider);
+        AccountManagerImpl.userTwoFactorAuthenticationProvidersMap = userTwoFactorAuthenticationProvidersMap;
+        Mockito.when(googleProvider.setup2FAKey(userAccount)).thenReturn("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
+        Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
+        Mockito.when(userDaoMock.update(userId, userVoMock)).thenReturn(true);
+
+        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.enableTwoFactorAuthentication(userId, "google");
+
+        Assert.assertEquals("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL", response.getSecretCode());
+    }
+
+    @Test
+    public void testDisableUserTwoFactorAuthentication() {
+        Long userId = 1L;
+
+        UserVO userVO = Mockito.mock(UserVO.class);
+        Account caller = Mockito.mock(Account.class);
+
+        AccountVO accountMock = Mockito.mock(AccountVO.class);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(Account.class), Mockito.isNull(), nullable(Boolean.class), nullable(Account.class));
+
+        Mockito.when(caller.getDomainId()).thenReturn(1L);
+        Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+        Mockito.when(userVO.getAccountId()).thenReturn(1L);
+        Mockito.when(_accountDao.findById(1L)).thenReturn(accountMock);
+        Mockito.when(accountMock.getDomainId()).thenReturn(1L);
+        Mockito.when(_accountService.getActiveAccountById(1L)).thenReturn(caller);
+
+        userVoMock.setKeyFor2fa("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
+        userVoMock.setUser2faProvider("google");
+        userVoMock.setTwoFactorAuthenticationEnabled(true);
+
+        Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
+
+        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.disableTwoFactorAuthentication(userId, caller, caller);
+
+        Assert.assertNull(response.getSecretCode());
+        Assert.assertNull(userVoMock.getKeyFor2fa());
+        Assert.assertNull(userVoMock.getUser2faProvider());
     }
 }

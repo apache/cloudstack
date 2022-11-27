@@ -196,6 +196,8 @@ public class AccountManagetImplTestBase {
     AccountManagerImpl accountManagerImpl;
     @Mock
     UsageEventDao _usageEventDao;
+    @Mock
+    AccountService _accountService;
 
     @Before
     public void setup() {

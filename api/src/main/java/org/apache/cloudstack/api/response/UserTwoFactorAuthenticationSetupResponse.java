@@ -56,4 +56,8 @@ public class UserTwoFactorAuthenticationSetupResponse extends BaseResponse {
     public void setSecretCode(String secretCode) {
         this.secretCode = secretCode;
     }
+
+    public String getSecretCode() {
+        return secretCode;
+    }
 }
