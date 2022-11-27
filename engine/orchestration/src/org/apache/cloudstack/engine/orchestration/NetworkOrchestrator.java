@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -707,17 +708,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         if (vo.getBroadcastDomainType() == BroadcastDomainType.Vlan && vo.getBroadcastUri() != null && offering.getSpecifyVlan()) {
-                            s_logger.info("Recording a manually assigned vlan to table");
                             String vnet = BroadcastDomainType.getValue(vo.getBroadcastUri());
                             List<DataCenterVnetVO> vnetVOs = _datacenterVnetDao.findVnet(plan.getDataCenterId(), plan.getPhysicalNetworkId(), vnet);
                             if (vnetVOs.size() == 1) {
+                                s_logger.info("Recording a manually assigned vlan to table");
                                 DataCenterVnetVO vnetVO = vnetVOs.get(0);
-                                if (vnetVO.getTakenAt() == null) {
-                                    vnetVO.setTakenAt(new Date());
-                                    vnetVO.setAccountId(owner.getId());
-                                    vnetVO.setReservationId(vo.getUuid());
-                                    _datacenterVnetDao.update(vnetVO.getId(), vnetVO);
-                                }
+                                vnetVO.setTakenAt(new Date());
+                                vnetVO.setAccountId(owner.getId());
+                                vnetVO.setReservationId(vo.getUuid());
+                                _datacenterVnetDao.update(vnetVO.getId(), vnetVO);
                             }
                         }
                     }
@@ -2699,8 +2698,46 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             }
                         }
                         if (networkFinal.getBroadcastDomainType() == BroadcastDomainType.Vlan && networkFinal.getBroadcastUri() != null && networkOffering.getSpecifyVlan()) {
-                            s_logger.info("Cleaning up our manually assigned vlan from table");
-                            _dcDao.releaseVnet(BroadcastDomainType.getValue(networkFinal.getBroadcastUri()), networkFinal.getDataCenterId(), networkFinal.getPhysicalNetworkId(), networkFinal.getAccountId(), networkFinal.getUuid());
+                            String vlan = BroadcastDomainType.getValue(networkFinal.getBroadcastUri());
+                            List<DataCenterVnetVO> vnetVOs = _datacenterVnetDao.findVnet(networkFinal.getDataCenterId(), networkFinal.getPhysicalNetworkId(), vlan);
+
+                            if (vnetVOs.size() == 1) {
+                                s_logger.info("Cleaning up our manually assigned vlan from table");
+                                List<NetworkVO> overlappingNetworks = _networksDao.listByZoneAndUriAndGuestType(networkFinal.getDataCenterId(), networkFinal.getBroadcastUri().toString(), null);
+
+                                Optional<NetworkVO> networkToAssign = overlappingNetworks.stream().filter(n -> n.getId() != networkId).sorted((a, b) -> {
+                                    // The entity layer caches these, so performance shouldn't suffer
+                                    NetworkOffering aOff = _networkOfferingDao.findById(a.getNetworkOfferingId());
+                                    NetworkOffering bOff = _networkOfferingDao.findById(b.getNetworkOfferingId());
+                                    // We are sorting so that networks that specify a vlan manually get sorted first, aka smaller
+                                    if (aOff.getSpecifyVlan() && !bOff.getSpecifyVlan()) {
+                                        return -1;
+                                    } else if (bOff.getSpecifyVlan() && !aOff.getSpecifyVlan()) {
+                                        return 1;
+                                    }
+                                    return 0;
+                                }).findFirst();
+
+                                if (networkToAssign.isPresent()) {
+                                    NetworkVO network = networkToAssign.get();
+                                    NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                                    s_logger.info("Re-assigning vlan " + vlan + " to network: " + network);
+                                    DataCenterVnetVO vnetVO = vnetVOs.get(0);
+                                    vnetVO.setTakenAt(network.getCreated());
+                                    vnetVO.setAccountId(network.getAccountId());
+                                    if (network.getReservationId() != null) {
+                                        vnetVO.setReservationId(network.getReservationId());
+                                    } else if (offering.getSpecifyVlan()) {
+                                        // Only do this if it is one of our manually assigned networks
+                                        vnetVO.setReservationId(network.getUuid());
+                                    } else {
+                                        vnetVO.setReservationId(null);
+                                    }
+                                    _datacenterVnetDao.update(vnetVO.getId(), vnetVO);
+                                } else {
+                                    _dcDao.releaseVnet(BroadcastDomainType.getValue(networkFinal.getBroadcastUri()), networkFinal.getDataCenterId(), networkFinal.getPhysicalNetworkId(), networkFinal.getAccountId(), networkFinal.getUuid());
+                                }
+                            }
                         }
                     }
                 });
