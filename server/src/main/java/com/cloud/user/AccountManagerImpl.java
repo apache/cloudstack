@@ -344,10 +344,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             false,
             ConfigKey.Scope.Domain);
 
-    ConfigKey<String> userTwoFactorAuthenticationProviderPlugin = new ConfigKey<>("Advanced", String.class,
-            "user.two.factor.authentication.provider.plugin",
+    ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
+            "user.two.factor.authentication.default.provider",
             "GOOGLE",
-            "The user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
+            "The default user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
 
     protected AccountManagerImpl() {
         super();
@@ -2707,7 +2707,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
-        final String name = userTwoFactorAuthenticationProviderPlugin.valueIn(domainId);
+        final String name = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
         return getUserTwoFactorAuthenticationProvider(name);
     }
 
@@ -3185,7 +3185,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication, userTwoFactorAuthenticationProviderPlugin, mandateUserTwoFactorAuthentication};
+        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication, userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
@@ -3228,7 +3228,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return getUserTwoFactorAuthenticator(userAccount.getUser2faProvider());
             }
         }
-        final String name = userTwoFactorAuthenticationProviderPlugin.valueIn(domainId);
+        final String name = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
         return getUserTwoFactorAuthenticator(name);
     }
 
