@@ -65,8 +65,8 @@ public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements 
         }
         long seed = System.currentTimeMillis();
         Random rng = new Random(seed);
-        long number = (rng.nextLong() % 90000) + 100000;
-        String key = Long.toString(number);
+        int number = rng.nextInt(999999);
+        String key = String.format("%06d", number);
         userAccount.setKeyFor2fa(key);
 
         return key;

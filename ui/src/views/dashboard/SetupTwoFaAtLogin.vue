@@ -46,8 +46,17 @@
           @change="val => { handleSelectChange(val) }">
           <a-select-option
             v-for="(opt) in providers"
-            :key="opt.name">
+            :key="opt.name"
+            :value="opt.name">
+            <div>
+              <span v-if="opt.name === 'google'">
+                <google-outlined />
+              </span>
+              <span v-if="opt.name === 'staticpin'">
+                <lock-outlined />
+              </span>
               {{ opt.name }}
+            </div>
           </a-select-option>
         </a-select>
         <div :span="24" v-if="selectedProvider">

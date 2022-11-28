@@ -40,7 +40,7 @@
                 <google-outlined />
               </span>
               <span v-if="opt.name === 'staticpin'">
-                <google-outlined />
+                <lock-outlined />
               </span>
               {{ opt.name }}
             </div>
