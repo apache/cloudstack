@@ -30,6 +30,8 @@
       <br />
       <br />
     </a-form>
+    <p v-html="$t('message.two.fa.login.page')"></p>
+    <br />
     <h3> {{ $t('label.select.2fa.provider') }} </h3>
     <a-form
       :rules="rules"
@@ -66,7 +68,7 @@
       <div v-if="twoFAenabled">
         <div v-if="selectedProvider !== 'staticpin'">
           <br />
-          <p v-html="$t('message.two.fa.register.account')"></p>
+          <p v-html="$t('message.two.fa.register.account.login.page')"></p>
           <vue-qrious
             class="center-align"
             :value="googleUrl"
@@ -76,7 +78,7 @@
         </div>
         <div v-if="selectedProvider === 'staticpin'">
           <br>
-          <p v-html="$t('message.two.fa.staticpin')"></p>
+          <p v-html="$t('message.two.fa.staticpin.login.page')"></p>
           <br>
           <div> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.static.pin') }}</a></div>
         </div>

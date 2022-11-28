@@ -3181,7 +3181,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication, userTwoFactorAuthenticationProviderPlugin};
+        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication, userTwoFactorAuthenticationProviderPlugin, mandateUserTwoFactorAuthentication};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
