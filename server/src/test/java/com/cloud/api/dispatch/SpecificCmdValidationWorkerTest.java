@@ -43,6 +43,6 @@ public class SpecificCmdValidationWorkerTest {
         worker.handle(new DispatchTask(cmd, params));
 
         // Assert
-        verify(cmd, times(1)).validateSpecificParameters(params);
+        verify(cmd, times(1)).validateCommandSpecificPermissionsAndParameters(params);
     }
 }

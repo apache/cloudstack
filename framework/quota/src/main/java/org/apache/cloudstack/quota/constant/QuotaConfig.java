@@ -18,11 +18,9 @@
 package org.apache.cloudstack.quota.constant;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.PluginAccessConfigs;
 
-public interface QuotaConfig {
-
-    public static final ConfigKey<Boolean> QuotaPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.enable.service", "false",
-            "Indicates whether Quota plugin is enabled or not.", true);
+public interface QuotaConfig extends PluginAccessConfigs {
 
     public static final ConfigKey<String> QuotaEnableEnforcement = new ConfigKey<String>("Advanced", String.class, "quota.enable.enforcement", "false",
             "Enable the usage quota enforcement, i.e. on true when exceeding quota the respective account will be locked.", true);

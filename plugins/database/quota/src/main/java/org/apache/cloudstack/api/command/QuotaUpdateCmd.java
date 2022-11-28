@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command;
 import com.cloud.user.Account;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.QuotaUpdateResponse;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
@@ -31,7 +30,7 @@ import java.util.Calendar;
 import javax.inject.Inject;
 
 @APICommand(name = "quotaUpdate", responseObject = QuotaUpdateResponse.class, description = "Update quota calculations, alerts and statements", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaUpdateCmd extends BaseCmd {
+public class QuotaUpdateCmd extends QuotaBaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaUpdateCmd.class);
 

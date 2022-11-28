@@ -21,7 +21,6 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -34,7 +33,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 
 @APICommand(name = "quotaCredits", responseObject = QuotaCreditsResponse.class, description = "Add +-credits to an account", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaCreditsCmd extends BaseCmd {
+public class QuotaCreditsCmd extends QuotaBaseCmd {
 
     @Inject
     QuotaResponseBuilder _responseBuilder;

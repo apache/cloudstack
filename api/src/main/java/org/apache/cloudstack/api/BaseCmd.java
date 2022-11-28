@@ -380,10 +380,9 @@ public abstract class BaseCmd {
     }
 
     /**
-     * To be overwritten by any class who needs specific validation
+     * Method intended to execute command's specific permissions and parameters. Should be overwritten by any class who needs specific validation.
      */
-    public void validateSpecificParameters(final Map<String, String> params){
-        // To be overwritten by any class who needs specific validation
+    public void validateCommandSpecificPermissionsAndParameters(final Map<String, String> params){
     }
 
     /**

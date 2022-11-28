@@ -118,8 +118,8 @@ public abstract class BaseListCmd extends BaseCmd implements IBaseListCmd {
     }
 
     @Override
-    public void validateSpecificParameters(final Map<String, String> params){
-        super.validateSpecificParameters(params);
+    public void validateCommandSpecificPermissionsAndParameters(final Map<String, String> params){
+        super.validateCommandSpecificPermissionsAndParameters(params);
 
         final Object pageSizeObj = params.get(ApiConstants.PAGE_SIZE);
         Long pageSize = null;

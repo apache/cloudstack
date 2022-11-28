@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
@@ -31,7 +30,7 @@ import javax.inject.Inject;
 import java.util.Arrays;
 
 @APICommand(name = "quotaEmailTemplateUpdate", responseObject = SuccessResponse.class, description = "Updates existing email templates for quota alerts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaEmailTemplateUpdateCmd extends BaseCmd {
+public class QuotaEmailTemplateUpdateCmd extends QuotaBaseCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateUpdateCmd.class);
 
     @Inject

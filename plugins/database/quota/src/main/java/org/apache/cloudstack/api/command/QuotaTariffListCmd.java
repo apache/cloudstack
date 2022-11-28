@@ -21,7 +21,6 @@ import com.cloud.utils.Pair;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
@@ -37,7 +36,7 @@ import java.util.Date;
 import java.util.List;
 
 @APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaTariffListCmd extends BaseListCmd {
+public class QuotaTariffListCmd extends QuotaBaseListCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class);
 
     @Inject

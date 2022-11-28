@@ -21,7 +21,6 @@ import com.cloud.utils.Pair;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -35,7 +34,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 @APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists balance and quota usage for all accounts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class QuotaSummaryCmd extends BaseListCmd {
+public class QuotaSummaryCmd extends QuotaBaseListCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaSummaryCmd.class);
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")

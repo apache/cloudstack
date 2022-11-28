@@ -33,7 +33,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "quotaTariffDelete", description = "Marks a quota tariff as removed.", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
 responseHasSensitiveInfo = false, since = "4.18.0.0", authorized = {RoleType.Admin})
-public class QuotaTariffDeleteCmd extends BaseCmd {
+public class QuotaTariffDeleteCmd extends QuotaBaseCmd {
     protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
