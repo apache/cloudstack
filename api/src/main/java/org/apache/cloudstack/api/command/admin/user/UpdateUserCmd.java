@@ -79,6 +79,9 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "Unique username")
     private String username;
 
+    @Parameter(name = ApiConstants.MANDATE_2FA, type = CommandType.BOOLEAN, description = "Provide true to mandate the user to use two factor authentication has to be enabled. This parameter is only used to mandate 2FA, not to disable 2FA")
+    private Boolean enable2FA;
+
     @Inject
     private RegionService _regionService;
 
@@ -124,6 +127,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     public String getUsername() {
         return username;
+    }
+
+    public Boolean getEnable2FA() {
+        return enable2FA;
     }
 
     /////////////////////////////////////////////////////
