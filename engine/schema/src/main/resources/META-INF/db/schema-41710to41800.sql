@@ -597,3 +597,8 @@ UPDATE `cloud`.`networks` ntwk
     ntwk.state = 'Setup' AND
     ntwk.removed is NULL AND
     ntwk.guest_type = 'Isolated';
+
+
+-- Add assignVolume API permission to default resource admin and domain admin
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 2, 'assignVolume', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 3, 'assignVolume', 'ALLOW');
