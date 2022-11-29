@@ -1832,15 +1832,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @return true if a and b are equal excluding 0 and null values.
      */
     private boolean compareEqualsIncludingNullOrZero(Long a, Long b) {
-        if ((a != null && a == 0 && b == null) || (a == null && b != null && b == 0)) {
-            return true;
-        }
+        a = ObjectUtils.defaultIfNull(a, 0L);
+        b = ObjectUtils.defaultIfNull(b, 0L);
 
-        if (a == b) {
-            return true;
-        }
-
-        return false;
+        return a.equals(b);
     }
 
     /**
