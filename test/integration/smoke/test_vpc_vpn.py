@@ -136,11 +136,11 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                 zoneid=self.zone.id,
                 vpcid=vpc.id
             )
+            self.cleanup.append(ntwk)
         except Exception as e:
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk, "Network failed to create")
-            self.cleanup.append(ntwk)
             self.logger.debug(
                 "Network %s created in VPC %s" % (ntwk.id, vpc.id))
 
@@ -155,13 +155,13 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                                        networkids=ntwk.id,
                                        hypervisor=self.hypervisor
                                        )
-            self.assertTrue(vm is not None, "VM failed to deploy")
             self.cleanup.append(vm)
-            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.debug("VM %s deployed in VPC %s" % (vm.id, vpc.id))
         except Exception as e:
             self.fail(e)
         finally:
+            self.assertTrue(vm is not None, "VM failed to deploy")
+            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.logger.debug("Deployed virtual machine: OK")
 
         try:
