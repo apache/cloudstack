@@ -1141,7 +1141,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
-            session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(userAcct.isTwoFactorAuthenticationEnabled()));
+            session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(userAcct.isUser2faEnabled()));
             session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
             session.setAttribute(ApiConstants.TWOFACTORAUTHENTICATIONPROVIDER, userAcct.getUser2faProvider());
 

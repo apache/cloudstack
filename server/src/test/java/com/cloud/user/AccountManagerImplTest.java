@@ -878,7 +878,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         userVoMock.setKeyFor2fa("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
         userVoMock.setUser2faProvider("google");
-        userVoMock.setTwoFactorAuthenticationEnabled(true);
+        userVoMock.setUser2faEnabled(true);
 
         Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
 

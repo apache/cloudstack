@@ -1559,7 +1559,7 @@ CREATE VIEW `cloud`.`user_view` AS
         async_job.uuid job_uuid,
         async_job.job_status job_status,
         async_job.account_id job_account_id,
-        user.two_factor_authentication_enabled two_factor_authentication_enabled
+        user.is_user_2fa_enabled is_user_2fa_enabled
     from
         `cloud`.`user`
             inner join

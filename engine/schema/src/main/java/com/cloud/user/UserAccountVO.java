@@ -109,8 +109,8 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Column(name = "external_entity", length = 65535)
     private String externalEntity = null;
 
-    @Column(name = "two_factor_authentication_enabled")
-    private boolean twoFactorAuthenticationEnabled = false;
+    @Column(name = "is_user_2fa_enabled")
+    private boolean user2faEnabled = false;
 
     @Column(name = "user_2fa_provider")
     private String user2faProvider;
@@ -322,13 +322,13 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     }
 
     @Override
-    public boolean isTwoFactorAuthenticationEnabled() {
-        return twoFactorAuthenticationEnabled;
+    public boolean isUser2faEnabled() {
+        return user2faEnabled;
     }
 
     @Override
-    public void setTwoFactorAuthenticationEnabled(boolean twoFactorAuthenticationEnabled) {
-        this.twoFactorAuthenticationEnabled = twoFactorAuthenticationEnabled;
+    public void setUser2faEnabled(boolean user2faEnabled) {
+        this.user2faEnabled = user2faEnabled;
     }
 
     @Override

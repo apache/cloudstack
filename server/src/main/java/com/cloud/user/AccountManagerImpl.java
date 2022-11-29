@@ -1407,7 +1407,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         Boolean is2FAenabled = updateUserCmd.getEnable2FA();
         if (is2FAenabled != null && is2FAenabled) {
-            user.setTwoFactorAuthenticationEnabled(true);
+            user.setUser2faEnabled(true);
         }
         _userDao.update(user.getId(), user);
         return _userAccountDao.findById(user.getId());
@@ -2427,7 +2427,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         UserVO userVO = new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID, source);
-        userVO.setTwoFactorAuthenticationEnabled(mandateUserTwoFactorAuthentication.valueIn(getAccount(accountId).getDomainId()));
+        userVO.setUser2faEnabled(mandateUserTwoFactorAuthentication.valueIn(getAccount(accountId).getDomainId()));
         UserVO user = _userDao.persist(userVO);
         CallContext.current().putContextParameter(User.class, user.getUuid());
         return user;
@@ -3213,7 +3213,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccess(caller, null, true, owner);
 
         UserAccount userAccount = _accountService.getUserAccountById(userAccountId);
-        if (!userAccount.isTwoFactorAuthenticationEnabled()) {
+        if (!userAccount.isUser2faEnabled()) {
             throw new CloudRuntimeException(String.format("Two factor authentication is not enabled on the user: %s", userAccount.getUsername()));
         }
         UserTwoFactorAuthenticator userTwoFactorAuthenticator = getUserTwoFactorAuthenticator(domainId, userAccountId);
@@ -3270,7 +3270,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO user = _userDao.createForUpdate();
         user.setKeyFor2fa(code);
         user.setUser2faProvider(provider.getName());
-        user.setTwoFactorAuthenticationEnabled(true);
+        user.setUser2faEnabled(true);
         _userDao.update(userId, user);
 
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
@@ -3298,7 +3298,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO user = _userDao.createForUpdate();
         user.setKeyFor2fa(null);
         user.setUser2faProvider(null);
-        user.setTwoFactorAuthenticationEnabled(false);
+        user.setUser2faEnabled(false);
         _userDao.update(userVO.getId(), user);
 
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();

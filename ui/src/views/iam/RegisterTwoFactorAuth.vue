@@ -156,7 +156,6 @@ export default {
     setup2FAProvider () {
       if (!this.twoFAenabled) {
         api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
-          console.log(response)
           this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
           if (this.selectedProvider === 'google') {
             this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
