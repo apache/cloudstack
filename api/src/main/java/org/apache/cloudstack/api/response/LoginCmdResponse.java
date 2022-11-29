@@ -176,7 +176,7 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
         this.sessionKey = sessionKey;
     }
 
-    public String Is2FAenabled() {
+    public String is2FAenabled() {
         return is2FAenabled;
     }
 
@@ -184,7 +184,7 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
         this.is2FAenabled = is2FAenabled;
     }
 
-    public String Is2FAverfied() {
+    public String is2FAverfied() {
         return is2FAverified;
     }
 

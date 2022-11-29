@@ -332,7 +332,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             Boolean.class,
             "enable.user.two.factor.authentication",
             "false",
-            "Determines whether two factor authentication is enabled or not. This can be configured at domain level also",
+            "Determines whether two factor authentication is enabled or not. This can also be configured at domain level.",
             false,
             ConfigKey.Scope.Domain);
 
@@ -340,7 +340,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             Boolean.class,
             "mandate.user.two.factor.authentication",
             "false",
-            "Determines whether to make the two factor authentication mandatory or not. This can be configured at domain level also",
+            "Determines whether to make the two factor authentication mandatory or not. This can also be configured at domain level.",
             false,
             ConfigKey.Scope.Domain);
 

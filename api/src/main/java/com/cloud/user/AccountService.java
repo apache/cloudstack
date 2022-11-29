@@ -134,7 +134,7 @@ public interface AccountService {
     List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders();
 
     /**
-     * Find user two factor authenticator provider by domain ID
+     * Finds user two factor authenticator provider by domain ID
      * @param domainId domain id
      * @return backup provider
      */
