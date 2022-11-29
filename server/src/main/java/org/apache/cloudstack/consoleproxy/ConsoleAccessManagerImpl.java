@@ -59,8 +59,10 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -88,6 +90,10 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private final Gson gson = new GsonBuilder().create();
 
     public static final Logger s_logger = Logger.getLogger(ConsoleAccessManagerImpl.class.getName());
+
+    private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
+            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+    );
 
     private static Set<String> allowedSessions;
 
@@ -200,8 +206,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         String vmUuid = vm.getUuid();
-        if (vm.getState() != VirtualMachine.State.Running) {
-            msg = "VM " + vmUuid + " must be Running to connect console, sending blank response for console access request";
+        if (unsupportedConsoleVMState.contains(vm.getState())) {
+            msg = "VM " + vmUuid + " must be running to connect console, sending blank response for console access request";
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
