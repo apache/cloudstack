@@ -185,7 +185,7 @@ const user = {
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
           commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
-          commit('SET_2FA_PROVIDER', result.twofaprovider)
+          commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_LOGIN_FLAG', false)
           notification.destroy()
 

@@ -62,15 +62,15 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.TWOFACTORAUTHENTICATIONCODE, type = CommandType.STRING, description = "two factor authentication code", required = true)
-    private String twoFactorAuthenticationCode;
+    @Parameter(name = ApiConstants.CODE_FOR_2FA, type = CommandType.STRING, description = "two factor authentication code", required = true)
+    private String codeFor2fa;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getTwoFactorAuthenticationCode() {
-        return twoFactorAuthenticationCode;
+    public String getCodeFor2fa() {
+        return codeFor2fa;
     }
 
     @Override
@@ -90,11 +90,11 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletRequest req, HttpServletResponse resp) throws ServerApiException {
-        String twoFactorAuthenticationCode = null;
-        if (params.containsKey(ApiConstants.TWOFACTORAUTHENTICATIONCODE)) {
-            twoFactorAuthenticationCode = ((String[])params.get(ApiConstants.TWOFACTORAUTHENTICATIONCODE))[0];
+        String codeFor2FA = null;
+        if (params.containsKey(ApiConstants.CODE_FOR_2FA)) {
+            codeFor2FA = ((String[])params.get(ApiConstants.CODE_FOR_2FA))[0];
         }
-        if (twoFactorAuthenticationCode.isEmpty()) {
+        if (codeFor2FA.isEmpty()) {
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Code for two factor authentication is required");
         }
 
@@ -103,7 +103,7 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
 
         String serializedResponse = null;
         try {
-            accountManager.verifyUsingTwoFactorAuthenticationCode(twoFactorAuthenticationCode, currentUserAccount.getDomainId(), currentUserId);
+            accountManager.verifyUsingTwoFactorAuthenticationCode(codeFor2FA, currentUserAccount.getDomainId(), currentUserId);
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
             return ApiResponseSerializer.toSerializedString(response, responseType);
