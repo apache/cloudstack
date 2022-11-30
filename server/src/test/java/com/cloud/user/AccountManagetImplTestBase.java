@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
@@ -60,7 +61,6 @@ import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import org.apache.cloudstack.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.SnapshotDao;

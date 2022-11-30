@@ -60,7 +60,6 @@ export default {
     }
   },
   created () {
-    console.log(this.$store.getters.twoFaEnabled)
     this.fetchData()
   },
   mounted () {

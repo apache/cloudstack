@@ -60,6 +60,8 @@ import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
@@ -144,8 +146,6 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
-import org.apache.cloudstack.auth.UserAuthenticator;
-import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -333,7 +333,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "enable.user.two.factor.authentication",
             "false",
             "Determines whether two factor authentication is enabled or not. This can also be configured at domain level.",
-            false,
+            true,
             ConfigKey.Scope.Domain);
 
     ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
@@ -341,12 +341,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "mandate.user.two.factor.authentication",
             "false",
             "Determines whether to make the two factor authentication mandatory or not. This can also be configured at domain level.",
-            false,
+            true,
             ConfigKey.Scope.Domain);
 
     ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
             "user.two.factor.authentication.default.provider",
-            "GOOGLE",
+            "google",
             "The default user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
 
     protected AccountManagerImpl() {
@@ -2715,10 +2715,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isEmpty(name)) {
             throw new CloudRuntimeException("Invalid two factor authentication provider name provided");
         }
-        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name)) {
+        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name.toLowerCase())) {
             throw new CloudRuntimeException("Failed to find two factor authentication provider by the name: " + name);
         }
-        return userTwoFactorAuthenticationProvidersMap.get(name);
+        return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
     @Override
@@ -3326,10 +3326,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isEmpty(name)) {
             throw new CloudRuntimeException("Invalid UserTwoFactorAuthenticator name provided");
         }
-        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name)) {
+        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name.toLowerCase())) {
             throw new CloudRuntimeException("Failed to find UserTwoFactorAuthenticator by the name: " + name);
         }
-        return userTwoFactorAuthenticationProvidersMap.get(name);
+        return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
 }

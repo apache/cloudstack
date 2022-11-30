@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.AdapterBase;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements UserTwoFactorAuthenticator {
     public static final Logger s_logger = Logger.getLogger(StaticPinUserTwoFactorAuthenticator.class);
@@ -63,8 +63,9 @@ public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements 
         if (StringUtils.isNotEmpty(userAccount.getKeyFor2fa())) {
             throw new CloudRuntimeException(String.format("2FA key is already setup for the user account %s", userAccount.getAccountName()));
         }
-        long seed = System.currentTimeMillis();
-        Random rng = new Random(seed);
+        long timeSeed = System.currentTimeMillis();
+        SecureRandom rng = new SecureRandom();
+        rng.setSeed(timeSeed);
         int number = rng.nextInt(999999);
         String key = String.format("%06d", number);
         userAccount.setKeyFor2fa(key);
