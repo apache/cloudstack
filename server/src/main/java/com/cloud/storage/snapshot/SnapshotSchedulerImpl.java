@@ -264,7 +264,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @DB
     protected void scheduleSnapshots() {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, _currentTimestamp);
-        s_logger.trace(String.format("Snapshot scheduler is being called at [%s].", displayTime));
+        s_logger.debug(String.format("Snapshot scheduler is being called at [%s].", displayTime));
 
         final List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug(String.format("There are [%s] scheduled snapshots to be executed at [%s].", snapshotsToBeExecuted.size(), displayTime));
