@@ -17,7 +17,6 @@
 # under the License.
 username=$1
 new_passwd=$2
-expected="successfully."
 
 passwd ${username} << EOD
 ${new_passwd}
