@@ -96,6 +96,7 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -1803,14 +1804,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
         }
 
-        if (currentSize != newSize || newMaxIops != volume.getMaxIops() || newMinIops != volume.getMinIops()) {
+        if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
             volumeResizeRequired = true;
             validateVolumeReadyStateAndHypervisorChecks(volume, currentSize, newSize);
         }
 
         StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true, false);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true, false);
         List<? extends StoragePool> suitableStoragePools = poolsPair.second();
 
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
@@ -1857,6 +1858,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    /**
+     * This method is to compare long values, in miniops and maxiops a or b can be null or 0.
+     * Use this method to treat 0 and null as same
+     *
+     * @param a
+     * @param b
+     * @return true if a and b are equal excluding 0 and null values.
+     */
+    private boolean compareEqualsIncludingNullOrZero(Long a, Long b) {
+        a = ObjectUtils.defaultIfNull(a, 0L);
+        b = ObjectUtils.defaultIfNull(b, 0L);
+
+        return a.equals(b);
     }
 
     /**

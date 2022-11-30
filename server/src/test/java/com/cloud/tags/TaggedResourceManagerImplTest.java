@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -122,5 +123,11 @@ public class TaggedResourceManagerImplTest extends TestCase {
         Mockito.when(accountManager.getAccount(ownerAccountId)).thenReturn(owner);
         Mockito.doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(caller, null, false, owner);
         taggedResourceManagerImplSpy.checkTagsDeletePermission(List.of(resourceTag1, resourceTag2), caller);
+    }
+
+    @Test
+    public void testRetrieveDataStoreNullPoolId() {
+        DataStore dataStore = taggedResourceManagerImplSpy.retrieveDatastore(null);
+        Assert.assertNull(dataStore);
     }
 }
