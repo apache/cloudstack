@@ -1168,7 +1168,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * attach or detach a device (ISO or disk) to an instance
+     * Attaches or detaches a device (ISO or disk) to an instance.
      * @param conn libvirt connection
      * @param attach boolean that determines whether the device will be attached or detached
      * @param vmName instance name
@@ -1259,7 +1259,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * attach or detach a disk to an instance
+     * Attaches or detaches a disk to an instance.
      * @param conn libvirt connection
      * @param attach boolean that determines whether the device will be attached or detached
      * @param vmName instance name
@@ -1296,7 +1296,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     /**
      *
-     * attach or detach a disk to an instance
+     * Attaches or detaches a disk to an instance.
      * @param conn libvirt connection
      * @param attach boolean that determines whether the device will be attached or detached
      * @param vmName instance name
