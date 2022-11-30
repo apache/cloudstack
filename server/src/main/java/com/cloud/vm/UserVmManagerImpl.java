@@ -2040,7 +2040,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (!AllowDiskOfferingChangeDuringScaleVm.valueIn(zoneId)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Disk Offering change for the root volume is disabled during the compute offering change operation. Please check the setting %s", AllowDiskOfferingChangeDuringScaleVm.key()));
+                s_logger.debug(String.format("Changing the disk offering of the root volume during the compute offering change operation is disabled. Please check the setting [%s].", AllowDiskOfferingChangeDuringScaleVm.key()));
             }
             return;
         }
