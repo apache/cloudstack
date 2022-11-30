@@ -47,7 +47,7 @@ import com.cloud.utils.Pair;
  */
 public interface UserVmManager extends UserVmService {
     String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
-    String AllowDiskOfferingChangeDuringScaleVmCK = "allow.diskOffering.change.during.scale.vm";
+    String AllowDiskOfferingChangeDuringScaleVmCK = "allow.diskoffering.change.during.scale.vm";
     String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
     ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
