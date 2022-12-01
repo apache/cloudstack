@@ -262,15 +262,12 @@ public class NetworkHelperImpl implements NetworkHelper {
             return null;
         }
 
-
-
         _accountMgr.checkAccess(caller, null, true, router);
 
         final Account owner = _accountMgr.getAccount(router.getAccountId());
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
-        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(router.getDomainId()))) {
-            _itMgr.decrementVrResourceCount(routerOffering, owner, true);
-        }
+
+        decrementVrResourceCount(owner, routerOffering);
 
         _itMgr.expunge(router.getUuid());
         _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
@@ -500,7 +497,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean startRouter)
-            throws InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
+            throws InsufficientAddressCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
         final Account owner = routerDeploymentDefinition.getOwner();
@@ -509,15 +506,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         // Try to allocate the domR twice using diff hypervisors, and when
         // failed both times, throw the exception up
         final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
-
-        // Increment the resource count with router offering.
-        // If router can't be deployed or started, decrement the resources.
-        // If resource.count.running.vms is false, increment resource count.
-        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
-            _itMgr.incrementVrResourceCount(routerOffering,
-                    owner, true);
-        }
-
+        incrementVrResourceCount(owner, routerOffering);
         int allocateRetry = 0;
         int startRetry = 0;
         DomainRouterVO router = null;
@@ -567,10 +556,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                     s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
                     continue;
                 } else {
-                    // If VR can't be deployed then decrement the resource count
-                    if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
-                        _itMgr.decrementVrResourceCount(routerOffering, owner,true);
-                    }
+                    decrementVrResourceCount(owner, routerOffering);
                     throw ex;
                 }
             } finally {
@@ -588,10 +574,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                         destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
                         continue;
                     } else {
-                        // If router can't be started then decrement the resource count
-                        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
-                            _itMgr.decrementVrResourceCount(routerOffering, owner,true);
-                        }
+                        decrementVrResourceCount(owner, routerOffering);
                         throw ex;
                     }
                 } finally {
@@ -604,6 +587,32 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         return router;
+    }
+
+    /**
+     * If VR can't be deployed then decrement the resource count
+     *
+     * @param owner the owner of the VR
+     * @param routerOffering the service offering
+     */
+    public void decrementVrResourceCount(Account owner, ServiceOfferingVO routerOffering) {
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
+            _itMgr.decrementVrResourceCount(routerOffering, owner,true);
+        }
+    }
+
+    /**
+     * Increment the resource count with router offering.
+     * If router can't be deployed or started, decrement the resources.
+     * If resource.count.running.vms is false, increment resource count.
+     *
+     * @param owner the owner of the VR
+     * @param routerOffering the service offering
+     */
+    public void incrementVrResourceCount(Account owner, ServiceOfferingVO routerOffering) {
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
+            _itMgr.incrementVrResourceCount(routerOffering, owner, true);
+        }
     }
 
     protected void filterSupportedHypervisors(final List<HypervisorType> hypervisors) {

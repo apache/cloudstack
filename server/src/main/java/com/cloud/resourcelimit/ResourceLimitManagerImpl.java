@@ -16,41 +16,6 @@
 // under the License.
 package com.cloud.resourcelimit;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.reservation.dao.ReservationDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.user.ResourceReservation;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -74,11 +39,15 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -92,6 +61,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -109,10 +79,39 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.user.ResourceReservation;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -472,7 +471,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
         String convertedNumResources = String.valueOf(numResources);
 
-        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage) {
             convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
             convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
             convertedNumResources = toHumanReadableSize(numResources);
@@ -513,7 +512,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Long resourceLimit = null;
         resourceLimit = domainResourceLimitMap.get(resourceType);
         if (resourceLimit != null && (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage)) {
-            if (! Long.valueOf(Resource.RESOURCE_UNLIMITED).equals(resourceLimit)) {
+            if (!Long.valueOf(Resource.RESOURCE_UNLIMITED).equals(resourceLimit)) {
                 resourceLimit = resourceLimit * ResourceType.bytesToGiB;
             }
         } else {
@@ -625,7 +624,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
-            sc.setParameters("accountId", (Object[])null);
+            sc.setParameters("accountId", (Object[]) null);
         }
 
         if (resourceType != null) {
@@ -838,7 +837,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, final boolean increment, final long delta) {
         if (s_logger.isDebugEnabled()) {
             String convertedDelta = String.valueOf(delta);
-            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage) {
                 convertedDelta = toHumanReadableSize(delta);
             }
             s_logger.debug("Updating resource Type = " + type + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
@@ -869,7 +868,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * and accounts of the sub-domains also. so just loop through immediate children of root domain
      *
      * @param domainId the domain level to start at
-     * @param type the resource type to do the recalculation for
+     * @param type     the resource type to do the recalculation for
      * @return the resulting new resource count
      */
     @DB
@@ -978,8 +977,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     public long countCpusForAccount(long accountId) {
         long cputotal = 0;
-        Account owner = _accountDao.findById(accountId);
-        DomainVO domain = _domainDao.findById(owner.getDomainId());
 
         // user vms
         SearchBuilder<UserVmJoinVO> userVmSearch = _userVmJoinDao.createSearchBuilder();
@@ -991,27 +988,44 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
-        if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
-        else
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
-        sc1.setParameters("displayVm", 1);
-        List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
-        for (UserVmJoinVO vm : userVms) {
-            cputotal += Long.valueOf(vm.getCpu());
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
+        } else {
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging);
         }
+        sc1.setParameters("displayVm", 1);
+        List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1, null);
+        for (UserVmJoinVO vm : userVms) {
+            cputotal += vm.getCpu();
+        }
+
+        final Pair<Boolean, Long> totalByAccountId = calculateCpuTotalByAccountId(accountId);
+        if (totalByAccountId.first()) {
+            return totalByAccountId.second();
+        } else {
+            return cputotal;
+        }
+    }
+
+    private Pair<Boolean, Long> calculateCpuTotalByAccountId(long accountId) {
+        long cputotal = 0;
+        boolean hasCpus = false;
+        final Account owner = _accountDao.findById(accountId);
+        final DomainVO domain = _domainDao.findById(owner.getDomainId());
 
         ServiceOffering defaultRouterOffering = null;
         String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
         if (globalRouterOffering != null) {
             defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
         }
+
         if (defaultRouterOffering == null) {
-            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+            defaultRouterOffering = serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
         }
+
         GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
         cpuSearch.select("sum", Func.SUM, cpuSearch.entity().getCpu());
-        cpuSearch.select("count", Func.COUNT, (Object[])null);
+        cpuSearch.select("count", Func.COUNT, (Object[]) null);
         SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         join1.and("type", join1.entity().getType(), Op.IN);
@@ -1032,6 +1046,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters(OFFERINGS_NAME, "displayVm", 1);
         List<SumCount> cpus = serviceOfferingDao.customSearch(sc, null);
         if (cpus != null) {
+            hasCpus = true;
             // Calculate the VR CPU resource count depending on the global setting
             if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId()))) {
                 cputotal += cpus.get(0).sum;
@@ -1042,16 +1057,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     cputotal = cputotal - cpus.get(0).count * defaultRouterOffering.getCpu();
                 }
             }
-            return cputotal;
-        } else {
-            return cputotal;
         }
+
+        return Pair.of(hasCpus, cputotal);
     }
+
 
     public long calculateMemoryForAccount(long accountId) {
         long ramtotal = 0;
-        Account owner = _accountDao.findById(accountId);
-        DomainVO domain = _domainDao.findById(owner.getDomainId());
 
         // user vms
         SearchBuilder<UserVmJoinVO> userVmSearch = _userVmJoinDao.createSearchBuilder();
@@ -1064,26 +1077,42 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
         else
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging);
         sc1.setParameters("displayVm", 1);
-        List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
+        List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1, null);
         for (UserVmJoinVO vm : userVms) {
-            ramtotal += Long.valueOf(vm.getRamSize());
+            ramtotal += vm.getRamSize();
         }
 
+        final Pair<Boolean, Long> totalByAccountId = calculateMemoryTotalByAccountId(accountId);
+        if (totalByAccountId.first()) {
+            return totalByAccountId.second();
+        } else {
+            return ramtotal;
+        }
+    }
+
+    public Pair<Boolean, Long> calculateMemoryTotalByAccountId(long accountId) {
+        long ramtotal = 0;
+        boolean hasMemory = false;
+        Account owner = _accountDao.findById(accountId);
+        DomainVO domain = _domainDao.findById(owner.getDomainId());
         ServiceOffering defaultRouterOffering = null;
         String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
+
         if (globalRouterOffering != null) {
             defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
         }
+
         if (defaultRouterOffering == null) {
-            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+            defaultRouterOffering = serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
         }
+
         GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
         memorySearch.select("sum", Func.SUM, memorySearch.entity().getRamSize());
-        memorySearch.select("count", Func.COUNT, (Object[])null);
+        memorySearch.select("count", Func.COUNT, null);
         SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         join1.and("type", join1.entity().getType(), Op.IN);
@@ -1109,14 +1138,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId()))) {
                 ramtotal += memory.get(0).sum;
                 if (VirtualMachineManager.ResourceCountRoutersType.valueIn(domain.getId())
-                    .equalsIgnoreCase(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES)) {
+                        .equalsIgnoreCase(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES)) {
                     ramtotal = ramtotal - memory.get(0).count * defaultRouterOffering.getRamSize();
                 }
             }
-            return ramtotal;
-        } else {
-            return ramtotal;
+
+            hasMemory = true;
         }
+        return Pair.of(hasMemory, ramtotal);
     }
 
     public long calculateSecondaryStorageForAccount(long accountId) {
@@ -1170,7 +1199,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         // 1. If its null assume displayResource = 1
         // 2. If its not null then send true if displayResource = 1
-        return ! Boolean.FALSE.equals(displayResource);
+        return !Boolean.FALSE.equals(displayResource);
     }
 
     @Override
@@ -1215,7 +1244,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public ResourceReservation getReservation(final Account account, final Boolean displayResource, final Resource.ResourceType type, final Long delta) throws ResourceAllocationException {
-        if (! Boolean.FALSE.equals(displayResource)) {
+        if (!Boolean.FALSE.equals(displayResource)) {
             return new CheckedReservation(account, type, delta, reservationDao, resourceLimitService);
         }
         throw new CloudRuntimeException("no reservation needed for resources that display as false");
@@ -1228,7 +1257,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ResourceCountCheckInterval, MaxAccountSecondaryStorage, MaxProjectSecondaryStorage};
+        return new ConfigKey<?>[]{ResourceCountCheckInterval, MaxAccountSecondaryStorage, MaxProjectSecondaryStorage};
     }
 
     protected class ResourceCountCheckTask extends ManagedContextRunnable {
