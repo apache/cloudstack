@@ -1045,6 +1045,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 hostId = ((ListVMsCmdByAdmin) cmd).getHostId();
                 storageId = ((ListVMsCmdByAdmin) cmd).getStorageId();
             }
+            hostId = cmd.getHostId();
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
