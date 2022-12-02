@@ -141,6 +141,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.IoDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FilesystemDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GraphicDef;
@@ -179,6 +180,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
@@ -2832,7 +2834,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             isSecureBoot = isSecureMode(details.get(GuestDef.BootType.UEFI.toString()));
         }
 
-        boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
         if (vmSpec.getOs().toLowerCase().contains("window")) {
             isWindowsTemplate =true;
         }
@@ -2923,7 +2924,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setDiscard(DiscardType.UNMAP);
                 }
 
-                setDiskIoDriver(disk, iothreadsEnabled);
+                boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
+                String ioDriver = volume.getDetails().get(StorageManager.STORAGE_POOL_IO_POLICY.toString());
+
+                setDiskIoDriver(disk, iothreadsEnabled, getIoDriverForTheStorage(ioDriver));
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -3065,13 +3069,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
-    protected void setDiskIoDriver(DiskDef disk, boolean iothreadsEnabled) {
+    public void setDiskIoDriver(DiskDef disk, boolean iothreadsEnabled, IoDriver ioDriver) {
         if (iothreadsEnabled) {
-            disk.setIoDriver(DiskDef.IoDriver.NATIVE);
             disk.setIothreads(iothreadsEnabled);
+            if (!enableIoUring && IoDriver.IOURING == ioDriver) {
+                //setting io=threads as default
+                disk.setIoDriver(IoDriver.THREADS);
+            } else {
+                disk.setIoDriver(ioDriver);
+            }
         } else if (enableIoUring) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
+    }
+
+    public IoDriver getIoDriverForTheStorage(String ioDriver) {
+        if (ioDriver == null) {
+            return IoDriver.THREADS;
+        }
+        if (ioDriver.equals("native")) {
+            return IoDriver.NATIVE;
+        } else if (ioDriver.equals("io_uring")) {
+            return IoDriver.IOURING;
+        }
+        return IoDriver.THREADS;
     }
 
     /**

@@ -4015,6 +4015,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _userVmDao.loadDetails(vm);
                 if (isIothreadsSupported(vm)) {
                     details.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
+                    details.put(StorageManager.STORAGE_POOL_IO_POLICY.toString(), String.valueOf(StorageManager.STORAGE_POOL_IO_POLICY.valueIn(volumeToAttachStoragePool.getId())));
                 }
 
                 if (chapInfo != null) {

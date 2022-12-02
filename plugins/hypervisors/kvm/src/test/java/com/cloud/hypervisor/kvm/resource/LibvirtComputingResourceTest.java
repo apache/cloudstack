@@ -183,6 +183,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.IoDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GraphicDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
@@ -5869,7 +5870,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
         Mockito.when(libvirtComputingResourceSpy.getHypervisorLibvirtVersion()).thenReturn(hypervisorLibvirtVersion);
         Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
-        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, false);
+        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, false, IoDriver.THREADS);
         return diskDef;
     }
 

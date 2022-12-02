@@ -137,6 +137,15 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.StoragePool,
             null);
 
+    ConfigKey<String> STORAGE_POOL_IO_POLICY = new ConfigKey<>(String.class,
+            "kvm.storage.pool.io.policy",
+            "Storage",
+            "threads",
+            "IO driver policy - 'threads' (default in qemu), 'native' or 'io_uring'. The policy will be set when the template has enabled the 'iothreads' option, and will be applied only on the volumes of that pool",
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
     ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
 

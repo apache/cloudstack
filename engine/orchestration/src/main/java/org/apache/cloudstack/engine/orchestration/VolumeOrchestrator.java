@@ -1520,6 +1520,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
         }
 
+        setIoDriverPolicy(details, storagePool, volume);
         ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
 
         if (chapInfo != null) {
@@ -1530,6 +1531,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         return details;
+    }
+
+    private void setIoDriverPolicy(Map<String, String> details, StoragePoolVO storagePool, VolumeVO volume) {
+        if (volume.getInstanceId() != null) {
+            UserVmDetailVO iothreads = userVmDetailsDao.findDetail(volume.getInstanceId(), VmDetailConstants.IOTHREADS);
+            if (iothreads != null) {
+                details.put(StorageManager.STORAGE_POOL_IO_POLICY.toString(), String.valueOf(StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId())));
+            }
+        }
     }
 
     private static enum VolumeTaskType {
