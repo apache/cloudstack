@@ -304,7 +304,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         TimeUnit.MILLISECONDS);
 
         if (_sanityCheckInterval > 0) {
-            _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
+            _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 0, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
@@ -2156,6 +2156,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private class SanityCheck extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
+            s_logger.info("running sanity check");
             UsageSanityChecker usc = new UsageSanityChecker();
             try {
                 String errors = usc.runSanityCheck();
