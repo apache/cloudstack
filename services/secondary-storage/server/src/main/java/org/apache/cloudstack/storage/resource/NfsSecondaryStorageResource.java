@@ -2225,7 +2225,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    public String allowOutgoingOnPrivate(String destCidr) {
+    public synchronized String allowOutgoingOnPrivate(String destCidr) {
         if (!_inSystemVM) {
             return null;
         }
@@ -2234,15 +2234,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("-c");
         command.add("iptables -I OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
 
-        String result = command.execute();
-        if (result != null) {
-            s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
-            return "Error in allowing outgoing to " + destCidr + ", err=" + result;
+        String msg = null;
+        for (int retry = 3; retry > 0; retry--) {
+            String result = command.execute();
+            if (result != null) {
+                msg = "Error in allowing outgoing to " + destCidr + ", err=" + result;
+                s_logger.warn(msg);
+            } else {
+                msg = null;
+                break;
+            }
         }
 
         addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
 
-        return null;
+        return msg;
     }
 
     private Answer execute(SecStorageFirewallCfgCommand cmd) {
