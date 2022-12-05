@@ -577,15 +577,17 @@ setup_vpc_apache2() {
 }
 
 setup_vpc_mgmt_route() {
-  rule=$MGMTNET via $LOCAL_GW dev eth${1}
+  log_it "Set up route for management network: $MGMTNET via local gateway: $LOCAL_GW for device eth$1 for hypervisor: $HYPERVISOR"
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
+    mgmt_route_rule="$MGMTNET via $LOCAL_GW dev eth${1}"
     if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];
     then
-      exist=`ip route show $rule | wc -l`
+      exist=`sudo ip route show $mgmt_route_rule | wc -l`
       if [ $exist -eq 0 ]
       then
-          sudo ip route add $rule
+          log_it "Set up route for management network via local gateway, hypervisor: $HYPERVISOR, rule: $mgmt_route_rule"
+          sudo ip route add $mgmt_route_rule
           # workaround to activate vSwitch under VMware
           timeout 3 ping -n -c 3 $LOCAL_GW || true
       fi
