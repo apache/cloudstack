@@ -16,6 +16,13 @@
 // under the License.
 
 <template>
+  <a-alert type="info" v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'hostcontrolstate' in resource">
+    <template #message>
+      <div class="title">
+        {{ $t('message.host.controlstate') }} {{ resource.hostcontrolstate }} .
+      </div>
+    </template>
+  </a-alert>
   <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
     <template #description>
       <p v-html="ip6routes" />
