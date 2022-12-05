@@ -36,7 +36,7 @@ import com.cloud.storage.Volume;
 import java.util.Map;
 
 @APICommand(name = AssignVolumeCmd.CMD_NAME, responseObject = VolumeResponse.class, description = "Changes ownership of a Volume from one account to another.", entityType = {
-        Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0.0")
 public class AssignVolumeCmd extends BaseCmd implements UserCmd {
     public static final Logger LOGGER = Logger.getLogger(AssignVolumeCmd.class.getName());
     public static final String CMD_NAME = "assignVolume";
@@ -83,11 +83,11 @@ public class AssignVolumeCmd extends BaseCmd implements UserCmd {
             if (result == null) {
                 Map<String,String> fullParams = getFullUrlParams();
                 if (accountId != null) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to account [%s].", fullParams.get("volumeid"),
-                            fullParams.get("accountid")));
+                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to account [%s].", fullParams.get(ApiConstants.VOLUME_ID),
+                            fullParams.get(ApiConstants.ACCOUNT_ID)));
                 }
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to project [%s].", fullParams.get("volumeid"),
-                        fullParams.get("projectid")));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to move volume [%s] to project [%s].", fullParams.get(ApiConstants.VOLUME_ID),
+                        fullParams.get(ApiConstants.PROJECT_ID)));
             }
 
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);
@@ -103,7 +103,7 @@ public class AssignVolumeCmd extends BaseCmd implements UserCmd {
 
     @Override
     public String getCommandName() {
-        return CMD_NAME + RESPONSE_SUFFIX;
+        return CMD_NAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override
