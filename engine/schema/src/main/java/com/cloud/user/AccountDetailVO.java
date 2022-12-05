@@ -42,7 +42,7 @@ public class AccountDetailVO implements InternalIdentity {
     private String name;
 
     @Encrypt
-    @Column(name = "value")
+    @Column(name = "value", length=4096)
     private String value;
 
     protected AccountDetailVO() {

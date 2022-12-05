@@ -64,7 +64,7 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
-                    <template #suffixIcon><filter-outlined /></template>
+                    <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
                       key="all"
@@ -752,7 +752,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -847,12 +847,18 @@ export default {
         delete params.showunique
       }
 
+      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
+        params.listsystemvms = true
+      }
+
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listSSHKeyPairs'].includes(this.apiName)) {
-          delete params.id
-          params.name = this.$route.params.id
+          if (!this.$isValidUuid(params.id)) {
+            delete params.id
+            params.name = this.$route.params.id
+          }
         }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false
@@ -874,6 +880,15 @@ export default {
       if (this.$showIcon()) {
         params.showIcon = true
       }
+
+      if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',
+        'listClustersMetrics', 'listHostsMetrics', 'listStoragePoolsMetrics',
+        'listImageStores', 'listSystemVms', 'listManagementServers',
+        'listConfigurations', 'listHypervisorCapabilities',
+        'listAlerts', 'listNetworkOfferings', 'listVPCOfferings'].includes(this.apiName)) {
+        delete params.listall
+      }
+
       api(this.apiName, params).then(json => {
         var responseName
         var objectName

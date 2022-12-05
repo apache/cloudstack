@@ -67,7 +67,7 @@ fi
 snapshotdir=/var/run/cloud_mount/$(uuidgen -r)
 mkdir -p $snapshotdir
 if [ $? -ne 0 ]; then
-  echo "4#cann't make dir $snapshotdir"
+  echo "4#can't make dir $snapshotdir"
   exit 0
 fi
 
@@ -83,7 +83,7 @@ mkdir -p $templatedir
 if [ $? -ne 0 ]; then
   templatedir=""
   cleanup
-  echo "6#cann't make dir $templatedir"
+  echo "6#can't make dir $templatedir"
   exit 0
 fi
 

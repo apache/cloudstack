@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -57,7 +58,7 @@ public interface AutoScaleService {
 
     boolean configureAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) throws ResourceUnavailableException;
 
-    boolean deleteAutoScaleVmGroup(long vmGroupId);
+    boolean deleteAutoScaleVmGroup(long vmGroupId, Boolean cleanup);
 
     AutoScaleVmGroup updateAutoScaleVmGroup(UpdateAutoScaleVmGroupCmd cmd);
 
@@ -78,4 +79,6 @@ public interface AutoScaleService {
     List<? extends Condition> listConditions(ListConditionsCmd cmd);
 
     boolean deleteCondition(long conditionId) throws ResourceInUseException;
+
+    Condition updateCondition(UpdateConditionCmd cmd) throws ResourceInUseException;
 }

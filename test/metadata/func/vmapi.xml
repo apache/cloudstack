@@ -695,10 +695,10 @@ under the License.
 	</command>
 	
 	
-<!-- Test case #90 - try to reboot stopped vitrual machine - should fail - Negative case -->
+<!-- Test case #90 - try to reboot stopped virtual machine - should fail - Negative case -->
 	<command>
 		<name>rebootVirtualMachine</name>
-		<testcase>90  [Try to reboot stopped vitrual machine - Negative case]</testcase>
+		<testcase>90  [Try to reboot stopped virtual machine - Negative case]</testcase>
 		<error>true</error>
 		<parameters>
 			<item getparam="true">

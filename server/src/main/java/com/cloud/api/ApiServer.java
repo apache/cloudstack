@@ -531,7 +531,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String key = (String)keysIter.next();
             final String[] value = (String[])params.get(key);
             // fail if parameter value contains ASCII control (non-printable) characters
-            if (value[0] != null) {
+            if (value[0] != null && !ApiConstants.ACTIVATION_RULE.equals(key)) {
                 final Pattern pattern = Pattern.compile(CONTROL_CHARACTERS);
                 final Matcher matcher = pattern.matcher(value[0]);
                 if (matcher.find()) {

@@ -63,6 +63,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
@@ -154,6 +155,8 @@ public class ExternalLoadBalancerDeviceManagerImplTest {
     PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Mock
     VirtualRouterProviderDao _vrProviderDao;
+    @Mock
+    LoadBalancingRulesManager lbRulesManager;
 
     @Mock
     LoadBalancingRule rule;

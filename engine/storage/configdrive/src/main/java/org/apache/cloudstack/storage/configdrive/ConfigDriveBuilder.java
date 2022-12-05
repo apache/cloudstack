@@ -30,8 +30,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -91,7 +94,7 @@ public class ConfigDriveBuilder {
      *  This method will build the metadata files required by OpenStack driver. Then, an ISO is going to be generated and returned as a String in base 64.
      *  If vmData is null, we throw a {@link CloudRuntimeException}. Moreover, {@link IOException} are captured and re-thrown as {@link CloudRuntimeException}.
      */
-    public static String buildConfigDrive(List<String[]> vmData, String isoFileName, String driveLabel) {
+    public static String buildConfigDrive(List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams) {
         if (vmData == null) {
             throw new CloudRuntimeException("No VM metadata provided");
         }
@@ -105,7 +108,7 @@ public class ConfigDriveBuilder {
             File openStackFolder = new File(tempDirName + ConfigDrive.openStackConfigDriveName);
 
             writeVendorAndNetworkEmptyJsonFile(openStackFolder);
-            writeVmMetadata(vmData, tempDirName, openStackFolder);
+            writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
 
             linkUserData(tempDirName);
 
@@ -187,10 +190,10 @@ public class ConfigDriveBuilder {
     }
 
     /**
-     * First we generate a JSON object using {@link #createJsonObjectWithVmData(List, String)}, then we write it to a file called "meta_data.json".
+     * First we generate a JSON object using {@link #createJsonObjectWithVmData(List, String, Map)}, then we write it to a file called "meta_data.json".
      */
-    static void writeVmMetadata(List<String[]> vmData, String tempDirName, File openStackFolder) {
-        JsonObject metaData = createJsonObjectWithVmData(vmData, tempDirName);
+    static void writeVmMetadata(List<String[]> vmData, String tempDirName, File openStackFolder, Map<String, String> customUserdataParams) {
+        JsonObject metaData = createJsonObjectWithVmData(vmData, tempDirName, customUserdataParams);
         writeFile(openStackFolder, "meta_data.json", metaData.toString());
     }
 
@@ -220,7 +223,7 @@ public class ConfigDriveBuilder {
      *  <li> [2]: config data file content
      * </ul>
      */
-    static JsonObject createJsonObjectWithVmData(List<String[]> vmData, String tempDirName) {
+    static JsonObject createJsonObjectWithVmData(List<String[]> vmData, String tempDirName, Map<String, String> customUserdataParams) {
         JsonObject metaData = new JsonObject();
         for (String[] item : vmData) {
             String dataType = item[CONFIGDATA_DIR];
@@ -228,12 +231,12 @@ public class ConfigDriveBuilder {
             String content = item[CONFIGDATA_CONTENT];
             LOG.debug(String.format("[createConfigDriveIsoForVM] dataType=%s, filename=%s, content=%s", dataType, fileName, (PASSWORD_FILE.equals(fileName) ? "********" : content)));
 
-            createFileInTempDirAnAppendOpenStackMetadataToJsonObject(tempDirName, metaData, dataType, fileName, content);
+            createFileInTempDirAnAppendOpenStackMetadataToJsonObject(tempDirName, metaData, dataType, fileName, content, customUserdataParams);
         }
         return metaData;
     }
 
-    static void createFileInTempDirAnAppendOpenStackMetadataToJsonObject(String tempDirName, JsonObject metaData, String dataType, String fileName, String content) {
+    static void createFileInTempDirAnAppendOpenStackMetadataToJsonObject(String tempDirName, JsonObject metaData, String dataType, String fileName, String content, Map<String, String> customUserdataParams) {
         if (StringUtils.isBlank(dataType)) {
             return;
         }
@@ -258,6 +261,22 @@ public class ConfigDriveBuilder {
 
         //now write the file to the OpenStack directory
         buildOpenStackMetaData(metaData, dataType, fileName, content);
+        buildCustomUserdataParamsMetaData(metaData, dataType, fileName, content, customUserdataParams);
+    }
+
+    protected static void buildCustomUserdataParamsMetaData(JsonObject metaData, String dataType, String fileName, String content, Map<String, String> customUserdataParams) {
+        if (!NetworkModel.METATDATA_DIR.equals(dataType)) {
+            return;
+        }
+        if (StringUtils.isEmpty(content)) {
+            return;
+        }
+        if (MapUtils.isNotEmpty(customUserdataParams)) {
+            Set<String> userdataVariableFileNames = customUserdataParams.keySet();
+            if (userdataVariableFileNames.contains(fileName)) {
+                metaData.addProperty(fileName, content);
+            }
+        }
     }
 
     /**

@@ -99,6 +99,10 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                 if (disks != null && disks.size() > 0) {
                     for (final DiskDef disk : disks) {
                         libvirtComputingResource.cleanupDisk(disk);
+                        DiskDef.LibvirtDiskEncryptDetails diskEncryptDetails = disk.getLibvirtDiskEncryptDetails();
+                        if (diskEncryptDetails != null) {
+                            libvirtComputingResource.removeLibvirtVolumeSecret(conn, diskEncryptDetails.getPassphraseUuid());
+                        }
                     }
                 }
                 else {

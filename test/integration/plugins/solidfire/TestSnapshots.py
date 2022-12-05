@@ -1767,4 +1767,3 @@ class TestSnapshots(cloudstackTestCase):
         sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
 
         sf_util.check_list(sf_volumes, expected_num_volumes, self, volume_err_msg)
-

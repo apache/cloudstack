@@ -1535,7 +1535,7 @@ def network_rules(session, args):
         logging.debug("port range [%s]" % port_range)
 
         if cidrs:
-            #create seperate ipset name
+            #create separate ipset name
             ipsetname = ipset_chain + "" + protocol[0:1] + "" + start + "_" + end
             if start == "-1":
                 ipsetname = ipset_chain + "_" + protocol[0:1] + "_any"

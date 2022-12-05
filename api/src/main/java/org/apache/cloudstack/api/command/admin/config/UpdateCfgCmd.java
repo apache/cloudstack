@@ -50,7 +50,7 @@ public class UpdateCfgCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the configuration")
     private String cfgName;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "the value of the configuration", length = 4095)
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "the value of the configuration", length = 4096)
     private String value;
 
     @Parameter(name = ApiConstants.ZONE_ID,

@@ -42,6 +42,7 @@ import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.net.NetUtils;
@@ -226,8 +227,9 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
                             IPv6Address.class.getName(), null);
                 }
             }
-            nic.setIPv6Dns1(dc.getIp6Dns1());
-            nic.setIPv6Dns2(dc.getIp6Dns2());
+            Pair<String, String> dns = _networkModel.getNetworkIp6Dns(network, dc);
+            nic.setIPv6Dns1(dns.first());
+            nic.setIPv6Dns2(dns.second());
         }
     }
 

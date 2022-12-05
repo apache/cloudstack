@@ -34,6 +34,10 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     @Param(description = "the autoscale policy ID")
     private String id;
 
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the autoscale policy")
+    private String name;
+
     @SerializedName(ApiConstants.ACTION)
     @Param(description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
@@ -77,6 +81,10 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setDuration(Integer duration) {

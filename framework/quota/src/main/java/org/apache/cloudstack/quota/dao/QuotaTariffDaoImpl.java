@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -124,7 +125,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                     if (result != null && !result.isEmpty()) {
                         tariffs.add(result.get(0));
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getDescription() + " , effective Date="
+                            s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getUsageTypeDescription() + " , effective Date="
                                     + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                         }
                     }
@@ -155,5 +156,79 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                 return persist(plan);
             }
         });
+    }
+
+    @Override
+    public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffs(Date startDate, Date endDate, Integer usageType, String name, String uuid, boolean listAll, Long startIndex, Long pageSize) {
+        SearchCriteria<QuotaTariffVO> searchCriteria = createListQuotaTariffsSearchCriteria(startDate, endDate, usageType, name, uuid);
+        Filter sorter = new Filter(QuotaTariffVO.class, "usageType", false, startIndex, pageSize);
+        sorter.addOrderBy(QuotaTariffVO.class, "effectiveOn", false);
+        sorter.addOrderBy(QuotaTariffVO.class, "updatedOn", false);
+
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Pair<List<QuotaTariffVO>, Integer>>) status -> searchAndCount(searchCriteria, sorter, listAll));
+    }
+
+    protected SearchCriteria<QuotaTariffVO> createListQuotaTariffsSearchCriteria(Date startDate, Date endDate, Integer usageType, String name, String uuid) {
+        SearchCriteria<QuotaTariffVO> searchCriteria = createListQuotaTariffsSearchBuilder(startDate, endDate, usageType, name, uuid).create();
+
+        searchCriteria.setParametersIfNotNull("start_date", startDate);
+        searchCriteria.setParametersIfNotNull("end_date", endDate);
+        searchCriteria.setParametersIfNotNull("usage_type", usageType);
+        searchCriteria.setParametersIfNotNull("name", name);
+        searchCriteria.setParametersIfNotNull("uuid", uuid);
+
+        return searchCriteria;
+    }
+
+    protected SearchBuilder<QuotaTariffVO> createListQuotaTariffsSearchBuilder(Date startDate, Date endDate, Integer usageType, String name, String uuid) {
+        SearchBuilder<QuotaTariffVO> searchBuilder = createSearchBuilder();
+
+        if (startDate != null) {
+            searchBuilder.and("start_date", searchBuilder.entity().getEffectiveOn(), SearchCriteria.Op.GTEQ);
+        }
+
+        if (endDate != null) {
+            searchBuilder.and("end_date", searchBuilder.entity().getEndDate(), SearchCriteria.Op.LTEQ);
+        }
+
+        if (usageType != null) {
+            searchBuilder.and("usage_type", searchBuilder.entity().getUsageType(), SearchCriteria.Op.EQ);
+        }
+
+        if (name != null) {
+            searchBuilder.and("name", searchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        }
+
+        if (uuid != null) {
+            searchBuilder.and("uuid", searchBuilder.entity().getUuid(), SearchCriteria.Op.EQ);
+        }
+
+        return searchBuilder;
+    }
+
+    @Override
+    public QuotaTariffVO findByName(String name) {
+        Pair<List<QuotaTariffVO>, Integer> pairQuotaTariffs = listQuotaTariffs(null, null, null, name, null, false, null, null);
+        List<QuotaTariffVO> quotaTariffs = pairQuotaTariffs.first();
+
+        if (CollectionUtils.isEmpty(quotaTariffs)) {
+            s_logger.debug(String.format("Could not find quota tariff with name [%s].", name));
+            return null;
+        }
+
+        return quotaTariffs.get(0);
+    }
+
+    @Override
+    public QuotaTariffVO findByUuid(String uuid) {
+        Pair<List<QuotaTariffVO>, Integer> pairQuotaTariffs = listQuotaTariffs(null, null, null, null, uuid, false, null, null);
+        List<QuotaTariffVO> quotaTariffs = pairQuotaTariffs.first();
+
+        if (CollectionUtils.isEmpty(quotaTariffs)) {
+            s_logger.debug(String.format("Could not find quota tariff with UUID [%s].", uuid));
+            return null;
+        }
+
+        return quotaTariffs.get(0);
     }
 }

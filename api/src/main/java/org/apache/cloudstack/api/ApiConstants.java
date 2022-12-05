@@ -23,6 +23,7 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
     public static final String ACCUMULATE = "accumulate";
+    public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";
@@ -39,6 +40,7 @@ public class ApiConstants {
     public static final String LIVE_PATCH = "livepatch";
     public static final String AVAILABLE = "available";
     public static final String AVAILABLE_SUBNETS = "availablesubnets";
+    public static final String AVAILABLE_VIRTUAL_MACHINE_COUNT = "availablevirtualmachinecount";
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
@@ -109,6 +111,9 @@ public class ApiConstants {
     public static final String CUSTOM_JOB_ID = "customjobid";
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
+    public static final String ENCRYPT = "encrypt";
+    public static final String ENCRYPT_ROOT = "encryptroot";
+    public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -262,6 +267,7 @@ public class ApiConstants {
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
+    public static final String LB_PROVIDER = "lbprovider";
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
@@ -412,6 +418,12 @@ public class ApiConstants {
     public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USER_DATA = "userdata";
+
+    public static final String USER_DATA_NAME = "userdataname";
+    public static final String USER_DATA_ID = "userdataid";
+    public static final String USER_DATA_POLICY = "userdatapolicy";
+    public static final String USER_DATA_DETAILS = "userdatadetails";
+    public static final String USER_DATA_PARAMS = "userdataparams";
     public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";
     public static final String USER_SOURCE = "usersource";
@@ -445,6 +457,7 @@ public class ApiConstants {
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
+    public static final String VM_TYPE = "vmtype";
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
@@ -609,6 +622,7 @@ public class ApiConstants {
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
     public static final String LIST_ALL = "listall";
+    public static final String LIST_SYSTEM_VMS = "listsystemvms";
     public static final String IP_RANGES = "ipranges";
     public static final String IPV6_ROUTING = "ip6routing";
     public static final String IPV6_ROUTES = "ip6routes";
@@ -724,7 +738,7 @@ public class ApiConstants {
     public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
     public static final String MIN_MEMBERS = "minmembers";
     public static final String MAX_MEMBERS = "maxmembers";
-    public static final String AUTOSCALE_VM_DESTROY_TIME = "destroyvmgraceperiod";
+    public static final String AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD = "expungevmgraceperiod";
     public static final String VMPROFILE_ID = "vmprofileid";
     public static final String VMGROUP_ID = "vmgroupid";
     public static final String CS_URL = "csurl";
@@ -740,6 +754,8 @@ public class ApiConstants {
     public static final String CONDITION_IDS = "conditionids";
     public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
+    public static final String AUTOSCALE_VMGROUP_ID = "autoscalevmgroupid";
+    public static final String AUTOSCALE_VMGROUP_NAME = "autoscalevmgroupname";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String BAREMETAL_RCT_URL = "baremetalrcturl";
     public static final String UCS_DN = "ucsdn";
@@ -821,6 +837,7 @@ public class ApiConstants {
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
     public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";
     public static final String SUPPORTS_PUBLIC_ACCESS = "supportspublicaccess";
+    public static final String SUPPORTS_VM_AUTOSCALING = "supportsvmautoscaling";
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
     public static final String NETWORK_NAME = "networkname";

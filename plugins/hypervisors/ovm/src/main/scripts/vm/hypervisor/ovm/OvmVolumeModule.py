@@ -153,6 +153,3 @@ class OvmVolume(OvmObject):
 
 if __name__ == "__main__":
     print OvmVolume.detachOrAttachIso(sys.argv[1], '', False)
-
-
-

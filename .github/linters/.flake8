@@ -15,5 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# W291 Trailing whitespace
+# W292 No newline at end of file
+# W293 Blank line contains whitespace
+# W391 Blank line at end of file
+
 [flake8]
-select = W291,W292,W293
+select = W291,W292,W293,W391

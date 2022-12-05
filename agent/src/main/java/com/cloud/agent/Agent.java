@@ -100,7 +100,7 @@ import com.cloud.utils.script.Script;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
-    private static final Logger s_logger = Logger.getLogger(Agent.class.getName());
+    protected static Logger s_logger = Logger.getLogger(Agent.class);
 
     public enum ExitStatus {
         Normal(0), // Normal status = 0.
@@ -303,6 +303,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
         _shell.updateConnectedHost();
         scavengeOldAgentObjects();
+
     }
 
     public void stop(final String reason, final String detail) {

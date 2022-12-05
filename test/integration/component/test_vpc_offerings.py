@@ -905,7 +905,7 @@ class TestVPCOffering(cloudstackTestCase):
         # 4. Enable the VPC offering again and create VPC. VPC should be
         #    created successfully
         # 5. Change name and displaytext of the VPCOffering. Name and
-        #    displaytext chnages should be reflected in listVPCPffering call
+        #    displaytext changes should be reflected in listVPCPffering call
 
         self.logger.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
@@ -960,7 +960,7 @@ class TestVPCOffering(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to update VPC offering- %s" % e)
 
-        self.logger.debug("Cheking if the changes are reflected to listVPC call?")
+        self.logger.debug("Checking if the changes are reflected to listVPC call?")
         vpc_offs = vpc_off.list(
             self.apiclient,
             id=vpc_off.id,
@@ -1045,7 +1045,7 @@ class TestVPCOffering(cloudstackTestCase):
         self.logger.debug("Deleting the VPC offering: %s" % vpc_off_4.name)
         vpc_off_4.delete(self.apiclient)
 
-        self.logger.debug("Cheking if listVPCOff return the deleted VPC off")
+        self.logger.debug("Checking if listVPCOff return the deleted VPC off")
         vpc_offs = VpcOffering.list(
             self.apiclient,
             id=vpc_off_4.id,
@@ -1057,7 +1057,7 @@ class TestVPCOffering(cloudstackTestCase):
             "List VPC offerings should nt return any response for deleted offering"
         )
 
-        self.logger.debug("Validating the listVPCOfferings repsonse by ids")
+        self.logger.debug("Validating the listVPCOfferings response by ids")
         self.validate_vpc_offering(vpc_off_3)
 
         self.logger.debug("ListVPCOfferings by displaytext & verifying the response")

@@ -157,6 +157,18 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
 
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network", since = "4.18.0")
+    private String ip4Dns1;
+
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the network", since = "4.18.0")
+    private String ip4Dns2;
+
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the network", since = "4.18.0")
+    private String ip6Dns1;
+
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
+    private String ip6Dns2;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -324,6 +336,22 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Long getAclId() {
         return aclId;
+    }
+
+    public String getIp4Dns1() {
+        return ip4Dns1;
+    }
+
+    public String getIp4Dns2() {
+        return ip4Dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
     }
 
     /////////////////////////////////////////////////////

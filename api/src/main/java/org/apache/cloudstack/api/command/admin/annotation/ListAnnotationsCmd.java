@@ -85,7 +85,7 @@ public class ListAnnotationsCmd extends BaseListCmd {
         // preconditions to check:
         // if entity type is null entity uuid can not have a value
         Preconditions.checkArgument(StringUtils.isNotBlank(entityType) ? StringUtils.isBlank(uuid) : true,
-                "I can search for an anotation on an entity or for a specific annotation, not both");
+                "I can search for an annotation on an entity or for a specific annotation, not both");
         // if uuid has a value entity type and entity uuid can not have a value
         Preconditions.checkArgument(StringUtils.isNotBlank(uuid) ? entityType == null && entityUuid == null : true,
                 "I will either search for a specific annotation or for annotations on an entity, not both");

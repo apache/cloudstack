@@ -28,7 +28,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.SnapshotDao;
 
-import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.Arrays;
@@ -82,7 +81,7 @@ public class SnapshotHelper {
     @Inject
     protected PrimaryDataStoreDao primaryDataStoreDao;
 
-    protected boolean backupSnapshotAfterTakingSnapshot = BackupSnapshotAfterTakingSnapshot.value();
+    protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     protected final Set<StoragePoolType> storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD,
             StoragePoolType.PowerFlex));
@@ -103,7 +102,7 @@ public class SnapshotHelper {
         }
 
         logger.debug(String.format("Expunging snapshot [%s] due to it is a temporary backup to create a volume from snapshot. It is occurring because the global setting [%s]"
-          + " has the value [%s].", snapInfo.getId(), BackupSnapshotAfterTakingSnapshot.key(), backupSnapshotAfterTakingSnapshot));
+          + " has the value [%s].", snapInfo.getId(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), backupSnapshotAfterTakingSnapshot));
 
         try {
             snapshotService.deleteSnapshot(snapInfo);

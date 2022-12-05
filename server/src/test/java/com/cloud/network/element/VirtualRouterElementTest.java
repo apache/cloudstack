@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -27,7 +28,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
@@ -249,7 +253,7 @@ public class VirtualRouterElementTest {
     public void testGetRouters2(){
         Network networkUpdateInprogress=new NetworkVO(2l,null,null,null,1l,1l,1l,1l,"d","d","d",null,1l,1l,null,true,null,true);
         mockDAOs((NetworkVO)networkUpdateInprogress,testOffering);
-        //alwyas return backup routers first when both primary and backup need update.
+        //always return backup routers first when both primary and backup need update.
         List<DomainRouterVO> routers=virtualRouterElement.getRouters(networkUpdateInprogress);
         assertTrue(routers.size()==1);
         assertTrue(routers.get(0).getRedundantState()==RedundantState.BACKUP && routers.get(0).getUpdateState()==VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
@@ -259,7 +263,7 @@ public class VirtualRouterElementTest {
     public void testGetRouters3(){
         Network network=new NetworkVO(3l,null,null,null,1l,1l,1l,1l,"d","d","d",null,1l,1l,null,true,null,true);
         mockDAOs((NetworkVO)network,testOffering);
-        //alwyas return backup routers first when both primary and backup need update.
+        //always return backup routers first when both primary and backup need update.
         List<DomainRouterVO> routers=virtualRouterElement.getRouters(network);
         assertTrue(routers.size()==4);
     }
@@ -500,5 +504,18 @@ public class VirtualRouterElementTest {
         when(virtualRouterElement.canHandle(network, service)).thenReturn(false);
 
         assertTrue(virtualRouterElement.addPasswordAndUserdata(network, nic, vm, dest, context));
+    }
+
+    @Test
+    public void verifyAutoScaleCounters() {
+        final List<AutoScaleCounter> counterList = VirtualRouterElement.getAutoScaleCounters();
+        assertEquals(3, counterList.size());
+
+        List<String> counterNames = counterList.stream().map(counter -> counter.getName()).collect(Collectors.toList());
+
+        assertEquals(3, counterNames.size());
+        assertTrue(counterNames.contains(AutoScaleCounterType.Cpu.getName()));
+        assertTrue(counterNames.contains(AutoScaleCounterType.Memory.getName()));
+        assertTrue(counterNames.contains(AutoScaleCounterType.VirtualRouter.getName()));
     }
 }

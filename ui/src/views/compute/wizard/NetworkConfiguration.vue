@@ -33,7 +33,7 @@
         <div>{{ text }}</div>
         <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
       </template>
-      <template #ipAddress="{ record }">
+      <template #ipAddress="{ record }" v-if="!this.autoscale">
         <a-form-item
           style="display: block"
           v-if="record.type !== 'L2'"
@@ -51,7 +51,7 @@
           </a-input>
         </a-form-item>
       </template>
-      <template #macAddress="{ record }">
+      <template #macAddress="{ record }" v-if="!this.autoscale">
         <a-form-item style="display: block" :name="'macAddress' + record.id">
           <a-input
             style="width: 150px;"
@@ -82,6 +82,10 @@ export default {
     value: {
       type: String,
       default: ''
+    },
+    autoscale: {
+      type: Boolean,
+      default: () => false
     },
     preFillContent: {
       type: Object,

@@ -149,4 +149,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     boolean isComputeOnly();
 
     boolean getDiskSizeStrictness();
+
+    boolean getEncrypt();
+
+    void setEncrypt(boolean encrypt);
 }
