@@ -4878,6 +4878,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd.getBootIntoSetup() != null) {
             additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
         }
+
+        if (StringUtils.isNotBlank(cmd.getPassword())) {
+            additionalParams.put(VirtualMachineProfile.Param.VmPassword, cmd.getPassword());
+        }
+
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, cmd.getDeploymentPlanner());
     }
 
@@ -5384,11 +5389,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             String password = "saved_password";
             if (template.isEnablePassword()) {
                 if (vm.getDetail("password") != null) {
+                    s_logger.debug(String.format("Decrypting VM [%s] current password.", vm));
                     password = DBEncryptionUtil.decrypt(vm.getDetail("password"));
+                } else if (additionalParams.containsKey(VirtualMachineProfile.Param.VmPassword)) {
+                    s_logger.debug(String.format("A password for VM [%s] was informed. Setting VM password to value defined by user.", vm));
+                    password = String.valueOf(additionalParams.get(VirtualMachineProfile.Param.VmPassword));
+                    vm.setPassword(password);
                 } else {
+                    s_logger.debug(String.format("Setting VM [%s] password to a randomly generated password.", vm));
                     password = _mgr.generateRandomPassword();
                     vm.setPassword(password);
                 }
+            } else if (additionalParams.containsKey(VirtualMachineProfile.Param.VmPassword)) {
+                s_logger.debug(String.format("A password was informed; however, the template [%s] is not password enabled. Ignoring the parameter.", template));
             }
 
             if (!validPassword(password)) {
