@@ -19,13 +19,16 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,7 +57,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -212,6 +214,8 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.OutputInterpreter.OneLineParser;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -236,7 +240,7 @@ public class LibvirtComputingResourceTest {
     LibvirtDomainXMLParser parserMock;
 
     @Spy
-    private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(LibvirtComputingResource.class);
+    private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
 
     @Mock
     Domain domainMock;
@@ -253,6 +257,17 @@ public class LibvirtComputingResourceTest {
             "SwapCached:            0 kB\n" +
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
+
+    final static long[] defaultStats = new long[2];
+    final static long[] vpcStats = { 1L, 2L };
+    final static long[] networkStats = { 3L, 4L };
+    final static long[] lbStats = { 5L };
+    final static String privateIp = "192.168.1.1";
+    final static String publicIp = "10.10.10.10";
+    final static Integer port = 8080;
+
+    final Script scriptMock = Mockito.mock(Script.class);
+    final OneLineParser statsParserMock = Mockito.mock(OneLineParser.class);
 
     @Before
     public void setup() throws Exception {
@@ -5940,6 +5955,114 @@ public class LibvirtComputingResourceTest {
         params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/");
         params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, "111111");
         configLocalStorageTests(params);
+    }
+
+    @Test
+    public void testGetNetworkStats() {
+        doReturn(networkStats[0] + ":" + networkStats[1]).when(libvirtComputingResourceSpy).networkUsage(privateIp, "get", null, publicIp);
+        doReturn(defaultStats[0] + ":" + defaultStats[1]).when(libvirtComputingResourceSpy).networkUsage(privateIp, "get", null, null);
+
+        long[] stats = libvirtComputingResourceSpy.getNetworkStats(privateIp, publicIp);
+        assertEquals(2, stats.length);
+        assertEquals(networkStats[0], stats[0]);
+        assertEquals(networkStats[1], stats[1]);
+
+        stats = libvirtComputingResourceSpy.getNetworkStats(privateIp);
+        assertEquals(2, stats.length);
+        Assert.assertEquals(0, stats[0]);
+        Assert.assertEquals(0, stats[1]);
+    }
+
+    @Test
+    public void testGetVPCNetworkStats() {
+        doReturn(vpcStats[0] + ":" + vpcStats[1]).when(libvirtComputingResourceSpy).configureVPCNetworkUsage(privateIp, publicIp, "get", null);
+        doReturn(defaultStats[0] + ":" + defaultStats[1]).when(libvirtComputingResourceSpy).configureVPCNetworkUsage(privateIp, null, "get", null);
+
+        long[] stats = libvirtComputingResourceSpy.getVPCNetworkStats(privateIp, publicIp, "get");
+        assertEquals(2, stats.length);
+        assertEquals(vpcStats[0], stats[0]);
+        assertEquals(vpcStats[1], stats[1]);
+
+        stats = libvirtComputingResourceSpy.getVPCNetworkStats(privateIp, null, "get");
+        assertEquals(2, stats.length);
+        Assert.assertEquals(0, stats[0]);
+        Assert.assertEquals(0, stats[1]);
+    }
+
+    @Test
+    public void testGetHaproxyStats() {
+        doReturn(lbStats[0] + "").when(libvirtComputingResourceSpy).getHaproxyStats(privateIp, publicIp, port);
+        long[] stats = libvirtComputingResourceSpy.getNetworkLbStats(privateIp, publicIp, port);
+        assertEquals(1, stats.length);
+        assertEquals(lbStats[0], stats[0]);
+
+        doReturn("0").when(libvirtComputingResourceSpy).getHaproxyStats(privateIp, publicIp, port);
+        stats = libvirtComputingResourceSpy.getNetworkLbStats(privateIp, publicIp, port);
+        assertEquals(1, stats.length);
+        Assert.assertEquals(0, stats[0]);
+    }
+
+    @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
+    public void testGetHaproxyStatsMethod() throws Exception {
+        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        doNothing().when(scriptMock).add(Mockito.anyString());
+        when(scriptMock.execute()).thenReturn(null);
+        when(scriptMock.execute(Mockito.any())).thenReturn(null);
+
+        PowerMockito.whenNew(OneLineParser.class).withNoArguments().thenReturn(statsParserMock);
+        when(statsParserMock.getLine()).thenReturn("result");
+
+        String result = libvirtComputingResourceSpy.getHaproxyStats(privateIp, publicIp, port);
+
+        Assert.assertEquals("result", result);
+        verify(scriptMock, times(4)).add(anyString());
+        verify(scriptMock).add("get_haproxy_stats.sh");
+        verify(scriptMock).add(privateIp);
+        verify(scriptMock).add(publicIp);
+        verify(scriptMock).add(String.valueOf(port));
+    }
+
+    @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
+    public void testNetworkUsageMethod1() throws Exception {
+        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        doNothing().when(scriptMock).add(Mockito.anyString());
+        when(scriptMock.execute()).thenReturn(null);
+        when(scriptMock.execute(Mockito.any())).thenReturn(null);
+
+        PowerMockito.whenNew(OneLineParser.class).withNoArguments().thenReturn(statsParserMock);
+        when(statsParserMock.getLine()).thenReturn("result");
+
+        String result = libvirtComputingResourceSpy.networkUsage(privateIp, "get", "eth0", publicIp);
+
+        Assert.assertEquals("result", result);
+        verify(scriptMock, times(3)).add(anyString());
+        verify(scriptMock).add("netusage.sh");
+        verify(scriptMock).add(privateIp);
+        verify(scriptMock).add("-g");
+
+        verify(scriptMock).add("-l", publicIp);
+    }
+
+    @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
+    public void testNetworkUsageMethod2() throws Exception {
+        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        doNothing().when(scriptMock).add(Mockito.anyString());
+        when(scriptMock.execute()).thenReturn(null);
+        when(scriptMock.execute(Mockito.any())).thenReturn(null);
+
+        PowerMockito.whenNew(OneLineParser.class).withNoArguments().thenReturn(statsParserMock);
+        when(statsParserMock.getLine()).thenReturn("result");
+
+        String result = libvirtComputingResourceSpy.networkUsage(privateIp, "get", "eth0", null);
+
+        Assert.assertEquals("result", result);
+        verify(scriptMock, times(3)).add(anyString());
+        verify(scriptMock).add("netusage.sh");
+        verify(scriptMock).add(privateIp);
+        verify(scriptMock).add("-g");
     }
 
     @Test

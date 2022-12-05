@@ -37,7 +37,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
@@ -105,7 +104,7 @@ public interface UserVmManager extends UserVmService {
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
 
-    boolean expunge(UserVmVO vm, long callerUserId, Account caller);
+    boolean expunge(UserVmVO vm);
 
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;

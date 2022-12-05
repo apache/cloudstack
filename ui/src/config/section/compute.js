@@ -525,6 +525,110 @@ export default {
       ]
     },
     {
+      name: 'autoscalevmgroup',
+      title: 'label.autoscale.vm.groups',
+      icon: 'ordered-list-outlined',
+      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      resourceType: 'AutoScaleVmGroup',
+      permission: ['listAutoScaleVmGroups'],
+      columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'state'],
+      details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'autoscalevmgroupid'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'autoscale.vm.profile',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleVmProfile.vue')))
+        },
+        {
+          name: 'loadbalancerrule',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleLoadBalancing.vue')))
+        },
+        {
+          name: 'scaleup.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleUpPolicyTab.vue')))
+        },
+        {
+          name: 'scaledown.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'createAutoScaleVmGroup',
+          icon: 'plus-outlined',
+          label: 'label.new.autoscale.vmgroup',
+          listView: true,
+          component: () => import('@/views/compute/CreateAutoScaleVmGroup.vue')
+        },
+        {
+          api: 'enableAutoScaleVmGroup',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.autoscale.vmgroup',
+          message: 'message.confirm.enable.autoscale.vmgroup',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return record.state === 'DISABLED' }
+        },
+        {
+          api: 'disableAutoScaleVmGroup',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.autoscale.vmgroup',
+          message: 'message.confirm.disable.autoscale.vmgroup',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['ENABLED', 'SCALING'].includes(record.state) }
+        },
+        {
+          api: 'updateAutoScaleVmGroup',
+          icon: 'edit-outlined',
+          label: 'label.update.autoscale.vmgroup',
+          dataView: true,
+          args: (record, store) => {
+            var args = ['name']
+            if (record.state === 'DISABLED') {
+              args.push('maxmembers')
+              args.push('minmembers')
+              args.push('interval')
+            }
+            return args
+          }
+        },
+        {
+          api: 'deleteAutoScaleVmGroup',
+          icon: 'delete-outlined',
+          label: 'label.delete.autoscale.vmgroup',
+          message: 'message.action.delete.autoscale.vmgroup',
+          dataView: true,
+          args: ['cleanup'],
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup || null } }) }
+        }
+      ]
+    },
+    {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold-outlined',

@@ -92,7 +92,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 }
                 try {
                     UserVm vm = userVmService.destroyVm(vmID, true);
-                    if (!userVmManager.expunge(userVM, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
+                    if (!userVmManager.expunge(userVM)) {
                         LOGGER.warn(String.format("Unable to expunge VM %s : %s, destroying Kubernetes cluster will probably fail",
                             vm.getInstanceName() , vm.getUuid()));
                     }

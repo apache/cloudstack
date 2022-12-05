@@ -317,6 +317,13 @@
             </div>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.loadbalancer">
+          <div class="resource-detail-item__label">{{ $t('label.loadbalancerrule') }}</div>
+          <div class="resource-detail-item__details">
+            <api-outlined />
+            <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.ipaddress">
           <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
           <div class="resource-detail-item__details">
@@ -349,6 +356,13 @@
           <div class="resource-detail-item__details">
             <gold-outlined />
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.autoscalevmgroupid">
+          <div class="resource-detail-item__label">{{ $t('label.autoscalevmgroupname') }}</div>
+          <div class="resource-detail-item__details">
+            <gold-outlined />
+            <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
@@ -400,6 +414,13 @@
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.publicip">
+          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__details">
+            <gateway-outlined />
+            <router-link :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">

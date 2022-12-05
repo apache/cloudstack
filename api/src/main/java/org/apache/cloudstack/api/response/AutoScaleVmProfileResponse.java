@@ -54,12 +54,12 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     @SerializedName(ApiConstants.OTHER_DEPLOY_PARAMS)
     @Param(description = "parameters other than zoneId/serviceOfferringId/templateId to be used while deploying a virtual machine")
-    private String otherDeployParams;
+    private Map<String, String> otherDeployParams;
 
     /* Parameters related to destroying a virtual machine */
-    @SerializedName(ApiConstants.AUTOSCALE_VM_DESTROY_TIME)
+    @SerializedName(ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD)
     @Param(description = "the time allowed for existing connections to get closed before a vm is destroyed")
-    private Integer destroyVmGraceperiod;
+    private Integer expungeVmGracePeriod;
 
     /* Parameters related to a running virtual machine - monitoring aspects */
     @SerializedName(ApiConstants.COUNTERPARAM_LIST)
@@ -67,6 +67,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
                type = CommandType.MAP,
                description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
     private Map<String, String> counterParams;
+
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base 64 encoded VM user data")
+    private String userData;
 
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
     @Param(description = "the ID of the user used to launch and destroy the VMs")
@@ -103,6 +107,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Boolean forDisplay;
 
     public AutoScaleVmProfileResponse() {
+        // Empty constructor
     }
 
     @Override
@@ -126,17 +131,26 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.templateId = templateId;
     }
 
-    public void setOtherDeployParams(String otherDeployParams) {
-        this.otherDeployParams = otherDeployParams;
+    public void setOtherDeployParams(List<Pair<String, String>> otherDeployParams) {
+        this.otherDeployParams = new HashMap<>();
+        for (Pair<String, String> paramKV : otherDeployParams) {
+            String key = paramKV.first();
+            String value = paramKV.second();
+            this.otherDeployParams.put(key, value);
+        }
     }
 
     public void setCounterParams(List<Pair<String, String>> counterParams) {
-        this.counterParams = new HashMap<String, String>();
+        this.counterParams = new HashMap<>();
         for (Pair<String, String> paramKV : counterParams) {
             String key = paramKV.first();
             String value = paramKV.second();
             this.counterParams.put(key, value);
         }
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
     }
 
     @Override
@@ -168,8 +182,8 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.autoscaleUserId = autoscaleUserId;
     }
 
-    public void setDestroyVmGraceperiod(Integer destroyVmGraceperiod) {
-        this.destroyVmGraceperiod = destroyVmGraceperiod;
+    public void setExpungeVmGracePeriod(Integer expungeVmGracePeriod) {
+        this.expungeVmGracePeriod = expungeVmGracePeriod;
     }
 
     public void setCsUrl(String csUrl) {

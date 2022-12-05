@@ -46,5 +46,5 @@ public interface VMEntityManager {
 
     boolean stopvirtualmachineforced(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException;
 
-    boolean destroyVirtualMachine(VMEntityVO vmEntityVO, String caller, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean destroyVirtualMachine(VMEntityVO vmEntityVO, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

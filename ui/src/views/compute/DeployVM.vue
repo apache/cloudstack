@@ -1372,6 +1372,8 @@ export default {
           this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
         } else if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
+        } else {
+          this.vm.disksizetotalgb = null
         }
 
         if (this.diskSize) {
@@ -2099,7 +2101,11 @@ export default {
           }
         }
 
-        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
+        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
+        const args = httpMethod === 'POST' ? {} : deployVmData
+        const data = httpMethod === 'POST' ? deployVmData : {}
+
+        api('deployVirtualMachine', args, httpMethod, data).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({

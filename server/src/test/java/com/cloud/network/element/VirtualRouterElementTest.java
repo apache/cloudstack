@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -27,7 +28,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
@@ -500,5 +504,18 @@ public class VirtualRouterElementTest {
         when(virtualRouterElement.canHandle(network, service)).thenReturn(false);
 
         assertTrue(virtualRouterElement.addPasswordAndUserdata(network, nic, vm, dest, context));
+    }
+
+    @Test
+    public void verifyAutoScaleCounters() {
+        final List<AutoScaleCounter> counterList = VirtualRouterElement.getAutoScaleCounters();
+        assertEquals(3, counterList.size());
+
+        List<String> counterNames = counterList.stream().map(counter -> counter.getName()).collect(Collectors.toList());
+
+        assertEquals(3, counterNames.size());
+        assertTrue(counterNames.contains(AutoScaleCounterType.Cpu.getName()));
+        assertTrue(counterNames.contains(AutoScaleCounterType.Memory.getName()));
+        assertTrue(counterNames.contains(AutoScaleCounterType.VirtualRouter.getName()));
     }
 }
