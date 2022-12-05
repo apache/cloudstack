@@ -768,6 +768,12 @@
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>org.apache.cloudstack</groupId>
+                                    <artifactId>cloud-plugin-storage-volume-linstor</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
                                     <artifactId>bctls-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
@@ -811,6 +817,7 @@
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
                                     <exclude>mysql:mysql-connector-java</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>

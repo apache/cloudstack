@@ -53,7 +53,7 @@ public enum Config {
             String.class,
             "alert.email.addresses",
             null,
-            "Comma separated list of email addresses used for sending alerts.",
+            "Comma separated list of email addresses which are going to receive alert emails.",
             null),
     AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
     AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
@@ -228,7 +228,7 @@ public enum Config {
             String.class,
             "network.loadbalancer.haproxy.stats.visibility",
             "global",
-            "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
+            "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
             null),
     NetworkLBHaproxyStatsUri(
             "Network",
@@ -689,7 +689,7 @@ public enum Config {
             Boolean.class,
             "secstorage.encrypt.copy",
             "false",
-            "Use SSL method used to encrypt copy traffic between zones",
+            "Use SSL method used to encrypt copy traffic between zones. Also ensures that the certificate assigned to the zone is used when generating links for external access.",
             "true,false"),
     SecStorageSecureCopyCert(
             "Advanced",
@@ -1696,7 +1696,7 @@ public enum Config {
             String.class,
             "baremetal.ipmi.lan.interface",
             "default",
-            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule 'default' means using default option of ipmitool",
+            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool",
             null),
 
     BaremetalIpmiRetryTimes("Advanced",

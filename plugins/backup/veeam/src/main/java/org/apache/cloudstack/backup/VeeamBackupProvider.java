@@ -95,7 +95,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Inject
     private VolumeDao volumeDao;
 
-    private VeeamClient getClient(final Long zoneId) {
+    protected VeeamClient getClient(final Long zoneId) {
         try {
             return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
                     VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId));
@@ -209,9 +209,31 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean deleteBackup(Backup backup) {
-        // Veeam does not support removal of a restore point or point-in-time backup
-        throw new CloudRuntimeException("Veeam B&R plugin does not allow removal of backup restore point, to delete the backup chain remove VM from the backup offering");
+    public boolean deleteBackup(Backup backup, boolean forced) {
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("Could not find any VM associated with the Backup [uuid: %s, externalId: %s].", backup.getUuid(), backup.getExternalId()));
+        }
+        if (!forced) {
+            LOG.debug(String.format("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
+                    + "More information about this limitation can be found in the links: [%s, %s].", "https://forums.veeam.com/powershell-f26/removing-a-single-restorepoint-t21061.html",
+                    "https://helpcenter.veeam.com/docs/backup/vsphere/retention_separate_vms.html?ver=110"));
+            throw new CloudRuntimeException("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
+                    + "Use forced:true to skip this verification and remove the complete backup chain.");
+        }
+        VeeamClient client = getClient(vm.getDataCenterId());
+        boolean result = client.deleteBackup(backup.getExternalId());
+        if (BooleanUtils.isFalse(result)) {
+            return false;
+        }
+
+        List<Backup> allBackups = backupDao.listByVmId(backup.getZoneId(), backup.getVmId());
+        for (Backup b : allBackups) {
+            if (b.getId() != backup.getId()) {
+                backupDao.remove(b.getId());
+            }
+        }
+        return result;
     }
 
     @Override

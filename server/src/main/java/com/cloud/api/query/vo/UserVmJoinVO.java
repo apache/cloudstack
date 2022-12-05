@@ -379,6 +379,30 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "affinity_group_description")
     private String affinityGroupDescription;
 
+    @Column(name = "autoscale_vmgroup_id")
+    private long autoScaleVmGroupId;
+
+    @Column(name = "autoscale_vmgroup_uuid")
+    private String autoScaleVmGroupUuid;
+
+    @Column(name = "autoscale_vmgroup_name")
+    private String autoScaleVmGroupName;
+
+    @Column(name = "user_data_id")
+    private Long userDataId;
+
+    @Column(name = "user_data_uuid")
+    private String userDataUuid;
+
+    @Column(name = "user_data_name")
+    private String userDataName;
+
+    @Column(name = "user_data_policy")
+    private String userDataPolicy;
+
+    @Column(name = "user_data_details")
+    private String userDataDetails;
+
     transient String password;
 
     @Transient
@@ -392,6 +416,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
 
     public UserVmJoinVO() {
+        // Empty constructor
     }
 
     @Override
@@ -505,10 +530,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getInstanceName() {
         return instanceName;
-    }
-
-    public long getGuestOSId() {
-        return guestOsId;
     }
 
     public String getGuestOsUuid() {
@@ -793,7 +814,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return poolUuid;
     }
 
-    public String getVolume_uuid() {
+    public String getVolumeUuid() {
         return volumeUuid;
     }
 
@@ -867,6 +888,18 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return affinityGroupDescription;
     }
 
+    public long getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupUuid() {
+        return autoScaleVmGroupUuid;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
+    }
+
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
     }
@@ -875,6 +908,26 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public String getUserDataUUid() {
+        return userDataUuid;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
     }
 
 }

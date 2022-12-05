@@ -17,16 +17,23 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -40,6 +47,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultSnapshotStrategyTest {
 
+    @InjectMocks
     DefaultSnapshotStrategy defaultSnapshotStrategySpy = Mockito.spy(DefaultSnapshotStrategy.class);
 
     @Mock
@@ -60,15 +68,18 @@ public class DefaultSnapshotStrategyTest {
     @Mock
     DataStore dataStoreMock;
 
+    @Mock
+    VolumeDetailsDao volumeDetailsDaoMock;
+
+    @Mock
+    SnapshotService snapshotServiceMock;
+
     Map<String, SnapshotInfo> mapStringSnapshotInfoInstance = new LinkedHashMap<>();
 
     @Before
     public void setup() {
-        defaultSnapshotStrategySpy.snapshotDataFactory = snapshotDataFactoryMock;
-        defaultSnapshotStrategySpy.snapshotDao = snapshotDaoMock;
-
         mapStringSnapshotInfoInstance.put("secondary storage", snapshotInfo1Mock);
-        mapStringSnapshotInfoInstance.put("priamry storage", snapshotInfo1Mock);
+        mapStringSnapshotInfoInstance.put("primary storage", snapshotInfo1Mock);
     }
 
     @Test
@@ -122,7 +133,7 @@ public class DefaultSnapshotStrategyTest {
 
     @Test
     public void validateDeleteSnapshotInfoSnapshotInfoIsNullOnSecondaryStorageReturnsTrue() {
-        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfo(null, "secondary storage", snapshotVoMock));
+        Assert.assertNull(defaultSnapshotStrategySpy.deleteSnapshotInfo(null, "secondary storage", snapshotVoMock));
     }
 
     @Test
@@ -131,24 +142,60 @@ public class DefaultSnapshotStrategyTest {
     }
 
     @Test
-    public void validateDeleteSnapshotInfoSnapshotDeleteSnapshotChainSuccessfullyReturnsTrue() throws NoTransitionException {
+    public void deleteSnapshotInfoTestReturnTrueIfCanDeleteTheSnapshotOnPrimaryStorage() throws NoTransitionException {
         Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
-        Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotChain(Mockito.any(), Mockito.anyString());
+        Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
 
-        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock));
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "primary storage", snapshotVoMock);
+        Assert.assertTrue(result);
     }
 
     @Test
-    public void validateDeleteSnapshotInfoSnapshotDeleteSnapshotChainFails() throws NoTransitionException {
+    public void deleteSnapshotInfoTestReturnFalseIfCannotDeleteTheSnapshotOnPrimaryStorage() throws NoTransitionException {
         Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+        Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+        Mockito.doReturn(false).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "primary storage", snapshotVoMock);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void deleteSnapshotInfoTestReturnFalseIfDeleteSnapshotOnPrimaryStorageThrowsACloudRuntimeException() throws NoTransitionException {
+        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
+        Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+        Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+        Mockito.doThrow(CloudRuntimeException.class).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "primary storage", snapshotVoMock);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void deleteSnapshotInfoTestReturnTrueIfCanDeleteTheSnapshotChainForSecondaryStorage() throws NoTransitionException {
+        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
+        Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+        Mockito.doNothing().when(defaultSnapshotStrategySpy).verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
+        Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+        Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotChain(Mockito.any(), Mockito.anyString());
+
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void deleteSnapshotInfoTestReturnTrueIfCannotDeleteTheSnapshotChainForSecondaryStorage() throws NoTransitionException {
+        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
+        Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+        Mockito.doNothing().when(defaultSnapshotStrategySpy).verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
         Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotChain(Mockito.any(), Mockito.anyString());
 
         boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock);
-        Assert.assertFalse(result);
+        Assert.assertTrue(result);
     }
 
     @Test
@@ -158,5 +205,44 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doThrow(NoTransitionException.class).when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
 
         Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock));
+    }
+
+    @Test
+    public void verifyIfTheSnapshotIsBeingUsedByAnyVolumeTestDetailsIsEmptyDoNothing() throws NoTransitionException {
+        Mockito.doReturn(new ArrayList<>()).when(volumeDetailsDaoMock).findDetails(Mockito.any(), Mockito.any(), Mockito.any());
+        defaultSnapshotStrategySpy.verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
+        Mockito.verify(snapshotObjectMock, Mockito.never()).processEvent(Mockito.any(Snapshot.Event.class));
+    }
+
+    @Test
+    public void verifyIfTheSnapshotIsBeingUsedByAnyVolumeTestDetailsIsNullDoNothing() throws NoTransitionException {
+        Mockito.doReturn(null).when(volumeDetailsDaoMock).findDetails(Mockito.any(), Mockito.any(), Mockito.any());
+        defaultSnapshotStrategySpy.verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
+        Mockito.verify(snapshotObjectMock, Mockito.never()).processEvent(Mockito.any(Snapshot.Event.class));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void verifyIfTheSnapshotIsBeingUsedByAnyVolumeTestDetailsIsNotEmptyThrowCloudRuntimeException() throws NoTransitionException {
+        Mockito.doReturn(List.of(new VolumeDetailVO())).when(volumeDetailsDaoMock).findDetails(Mockito.any(), Mockito.any(), Mockito.any());
+        defaultSnapshotStrategySpy.verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
+    }
+
+    @Test
+    public void deleteSnapshotInPrimaryStorageTestReturnTrueIfDeleteReturnsTrue() throws NoTransitionException {
+        Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, snapshotObjectMock));
+    }
+
+    @Test
+    public void deleteSnapshotInPrimaryStorageTestReturnFalseIfDeleteReturnsFalse() throws NoTransitionException {
+        Mockito.doReturn(false).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, null));
+    }
+
+    @Test
+    public void deleteSnapshotInPrimaryStorageTestReturnFalseIfDeleteThrowsException() throws NoTransitionException {
+        Mockito.doThrow(CloudRuntimeException.class).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, null));
     }
 }

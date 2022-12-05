@@ -86,7 +86,10 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
 
     @Override
     public String toString() {
-        return _vm.toString();
+        if (_vm != null) {
+            return _vm.toString();
+        }
+        return "";
     }
 
     @Override

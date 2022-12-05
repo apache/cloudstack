@@ -20,7 +20,7 @@
     <autogen-view
       @change-resource="changeResource"/>
     <quota-summary-resource
-      v-if="isSummaryResouce"
+      v-if="isSummaryResource"
       :resource="resource"
       :tabs="$route.meta.tabs"/>
   </div>
@@ -47,7 +47,7 @@ export default {
     }
   },
   computed: {
-    isSummaryResouce () {
+    isSummaryResource () {
       if (this.$route.path.startsWith('/quotasummary')) {
         if (this.$route.query && 'quota' in this.$route.query && this.$route.query.quota) {
           return true

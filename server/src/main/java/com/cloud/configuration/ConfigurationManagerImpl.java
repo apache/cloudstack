@@ -3005,7 +3005,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
-                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId, cmd.getDiskOfferingStrictness(), cmd.isCustomized());
+                cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -3016,7 +3017,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness, final boolean isCustomized) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled, final Long diskOfferingId,
+            final boolean diskOfferingStrictness, final boolean isCustomized, final boolean encryptRoot) {
+
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
@@ -3103,7 +3106,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                     iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength,
                     iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                    hypervisorSnapshotReserve, cacheMode, storagePolicyID);
+                    hypervisorSnapshotReserve, cacheMode, storagePolicyID, encryptRoot);
         } else {
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
         }
@@ -3145,7 +3148,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                       Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID) {
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, boolean encrypt) {
 
         DiskOfferingVO diskOffering = new DiskOfferingVO(name, displayText, typedProvisioningType, false, tags, false, localStorageRequired, false);
 
@@ -3185,6 +3188,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         diskOffering.setCustomizedIops(isCustomizedIops);
         diskOffering.setMinIops(minIops);
         diskOffering.setMaxIops(maxIops);
+        diskOffering.setEncrypt(encrypt);
 
         setBytesRate(diskOffering, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
         setIopsRate(diskOffering, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength);
@@ -3441,7 +3445,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID, final boolean diskSizeStrictness) {
+                                                final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID,
+                                                final boolean diskSizeStrictness, final boolean encrypt) {
         long diskSize = 0;// special case for custom disk offerings
         long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
         if (numGibibytes != null && numGibibytes <= 0) {
@@ -3523,6 +3528,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("If provided, Hypervisor Snapshot Reserve must be greater than or equal to 0.");
         }
 
+        newDiskOffering.setEncrypt(encrypt);
         newDiskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
         newDiskOffering.setDiskSizeStrictness(diskSizeStrictness);
 
@@ -3538,6 +3544,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
+
             if (MapUtils.isNotEmpty(details)) {
                 details.forEach((key, value) -> {
                     boolean displayDetail = !StringUtils.equalsAny(key, Volume.BANDWIDTH_LIMIT_IN_MBPS, Volume.IOPS_LIMIT);
@@ -3634,6 +3641,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
         final String cacheMode = cmd.getCacheMode();
+        final boolean encrypt = cmd.getEncrypt();
 
         validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
         validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
@@ -3647,7 +3655,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId, diskSizeStrictness);
+                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId, diskSizeStrictness, encrypt);
     }
 
     /**
@@ -6035,9 +6043,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     void validateLoadBalancerServiceCapabilities(final Map<Capability, String> lbServiceCapabilityMap) {
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
-            if (lbServiceCapabilityMap.keySet().size() > 3 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
-                throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", "
-                        + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
+            if (lbServiceCapabilityMap.keySet().size() > 4 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
+                throw new InvalidParameterValueException(String.format("Only %s capabilities can be specified for LB service",
+                        StringUtils.join(Capability.SupportedLBIsolation.getName(), Capability.ElasticLb.getName(),
+                                Capability.InlineMode.getName(), Capability.LbSchemes.getName(), Capability.VmAutoScaling.getName())));
             }
 
             for (final Capability cap : lbServiceCapabilityMap.keySet()) {
@@ -6066,9 +6075,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (!internalLb && !publicLb) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.LbSchemes.getName());
                     }
+                } else if (cap == Capability.VmAutoScaling) {
+                    final boolean enabled = value.contains("true");
+                    final boolean disabled = value.contains("false");
+                    if (!enabled && !disabled) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.VmAutoScaling.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", "
-                            + Capability.InlineMode.getName() + ", " + Capability.LbSchemes.getName() + " capabilities can be sepcified for LB service");
+                    throw new InvalidParameterValueException(String.format("Only %s capabilities can be specified for LB service",
+                            StringUtils.join(Capability.SupportedLBIsolation.getName(), Capability.ElasticLb.getName(),
+                                    Capability.InlineMode.getName(), Capability.LbSchemes.getName(), Capability.VmAutoScaling.getName())));
                 }
             }
         }
@@ -6120,7 +6136,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     associatePublicIP = value.contains("true");
                 } else {
                     throw new InvalidParameterValueException("Only " + Capability.ElasticIp.getName() + " and " + Capability.AssociatePublicIP.getName()
-                            + " capabilitiy can be sepcified for static nat service");
+                            + " capability can be sepcified for static nat service");
                 }
             }
             if (!eipEnabled && associatePublicIP) {
@@ -6228,6 +6244,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean internalLb = false;
         boolean strechedL2Subnet = false;
         boolean publicAccess = false;
+        boolean vmAutoScaling = false;
 
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             final Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
@@ -6261,6 +6278,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         internalLb = publicLbStr.contains("internal");
                         publicLb = publicLbStr.contains("public");
                     }
+                }
+
+                final String vmAutoScalingStr = lbServiceCapabilityMap.get(Capability.VmAutoScaling);
+                if (vmAutoScalingStr != null) {
+                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.VmAutoScaling, vmAutoScalingStr);
+                    vmAutoScaling = vmAutoScalingStr.contains("true");
                 }
             }
 
@@ -6331,6 +6354,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);
         }
+
+        // Set VM AutoScaling capability
+        offeringFinal.setSupportsVmAutoScaling(vmAutoScaling);
 
         //Set Service package id
         offeringFinal.setServicePackage(servicePackageUuid);
@@ -6771,7 +6797,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final int networkCount = _networkDao.getNetworkCountByNetworkOffId(offeringId);
         if (networkCount > 0) {
             throw new InvalidParameterValueException("Can't delete network offering " + offeringId + " as its used by " + networkCount + " networks. "
-                    + "To make the network offering unavaiable, disable it");
+                    + "To make the network offering unavailable, disable it");
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());

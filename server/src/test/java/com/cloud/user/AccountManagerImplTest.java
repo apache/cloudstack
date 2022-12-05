@@ -141,6 +141,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
         Mockito.when(_vmSnapshotDao.listByAccountId(Mockito.anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+        Mockito.when(_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(42l)).thenReturn(true);
 
         List<SSHKeyPairVO> sshkeyList = new ArrayList<SSHKeyPairVO>();
         SSHKeyPairVO sshkey = new SSHKeyPairVO();
@@ -164,7 +165,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountDao.remove(42l)).thenReturn(true);
         Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l)).thenReturn(true);
         Mockito.when(_userVmDao.listByAccountId(42l)).thenReturn(Arrays.asList(Mockito.mock(UserVmVO.class)));
-        Mockito.when(_vmMgr.expunge(Mockito.any(UserVmVO.class), Mockito.anyLong(), Mockito.any(Account.class))).thenReturn(false);
+        Mockito.when(_vmMgr.expunge(Mockito.any(UserVmVO.class))).thenReturn(false);
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
 

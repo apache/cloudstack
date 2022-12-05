@@ -177,7 +177,7 @@ The columns that should be made available while displaying the list of
   or a function in case we need to selectively (i.e., based on certain
   conditions) restrict the view of certain columns.
 
-It also contains router-links to the resouce and other related data such as the
+It also contains router-links to the resource and other related data such as the
   account, domain, etc of the resource if present
 
 For example:

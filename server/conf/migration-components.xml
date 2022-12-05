@@ -39,7 +39,7 @@ under the License.
         <dao name="domain router dao" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
         <dao name="Storage pool dao" class="com.cloud.storage.dao.StoragePoolDaoImpl" />
         <dao name="Account dao" class="com.cloud.user.dao.AccountDaoImpl" />
-        <dao name="Resouce count dao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" />
+        <dao name="Resource count dao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" />
         <dao name="Instance group dao" class="com.cloud.vm.dao.InstanceGroupDaoImpl" />
         <dao name="Instance group vm map dao" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
     </migration>

@@ -745,4 +745,3 @@ class StorPoolHelper():
         cmd.id = vmid
         cmd.hostid = hostid
         return (apiclient.startVirtualMachine(cmd))
-

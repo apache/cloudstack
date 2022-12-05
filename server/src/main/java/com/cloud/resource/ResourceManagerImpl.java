@@ -2921,7 +2921,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return result;
             }
         } catch (final AgentUnavailableException e) {
-            s_logger.error("Agent is not availbale!", e);
+            s_logger.error("Agent is not available!", e);
         }
 
         final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
