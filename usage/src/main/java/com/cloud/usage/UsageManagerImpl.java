@@ -304,7 +304,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         TimeUnit.MILLISECONDS);
 
         if (_sanityCheckInterval > 0) {
-            _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 0, _sanityCheckInterval, TimeUnit.DAYS);
+            _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
