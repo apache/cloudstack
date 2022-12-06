@@ -34,7 +34,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
@@ -44,9 +43,12 @@ import com.cloud.utils.Pair;
  */
 public interface UserVmManager extends UserVmService {
     String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
+    String AllowDiskOfferingChangeDuringScaleVmCK = "allow.diskoffering.change.during.scale.vm";
     String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
     ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
+    ConfigKey<Boolean> AllowDiskOfferingChangeDuringScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowDiskOfferingChangeDuringScaleVmCK, "false",
+            "Determines whether to allow or disallow disk offering change for root volume during scaling of a stopped or running vm", true, ConfigKey.Scope.Zone);
     ConfigKey<Boolean> AllowUserExpungeRecoverVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserExpungeRecoverVmCK, "false",
         "Determines whether users can expunge or recover their vm", true, ConfigKey.Scope.Account);
     ConfigKey<Boolean> DisplayVMOVFProperties = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.display.ovf.properties", "false",
@@ -88,7 +90,7 @@ public interface UserVmManager extends UserVmService {
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
 
-    boolean expunge(UserVmVO vm, long callerUserId, Account caller);
+    boolean expunge(UserVmVO vm);
 
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;

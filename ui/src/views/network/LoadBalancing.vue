@@ -66,8 +66,29 @@
           </a-select>
         </div>
         <div class="form__item">
+          <div class="form__label">{{ $t('label.autoscale') }}</div>
+          <a-select
+            v-model:value="newRule.autoscale"
+            defaultValue="no"
+            style="min-width: 100px"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="yes">{{ $t('label.yes') }}</a-select-option>
+            <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
+          </a-select>
+        </div>
+        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no' || ('vpcid' in this.resource && !('associatednetworkid' in this.resource))">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
+            {{ $t('label.add') }}
+          </a-button>
+        </div>
+        <div class="form__item" v-else-if="newRule.autoscale === 'yes'">
+          <div class="form__label" style="white-space: nowrap;">{{ $t('label.add') }}</div>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleAddNewRule">
             {{ $t('label.add') }}
           </a-button>
         </div>
@@ -104,8 +125,18 @@
           {{ returnStickinessLabel(record.id) }}
         </a-button>
       </template>
+      <template #autoscale="{record}">
+        <div>
+          <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
+              <a-button>{{ $t('label.view') }}</a-button>
+          </router-link>
+          <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { networkid: record.networkid, lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
+              <a-button>{{ $t('label.new') }}</a-button>
+          </router-link>
+        </div>
+      </template>
       <template #add="{record}">
-        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }" v-if='!record.autoscalevmgroup'>
           <template #icon><plus-outlined /></template>
             {{ $t('label.add') }}
         </a-button>
@@ -123,7 +154,8 @@
               </div>
               <div>{{ ip }}</div>
               <tooltip-button
-                :tooltip="$t('label.action.delete.load.balancer')"
+                :disabled='record.autoscalevmgroup'
+                :tooltip="$t('label.remove.vm.from.lb')"
                 type="primary"
                 :danger="true"
                 icon="delete-outlined"
@@ -144,7 +176,7 @@
           >
             <tooltip-button
               :tooltip="$t('label.delete')"
-              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
+              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis) || record.autoscalevmgroup"
               type="primary"
               :danger="true"
               icon="delete-outlined" />
@@ -447,7 +479,7 @@
           </template>
 
           <template #action="{text, record, index}" style="text-align: center" :text="text">
-            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale" />
           </template>
         </a-table>
         <a-pagination
@@ -594,6 +626,10 @@ export default {
           slots: { customRender: 'stickiness' }
         },
         {
+          title: this.$t('label.autoscale'),
+          slots: { customRender: 'autoscale' }
+        },
+        {
           title: this.$t('label.add.vms'),
           slots: { customRender: 'add' }
         },
@@ -707,6 +743,7 @@ export default {
             this.fetchLBRuleInstances()
           }, 100)
           this.fetchLBStickinessPolicies()
+          this.fetchAutoScaleVMgroups()
           return
         }
         this.loading = false
@@ -735,11 +772,25 @@ export default {
       this.loading = true
       this.lbRules.forEach(rule => {
         api('listLBStickinessPolicies', {
+          listAll: true,
           lbruleid: rule.id
         }).then(response => {
           this.stickinessPolicies.push(...response.listlbstickinesspoliciesresponse.stickinesspolicies)
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    fetchAutoScaleVMgroups () {
+      this.loading = true
+      this.lbRules.forEach(rule => {
+        api('listAutoScaleVmGroups', {
+          listAll: true,
+          lbruleid: rule.id
+        }).then(response => {
+          rule.autoscalevmgroup = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]
         }).finally(() => {
           this.loading = false
         })
@@ -871,7 +922,9 @@ export default {
     },
     openStickinessModal (id) {
       this.initForm()
-      this.rules = { name: [{ required: true, message: this.$t('message.error.specify.sticky.name') }] }
+      this.rules = {
+        methodname: [{ required: true, message: this.$t('message.error.specify.stickiness.method') }]
+      }
       this.stickinessModalVisible = true
       this.selectedRule = id
       const match = this.stickinessPolicies.find(policy => policy.lbruleid === id)
@@ -973,6 +1026,14 @@ export default {
           return
         }
 
+        if (values.name === null || values.name === undefined || values.name === '') {
+          this.$notification.error({
+            message: this.$t('label.error'),
+            description: this.$t('message.error.specify.sticky.name')
+          })
+          return
+        }
+
         values.nocache = this.form.nocache
         values.indirect = this.form.indirect
         values.postonly = this.form.postonly
@@ -998,11 +1059,14 @@ export default {
         this.handleAddStickinessPolicy(data, values)
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.stickinessModalLoading = false
       })
     },
     handleStickinessMethodSelectChange (e) {
       if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
+      this.form.methodname = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
@@ -1171,8 +1235,7 @@ export default {
         this.loading = false
       })
     },
-    handleOpenAddVMModal () {
-      if (this.addVmModalLoading) return
+    checkNewRule () {
       if (!this.selectedRule) {
         if (!this.newRule.name) {
           this.$refs.newRuleName.classList.add('error')
@@ -1189,7 +1252,14 @@ export default {
         } else {
           this.$refs.newRulePrivatePort.classList.remove('error')
         }
-        if (!this.newRule.name || !this.newRule.publicport || !this.newRule.privateport) return
+        if (!this.newRule.name || !this.newRule.publicport || !this.newRule.privateport) return false
+      }
+      return true
+    },
+    handleOpenAddVMModal () {
+      if (this.addVmModalLoading) return
+      if (!this.checkNewRule()) {
+        return
       }
       this.addVmModalVisible = true
       this.fetchVirtualMachines()
@@ -1256,6 +1326,7 @@ export default {
     handleAssignToLBRule (data) {
       const vmIDIpMap = {}
 
+      let selectedVmCount = 0
       let count = 0
       let innerCount = 0
       this.newRule.vmguestip.forEach(ip => {
@@ -1270,8 +1341,16 @@ export default {
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
           innerCount++
         }
+        if (this.newRule.virtualmachineid[count]) {
+          selectedVmCount++
+        }
         count++
       })
+
+      if (selectedVmCount === 0) {
+        this.fetchData()
+        return
+      }
 
       this.loading = true
       api('assignToLoadBalancerRule', {
@@ -1309,6 +1388,9 @@ export default {
 
       if (this.selectedRule) {
         this.handleAssignToLBRule(this.selectedRule.id)
+        return
+      } else if (!this.checkNewRule()) {
+        this.loading = false
         return
       }
 

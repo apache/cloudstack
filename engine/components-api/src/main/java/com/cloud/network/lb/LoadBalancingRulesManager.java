@@ -20,8 +20,13 @@ import java.util.List;
 
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
@@ -61,7 +66,13 @@ public interface LoadBalancingRulesManager {
 
     String getLBCapability(long networkid, String capabilityName);
 
-    boolean configureLbAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException;
+    LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(LoadBalancingRule.LbAutoScaleVmGroup lbAutoScaleVmGroup);
+
+    LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(AutoScaleVmGroupVO asGroup);
+
+    Network.Provider getLoadBalancerServiceProvider(LoadBalancerVO loadBalancer);
+
+    boolean configureLbAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException;
 
     boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
 
