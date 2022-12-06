@@ -881,12 +881,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         DiskProfile diskProfile = toDiskProfile(vol, offering);
 
-        // Set context information for VOLUME.CREATE event for ROOT disk.
-        CallContext volumeContext = CallContext.current();
-        if (type == Type.ROOT && volumeContext != null && volumeContext.getEventResourceType() == ApiCommandResourceType.Volume) {
-            volumeContext.setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, diskProfile.getVolumeId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
-            volumeContext.setEventResourceId(diskProfile.getVolumeId());
-        }
+        updateRootDiskVolumeEventDetails(type, vm, List.of(diskProfile));
 
         return diskProfile;
     }
@@ -1024,16 +1019,30 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             profiles.add(diskProfile);
         }
 
-        // Set context information for VOLUME.CREATE event for ROOT disk.
-        CallContext volumeContext = CallContext.current();
-        if (type == Type.ROOT && volumeContext != null && volumeContext.getEventResourceType() == ApiCommandResourceType.Volume) {
-            String volumeIds = profiles.stream().map(diskProfile -> this._uuidMgr.getUuid(Volume.class, diskProfile.getVolumeId())).collect(Collectors.joining(", "));
-            volumeContext.setEventDetails("Volume Id: " + volumeIds + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
-            volumeContext.setEventResourceId(profiles.stream().findFirst().map(DiskProfile::getVolumeId).orElse(null));
-        }
+        updateRootDiskVolumeEventDetails(type, vm, profiles);
 
         handleRootDiskControllerTpeForDeployAsIs(templateAsIsDisks, vm);
         return profiles;
+    }
+
+    /**
+     * Set context information for VOLUME.CREATE event for ROOT disk.
+     *
+     * @param type         - Volume Type
+     * @param vm           - Virtual Machine
+     * @param diskProfiles - Disk Profiles
+     */
+    private void updateRootDiskVolumeEventDetails(Type type, VirtualMachine vm, List<DiskProfile> diskProfiles) {
+        CallContext callContext = CallContext.current();
+        // Update only for volume type ROOT and API command resource type Volume
+        if (type == Type.ROOT && callContext != null && callContext.getEventResourceType() == ApiCommandResourceType.Volume) {
+            List<Long> volumeIds = diskProfiles.stream().map(DiskProfile::getVolumeId).filter(volumeId -> volumeId != null).collect(Collectors.toList());
+            if (!volumeIds.isEmpty()) {
+                callContext.setEventResourceId(volumeIds.get(0));
+            }
+            String volumeUuids = volumeIds.stream().map(volumeId -> this._uuidMgr.getUuid(Volume.class, volumeId)).collect(Collectors.joining(", "));
+            callContext.setEventDetails("Volume Id: " + volumeUuids + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
+        }
     }
 
     private void handleRootDiskControllerTpeForDeployAsIs(List<DatadiskTO> disksAsIs, VirtualMachine vm) {
