@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "listCounters", description = "List the counters", responseObject = CounterResponse.class,
+@APICommand(name = "listCounters", description = "List the counters for VM auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCountersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCountersCmd.class.getName());
@@ -50,6 +50,9 @@ public class ListCountersCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SOURCE, type = CommandType.STRING, description = "Source of the counter.")
     private String source;
+
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Network provider of the counter.", since = "4.18.0")
+    private String provider;
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
@@ -90,6 +93,10 @@ public class ListCountersCmd extends BaseListCmd {
 
     public String getSource() {
         return source;
+    }
+
+    public String getProvider() {
+        return provider;
     }
 
     @Override

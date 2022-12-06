@@ -829,7 +829,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
                     "\tretries 3\n" +
                     "\toption redispatch\n" +
                     "\toption forwardfor\n" +
-                    "\toption forceclose\n" +
+                    "\toption httpclose\n" +
                     "\ttimeout connect    5000\n" +
                     "\ttimeout client     50000\n" +
                     "\ttimeout server     50000\n" +
