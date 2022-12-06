@@ -586,7 +586,7 @@ setup_vpc_mgmt_route() {
       exist=`sudo ip route show $mgmt_route_rule | wc -l`
       if [ $exist -eq 0 ]
       then
-          log_it "Set up route for management network via local gateway, hypervisor: $HYPERVISOR, rule: $mgmt_route_rule"
+          log_it "Add route for management network via local gateway, hypervisor: $HYPERVISOR, rule: $mgmt_route_rule"
           sudo ip route add $mgmt_route_rule
           # workaround to activate vSwitch under VMware
           timeout 3 ping -n -c 3 $LOCAL_GW || true
