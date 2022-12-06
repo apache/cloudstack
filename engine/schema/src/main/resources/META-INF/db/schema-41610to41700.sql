@@ -23,7 +23,7 @@
 ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
 
 
--- PR#5832 Fix 'endpointe.url' global settings configruation typo.
+-- PR#5832 Fix 'endpointe.url' global settings configuration typo.
 UPDATE `cloud`.`configuration` SET name='endpoint.url' WHERE name='endpointe.url';
 
 

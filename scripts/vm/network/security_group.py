@@ -911,7 +911,7 @@ def cleanup_bridge(bridge):
         try:
             execute("iptables -F " + chain)
         except: pass
-    # Remove brige chains
+    # Remove bridge chains
     for chain in chains:
         try:
             execute("iptables -X " + chain)
@@ -1389,7 +1389,7 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
     #vm_mac = "1e:00:b4:00:00:05"
     #vif = "vnet11"
     #brname = "cloudbr0"
-    #sec_ips = "10.11.118.133;10.11.118.135;10.11.118.138;" # end with ";" and seperated by ";"
+    #sec_ips = "10.11.118.133;10.11.118.135;10.11.118.138;" # end with ";" and separated by ";"
 
     vm_ips = []
     if sec_ips is not None:

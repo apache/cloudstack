@@ -1612,7 +1612,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.create(self.apiclient,
                        resourceIds=self.vm_1.id,
                        resourceType='UserVm',
-                       tags={tag_key.upper(): tag_value.uppper()})
+                       tags={tag_key.upper(): tag_value.upper()})
         except Exception as e:
             pass
         else:

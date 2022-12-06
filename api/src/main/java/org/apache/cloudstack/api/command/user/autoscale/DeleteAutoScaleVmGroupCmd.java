@@ -52,12 +52,22 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
                description = "the ID of the autoscale group")
     private Long id;
 
+    @Parameter(name = ApiConstants.CLEANUP,
+            type = CommandType.BOOLEAN,
+            description = "true if all VMs have to be cleaned up, false otherwise",
+            since = "4.18.0")
+    private Boolean cleanup;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getCleanup() {
+        return cleanup != null && cleanup;
     }
 
     // ///////////////////////////////////////////////////
@@ -93,7 +103,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
-        boolean result = _autoScaleService.deleteAutoScaleVmGroup(id);
+        boolean result = _autoScaleService.deleteAutoScaleVmGroup(id, getCleanup());
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

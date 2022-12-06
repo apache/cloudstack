@@ -21,7 +21,7 @@ Usage:
 
 Common options:
   --help|-h	Show this help text.
-  --debug-link|-DL	Print debugging messages when packets are trasnferred via links.
+  --debug-link|-DL	Print debugging messages when packets are transferred via links.
   --debug-element|-DE	Print debugging messages when packets are received or sent by elements.
   --debug-pipeline|-DP	Print debugging messages in pipelines.
   --host|-n|--host-name VALUE	Name or IP address of host to connect to. Required.

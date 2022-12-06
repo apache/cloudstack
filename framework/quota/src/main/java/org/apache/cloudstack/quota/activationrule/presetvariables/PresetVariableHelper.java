@@ -469,7 +469,7 @@ public class PresetVariableHelper {
         }
 
         value.setTags(getPresetVariableValueResourceTags(volumeId, ResourceObjectType.Volume));
-        value.setSize(ByteScaleUtils.bytesToMib(volumeVo.getSize()));
+        value.setSize(ByteScaleUtils.bytesToMebibytes(volumeVo.getSize()));
     }
 
     protected GenericPresetVariable getPresetVariableValueDiskOffering(Long diskOfferingId) {
@@ -536,7 +536,7 @@ public class PresetVariableHelper {
         value.setName(vmTemplateVo.getName());
         value.setOsName(getPresetVariableValueOsName(vmTemplateVo.getGuestOSId()));
         value.setTags(getPresetVariableValueResourceTags(templateOrIsoId, usageType == UsageTypes.ISO ? ResourceObjectType.ISO : ResourceObjectType.Template));
-        value.setSize(ByteScaleUtils.bytesToMib(vmTemplateVo.getSize()));
+        value.setSize(ByteScaleUtils.bytesToMebibytes(vmTemplateVo.getSize()));
     }
 
     protected void loadPresetVariableValueForSnapshot(UsageVO usageRecord, Value value) {
@@ -554,7 +554,7 @@ public class PresetVariableHelper {
 
         value.setId(snapshotVo.getUuid());
         value.setName(snapshotVo.getName());
-        value.setSize(ByteScaleUtils.bytesToMib(snapshotVo.getSize()));
+        value.setSize(ByteScaleUtils.bytesToMebibytes(snapshotVo.getSize()));
         value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()]);
         value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId), usageType));
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));

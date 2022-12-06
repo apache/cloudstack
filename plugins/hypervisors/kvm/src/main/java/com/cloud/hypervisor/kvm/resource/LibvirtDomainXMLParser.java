@@ -41,6 +41,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
@@ -50,6 +51,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
+    private MemBalloonDef memBalloonDef = new MemBalloonDef();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
     private final List<RngDef> rngDefs = new ArrayList<RngDef>();
     private final List<ChannelDef> channels = new ArrayList<ChannelDef>();
@@ -206,6 +208,8 @@ public class LibvirtDomainXMLParser {
                 diskDefs.add(def);
             }
 
+            memBalloonDef = parseMemBalloonTag(devices);
+
             NodeList nics = devices.getElementsByTagName("interface");
             for (int i = 0; i < nics.getLength(); i++) {
                 Element nic = (Element)nics.item(i);
@@ -342,6 +346,25 @@ public class LibvirtDomainXMLParser {
         return false;
     }
 
+    /**
+     * Parse the memballoon tag.
+     * @param devices the devices tag.
+     * @return the MemBalloonDef.
+     */
+    private MemBalloonDef parseMemBalloonTag(Element devices) {
+        MemBalloonDef def = new MemBalloonDef();
+        NodeList memBalloons = devices.getElementsByTagName("memballoon");
+        if (memBalloons != null && memBalloons.getLength() != 0) {
+            Element memBalloon = (Element)memBalloons.item(0);
+            String model = memBalloon.getAttribute("model");
+            if (model.equalsIgnoreCase("virtio")) {
+                String statsPeriod = getAttrValue("stats", "period", memBalloon);
+                def.defVirtioMemBalloon(statsPeriod);
+            }
+        }
+        return def;
+    }
+
     private static String getTagValue(String tag, Element eElement) {
         NodeList tagNodeList = eElement.getElementsByTagName(tag);
         if (tagNodeList == null || tagNodeList.getLength() == 0) {
@@ -370,6 +393,10 @@ public class LibvirtDomainXMLParser {
 
     public List<InterfaceDef> getInterfaces() {
         return interfaces;
+    }
+
+    public MemBalloonDef getMemBalloon() {
+        return memBalloonDef;
     }
 
     public List<DiskDef> getDisks() {

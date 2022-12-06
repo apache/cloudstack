@@ -145,4 +145,3 @@ class bash:
             return self.getStdout()
         else:
             return self.getStderr()
-

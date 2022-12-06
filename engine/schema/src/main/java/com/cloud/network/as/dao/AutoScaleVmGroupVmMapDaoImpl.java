@@ -23,32 +23,96 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.VMInstanceDao;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 @Component
 public class AutoScaleVmGroupVmMapDaoImpl extends GenericDaoBase<AutoScaleVmGroupVmMapVO, Long> implements AutoScaleVmGroupVmMapDao {
 
+    @Inject
+    VMInstanceDao vmInstanceDao;
+
+    GenericSearchBuilder<AutoScaleVmGroupVmMapVO, Integer> CountBy;
+
+    SearchBuilder<AutoScaleVmGroupVmMapVO> AllFieldsSearch;
+
+    @PostConstruct
+    protected void init() {
+        CountBy = createSearchBuilder(Integer.class);
+        CountBy.select(null, SearchCriteria.Func.COUNT, CountBy.entity().getId());
+        CountBy.and("vmGroupId", CountBy.entity().getVmGroupId(), SearchCriteria.Op.EQ);
+        final SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
+        vmSearch.and("states", vmSearch.entity().getState(), SearchCriteria.Op.IN);
+        CountBy.join("vmSearch", vmSearch, CountBy.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        CountBy.done();
+
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("vmGroupId", AllFieldsSearch.entity().getVmGroupId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("instanceId", AllFieldsSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
+    }
+
+    @Override
+    public int countAvailableVmsByGroup(long vmGroupId) {
+
+        SearchCriteria<Integer> sc = CountBy.create();
+        sc.setParameters("vmGroupId", vmGroupId);
+        sc.setJoinParameters("vmSearch", "states",
+                State.Starting, State.Running, State.Stopping, State.Migrating);
+        final List<Integer> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
     @Override
     public Integer countByGroup(long vmGroupId) {
 
-        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
-        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vmGroupId", vmGroupId);
         return getCountIncludingRemoved(sc);
     }
 
     @Override
     public List<AutoScaleVmGroupVmMapVO> listByGroup(long vmGroupId) {
-        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
-        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vmGroupId", vmGroupId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AutoScaleVmGroupVmMapVO> listByVm(long vmId) {
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", vmId);
         return listBy(sc);
     }
 
     @Override
     public int remove(long vmGroupId, long vmId) {
-        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
-        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
-        sc.addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vmGroupId", vmGroupId);
+        sc.setParameters("instanceId", vmId);
         return remove(sc);
     }
 
+    @Override
+    public boolean removeByVm(long vmId) {
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", vmId);
+        return remove(sc) >= 0;
+    }
+
+    @Override
+    public boolean removeByGroup(long vmGroupId) {
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vmGroupId", vmGroupId);
+        return remove(sc) >= 0;
+    }
 }

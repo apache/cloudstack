@@ -224,7 +224,7 @@ public class Upgrade430to440 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update vlan URIs ", e);
         }
-        s_logger.debug("Done updateing vlan URIs");
+        s_logger.debug("Done updating vlan URIs");
     }
 
     @Override

@@ -367,7 +367,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
         enabled_pod = pods[0]
 
-        self.debug("Cheking if pod has at least 2 clusters")
+        self.debug("Checking if pod has at least 2 clusters")
         clusters = Cluster.list(
                                 self.apiclient,
                                 podid=enabled_pod.id,
@@ -574,7 +574,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
 
         enabled_pod = pods[0]
-        self.debug("Cheking if pod has multiple clusters")
+        self.debug("Checking if pod has multiple clusters")
         clusters = Cluster.list(
                                 self.apiclient,
                                 podid=enabled_pod.id,
@@ -588,7 +588,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
 
         enabled_cluster = clusters[0]
 
-        self.debug("Cheking if cluster has multiple storage pools")
+        self.debug("Checking if cluster has multiple storage pools")
         storage_pools = StoragePool.list(
                                 self.apiclient,
                                 clusterid=enabled_cluster.id,
@@ -812,7 +812,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
 
         enabled_pod = pods[0]
-        self.debug("Cheking if pod has multiple clusters")
+        self.debug("Checking if pod has multiple clusters")
         clusters = Cluster.list(
                                 self.apiclient,
                                 podid=enabled_pod.id,
@@ -826,7 +826,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
 
         enabled_cluster = clusters[0]
 
-        self.debug("Cheking if cluster has multiple hosts")
+        self.debug("Checking if cluster has multiple hosts")
         hosts = Host.list(
                                 self.apiclient,
                                 clusterid=enabled_cluster.id,

@@ -63,7 +63,7 @@ Deploy Cloud using marvin:
 docker run -ti --rm --link simulator:8096 cloudstack/marvin python /marvin/marvin/deployDataCenter.py -i /marvin/dev/advanced.cfg
 ```
 
-Perform Smoke tests against CloudStack Simulator containter:
+Perform Smoke tests against CloudStack Simulator container:
 ```
 docker run -ti --rm --link simulator:8096 \
   nosetests-2.7 -v --with-marvin \

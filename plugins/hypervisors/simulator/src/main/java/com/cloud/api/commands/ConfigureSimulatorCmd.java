@@ -63,7 +63,7 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "which command needs to be configured")
     private String command;
 
-    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "configuration options for this command, which is seperated by ;")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "configuration options for this command, which is separated by ;")
     private String values;
 
     @Parameter(name=ApiConstants.COUNT, type=CommandType.INTEGER, description="number of times the mock is active")

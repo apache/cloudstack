@@ -172,4 +172,3 @@ class ConfigFileOps:
                 self.add_lines(oldLine, False)
             else:
                 self.replace_lines(newLine, oldLine, False)
-

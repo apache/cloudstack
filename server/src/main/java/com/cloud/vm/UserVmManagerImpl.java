@@ -244,6 +244,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -577,6 +578,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+
+    @Inject
+    private AutoScaleManager autoScaleManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -1296,7 +1300,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // resize and migrate the root volume if required
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
+        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
 
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
@@ -2053,7 +2057,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     // #1 Check existing host has capacity
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
-                                && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), cpuDiff, ByteScaleUtils.mibToBytes(memoryDiff), false,
+                                && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false);
                         excludes.addHost(vmInstance.getHostId());
@@ -2066,7 +2070,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // #3 resize or migrate the root volume if required
                     DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-                    changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
+                    changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
 
                     // #4 scale the vm now
                     vmInstance = _vmInstanceDao.findById(vmId);
@@ -2109,7 +2113,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters) throws ResourceAllocationException {
+    private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters, Long zoneId) throws ResourceAllocationException {
+
+        if (!AllowDiskOfferingChangeDuringScaleVm.valueIn(zoneId)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Changing the disk offering of the root volume during the compute offering change operation is disabled. Please check the setting [%s].", AllowDiskOfferingChangeDuringScaleVm.key()));
+            }
+            return;
+        }
 
         List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmId);
 
@@ -2444,7 +2455,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
+    public boolean expunge(UserVmVO vm) {
         vm = _vmDao.acquireInLockTable(vm.getId());
         if (vm == null) {
             return false;
@@ -2462,6 +2473,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             vm.getBackupExternalId(), backupsForVm.size()));
                 }
             }
+
+            autoScaleManager.removeVmFromVmGroup(vm.getId());
 
             releaseNetworkResourcesOnExpunge(vm.getId());
 
@@ -3284,6 +3297,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
+        // check if vm belongs to AutoScale vm group in Disabled state
+        autoScaleManager.checkIfVmActionAllowed(vmId);
+
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
@@ -3306,11 +3322,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         detachVolumesFromVm(dataVols);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
-        if (expunge) {
-            if (!expunge(vm, ctx.getCallingUserId(), ctx.getCallingAccount())) {
-                throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
-            }
+        if (expunge && !expunge(vm)) {
+            throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
         }
+
+        autoScaleManager.removeVmFromVmGroup(vmId);
 
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
 
@@ -4636,7 +4652,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // rootdisksize must be larger than template.
         boolean isIso = ImageFormat.ISO == templateVO.getFormat();
         if ((rootDiskSize << 30) < templateVO.getSize()) {
-            String error = "Unsupported: rootdisksize override is smaller than template size " + toHumanReadableSize(templateVO.getSize());
+            String error = String.format("Unsupported: rootdisksize override (%s GB) is smaller than template size %s", rootDiskSize, toHumanReadableSize(templateVO.getSize()));
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
@@ -5211,7 +5227,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        _userDao.findById(userId);
+        // check if vm belongs to AutoScale vm group in Disabled state
+        autoScaleManager.checkIfVmActionAllowed(vmId);
+
         boolean status = false;
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
@@ -5508,10 +5526,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm destroyVm(long vmId, boolean expunge) throws ResourceUnavailableException, ConcurrentOperationException {
-        // Account caller = CallContext.current().getCallingAccount();
-        // Long userId = CallContext.current().getCallingUserId();
-        Long userId = 2L;
-
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
@@ -5531,7 +5545,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.destroy(Long.toString(userId), expunge);
+            status = vmEntity.destroy(expunge);
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
             ex.addProxyObject(vm.getUuid(), "vmId");
@@ -5695,7 +5709,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_EXPUNGE, eventDescription = "expunging Vm", async = true)
     public UserVm expungeVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
-        Long userId = caller.getId();
+        Long callerId = caller.getId();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
@@ -5717,15 +5731,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
-        if (!_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVm.valueIn(userId)) {
+        if (!_accountMgr.isAdmin(callerId) && !AllowUserExpungeRecoverVm.valueIn(callerId)) {
             throw new PermissionDeniedException("Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
+
+        // check if vm belongs to AutoScale vm group in Disabled state
+        autoScaleManager.checkIfVmActionAllowed(vmId);
 
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId, false);
 
         boolean status;
 
-        status = expunge(vm, userId, caller);
+        status = expunge(vm);
         if (status) {
             return _vmDao.findByIdIncludingRemoved(vmId);
         } else {
@@ -6286,6 +6303,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm getUserVm(long vmId) {
         return _vmDao.findById(vmId);
+    }
+
+    @Override
+    public VirtualMachine getVm(long vmId) {
+        return _vmInstanceDao.findById(vmId);
     }
 
     private VMInstanceVO preVmStorageMigrationCheck(Long vmId) {
@@ -7980,7 +8002,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
+        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList};
     }
@@ -8057,8 +8079,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void detachVolumesFromVm(List<VolumeVO> volumes) {
 
         for (VolumeVO volume : volumes) {
+            CallContext vmContext = CallContext.current();
+            // Create new context and inject correct event resource type, id and details,
+            // otherwise VOLUME.DETACH event will be associated with VirtualMachine and contain VM id and other information.
+            CallContext volumeContext = CallContext.register(vmContext.getCallingUserId(), vmContext.getCallingAccountId());
+            volumeContext.setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
+            volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
+            volumeContext.setEventResourceId(volume.getId());
+            volumeContext.setStartEventId(vmContext.getStartEventId());
 
-            Volume detachResult = _volumeService.detachVolumeViaDestroyVM(volume.getInstanceId(), volume.getId());
+            Volume detachResult = null;
+            try {
+                detachResult = _volumeService.detachVolumeViaDestroyVM(volume.getInstanceId(), volume.getId());
+            } finally {
+                // Remove volumeContext and pop vmContext back
+                CallContext.unregister();
+            }
 
             if (detachResult == null) {
                 s_logger.error("DestroyVM remove volume - failed to detach and delete volume " + volume.getInstanceId() + " from instance " + volume.getId());

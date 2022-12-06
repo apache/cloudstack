@@ -169,7 +169,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
         boolean result = false;
 
         try {
-            result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap);
+            result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds, vmIdIpsMap, false);
         }catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign load balancer rule");
         }

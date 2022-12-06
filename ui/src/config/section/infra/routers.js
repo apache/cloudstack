@@ -44,6 +44,9 @@ export default {
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
     component: shallowRef(defineAsyncComponent(() => import('@views/infra/routers/RouterHealthCheck.vue')))
   }, {
+    name: 'volume',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/VolumesTab.vue')))
+  }, {
     name: 'events',
     resourceType: 'DomainRouter',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),

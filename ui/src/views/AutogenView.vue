@@ -752,7 +752,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -845,6 +845,10 @@ export default {
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
+      }
+
+      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
+        params.listsystemvms = true
       }
 
       this.loading = true
