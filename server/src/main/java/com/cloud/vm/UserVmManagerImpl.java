@@ -596,6 +596,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private int _scaleRetry;
     private Map<Long, VmAndCountDetails> vmIdCountMap = new ConcurrentHashMap<>();
 
+    protected static long ROOT_DEVICE_ID = 0;
+
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int NUM_OF_2K_BLOCKS = 512;
     private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
@@ -2333,8 +2335,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
                 for (VolumeVO volume : volumes) {
                     if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                        // Create an event
-                        _volumeService.publishVolumeCreationUsageEvent(volume);
+                        recoverRootVolume(volume, vmId);
+                        break;
                     }
                 }
 
@@ -2344,6 +2346,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
 
         return _vmDao.findById(vmId);
+    }
+
+    protected void recoverRootVolume(VolumeVO volume, Long vmId) {
+        if (Volume.State.Destroy.equals(volume.getState())) {
+            _volumeService.recoverVolume(volume.getId());
+            _volsDao.attachVolume(volume.getId(), vmId, ROOT_DEVICE_ID);
+        } else {
+            _volumeService.publishVolumeCreationUsageEvent(volume);
+        }
     }
 
     @Override
@@ -3329,6 +3340,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         autoScaleManager.removeVmFromVmGroup(vmId);
 
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
+
+        if (getDestroyRootVolumeOnVmDestruction(vm.getDomainId())) {
+            VolumeVO rootVolume = _volsDao.getInstanceRootVolume(vm.getId());
+            if (rootVolume != null) {
+                _volService.destroyVolume(rootVolume.getId());
+            } else {
+                s_logger.warn(String.format("Tried to destroy ROOT volume for VM [%s], but couldn't retrieve it.", vm.getUuid()));
+            }
+        }
 
         return destroyedVm;
     }
@@ -8004,7 +8024,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
-                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList};
+                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction};
     }
 
     @Override
@@ -8333,5 +8353,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             s_logger.warn(String.format("Skip collecting vm %s disk and network statistics as the expected vm state is %s but actual state is %s", vm, expectedState, vm.getState()));
         }
+    }
+
+    public Boolean getDestroyRootVolumeOnVmDestruction(Long domainId){
+        return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
     }
 }
