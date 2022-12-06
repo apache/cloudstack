@@ -265,11 +265,19 @@ public interface VirtualMachineManager extends Manager {
     Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
 
     /**
-     * Obtains statistics for a list of host or VMs; CPU and network utilization
-     * @param host ID
-     * @param host name
-     * @param list of VM IDs or host id
-     * @return GetVmStatsAnswer
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmIds list of VM IDs
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmMap map of VM IDs and the corresponding VirtualMachine object
+     * @return map of VM ID and stats entry for the VM
      */
     HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
 
