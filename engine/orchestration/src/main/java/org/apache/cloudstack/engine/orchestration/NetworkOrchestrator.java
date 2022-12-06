@@ -38,11 +38,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.query.dao.DomainRouterJoinDao;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.network.NetworkServiceImpl;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -82,6 +77,8 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
@@ -132,6 +129,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkStateListener;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -192,6 +190,7 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
@@ -202,6 +201,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -2833,17 +2833,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     if (vrIfaceMTUs.first() != null && vrIfaceMTUs.first() > 0) {
                         userNetwork.setPublicMtu(vrIfaceMTUs.first());
                     } else {
-                        userNetwork.setPublicMtu(Integer.valueOf(NetworkServiceImpl.VRPublicInterfaceMtu.defaultValue()));
+                        userNetwork.setPublicMtu(Integer.valueOf(NetworkService.VRPublicInterfaceMtu.defaultValue()));
                     }
 
                     if (vrIfaceMTUs.second() != null && vrIfaceMTUs.second() > 0) {
                         userNetwork.setPrivateMtu(vrIfaceMTUs.second());
                     } else {
-                        userNetwork.setPrivateMtu(Integer.valueOf(NetworkServiceImpl.VRPrivateInterfaceMtu.defaultValue()));
+                        userNetwork.setPrivateMtu(Integer.valueOf(NetworkService.VRPrivateInterfaceMtu.defaultValue()));
                     }
                 } else {
-                    userNetwork.setPublicMtu(Integer.valueOf(NetworkServiceImpl.VRPublicInterfaceMtu.defaultValue()));
-                    userNetwork.setPrivateMtu(Integer.valueOf(NetworkServiceImpl.VRPrivateInterfaceMtu.defaultValue()));
+                    userNetwork.setPublicMtu(Integer.valueOf(NetworkService.VRPublicInterfaceMtu.defaultValue()));
+                    userNetwork.setPrivateMtu(Integer.valueOf(NetworkService.VRPrivateInterfaceMtu.defaultValue()));
                 }
 
                 if (!GuestType.L2.equals(userNetwork.getGuestType())) {

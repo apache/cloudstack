@@ -608,9 +608,6 @@ export default {
       if (this.scopeType !== 'all') {
         this.handleScopeTypeChange(this.scopeType)
       }
-      this.allowSettingMTU()
-      this.fetchPrivateMtuForZone()
-      this.fetchPublicMtuForZone()
     },
     isAdmin () {
       return isAdmin()
@@ -632,30 +629,6 @@ export default {
     },
     isValidTextValueForKey (obj, key) {
       return this.isValidValueForKey(obj, key) && String(obj[key]).length > 0
-    },
-    allowSettingMTU () {
-      api('listConfigurations', {
-        name: 'allow.end.users.to.specify.vm.mtu',
-        zoneid: this.selectedZone.id
-      }).then(json => {
-        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
-      })
-    },
-    fetchPrivateMtuForZone () {
-      api('listConfigurations', {
-        name: 'vr.private.interface.mtu',
-        zoneid: this.selectedZone.id
-      }).then(json => {
-        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
-      })
-    },
-    fetchPublicMtuForZone () {
-      api('listConfigurations', {
-        name: 'vr.public.interface.mtu',
-        zoneid: this.selectedZone.id
-      }).then(json => {
-        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
-      })
     },
     fetchZoneData () {
       this.zones = []
@@ -690,14 +663,14 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      this.setMTU = zone?.allowuserspecifyvmmtu || false
+      this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
+      this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
         this.fetchNetworkOfferingData()
       }
-      this.allowSettingMTU()
-      this.fetchPrivateMtuForZone()
-      this.fetchPublicMtuForZone()
     },
     fetchPhysicalNetworkData () {
       this.formSelectedPhysicalNetwork = {}

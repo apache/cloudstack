@@ -404,32 +404,8 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
       this.allowSettingMTU()
-      this.fetchPrivateMtuForZone()
-      this.fetchPublicMtuForZone()
     },
     allowSettingMTU () {
-      api('listConfigurations', {
-        name: 'allow.end.users.to.specify.vm.mtu',
-        zoneid: this.selectedZone.id
-      }).then(json => {
-        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
-      })
-    },
-    fetchPrivateMtuForZone () {
-      api('listConfigurations', {
-        name: 'vr.private.interface.mtu',
-        zoneid: this.selectedZone.id
-      }).then(json => {
-        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
-      })
-    },
-    fetchPublicMtuForZone () {
-      api('listConfigurations', {
-        name: 'vr.public.interface.mtu',
-        zoneid: this.selectedZone.id
-      }).then(json => {
-        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
-      })
     },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
@@ -467,10 +443,10 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      this.setMTU = zone?.allowuserspecifyvmmtu || false
+      this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
+      this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
-      this.allowSettingMTU()
-      this.fetchPrivateMtuForZone()
-      this.fetchPublicMtuForZone()
     },
     fetchDomainData () {
       const params = {}
@@ -618,7 +594,7 @@ export default {
     updateMtu (isPublic) {
       if (isPublic) {
         if (this.form.publicmtu > this.publicMtuMax) {
-          this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed').replace('%x', this.publicMtuMax)}`
+          this.errorPublicMtu = this.$t('message.error.mtu.public.max.exceed')
           this.form.publicmtu = this.publicMtuMax
         } else if (this.form.publicmtu < this.minMTU) {
           this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
@@ -628,7 +604,7 @@ export default {
         }
       } else {
         if (this.form.privatemtu > this.privateMtuMax) {
-          this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed').replace('%x', this.privateMtuMax)}`
+          this.errorPrivateMtu = this.$t('message.error.mtu.private.max.exceed')
           this.form.privatemtu = this.privateMtuMax
         } else if (this.form.privatemtu < this.minMTU) {
           this.errorPrivateMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`

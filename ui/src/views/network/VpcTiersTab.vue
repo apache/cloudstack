@@ -506,8 +506,7 @@ export default {
     },
     fetchData () {
       this.networks = this.resource.network
-      this.allowSettingMTU()
-      this.fetchPrivateMtuForZone()
+      this.fetchMtuForZone()
       if (!this.networks || this.networks.length === 0) {
         return
       }
@@ -517,21 +516,12 @@ export default {
       }
       this.publicLBNetworkExists()
     },
-    allowSettingMTU () {
-      api('listConfigurations', {
-        name: 'allow.end.users.to.specify.vm.mtu',
-        zoneid: this.resource.zoneid
+    fetchMtuForZone () {
+      api('listZone', {
+        id: this.resource.zoneid
       }).then(json => {
-        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
-        console.log(this.setMTU)
-      })
-    },
-    fetchPrivateMtuForZone () {
-      api('listConfigurations', {
-        name: 'vr.private.interface.mtu',
-        zoneid: this.resource.zoneid
-      }).then(json => {
-        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+        this.setMTU = json?.listzonesresponse?.allowuserspecifyvmmtu || false
+        this.privateMtuMax = json?.listzonesresponse?.routerprivateinterfacemaxmtu || 1500
       })
     },
     fetchNetworkAclList () {

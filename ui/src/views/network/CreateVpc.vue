@@ -230,15 +230,6 @@ export default {
     },
     async fetchData () {
       this.fetchZones()
-      await this.fetchPublicMtuForZone()
-    },
-    allowSettingMTU () {
-      api('listConfigurations', {
-        name: 'allow.end.users.to.specify.vm.mtu',
-        zoneid: this.form.zoneid
-      }).then(json => {
-        this.setMTU = json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
-      })
     },
     fetchPublicMtuForZone () {
       api('listConfigurations', {
@@ -268,9 +259,13 @@ export default {
         this.form.vpcofferingid = ''
         return
       }
+      for (var zone of this.zones) {
+        if (zone.id === value) {
+          this.setMTU = zone?.allowuserspecifyvmmtu || false
+          this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+        }
+      }
       this.fetchOfferings()
-      this.allowSettingMTU()
-      this.fetchPublicMtuForZone()
     },
     fetchOfferings () {
       this.loadingOffering = true

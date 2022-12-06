@@ -618,6 +618,7 @@ public class ApiConstants {
     public static final String RESTART_REQUIRED = "restartrequired";
     public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
     public static final String ALLOW_USER_DRIVEN_BACKUPS = "allowuserdrivenbackups";
+    public static final String ALLOW_USER_SPECIFY_VM_MTU = "allowuserspecifyvmmtu";
     public static final String CONSERVE_MODE = "conservemode";
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
@@ -881,6 +882,8 @@ public class ApiConstants {
     public static final String ROUTER_CHECK_TYPE = "checktype";
     public static final String ROUTER_IP = "routerip";
     public static final String ROUTER_IPV6 = "routeripv6";
+    public static final String ROUTER_PRIVATE_INTERFACE_MAX_MTU = "routerprivateinterfacemaxmtu";
+    public static final String ROUTER_PUBLIC_INTERFACE_MAX_MTU = "routerpublicinterfacemaxmtu";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
     public static final String CACHE_MODE = "cachemode";

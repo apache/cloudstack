@@ -41,21 +41,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.alert.AlertManager;
-import com.cloud.api.query.dao.DomainRouterJoinDao;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.router.CommandSetupHelper;
-import com.cloud.network.router.NetworkHelper;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -93,8 +78,18 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
@@ -164,12 +159,16 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
@@ -179,6 +178,7 @@ import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -226,6 +226,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
@@ -239,14 +240,13 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -259,17 +259,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<>("Advanced", Boolean.class,
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
-    public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
-            "vr.public.interface.max.mtu", "1500", "MTU set on the VR's public facing interfaces",
-            true, ConfigKey.Scope.Zone);
-
-    public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
-            "vr.private.interface.max.mtu", "1500", "MTU set on the VR's private interfaces",
-            true, ConfigKey.Scope.Zone);
-
-    public static final ConfigKey<Boolean> AllowUsersToSpecifyVmMtu = new ConfigKey<>("Advanced", Boolean.class,
-            "allow.end.users.to.specify.vm.mtu", "false", "Allow end users to specify VM MTU",
-            true, ConfigKey.Scope.Zone);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
