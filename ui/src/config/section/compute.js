@@ -747,7 +747,7 @@ export default {
           args: ['name', 'description', 'type'],
           mapping: {
             type: {
-              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non Strict)', 'host affinity (Non Strict)']
+              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
             }
           }
         },

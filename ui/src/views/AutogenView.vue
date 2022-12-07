@@ -1406,9 +1406,9 @@ export default {
                   params[key] = 'host anti-affinity'
                 } else if (params[key] === 'host affinity (Strict)') {
                   params[key] = 'host affinity'
-                } else if (params[key] === 'host anti-affinity (Non Strict)') {
+                } else if (params[key] === 'host anti-affinity (Non-Strict)') {
                   params[key] = 'non-strict host anti-affinity'
-                } else if (params[key] === 'host affinity (Non Strict)') {
+                } else if (params[key] === 'host affinity (Non-Strict)') {
                   params[key] = 'non-strict host affinity'
                 }
               }
