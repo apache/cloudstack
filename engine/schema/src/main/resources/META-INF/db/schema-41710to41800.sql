@@ -797,4 +797,4 @@ UPDATE `cloud`.`networks` ntwk
     ntwk.removed is NULL AND
     ntwk.guest_type = 'Isolated';
 
-DELETE FROM `cloud`.`configuration` WHERE name=task.cleanup.retry.interval;
+DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
