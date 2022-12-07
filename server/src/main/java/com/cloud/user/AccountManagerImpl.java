@@ -336,7 +336,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             true,
             ConfigKey.Scope.Domain);
 
-    ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+    public static ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
             Boolean.class,
             "mandate.user.two.factor.authentication",
             "false",
@@ -2426,9 +2426,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             userUUID = UUID.randomUUID().toString();
         }
 
-        UserVO userVO = new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID, source);
-        userVO.setUser2faEnabled(mandateUserTwoFactorAuthentication.valueIn(getAccount(accountId).getDomainId()));
-        UserVO user = _userDao.persist(userVO);
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID, source));
         CallContext.current().putContextParameter(User.class, user.getUuid());
         return user;
     }

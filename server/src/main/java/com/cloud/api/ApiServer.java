@@ -160,6 +160,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -1141,7 +1142,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
-            session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(userAcct.isUser2faEnabled()));
+            if (!userAcct.isUser2faEnabled()) {
+                boolean adminMandated2FA = AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId());
+                session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(adminMandated2FA));
+            } else {
+                session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(true));
+            }
             session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
             session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
 

@@ -35,10 +35,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
-import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
-import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
-import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
@@ -55,11 +51,16 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
 import com.cloud.projects.Project;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.StringUtils;
@@ -310,10 +311,15 @@ public class ApiServlet extends HttpServlet {
                 userId = (Long)session.getAttribute("userid");
                 UserAccount userAccount = accountMgr.getUserAccountById(userId);
                 boolean is2FAenabled = userAccount.isUser2faEnabled();
+                if (!userAccount.isUser2faEnabled()) {
+                    is2FAenabled = AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId());
+                }
                 boolean is2FAverified = (boolean) session.getAttribute(ApiConstants.IS_2FA_VERIFIED);
                 if (is2FAenabled && !is2FAverified) {
                     APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
-                    if ((command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) || apiAuthenticator == null ) {
+                    if ((command != null && !(command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME) || command.equals(SetupUserTwoFactorAuthenticationCmd.APINAME))) || apiAuthenticator == null ) {
+                        s_logger.error("Two factor authentication is enabled but not verified, please either setup two factor authentication or verify if setup is already done");
+
                         if (session != null) {
                             invalidateHttpSession(session, String.format("request verification failed for %s from %s", userId, remoteAddress.getHostAddress()));
                         }
@@ -324,10 +330,12 @@ public class ApiServlet extends HttpServlet {
                                         responseType);
                         HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
                     } else {
-                        String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
-                        session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
-                        HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
-                        return;
+                        if (command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
+                            String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
+                            session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
+                            HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                            return;
+                        }
                     }
                 }
             }
