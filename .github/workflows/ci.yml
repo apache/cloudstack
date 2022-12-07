@@ -57,9 +57,9 @@ jobs:
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh
           cd ..
 
-      - name: RAT licence checks
-        run: |
-          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
+      #- name: RAT licence checks
+      #  run: |
+      #    mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
 
       - name: Build with Maven
         run: |
