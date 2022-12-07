@@ -24,6 +24,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -61,7 +62,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -96,7 +96,10 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.exception.InvalidParameterValueException;
 
 @PowerMockIgnore("javax.management.*")
 @RunWith(PowerMockRunner.class)
@@ -154,6 +157,10 @@ public class NetworkServiceImplTest {
     AccountService accountService;
     @Mock
     NetworkHelper networkHelper;
+    @Mock
+    ServiceOfferingDao serviceOfferingDaoMock;
+    @Mock
+    ServiceOfferingVO serviceOfferingVoMock;
 
     @InjectMocks
     AccountManagerImpl accountManagerImpl;
@@ -171,7 +178,8 @@ public class NetworkServiceImplTest {
     @Mock
     private Account accountMock;
     @InjectMocks
-    private NetworkServiceImpl service = new NetworkServiceImpl();
+    NetworkServiceImpl service = new NetworkServiceImpl();
+
     private static final String VLAN_ID_900 = "900";
     private static final String VLAN_ID_901 = "901";
     private static final String VLAN_ID_902 = "902";
@@ -199,6 +207,8 @@ public class NetworkServiceImplTest {
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
     }
+
+    Class<InvalidParameterValueException> expectedException = InvalidParameterValueException.class;
 
     @Before
     public void setup() throws Exception {
@@ -241,6 +251,7 @@ public class NetworkServiceImplTest {
         Mockito.lenient().doNothing().when(accountMgr).checkAccess(accountMock, networkOffering, dc);
         Mockito.when(accountMgr.isRootAdmin(accountMock.getId())).thenReturn(true);
     }
+
     @Test
     public void testGetPrivateVlanPairNoVlans() {
         Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair(null, null, null);
@@ -712,5 +723,51 @@ public class NetworkServiceImplTest {
         Assert.assertNull(networkVO.getDns2());
         Assert.assertNull(networkVO.getIp6Dns1());
         Assert.assertNull(networkVO.getIp6Dns2());
+    }
+    @Test
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustThrowInvalidParameterValueExceptionWhenServiceOfferingIsNull() {
+        doReturn(null).when(serviceOfferingDaoMock).findById(anyLong());
+
+        String expectedMessage = String.format("Could not find specified service offering [%s].", 1l);
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedException, () -> {
+            service.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustThrowInvalidParameterValueExceptionWhenServiceOfferingStateIsInactive() {
+        doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(anyLong());
+        doReturn(ServiceOffering.State.Inactive).when(serviceOfferingVoMock).getState();
+
+        String expectedMessage = String.format("The specified service offering [%s] is inactive.", serviceOfferingVoMock);
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedException, () -> {
+            service.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustThrowInvalidParameterValueExceptionWhenSystemVmTypeIsNotDomainRouter() {
+        doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(anyLong());
+        doReturn(ServiceOffering.State.Active).when(serviceOfferingVoMock).getState();
+        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getSystemVmType();
+
+        String expectedMessage = String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering of type [%s].",
+                serviceOfferingVoMock, serviceOfferingVoMock.getSystemVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
+        InvalidParameterValueException assertThrows = Assert.assertThrows(expectedException, () -> {
+            service.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
+        });
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustNotThrowInvalidParameterValueExceptionWhenSystemVmTypeIsDomainRouter() {
+        NetworkServiceImpl networkServiceImplMock = mock(NetworkServiceImpl.class);
+
+        networkServiceImplMock.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
     }
 }
