@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.network;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -24,27 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.alert.AlertManager;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.CommandSetupHelper;
-import com.cloud.network.router.NetworkHelper;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.org.Grouping;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.AccountService;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
@@ -64,38 +52,50 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.alert.AlertManager;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.org.Grouping;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 
 
 @PowerMockIgnore("javax.management.*")
@@ -478,7 +478,7 @@ public class NetworkServiceImplTest {
     }
 
     private void replaceUserChangeMtuField() throws Exception {
-        Field field = NetworkServiceImpl.class.getDeclaredField("AllowUsersToSpecifyVmMtu");
+        Field field = NetworkService.class.getDeclaredField("AllowUsersToSpecifyVmMtu");
         field.setAccessible(true);
         // remove final modifier from field
         Field modifiersField = Field.class.getDeclaredField("modifiers");
