@@ -33,12 +33,12 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="code" ref="code">
-          <a-input
-            class="center-align"
-            style="width: 400px"
+          <a-input-password
+            style="width: 500px"
             v-model:value="form.code"
             placeholder="xxxxxxx" />
         </a-form-item>
+        <br/>
         <div :span="24" class="center-align top-padding">
             <a-button
               :loading="loading"

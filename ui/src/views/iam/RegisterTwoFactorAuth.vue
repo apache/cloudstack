@@ -85,7 +85,7 @@
           <br />
           <h3> {{ $t('label.enter.code') }} </h3>
           <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
-            <a-input v-model:value="code" />
+            <a-input-password v-model:value="code"/>
             <div :span="24">
               <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.verify') }}</a-button>
             </div>
