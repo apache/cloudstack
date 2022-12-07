@@ -35,6 +35,11 @@ public abstract class QuotaBaseCmd extends BaseCmd {
 
     public static void validateQuotaAccountEnabled(BaseCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
+
+        if (caller.getType().equals(Account.Type.ADMIN)) {
+            return;
+        }
+
         if (!QuotaConfig.QuotaPluginEnabled.value() || !QuotaConfig.QuotaAccountEnabled.valueIn(caller.getAccountId())){
             throw new UnavailableCommandException(String.format("The API [%s] is not available for account %s.", cmd.getActualCommandName(),
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(caller, "accountName", "uuid")));

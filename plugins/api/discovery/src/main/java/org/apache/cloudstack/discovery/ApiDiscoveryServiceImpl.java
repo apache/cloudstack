@@ -254,16 +254,23 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         List<ApiDiscoveryResponse> responseList = new ArrayList<>();
         List<String> apisAllowed = new ArrayList<>(s_apiNameDiscoveryResponseMap.keySet());
 
-        if (user == null)
+        if (user == null) {
             return null;
+        }
+
+        Account account = accountService.getAccount(user.getAccountId());
+        if (account == null) {
+            throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
+        }
 
         if (name != null) {
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
-            if (PluginAccessConfigs.QuotaPluginEnabled.value() && !PluginAccessConfigs.QuotaAccountEnabled.valueIn(user.getAccountId()) &&
-                    quotaCmdList.parallelStream().anyMatch(className -> name.equalsIgnoreCase(className))) {
-                    return null;
+            if (account.getType() != Account.Type.ADMIN && PluginAccessConfigs.QuotaPluginEnabled.value() &&
+                !PluginAccessConfigs.QuotaAccountEnabled.valueIn(user.getAccountId()) && quotaCmdList.parallelStream().anyMatch(name::equalsIgnoreCase)) {
+
+                return null;
             }
 
             for (APIChecker apiChecker : _apiAccessCheckers) {
@@ -277,11 +284,6 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             responseList.add(s_apiNameDiscoveryResponseMap.get(name));
 
         } else {
-            Account account = accountService.getAccount(user.getAccountId());
-            if (account == null) {
-                throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
-            }
-
             final Role role = roleService.findRole(account.getRoleId());
             if (role == null || role.getId() < 1L) {
                 throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.",
