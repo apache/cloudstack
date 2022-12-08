@@ -21,7 +21,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest-4-cores #ubuntu-20.04
+    runs-on: ubuntu-20.04
 
     strategy:
       matrix:
@@ -223,8 +223,10 @@ jobs:
         run: |
           export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom"
           #mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log &
+          set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
           while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
+          set -e
           python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
 
       - name: Run Integration Tests with Simulator
