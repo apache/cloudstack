@@ -56,8 +56,10 @@ jobs:
           sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password password'
           sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password password'
           sudo apt-get install -y mysql-server
+          sudo systemctl set-environment MYSQLD_OPTS="--skip-networking --skip-grant-tables"
+          sudo systemctl start mysql
+          sudo mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
           sudo systemctl restart mysql
-          sudo mysql -uroot -ppassword -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
 
       - name: Env details
         run: |
