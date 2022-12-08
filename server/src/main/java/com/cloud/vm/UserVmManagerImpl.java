@@ -8099,14 +8099,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void detachVolumesFromVm(List<VolumeVO> volumes) {
 
         for (VolumeVO volume : volumes) {
-            CallContext vmContext = CallContext.current();
             // Create new context and inject correct event resource type, id and details,
             // otherwise VOLUME.DETACH event will be associated with VirtualMachine and contain VM id and other information.
-            CallContext volumeContext = CallContext.register(vmContext.getCallingUserId(), vmContext.getCallingAccountId());
+            CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
             volumeContext.setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
             volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
             volumeContext.setEventResourceId(volume.getId());
-            volumeContext.setStartEventId(vmContext.getStartEventId());
 
             Volume detachResult = null;
             try {
