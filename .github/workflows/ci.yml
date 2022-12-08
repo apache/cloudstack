@@ -210,7 +210,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -B -T4 -P developer,systemvm -Dsimulator clean install
+          mvn -B -T2 -P developer,systemvm -Dsimulator clean install
 
       - name: Setup Simulator Prerequisites
         run: |
