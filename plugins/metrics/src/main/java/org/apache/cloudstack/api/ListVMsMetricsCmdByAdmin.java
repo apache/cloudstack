@@ -28,7 +28,6 @@ import org.apache.cloudstack.response.VmMetricsResponse;
 @APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin})
-@Deprecated(since = "4.17.0")
 public class ListVMsMetricsCmdByAdmin extends ListVMsMetricsCmd implements AdminCmd {
 
     /////////////////////////////////////////////////////
