@@ -430,6 +430,20 @@ class CsIP:
                             "-I VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
+            self.fw.append(
+                ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "front", "-A INPUT -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "front", "-A OUTPUT -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i eth0 -o %s" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i %s -o eth0" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -o %s ! -i eth0 -p tcp" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i %s ! -o eth0 -p tcp" % (self.dev, self.dev)])
             self.fw.append(["nat", "",
                             "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
             self.fw.append(["mangle", "",
@@ -556,18 +570,17 @@ class CsIP:
             self.fw.append(
                 ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
             self.fw.append(
-                ["", "front", "-A NETWORK_STATS_%s -s %s -o %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+                ["", "front", "-A INPUT -j NETWORK_STATS_%s" % self.dev])
             self.fw.append(
-                ["", "front", "-A NETWORK_STATS_%s -d %s -i %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
-
-        self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
-        self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
-        self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
-
-        self.fw.append(["", "", "-A NETWORK_STATS -i eth0 -o eth2 -p tcp"])
-        self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
-        self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
-        self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
+                ["", "front", "-A OUTPUT -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -s %s -o %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -d %s -i %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s ! -s %s -o %s -p tcp" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s ! -d %s -i %s -p tcp" % (self.dev, self.cl.get_vpccidr(), self.dev)])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])

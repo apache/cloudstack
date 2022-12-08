@@ -252,6 +252,200 @@ FROM role_permissions role_perm
 INNER JOIN roles ON role_perm.role_id = roles.id
 WHERE roles.role_type != 'Admin' AND roles.is_default = 1 AND role_perm.rule = 'migrateVolume';
 
+-- VM autoscaling
+
+-- Idempotent ADD COLUMN
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent RENAME COLUMN
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_CHANGE_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_CHANGE_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_new_name VARCHAR(200)
+, IN in_column_new_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1054 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent ADD UNIQUE KEY
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY` (
+    IN in_table_name VARCHAR(200)
+, IN in_key_name VARCHAR(200)
+, IN in_key_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD UNIQUE KEY ', in_key_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent DROP FOREIGN KEY
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
+    IN in_table_name VARCHAR(200)
+, IN in_foreign_key_name VARCHAR(200)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1091, 1025 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Add column 'supports_vm_autoscaling' to 'network_offerings' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
+
+-- Update column 'supports_vm_autoscaling' to 1 if network offerings support Lb
+UPDATE `cloud`.`network_offerings`
+JOIN `cloud`.`ntwk_offering_service_map`
+ON network_offerings.id = ntwk_offering_service_map.network_offering_id
+SET network_offerings.supports_vm_autoscaling = 1
+WHERE ntwk_offering_service_map.service = 'Lb'
+    AND ntwk_offering_service_map.provider IN ('VirtualRouter', 'VpcVirtualRouter', 'Netscaler')
+    AND network_offerings.removed IS NULL;
+
+-- Add column 'name' to 'autoscale_vmgroups' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
+UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
+
+-- Add column 'next_vm_seq' to 'autoscale_vmgroups' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'next_vm_seq', 'BIGINT UNSIGNED NOT NULL DEFAULT 1');
+
+-- Add column 'user_data' to 'autoscale_vmprofiles' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmprofiles', 'user_data', 'TEXT(32768) AFTER `counter_params`');
+
+-- Add column 'name' to 'autoscale_policies' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_policies', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale policy" AFTER `uuid`');
+
+-- Add column 'provider' and update values
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.counter', 'provider', 'VARCHAR(255) NOT NULL COMMENT "Network provider name" AFTER `uuid`');
+UPDATE `cloud`.`counter` SET provider = 'Netscaler' WHERE `provider` IS NULL OR `provider` = '';
+
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value', '(provider, source, value)');
+
+-- Add new counters for VM autoscaling
+
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Public Network - mbps received per vm', 'public.network.received.average.mbps', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Public Network - mbps transmit per vm', 'public.network.transmit.average.mbps', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
+
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Public Network - mbps received per vm', 'public.network.received.average.mbps', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Public Network - mbps transmit per vm', 'public.network.transmit.average.mbps', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
+
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+
+-- Update autoscale_vmgroups to new state
+
+UPDATE `cloud`.`autoscale_vmgroups` SET state= UPPER(state);
+
+-- Update autoscale_vmgroups so records will not be removed when LB rule is removed
+
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.autoscale_vmgroups', 'fk_autoscale_vmgroup__load_balancer_id');
+
+-- Update autoscale_vmprofiles to make autoscale_user_id optional
+
+ALTER TABLE `cloud`.`autoscale_vmprofiles` MODIFY COLUMN `autoscale_user_id` bigint unsigned;
+
+-- Update autoscale_vmprofiles to rename destroy_vm_grace_period
+
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.autoscale_vmprofiles', 'destroy_vm_grace_period', 'expunge_vm_grace_period', 'int unsigned COMMENT "the time allowed for existing connections to get closed before a vm is expunged"');
+
+-- Create table for VM autoscaling historic data
+
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmgroup_id` bigint unsigned NOT NULL,
+  `policy_id` bigint unsigned NOT NULL,
+  `counter_id` bigint unsigned NOT NULL,
+  `resource_id` bigint unsigned DEFAULT NULL,
+  `resource_type` varchar(255) NOT NULL,
+  `raw_value` double NOT NULL,
+  `value_type` varchar(255) NOT NULL,
+  `created` datetime NOT NULL COMMENT 'Date this data is created',
+  `state` varchar(255) NOT NULL COMMENT 'State of the data',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_statistics__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  INDEX `i_autoscale_vmgroup_statistics__vmgroup_id`(`vmgroup_id`),
+  INDEX `i_autoscale_vmgroup_statistics__policy_id`(`policy_id`),
+  INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Update Network offering view with supports_vm_autoscaling
+DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
+CREATE VIEW `cloud`.`network_offering_view` AS
+    SELECT
+        `network_offerings`.`id` AS `id`,
+        `network_offerings`.`uuid` AS `uuid`,
+        `network_offerings`.`name` AS `name`,
+        `network_offerings`.`unique_name` AS `unique_name`,
+        `network_offerings`.`display_text` AS `display_text`,
+        `network_offerings`.`nw_rate` AS `nw_rate`,
+        `network_offerings`.`mc_rate` AS `mc_rate`,
+        `network_offerings`.`traffic_type` AS `traffic_type`,
+        `network_offerings`.`tags` AS `tags`,
+        `network_offerings`.`system_only` AS `system_only`,
+        `network_offerings`.`specify_vlan` AS `specify_vlan`,
+        `network_offerings`.`service_offering_id` AS `service_offering_id`,
+        `network_offerings`.`conserve_mode` AS `conserve_mode`,
+        `network_offerings`.`created` AS `created`,
+        `network_offerings`.`removed` AS `removed`,
+        `network_offerings`.`default` AS `default`,
+        `network_offerings`.`availability` AS `availability`,
+        `network_offerings`.`dedicated_lb_service` AS `dedicated_lb_service`,
+        `network_offerings`.`shared_source_nat_service` AS `shared_source_nat_service`,
+        `network_offerings`.`sort_key` AS `sort_key`,
+        `network_offerings`.`redundant_router_service` AS `redundant_router_service`,
+        `network_offerings`.`state` AS `state`,
+        `network_offerings`.`guest_type` AS `guest_type`,
+        `network_offerings`.`elastic_ip_service` AS `elastic_ip_service`,
+        `network_offerings`.`eip_associate_public_ip` AS `eip_associate_public_ip`,
+        `network_offerings`.`elastic_lb_service` AS `elastic_lb_service`,
+        `network_offerings`.`specify_ip_ranges` AS `specify_ip_ranges`,
+        `network_offerings`.`inline` AS `inline`,
+        `network_offerings`.`is_persistent` AS `is_persistent`,
+        `network_offerings`.`internal_lb` AS `internal_lb`,
+        `network_offerings`.`public_lb` AS `public_lb`,
+        `network_offerings`.`egress_default_policy` AS `egress_default_policy`,
+        `network_offerings`.`concurrent_connections` AS `concurrent_connections`,
+        `network_offerings`.`keep_alive_enabled` AS `keep_alive_enabled`,
+        `network_offerings`.`supports_streched_l2` AS `supports_streched_l2`,
+        `network_offerings`.`supports_public_access` AS `supports_public_access`,
+        `network_offerings`.`supports_vm_autoscaling` AS `supports_vm_autoscaling`,
+        `network_offerings`.`for_vpc` AS `for_vpc`,
+        `network_offerings`.`service_package_id` AS `service_package_id`,
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        `offering_details`.value AS internet_protocol
+    FROM
+        `cloud`.`network_offerings`
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `domain_details` ON `domain_details`.`network_offering_id` = `network_offerings`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
+    GROUP BY
+        `network_offerings`.`id`;
+
+-- UserData as first class resource (PR #6202)
 CREATE TABLE `cloud`.`user_data` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'UUID of the user data',
@@ -524,6 +718,9 @@ SELECT
     `affinity_group`.`uuid` AS `affinity_group_uuid`,
     `affinity_group`.`name` AS `affinity_group_name`,
     `affinity_group`.`description` AS `affinity_group_description`,
+    `autoscale_vmgroups`.`id` AS `autoscale_vmgroup_id`,
+    `autoscale_vmgroups`.`uuid` AS `autoscale_vmgroup_uuid`,
+    `autoscale_vmgroups`.`name` AS `autoscale_vmgroup_name`,
     `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`,
     `user_data`.`id` AS `user_data_id`,
     `user_data`.`uuid` AS `user_data_uuid`,
@@ -531,7 +728,7 @@ SELECT
     `user_vm`.`user_data_details` AS `user_data_details`,
     `vm_template`.`user_data_link_policy` AS `user_data_policy`
 FROM
-    (((((((((((((((((((((((((((((((((`user_vm`
+    (((((((((((((((((((((((((((((((((((`user_vm`
         JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
             AND ISNULL(`vm_instance`.`removed`))))
         JOIN `account` ON ((`vm_instance`.`account_id` = `account`.`id`)))
@@ -569,6 +766,8 @@ FROM
             AND (`async_job`.`job_status` = 0))))
         LEFT JOIN `affinity_group_vm_map` ON ((`vm_instance`.`id` = `affinity_group_vm_map`.`instance_id`)))
         LEFT JOIN `affinity_group` ON ((`affinity_group_vm_map`.`affinity_group_id` = `affinity_group`.`id`)))
+        LEFT JOIN `autoscale_vmgroup_vm_map` ON ((`autoscale_vmgroup_vm_map`.`instance_id` = `vm_instance`.`id`)))
+        LEFT JOIN `autoscale_vmgroups` ON ((`autoscale_vmgroup_vm_map`.`vmgroup_id` = `autoscale_vmgroups`.`id`)))
         LEFT JOIN `user_vm_details` `custom_cpu` ON (((`custom_cpu`.`vm_id` = `vm_instance`.`id`)
             AND (`custom_cpu`.`name` = 'CpuNumber'))))
         LEFT JOIN `user_vm_details` `custom_speed` ON (((`custom_speed`.`vm_id` = `vm_instance`.`id`)

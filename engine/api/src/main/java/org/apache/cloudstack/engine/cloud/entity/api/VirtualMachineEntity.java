@@ -132,7 +132,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * Destroys the VM.
      * @param expunge indicates if vm should be expunged
      */
-    boolean destroy(String caller, boolean expunge) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
+    boolean destroy(boolean expunge) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
 
     /**
      * Duplicate this VM in the database so that it will start new

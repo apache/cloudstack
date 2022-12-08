@@ -38,11 +38,12 @@ public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements C
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.LIKE);
         AllFieldsSearch.and("source", AllFieldsSearch.entity().getSource(), Op.EQ);
+        AllFieldsSearch.and("provider", AllFieldsSearch.entity().getProvider(), Op.EQ);
         AllFieldsSearch.done();
     }
 
     @Override
-    public List<CounterVO> listCounters(Long id, String name, String source, String keyword, Filter filter) {
+    public List<CounterVO> listCounters(Long id, String name, String source, String provider, String keyword, Filter filter) {
         SearchCriteria<CounterVO> sc = AllFieldsSearch.create();
 
         if (keyword != null) {
@@ -52,15 +53,18 @@ public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements C
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (source != null) {
-            sc.addAnd("source", SearchCriteria.Op.EQ, source);
+            sc.setParameters("source", source);
+        }
+        if (provider != null) {
+            sc.setParameters("provider", provider);
         }
         return listBy(sc, filter);
     }

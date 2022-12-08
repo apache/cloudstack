@@ -373,6 +373,7 @@ import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -3358,6 +3359,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateAutoScalePolicyCmd.class);
         cmdList.add(UpdateAutoScaleVmGroupCmd.class);
         cmdList.add(UpdateAutoScaleVmProfileCmd.class);
+        cmdList.add(UpdateConditionCmd.class);
         cmdList.add(ListCapabilitiesCmd.class);
         cmdList.add(ListEventsCmd.class);
         cmdList.add(ListEventTypesCmd.class);

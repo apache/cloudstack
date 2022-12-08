@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VolumeDao;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -165,6 +167,12 @@ public class UserVmManagerImplTest {
 
     @Mock
     UserDataDao userDataDao;
+
+    @Mock
+    private VolumeVO volumeVOMock;
+
+    @Mock
+    private VolumeDao volumeDaoMock;
 
     private long vmId = 1l;
 
@@ -855,5 +863,15 @@ public class UserVmManagerImplTest {
 
         Assert.assertEquals("testUserdata", userVmVO.getUserData());
         Assert.assertEquals(1L, (long)userVmVO.getUserDataId());
+    }
+
+    @Test
+    public void recoverRootVolumeTestDestroyState() {
+        Mockito.doReturn(Volume.State.Destroy).when(volumeVOMock).getState();
+
+        userVmManagerImpl.recoverRootVolume(volumeVOMock, vmId);
+
+        Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
+        Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
     }
 }
