@@ -59,6 +59,7 @@ jobs:
           sudo systemctl set-environment MYSQLD_OPTS="--skip-networking --skip-grant-tables"
           sudo systemctl start mysql
           sudo mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+          sudo systemctl unset-environment MYSQLD_OPTS
           sudo systemctl restart mysql
 
       - name: Env details
