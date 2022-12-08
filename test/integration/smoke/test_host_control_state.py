@@ -26,6 +26,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
+                               list_hosts,
                                list_routers,
                                list_ssvms)
 from marvin.lib.base import (Account,
@@ -33,6 +34,8 @@ from marvin.lib.base import (Account,
                              Host,
                              ServiceOffering,
                              VirtualMachine)
+from marvin.sshClient import SshClient
+import time
 
 
 class TestHostControlState(cloudstackTestCase):
@@ -45,6 +48,7 @@ class TestHostControlState(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         cls.template = get_template(
             cls.apiclient,
@@ -112,6 +116,22 @@ class TestHostControlState(cloudstackTestCase):
         response = self.apiclient.updateHost(cmd)
         self.assertEqual(response.resourcestate, "Enabled")
 
+    def get_host_ipaddress(self, hostId):
+        hosts = list_hosts(
+            self.apiclient,
+            type='Routing',
+            id=hostId
+        )
+        return hosts[0].ipaddress
+
+    def stop_agent(self, host_ipaddress):
+        SshClient(host_ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
+            ("systemctl stop cloudstack-agent || service cloudstack-agent stop")
+
+    def start_agent(self, host_ipaddress):
+        SshClient(host_ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"]).execute\
+            ("systemctl start cloudstack-agent || service cloudstack-agent start")
+
     def verify_uservm_host_control_state(self, vm_id, state):
         list_vms = VirtualMachine.list(
             self.apiclient,
@@ -159,8 +179,23 @@ class TestHostControlState(cloudstackTestCase):
         self.disable_host(host_id)
         self.verify_uservm_host_control_state(self.vm.id, "Disabled")
 
-        self.enable_host(host_id)
-        self.verify_uservm_host_control_state(self.vm.id, "Enabled")
+        if self.hypervisor == "kvm":
+            host_ipaddress = self.get_host_ipaddress(host_id)
+
+            self.stop_agent(host_ipaddress)
+            time.sleep(5)  # wait for the host to be Disconnected
+            self.verify_uservm_host_control_state(self.vm.id, "Offline")
+
+            self.enable_host(host_id)
+            self.verify_uservm_host_control_state(self.vm.id, "Offline")
+
+            self.start_agent(host_ipaddress)
+            time.sleep(10)  # wait for the host to be Up
+            self.verify_uservm_host_control_state(self.vm.id, "Enabled")
+
+        else:
+            self.enable_host(host_id)
+            self.verify_uservm_host_control_state(self.vm.id, "Enabled")
 
     @attr(tags=["basic", "advanced"], required_hardware="false")
     def test_ssvm_host_control_state(self):
