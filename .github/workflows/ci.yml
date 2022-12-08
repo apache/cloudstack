@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     strategy:
+      fail-fast: false
       matrix:
         tests: [ "smoke/test_certauthority_root",
                  "smoke/test_accounts
