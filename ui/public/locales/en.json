@@ -2637,7 +2637,7 @@
 "message.volume.state.attaching": "The volume is attaching to a volume from Ready state.",
 "message.volume.state.copying": "Volume is copying from image store to primary, in case it's an uploaded volume.",
 "message.volume.state.creating": "The volume is being created.",
-"message.volume.state.destroy": "The volume has been destroyed and cannot be recovered.",
+"message.volume.state.destroy": "The volume has been destroyed.",
 "message.volume.state.destroying": "The volume is being destroyed, and cannot be recovered.",
 "message.volume.state.expunged": "The volume has been expunged.",
 "message.volume.state.expunging": "The volume is being expunged",
