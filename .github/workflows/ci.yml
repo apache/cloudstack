@@ -158,7 +158,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '11'
@@ -166,11 +166,16 @@ jobs:
           architecture: x64
           cache: maven
 
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.8'
           architecture: 'x64'
+
+      - name: Set up Node 14
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
 
       - name: Install Build Dependencies
         run: |
@@ -204,11 +209,6 @@ jobs:
           sudo systemctl restart mysql
           sudo mysql -uroot -e "SELECT VERSION();"
 
-      #- name: RAT licence checks
-      #  run: |
-      #    mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
-      #    find rat.txt -type f -exec echo -e "Printing RAT license-failures {} :\n" \; -exec cat {} \;
-
       - name: Build with Maven
         run: |
           mvn -B -P developer,systemvm -Dsimulator clean install
@@ -223,11 +223,12 @@ jobs:
       - name: Start CloudStack Management Server with Simulator
         run: |
           export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom"
-          #mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log &
+          echo -e "\nStarting simulator"
           set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
           while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
           set -e
+          echo -e "\nStarting Advanced Zone DataCenter deployment"
           python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
 
       - name: Run Integration Tests with Simulator
@@ -238,8 +239,8 @@ jobs:
           TESTS="${{ matrix.tests }}"
           echo "Tests in this job: $TESTS"
 
-          TESTS=$(echo $TESTS | tr -d '\n' | tr -s ' ')
-          for suite in "$TESTS" ; do
+          TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
+          for suite in "${TESTS[@]}" ; do
             echo "Currently running test: $suite"
             time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
           done
