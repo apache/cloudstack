@@ -19,6 +19,10 @@ name: RAT License Check
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -35,7 +39,8 @@ jobs:
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
           mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
-      - name: Rat Failures
+      - name: Rat Report
         if: always()
         run: |
+          cat target/rat.txt || true
           find rat.txt -type f -exec echo -e "Printing RAT license-failures {} :\n" \; -exec cat {} \;

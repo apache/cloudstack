@@ -19,6 +19,10 @@ name: Simulator CI
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -215,7 +219,7 @@ jobs:
 
       - name: Setup Simulator Prerequisites
         run: |
-          python3 -m pip install --user --upgrade http://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-2.0.4.zip#md5=3df394d89300db95163f17c843ef49df 2>&1 > /dev/null
+          sudo python3 -m pip install --upgrade netaddr mysql-connector-python
           python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
           mvn -q -Pdeveloper -pl developer -Ddeploydb
           mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
@@ -250,4 +254,4 @@ jobs:
 
       - name: Integration Tests Result
         run: |
-          python3 ./tools/travis/xunit-reader.py integration-test-results/
+          python3 ./tools/marvin/xunit-reader.py integration-test-results/

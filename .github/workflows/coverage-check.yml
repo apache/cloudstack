@@ -19,6 +19,10 @@ name: PR Quality Check
 
 on: [pull_request_target]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: JaCoCo Coverage
