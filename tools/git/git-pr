@@ -61,7 +61,7 @@ repoName=$(basename `git rev-parse --show-toplevel`)
 export LANG="en_EN.UTF-8"
 
 if [ "${prId}" -eq "${prId}" 2>/dev/null ]; then
-  # Get json data from GitHub API
+  # Get json data from Github API
   curl -s https://api.github.com/repos/apache/${repoName}/pulls/${prId} > ${jsonTmp}
 else
   echo "ERROR: Pull-request id must be an integer, not '${prId}'"
