@@ -247,4 +247,5 @@ jobs:
 
       - name: Integration Tests Result
         run: |
+          echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
