@@ -57,8 +57,8 @@ jobs:
                   smoke/test_domain_disk_offerings
                   smoke/test_domain_network_offerings
                   smoke/test_domain_service_offerings
-                  smoke/test_domain_vpc_offerings
-                  smoke/test_dynamicroles
+                  smoke/test_domain_vpc_offerings",
+                "smoke/test_dynamicroles
                   smoke/test_enable_account_settings_for_domain
                   smoke/test_enable_role_based_users_in_projects
                   smoke/test_events_resource
@@ -81,7 +81,7 @@ jobs:
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
                   smoke/test_nested_virtualization",
-                 "smoke/test_network
+                "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
                   smoke/test_network_permissions
@@ -106,8 +106,8 @@ jobs:
                   smoke/test_reset_configuration_settings
                   smoke/test_reset_vm_on_reboot
                   smoke/test_resource_accounting
-                  smoke/test_resource_detail
-                  smoke/test_router_dhcphosts
+                  smoke/test_resource_detail",
+                "smoke/test_router_dhcphosts
                   smoke/test_router_dns
                   smoke/test_router_dnsservice
                   smoke/test_routers
@@ -185,11 +185,11 @@ jobs:
                 "component/test_volumes
                   component/test_vpc
                   component/test_vpc_distributed_routing_offering
-                  component/test_vpc_network",
-                "component/test_vpc_network_lbrules
+                  component/test_vpc_network
                   component/test_vpc_offerings
                   component/test_vpc_routers
-                  component/test_vpn_users" ]
+                  component/test_vpn_users",
+                "component/test_vpc_network_lbrules" ]
 
     steps:
       - uses: actions/checkout@v3
@@ -270,10 +270,11 @@ jobs:
 
           TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
           for suite in "${TESTS[@]}" ; do
-            echo "Currently running test: $suite"
+            echo -e "Currently running test: $suite\n"
             time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
           done
 
+          echo -e "Stopping Simulator, integration tests run completed\n"
           mvn -Dsimulator -pl client jetty:stop 2>&1
           find /tmp//MarvinLogs -type f -exec echo -e "Printing marvin logs {} :\n" \; -exec cat {} \;
 
