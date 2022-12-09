@@ -37,4 +37,5 @@ jobs:
           mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
       - name: Rat Failures
         if: always()
+        run: |
           find rat.txt -type f -exec echo -e "Printing RAT license-failures {} :\n" \; -exec cat {} \;
