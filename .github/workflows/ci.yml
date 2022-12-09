@@ -62,13 +62,11 @@ jobs:
                   smoke/test_enable_account_settings_for_domain
                   smoke/test_enable_role_based_users_in_projects
                   smoke/test_events_resource
-                  smoke/test_gateway_on_shared_networks
                   smoke/test_global_settings
                   smoke/test_guest_vlan_range
                   smoke/test_host_maintenance
                   smoke/test_hostha_kvm
                   smoke/test_hostha_simulator
-                  smoke/test_human_readable_logs
                   smoke/test_internal_lb
                   smoke/test_ipv6_infra
                   smoke/test_iso
@@ -119,12 +117,10 @@ jobs:
                   smoke/test_snapshots
                   smoke/test_ssvm
                   smoke/test_staticroles
-                  smoke/test_storage_policy
                   smoke/test_templates
                   smoke/test_update_security_group
                   smoke/test_usage
                   smoke/test_usage_events
-                  smoke/test_vm_autoscaling
                   smoke/test_vm_deployment_planner
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
