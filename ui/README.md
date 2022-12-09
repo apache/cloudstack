@@ -17,6 +17,10 @@ Install node: (CentOS/Fedora/RHEL)
     curl -sL https://rpm.nodesource.com/setup_16.x | sudo bash -
     sudo yum install nodejs
 
+Install node: (Mac OS)
+
+    brew install node@16
+
 Optionally, you may also install system-wide dev tools:
 
     sudo npm install -g @vue/cli npm-check-updates
@@ -36,6 +40,10 @@ Override the default `CS_URL` to a running CloudStack management server:
 
 To configure https, you may use `.env.local.https.example`.
 
+To use the community Simulator QA server you can do this:
+
+    echo "CS_URL=https://qa.cloudstack.cloud" > .env.local
+
 Build and run:
 
     npm run serve
@@ -45,9 +53,8 @@ Upgrade dependencies to the latest versions:
 
     ncu -u
 
-Run Tests:
+Run Lint and Unit Tests:
 
-    npm run test
     npm run lint
     npm run test:unit
 
