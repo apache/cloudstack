@@ -8,13 +8,13 @@ A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
 Install node: (Debian/Ubuntu)
 
-    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     sudo apt-get install -y nodejs
     # Or use distro provided: sudo apt-get install npm nodejs
 
 Install node: (CentOS/Fedora/RHEL)
 
-    curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+    curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
     sudo yum install nodejs
 
 Optionally, you may also install system-wide dev tools:
@@ -125,7 +125,7 @@ The following is tested to work on any Ubuntu 18.04/20.04 base installation or
 docker container:
 
     # Install nodejs (lts)
-    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     sudo apt-get install -y nodejs debhelper rpm
     # Install build tools
     npm install -g @vue/cli webpack eslint
@@ -135,7 +135,7 @@ docker container:
 
 ## Documentation
 
-- VueJS Guide: https://vuejs.org/v2/guide/
+- VueJS Guide: https://vuejs.org/guide/
 - Vue Ant Design: https://www.antdv.com/docs/vue/introduce/
 - UI Developer [Docs](docs)
 - JavaScript ES6 Reference: https://www.tutorialspoint.com/es6/
