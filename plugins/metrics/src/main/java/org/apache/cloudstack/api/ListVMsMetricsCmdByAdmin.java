@@ -27,7 +27,7 @@ import org.apache.cloudstack.response.VmMetricsResponse;
 
 @APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
-        since = "4.9.3", authorized = {RoleType.Admin})
+        authorized = {RoleType.Admin})
 public class ListVMsMetricsCmdByAdmin extends ListVMsMetricsCmd implements AdminCmd {
 
     /////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ public class ListVMsMetricsCmdByAdmin extends ListVMsMetricsCmd implements Admin
     private Long storageId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = BaseCmd.CommandType.UUID, entityType = ClusterResponse.class,
-            description = "the cluster ID", since = "4.16.0")
+            description = "the cluster ID")
     private Long clusterId;
 
 
