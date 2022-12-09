@@ -38,9 +38,10 @@ jobs:
       - name: RAT licence checks
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
+          rm -fr nonoss
           mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
       - name: Rat Report
         if: always()
         run: |
+          echo -e "Printing RAT report\n"
           cat target/rat.txt || true
-          find rat.txt -type f -exec echo -e "Printing RAT license-failures {} :\n" \; -exec cat {} \;
