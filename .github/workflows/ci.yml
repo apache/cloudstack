@@ -30,38 +30,60 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tests: [ "smoke/test_certauthority_root",
-                 "smoke/test_accounts
+        tests: [ "smoke/test_accounts
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
+                  smoke/test_annotations
                   smoke/test_async_job
+                  smoke/test_attach_multiple_volumes
                   smoke/test_backup_recovery_dummy
+                  smoke/test_certauthority_root
+                  smoke/test_console_endpoint
                   smoke/test_create_list_domain_account_project
                   smoke/test_create_network
                   smoke/test_deploy_vgpu_enabled_vm
+                  smoke/test_deploy_virtio_scsi_vm
                   smoke/test_deploy_vm_extra_config_data
                   smoke/test_deploy_vm_iso
+                  smoke/test_deploy_vm_iso_uefi
                   smoke/test_deploy_vm_root_resize
                   smoke/test_deploy_vm_with_userdata
+                  smoke/test_deploy_vms_in_parallel
                   smoke/test_deploy_vms_with_varied_deploymentplanners
                   smoke/test_diagnostics
+                  smoke/test_direct_download
                   smoke/test_disk_offerings
+                  smoke/test_disk_provisioning_types
+                  smoke/test_domain_disk_offerings
+                  smoke/test_domain_network_offerings
+                  smoke/test_domain_service_offerings
+                  smoke/test_domain_vpc_offerings
                   smoke/test_dynamicroles
+                  smoke/test_enable_account_settings_for_domain
+                  smoke/test_enable_role_based_users_in_projects
+                  smoke/test_events_resource
+                  smoke/test_gateway_on_shared_networks
                   smoke/test_global_settings
                   smoke/test_guest_vlan_range
-                  smoke/test_annotations
                   smoke/test_host_maintenance
-                  smoke/test_hostha_simulator",
-                 "smoke/test_internal_lb
+                  smoke/test_hostha_kvm
+                  smoke/test_hostha_simulator
+                  smoke/test_human_readable_logs
+                  smoke/test_internal_lb
+                  smoke/test_ipv6_infra
                   smoke/test_iso
+                  smoke/test_kubernetes_clusters
+                  smoke/test_kubernetes_supported_versions
                   smoke/test_list_ids_parameter
                   smoke/test_loadbalance
                   smoke/test_login
                   smoke/test_metrics_api
+                  smoke/test_migration
                   smoke/test_multipleips_per_nic
-                  smoke/test_nested_virtualization
-                  smoke/test_network
+                  smoke/test_nested_virtualization",
+                 "smoke/test_network
                   smoke/test_network_acl
+                  smoke/test_network_ipv6
                   smoke/test_network_permissions
                   smoke/test_nic
                   smoke/test_nic_adapter_type
@@ -70,19 +92,24 @@ jobs:
                   smoke/test_outofbandmanagement_nestedplugin
                   smoke/test_over_provisioning
                   smoke/test_password_server
+                  smoke/test_persistent_network
                   smoke/test_portable_publicip
                   smoke/test_portforwardingrules
+                  smoke/test_primary_storage
                   smoke/test_privategw_acl
                   smoke/test_privategw_acl_ovs_gre
                   smoke/test_projects
-                  smoke/test_public_ip_range",
-                 "smoke/test_pvlan
+                  smoke/test_public_ip_range
+                  smoke/test_pvlan
                   smoke/test_regions
+                  smoke/test_register_userdata
+                  smoke/test_reset_configuration_settings
                   smoke/test_reset_vm_on_reboot
                   smoke/test_resource_accounting
                   smoke/test_resource_detail
                   smoke/test_router_dhcphosts
                   smoke/test_router_dns
+                  smoke/test_router_dnsservice
                   smoke/test_routers
                   smoke/test_routers_iptables_default_policy
                   smoke/test_routers_network_ops
@@ -92,17 +119,22 @@ jobs:
                   smoke/test_snapshots
                   smoke/test_ssvm
                   smoke/test_staticroles
+                  smoke/test_storage_policy
                   smoke/test_templates
                   smoke/test_update_security_group
                   smoke/test_usage
-                  smoke/test_usage_events",
-                "smoke/test_vm_life_cycle
+                  smoke/test_usage_events
+                  smoke/test_vm_autoscaling
+                  smoke/test_vm_deployment_planner
+                  smoke/test_vm_life_cycle
+                  smoke/test_vm_lifecycle_unmanage_import
+                  smoke/test_vm_snapshot_kvm
                   smoke/test_vm_snapshots
                   smoke/test_volumes
+                  smoke/test_vpc_ipv6
                   smoke/test_vpc_redundant
                   smoke/test_vpc_router_nics
-                  smoke/test_vpc_vpn
-                  smoke/test_primary_storage",
+                  smoke/test_vpc_vpn",
                 "component/find_hosts_for_migration
                   component/test_acl_isolatednetwork
                   component/test_acl_isolatednetwork_delete
