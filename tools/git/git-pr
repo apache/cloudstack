@@ -69,7 +69,7 @@ else
 fi
 
 # Get vars from the GitHub API and parse the returned json
-prAuthor=$(cat ${jsonTmp} | python -c "
+prAuthor=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['user']['login'].encode('utf-8').decode('ascii','ignore'))
@@ -77,7 +77,7 @@ except:
   print ('')
 ")
 
-prTitle=$(cat ${jsonTmp} | python -c "
+prTitle=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['title'].encode('utf-8').decode('ascii','ignore'))
@@ -85,7 +85,7 @@ except:
   print ('')
 ")
 
-prBody=$(cat ${jsonTmp} | python -c "
+prBody=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['body'].encode('utf-8').decode('ascii','ignore'))
@@ -93,7 +93,7 @@ except:
   print ('')
 ")
 
-prOriginBranch=$(cat ${jsonTmp} | python -c "
+prOriginBranch=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['head']['label'].encode('utf-8').decode('ascii','ignore'))
@@ -101,7 +101,7 @@ except:
   print ('')
 " | sed -e "s/:/\//")
 
-prState=$(cat ${jsonTmp} | python -c "
+prState=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['state'].encode('utf-8').decode('ascii','ignore'))
@@ -109,7 +109,7 @@ except:
   print ('Unknown')
 ")
 
-prMergeableState=$(cat ${jsonTmp} | python -c "
+prMergeableState=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['mergeable_state'].encode('utf-8').decode('ascii','ignore'))
@@ -117,7 +117,7 @@ except:
   print ('Unknown')
 ")
 
-prDestinationBranch=$(cat ${jsonTmp} | python -c "
+prDestinationBranch=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['base']['ref'].encode('utf-8').decode('ascii','ignore'))
@@ -125,7 +125,7 @@ except:
   print ('Unknown')
 ")
 
-prCommits=$(cat ${jsonTmp} | python -c "
+prCommits=$(cat ${jsonTmp} | python3 -c "
 try:
   import sys, json
   print (json.load(sys.stdin)['commits'])
