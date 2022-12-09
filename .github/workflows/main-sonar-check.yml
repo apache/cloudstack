@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Main Branch Quality Check
+name: Main Branch Sonar Quality Check
 
 on:
   push:
