@@ -208,7 +208,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -T2 -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -Dmaven.test.skip=true
+          mvn -T2 -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
 
       - name: Setup Simulator Prerequisites
         run: |
