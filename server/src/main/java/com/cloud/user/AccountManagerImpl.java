@@ -344,6 +344,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             true,
             ConfigKey.Scope.Domain);
 
+    public static ConfigKey<String> userTwoFactorAuthenticationIssuer = new ConfigKey<String>("Advanced",
+            String.class,
+            "user.two.factor.authentication.issuer",
+            "CloudStack",
+            "Name of the issuer of two factor authentication",
+            true,
+            ConfigKey.Scope.Global);
+
     ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
             "user.two.factor.authentication.default.provider",
             "google",
@@ -3183,7 +3191,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication, userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication};
+        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
+                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {

@@ -159,7 +159,12 @@ export default {
           this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
           if (this.selectedProvider === 'google') {
             this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
-            this.googleUrl = 'otpauth://totp/CloudStack:' + this.username + '?secret=' + this.pin + '&issuer=CloudStack'
+
+            api('listConfigurations', { name: 'user.two.factor.authentication.issuer' }).then(json => {
+              var issuer = json.listconfigurationsresponse.configuration[0].value
+              this.googleUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
+            })
+
             this.showPin = false
           }
           if (this.selectedProvider === 'staticpin') {
