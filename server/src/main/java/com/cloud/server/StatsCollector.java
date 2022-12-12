@@ -287,7 +287,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             "When set to 'true' stats for VM disks will be stored in the database otherwise disk stats will not be stored", true);
 
     protected static ConfigKey<Integer> vmDiskStatsMaxRetentionTime = new ConfigKey<>("Advanced", Integer.class, "vm.disk.stats.max.retention.time", "720",
-            "The maximum time (in minutes) for keeping Volume stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
+            "The maximum time (in minutes) for keeping VM disks stats records in the database. The VM disks stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
 
     private static StatsCollector s_instance = null;
 
