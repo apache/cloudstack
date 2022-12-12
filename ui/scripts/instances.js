@@ -2564,9 +2564,6 @@
                             cpunumber: {
                                 label: 'label.num.cpu.cores'
                             },
-                            cpuspeed: {
-                                label: 'label.cpu.mhz'
-                            },
                             memory: {
                                 label: 'label.memory.mb'
                             },
