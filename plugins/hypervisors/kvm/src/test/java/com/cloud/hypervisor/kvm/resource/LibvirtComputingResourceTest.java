@@ -59,7 +59,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
