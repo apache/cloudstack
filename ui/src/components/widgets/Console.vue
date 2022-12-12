@@ -30,7 +30,6 @@ import Vue from 'vue'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import { uuid } from 'vue-uuid'
 
 export default {
   name: 'Console',
@@ -46,8 +45,7 @@ export default {
   },
   data () {
     return {
-      url: '',
-      tokenValidationEnabled: false
+      url: ''
     }
   },
   components: {
@@ -56,20 +54,9 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
-  mounted () {
-    this.verifyExtraValidationEnabled()
-  },
   methods: {
-    verifyExtraValidationEnabled () {
-      api('listConfigurations', { name: 'consoleproxy.extra.security.validation.enabled' }).then(json => {
-        this.tokenValidationEnabled = json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value === 'true'
-      })
-    },
     consoleUrl () {
       const params = {}
-      if (this.tokenValidationEnabled) {
-        params.token = uuid.v4()
-      }
       params.virtualmachineid = this.resource.id
       api('createConsoleEndpoint', params).then(json => {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'

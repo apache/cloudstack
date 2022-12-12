@@ -50,7 +50,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -59,8 +58,10 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -88,6 +89,10 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private final Gson gson = new GsonBuilder().create();
 
     public static final Logger s_logger = Logger.getLogger(ConsoleAccessManagerImpl.class.getName());
+
+    private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
+            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+    );
 
     private static Set<String> allowedSessions;
 
@@ -127,13 +132,6 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             if (!checkSessionPermission(vm, account)) {
                 return new ConsoleEndpoint(false, null, "Permission denied");
-            }
-
-            if (BooleanUtils.isTrue(ConsoleAccessManager.ConsoleProxyExtraSecurityValidationEnabled.value()) &&
-                StringUtils.isBlank(extraSecurityToken)) {
-                String errorMsg = "Extra security validation is enabled but the extra token is missing";
-                s_logger.error(errorMsg);
-                return new ConsoleEndpoint(false, errorMsg);
             }
 
             String sessionUuid = UUID.randomUUID().toString();
@@ -202,15 +200,22 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             throw new CloudRuntimeException(msg);
         }
 
+        String vmUuid = vm.getUuid();
+        if (unsupportedConsoleVMState.contains(vm.getState())) {
+            msg = "VM " + vmUuid + " must be running to connect console, sending blank response for console access request";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
         if (vm.getHostId() == null) {
-            msg = "VM " + vmId + " lost host info, sending blank response for console access request";
+            msg = "VM " + vmUuid + " lost host info, sending blank response for console access request";
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
         HostVO host = managementServer.getHostBy(vm.getHostId());
         if (host == null) {
-            msg = "VM " + vmId + "'s host does not exist, sending blank response for console access request";
+            msg = "VM " + vmUuid + "'s host does not exist, sending blank response for console access request";
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -467,6 +472,6 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] { ConsoleProxyExtraSecurityValidationEnabled };
+        return new ConfigKey[] {};
     }
 }
