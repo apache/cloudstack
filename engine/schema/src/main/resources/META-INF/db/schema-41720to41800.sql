@@ -298,15 +298,6 @@ BEGIN
 -- Add column 'supports_vm_autoscaling' to 'network_offerings' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
 
--- Update column 'supports_vm_autoscaling' to 1 if network offerings support Lb
-UPDATE `cloud`.`network_offerings`
-JOIN `cloud`.`ntwk_offering_service_map`
-ON network_offerings.id = ntwk_offering_service_map.network_offering_id
-SET network_offerings.supports_vm_autoscaling = 1
-WHERE ntwk_offering_service_map.service = 'Lb'
-    AND ntwk_offering_service_map.provider IN ('VirtualRouter', 'VpcVirtualRouter', 'Netscaler')
-    AND network_offerings.removed IS NULL;
-
 -- Add column 'name' to 'autoscale_vmgroups' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
 UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
@@ -445,6 +436,16 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
     GROUP BY
         `network_offerings`.`id`;
+
+-- Update column 'supports_vm_autoscaling' to 1 if network offerings support Lb
+UPDATE `cloud`.`network_offerings`
+JOIN `cloud`.`ntwk_offering_service_map`
+ON network_offerings.id = ntwk_offering_service_map.network_offering_id
+SET network_offerings.supports_vm_autoscaling = 1
+WHERE ntwk_offering_service_map.service = 'Lb'
+    AND ntwk_offering_service_map.provider IN ('VirtualRouter', 'VpcVirtualRouter', 'Netscaler')
+    AND network_offerings.removed IS NULL
+    AND (SELECT COUNT(id) AS count FROM `network_offering_view` WHERE supports_vm_autoscaling = 1) = 0;
 
 -- UserData as first class resource (PR #6202)
 CREATE TABLE `cloud`.`user_data` (
