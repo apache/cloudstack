@@ -576,6 +576,25 @@ setup_vpc_apache2() {
   setup_apache2_common
 }
 
+setup_vpc_mgmt_route() {
+  log_it "Set up route for management network: $MGMTNET via local gateway: $LOCAL_GW for device eth$1 for hypervisor: $HYPERVISOR"
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    mgmt_route_rule="$MGMTNET via $LOCAL_GW dev eth${1}"
+    if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];
+    then
+      exist=`sudo ip route show $mgmt_route_rule | wc -l`
+      if [ $exist -eq 0 ]
+      then
+          log_it "Add route for management network via local gateway, hypervisor: $HYPERVISOR, rule: $mgmt_route_rule"
+          sudo ip route add $mgmt_route_rule
+          # workaround to activate vSwitch under VMware
+          timeout 3 ping -n -c 3 $LOCAL_GW || true
+      fi
+    fi
+  fi
+}
+
 clean_ipalias_config() {
   rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
   rm -f /etc/apache2/sites-available/ipAlias*

@@ -54,15 +54,7 @@ setup_vpcrouter() {
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS2" >> /etc/resolv.conf
   fi
-  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
-  then
-     if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];
-     then
-         ip route add $MGMTNET via $LOCAL_GW dev eth0
-         # workaround to activate vSwitch under VMware
-         timeout 3 ping -n -c 3 $LOCAL_GW || true
-     fi
-  fi
+  setup_vpc_mgmt_route "0"
 
   ip route delete default
   # create route table for static route

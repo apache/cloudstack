@@ -190,6 +190,7 @@ setup_interface_sshd() {
   elif [ "$TYPE" == "vpcrouter" ]; then
     init_interfaces "eth0"
     setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+    setup_vpc_mgmt_route "0"
     setup_sshd $ETH0_IP "eth0"
 
   elif [ "$TYPE" == "ilbvm" ]; then
