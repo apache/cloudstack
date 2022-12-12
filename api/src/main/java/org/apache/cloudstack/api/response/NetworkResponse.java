@@ -255,6 +255,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
     private Boolean redundantRouter;
 
+    @SerializedName(ApiConstants.SUPPORTS_VM_AUTOSCALING)
+    @Param(description = "if network offering supports vm autoscaling feature", since = "4.18.0")
+    private Boolean supportsVmAutoScaling;
+
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
@@ -532,6 +536,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setRedundantRouter(Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    public Boolean getSupportsVmAutoScaling() {
+        return supportsVmAutoScaling;
+    }
+
+    public void setSupportsVmAutoScaling(Boolean supportsVmAutoScaling) {
+        this.supportsVmAutoScaling = supportsVmAutoScaling;
     }
 
     public String getVpcName() {

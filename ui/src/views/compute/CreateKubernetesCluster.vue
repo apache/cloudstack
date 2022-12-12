@@ -292,7 +292,7 @@ export default {
           {
             validator: async (rule, value) => {
               if (value && (isNaN(value) || value < 8)) {
-                return Promise.reject(this.$t('messgae.validate.min').replace('{0}', '8GB'))
+                return Promise.reject(this.$t('message.validate.min').replace('{0}', '8GB'))
               }
               return Promise.resolve()
             }

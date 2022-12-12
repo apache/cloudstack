@@ -1462,7 +1462,7 @@
 "message.validate.range.length": "Gelieve een waarde tussen de {0} en {1} karakters lang in te geven.",
 "message.vm.review.launch": "Gelieve de volgende gegevens te verifi\u00ebren te bevestigen zodat uw instantie gestart kan worden.",
 "message.zone.creation.complete": "De installatie van de zone is compleet",
-"messgae.validate.min": "Gelieve een waarde groter of gelijk aan {0} in te geven.",
+"message.validate.min": "Gelieve een waarde groter of gelijk aan {0} in te geven.",
 "side.by.side": "Zij aan Zij",
 "state.completed": "Uitgevoerd",
 "state.declined": "Geweigerd",

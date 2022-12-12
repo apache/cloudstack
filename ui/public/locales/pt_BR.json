@@ -2470,7 +2470,7 @@
 "message.zone.creation.complete": "Cria\u00e7\u00e3o de zona completa",
 "message.zone.detail.description": "Preencha os detalhes da zona",
 "message.zone.detail.hint": "Uma zona \u00e9 a maior unidade organizacional no CloudStack, e normalmente corresponde a um \u00fanico datacenter. As zonas proporcionam isolamento f\u00edsico e redund\u00e2ncia. Uma zona consiste em um ou mais pods (cada um contendo hosts e servidores de armazenamento prim\u00e1rio) e um servidor de armazenamento secund\u00e1rio que \u00e9 compartilhado por todos os pods da zona.",
-"messgae.validate.min": "Por favor entre com um valor maior que ou igual a {0}.",
+"message.validate.min": "Por favor entre com um valor maior que ou igual a {0}.",
 "migrate.from": "Migrar de",
 "migrate.to": "Migrar para",
 "migrationPolicy": "Pol\u00edtica de migra\u00e7\u00e3o",
