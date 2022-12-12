@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
 import org.apache.cloudstack.api.ListSystemVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListUsageServerMetricsCmd;
 import org.apache.cloudstack.api.ListVMsMetricsCmd;
+import org.apache.cloudstack.api.ListVMsMetricsCmdByAdmin;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVolumesMetricsCmd;
 import org.apache.cloudstack.api.ListVolumesUsageHistoryCmd;
@@ -1077,6 +1078,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         cmdList.add(ListVMsUsageHistoryCmd.class);
         cmdList.add(ListSystemVMsUsageHistoryCmd.class);
         cmdList.add(ListVolumesUsageHistoryCmd.class);
+        // separate Admin commands
+        cmdList.add(ListVMsMetricsCmdByAdmin.class);
         return cmdList;
     }
 

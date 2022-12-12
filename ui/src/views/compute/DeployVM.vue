@@ -1942,6 +1942,7 @@ export default {
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
           deployVmData.templateid = values.templateid
+          values.hypervisor = null
         } else {
           deployVmData.templateid = values.isoid
         }
