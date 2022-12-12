@@ -329,15 +329,39 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long bytesSent;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
-    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0")
     ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_ID)
+    @Param(description = "ID of AutoScale VM group", since = "4.18.0")
+    String autoScaleVmGroupId;
+
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_NAME)
+    @Param(description = "Name of AutoScale VM group", since = "4.18.0")
+    String autoScaleVmGroupName;
+
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
+    private String userData;
+
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.0")
+    private String userDataId;
+
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.0")
+    private String userDataName;
+
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
+    private String userDataPolicy;
+
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0")
+    private String userDataDetails;
+
     public UserVmResponse() {
-        securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
+        securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
-        tags = new LinkedHashSet<ResourceTagResponse>();
-        tagIds = new LinkedHashSet<Long>();
-        affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
+        tags = new LinkedHashSet<>();
+        tagIds = new LinkedHashSet<>();
+        affinityGroupList = new LinkedHashSet<>();
     }
 
     public void setHypervisor(String hypervisor) {
@@ -602,6 +626,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getServiceState() {
         return serviceState;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public void setIsDynamicallyScalable(Boolean isDynamicallyScalable) {
@@ -952,4 +980,57 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
     }
+
+    public void setAutoScaleVmGroupId(String autoScaleVmGroupId) {
+        this.autoScaleVmGroupId = autoScaleVmGroupId;
+    }
+
+    public void setAutoScaleVmGroupName(String autoScaleVmGroupName) {
+        this.autoScaleVmGroupName = autoScaleVmGroupName;
+    }
+
+    public String getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    public String getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(String userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public void setUserDataName(String userDataName) {
+        this.userDataName = userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public void setUserDataPolicy(String userDataPolicy) {
+        this.userDataPolicy = userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
+    }
+
 }

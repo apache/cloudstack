@@ -17,8 +17,10 @@
 package com.cloud.consoleproxy;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -67,9 +69,12 @@ public class ConsoleProxyGCThread extends Thread {
 
         boolean bReportLoad = false;
         long lastReportTick = System.currentTimeMillis();
+        List<String> removedSessions = new ArrayList<>();
+
         while (true) {
             cleanupLogging();
             bReportLoad = false;
+            removedSessions.clear();
 
             if (s_logger.isDebugEnabled())
                 s_logger.debug("connMap=" + connMap);
@@ -89,6 +94,7 @@ public class ConsoleProxyGCThread extends Thread {
                 }
 
                 synchronized (connMap) {
+                    removedSessions.add(client.getSessionUuid());
                     connMap.remove(key);
                     bReportLoad = true;
                 }
@@ -100,7 +106,9 @@ public class ConsoleProxyGCThread extends Thread {
 
             if (bReportLoad || System.currentTimeMillis() - lastReportTick > 5000) {
                 // report load changes
-                String loadInfo = new ConsoleProxyClientStatsCollector(connMap).getStatsReport();
+                ConsoleProxyClientStatsCollector collector = new ConsoleProxyClientStatsCollector(connMap);
+                collector.setRemovedSessions(removedSessions);
+                String loadInfo = collector.getStatsReport();
                 ConsoleProxy.reportLoadInfo(loadInfo);
                 lastReportTick = System.currentTimeMillis();
 

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -100,5 +101,28 @@ public class XcpServerResource extends CitrixResourceBase {
         //Dynamic Memory Control (DMC) is a technology provided by Xen Cloud Platform (XCP), starting from the 0.5 release
         //For the supported XCPs dmc is default enabled, XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x;
         return true;
+    }
+
+    @Override
+    public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif, final String publicIp) {
+        String args = "";
+        if (option.equals("get")) {
+            args += "-g";
+            if (StringUtils.isNotEmpty(publicIp)) {
+                args += " -l " + publicIp;
+            }
+        } else if (option.equals("create")) {
+            args += "-c";
+        } else if (option.equals("reset")) {
+            args += "-r";
+        } else if (option.equals("addVif")) {
+            args += "-a ";
+            args += vif;
+        } else if (option.equals("deleteVif")) {
+            args += "-d ";
+            args += vif;
+        }
+
+        return executeInVR(privateIpAddress, "netusage.sh", args).getDetails();
     }
 }

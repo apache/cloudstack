@@ -120,4 +120,3 @@ if __name__ == "__main__":
 
 	ret = insert_host_entry(mac, ip, hostname, dns, gateway, next_server)
 	sys.exit(ret)
-

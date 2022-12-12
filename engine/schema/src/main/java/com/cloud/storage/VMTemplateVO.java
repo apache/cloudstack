@@ -31,6 +31,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.user.UserData;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -156,6 +157,13 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Column(name = "deploy_as_is")
     private boolean deployAsIs;
+
+    @Column(name = "user_data_id")
+    private Long userDataId;
+
+    @Column(name = "user_data_link_policy")
+    @Enumerated(value = EnumType.STRING)
+    UserData.UserDataOverridePolicy userDataLinkPolicy;
 
     @Override
     public String getUniqueName() {
@@ -644,4 +652,23 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public void setDeployAsIs(boolean deployAsIs) {
         this.deployAsIs = deployAsIs;
     }
+
+    @Override
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(Long userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    @Override
+    public UserData.UserDataOverridePolicy getUserDataOverridePolicy() {
+        return userDataLinkPolicy;
+    }
+
+    public void setUserDataLinkPolicy(UserData.UserDataOverridePolicy userDataLinkPolicy) {
+        this.userDataLinkPolicy = userDataLinkPolicy;
+    }
+
 }

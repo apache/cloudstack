@@ -163,4 +163,3 @@ class networkConfig:
             type = "dev"
 
         return networkConfig.devInfo(macAddr, ipAddr, netmask, None, type, dev)
-

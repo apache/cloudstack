@@ -26,7 +26,7 @@ CentOS based built-in user VM template.
 # Setting up Tools and Environment
 
 - Install packer and latest KVM, qemu on a Linux machine
-- Install tools for exporting appliances: qemu-img, ovftool, faketime
+- Install tools for exporting appliances: qemu-img, ovftool, faketime, sharutils
 - Build and install `vhd-util` as described in build.sh or use pre-built
   binaries at:
 

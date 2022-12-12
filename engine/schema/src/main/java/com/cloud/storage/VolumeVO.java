@@ -32,11 +32,12 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "volumes")
@@ -172,6 +173,12 @@ public class VolumeVO implements Volume {
 
     @Transient
     private boolean deployAsIs;
+
+    @Column(name = "passphrase_id")
+    private Long passphraseId;
+
+    @Column(name = "encrypt_format")
+    private String encryptFormat;
 
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId,
@@ -500,7 +507,7 @@ public class VolumeVO implements Volume {
 
     @Override
     public String toString() {
-        return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
+        return new StringBuilder("Vol[").append(id).append("|name=").append(name).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
     }
 
     @Override
@@ -663,4 +670,11 @@ public class VolumeVO implements Volume {
         this.externalUuid = externalUuid;
     }
 
+    public Long getPassphraseId() { return passphraseId; }
+
+    public void setPassphraseId(Long id) { this.passphraseId = id; }
+
+    public String getEncryptFormat() { return encryptFormat; }
+
+    public void setEncryptFormat(String encryptFormat) { this.encryptFormat = encryptFormat; }
 }

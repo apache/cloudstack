@@ -63,7 +63,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
     def "Test successfully creating a initial context"() {
 		given: "We have a LdapContextFactory"
 		def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
-		when: "A context attempts to bind and no Ldap server is avaiable"
+		when: "A context attempts to bind and no Ldap server is available"
 		ldapContextFactory.createInitialDirContext(null, null, true)
 		then: "An expection is thrown"
 		thrown NamingException
@@ -72,7 +72,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
     def "Test successfully binding as a user"() {
 		given: "We have a LdapContextFactory"
 		def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
-		when: "A user attempts to bind and no LDAP server is avaiable"
+		when: "A user attempts to bind and no LDAP server is available"
 		ldapContextFactory.createUserContext(principal, password)
 		then: "An exception is thrown"
 		thrown NamingException
@@ -111,7 +111,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 	def "Test successully binding as system"() {
 		given: "We have a LdapContextFactory"
 	    def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
-		when: "A bind context attempts to bind and no Ldap server is avaiable"
+		when: "A bind context attempts to bind and no Ldap server is available"
 	    ldapContextFactory.createBindContext()
 		then: "An exception is thrown"
 		thrown NamingException

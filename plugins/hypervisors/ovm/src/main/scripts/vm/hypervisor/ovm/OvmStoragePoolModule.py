@@ -427,5 +427,3 @@ if this doesn't resolve the problem, please check oracle manual to see how to of
             errmsg = fmt_err_msg(e)
             logger.error(OvmStoragePool.copyVolume, errmsg)
             raise XmlRpcFault(toErrCode(OvmStoragePool, OvmStoragePool.copyVolume), errmsg)
-
-

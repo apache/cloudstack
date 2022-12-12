@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
@@ -313,7 +312,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             }
             try {
                 UserVm vm = userVmService.destroyVm(userVM.getId(), true);
-                if (!userVmManager.expunge(userVM, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
+                if (!userVmManager.expunge(userVM)) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to expunge VM '%s'."
                         , kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }

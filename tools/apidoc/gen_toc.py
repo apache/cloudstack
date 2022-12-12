@@ -201,7 +201,8 @@ known_categories = {
     'UnmanagedInstance': 'Virtual Machine',
     'Rolling': 'Rolling Maintenance',
     'importVsphereStoragePolicies' : 'vSphere storage policies',
-    'listVsphereStoragePolicies' : 'vSphere storage policies'
+    'listVsphereStoragePolicies' : 'vSphere storage policies',
+    'ConsoleEndpoint': 'Console Endpoint'
 }
 
 
@@ -221,7 +222,7 @@ for f in sys.argv:
     dirname, fn = os.path.split(f)
     if not fn.endswith('.xml'):
         continue
-    if fn.endswith('Summary.xml'):
+    if fn.endswith('Summary.xml') and fn != 'quotaSummary.xml':
         continue
     if fn.endswith('SummarySorted.xml'):
         continue

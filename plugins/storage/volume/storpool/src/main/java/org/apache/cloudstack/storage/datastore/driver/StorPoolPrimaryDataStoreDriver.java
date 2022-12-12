@@ -233,7 +233,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                     VolumeVO volume = volumeDao.findById(vinfo.getId());
                     volume.setPoolId(dataStore.getId());
-                    volume.setPoolType(StoragePoolType.SharedMountPoint);
                     volume.setPath(path);
                     volumeDao.update(volume.getId(), volume);
 
@@ -274,9 +273,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(data.getDataStore().getUuid(), data.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
 
-                StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s", name, vol.getUuid(), oldSize, payload.newSize, payload.shrinkOk);
+                long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
 
-                SpApiResponse resp = StorPoolUtil.volumeUpdate(name, payload.newSize, payload.shrinkOk, payload.newMaxIops, conn);
+                StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s", name, vol.getUuid(), oldSize, payload.newSize, payload.shrinkOk, maxIops);
+
+                SpApiResponse resp = StorPoolUtil.volumeUpdate(name, payload.newSize, payload.shrinkOk, maxIops, conn);
                 if (resp.getError() != null) {
                     err = String.format("Could not resize StorPool volume %s. Error: %s", name, resp.getError());
                 } else {
@@ -716,7 +717,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     final String name = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
                     StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc DST tmpSnapName=%s ,srcUUID=%s", name, srcTO.getUuid());
 
-                    if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.SharedMountPoint)) {
+                    if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.StorPool)) {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
                         String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
                         //uuid tag will be the same as srcData.uuid

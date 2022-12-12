@@ -71,10 +71,10 @@ class TestPVLAN(cloudstackTestCase):
         self.broadcasttype = createNetworkResponse.broadcastdomaintype
         self.broadcasturi = createNetworkResponse.broadcasturi
 
-        braodcasturi = "pvlan://{0}-i{1}".format(self.vlan, self.isolatedpvlan)
+        broadcasturi = "pvlan://{0}-i{1}".format(self.vlan, self.isolatedpvlan)
         self.assertIsNotNone(createNetworkResponse.id, "Network failed to create")
         self.assertTrue(createNetworkResponse.broadcastdomaintype, "Pvlan")
-        self.assertTrue(createNetworkResponse.broadcasturi, braodcasturi)
+        self.assertTrue(createNetworkResponse.broadcasturi, broadcasturi)
 
         self.debug("Clean up test pvlan network")
         deleteNetworkCmd = deleteNetwork.deleteNetworkCmd()

@@ -194,7 +194,7 @@ public class Networks {
         /**
          * converts a String to a BroadcastDomainType
          *
-         * @param scheme convert a string representation to a BroacastDomainType
+         * @param scheme convert a string representation to a BroadcastDomainType
          * @return the value of this
          */
         public static BroadcastDomainType toEnumValue(String scheme) {

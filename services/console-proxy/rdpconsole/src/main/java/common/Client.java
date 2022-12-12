@@ -59,7 +59,7 @@ public class Client {
         {
             name = "--debug-link";
             alias = "-DL";
-            description = "Print debugging messages when packets are trasnferred via links.";
+            description = "Print debugging messages when packets are transferred via links.";
         }
     };
     private final Option debugElement = new Option() {

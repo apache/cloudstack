@@ -698,8 +698,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
 
-    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), 0, network, isDefaultNic, vm, ipAddresses, forced);
+    private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, forced);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed", nic.getNicId()));
         }
@@ -794,7 +794,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             LOGGER.debug(String.format("Volume %s needs to be migrated", volumeVO.getUuid()));
-            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(profile.getVolumeId(), null, null, null, null, false, true);
+            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(profile.getVolumeId(), null, null, null, null, false, true);
             if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
                 cleanupFailedImportVM(vm);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool(s) found", userVm.getInstanceName(), volumeVO.getUuid()));
@@ -1016,12 +1016,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
         try {
-            boolean firstNic = true;
+            int nicIndex = 0;
             for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                 Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                 Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, firstNic, forced);
-                firstNic = false;
+                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, forced);
+                nicIndex++;
             }
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);

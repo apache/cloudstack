@@ -148,6 +148,9 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "supports_public_access")
     private boolean supportsPublicAccess = false;
 
+    @Column(name = "supports_vm_autoscaling")
+    boolean supportsVmAutoScaling = false;
+
     @Column(name = "for_vpc")
     private boolean forVpc;
 
@@ -400,5 +403,10 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
 
     public String getInternetProtocol() {
         return internetProtocol;
+    }
+
+    @Override
+    public boolean isSupportsVmAutoScaling() {
+        return supportsVmAutoScaling;
     }
 }

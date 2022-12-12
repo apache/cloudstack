@@ -33,7 +33,7 @@
             <span>{{ $t('label.projects') }}</span>
           </template>
           <span class="custom-suffix-icon">
-            <ProjectOutlined v-if="!loading" />
+            <ProjectOutlined v-if="!loading" class="ant-select-suffix" />
             <LoadingOutlined v-else />
           </span>
         </a-tooltip>

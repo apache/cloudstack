@@ -19,13 +19,16 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,14 +57,16 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -78,6 +83,7 @@ import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
+import org.libvirt.VcpuInfo;
 import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
@@ -162,6 +168,8 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -179,6 +187,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef.GuestType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestResourceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InputDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
@@ -205,15 +214,15 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.OutputInterpreter.OneLineParser;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class, SshHelper.class})
+@PrepareForTest(value = {MemStat.class, SshHelper.class, AgentPropertiesFileHandler.class, AgentProperties.class, Script.class})
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
@@ -223,8 +232,15 @@ public class LibvirtComputingResourceTest {
     VirtualMachineTO vmTO;
     @Mock
     LibvirtVMDef vmDef;
+    @Mock
+    Logger loggerMock;
+    @Mock
+    Connect connMock;
+    @Mock
+    LibvirtDomainXMLParser parserMock;
+
     @Spy
-    private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(LibvirtComputingResource.class);
+    private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
 
     @Mock
     Domain domainMock;
@@ -242,11 +258,24 @@ public class LibvirtComputingResourceTest {
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
 
+    final static long[] defaultStats = new long[2];
+    final static long[] vpcStats = { 1L, 2L };
+    final static long[] networkStats = { 3L, 4L };
+    final static long[] lbStats = { 5L };
+    final static String privateIp = "192.168.1.1";
+    final static String publicIp = "10.10.10.10";
+    final static Integer port = 8080;
+
+    final Script scriptMock = Mockito.mock(Script.class);
+    final OneLineParser statsParserMock = Mockito.mock(OneLineParser.class);
+
     @Before
     public void setup() throws Exception {
         libvirtComputingResourceSpy._qemuSocketsPath = new File("/var/run/qemu");
+        libvirtComputingResourceSpy.parser = parserMock;
         Scanner scanner = new Scanner(memInfo);
         PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+        LibvirtComputingResource.s_logger = loggerMock;
     }
 
     /**
@@ -2149,7 +2178,7 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(poolManager);
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
-        when(primary.createPhysicalDisk(diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), diskCharacteristics.getSize())).thenReturn(vol);
+        when(primary.createPhysicalDisk(diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), diskCharacteristics.getSize(), null)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2208,7 +2237,7 @@ public class LibvirtComputingResourceTest {
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
         when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
-        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0)).thenReturn(vol);
+        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0,null)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4847,7 +4876,12 @@ public class LibvirtComputingResourceTest {
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
         final Connect conn = Mockito.mock(Connect.class);
         final StorageVol v = Mockito.mock(StorageVol.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -4860,9 +4894,11 @@ public class LibvirtComputingResourceTest {
         try {
             when(libvirtUtilitiesHelper.getConnection()).thenReturn(conn);
             when(conn.storageVolLookupByPath(path)).thenReturn(v);
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
+            when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(info);
 
             when(conn.getLibVirVersion()).thenReturn(10010l);
-
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4875,9 +4911,10 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
 
-        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
+        verify(libvirtComputingResource, times(2)).getLibvirtUtilitiesHelper();
         try {
             verify(libvirtUtilitiesHelper, times(1)).getConnection();
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmInstance);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4898,13 +4935,28 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+        final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo info = Mockito.mock(DomainInfo.class);
+        final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+        info.state = state;
 
+        when(pool.getType()).thenReturn(StoragePoolType.Linstor);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
         when(vol.getPath()).thenReturn(path);
         when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
         when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+
+        when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        try {
+            when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
+            when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(info);
+        } catch (final LibvirtException e) {
+            fail(e.getMessage());
+        }
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4915,9 +4967,10 @@ public class LibvirtComputingResourceTest {
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(libvirtComputingResource, times(0)).getResizeScriptType(storagePool, vol);
 
-        verify(libvirtComputingResource, times(0)).getLibvirtUtilitiesHelper();
+        verify(libvirtComputingResource, times(1)).getLibvirtUtilitiesHelper();
         try {
             verify(libvirtUtilitiesHelper, times(0)).getConnection();
+            verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(vmInstance);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -4956,6 +5009,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.Filesystem);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -4986,6 +5040,7 @@ public class LibvirtComputingResourceTest {
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -5032,6 +5087,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenThrow(CloudRuntimeException.class);
@@ -5715,13 +5771,13 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResource._noMemBalloon = false;
 
         long maxMemory = 2048;
-        long minMemory = ByteScaleUtils.mibToBytes(64);
+        long minMemory = ByteScaleUtils.mebibytesToBytes(64);
 
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
         Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
 
         long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
-        Assert.assertEquals(ByteScaleUtils.bytesToKib(minMemory), currentMemory);
+        Assert.assertEquals(ByteScaleUtils.bytesToKibibytes(minMemory), currentMemory);
         Mockito.verify(vmTo).getMinRam();
     }
 
@@ -5901,4 +5957,250 @@ public class LibvirtComputingResourceTest {
         configLocalStorageTests(params);
     }
 
+    @Test
+    public void testGetNetworkStats() {
+        doReturn(networkStats[0] + ":" + networkStats[1]).when(libvirtComputingResourceSpy).networkUsage(privateIp, "get", null, publicIp);
+        doReturn(defaultStats[0] + ":" + defaultStats[1]).when(libvirtComputingResourceSpy).networkUsage(privateIp, "get", null, null);
+
+        long[] stats = libvirtComputingResourceSpy.getNetworkStats(privateIp, publicIp);
+        assertEquals(2, stats.length);
+        assertEquals(networkStats[0], stats[0]);
+        assertEquals(networkStats[1], stats[1]);
+
+        stats = libvirtComputingResourceSpy.getNetworkStats(privateIp);
+        assertEquals(2, stats.length);
+        Assert.assertEquals(0, stats[0]);
+        Assert.assertEquals(0, stats[1]);
+    }
+
+    @Test
+    public void testGetVPCNetworkStats() {
+        doReturn(vpcStats[0] + ":" + vpcStats[1]).when(libvirtComputingResourceSpy).configureVPCNetworkUsage(privateIp, publicIp, "get", null);
+        doReturn(defaultStats[0] + ":" + defaultStats[1]).when(libvirtComputingResourceSpy).configureVPCNetworkUsage(privateIp, null, "get", null);
+
+        long[] stats = libvirtComputingResourceSpy.getVPCNetworkStats(privateIp, publicIp, "get");
+        assertEquals(2, stats.length);
+        assertEquals(vpcStats[0], stats[0]);
+        assertEquals(vpcStats[1], stats[1]);
+
+        stats = libvirtComputingResourceSpy.getVPCNetworkStats(privateIp, null, "get");
+        assertEquals(2, stats.length);
+        Assert.assertEquals(0, stats[0]);
+        Assert.assertEquals(0, stats[1]);
+    }
+
+    @Test
+    public void testGetHaproxyStats() {
+        doReturn(lbStats[0] + "").when(libvirtComputingResourceSpy).getHaproxyStats(privateIp, publicIp, port);
+        long[] stats = libvirtComputingResourceSpy.getNetworkLbStats(privateIp, publicIp, port);
+        assertEquals(1, stats.length);
+        assertEquals(lbStats[0], stats[0]);
+
+        doReturn("0").when(libvirtComputingResourceSpy).getHaproxyStats(privateIp, publicIp, port);
+        stats = libvirtComputingResourceSpy.getNetworkLbStats(privateIp, publicIp, port);
+        assertEquals(1, stats.length);
+        Assert.assertEquals(0, stats[0]);
+    }
+
+    @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
+    public void testGetHaproxyStatsMethod() throws Exception {
+        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        doNothing().when(scriptMock).add(Mockito.anyString());
+        when(scriptMock.execute()).thenReturn(null);
+        when(scriptMock.execute(Mockito.any())).thenReturn(null);
+
+        PowerMockito.whenNew(OneLineParser.class).withNoArguments().thenReturn(statsParserMock);
+        when(statsParserMock.getLine()).thenReturn("result");
+
+        String result = libvirtComputingResourceSpy.getHaproxyStats(privateIp, publicIp, port);
+
+        Assert.assertEquals("result", result);
+        verify(scriptMock, times(4)).add(anyString());
+        verify(scriptMock).add("get_haproxy_stats.sh");
+        verify(scriptMock).add(privateIp);
+        verify(scriptMock).add(publicIp);
+        verify(scriptMock).add(String.valueOf(port));
+    }
+
+    @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
+    public void testNetworkUsageMethod1() throws Exception {
+        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        doNothing().when(scriptMock).add(Mockito.anyString());
+        when(scriptMock.execute()).thenReturn(null);
+        when(scriptMock.execute(Mockito.any())).thenReturn(null);
+
+        PowerMockito.whenNew(OneLineParser.class).withNoArguments().thenReturn(statsParserMock);
+        when(statsParserMock.getLine()).thenReturn("result");
+
+        String result = libvirtComputingResourceSpy.networkUsage(privateIp, "get", "eth0", publicIp);
+
+        Assert.assertEquals("result", result);
+        verify(scriptMock, times(3)).add(anyString());
+        verify(scriptMock).add("netusage.sh");
+        verify(scriptMock).add(privateIp);
+        verify(scriptMock).add("-g");
+
+        verify(scriptMock).add("-l", publicIp);
+    }
+
+    @Test
+    @PrepareForTest(value = {LibvirtComputingResource.class})
+    public void testNetworkUsageMethod2() throws Exception {
+        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        doNothing().when(scriptMock).add(Mockito.anyString());
+        when(scriptMock.execute()).thenReturn(null);
+        when(scriptMock.execute(Mockito.any())).thenReturn(null);
+
+        PowerMockito.whenNew(OneLineParser.class).withNoArguments().thenReturn(statsParserMock);
+        when(statsParserMock.getLine()).thenReturn("result");
+
+        String result = libvirtComputingResourceSpy.networkUsage(privateIp, "get", "eth0", null);
+
+        Assert.assertEquals("result", result);
+        verify(scriptMock, times(3)).add(anyString());
+        verify(scriptMock).add("netusage.sh");
+        verify(scriptMock).add(privateIp);
+        verify(scriptMock).add("-g");
+    }
+
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestLibvirtError() throws LibvirtException {
+        Mockito.when(connMock.listDomains()).thenThrow(LibvirtException.class);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).error(Mockito.anyString(), Mockito.any());
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestWithNoVMs() throws LibvirtException {
+        Mockito.when(connMock.listDomains()).thenReturn(new int[0]);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getVmsToSetMemoryBalloonStatsPeriodTestWhenSuccessfullyGetVmIds() throws LibvirtException {
+        int[] fakeList = new int[]{1};
+        List<Integer> expected = Arrays.asList(ArrayUtils.toObject(fakeList));
+        Mockito.when(connMock.listDomains()).thenReturn(fakeList);
+
+        List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestWhenMemBalloonIsDisabled() {
+        Integer expected = 0;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(true);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestWhenStatsPeriodIsZero() {
+        Integer expected = 0;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(0);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Mockito.verify(loggerMock).info(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
+                + "Adjust (increase) the value of this parameter to correct this.", AgentProperties.VM_MEMBALLOON_STATS_PERIOD.getName()));
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmBalloonStatsPeriodTestSuccess() {
+        Integer expected = 60;
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_DISABLE))).thenReturn(false);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.VM_MEMBALLOON_STATS_PERIOD))).thenReturn(60);
+
+        Integer result = libvirtComputingResourceSpy.getCurrentVmBalloonStatsPeriod();
+
+        Assert.assertEquals(expected, result);
+    }
+
+    private void prepareMocksToSetupMemoryBalloonStatsPeriod(Integer currentVmBalloonStatsPeriod) throws LibvirtException {
+        Integer[] fakeList = ArrayUtils.toObject(new int[]{1});
+        Mockito.doReturn(Arrays.asList(fakeList)).when(libvirtComputingResourceSpy).getVmsToSetMemoryBalloonStatsPeriod(connMock);
+        Mockito.doReturn(currentVmBalloonStatsPeriod).when(libvirtComputingResourceSpy).getCurrentVmBalloonStatsPeriod();
+        Mockito.when(domainMock.getXMLDesc(Mockito.anyInt())).thenReturn("");
+        Mockito.when(domainMock.getName()).thenReturn("fake-VM-name");
+        Mockito.when(connMock.domainLookupByID(1)).thenReturn(domainMock);
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestMemBalloonPropertyDisabled() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(0);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("60");
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+        PowerMockito.mockStatic(Script.class);
+        PowerMockito.when(Script.runSimpleBashScript(Mockito.any())).thenReturn(null);
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).debug("The memory balloon stats period [0] has been set successfully for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name].");
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestErrorWhenSetNewPeriod() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("0");
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+        PowerMockito.mockStatic(Script.class);
+        PowerMockito.when(Script.runSimpleBashScript(Mockito.eq("virsh dommemstat 1 --period 60 --live"))).thenReturn("some-fake-error");
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).error("Unable to set up memory balloon stats period for VM (Libvirt Domain) with ID [1] due to an error when running the [virsh "
+                + "dommemstat 1 --period 60 --live] command. Output: [some-fake-error].");
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestSetNewPeriodSuccessfully() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("0");
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+        PowerMockito.mockStatic(Script.class);
+        PowerMockito.when(Script.runSimpleBashScript(Mockito.eq("virsh dommemstat 1 --period 60 --live"))).thenReturn(null);
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        PowerMockito.verifyStatic(Script.class);
+        Script.runSimpleBashScript("virsh dommemstat 1 --period 60 --live");
+        Mockito.verify(loggerMock, Mockito.never()).error(Mockito.anyString());
+    }
+
+    @Test
+    public void setupMemoryBalloonStatsPeriodTestSkipVm() throws LibvirtException {
+        prepareMocksToSetupMemoryBalloonStatsPeriod(60);
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defNoneMemBalloon();
+        Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
+        Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
+
+        libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
+
+        Mockito.verify(loggerMock).debug("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name] because this"
+                + " VM has no memory balloon.");
+    }
 }

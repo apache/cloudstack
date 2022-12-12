@@ -485,7 +485,7 @@ export default {
         {
           title: 'label.volgroup',
           key: 'primaryStorageVolumeGroup',
-          placeHolder: 'message.error.volumne.group',
+          placeHolder: 'message.error.volume.group',
           required: true,
           display: {
             primaryStorageProtocol: 'clvm'
@@ -494,7 +494,7 @@ export default {
         {
           title: 'label.volume',
           key: 'primaryStorageVolume',
-          placeHolder: 'message.error.volumne',
+          placeHolder: 'message.error.volume',
           required: true,
           display: {
             primaryStorageProtocol: 'gluster'

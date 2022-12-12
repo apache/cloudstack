@@ -68,7 +68,7 @@ public class OvmVm extends OvmObject {
 
     public static void stop(Connection c, String vmName) throws XmlRpcException {
         Object[] params = {vmName};
-        /* Agent will destroy vm if vm shutdowns failed due to timout after 10 mins, so we set timeout to 20 mins here*/
+        /* Agent will destroy vm if vm shutdowns failed due to timeout after 10 mins, so we set timeout to 20 mins here*/
         c.callTimeoutInSec("OvmVm.stop", params, 1200);
     }
 

@@ -1829,6 +1829,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         final List<String> hostTags = cmd.getHostTags();
         if (hostTags != null) {
+            List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
+            s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. Updating the host tags will not affect them.", activeVMs, host));
+
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Updating Host Tags to :" + hostTags);
             }
@@ -2918,7 +2921,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 return result;
             }
         } catch (final AgentUnavailableException e) {
-            s_logger.error("Agent is not availbale!", e);
+            s_logger.error("Agent is not available!", e);
         }
 
         final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();

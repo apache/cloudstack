@@ -169,7 +169,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
             try {
                 if (!success) {
                     if (vmSnapshot != null) {
-                        s_logger.debug("Delete exsisting VM Snapshot " + vmSnapshotName + " after making VolumeTO failed");
+                        s_logger.debug("Delete existing VM Snapshot " + vmSnapshotName + " after making VolumeTO failed");
                         final Set<VBD> vbds = vmSnapshot.getVBDs(conn);
                         for (final VBD vbd : vbds) {
                             final VBD.Record vbdr = vbd.getRecord(conn);

@@ -114,6 +114,12 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<Double> RouterHealthChecksMaxMemoryUsageThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.max.memory.usage.threshold",
             "Advanced", "100", "Max Memory Usage threshold as % above which check is considered a failure.",
             true, ConfigKey.Scope.Zone, null);
+    ConfigKey<String> RouterLogrotateFrequency = new ConfigKey<>(String.class, "router.logrotate.frequency", "Advanced", "*:00:00",
+            "Sets the frequency of the logrotate service on the virtual router. The default value is *:00:00 (hourly) and follows the last block of " +
+                    "OnCalendar standard [Hour:Minute:Second]. e.g, *:*:00 is for every minute and */12:00:00 is for every 12 hours. See Systemd Timers for more options. " +
+                    "Furthermore, the file's minimum size is hardcoded as 10MiB, meaning that the service of logrotate will run, but not rotate the log files if it does not " +
+                    "reach the minimum size.",
+            true, ConfigKey.Scope.Zone, null);
 
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz

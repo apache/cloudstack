@@ -522,7 +522,7 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None, userdataid=None, userdatadetails=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -611,6 +611,12 @@ class VirtualMachine:
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
+
+        if userdataid is not None:
+            cmd.userdataid = userdataid
+
+        if userdatadetails is not None:
+            cmd.userdatadetails = userdatadetails
 
         if "dhcpoptionsnetworklist" in services:
             cmd.dhcpoptionsnetworklist = services["dhcpoptionsnetworklist"]
@@ -1665,6 +1671,18 @@ class Template:
             cmd.listall = True
         return (apiclient.listTemplates(cmd))
 
+    @classmethod
+    def linkUserDataToTemplate(cls, apiclient, templateid, userdataid=None, userdatapolicy=None):
+        "Link userdata to template "
+
+        cmd = linkUserDataToTemplate.linkUserDataToTemplateCmd()
+        cmd.templateid = templateid
+        if userdataid is not None:
+            cmd.userdataid = userdataid
+        if userdatapolicy is not None:
+            cmd.userdatapolicy = userdatapolicy
+
+        return apiclient.linkUserDataToTemplate(cmd)
 
 class Iso:
     """Manage ISO life cycle"""
@@ -2155,6 +2173,15 @@ class Autoscale:
         return (apiclient.createCondition(cmd))
 
     @classmethod
+    def updateCondition(cls, apiclient, id, **kwargs):
+        """Updates condition."""
+
+        cmd = updateCondition.updateConditionCmd()
+        cmd.id = id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateCondition(cmd))
+
+    @classmethod
     def listConditions(cls, apiclient, **kwargs):
         """Lists all available Conditions."""
 
@@ -2202,7 +2229,8 @@ class Autoscale:
 
     @classmethod
     def createAutoscaleVmProfile(cls, apiclient, serviceofferingid, zoneid, templateid,
-                                 autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None):
+                                 autoscaleuserid=None, expungevmgraceperiod=None, counterparam=None,
+                                 otherdeployparams=None, userdata=None):
         """creates Autoscale VM Profile."""
 
         cmd = createAutoScaleVmProfile.createAutoScaleVmProfileCmd()
@@ -2212,8 +2240,8 @@ class Autoscale:
         if autoscaleuserid:
             cmd.autoscaleuserid = autoscaleuserid
 
-        if destroyvmgraceperiod:
-            cmd.destroyvmgraceperiod = destroyvmgraceperiod
+        if expungevmgraceperiod:
+            cmd.expungevmgraceperiod = expungevmgraceperiod
 
         if counterparam:
             for name, value in list(counterparam.items()):
@@ -2222,11 +2250,17 @@ class Autoscale:
                     'value': value
                 })
 
+        if otherdeployparams:
+            cmd.otherdeployparams = otherdeployparams
+
+        if userdata:
+            cmd.userdata = userdata
+
         return (apiclient.createAutoScaleVmProfile(cmd))
 
     @classmethod
     def updateAutoscaleVMProfile(cls, apiclient, id, **kwargs):
-        """Updates Autoscale Policy."""
+        """Updates Autoscale VM Profile."""
 
         cmd = updateAutoScaleVmProfile.updateAutoScaleVmProfileCmd()
         cmd.id = id
@@ -2235,7 +2269,7 @@ class Autoscale:
 
     @classmethod
     def createAutoscaleVmGroup(cls, apiclient, lbruleid, minmembers, maxmembers,
-                               scaledownpolicyids, scaleuppolicyids, vmprofileid, interval=None):
+                               scaledownpolicyids, scaleuppolicyids, vmprofileid, interval=None, name=None):
         """creates Autoscale VM Group."""
 
         cmd = createAutoScaleVmGroup.createAutoScaleVmGroupCmd()
@@ -2247,6 +2281,8 @@ class Autoscale:
         cmd.vmprofileid = vmprofileid
         if interval:
             cmd.interval = interval
+        if name:
+            cmd.name = name
 
         return (apiclient.createAutoScaleVmGroup(cmd))
 
@@ -2285,6 +2321,255 @@ class Autoscale:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateAutoScaleVmGroup(cmd))
 
+    @classmethod
+    def deleteAutoscaleVMGroup(cls, apiclient, id, cleanup=None):
+        """Deletes Autoscale VM Group."""
+
+        cmd = deleteAutoScaleVmGroup.deleteAutoScaleVmGroupCmd()
+        cmd.id = id
+        if cleanup:
+            cmd.cleanup = cleanup
+        return (apiclient.deleteAutoScaleVmGroup(cmd))
+
+    @classmethod
+    def deleteCondition(cls, apiclient, id):
+        """Deletes condition."""
+
+        cmd = deleteCondition.deleteConditionCmd()
+        cmd.id = id
+        return (apiclient.deleteCondition(cmd))
+
+    @classmethod
+    def deleteAutoscaleVMProfile(cls, apiclient, id):
+        """Deletes Autoscale VM Profile."""
+
+        cmd = deleteAutoScaleVmProfile.deleteAutoScaleVmProfileCmd()
+        cmd.id = id
+        return (apiclient.deleteAutoScaleVmProfile(cmd))
+
+    @classmethod
+    def deleteAutoscalePolicy(cls, apiclient, id):
+        """Deletes Autoscale Policy."""
+
+        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
+        cmd.id = id
+        return (apiclient.deleteAutoScalePolicy(cmd))
+
+class AutoScaleCondition:
+    """Manage autoscale condition"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def listConditions(cls, apiclient, **kwargs):
+        """Lists all available Conditions."""
+
+        cmd = listConditions.listConditionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listConditions(cmd))
+
+    @classmethod
+    def create(cls, apiclient, counterid, relationaloperator, threshold, projectid=None):
+        """creates condition."""
+
+        cmd = createCondition.createConditionCmd()
+        cmd.counterid = counterid
+        cmd.relationaloperator = relationaloperator
+        cmd.threshold = threshold
+        if projectid:
+            cmd.projectid = projectid
+        return AutoScaleCondition(apiclient.createCondition(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates condition."""
+
+        cmd = updateCondition.updateConditionCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateCondition(cmd))
+
+    def delete(self, apiclient):
+        """Deletes condition."""
+
+        cmd = deleteCondition.deleteConditionCmd()
+        cmd.id = self.id
+        apiclient.deleteCondition(cmd)
+        return
+
+class AutoScalePolicy:
+    """Manage autoscale policy"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists all available Autoscale Policies."""
+
+        cmd = listAutoScalePolicies.listAutoScalePoliciesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listAutoScalePolicies(cmd))
+
+    @classmethod
+    def create(cls, apiclient, action, conditionids, duration, quiettime=None):
+        """creates condition."""
+
+        cmd = createAutoScalePolicy.createAutoScalePolicyCmd()
+        cmd.action = action
+        cmd.conditionids = conditionids
+        cmd.duration = duration
+        if quiettime:
+            cmd.quiettime = quiettime
+
+        return AutoScalePolicy(apiclient.createAutoScalePolicy(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates Autoscale Policy."""
+
+        cmd = updateAutoScalePolicy.updateAutoScalePolicyCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateAutoScalePolicy(cmd))
+
+    def delete(self, apiclient):
+        """Deletes Autoscale Policy."""
+
+        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
+        cmd.id = self.id
+        apiclient.deleteAutoScalePolicy(cmd)
+        return
+
+class AutoScaleVmProfile:
+    """Manage autoscale vm profile"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists all available AutoscaleVM  Profiles."""
+
+        cmd = listAutoScaleVmProfiles.listAutoScaleVmProfilesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listAutoScaleVmProfiles(cmd))
+
+    @classmethod
+    def create(cls, apiclient, serviceofferingid, zoneid, templateid,
+                                 autoscaleuserid=None, expungevmgraceperiod=None, counterparam=None,
+                                 otherdeployparams=None, userdata=None, projectid=None):
+        """creates Autoscale VM Profile."""
+
+        cmd = createAutoScaleVmProfile.createAutoScaleVmProfileCmd()
+        cmd.serviceofferingid = serviceofferingid
+        cmd.zoneid = zoneid
+        cmd.templateid = templateid
+        if autoscaleuserid:
+            cmd.autoscaleuserid = autoscaleuserid
+
+        if expungevmgraceperiod:
+            cmd.expungevmgraceperiod = expungevmgraceperiod
+
+        if counterparam:
+            for name, value in list(counterparam.items()):
+                cmd.counterparam.append({
+                    'name': name,
+                    'value': value
+                })
+
+        if otherdeployparams:
+            cmd.otherdeployparams = otherdeployparams
+
+        if userdata:
+            cmd.userdata = userdata
+
+        if projectid:
+            cmd.projectid = projectid
+
+        return AutoScaleVmProfile(apiclient.createAutoScaleVmProfile(cmd).__dict__)
+
+    def update(self, apiclient, **kwargs):
+        """Updates Autoscale VM Profile."""
+
+        cmd = updateAutoScaleVmProfile.updateAutoScaleVmProfileCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateAutoScaleVmProfile(cmd))
+
+    def delete(self, apiclient):
+        """Deletes Autoscale VM Profile."""
+
+        cmd = deleteAutoScaleVmProfile.deleteAutoScaleVmProfileCmd()
+        cmd.id = self.id
+        apiclient.deleteAutoScaleVmProfile(cmd)
+        return
+
+class AutoScaleVmGroup:
+    """Manage autoscale vm group"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, lbruleid, minmembers, maxmembers,
+                               scaledownpolicyids, scaleuppolicyids, vmprofileid, interval=None, name=None):
+        """creates Autoscale VM Group."""
+
+        cmd = createAutoScaleVmGroup.createAutoScaleVmGroupCmd()
+        cmd.lbruleid = lbruleid
+        cmd.minmembers = minmembers
+        cmd.maxmembers = maxmembers
+        cmd.scaledownpolicyids = scaledownpolicyids
+        cmd.scaleuppolicyids = scaleuppolicyids
+        cmd.vmprofileid = vmprofileid
+        if interval:
+            cmd.interval = interval
+        if name:
+            cmd.name = name
+
+        return AutoScaleVmGroup(apiclient.createAutoScaleVmGroup(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists all available AutoscaleVM  Group."""
+
+        cmd = listAutoScaleVmGroups.listAutoScaleVmGroupsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listAutoScaleVmGroups(cmd))
+
+    def enable(self, apiclient, **kwargs):
+        """Enables AutoscaleVM  Group."""
+
+        cmd = enableAutoScaleVmGroup.enableAutoScaleVmGroupCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.enableAutoScaleVmGroup(cmd))
+
+    def disable(self, apiclient, **kwargs):
+        """Disables AutoscaleVM  Group."""
+
+        cmd = disableAutoScaleVmGroup.disableAutoScaleVmGroupCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.disableAutoScaleVmGroup(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Updates Autoscale VM Group."""
+
+        cmd = updateAutoScaleVmGroup.updateAutoScaleVmGroupCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateAutoScaleVmGroup(cmd))
+
+    def delete(self, apiclient, cleanup=None):
+        """Deletes Autoscale VM Group."""
+
+        cmd = deleteAutoScaleVmGroup.deleteAutoScaleVmGroupCmd()
+        cmd.id = self.id
+        if cleanup:
+            cmd.cleanup = cleanup
+        apiclient.deleteAutoScaleVmGroup(cmd)
+        return
 
 class ServiceOffering:
     """Manage service offerings cycle"""
@@ -3240,6 +3525,14 @@ class Network:
             cmd.endipv6 = services["endipv6"]
         if "routeripv6" in services:
             cmd.routeripv6 = services["routeripv6"]
+        if "dns1" in services:
+            cmd.dns1 = services["dns1"]
+        if "dns2" in services:
+            cmd.dns2 = services["dns2"]
+        if "ip6dns1" in services:
+            cmd.ip6dns1 = services["ip6dns1"]
+        if "ip6dns2" in services:
+            cmd.ip6dns2 = services["ip6dns2"]
 
         if accountid:
             cmd.account = accountid
@@ -4990,6 +5283,45 @@ class SSHKeyPair:
             cmd.listall = True
         return (apiclient.listSSHKeyPairs(cmd))
 
+class UserData:
+    """Manage Userdata"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def register(cls, apiclient, name=None, account=None,
+                 domainid=None, projectid=None, userdata=None, params=None):
+        """Registers Userdata"""
+        cmd = registerUserData.registerUserDataCmd()
+        cmd.name = name
+        cmd.userdata = userdata
+        if params is not None:
+            cmd.params = params
+        if account is not None:
+            cmd.account = account
+        if domainid is not None:
+            cmd.domainid = domainid
+        if projectid is not None:
+            cmd.projectid = projectid
+
+        return (apiclient.registerUserData(cmd))
+
+    @classmethod
+    def delete(cls, apiclient, id):
+        """Delete Userdata"""
+        cmd = deleteUserData.deleteUserDataCmd()
+        cmd.id = id
+        apiclient.deleteUserData(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all UserData"""
+        cmd = listUserData.listUserDataCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listUserData(cmd))
 
 class Capacities:
     """Manage Capacities"""

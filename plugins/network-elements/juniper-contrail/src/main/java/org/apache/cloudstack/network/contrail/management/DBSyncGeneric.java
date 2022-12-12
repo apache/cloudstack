@@ -50,7 +50,7 @@ public class DBSyncGeneric {
     private final String dbComparatorMethodPrefix = "dbComparator";
     private final String vncComparatorMethodPrefix = "vncComparator";
 
-    /* sync methods implementation object, if implemented in seperate class
+    /* sync methods implementation object, if implemented in separate class
      * set the scope object
      */
     private Object _scope;

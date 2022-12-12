@@ -478,9 +478,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
     @Override
     public ManagedObjectReference findDatastore(String poolUuid) throws Exception {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - findDatastore(). target MOR: " + _mor.getValue() + ", poolUuid: " + poolUuid);
+        s_logger.trace(String.format("Searching datastore in target MOR [%s] with poolUuid [%s].", _mor.getValue(), poolUuid));
 
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
         int key = cfmMo.getCustomFieldKey("Datastore", CustomFieldConstants.CLOUD_UUID);
@@ -489,18 +487,17 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
         ObjectContent[] ocs = getDatastorePropertiesOnHyperHost(new String[] {"name", String.format("value[%d]", key)});
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
-                if (oc.getPropSet().get(0).getVal().equals(poolUuid))
+                if (oc.getPropSet().get(0).getVal().equals(poolUuid)) {
+                    s_logger.trace(String.format("Found datastore [%s] in target MOR [%s].", oc.getObj(), _mor.getValue()));
                     return oc.getObj();
-
+                }
                 if (oc.getPropSet().size() > 1) {
                     DynamicProperty prop = oc.getPropSet().get(1);
                     if (prop != null && prop.getVal() != null) {
                         if (prop.getVal() instanceof CustomFieldStringValue) {
                             String val = ((CustomFieldStringValue)prop.getVal()).getValue();
                             if (val.equalsIgnoreCase(poolUuid)) {
-
-                                if (s_logger.isTraceEnabled())
-                                    s_logger.trace("vCenter API trace - findDatastore() done(successfully)");
+                                s_logger.trace(String.format("Found datastore [%s] in target MOR [%s].", oc.getObj(), _mor.getValue()));
                                 return oc.getObj();
                             }
                         }
@@ -509,8 +506,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
             }
         }
 
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - findDatastore() done(failed)");
+        s_logger.trace(String.format("Failed to find a datastore with UUID [%s].", poolUuid));
         return null;
     }
 
