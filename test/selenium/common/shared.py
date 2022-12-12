@@ -146,4 +146,3 @@ class Shared(object):
 
         #this method isn't as slick as I hoped :(
         time.sleep(1)
-

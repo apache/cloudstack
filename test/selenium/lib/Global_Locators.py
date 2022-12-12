@@ -220,5 +220,3 @@ login_password_css = "body.login > div.login > form > div.fields > div.field.pas
 
 # Click ok to login
 login_submit_css = "body.login > div.login > form > div.fields > input[type=\"submit\"]" # Login>Login Button (Submit button)
-
-

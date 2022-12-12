@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
@@ -132,6 +133,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "list by the High Availability offering; true if filtering VMs with HA enabled; false for VMs with HA disabled", since = "4.15")
     private Boolean haEnabled;
 
+    @Parameter(name = ApiConstants.AUTOSCALE_VMGROUP_ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of AutoScaling VM Group", since = "4.18.0")
+    private Long autoScaleVmGroupId;
+
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for VMs", since = "4.16.0.0")
     private Boolean showIcon;
@@ -225,6 +229,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     public Boolean getShowUserData() {
         return this.showUserData;
+    }
+
+    public Long getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {

@@ -98,7 +98,7 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
         def ldapCreateAccountCmd = new LdapCreateAccountCmd(ldapManager, accountService)
         when: "A user with no lastname attempts to validate"
         ldapCreateAccountCmd.validateUser(new LdapUser("username", "email", "firstname", null, "principal", "domain", false, null))
-        then: "An exception is thown"
+        then: "An exception is thrown"
         thrown Exception
     }
 

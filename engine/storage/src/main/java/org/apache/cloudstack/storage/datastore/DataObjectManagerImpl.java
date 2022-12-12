@@ -138,7 +138,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             try {
                 objectInDataStoreMgr.update(objInStore, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
-                s_logger.debug("state transation failed", e1);
+                s_logger.debug("state transaction failed", e1);
             }
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
@@ -149,7 +149,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             try {
                 objectInDataStoreMgr.update(objInStore, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
-                s_logger.debug("state transation failed", e1);
+                s_logger.debug("state transaction failed", e1);
             }
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);

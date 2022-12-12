@@ -31,7 +31,7 @@ class serviceCfgBase(object):
         self.syscfg = syscfg
         self.netMgrRunning = False
 
-    def configration(self):
+    def configuration(self):
         writeProgressBar("Configure " + self.serviceName + " ...", None)
         result = False
         try:

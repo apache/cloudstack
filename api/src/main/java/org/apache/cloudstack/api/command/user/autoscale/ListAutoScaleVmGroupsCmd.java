@@ -50,6 +50,9 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
     private Long id;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale vmgroup", since = "4.18.0")
+    private String name;
+
     @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the loadbalancer")
     private Long loadBalancerId;
 
@@ -71,6 +74,10 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getLoadBalancerId() {

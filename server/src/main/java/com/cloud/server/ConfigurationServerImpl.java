@@ -1043,6 +1043,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 Network.GuestType.Isolated, true, false, false, false, true, false);
 
                 defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultIsolatedSourceNatEnabledNetworkOffering.setSupportsVmAutoScaling(true);
                 defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
 
                 for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
@@ -1075,6 +1076,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false, false, false);
 
                 defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultNetscalerNetworkOffering.setSupportsVmAutoScaling(true);
                 defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
 
                 for (Service service : netscalerServiceProviders.keySet()) {
@@ -1091,6 +1093,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 null, Network.GuestType.Isolated, false, false, false, false, true, true);
 
                 defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
+                defaultNetworkOfferingForVpcNetworks.setSupportsVmAutoScaling(true);
                 defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
 
                 Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();

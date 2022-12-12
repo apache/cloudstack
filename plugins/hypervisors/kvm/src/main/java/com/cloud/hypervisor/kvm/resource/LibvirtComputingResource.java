@@ -2215,11 +2215,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String networkUsage(final String privateIpAddress, final String option, final String vif) {
+        return networkUsage(privateIpAddress, option, vif, null);
+    }
+
+    public String networkUsage(final String privateIpAddress, final String option, final String vif, String publicIp) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("netusage.sh");
         getUsage.add(privateIpAddress);
         if (option.equals("get")) {
             getUsage.add("-g");
+            if (StringUtils.isNotEmpty(publicIp)) {
+                getUsage.add("-l", publicIp);
+            }
         } else if (option.equals("create")) {
             getUsage.add("-c");
         } else if (option.equals("reset")) {
@@ -2240,7 +2247,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public long[] getNetworkStats(final String privateIP) {
-        final String result = networkUsage(privateIP, "get", null);
+        return getNetworkStats(privateIP, null);
+    }
+
+    public long[] getNetworkStats(final String privateIP, String publicIp) {
+        final String result = networkUsage(privateIP, "get", null, publicIp);
         final long[] stats = new long[2];
         if (result != null) {
             final String[] splitResult = result.split(":");
@@ -2249,6 +2260,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 stats[0] += Long.parseLong(splitResult[i++]);
                 stats[1] += Long.parseLong(splitResult[i++]);
             }
+        }
+        return stats;
+    }
+
+    public String getHaproxyStats(final String privateIP, final String publicIp, final Integer port) {
+        final Script getHaproxyStatsScript = new Script(_routerProxyPath, s_logger);
+        getHaproxyStatsScript.add("get_haproxy_stats.sh");
+        getHaproxyStatsScript.add(privateIP);
+        getHaproxyStatsScript.add(publicIp);
+        getHaproxyStatsScript.add(String.valueOf(port));
+
+        final OutputInterpreter.OneLineParser statsParser = new OutputInterpreter.OneLineParser();
+        final String result = getHaproxyStatsScript.execute(statsParser);
+        if (result != null) {
+            s_logger.debug("Failed to execute haproxy stats:" + result);
+            return null;
+        }
+        return statsParser.getLine();
+    }
+
+    public long[] getNetworkLbStats(final String privateIp, final String publicIp, final Integer port) {
+        final String result = getHaproxyStats(privateIp, publicIp, port);
+        final long[] stats = new long[1];
+        if (result != null) {
+            final String[] splitResult = result.split(",");
+            stats[0] += Long.parseLong(splitResult[0]);
         }
         return stats;
     }
@@ -2683,7 +2720,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!_noMemBalloon);
 
-        Long maxRam = ByteScaleUtils.bytesToKib(vmTO.getMaxRam());
+        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
 
         grd.setMemorySize(maxRam);
         grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
@@ -2702,7 +2739,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
             return maxRam;
         } else {
-            return ByteScaleUtils.bytesToKib(vmTO.getMinRam());
+            return ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
         }
     }
 

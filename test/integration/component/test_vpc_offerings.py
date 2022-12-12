@@ -905,7 +905,7 @@ class TestVPCOffering(cloudstackTestCase):
         # 4. Enable the VPC offering again and create VPC. VPC should be
         #    created successfully
         # 5. Change name and displaytext of the VPCOffering. Name and
-        #    displaytext chnages should be reflected in listVPCPffering call
+        #    displaytext changes should be reflected in listVPCPffering call
 
         self.logger.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(

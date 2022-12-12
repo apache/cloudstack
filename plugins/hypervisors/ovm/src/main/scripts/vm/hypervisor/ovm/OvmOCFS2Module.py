@@ -77,4 +77,3 @@ EOF
         doCmd(cmd)
         cmd = ['service o2cb start %s'%cluster]
         doCmd(cmd)
-

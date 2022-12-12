@@ -635,7 +635,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         if self.hypervisor.lower() in ["kvm", "simulator"]:
             # identify suitable host
             clusters = [h.clusterid for h in hosts]
-            # find hosts withe same clusterid
+            # find hosts with same clusterid
             clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
 
             if len(clusters) <= 1:
