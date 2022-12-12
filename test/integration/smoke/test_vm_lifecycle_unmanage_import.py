@@ -60,6 +60,8 @@ class TestUnmanageVM(cloudstackTestCase):
             assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+        if cls.hypervisorNotSupported:
+            return
 
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
@@ -97,9 +99,14 @@ class TestUnmanageVM(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.services["network"]["networkoffering"] = self.network_offering.id
         self.cleanup = []
         self.created_networks = []
+        self.virtual_machine = None
+        self.unmanaged_instance = None
+        self.imported_vm = None
+        if self.hypervisorNotSupported:
+            return
+        self.services["network"]["networkoffering"] = self.network_offering.id
         network_data = self.services["l2-network"]
         self.network = Network.create(
             self.apiclient,
@@ -127,8 +134,6 @@ class TestUnmanageVM(cloudstackTestCase):
         )
         self.cleanup.append(self.network2)
         self.created_networks.append(self.network2)
-        self.unmanaged_instance = None
-        self.imported_vm = None
 
     '''
     Fetch vmware datacenter login details
