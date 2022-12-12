@@ -3223,6 +3223,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!userAccount.isUser2faEnabled()) {
             throw new CloudRuntimeException(String.format("Two factor authentication is not enabled on the user: %s", userAccount.getUsername()));
         }
+        if (StringUtils.isBlank(userAccount.getUser2faProvider()) || StringUtils.isBlank(userAccount.getSecretKey())) {
+            throw new CloudRuntimeException(String.format("Two factor authentication is not setup for the user: %s, please setup 2FA before verifying", userAccount.getUsername()));
+        }
+
         UserTwoFactorAuthenticator userTwoFactorAuthenticator = getUserTwoFactorAuthenticator(domainId, userAccountId);
         userTwoFactorAuthenticator.check2FA(code, userAccount);
     }
