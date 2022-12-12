@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
 import org.apache.log4j.xml.DOMConfigurator;
 
 public class LogUtils {
@@ -71,5 +72,11 @@ public class LogUtils {
             LOGGER.trace(String.format("out of %d appenders, %d are log files", appenderCount, fileNames.size()));
         }
         return fileNames;
+    }
+
+    public static void log(Priority prio, Logger logger, String format, String... args) {
+        if (logger.isEnabledFor(prio)) {
+            logger.log(prio, String.format(format, args));
+        }
     }
 }
