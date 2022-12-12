@@ -409,10 +409,7 @@ public class ApiServlet extends HttpServlet {
             if (is2FAenabled) {
                 skip2FAcheck = false;
             } else {
-                boolean is2FAmandated = false;
-                if (!userAccount.isUser2faEnabled()) {
-                    is2FAmandated = AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId());
-                }
+                boolean is2FAmandated = AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId());
                 if (is2FAmandated) {
                     skip2FAcheck = false;
                 } else {
