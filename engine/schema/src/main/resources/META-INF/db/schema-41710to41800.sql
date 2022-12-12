@@ -796,3 +796,71 @@ UPDATE `cloud`.`networks` ntwk
     ntwk.state = 'Setup' AND
     ntwk.removed is NULL AND
     ntwk.guest_type = 'Isolated';
+
+----- PR Quota custom tariffs #5909---
+-- Create column 'uuid'
+ALTER TABLE cloud_usage.quota_tariff
+    ADD COLUMN  `uuid` varchar(40);
+
+UPDATE  cloud_usage.quota_tariff
+SET     uuid = UUID()
+WHERE   uuid is null;
+
+ALTER TABLE cloud_usage.quota_tariff
+    MODIFY      `uuid` varchar(40) NOT NULL;
+
+
+-- Create column 'name'
+ALTER TABLE cloud_usage.quota_tariff
+    ADD COLUMN  `name` text
+    COMMENT     'A name, deﬁned by the user, to the tariff. This column will be used as identiﬁer along the tariff updates.';
+
+UPDATE  cloud_usage.quota_tariff
+SET     name = case when effective_on <= now() then usage_name else concat(usage_name, '-', id) end
+WHERE   name is null;
+
+ALTER TABLE cloud_usage.quota_tariff
+    MODIFY      `name` text NOT NULL;
+
+
+-- Create column 'description'
+ALTER TABLE cloud_usage.quota_tariff
+    ADD COLUMN  `description` text DEFAULT NULL
+    COMMENT     'The description of the tariff.';
+
+
+-- Create column 'activation_rule'
+ALTER TABLE cloud_usage.quota_tariff
+    ADD COLUMN  `activation_rule` text DEFAULT NULL
+    COMMENT     'JS expression that defines when the tariff should be activated.';
+
+
+-- Create column 'removed'
+ALTER TABLE cloud_usage.quota_tariff
+    ADD COLUMN  `removed` datetime DEFAULT NULL;
+
+
+-- Create column 'end_date'
+ALTER TABLE cloud_usage.quota_tariff
+    ADD COLUMN  `end_date` datetime DEFAULT NULL
+    COMMENT     'Defines the end date of the tariff.';
+
+
+-- Change usage unit to right unit
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'Compute*Month'
+WHERE   usage_unit = 'Compute-Month';
+
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'IP*Month'
+WHERE   usage_unit = 'IP-Month';
+
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'GB*Month'
+WHERE   usage_unit = 'GB-Month';
+
+UPDATE  cloud_usage.quota_tariff
+SET     usage_unit = 'Policy*Month'
+WHERE   usage_unit = 'Policy-Month';
+
+----- PR Quota custom tariffs #5909 -----
