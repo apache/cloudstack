@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,7 +67,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -972,6 +973,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    private Object getObjectPossibleMethodValue(Object obj, String methodName) {
+        Object result = null;
+
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            result = m.invoke(obj);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
+
+        return result;
+    }
+
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1037,16 +1049,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object isHaEnabled = cmd.getHaEnabled();
         Object autoScaleVmGroupId = cmd.getAutoScaleVmGroupId();
         Object pod = null;
-        Long clusterId = null;
+        Object clusterId = null;
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
-            if (cmd instanceof ListVMsCmdByAdmin) {
-                pod = ((ListVMsCmdByAdmin) cmd).getPodId();
-                clusterId = ((ListVMsCmdByAdmin) cmd).getClusterId();
-                hostId = ((ListVMsCmdByAdmin) cmd).getHostId();
-                storageId = ((ListVMsCmdByAdmin) cmd).getStorageId();
-            }
+            pod = getObjectPossibleMethodValue(cmd, "getPodId");
+            clusterId = getObjectPossibleMethodValue(cmd, "getClusterId");
+            hostId = getObjectPossibleMethodValue(cmd, "getHostId");
+            storageId = getObjectPossibleMethodValue(cmd, "getStorageId");
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);

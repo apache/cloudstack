@@ -37,7 +37,11 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEvent;
 import com.cloud.storage.StorageUtil;
+
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -135,6 +139,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -175,6 +180,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    private UUIDManager _uuidMgr;
     @Inject
     protected TemplateManager _tmpltMgr;
     @Inject
@@ -812,6 +819,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol.getTemplateId());
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
                                          Long deviceId) {
@@ -871,7 +879,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
         }
-        return toDiskProfile(vol, offering);
+        DiskProfile diskProfile = toDiskProfile(vol, offering);
+
+        updateRootDiskVolumeEventDetails(type, vm, List.of(diskProfile));
+
+        return diskProfile;
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
@@ -953,6 +965,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return toDiskProfile(vol, offering);
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
                                                       Account owner) {
@@ -1006,8 +1019,30 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             profiles.add(diskProfile);
         }
 
+        updateRootDiskVolumeEventDetails(type, vm, profiles);
+
         handleRootDiskControllerTpeForDeployAsIs(templateAsIsDisks, vm);
         return profiles;
+    }
+
+    /**
+     * Set context information for VOLUME.CREATE event for ROOT disk.
+     *
+     * @param type         - Volume Type
+     * @param vm           - Virtual Machine
+     * @param diskProfiles - Disk Profiles
+     */
+    private void updateRootDiskVolumeEventDetails(Type type, VirtualMachine vm, List<DiskProfile> diskProfiles) {
+        CallContext callContext = CallContext.current();
+        // Update only for volume type ROOT and API command resource type Volume
+        if (type == Type.ROOT && callContext != null && callContext.getEventResourceType() == ApiCommandResourceType.Volume) {
+            List<Long> volumeIds = diskProfiles.stream().map(DiskProfile::getVolumeId).filter(volumeId -> volumeId != null).collect(Collectors.toList());
+            if (!volumeIds.isEmpty()) {
+                callContext.setEventResourceId(volumeIds.get(0));
+            }
+            String volumeUuids = volumeIds.stream().map(volumeId -> this._uuidMgr.getUuid(Volume.class, volumeId)).collect(Collectors.joining(", "));
+            callContext.setEventDetails("Volume Id: " + volumeUuids + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
+        }
     }
 
     private void handleRootDiskControllerTpeForDeployAsIs(List<DatadiskTO> disksAsIs, VirtualMachine vm) {

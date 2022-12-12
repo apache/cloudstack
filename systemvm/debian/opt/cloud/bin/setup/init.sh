@@ -188,6 +188,7 @@ setup_interface_sshd() {
     setup_sshd $ETH1_IP "eth1"
 
   elif [ "$TYPE" == "vpcrouter" ]; then
+    init_interfaces "eth0"
     setup_interface "0" $ETH0_IP $ETH0_MASK $GW
     setup_sshd $ETH0_IP "eth0"
 
