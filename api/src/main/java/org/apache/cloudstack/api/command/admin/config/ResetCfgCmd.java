@@ -163,7 +163,7 @@ public class ResetCfgCmd extends BaseCmd {
                 response.setScope(ConfigKey.Scope.ImageStore.name());
             }
             if (getNetworkId() != null) {
-                response.setScope("network");
+                response.setScope(ConfigKey.Scope.Network.name());
             }
             response.setValue(cfg.second());
             this.setResponseObject(response);
