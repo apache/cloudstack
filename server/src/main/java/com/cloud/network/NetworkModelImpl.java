@@ -1677,15 +1677,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
             s_logger.info(String.format("Checking permission for account %s (%s) on network %s (%s)", caller.getAccountName(), caller.getUuid(), network.getName(), network.getUuid()));
             if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
-                checkSharedNetworkPermissions(caller, network);
+                checkAccountNetworkPermissions(caller, network);
 
             } else {
-                checkIsolatedNetworkPermissions(caller, network);
+                checkDomainNetworkPermissions(caller, network);
             }
         }
     }
 
-    private void checkSharedNetworkPermissions(Account caller, Network network) {
+    private void checkAccountNetworkPermissions(Account caller, Network network) {
         AccountVO networkOwner = _accountDao.findById(network.getAccountId());
         if (networkOwner == null)
             throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
@@ -1701,7 +1701,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
     }
 
-    private void checkIsolatedNetworkPermissions(Account caller, Network network) {
+    private void checkDomainNetworkPermissions(Account caller, Network network) {
         if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
             DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
             if (callerDomain == null) {
