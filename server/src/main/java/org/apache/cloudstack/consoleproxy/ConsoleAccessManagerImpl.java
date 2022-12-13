@@ -47,7 +47,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ObjectUtils;
@@ -212,13 +211,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             throw new CloudRuntimeException(msg);
         }
 
-        if (vm.getHostId() == null) {
+        Long hostId = vm.getState() != VirtualMachine.State.Migrating ? vm.getHostId() : vm.getLastHostId();
+        if (hostId == null) {
             msg = "VM " + vmUuid + " lost host info, sending blank response for console access request";
             s_logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
-        HostVO host = managementServer.getHostBy(vm.getHostId());
+        HostVO host = managementServer.getHostBy(hostId);
         if (host == null) {
             msg = "VM " + vmUuid + "'s host does not exist, sending blank response for console access request";
             s_logger.warn(msg);
@@ -487,13 +487,4 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
     }
 
-    @Override
-    public String getConfigComponentName() {
-        return ConsoleAccessManagerImpl.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] { };
-    }
 }
