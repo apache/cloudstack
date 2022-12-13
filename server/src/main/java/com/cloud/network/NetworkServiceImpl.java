@@ -2757,8 +2757,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (networkOfferingChanged) {
                 throw new InvalidParameterValueException("Cannot specify this nework offering change and guestVmCidr at same time. Specify only one.");
             }
-            if (!(network.getState() == Network.State.Implemented)) {
-                throw new InvalidParameterValueException("The network must be in " + Network.State.Implemented + " state. IP Reservation cannot be applied in " + network.getState() + " state");
+            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Allocated) {
+                throw new InvalidParameterValueException(String.format("The network must be in %s or %s state. IP Reservation cannot be applied in %s state",
+                        Network.State.Implemented, Network.State.Allocated, network.getState()));
             }
             if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
