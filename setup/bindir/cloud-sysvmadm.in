@@ -26,7 +26,7 @@ usage() {
   usage_content="
   The tool for stopping/starting running system vms and domain routers
 
-  Usage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-t] [-n] [-z] [-i] [-j] [-v] [-i] [-j]
+  Usage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-n] [-t] [-l] [-z] [-v] [-i] [-j]
 
    -d - cloud DB server ip address, defaulted to localhost if not specified
    -u - user name to access cloud DB, defaulted to \"root\" if not specified
