@@ -180,10 +180,10 @@ public class StringUtils {
         return cleanResult;
     }
 
-    public static String cleanDetails(final String stringToClean, final String detailsIndexSting) {
+    public static String cleanDetails(final String stringToClean, final String detailsIndexString) {
         String cleanResult = stringToClean;
         for (final String log : stringToClean.split("&|%26")) {
-            if (log.contains(detailsIndexSting)) {
+            if (log.contains(detailsIndexString)) {
                 cleanResult = cleanResult.replace(log, "");
             }
         }

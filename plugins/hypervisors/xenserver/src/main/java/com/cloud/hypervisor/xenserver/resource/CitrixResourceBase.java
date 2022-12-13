@@ -4085,7 +4085,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return states;
     }
 
-    public HashMap<String, String> parseDefaultOvsRuleComamnd(final String str) {
+    public HashMap<String, String> parseDefaultOvsRuleCommand(final String str) {
         final HashMap<String, String> cmd = new HashMap<String, String>();
         final String[] sarr = str.split("/");
         for (int i = 0; i < sarr.length; i++) {
