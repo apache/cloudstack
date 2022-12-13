@@ -533,8 +533,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the set of responses that was created.
      */
     protected List<StatsResponse> createVolumeStatsResponse(List<VolumeStatsVO> volumeStatsList) {
-        List<StatsResponse> statsResponseList = new ArrayList<StatsResponse>();
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        List<StatsResponse> statsResponseList = new ArrayList<>();
         for (VolumeStatsVO volumeStats : volumeStatsList) {
             StatsResponse response = new StatsResponse();
             response.setTimestamp(volumeStats.getTimestamp());

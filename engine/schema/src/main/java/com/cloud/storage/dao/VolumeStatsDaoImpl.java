@@ -39,29 +39,32 @@ public class VolumeStatsDaoImpl extends GenericDaoBase<VolumeStatsVO, Long> impl
     protected SearchBuilder<VolumeStatsVO> volumeIdTimestampBetweenSearch;
     protected SearchBuilder<VolumeStatsVO> timestampSearch;
 
+    private final static String VOLUME_ID = "volumeId";
+    private final static String TIMESTAMP = "timestamp";
+
     @PostConstruct
     protected void init() {
         volumeIdSearch = createSearchBuilder();
-        volumeIdSearch.and("volumeId", volumeIdSearch.entity().getVolumeId(), Op.EQ);
+        volumeIdSearch.and(VOLUME_ID, volumeIdSearch.entity().getVolumeId(), Op.EQ);
         volumeIdSearch.done();
 
         volumeIdTimestampGreaterThanEqualSearch = createSearchBuilder();
-        volumeIdTimestampGreaterThanEqualSearch.and("volumeId", volumeIdTimestampGreaterThanEqualSearch.entity().getVolumeId(), Op.EQ);
-        volumeIdTimestampGreaterThanEqualSearch.and("timestamp", volumeIdTimestampGreaterThanEqualSearch.entity().getTimestamp(), Op.GTEQ);
+        volumeIdTimestampGreaterThanEqualSearch.and(VOLUME_ID, volumeIdTimestampGreaterThanEqualSearch.entity().getVolumeId(), Op.EQ);
+        volumeIdTimestampGreaterThanEqualSearch.and(TIMESTAMP, volumeIdTimestampGreaterThanEqualSearch.entity().getTimestamp(), Op.GTEQ);
         volumeIdTimestampGreaterThanEqualSearch.done();
 
         volumeIdTimestampLessThanEqualSearch = createSearchBuilder();
-        volumeIdTimestampLessThanEqualSearch.and("volumeId", volumeIdTimestampLessThanEqualSearch.entity().getVolumeId(), Op.EQ);
-        volumeIdTimestampLessThanEqualSearch.and("timestamp", volumeIdTimestampLessThanEqualSearch.entity().getTimestamp(), Op.LTEQ);
+        volumeIdTimestampLessThanEqualSearch.and(VOLUME_ID, volumeIdTimestampLessThanEqualSearch.entity().getVolumeId(), Op.EQ);
+        volumeIdTimestampLessThanEqualSearch.and(TIMESTAMP, volumeIdTimestampLessThanEqualSearch.entity().getTimestamp(), Op.LTEQ);
         volumeIdTimestampLessThanEqualSearch.done();
 
         volumeIdTimestampBetweenSearch = createSearchBuilder();
-        volumeIdTimestampBetweenSearch.and("volumeId", volumeIdTimestampBetweenSearch.entity().getVolumeId(), Op.EQ);
-        volumeIdTimestampBetweenSearch.and("timestamp", volumeIdTimestampBetweenSearch.entity().getTimestamp(), Op.BETWEEN);
+        volumeIdTimestampBetweenSearch.and(VOLUME_ID, volumeIdTimestampBetweenSearch.entity().getVolumeId(), Op.EQ);
+        volumeIdTimestampBetweenSearch.and(TIMESTAMP, volumeIdTimestampBetweenSearch.entity().getTimestamp(), Op.BETWEEN);
         volumeIdTimestampBetweenSearch.done();
 
         timestampSearch = createSearchBuilder();
-        timestampSearch.and("timestamp", timestampSearch.entity().getTimestamp(), Op.LT);
+        timestampSearch.and(TIMESTAMP, timestampSearch.entity().getTimestamp(), Op.LT);
         timestampSearch.done();
 
     }
@@ -69,53 +72,53 @@ public class VolumeStatsDaoImpl extends GenericDaoBase<VolumeStatsVO, Long> impl
     @Override
     public List<VolumeStatsVO> findByVolumeId(long volumeId) {
         SearchCriteria<VolumeStatsVO> sc = volumeIdSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         return listBy(sc);
     }
 
     @Override
     public List<VolumeStatsVO> findByVolumeIdOrderByTimestampDesc(long volumeId) {
         SearchCriteria<VolumeStatsVO> sc = volumeIdSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        Filter orderByFilter = new Filter(VolumeStatsVO.class, "timestamp", false, null, null);
+        sc.setParameters(VOLUME_ID, volumeId);
+        Filter orderByFilter = new Filter(VolumeStatsVO.class, TIMESTAMP, false, null, null);
         return search(sc, orderByFilter, null, false);
     }
 
     @Override
     public List<VolumeStatsVO> findByVolumeIdAndTimestampGreaterThanEqual(long volumeId, Date time) {
         SearchCriteria<VolumeStatsVO> sc = volumeIdTimestampGreaterThanEqualSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("timestamp", time);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(TIMESTAMP, time);
         return listBy(sc);
     }
 
     @Override
     public List<VolumeStatsVO> findByVolumeIdAndTimestampLessThanEqual(long volumeId, Date time) {
         SearchCriteria<VolumeStatsVO> sc = volumeIdTimestampLessThanEqualSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("timestamp", time);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(TIMESTAMP, time);
         return listBy(sc);
     }
 
     @Override
     public List<VolumeStatsVO> findByVolumeIdAndTimestampBetween(long volumeId, Date startTime, Date endTime) {
         SearchCriteria<VolumeStatsVO> sc = volumeIdTimestampBetweenSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("timestamp", startTime, endTime);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(TIMESTAMP, startTime, endTime);
         return listBy(sc);
     }
 
     @Override
     public void removeAllByVolumeId(long volumeId) {
         SearchCriteria<VolumeStatsVO> sc = volumeIdSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         expunge(sc);
     }
 
     @Override
     public void removeAllByTimestampLessThan(Date limit) {
         SearchCriteria<VolumeStatsVO> sc = timestampSearch.create();
-        sc.setParameters("timestamp", limit);
+        sc.setParameters(TIMESTAMP, limit);
         expunge(sc);
     }
 }
