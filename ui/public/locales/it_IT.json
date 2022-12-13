@@ -1461,7 +1461,7 @@
 "message.validate.range.length": "Please enter a value between {0} and {1} characters long.",
 "message.vm.review.launch": "Si prega di riesaminare le informazioni e confermare l'instance virtuale scelta sia corretta prima di avviarla.",
 "message.zone.creation.complete": "Creazione zona completata",
-"messgae.validate.min": "Please enter a value greater than or equal to {0}.",
+"message.validate.min": "Please enter a value greater than or equal to {0}.",
 "side.by.side": "Side by Side",
 "state.completed": "Completato",
 "state.declined": "Declinato",

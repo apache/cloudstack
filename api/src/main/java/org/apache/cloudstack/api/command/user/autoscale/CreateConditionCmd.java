@@ -29,13 +29,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.Condition;
 
-@APICommand(name = "createCondition", description = "Creates a condition", responseObject = ConditionResponse.class, entityType = {Condition.class},
+@APICommand(name = "createCondition", description = "Creates a condition for VM auto scaling", responseObject = ConditionResponse.class, entityType = {Condition.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateConditionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateConditionCmd.class.getName());
@@ -48,14 +49,17 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.UUID, entityType = CounterResponse.class, required = true, description = "ID of the Counter.")
     private long counterId;
 
-    @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold.")
+    @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold. Valid values are EQ, GT, LT, GE, LE.")
     private String relationalOperator;
 
-    @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Threshold value.")
+    @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Value for which the Counter will be evaluated with the Operator selected.")
     private Long threshold;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the condition. " + "Must be used with the domainId parameter.")
     private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for condition")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID of the account.")
     private Long domainId;
@@ -103,17 +107,14 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     }
 
     public String getAccountName() {
-        if (accountName == null) {
-            return CallContext.current().getCallingAccount().getAccountName();
-        }
-
         return accountName;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public Long getDomainId() {
-        if (domainId == null) {
-            return CallContext.current().getCallingAccount().getDomainId();
-        }
         return domainId;
     }
 
@@ -138,7 +139,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
