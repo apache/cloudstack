@@ -45,6 +45,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -253,7 +254,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 
@@ -370,8 +370,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private DomainRouterJoinDao domainRouterJoinDao;
     @Inject
     private AnnotationDao annotationDao;
-    @Inject
-    private ConfigurationDao configDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1413,9 +1411,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * @param configName name of the config
      * @return the service offering found or null if not found
      */
-    public ServiceOffering getServiceOfferingByConfig(String configName) {
+    public ServiceOffering getServiceOfferingByConfig() {
         ServiceOffering defaultRouterOffering = null;
-        final String globalRouterOffering = configDao.getValue(configName);
+        final String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
 
         if (globalRouterOffering != null) {
             defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
@@ -1524,7 +1522,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
 
-        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig("router.service.offering");
+        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
         final Pair<Long, Long> cpuMemoryCount = resolveCpuAndMemoryCount(offering, defaultRouterOffering, owner);
         calculateResourceCount(cpuMemoryCount, owner, true);
     }
@@ -1542,14 +1540,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
 
-        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig("router.service.offering");
+        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
         final Pair<Long, Long> cpuMemoryCount = resolveCpuAndMemoryCount(offering, defaultRouterOffering, owner);
         calculateResourceCount(cpuMemoryCount, owner, false);
     }
 
     private void resetVmNicsDeviceId(Long vmId) {
         final List<NicVO> nics = _nicsDao.listByVmId(vmId);
-        Collections.sort(nics, (nic1, nic2) -> {
+        nics.sort((nic1, nic2) -> {
             Long nicDevId1 = (long) nic1.getDeviceId();
             Long nicDevId2 = (long) nic2.getDeviceId();
             return nicDevId1.compareTo(nicDevId2);
