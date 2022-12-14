@@ -79,13 +79,14 @@ class TestMetrics(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.updateConfiguration('vm.stats.interval', cls.vm_stats_interval_cfg)
-        cls.updateConfiguration('vm.stats.max.retention.time', cls.vm_stats_max_retention_time_cfg)
-        cls.updateConfiguration('vm.disk.stats.interval', cls.vm_disk_stats_interval_cfg)
-        cls.updateConfiguration('vm.disk.stats.interval.min', cls.vm_disk_stats_interval_min_cfg)
-        cls.updateConfiguration('vm.disk.stats.max.retention.time', cls.vm_disk_stats_max_retention_time_cfg)
-        cls.updateConfiguration('vm.disk.stats.retention.enabled', cls.vm_disk_stats_retention_enabled_cfg)
-        cls.restartServer()
+        if cls.hypervisor.lower() != 'simulator':
+            cls.updateConfiguration('vm.stats.interval', cls.vm_stats_interval_cfg)
+            cls.updateConfiguration('vm.stats.max.retention.time', cls.vm_stats_max_retention_time_cfg)
+            cls.updateConfiguration('vm.disk.stats.interval', cls.vm_disk_stats_interval_cfg)
+            cls.updateConfiguration('vm.disk.stats.interval.min', cls.vm_disk_stats_interval_min_cfg)
+            cls.updateConfiguration('vm.disk.stats.max.retention.time', cls.vm_disk_stats_max_retention_time_cfg)
+            cls.updateConfiguration('vm.disk.stats.retention.enabled', cls.vm_disk_stats_retention_enabled_cfg)
+            cls.restartServer()
         super(TestMetrics, cls).tearDownClass()
 
     @classmethod
