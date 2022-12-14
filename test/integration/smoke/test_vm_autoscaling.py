@@ -306,7 +306,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             services=cls.services["network"],
             networkid=cls.user_network_1.id
         )
-        cls._cleanup.append(cls.public_ip_address)
 
         cls.services["lbrule"]["openfirewall"] = False
         cls.load_balancer_rule = LoadBalancerRule.create(
