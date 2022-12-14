@@ -23,6 +23,7 @@ from marvin.lib.base import *
 from marvin.lib.common import *
 from marvin.lib.utils import (random_gen)
 from nose.plugins.attrib import attr
+from marvin.lib.decoratorGenerators import skipTestIf
 
 import time
 
@@ -53,25 +54,28 @@ class TestMetrics(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
             cls.hypervisor
         )
-        cls.vm_stats_interval_cfg = Configurations.list(cls.apiclient, name='vm.stats.interval')[0].value
-        cls.vm_stats_max_retention_time_cfg = Configurations.list(cls.apiclient, name='vm.stats.max.retention.time')[0].value
-        cls.vm_disk_stats_interval_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.interval')[0].value
-        cls.vm_disk_stats_interval_min_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.interval.min')[0].value
-        cls.vm_disk_stats_max_retention_time_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.max.retention.time')[0].value
-        cls.vm_disk_stats_retention_enabled_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.retention.enabled')[0].value
-        Configurations.update(cls.apiclient, 'vm.stats.interval', value='60000')
-        Configurations.update(cls.apiclient, 'vm.stats.max.retention.time', value='7200')
-        Configurations.update(cls.apiclient, 'vm.disk.stats.interval', value='90')
-        Configurations.update(cls.apiclient, 'vm.disk.stats.interval.min', value='90')
-        Configurations.update(cls.apiclient, 'vm.disk.stats.max.retention.time', value='7200')
-        Configurations.update(cls.apiclient, 'vm.disk.stats.retention.enabled', value='true')
-        cls.restartServer()
-        cls._cleanup.append(cls.service_offering)
+        cls.hypervisorNotSupported = True
+        if cls.hypervisor.lower() != 'simulator':
+            cls.hypervisorNotSupported = False
+            cls.vm_stats_interval_cfg = Configurations.list(cls.apiclient, name='vm.stats.interval')[0].value
+            cls.vm_stats_max_retention_time_cfg = Configurations.list(cls.apiclient, name='vm.stats.max.retention.time')[0].value
+            cls.vm_disk_stats_interval_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.interval')[0].value
+            cls.vm_disk_stats_interval_min_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.interval.min')[0].value
+            cls.vm_disk_stats_max_retention_time_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.max.retention.time')[0].value
+            cls.vm_disk_stats_retention_enabled_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.retention.enabled')[0].value
+            Configurations.update(cls.apiclient, 'vm.stats.interval', value='60000')
+            Configurations.update(cls.apiclient, 'vm.stats.max.retention.time', value='7200')
+            Configurations.update(cls.apiclient, 'vm.disk.stats.interval', value='90')
+            Configurations.update(cls.apiclient, 'vm.disk.stats.interval.min', value='90')
+            Configurations.update(cls.apiclient, 'vm.disk.stats.max.retention.time', value='7200')
+            Configurations.update(cls.apiclient, 'vm.disk.stats.retention.enabled', value='true')
+            cls.restartServer()
 
     @classmethod
     def tearDownClass(cls):
@@ -433,7 +437,8 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
     def test_list_vms_metrics_history(self):
         #deploy VM
         self.small_virtual_machine = VirtualMachine.create(
@@ -460,7 +465,8 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
     def test_list_system_vms_metrics_history(self):
         cmd = listSystemVmsUsageHistory.listSystemVmsUsageHistoryCmd()
         now = datetime.datetime.now() - datetime.timedelta(minutes=15)
@@ -475,7 +481,8 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
     def test_list_volumes_metrics_history(self):
         #deploy VM
         self.small_virtual_machine = VirtualMachine.create(
