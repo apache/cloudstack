@@ -1145,7 +1145,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return errMsg;
         }
 
-        isValueDeltaOrAll(name, value);
+        isValueForUpdateCfgCmdDeltaOrAll(name, value);
 
         if (value == null) {
             if (type.equals(Boolean.class)) {
@@ -1324,7 +1324,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return null;
     }
 
-    private void isValueDeltaOrAll(String name, String value) {
+    private void isValueForUpdateCfgCmdDeltaOrAll(String name, String value) {
         if (VirtualMachineManager.ResourceCountRoutersType.key().equalsIgnoreCase(name)
                 && (!resourceCountRoutersTypeValues.contains(value) || isBlank(value))) {
             final String msg = "Possible values are: delta or all.";
