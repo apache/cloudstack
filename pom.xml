@@ -110,6 +110,7 @@
         <cs.hamcrest.version>1.3</cs.hamcrest.version>
         <cs.junit.version>4.13.2</cs.junit.version>
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
+        <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
         <cs.mockito.version>3.2.4</cs.mockito.version>
         <cs.powermock.version>2.0.5</cs.powermock.version>
