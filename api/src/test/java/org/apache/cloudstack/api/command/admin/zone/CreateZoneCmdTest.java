@@ -1,7 +1,5 @@
 package org.apache.cloudstack.api.command.admin.zone;
 
-import static org.junit.Assert.*;
-
 import java.lang.reflect.Field;
 
 import org.junit.Assert;
@@ -16,11 +14,11 @@ public class CreateZoneCmdTest {
             Field f = createZoneCmd.getClass().getDeclaredField("isEdge");
             f.setAccessible(true);
             f.set(createZoneCmd, null);
-            assertFalse("Null or no isedge param value for API should return false", createZoneCmd.isEdge());
+            Assert.assertFalse("Null or no isedge param value for API should return false", createZoneCmd.isEdge());
             f.set(createZoneCmd, false);
-            assertFalse("false value for isedge param value for API should return false", createZoneCmd.isEdge());
+            Assert.assertFalse("false value for isedge param value for API should return false", createZoneCmd.isEdge());
             f.set(createZoneCmd, true);
-            assertTrue("true value for isedge param value for API should return true", createZoneCmd.isEdge());
+            Assert.assertTrue("true value for isedge param value for API should return true", createZoneCmd.isEdge());
         } catch (NoSuchFieldException | SecurityException | IllegalAccessException e) {
             Assert.fail();
         }
