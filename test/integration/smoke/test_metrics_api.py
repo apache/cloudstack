@@ -60,6 +60,14 @@ class TestMetrics(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor
         )
+        cls.domain = get_domain(cls.apiclient)
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            admin=False,
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
         cls.hypervisorNotSupported = True
         if cls.hypervisor.lower() != 'simulator':
             cls.hypervisorNotSupported = False
@@ -132,6 +140,10 @@ class TestMetrics(cloudstackTestCase):
             Configurations.update(cls.apiclient, config, value=value)
 
     def setUp(self):
+        self.userapiclient = self.testClient.getUserApiClient(
+            UserName=self.account.name,
+            DomainName=self.account.domain
+        )
         self.cleanup = []
 
     def tearDown(self):
@@ -185,23 +197,24 @@ class TestMetrics(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_list_vms_metrics(self):
-        #deploy VM
+    def run_list_vm_metrics_test(self, is_user):
+        apiclient = self.apiclient
+        if is_user:
+            apiclient = self.userapiclient
         self.small_virtual_machine = VirtualMachine.create(
-                                        self.apiclient,
-                                        self.services["virtual_machine"],
-                                        serviceofferingid=self.service_offering.id,
-                                        templateid=self.template.id,
-                                        zoneid=self.zone.id
-                                        )
+            apiclient,
+            self.services["virtual_machine"],
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
         self.cleanup.append(self.small_virtual_machine)
 
 
         cmd = listVirtualMachinesMetrics.listVirtualMachinesMetricsCmd()
         cmd.id = self.small_virtual_machine.id
 
-        lvmm = self.apiclient.listVirtualMachinesMetrics(cmd)[0]
+        lvmm = apiclient.listVirtualMachinesMetrics(cmd)[0]
 
         self.assertEqual(lvmm.id, self.small_virtual_machine.id)
 
@@ -212,7 +225,13 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(lvmm, 'networkread'))
         self.assertTrue(hasattr(lvmm, 'networkwrite'))
 
-        return
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_list_vms_metrics_admin(self):
+        self.run_list_vm_metrics_test(False)
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_list_vms_metrics_user(self):
+        self.run_list_vm_metrics_test(True)
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_list_pstorage_metrics(self):
