@@ -766,20 +766,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 VpcOfferingJoinVO offering = it.next();
-                if(org.apache.commons.lang3.StringUtils.isEmpty(offering.getDomainId())) {
+                if (org.apache.commons.lang3.StringUtils.isEmpty(offering.getDomainId())) {
                     continue;
                 }
-                boolean toRemove = true;
                 String[] domainIdsArray = offering.getDomainId().split(",");
                 for (String domainIdString : domainIdsArray) {
                     Long dId = Long.valueOf(domainIdString.trim());
-                    if (domainDao.isChildDomain(dId, caller.getDomainId())) {
-                        toRemove = false;
+                    if (!domainDao.isChildDomain(dId, caller.getDomainId())) {
+                        it.remove();
                         break;
                     }
-                }
-                if (toRemove) {
-                    it.remove();
                 }
             }
         }

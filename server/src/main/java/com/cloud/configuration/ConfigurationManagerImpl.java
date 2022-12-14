@@ -6712,22 +6712,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (StringUtils.isEmpty(offering.getDomainId())) {
                     continue;
                 }
-                boolean toRemove = true;
                 String[] domainIdsArray = offering.getDomainId().split(",");
                 for (String domainIdString : domainIdsArray) {
                     Long dId = Long.valueOf(domainIdString.trim());
                     if (caller.getType() != Account.Type.ADMIN &&
-                            _domainDao.isChildDomain(dId, caller.getDomainId())) {
-                        toRemove = false;
+                            !_domainDao.isChildDomain(dId, caller.getDomainId())) {
+                        it.remove();
                         break;
                     }
-                    if (domainId != null && _domainDao.isChildDomain(dId, domainId)) {
-                        toRemove = false;
+                    if (domainId != null && !_domainDao.isChildDomain(dId, domainId)) {
+                        it.remove();
                         break;
                     }
-                }
-                if (toRemove) {
-                    it.remove();
                 }
             }
         }
