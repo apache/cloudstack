@@ -45,7 +45,6 @@ BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
-BuildRequires: maven => 3.0.0
 BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
