@@ -110,7 +110,7 @@ public static void setUp() throws ConfigurationException {
 
     @Test
     public void canDoReasonableNumberOfApiAccessPerSecond() throws Exception {
-        int allowedRequests = 2000;
+        int allowedRequests = 200;
         s_limitService.setMaxAllowed(allowedRequests);
         s_limitService.setTimeToLive(5);
         long startTime = System.nanoTime();
@@ -122,13 +122,15 @@ public static void setUp() throws ConfigurationException {
         }
         // we cannot really say more about this test
         boolean underLimit =  isUnderLimit(key);
-        long endtime = System.nanoTime();
+        long endTime = System.nanoTime();
+        System.out.println("time elapsed " + (endTime - startTime)/1000/1000 + " ms");
         int issued = s_limitService.getIssued(key.getAccountId());
         int timeToLive = s_limitService.getTimeToLive();
 
         // this assertion is really invalid as we don´t know if we exceeded the time to live for the amount of api calls (for sure)
-        assertFalse(String.format("We should block >%d requests per %d seconds (managed %d, time elapsed %d)",
-                s_limitService.getMaxAllowed(), timeToLive, issued, endtime - startTime), underLimit);
+        // so only fail if timeToLive is not exeeded and we didn´t get the requested number of calls
+        assertFalse(String.format("We should block >%d requests per %d seconds (managed %d, time elapsed %d ns)",
+                s_limitService.getMaxAllowed(), timeToLive, issued, endTime - startTime), ((endTime - startTime)/1000000000 < timeToLive) && underLimit);
     }
 
     @Test
