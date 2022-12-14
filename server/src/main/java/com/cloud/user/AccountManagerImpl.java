@@ -328,7 +328,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
 
-    static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+    public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
             Boolean.class,
             "enable.user.two.factor.authentication",
             "false",
@@ -3203,7 +3203,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         this.userTwoFactorAuthenticationProviders = userTwoFactorAuthenticationProviders;
     }
 
-    private void initializeUserTwoFactorAuthenticationProvidersMap() {
+    protected void initializeUserTwoFactorAuthenticationProvidersMap() {
         if (userTwoFactorAuthenticationProviders != null) {
             for (final UserTwoFactorAuthenticator userTwoFactorAuthenticator : userTwoFactorAuthenticationProviders) {
                 userTwoFactorAuthenticationProvidersMap.put(userTwoFactorAuthenticator.getName().toLowerCase(), userTwoFactorAuthenticator);
