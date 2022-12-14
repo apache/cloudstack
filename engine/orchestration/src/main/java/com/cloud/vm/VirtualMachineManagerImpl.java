@@ -1430,13 +1430,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     /**
      * Counts VR resources for the domain if global setting is true.
-     * if value is "all" count all VR resources else get diff of
-     * current VR offering and default VR offering
+     * If the value is "all", counts all VR resources, otherwise get the difference between
+     * current VR offering and default VR offering.
      *
      * @param offering VR service offering
      * @param defaultRouterOffering default VR service offering
      * @param owner account
-     * @return a Pair of cpu and ram
+     * @return a Pair of CPU and RAM
      */
     private Pair<Long, Long> resolveCpuAndMemoryCount(ServiceOffering offering, ServiceOffering defaultRouterOffering, Account owner) {
         Integer cpuCount = 0;
@@ -1468,12 +1468,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memoryCount);
             }
         } catch (ResourceAllocationException ex) {
-            throw new CloudRuntimeException(String.format("Unable to deploy/start routers due to {}", ex.getMessage()));
+            throw new CloudRuntimeException(String.format("Unable to deploy/start routers due to {}.", ex.getMessage()));
         }
     }
 
     /**
-     * Check if resource count can be allocated to account/domain
+     * Checks if resource count can be allocated to the account/domain.
      *
      * @param cpuMemoryCount a Pair of cpu and ram
      * @param owner the account
@@ -1485,10 +1485,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Increment the resource count
         if (s_logger.isDebugEnabled()) {
-            if(isIncrement) {
-                s_logger.debug(String.format("Incrementing the CPU count with value %s and RAM value with %s", cpuCount, memoryCount));
+            if (isIncrement) {
+                s_logger.debug(String.format("Incrementing the CPU count with value %s and RAM value with %s.", cpuCount, memoryCount));
             } else {
-                s_logger.debug(String.format("Decrementing cpu resource count with value %s and memory resource with value %s",cpuCount, memoryCount));
+                s_logger.debug(String.format("Decrementing CPU resource count with value %s and memory resource with value %s.",cpuCount, memoryCount));
             }
         }
 
@@ -1502,15 +1502,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Function to increment the VR resource count
+     * Increments the VR resource count.
      * If the global setting resource.count.router is true then the VR
-     * resource count will be considered as well
+     * resource count will be considered as well.
      * If the global setting resource.count.router.type is "all" then
-     * all VR resource count will be considered else the diff between
+     * the total VR resource count will be considered, otherwise the difference between
      * the current VR service offering and the default offering will
      * be considered.
      * During router deployment/destroy, we increment the resource
-     * count only if resource.count.running.vms is false else
+     * count only if resource.count.running.vms is false, otherwise
      * we increment it during VR start/stop. Same applies for
      * decrementing resource count.
      *
@@ -1530,7 +1530,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Function to decrement the VR resource count
+     * Decrements the VR resource count.
      *
      * @param offering
      * @param owner
