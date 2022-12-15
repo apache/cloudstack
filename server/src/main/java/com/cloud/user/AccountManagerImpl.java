@@ -3269,7 +3269,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserAccountVO userAccount = _userAccountDao.findById(userId);
         UserVO userVO = _userDao.findById(userId);
 
-        if (!enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) {
+        if (!enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()) && !mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) {
             throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
         }
 
