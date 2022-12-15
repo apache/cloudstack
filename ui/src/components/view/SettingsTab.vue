@@ -106,11 +106,11 @@ export default {
       warningMessages: {
         'vr.private.interface.max.mtu': {
           scope: 'zone',
-          warning: this.$t('Please note that this limit won\'t affect pre-existing networks')
+          warning: this.$t('message.warn.zone.mtu.update')
         },
         'vr.public.interface.max.mtu': {
           scope: 'zone',
-          warning: this.$t('Please note that this limit won\'t affect pre-existing networks')
+          warning: this.$t('message.warn.zone.mtu.update')
         }
       }
     }
