@@ -1753,7 +1753,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     protected Pair<Integer, Integer> validateMtuConfig(Integer publicMtu, Integer privateMtu, Long zoneId) {
         Integer vrMaxMtuForPublicIfaces = VRPublicInterfaceMtu.valueIn(zoneId);
         Integer vrMaxMtuForPrivateIfaces = VRPrivateInterfaceMtu.valueIn(zoneId);
-        if (!AllowUsersToSpecifyVmMtu.valueIn(zoneId)) {
+        if (!AllowUsersToSpecifyVRMtu.valueIn(zoneId)) {
             privateMtu = vrMaxMtuForPrivateIfaces;
             publicMtu = vrMaxMtuForPublicIfaces;
             return new Pair<>(publicMtu, privateMtu);
@@ -3238,7 +3238,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
-        if (!AllowUsersToSpecifyVmMtu.valueIn(zoneId)) {
+        if (!AllowUsersToSpecifyVRMtu.valueIn(zoneId)) {
             return new Pair<>(null, null);
         }
 
@@ -5704,6 +5704,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVmMtu};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
     }
 }

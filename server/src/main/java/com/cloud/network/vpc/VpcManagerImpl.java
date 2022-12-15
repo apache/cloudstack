@@ -1277,7 +1277,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {
         Long zoneId = vpcToUpdate.getZoneId();
-        if (mtu == null || NetworkService.AllowUsersToSpecifyVmMtu.valueIn(zoneId)) {
+        if (mtu == null || NetworkService.AllowUsersToSpecifyVRMtu.valueIn(zoneId)) {
             return null;
         }
         if (mtu > NetworkService.VRPublicInterfaceMtu.valueIn(zoneId)) {

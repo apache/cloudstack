@@ -261,7 +261,7 @@ export default {
       }
       for (var zone of this.zones) {
         if (zone.id === value) {
-          this.setMTU = zone?.allowuserspecifyvmmtu || false
+          this.setMTU = zone?.allowuserspecifyvrmtu || false
           this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
         }
       }

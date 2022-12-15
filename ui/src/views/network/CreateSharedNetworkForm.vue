@@ -663,7 +663,7 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
-      this.setMTU = zone?.allowuserspecifyvmmtu || false
+      this.setMTU = zone?.allowuserspecifyvrmtu || false
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       if (isAdmin()) {

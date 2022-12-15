@@ -478,7 +478,7 @@ public class NetworkServiceImplTest {
     }
 
     private void replaceUserChangeMtuField() throws Exception {
-        Field field = NetworkService.class.getDeclaredField("AllowUsersToSpecifyVmMtu");
+        Field field = NetworkService.class.getDeclaredField("AllowUsersToSpecifyVRMtu");
         field.setAccessible(true);
         // remove final modifier from field
         Field modifiersField = Field.class.getDeclaredField("modifiers");

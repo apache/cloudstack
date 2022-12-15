@@ -120,7 +120,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
         zoneResponse.setHasAnnotation(annotationDao.hasAnnotations(dataCenter.getUuid(), AnnotationService.EntityType.ZONE.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
-        zoneResponse.setAllowUserSpecifyVmMtu(NetworkService.AllowUsersToSpecifyVmMtu.valueIn(dataCenter.getId()));
+        zoneResponse.setAllowUserSpecifyVRMtu(NetworkService.AllowUsersToSpecifyVRMtu.valueIn(dataCenter.getId()));
         zoneResponse.setRouterPrivateInterfaceMaxMtu(NetworkService.VRPrivateInterfaceMtu.valueIn(dataCenter.getId()));
         zoneResponse.setRouterPublicInterfaceMaxMtu(NetworkService.VRPublicInterfaceMtu.valueIn(dataCenter.getId()));
 

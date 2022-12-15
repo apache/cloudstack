@@ -71,8 +71,8 @@ public interface NetworkService {
             "vr.private.interface.max.mtu", "1500", "The maximum value the MTU can have on the VR's private interfaces",
             true, ConfigKey.Scope.Zone);
 
-    public static final ConfigKey<Boolean> AllowUsersToSpecifyVmMtu = new ConfigKey<>("Advanced", Boolean.class,
-            "allow.end.users.to.specify.vm.mtu", "false", "Allow end users to specify VM MTU",
+    public static final ConfigKey<Boolean> AllowUsersToSpecifyVRMtu = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);

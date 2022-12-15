@@ -520,7 +520,7 @@ export default {
       api('listZones', {
         id: this.resource.zoneid
       }).then(json => {
-        this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvmmtu || false
+        this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
         this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
       })
     },
