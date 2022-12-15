@@ -168,12 +168,20 @@ export default {
       const rules = {}
 
       this.dataItems.forEach(record => {
-        rules['ipAddress' + record.id] = [{
+        const ipAddressKey = 'ipAddress' + record.id
+        const macAddressKey = 'macAddress' + record.id
+        rules[ipAddressKey] = [{
           validator: this.validatorIpAddress,
           cidr: record.cidr,
           networkType: record.type
         }]
-        rules['macAddress' + record.id] = [{ validator: this.validatorMacAddress }]
+        if (record.ipAddress) {
+          form[ipAddressKey] = record.ipAddress
+        }
+        rules[macAddressKey] = [{ validator: this.validatorMacAddress }]
+        if (record.macAddress) {
+          form[macAddressKey] = record.macAddress
+        }
       })
       this.form = reactive(form)
       this.rules = reactive(rules)
@@ -197,7 +205,7 @@ export default {
 
         this.networks.filter((item, index) => {
           if (item.key === key) {
-            this.networks[index].name = value
+            this.networks[index][name] = value
           }
         })
         this.$emit('update-network-config', this.networks)
