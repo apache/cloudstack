@@ -197,7 +197,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="isAdmin()" name="tags" ref="tags">
+        <a-form-item v-if="isAdmin() || isDomainAdmin()" name="tags" ref="tags">
           <template #label>
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
@@ -211,7 +211,7 @@
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
-            v-if="isAdmin()">
+            v-if="isAdmin() || isDomainAdmin()">
             <a-select-option v-for="(opt) in storageTags" :key="opt">
               {{ opt }}
             </a-select-option>
@@ -388,6 +388,9 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
       }
+    },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     isAdmin () {
       return isAdmin()

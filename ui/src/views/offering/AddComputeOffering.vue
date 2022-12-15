@@ -153,7 +153,7 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
-            <a-form-item v-if="isAdmin()" name="hosttags" ref="hosttags">
+            <a-form-item v-if="isAdmin() || isDomainAdmin()" name="hosttags" ref="hosttags">
               <template #label>
                 <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
               </template>
@@ -508,7 +508,7 @@
                 </a-form-item>
               </a-col>
               <a-col :md="12" :lg="12">
-                <a-form-item v-if="isAdmin()" name="storagetags" ref="storagetags">
+                <a-form-item v-if="isAdmin() || isDomainAdmin()" name="storagetags" ref="storagetags">
                   <template #label>
                     <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
                   </template>
@@ -761,6 +761,8 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
+      } else if (this.isDomainAdmin()) {
+        this.fetchStorageTagData()
       }
       this.fetchDiskOfferings()
     },
@@ -791,6 +793,9 @@ export default {
     },
     isAdmin () {
       return isAdmin()
+    },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
