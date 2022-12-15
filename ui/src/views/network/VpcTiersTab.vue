@@ -517,11 +517,11 @@ export default {
       this.publicLBNetworkExists()
     },
     fetchMtuForZone () {
-      api('listZone', {
+      api('listZones', {
         id: this.resource.zoneid
       }).then(json => {
-        this.setMTU = json?.listzonesresponse?.allowuserspecifyvmmtu || false
-        this.privateMtuMax = json?.listzonesresponse?.routerprivateinterfacemaxmtu || 1500
+        this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvmmtu || false
+        this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
       })
     },
     fetchNetworkAclList () {
