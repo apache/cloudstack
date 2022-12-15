@@ -42,7 +42,7 @@ public class NiciraNvpApiVersion {
 
     public static synchronized void logNiciraApiVersion() {
         if (niciraApiVersion != null) {
-            s_logger.info("NSX API VERSION: " + niciraApiVersion);
+            s_logger.info(String.format("NSX API VERSION: %s", niciraApiVersion));
         }
     }
 
