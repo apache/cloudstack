@@ -62,6 +62,11 @@ public interface CAManager extends CAService, Configurable, PluggableService {
             "true",
             "Enable automatic renewal and provisioning of certificate to agents as supported by the configured CA plugin.", true, ConfigKey.Scope.Cluster);
 
+    ConfigKey<Boolean> AllowHostIPInSysVMAgentCert = new ConfigKey<>("Advanced", Boolean.class,
+            "ca.framework.cert.systemvm.allow.host.ip",
+            "false",
+            "Allow hypervisor host's IP to be a part of a system VM's agent cert", true, ConfigKey.Scope.Zone);
+
     ConfigKey<Long> CABackgroundJobDelay = new ConfigKey<>("Advanced", Long.class,
             "ca.framework.background.task.delay",
             "3600",

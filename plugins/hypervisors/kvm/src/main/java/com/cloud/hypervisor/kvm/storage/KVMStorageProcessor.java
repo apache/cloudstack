@@ -1609,7 +1609,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.info(String.format("It was not possible to take live disk snapshot for volume [%s], in VM [%s], due to [%s]. We will take full snapshot of the VM"
                             + " and extract the disk instead. Consider upgrading your QEMU binary.", volume, vmName, e.getMessage()));
 
-                    takeFullVmSnaphotForBinariesThatDoesNotSupportLiveDiskSnapshot(vm, snapshotName, vmName);
+                    takeFullVmSnapshotForBinariesThatDoesNotSupportLiveDiskSnapshot(vm, snapshotName, vmName);
                     primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
                     extractDiskFromFullVmSnapshot(disk, volume, snapshotPath, snapshotName, vmName, vm);
                 }
@@ -1711,7 +1711,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected void takeFullVmSnaphotForBinariesThatDoesNotSupportLiveDiskSnapshot(Domain vm, String snapshotName, String vmName) throws LibvirtException {
+    protected void takeFullVmSnapshotForBinariesThatDoesNotSupportLiveDiskSnapshot(Domain vm, String snapshotName, String vmName) throws LibvirtException {
         String vmUuid = vm.getUUIDString();
 
         long start = System.currentTimeMillis();

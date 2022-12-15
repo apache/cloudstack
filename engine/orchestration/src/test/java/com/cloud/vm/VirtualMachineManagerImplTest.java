@@ -17,6 +17,7 @@
 
 package com.cloud.vm;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -31,9 +32,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.StorageManager;
+import com.cloud.host.Host;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
@@ -150,6 +154,49 @@ public class VirtualMachineManagerImplTest {
         ArrayList<StoragePoolAllocator> storagePoolAllocators = new ArrayList<>();
         storagePoolAllocators.add(storagePoolAllocatorMock);
         virtualMachineManagerImpl.setStoragePoolAllocators(storagePoolAllocators);
+    }
+
+    @Test
+    public void testaddHostIpToCertDetailsIfConfigAllows() {
+        Host vmHost = mock(Host.class);
+        ConfigKey testConfig = mock(ConfigKey.class);
+
+        Long dataCenterId = 5L;
+        String hostIp = "1.1.1.1";
+        String routerIp = "2.2.2.2";
+        Map<String, String> ipAddresses = new HashMap<>();
+        ipAddresses.put(NetworkElementCommand.ROUTER_IP, routerIp);
+
+        when(testConfig.valueIn(dataCenterId)).thenReturn(true);
+        when(vmHost.getDataCenterId()).thenReturn(dataCenterId);
+        when(vmHost.getPrivateIpAddress()).thenReturn(hostIp);
+
+        virtualMachineManagerImpl.addHostIpToCertDetailsIfConfigAllows(vmHost, ipAddresses, testConfig);
+        assertTrue(ipAddresses.containsKey(NetworkElementCommand.HYPERVISOR_HOST_PRIVATE_IP));
+        assertEquals(hostIp, ipAddresses.get(NetworkElementCommand.HYPERVISOR_HOST_PRIVATE_IP));
+        assertTrue(ipAddresses.containsKey(NetworkElementCommand.ROUTER_IP));
+        assertEquals(routerIp, ipAddresses.get(NetworkElementCommand.ROUTER_IP));
+    }
+
+    @Test
+    public void testaddHostIpToCertDetailsIfConfigAllowsWhenConfigFalse() {
+        Host vmHost = mock(Host.class);
+        ConfigKey testConfig = mock(ConfigKey.class);
+
+        Long dataCenterId = 5L;
+        String hostIp = "1.1.1.1";
+        String routerIp = "2.2.2.2";
+        Map<String, String> ipAddresses = new HashMap<>();
+        ipAddresses.put(NetworkElementCommand.ROUTER_IP, routerIp);
+
+        when(testConfig.valueIn(dataCenterId)).thenReturn(false);
+        when(vmHost.getDataCenterId()).thenReturn(dataCenterId);
+        when(vmHost.getPrivateIpAddress()).thenReturn(hostIp);
+
+        virtualMachineManagerImpl.addHostIpToCertDetailsIfConfigAllows(vmHost, ipAddresses, testConfig);
+        assertFalse(ipAddresses.containsKey(NetworkElementCommand.HYPERVISOR_HOST_PRIVATE_IP));
+        assertTrue(ipAddresses.containsKey(NetworkElementCommand.ROUTER_IP));
+        assertEquals(routerIp, ipAddresses.get(NetworkElementCommand.ROUTER_IP));
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -341,7 +388,7 @@ public class VirtualMachineManagerImplTest {
         Map<Volume, StoragePool> volumeToPoolObjectMap = virtualMachineManagerImpl.buildMapUsingUserInformation(virtualMachineProfileMock, hostMock, userDefinedVolumeToStoragePoolMap);
 
         assertFalse(volumeToPoolObjectMap.isEmpty());
-        Assert.assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
+        assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
 
         Mockito.verify(userDefinedVolumeToStoragePoolMap, times(1)).keySet();
     }
@@ -360,8 +407,8 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn(volumesOfVm).when(volumeDaoMock).findUsableVolumesForInstance(vmInstanceVoMockId);
         List<Volume> volumesNotMapped = virtualMachineManagerImpl.findVolumesThatWereNotMappedByTheUser(virtualMachineProfileMock, volumeToStoragePoolObjectMap);
 
-        Assert.assertEquals(1, volumesNotMapped.size());
-        Assert.assertEquals(volumeVoMock2, volumesNotMapped.get(0));
+        assertEquals(1, volumesNotMapped.size());
+        assertEquals(volumeVoMock2, volumesNotMapped.get(0));
     }
 
     @Test
@@ -407,8 +454,8 @@ public class VirtualMachineManagerImplTest {
 
         List<StoragePool> poolList = virtualMachineManagerImpl.getCandidateStoragePoolsToMigrateLocalVolume(virtualMachineProfileMock, dataCenterDeploymentMock, volumeVoMock);
 
-        Assert.assertEquals(1, poolList.size());
-        Assert.assertEquals(storagePoolVoMock, poolList.get(0));
+        assertEquals(1, poolList.size());
+        assertEquals(storagePoolVoMock, poolList.get(0));
     }
 
     @Test
@@ -426,8 +473,8 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn(true).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(hostMockId, storagePoolVoMock);
         List<StoragePool> poolList = virtualMachineManagerImpl.getCandidateStoragePoolsToMigrateLocalVolume(virtualMachineProfileMock, dataCenterDeploymentMock, volumeVoMock);
 
-        Assert.assertEquals(1, poolList.size());
-        Assert.assertEquals(storagePoolVoMock, poolList.get(0));
+        assertEquals(1, poolList.size());
+        assertEquals(storagePoolVoMock, poolList.get(0));
     }
 
     @Test
@@ -525,7 +572,7 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
 
         assertFalse(volumeToPoolObjectMap.isEmpty());
-        Assert.assertEquals(storagePoolMockOther, volumeToPoolObjectMap.get(volumeVoMock));
+        assertEquals(storagePoolMockOther, volumeToPoolObjectMap.get(volumeVoMock));
     }
 
     @Test
@@ -582,7 +629,7 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, allVolumes);
 
         assertFalse(volumeToPoolObjectMap.isEmpty());
-        Assert.assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
+        assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
 
         Mockito.verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
         Mockito.verify(virtualMachineManagerImpl).isStorageCrossClusterMigration(hostMockId, storagePoolVoMock);
@@ -603,7 +650,7 @@ public class VirtualMachineManagerImplTest {
 
         Map<Volume, StoragePool> mappingVolumeAndStoragePool = virtualMachineManagerImpl.createMappingVolumeAndStoragePool(virtualMachineProfileMock, hostMock, new HashMap<>());
 
-        Assert.assertEquals(mappingVolumeAndStoragePool, volumeToPoolObjectMap);
+        assertEquals(mappingVolumeAndStoragePool, volumeToPoolObjectMap);
 
         InOrder inOrder = Mockito.inOrder(virtualMachineManagerImpl);
         inOrder.verify(virtualMachineManagerImpl).buildMapUsingUserInformation(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock), Mockito.anyMapOf(Long.class, Long.class));
@@ -670,7 +717,7 @@ public class VirtualMachineManagerImplTest {
 
         boolean result = virtualMachineManagerImpl.isRootVolumeOnLocalStorage(0l);
 
-        Assert.assertEquals(expected, result);
+        assertEquals(expected, result);
     }
 
     @Test
