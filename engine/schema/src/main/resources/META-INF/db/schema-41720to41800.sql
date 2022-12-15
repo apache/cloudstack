@@ -866,6 +866,9 @@ WHERE   usage_unit = 'Policy-Month';
 
 ----- PR Quota custom tariffs #5909 -----
 
+-- delete configuration task.cleanup.retry.interval #6910
+DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
+
 
 -- Add assignVolume API permission to default resource admin and domain admin
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 2, 'assignVolume', 'ALLOW');

@@ -108,7 +108,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 		result['java.naming.security.credentials'] == password
 	}
 
-	def "Test successully binding as system"() {
+	def "Test successfully binding as system"() {
 		given: "We have a LdapContextFactory"
 	    def ldapContextFactory = new LdapContextFactory(ldapConfiguration)
 		when: "A bind context attempts to bind and no Ldap server is available"

@@ -113,7 +113,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                         _snapshotDetailsDao.removeDetails(snapshotId);
                     }
                     res = deleteSnapshotFromDb(snapshotId);
-                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfuly=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
+                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
                 }
             } catch (Exception e) {
                 String errMsg = String.format("Cannot delete snapshot due to %s", e.getMessage());
