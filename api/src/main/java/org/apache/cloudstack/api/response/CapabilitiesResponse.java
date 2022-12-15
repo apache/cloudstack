@@ -104,10 +104,6 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "default page size in the UI for various views, value set in the configurations", since = "4.15.2")
     private Long defaultUiPageSize;
 
-    @SerializedName(ApiConstants.ALLOW_USER_SPECIFY_VR_MTU)
-    @Param(description = "true if the user can specify virtualmachine MTU", since = "4.18.0")
-    private boolean allowUserSpecifyVmMtu;
-
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -186,9 +182,5 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setDefaultUiPageSize(Long defaultUiPageSize) {
         this.defaultUiPageSize = defaultUiPageSize;
-    }
-
-    public void setAllowUserSpecifyVmMtu(boolean allowUserSpecifyVmMtu) {
-        this.allowUserSpecifyVmMtu = allowUserSpecifyVmMtu;
     }
 }
