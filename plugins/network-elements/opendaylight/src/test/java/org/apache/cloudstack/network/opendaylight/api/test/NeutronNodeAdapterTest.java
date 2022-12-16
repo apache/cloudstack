@@ -29,6 +29,7 @@ import org.apache.cloudstack.network.opendaylight.api.model.NeutronNodeWrapper;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.junit.Test;
 
+import com.google.gson.JsonParser;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -48,7 +49,8 @@ public class NeutronNodeAdapterTest {
             entity = new StringRequestEntity(gsonNeutronNode.toJson(nodeWrapper), "application/json", null);
 
             String actual = entity.getContent();
-            Assert.assertEquals(jsonString, actual);
+            JsonParser parser = new JsonParser();
+            Assert.assertEquals(parser.parse(jsonString), parser.parse(actual));
         } catch (UnsupportedEncodingException e) {
             Assert.fail(e.getMessage());
         }

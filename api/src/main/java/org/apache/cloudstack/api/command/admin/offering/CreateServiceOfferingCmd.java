@@ -190,7 +190,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.14")
     private String cacheMode;
 
-    // Introduce 4 new optional paramaters to work custom compute offerings
+    // Introduce 4 new optional parameters to work custom compute offerings
     @Parameter(name = ApiConstants.CUSTOMIZED,
             type = CommandType.BOOLEAN,
             since = "4.13",

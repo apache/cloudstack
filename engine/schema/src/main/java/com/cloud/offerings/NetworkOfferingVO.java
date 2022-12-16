@@ -151,6 +151,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="supports_public_access")
     boolean supportsPublicAccess = false;
 
+    @Column(name = "supports_vm_autoscaling")
+    boolean supportsVmAutoScaling = false;
+
     @Override
     public String getDisplayText() {
         return displayText;
@@ -545,5 +548,14 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public String getServicePackage() {
         return servicePackageUuid;
+    }
+
+    public void setSupportsVmAutoScaling(boolean supportsVmAutoScaling) {
+        this.supportsVmAutoScaling = supportsVmAutoScaling;
+    }
+
+    @Override
+    public boolean isSupportsVmAutoScaling() {
+        return supportsVmAutoScaling;
     }
 }

@@ -14,7 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
@@ -36,14 +35,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41700to41800.class);
+    final static Logger LOG = Logger.getLogger(Upgrade41720to41800.class);
+
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.17.0.0", "4.18.0.0"};
+        return new String[] {"4.17.2.0", "4.18.0.0"};
     }
 
     @Override
@@ -58,7 +58,7 @@ public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41700to41800.sql";
+        final String scriptFile = "META-INF/db/schema-41720to41800.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -75,7 +75,7 @@ public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41700to41800-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41720to41800-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -85,7 +85,7 @@ public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration();
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 
     @Override
@@ -157,7 +157,7 @@ public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
         Object[] ids = tariffs.keySet().toArray();
 
-        LOG.info(String.format("Updating %s registers of %s quota tariffs of type [%s] with SQL [%s].", tariffs.size() -1, setRemoved ? "previous of current" :
+        LOG.info(String.format("Updating %s registers of %s quota tariffs of type [%s] with SQL [%s].", tariffs.size() - 1, setRemoved ? "previous of current" :
                 "next to current", tariffTypeDescription, updateQuotaTariff));
 
         for (int i = 0; i < tariffs.size() - 1; i++) {
@@ -198,17 +198,17 @@ public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
     protected void convertVmResourcesQuotaTypesToRunningVmQuotaType(Connection conn) {
         LOG.info("Converting quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" to \"RUNNING_VM\".");
 
-        String insertSql = String.format("INSERT INTO cloud_usage.quota_tariff (usage_type, usage_name, usage_unit, usage_discriminator, currency_value, effective_on, updated_on,"
+        String insertSql = "INSERT INTO cloud_usage.quota_tariff (usage_type, usage_name, usage_unit, usage_discriminator, currency_value, effective_on, updated_on,"
                 + " updated_by, uuid, name, description, removed, end_date, activation_rule)\n"
                 + "SELECT  1, 'RUNNING_VM', usage_unit, '', 0, effective_on, updated_on, updated_by, UUID(), name, description, removed, end_date,\n"
                 + "        CASE\n"
                 + "            WHEN usage_type = 15 THEN CONCAT('((value.computingResources ? (value.computingResources.cpuSpeed * value.computingResources.cpuNumber) : 0) / 100) * ', currency_value)\n"
                 + "            WHEN usage_type = 16 THEN CONCAT('(value.computingResources ? value.computingResources.cpuNumber : 0) * ', currency_value)\n"
-                + "            WHEN usage_type = 17 THEN CONCAT('(value.computingResources ? value.computingResources.memory : 0)* ', currency_value)\n"
+                + "            WHEN usage_type = 17 THEN CONCAT('(value.computingResources ? value.computingResources.memory : 0) * ', currency_value)\n"
                 + "        END\n"
                 + "FROM    cloud_usage.quota_tariff \n"
                 + "WHERE   usage_type in (15, 16, 17) \n"
-                + "AND     currency_value > 0.0;");
+                + "AND     currency_value > 0.0;";
 
         try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
             pstmt.executeUpdate();

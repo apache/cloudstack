@@ -103,7 +103,8 @@ export default {
         wrapperCol: { span: 12 }
       },
       validStatus: '',
-      validMessage: ''
+      validMessage: '',
+      formModel: {}
     }
   },
   watch: {

@@ -246,6 +246,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -388,7 +389,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private HostDao _hostDao;
     @Inject
-    private ServiceOfferingDao _offeringDao;
+    private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
@@ -445,8 +446,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private SecurityGroupManager _securityGroupMgr;
-    @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -583,6 +582,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     protected SnapshotHelper snapshotHelper;
 
+    @Inject
+    private AutoScaleManager autoScaleManager;
+
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
     private int _expungeInterval;
@@ -596,6 +598,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private boolean _instanceNameFlag;
     private int _scaleRetry;
     private Map<Long, VmAndCountDetails> vmIdCountMap = new ConcurrentHashMap<>();
+
+    protected static long ROOT_DEVICE_ID = 0;
 
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int NUM_OF_2K_BLOCKS = 512;
@@ -1263,18 +1267,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         // Check resource limits for CPU and Memory.
-        ServiceOfferingVO newServiceOffering = _offeringDao.findById(svcOffId);
+        ServiceOfferingVO newServiceOffering = serviceOfferingDao.findById(svcOffId);
         if (newServiceOffering.getState() == ServiceOffering.State.Inactive) {
             throw new InvalidParameterValueException(String.format("Unable to upgrade virtual machine %s with an inactive service offering %s", vmInstance.getUuid(), newServiceOffering.getUuid()));
         }
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
             validateCustomParameters(newServiceOffering, customParameters);
-            newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customParameters);
+            newServiceOffering = serviceOfferingDao.getComputeOffering(newServiceOffering, customParameters);
         } else {
             validateOfferingMaxResource(newServiceOffering);
         }
-        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
 
         validateDiskOfferingChecks(currentServiceOffering, newServiceOffering);
 
@@ -1301,7 +1305,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // resize and migrate the root volume if required
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
+        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
 
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
@@ -1921,7 +1925,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (State.Running.equals(vmInstance.getState())) {
-            ServiceOfferingVO newServiceOfferingVO = _serviceOfferingDao.findById(newServiceOfferingId);
+            ServiceOfferingVO newServiceOfferingVO = serviceOfferingDao.findById(newServiceOfferingId);
             HostVO instanceHost = _hostDao.findById(vmInstance.getHostId());
             _hostDao.loadHostTags(instanceHost);
 
@@ -1957,17 +1961,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         //Check if its a scale "up"
-        ServiceOfferingVO newServiceOffering = _offeringDao.findById(newServiceOfferingId);
+        ServiceOfferingVO newServiceOffering = serviceOfferingDao.findById(newServiceOfferingId);
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
             validateCustomParameters(newServiceOffering, customParameters);
-            newServiceOffering = _offeringDao.getComputeOffering(newServiceOffering, customParameters);
+            newServiceOffering = serviceOfferingDao.getComputeOffering(newServiceOffering, customParameters);
         }
 
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         if (newServiceOffering.isDynamicScalingEnabled() != currentServiceOffering.isDynamicScalingEnabled()) {
             throw new InvalidParameterValueException("Unable to Scale VM: since dynamic scaling enabled flag is not same for new service offering and old service offering");
         }
@@ -1998,8 +2002,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(message);
         }
 
-        _offeringDao.loadDetails(currentServiceOffering);
-        _offeringDao.loadDetails(newServiceOffering);
+        serviceOfferingDao.loadDetails(currentServiceOffering);
+        serviceOfferingDao.loadDetails(newServiceOffering);
 
         Map<String, String> currentDetails = currentServiceOffering.getDetails();
         Map<String, String> newDetails = newServiceOffering.getDetails();
@@ -2071,7 +2075,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // #3 resize or migrate the root volume if required
                     DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-                    changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters);
+                    changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
 
                     // #4 scale the vm now
                     vmInstance = _vmInstanceDao.findById(vmId);
@@ -2114,7 +2118,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters) throws ResourceAllocationException {
+    private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters, Long zoneId) throws ResourceAllocationException {
+
+        if (!AllowDiskOfferingChangeDuringScaleVm.valueIn(zoneId)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Changing the disk offering of the root volume during the compute offering change operation is disabled. Please check the setting [%s].", AllowDiskOfferingChangeDuringScaleVm.key()));
+            }
+            return;
+        }
 
         List<VolumeVO> vols = _volsDao.findReadyAndAllocatedRootVolumesByInstance(vmId);
 
@@ -2304,7 +2315,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 // Get serviceOffering for Virtual Machine
-                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+                ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
                 // First check that the maximum number of UserVMs, CPU and Memory limit for the given
                 // accountId will not be exceeded
@@ -2327,8 +2338,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
                 for (VolumeVO volume : volumes) {
                     if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                        // Create an event
-                        _volumeService.publishVolumeCreationUsageEvent(volume);
+                        recoverRootVolume(volume, vmId);
+                        break;
                     }
                 }
 
@@ -2338,6 +2349,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
 
         return _vmDao.findById(vmId);
+    }
+
+    protected void recoverRootVolume(VolumeVO volume, Long vmId) {
+        if (Volume.State.Destroy.equals(volume.getState())) {
+            _volumeService.recoverVolume(volume.getId());
+            _volsDao.attachVolume(volume.getId(), vmId, ROOT_DEVICE_ID);
+        } else {
+            _volumeService.publishVolumeCreationUsageEvent(volume);
+        }
     }
 
     @Override
@@ -2385,7 +2405,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
 
-        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, _offeringDao, _vmDao, this, _configDao));
+        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, serviceOfferingDao, _vmDao, this, _configDao));
 
         String value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
         _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
@@ -2449,7 +2469,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
+    public boolean expunge(UserVmVO vm) {
         vm = _vmDao.acquireInLockTable(vm.getId());
         if (vm == null) {
             return false;
@@ -2467,6 +2487,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             vm.getBackupExternalId(), backupsForVm.size()));
                 }
             }
+
+            autoScaleManager.removeVmFromVmGroup(vm.getId());
 
             releaseNetworkResourcesOnExpunge(vm.getId());
 
@@ -2612,7 +2634,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(), msg, msg);
 
                 // Get serviceOffering for Virtual Machine
-                ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+                ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
                 // Update Resource Count for the given account
                 resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
@@ -2720,8 +2742,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long newCpu = NumberUtils.toLong(details.get(VmDetailConstants.CPU_NUMBER));
         long newMemory = NumberUtils.toLong(details.get(VmDetailConstants.MEMORY));
-        ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
-        ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vmInstance.getServiceOfferingId());
+        ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO svcOffering = serviceOfferingDao.findById(vmInstance.getServiceOfferingId());
         boolean isDynamic = currentServiceOffering.isDynamic();
         if (isDynamic) {
             Map<String, String> customParameters = new HashMap<>();
@@ -2863,7 +2885,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         vmInstance.setDisplayVm(isDisplayVm);
 
         // Resource limit changes
-        ServiceOffering offering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOffering offering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         if (isDisplayVm) {
             resourceCountIncrement(vmInstance.getAccountId(), true, Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         } else {
@@ -2980,7 +3002,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ha = vm.isHaEnabled();
         }
 
-        ServiceOffering offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+        ServiceOffering offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         if (!offering.isOfferHA() && ha) {
             throw new InvalidParameterValueException("Can't enable ha for the vm as it's created from the Service offering having HA disabled");
         }
@@ -3235,7 +3257,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // If the VM is Volatile in nature, on reboot discard the VM's root disk and create a new root disk for it: by calling restoreVM
         long serviceOfferingId = vmInstance.getServiceOfferingId();
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(vmInstance.getId(), serviceOfferingId);
+        ServiceOfferingVO offering = serviceOfferingDao.findById(vmInstance.getId(), serviceOfferingId);
         if (offering != null && offering.getRemoved() == null) {
             if (offering.isVolatileVm()) {
                 return restoreVMInternal(caller, vmInstance, null);
@@ -3289,6 +3311,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
+        // check if vm belongs to AutoScale vm group in Disabled state
+        autoScaleManager.checkIfVmActionAllowed(vmId);
+
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
@@ -3311,13 +3336,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         detachVolumesFromVm(dataVols);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
-        if (expunge) {
-            if (!expunge(vm, ctx.getCallingUserId(), ctx.getCallingAccount())) {
-                throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
-            }
+        if (expunge && !expunge(vm)) {
+            throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
         }
 
+        autoScaleManager.removeVmFromVmGroup(vmId);
+
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
+
+        if (getDestroyRootVolumeOnVmDestruction(vm.getDomainId())) {
+            VolumeVO rootVolume = _volsDao.getInstanceRootVolume(vm.getId());
+            if (rootVolume != null) {
+                _volService.destroyVolume(rootVolume.getId());
+            } else {
+                s_logger.warn(String.format("Tried to destroy ROOT volume for VM [%s], but couldn't retrieve it.", vm.getUuid()));
+            }
+        }
 
         return destroyedVm;
     }
@@ -3917,12 +3951,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _configMgr.checkZoneAccess(owner, zone);
         }
 
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOffering.getId());
+        ServiceOfferingVO offering = serviceOfferingDao.findById(serviceOffering.getId());
 
         if (offering.isDynamic()) {
             offering.setDynamicFlag(true);
             validateCustomParameters(offering, customParameters);
-            offering = _offeringDao.getComputeOffering(offering, customParameters);
+            offering = serviceOfferingDao.getComputeOffering(offering, customParameters);
         } else {
             validateOfferingMaxResource(offering);
         }
@@ -4643,7 +4677,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // rootdisksize must be larger than template.
         boolean isIso = ImageFormat.ISO == templateVO.getFormat();
         if ((rootDiskSize << 30) < templateVO.getSize()) {
-            String error = "Unsupported: rootdisksize override is smaller than template size " + toHumanReadableSize(templateVO.getSize());
+            String error = String.format("Unsupported: rootdisksize override (%s GB) is smaller than template size %s", rootDiskSize, toHumanReadableSize(templateVO.getSize()));
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
@@ -4665,7 +4699,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType){
-        ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         if (!serviceOffering.isDynamic()) {
             UsageEventUtils.publishUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                     vm.getHostName(), serviceOffering.getId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
@@ -5001,7 +5035,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if(defaultNic != null) {
             Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
             if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
-                final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
+                final String serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
                 boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
                 String destHostname = VirtualMachineManager.getHypervisorHostname(dest.getHost() != null ? dest.getHost().getName() : "");
                 List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), vm.getUserDataDetails(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
@@ -5218,7 +5252,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        _userDao.findById(userId);
+        // check if vm belongs to AutoScale vm group in Disabled state
+        autoScaleManager.checkIfVmActionAllowed(vmId);
+
         boolean status = false;
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
@@ -5319,7 +5355,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             // check if account/domain is with in resource limits to start a new vm
-            ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+            ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             resourceLimitCheck(owner, vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
         // check if vm is security group enabled
@@ -5348,7 +5384,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean deployOnGivenHost = false;
         if (destinationHost != null) {
             s_logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-            final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+            final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
             if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
                 String errorMsg = "Cannot deploy the VM to specified host " + hostId + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity? " + cpuCapabilityAndCapacity.second();
@@ -5515,10 +5551,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm destroyVm(long vmId, boolean expunge) throws ResourceUnavailableException, ConcurrentOperationException {
-        // Account caller = CallContext.current().getCallingAccount();
-        // Long userId = CallContext.current().getCallingUserId();
-        Long userId = 2L;
-
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
@@ -5538,7 +5570,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.destroy(Long.toString(userId), expunge);
+            status = vmEntity.destroy(expunge);
         } catch (CloudException e) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
             ex.addProxyObject(vm.getUuid(), "vmId");
@@ -5557,7 +5589,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (vmState != State.Error) {
                 // Get serviceOffering for Virtual Machine
-                ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+                ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
 
                 //Update Resource Count for the given account
                 resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
@@ -5702,7 +5734,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_EXPUNGE, eventDescription = "expunging Vm", async = true)
     public UserVm expungeVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
-        Long userId = caller.getId();
+        Long callerId = caller.getId();
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
@@ -5724,15 +5756,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
-        if (!_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVm.valueIn(userId)) {
+        if (!_accountMgr.isAdmin(callerId) && !AllowUserExpungeRecoverVm.valueIn(callerId)) {
             throw new PermissionDeniedException("Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
+
+        // check if vm belongs to AutoScale vm group in Disabled state
+        autoScaleManager.checkIfVmActionAllowed(vmId);
 
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId, false);
 
         boolean status;
 
-        status = expunge(vm, userId, caller);
+        status = expunge(vm);
         if (status) {
             return _vmDao.findByIdIncludingRemoved(vmId);
         } else {
@@ -6505,7 +6540,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private DeployDestination chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost) {
         vm.setLastHostId(null); // Last host does not have higher priority in vm migration
-        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offering, null, null);
         final Long srcHostId = srcHost.getId();
         final Host host = _hostDao.findById(srcHostId);
@@ -6680,7 +6715,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Checks for implicitly dedicated hosts
-        ServiceOfferingVO deployPlanner = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        ServiceOfferingVO deployPlanner = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
         if (deployPlanner.getDeploymentPlanner() != null && deployPlanner.getDeploymentPlanner().equals("ImplicitDedicationPlanner")) {
             //VM is deployed using implicit planner
             long accountOfVm = vm.getAccountId();
@@ -6704,7 +6739,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     //If vm is deployed using preferred implicit planner, check if all vms on destination host must be
                     //using implicit planner and must belong to same account
                     for (VMInstanceVO vmsDest : vmsOnDest) {
-                        ServiceOfferingVO destPlanner = _offeringDao.findById(vm.getId(), vmsDest.getServiceOfferingId());
+                        ServiceOfferingVO destPlanner = serviceOfferingDao.findById(vm.getId(), vmsDest.getServiceOfferingId());
                         if (!((destPlanner.getDeploymentPlanner() != null && destPlanner.getDeploymentPlanner().equals("ImplicitDedicationPlanner")) && vmsDest.getAccountId() == accountOfVm)) {
                             msg = "VM of account " + accountOfVm + " with preffered implicit deployment planner being migrated to host " + destHost.getName()
                             + " not having all vms implicitly dedicated to account " + accountOfVm;
@@ -6796,7 +6831,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private boolean isImplicitPlannerUsedByOffering(long offeringId) {
         boolean implicitPlannerUsed = false;
-        ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(offeringId);
+        ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(offeringId);
         if (offering == null) {
             s_logger.error("Couldn't retrieve the offering by the given id : " + offeringId);
         } else {
@@ -7111,7 +7146,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
 
         // Get serviceOffering and Volumes for Virtual Machine
-        final ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+        final ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
 
         //Remove vm from instance group
         removeInstanceFromInstanceGroup(cmd.getVmId());
@@ -7791,7 +7826,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void updateVMDynamicallyScalabilityUsingTemplate(UserVmVO vm, Long newTemplateId) {
-        ServiceOfferingVO serviceOffering = _offeringDao.findById(vm.getServiceOfferingId());
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
         VMTemplateVO newTemplate = _templateDao.findById(newTemplateId);
         boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(vm, serviceOffering, newTemplate, vm.getDataCenterId());
         vm.setDynamicallyScalable(dynamicScalingEnabled);
@@ -7992,9 +8027,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
+        return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
-                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList};
+                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction};
     }
 
     @Override
@@ -8069,14 +8104,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void detachVolumesFromVm(List<VolumeVO> volumes) {
 
         for (VolumeVO volume : volumes) {
-            CallContext vmContext = CallContext.current();
             // Create new context and inject correct event resource type, id and details,
             // otherwise VOLUME.DETACH event will be associated with VirtualMachine and contain VM id and other information.
-            CallContext volumeContext = CallContext.register(vmContext.getCallingUserId(), vmContext.getCallingAccountId());
+            CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
             volumeContext.setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
             volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
             volumeContext.setEventResourceId(volume.getId());
-            volumeContext.setStartEventId(vmContext.getStartEventId());
 
             Volume detachResult = null;
             try {
@@ -8215,7 +8248,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Decrement VM resources and generate usage events after unmanaging VM
      */
     private void postProcessingUnmanageVM(UserVmVO vm) {
-        ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+        ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getServiceOfferingId());
         Long cpu = offering.getCpu() != null ? new Long(offering.getCpu()) : 0L;
         Long ram = offering.getRamSize() != null ? new Long(offering.getRamSize()) : 0L;
         // First generate a VM stop event if the VM was not stopped already
@@ -8323,5 +8356,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             s_logger.warn(String.format("Skip collecting vm %s disk and network statistics as the expected vm state is %s but actual state is %s", vm, expectedState, vm.getState()));
         }
+    }
+
+    public Boolean getDestroyRootVolumeOnVmDestruction(Long domainId){
+        return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
     }
 }

@@ -64,6 +64,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -153,6 +154,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @Inject
     private NetworkOfferingDao networkOfferingDao;
     @Inject
+    private AutoScaleVmGroupDao autoScaleVmGroupDao;
+    @Inject
     private UserDataDao userDataDao;
     @Inject
     EntityManager entityManager;
@@ -188,6 +191,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.SECONDARY_STORAGE, ApiCommandResourceType.ImageStore);
         s_typeMap.put(EntityType.VR, ApiCommandResourceType.DomainRouter);
         s_typeMap.put(EntityType.SYSTEM_VM, ApiCommandResourceType.SystemVm);
+        s_typeMap.put(EntityType.AUTOSCALE_VM_GROUP, ApiCommandResourceType.AutoScaleVmGroup);
     }
 
     public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
@@ -526,6 +530,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 return templateDao.findByUuid(entityUuid);
             case KUBERNETES_CLUSTER:
                 return kubernetesClusterHelpers.get(0).findByUuid(entityUuid);
+            case AUTOSCALE_VM_GROUP:
+                return autoScaleVmGroupDao.findByUuid(entityUuid);
             default:
                 throw new CloudRuntimeException("Invalid entity type " + type);
         }

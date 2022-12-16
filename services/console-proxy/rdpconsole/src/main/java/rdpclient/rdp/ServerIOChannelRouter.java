@@ -452,7 +452,7 @@ public class ServerIOChannelRouter extends BaseElement {
             break;
 
         default:
-            throw new RuntimeException("Unknow data PDU type: " + type2 + ", data: " + buf + ".");
+            throw new RuntimeException("Unknown data PDU type: " + type2 + ", data: " + buf + ".");
         }
     }
 

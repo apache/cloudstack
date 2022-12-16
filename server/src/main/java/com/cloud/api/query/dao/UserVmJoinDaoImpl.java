@@ -398,6 +398,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
 
+        if (userVm.getAutoScaleVmGroupName() != null) {
+            userVmResponse.setAutoScaleVmGroupName(userVm.getAutoScaleVmGroupName());
+        }
+        if (userVm.getAutoScaleVmGroupUuid() != null) {
+            userVmResponse.setAutoScaleVmGroupId(userVm.getAutoScaleVmGroupUuid());
+        }
+
         if (userVm.getUserDataId() != null) {
             userVmResponse.setUserDataId(userVm.getUserDataUUid());
             userVmResponse.setUserDataName(userVm.getUserDataName());
@@ -456,7 +463,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             nicResponse.setId(uvo.getNicUuid());
             /*2: networkUuid*/
             nicResponse.setNetworkid(uvo.getNetworkUuid());
-            /*3: vmId makes no sense on a nested nic object so it is ommited here */
+            /*3: vmId makes no sense on a nested nic object so it is omitted here */
 
             if (uvo.getTrafficType() != null) {
             /*4: trafficType*/

@@ -1002,7 +1002,7 @@ class CsRemoteAccessVpn(CsDataBag):
 
         secret = CsFile(vpnsecretfilte)
         secret.empty()
-        secret.addeq("%s : PSK \"%s\"" % (left, psk))
+        secret.addeq(": PSK \"%s\"" % (psk))
         secret.commit()
 
         xl2tpdconf = CsFile(xl2tpdconffile)

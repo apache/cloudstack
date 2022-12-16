@@ -6078,9 +6078,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     void validateLoadBalancerServiceCapabilities(final Map<Capability, String> lbServiceCapabilityMap) {
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
-            if (lbServiceCapabilityMap.keySet().size() > 3 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
-                throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", "
-                        + Capability.InlineMode.getName() + " capabilities can be sepcified for LB service");
+            if (lbServiceCapabilityMap.keySet().size() > 4 || !lbServiceCapabilityMap.containsKey(Capability.SupportedLBIsolation)) {
+                throw new InvalidParameterValueException(String.format("Only %s capabilities can be specified for LB service",
+                        StringUtils.join(Capability.SupportedLBIsolation.getName(), Capability.ElasticLb.getName(),
+                                Capability.InlineMode.getName(), Capability.LbSchemes.getName(), Capability.VmAutoScaling.getName())));
             }
 
             for (final Capability cap : lbServiceCapabilityMap.keySet()) {
@@ -6109,9 +6110,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     if (!internalLb && !publicLb) {
                         throw new InvalidParameterValueException("Unknown specified value for " + Capability.LbSchemes.getName());
                     }
+                } else if (cap == Capability.VmAutoScaling) {
+                    final boolean enabled = value.contains("true");
+                    final boolean disabled = value.contains("false");
+                    if (!enabled && !disabled) {
+                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.VmAutoScaling.getName());
+                    }
                 } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedLBIsolation.getName() + ", " + Capability.ElasticLb.getName() + ", "
-                            + Capability.InlineMode.getName() + ", " + Capability.LbSchemes.getName() + " capabilities can be sepcified for LB service");
+                    throw new InvalidParameterValueException(String.format("Only %s capabilities can be specified for LB service",
+                            StringUtils.join(Capability.SupportedLBIsolation.getName(), Capability.ElasticLb.getName(),
+                                    Capability.InlineMode.getName(), Capability.LbSchemes.getName(), Capability.VmAutoScaling.getName())));
                 }
             }
         }
@@ -6271,6 +6279,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean internalLb = false;
         boolean strechedL2Subnet = false;
         boolean publicAccess = false;
+        boolean vmAutoScaling = false;
 
         if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
             final Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
@@ -6304,6 +6313,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         internalLb = publicLbStr.contains("internal");
                         publicLb = publicLbStr.contains("public");
                     }
+                }
+
+                final String vmAutoScalingStr = lbServiceCapabilityMap.get(Capability.VmAutoScaling);
+                if (vmAutoScalingStr != null) {
+                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.VmAutoScaling, vmAutoScalingStr);
+                    vmAutoScaling = vmAutoScalingStr.contains("true");
                 }
             }
 
@@ -6376,6 +6391,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);
         }
+
+        // Set VM AutoScaling capability
+        offeringFinal.setSupportsVmAutoScaling(vmAutoScaling);
 
         //Set Service package id
         offeringFinal.setServicePackage(servicePackageUuid);

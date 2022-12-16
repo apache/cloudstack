@@ -146,6 +146,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean isSupportingPublicAccess();
 
+    boolean isSupportsVmAutoScaling();
+
     String getServicePackage();
 
     Date getCreated();
