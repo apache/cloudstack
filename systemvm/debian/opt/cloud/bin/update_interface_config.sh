@@ -50,7 +50,7 @@ if [ ! -z $interfaceName ]; then
   else
     ifconfig $interfaceName mtu $mtu
   fi
-  if grep "dhcp-option=$interfaceName,26" /etc/dnsmasq.d/cloud.conf
+  if grep "dhcp-option=$interfaceName,26" /etc/dnsmasq.d/cloud.conf; then
     sed -i "/dhcp-option=$interfaceName,26/c\dhcp-option=$interfaceName,26,$mtu" /etc/dnsmasq.d/cloud.conf
   else
     echo "dhcp-option=$interfaceName,26,$mtu" >> /etc/dnsmasq.d/cloud.conf
