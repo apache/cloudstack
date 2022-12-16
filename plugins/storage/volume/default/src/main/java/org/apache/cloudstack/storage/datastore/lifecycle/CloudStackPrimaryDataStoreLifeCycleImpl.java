@@ -146,22 +146,19 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         try {
             if (scheme == null) {
                 throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
-            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
-                String uriHost = uri.getHost();
-                String uriPath = uri.getPath();
-                if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
+            } else if (scheme.equalsIgnoreCase("nfs")) {
+                if (storageHost == null || storagePath == null || storageHost.trim().isEmpty() || storagePath.trim().isEmpty()) {
                     throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("cifs")) {
+            } else if (scheme.equalsIgnoreCase("cifs")) {
                 // Don't validate against a URI encoded URI.
                 URI cifsUri = new URI(url);
                 String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
                 if (warnMsg != null) {
                     throw new InvalidParameterValueException(warnMsg);
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("sharedMountPoint")) {
-                String uriPath = uri.getPath();
-                if (uriPath == null) {
+            } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
+                if (storagePath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
             } else if (scheme.equalsIgnoreCase("rbd")) {
@@ -183,24 +180,22 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         parameters.setTags(tags);
         parameters.setDetails(details);
 
-        String scheme = uri.getScheme();
-        String storageHost = uri.getHost();
         String hostPath = null;
         try {
-          hostPath = URLDecoder.decode(uri.getPath(), "UTF-8");
+            hostPath = URLDecoder.decode(storagePath, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             s_logger.error("[ignored] we are on a platform not supporting \"UTF-8\"!?!", e);
         }
         if (hostPath == null) { // if decoding fails, use getPath() anyway
-            hostPath = uri.getPath();
+            hostPath = storagePath;
         }
         Object localStorage = dsInfos.get("localStorage");
         if (localStorage != null) {
             hostPath = hostPath.replaceFirst("/", "");
             hostPath = hostPath.replace("+", " ");
         }
-        String userInfo = uri.getUserInfo();
-        int port = uri.getPort();
+        String userInfo = uriInfo.getUserInfo();
+        int port = uriInfo.getPort();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("createPool Params @ scheme - " + scheme + " storageHost - " + storageHost + " hostPath - " + hostPath + " port - " + port);
         }
@@ -242,10 +237,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         } else if (scheme.equalsIgnoreCase("rbd")) {
             if (port == -1) {
                 port = 0;
-            }
-            if (multi) {
-                storageHost = storageHost + (hostPath.substring(0, hostPath.lastIndexOf("/")).replaceAll("/", ","));
-                hostPath = hostPath.substring(hostPath.lastIndexOf("/") + 1);
             }
             parameters.setType(StoragePoolType.RBD);
             parameters.setHost(storageHost);
@@ -321,8 +312,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 parameters.setPort(0);
                 parameters.setPath(hostPath);
             } else {
-                s_logger.warn("Unable to figure out the scheme for URI: " + uri);
-                throw new IllegalArgumentException("Unable to figure out the scheme for URI: " + uri);
+                s_logger.warn("Unable to figure out the scheme for URI: " + uriInfo);
+                throw new IllegalArgumentException("Unable to figure out the scheme for URI: " + uriInfo);
             }
         }
 
@@ -330,7 +321,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolByHostPath(storageHost, hostPath);
             if (!pools.isEmpty() && !scheme.equalsIgnoreCase("sharedmountpoint")) {
                 Long oldPodId = pools.get(0).getPodId();
-                throw new CloudRuntimeException("Storage pool " + uri + " already in use by another pod (id=" + oldPodId + ")");
+                throw new CloudRuntimeException("Storage pool " + uriInfo + " already in use by another pod (id=" + oldPodId + ")");
             }
         }
 
