@@ -73,12 +73,14 @@ class TestMetrics(cloudstackTestCase):
             cls.hypervisorNotSupported = False
             cls.vm_stats_interval_cfg = Configurations.list(cls.apiclient, name='vm.stats.interval')[0].value
             cls.vm_stats_max_retention_time_cfg = Configurations.list(cls.apiclient, name='vm.stats.max.retention.time')[0].value
+            cls.vm_stats_user_vm_only_cfg = Configurations.list(cls.apiclient, name='vm.stats.user.vm.only')[0].value
             cls.vm_disk_stats_interval_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.interval')[0].value
             cls.vm_disk_stats_interval_min_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.interval.min')[0].value
             cls.vm_disk_stats_max_retention_time_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.max.retention.time')[0].value
             cls.vm_disk_stats_retention_enabled_cfg = Configurations.list(cls.apiclient, name='vm.disk.stats.retention.enabled')[0].value
             Configurations.update(cls.apiclient, 'vm.stats.interval', value='60000')
             Configurations.update(cls.apiclient, 'vm.stats.max.retention.time', value='7200')
+            Configurations.update(cls.apiclient, 'vm.stats.user.vm.only', value='false')
             Configurations.update(cls.apiclient, 'vm.disk.stats.interval', value='90')
             Configurations.update(cls.apiclient, 'vm.disk.stats.interval.min', value='90')
             Configurations.update(cls.apiclient, 'vm.disk.stats.max.retention.time', value='7200')
@@ -90,6 +92,7 @@ class TestMetrics(cloudstackTestCase):
         if cls.hypervisor.lower() != 'simulator':
             cls.updateConfiguration('vm.stats.interval', cls.vm_stats_interval_cfg)
             cls.updateConfiguration('vm.stats.max.retention.time', cls.vm_stats_max_retention_time_cfg)
+            cls.updateConfiguration('vm.stats.user.vm.only', cls.vm_stats_user_vm_only_cfg)
             cls.updateConfiguration('vm.disk.stats.interval', cls.vm_disk_stats_interval_cfg)
             cls.updateConfiguration('vm.disk.stats.interval.min', cls.vm_disk_stats_interval_min_cfg)
             cls.updateConfiguration('vm.disk.stats.max.retention.time', cls.vm_disk_stats_max_retention_time_cfg)
