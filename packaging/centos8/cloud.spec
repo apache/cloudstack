@@ -76,7 +76,7 @@ Requires: /usr/bin/ssh-keygen
 Requires: (genisoimage or mkisofs)
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-Requires: iptables-services
+Requires: (iptables-services or iptables)
 Requires: (qemu-img or qemu-tools)
 Requires: python3-pip
 Requires: python3-setuptools
