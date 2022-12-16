@@ -47,22 +47,6 @@
           <a-row :gutter="12" v-if="resource.type !== 'L2'">
             <a-col :md="12" :lg="12">
               <a-form-item
-                ref="privatemtu"
-                name="privatemtu">
-                <template #label>
-                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
-                </template>
-                <a-input-number
-                  v-model:value="form.privatemtu"
-                  style="width: 100%;"
-                  :defaultValue="resource.privatemtu"
-                  :placeholder="apiParams.privatemtu.description"
-                  @change="updateMtu(false)"/>
-                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu"></div>
-              </a-form-item>
-            </a-col>
-            <a-col :md="12" :lg="12">
-              <a-form-item
               v-if="!resource.vpcid"
                 ref="publicmtu"
                 name="publicmtu">
@@ -76,6 +60,22 @@
                   :placeholder="apiParams.publicmtu.description"
                   @change="updateMtu(true)"/>
                 <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input-number
+                  v-model:value="form.privatemtu"
+                  style="width: 100%;"
+                  :defaultValue="resource.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"
+                  @change="updateMtu(false)"/>
+                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu"></div>
               </a-form-item>
             </a-col>
           </a-row>
