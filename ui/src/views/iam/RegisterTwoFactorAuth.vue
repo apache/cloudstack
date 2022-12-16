@@ -198,7 +198,7 @@ export default {
       })
     },
     submitPin () {
-      api('validateUserTwoFactorAuthenticationCode', { 'codefor2fa': this.code }).then(response => {
+      api('validateUserTwoFactorAuthenticationCode', { codefor2fa: this.code }).then(response => {
         this.$message.success({
           content: `${this.$t('label.action.enable.two.factor.authentication')}`,
           duration: 2

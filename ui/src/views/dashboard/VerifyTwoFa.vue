@@ -79,7 +79,7 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        api('validateUserTwoFactorAuthenticationCode', { 'codefor2fa': values.code }).then(response => {
+        api('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code }).then(response => {
           this.twoFAresponse = true
           if (this.twoFAresponse) {
             this.$notification.destroy()
