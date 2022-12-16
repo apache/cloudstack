@@ -144,7 +144,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             if (zone != null && DataCenter.Type.Edge.equals(zone.getType())) {
                 String errorMsg = "Console access is not supported for Edge zones";
                 s_logger.error(errorMsg);
-                return new ConsoleEndpoint(false, errorMsg);
+                return new ConsoleEndpoint(false, null, errorMsg);
             }
 
             String sessionUuid = UUID.randomUUID().toString();
