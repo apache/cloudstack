@@ -60,6 +60,7 @@
               {{ $t('label.duration.custom') }}
             </a-radio-button>
           </a-radio-group>
+          <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.shown.charts')" @click="onClickShowResourceInfoModal('CHART')"/>
         </div>
         <div class="ant-tag" v-if="durationSelectorValue==='custom'">
           <a-button @click="openFilter()">
@@ -389,6 +390,9 @@ export default {
     },
     onClickShowResourceInfoModal (resource) {
       switch (resource) {
+        case 'CHART':
+          this.resourceInfoModalTitle = this.$t('label.chart.info')
+          break
         case 'CPU':
           this.resourceInfoModalTitle = this.$t('label.cpu.usage.info')
           break
