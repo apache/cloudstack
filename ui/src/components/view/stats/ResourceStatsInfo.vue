@@ -48,10 +48,15 @@ export default {
     return {
       info: [
         {
+          resourceType: 'CHART',
+          messageList: [
+            this.$t('message.chart.statistic.info')
+          ]
+        },
+        {
           resourceType: 'CPU',
           messageList: [
-            this.$t('message.cpu.usage.info.multi.cpu'),
-            this.$t('message.cpu.usage.info.cpu.cap')
+            this.$t('message.cpu.usage.info')
           ]
         },
         {

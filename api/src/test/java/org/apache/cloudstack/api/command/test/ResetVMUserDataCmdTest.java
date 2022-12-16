@@ -132,7 +132,7 @@ public class ResetVMUserDataCmdTest {
         Map<String, String> result = cmd.getUserdataDetails();
 
         values1.putAll(values2);
-        Assert.assertEquals(values1.toString(), result.toString());
+        Assert.assertEquals(values1, result);
     }
 
 }

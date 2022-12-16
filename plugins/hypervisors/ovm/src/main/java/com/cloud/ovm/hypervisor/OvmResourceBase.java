@@ -557,7 +557,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 data.isIso = false;
                 vm.disks.add(data);
             } else {
-                throw new CloudRuntimeException("Unknow volume type: " + volume.getType());
+                throw new CloudRuntimeException("Unknown volume type: " + volume.getType());
             }
         }
     }

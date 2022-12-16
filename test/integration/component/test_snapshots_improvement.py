@@ -491,7 +491,7 @@ class TestCreateSnapshot(cloudstackTestCase):
         self.testClient.submitCmdsAndWait(jobs)
         return
 
-    def create_Snaphot_Stop_VM(self):
+    def create_Snapshot_Stop_VM(self):
         """Creates a snapshot on ROOT disk while vm is in stopping state
 
             1. Create a virtual machine
@@ -598,7 +598,7 @@ class TestCreateSnapshot(cloudstackTestCase):
         # b. listSnapshots should list this newly created snapshot.
 
         self.debug("Create virtual machine and snapshot on ROOT disk volume")
-        self.create_Snaphot_Stop_VM()
+        self.create_Snapshot_Stop_VM()
 
         self.debug("Verify whether snapshots were created properly or not?")
         self.verify_Snapshots()

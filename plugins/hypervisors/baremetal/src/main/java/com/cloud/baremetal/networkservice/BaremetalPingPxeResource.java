@@ -70,7 +70,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
         }
 
         if (_storageServer == null) {
-            throw new ConfigurationException("No stroage server specified");
+            throw new ConfigurationException("No storage server specified");
         }
 
         if (_tftpDir == null) {

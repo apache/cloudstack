@@ -330,7 +330,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
 
         if (snapshotStrategy == null) {
-            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+            s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
             String errorMsg = String.format("Revert snapshot command failed for snapshot with id %d, because this command is supported only for KVM hypervisor", snapshotId);
             throw new CloudRuntimeException(errorMsg);
         }
@@ -497,7 +497,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
             if (snapshotStrategy == null) {
-                throw new CloudRuntimeException("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+                throw new CloudRuntimeException("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
             }
             snapshotInfo = snapshotStrategy.backupSnapshot(snapshotInfo);
 
@@ -598,7 +598,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
 
         if (snapshotStrategy == null) {
-            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+            s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
 
             return false;
         }
@@ -815,7 +815,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             for (SnapshotVO snapshot : snapshots) {
                 SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.DELETE);
                 if (snapshotStrategy == null) {
-                    s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshot.getId() + "'");
+                    s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshot.getId() + "'");
                     continue;
                 }
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);

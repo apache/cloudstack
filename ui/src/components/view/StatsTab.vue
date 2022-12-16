@@ -42,6 +42,7 @@
           </a-button>
           <span v-html="formatedPeriod"></span>
         </span>
+        <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.shown.charts')" @click="onClickShowResourceInfoModal('CHART')"/>
       </a-col>
     </a-row>
     <div v-if="loaded">
@@ -316,6 +317,9 @@ export default {
     },
     onClickShowResourceInfoModal (resource) {
       switch (resource) {
+        case 'CHART':
+          this.resourceInfoModalTitle = this.$t('label.chart.info')
+          break
         case 'CPU':
           this.resourceInfoModalTitle = this.$t('label.cpu.usage.info')
           break
