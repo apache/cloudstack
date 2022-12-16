@@ -66,6 +66,10 @@ public class ImportRoleCmd extends RoleCmd {
             description = "Force create a role with the same name. This overrides the role type, description and rule permissions for the existing role. Default is false.")
     private Boolean forced;
 
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Indicates whether the role will be visible to all users (public) or only to root admins (private)." +
+            " If this parameter is not specified during the creation of the role its value will be defaulted to true (public).")
+    private boolean publicRole = true;
+
     @Inject
     ApiServerService _apiServer;
 
@@ -116,6 +120,10 @@ public class ImportRoleCmd extends RoleCmd {
         return (forced != null) ? forced : false;
     }
 
+    public boolean isPublicRole() {
+        return publicRole;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -137,7 +145,7 @@ public class ImportRoleCmd extends RoleCmd {
         }
 
         CallContext.current().setEventDetails("Role: " + getRoleName() + ", type: " + getRoleType() + ", description: " + getRoleDescription());
-        Role role = roleService.importRole(getRoleName(), getRoleType(), getRoleDescription(), getRules(), isForced());
+        Role role = roleService.importRole(getRoleName(), getRoleType(), getRoleDescription(), getRules(), isForced(), isPublicRole());
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to import role");
         }

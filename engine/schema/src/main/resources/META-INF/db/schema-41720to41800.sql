@@ -868,3 +868,7 @@ WHERE   usage_unit = 'Policy-Month';
 
 -- delete configuration task.cleanup.retry.interval #6910
 DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
+
+-- create_public_parameter_on_roles.
+ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
+
