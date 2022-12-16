@@ -48,9 +48,9 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     public KVMHAMonitor(NfsStoragePool pool, RbdStoragePool rbdpool, String host, String scriptPath, String scriptPathRbd) {
         if (pool != null) {
-            nfsstoragePool.put(pool._poolUUID, pool);
+            nfsstoragePool.put(pool._poolUuid, pool);
         }else if (rbdpool != null) {
-            rbdstoragePool.put(rbdpool._poolUUID, rbdpool);
+            rbdstoragePool.put(rbdpool._poolUuid, rbdpool);
         }
         configureHeartBeatPath(scriptPath, scriptPathRbd);
         hostPrivateIp = host;
@@ -64,11 +64,11 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     }
 
     public void addStoragePool(NfsStoragePool pool) {
-        nfsstoragePool.put(pool._poolUUID, pool);
+        nfsstoragePool.put(pool._poolUuid, pool);
     }
 
     public void addStoragePool(RbdStoragePool pool) {
-        rbdstoragePool.put(pool._poolUUID, pool);
+        rbdstoragePool.put(pool._poolUuid, pool);
     }
 
     public void removeStoragePool(String uuid) {
