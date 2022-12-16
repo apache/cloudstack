@@ -23,7 +23,7 @@ import com.cloud.upgrade.dao.Upgrade41120to41200;
 import com.cloud.upgrade.dao.Upgrade41500to41510;
 import com.cloud.upgrade.dao.Upgrade41510to41520;
 import com.cloud.upgrade.dao.Upgrade41520to41600;
-import com.cloud.upgrade.dao.Upgrade41710to41800;
+import com.cloud.upgrade.dao.Upgrade41720to41800;
 import com.cloud.upgrade.dao.Upgrade481to490;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.junit.jupiter.api.BeforeAll;
@@ -90,7 +90,7 @@ class DatabaseVersionHierarchyTest {
                 .next("4.15.1.0", new Upgrade41510to41520())
                 .next("4.15.2.0", new Upgrade41520to41600())
                 .next("4.15.4", new DummyUpgrade())
-                .next("4.17.1.0", new Upgrade41710to41800());
+                .next("4.17.2.0", new Upgrade41720to41800());
         hierarchy = builder.build();
     }
 
