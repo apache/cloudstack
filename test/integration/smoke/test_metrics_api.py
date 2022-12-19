@@ -81,8 +81,8 @@ class TestMetrics(cloudstackTestCase):
             Configurations.update(cls.apiclient, 'vm.stats.interval', value='60000')
             Configurations.update(cls.apiclient, 'vm.stats.max.retention.time', value='7200')
             Configurations.update(cls.apiclient, 'vm.stats.user.vm.only', value='false')
-            Configurations.update(cls.apiclient, 'vm.disk.stats.interval', value='90')
-            Configurations.update(cls.apiclient, 'vm.disk.stats.interval.min', value='90')
+            Configurations.update(cls.apiclient, 'vm.disk.stats.interval', value='60')
+            Configurations.update(cls.apiclient, 'vm.disk.stats.interval.min', value='60')
             Configurations.update(cls.apiclient, 'vm.disk.stats.max.retention.time', value='7200')
             Configurations.update(cls.apiclient, 'vm.disk.stats.retention.enabled', value='true')
             cls.restartServer()
@@ -493,7 +493,7 @@ class TestMetrics(cloudstackTestCase):
     def test_list_system_vms_metrics_history(self):
         cmd = listSystemVmsUsageHistory.listSystemVmsUsageHistoryCmd()
         now = datetime.datetime.now() - datetime.timedelta(minutes=15)
-        start_time = now.strftime("%Y-%d-%m %H:%M:%S")
+        start_time = now.strftime("%Y-%m-%d %H:%M:%S")
         cmd.startdate = start_time
 
         result = self.apiclient.listSystemVmsUsageHistory(cmd)[0]
@@ -516,6 +516,12 @@ class TestMetrics(cloudstackTestCase):
                                         zoneid=self.zone.id
                                         )
         self.cleanup.append(self.small_virtual_machine)
+
+        currentHost = Host.list(self.apiclient, id=self.small_virtual_machine.hostid)[0]
+        if currentHost.hypervisor.lower() == "xenserver" and currentHost.hypervisorversion == "7.1.0":
+            # Skip tests as volume metrics doesn't see to work
+            self.skipTest("Skipping test because volume metrics doesn't work on hypervisor\
+                            %s, %s" % (currentHost.hypervisor, currentHost.hypervisorversion))
 
         # Wait for 2 minutes
         time.sleep(120)
