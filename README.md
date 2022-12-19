@@ -1,6 +1,6 @@
 # Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
-![Apache CloudStack](tools/logo/apache_cloudstack.png)
+![Apache CloudStack](tools/logo/acsxmas.jpg)
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
