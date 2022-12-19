@@ -111,7 +111,7 @@ public class ListRolesCmd extends BaseListCmd {
     public void execute() {
         Pair<List<Role>, Integer> roles;
         if (getId() != null && getId() > 0L) {
-            roles = new Pair<List<Role>, Integer>(Collections.singletonList(roleService.findRole(getId(), true)), 1);
+            roles = new Pair<>(Collections.singletonList(roleService.findRole(getId(), true)), 1);
         } else if (StringUtils.isNotBlank(getName())) {
             roles = roleService.findRolesByName(getName(), getStartIndex(), getPageSizeVal());
         } else if (getRoleType() != null) {
