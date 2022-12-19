@@ -1279,7 +1279,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 default:
                     errMessage = validateRangeOther(name, value, rangeOption);
             }
-            if (Strings.isNullOrEmpty(errMessage)) {
+            if (StringUtils.isEmpty(errMessage)) {
                 return null;
             }
             message.add(errMessage);
