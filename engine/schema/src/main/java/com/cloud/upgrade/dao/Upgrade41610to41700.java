@@ -63,7 +63,6 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         fixWrongDatastoreClusterPoolUuid(conn);
-        updateConfigurationGroups();
     }
 
     @Override

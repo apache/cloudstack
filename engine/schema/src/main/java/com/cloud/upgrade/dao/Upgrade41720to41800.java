@@ -232,6 +232,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
+    }
 
     private void updateConfigurationGroups() {
         configGroupsAggregator.updateConfigurationGroups();
