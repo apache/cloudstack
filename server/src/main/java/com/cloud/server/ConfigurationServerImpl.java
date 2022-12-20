@@ -161,7 +161,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         try {
             persistDefaultValues();
             _configDepotAdmin.populateConfigurations();
-        } catch (InternalErrorException e) {
+        } catch (InternalErrorException | CloudRuntimeException e) {
+            s_logger.error("Unhandled configuration exception: " + e.getMessage());
             throw new RuntimeException("Unhandled configuration exception", e);
         }
         return true;

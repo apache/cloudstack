@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
@@ -109,6 +111,7 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.SystemIntegrityChecker;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
@@ -369,6 +372,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
 
             try {
+                initializeDatabaseEncryptors();
 
                 final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
                 final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
@@ -400,6 +404,33 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         } finally {
             lock.releaseRef();
+        }
+    }
+
+    private void initializeDatabaseEncryptors() {
+        TransactionLegacy txn = TransactionLegacy.open("initializeDatabaseEncryptors");
+        txn.start();
+        String errorMessage = "";
+        try {
+            errorMessage = "Unable to get the database connections";
+            Connection conn = txn.getConnection();
+
+            errorMessage = "Unable to get the 'init' value from 'configuration' table in the 'cloud' database";
+            String sql = "SELECT value from configuration WHERE name = 'init'";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            ResultSet result = pstmt.executeQuery();
+            if (result.next()) {
+                String init = result.getString(1);
+                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+            }
+
+            txn.commit();
+        } catch (CloudRuntimeException | SQLException e) {
+            errorMessage = "Unable to initialize the database encryptors due to " + errorMessage;
+            s_logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
+        } finally {
+            txn.close();
         }
     }
 
