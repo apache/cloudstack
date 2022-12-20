@@ -16,120 +16,75 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="tabLoading">
-    <a-table
-      size="small"
-      :showHeader="false"
-      :columns="columns"
-      :dataSource="configdata.filter(config => !config.parent)"
-      :rowKey="record => record.name"
-      :pagination="true"
-      :rowClassName="getRowClassName"
-      style="overflow-y: auto; margin-left: 10px" >
+  <a-table
+    size="small"
+    :showHeader="false"
+    :columns="columns"
+    :dataSource="config.filter(c => !c.parent)"
+    :rowKey="record => record.name"
+    :pagination="false"
+    :rowClassName="getRowClassName"
+    style="overflow-y: auto; margin-left: 10px" >
 
-      <template #displaytext="{ record }">
-        <ConfigurationRow :config="configdata" :configrecord="record" :loading="tabLoading" />
-      </template>
-    </a-table>
-  </a-spin>
+    <template #name="{ record }">
+      <span :style="hierarchyExists ? 'padding-left: 0px;' : 'padding-left: 25px;'">
+        <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }}
+      </span>
+      <br/>
+      <span :style="record.parent ? 'padding-left: 50px; display:block' : 'padding-left: 25px; display:block'">{{ record.description }}</span>
+    </template>
+
+    <template #value="{ record }">
+      <ConfigurationValue :configrecord="record" />
+    </template>
+
+  </a-table>
 </template>
 
 <script>
-import { api } from '@/api'
-import ConfigurationRow from './ConfigurationRow'
+import ConfigurationValue from './ConfigurationValue'
 
 export default {
   name: 'ConfigurationTab',
   components: {
-    ConfigurationRow
+    ConfigurationValue
   },
   props: {
-    group: {
-      type: String,
-      required: true
-    },
-    subgroup: {
-      type: String,
-      required: false
-    },
-    parent: {
-      type: String,
-      required: false
-    },
-    loading: {
-      type: Boolean,
-      default: false
+    config: {
+      type: Array,
+      default: () => { return [] }
+    }
+  },
+  computed: {
+    hierarchyExists () {
+      for (var c of this.config) {
+        if (c.children) {
+          return true
+        }
+      }
+      return false
     }
   },
   data () {
     return {
-      tabLoading: this.loading,
       columns: [
         {
-          title: 'Display Text',
-          dataIndex: 'displaytext',
-          slots: { customRender: 'displaytext' }
+          title: 'name',
+          dataIndex: 'name',
+          slots: { customRender: 'name' }
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          slots: { customRender: 'value' },
+          width: '29%'
         }
       ],
       apiName: 'listConfigurations',
       configdata: []
     }
   },
-  created () {
-    this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
-  },
-  watch: {
-    group: {
-      deep: true,
-      handler (newItem, oldItem) {
-        if (!newItem) {
-          return
-        }
-        this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
-      }
-    },
-    subgroup: {
-      deep: true,
-      handler (newItem, oldItem) {
-        if (!newItem) {
-          return
-        }
-        this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
-      }
-    },
-    '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
-        if ('name' in to.query) {
-          this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup, name: to.query.name })
-        } else {
-          this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
-        }
-      }
-    },
-    '$i18n.locale' (to, from) {
-      if (to !== from) {
-        this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
-      }
-    }
-  },
   methods: {
-    fetchConfigurationDataByGroup (params = {}) {
-      this.tabLoading = true
-      params.pagesize = -1
-      console.log('group name: ' + this.group)
-      api('listConfigurations', params).then(response => {
-        this.configdata = response.listconfigurationsresponse.configuration
-        if (!this.configdata || this.configdata.length === 0) {
-          this.configdata = []
-        }
-        console.log(this.configdata)
-      }).catch(error => {
-        console.error(error)
-        this.$message.error(this.$t('message.error.loading.setting'))
-      }).finally(() => {
-        this.tabLoading = false
-      })
-    },
     getRowClassName (record, index) {
       if (index % 2 === 0) {
         return 'config-light-row'

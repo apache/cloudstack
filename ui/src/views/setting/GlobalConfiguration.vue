@@ -16,66 +16,62 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="configLoading" style="background-color: #fff;">
-    <a-affix :offsetTop="78">
-      <a-card class="breadcrumb-card" style="z-index: 10">
-        <a-row>
-          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
-            <breadcrumb>
-              <template #end>
-                <a-button
-                  :loading="configLoading"
-                  style="margin-bottom: 5px"
-                  shape="round"
-                  size="small"
-                  @click="refreshConfigurationData()">
-                  <template #icon><reload-outlined /></template>
-                  {{ $t('label.refresh') }}
-                </a-button>
-              </template>
-            </breadcrumb>
-          </a-col>
-          <a-col
-            :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
-            <slot name="action"></slot>
-            <search-view
-              :searchFilters="searchFilters"
-              :searchParams="searchParams"
-              :apiName="apiName"
-              @search="onSearch"
-              @change-filter="changeFilter"/>
-          </a-col>
-        </a-row>
+  <a-row :gutter="12">
+    <a-col :md="24">
+      <a-card class="breadcrumb-card">
+        <a-col :span="12" style="display: inline-flex">
+          <breadcrumb style="padding-top: 6px; padding-left: 8px" />
+          <a-button
+            style="margin-left: 12px; margin-top: 4px"
+            :loading="loading"
+            size="small"
+            shape="round"
+            @click="fetchConfigurationData()" >
+            <template #icon><ReloadOutlined /></template>
+            {{ $t('label.refresh') }}
+          </a-button>
+        </a-col>
+        <a-col :span="12" style="float: right">
+          <a-input-search
+          style="width: 25vw; float: right; margin-bottom: 10px; z-index: 8; display: flex"
+          :placeholder="$t('label.search')"
+          v-model:value="filter"
+          @search="fetchConfigurationData()"
+          v-focus="true" />
+        </a-col>
       </a-card>
-    </a-affix>
-    <a-tabs
-      tabPosition="left"
-      :animated="false"
-      @change="handleChangeConfigGroupTab" >
-      <a-tab-pane
-        key=''
-        tab='All Settings' >
-          <AllConfigurationsTab :loading="configLoading" />
-      </a-tab-pane>
-      <a-tab-pane
-        v-for="(group) in groups"
-        :key="group.name"
-        :tab="group.name" >
-
+    </a-col>
+    <a-spin :spinning="configLoading" style="background-color: #fff;">
+      <a-card style="margin-left: 10px;">
         <a-tabs
+          tabPosition="left"
           :animated="false"
-          @change="handleChangeConfigSubGroupTab" >
+          @change="handleChangeConfigGroupTab" >
           <a-tab-pane
-            v-for="(subgroup) in group.subgroup"
-            :key="subgroup.name"
-            :tab="subgroup.name" >
-             <ConfigurationTab :group="group.name" :subgroup="subgroup.name" :loading="configLoading" />
+            key=''
+            tab='All Settings' >
+              <AllConfigurationsTab :loading="configLoading" />
+          </a-tab-pane>
+          <a-tab-pane
+            v-for="(group) in groups"
+            :key="group.name"
+            :tab="group.name" >
+            <a-tabs
+              :animated="false"
+              @change="handleChangeConfigSubGroupTab" >
+              <a-tab-pane
+                v-for="(subgroup) in group.subgroup"
+                :key="subgroup.name"
+                :tab="subgroup.name" >
+                <ConfigurationTab
+                  :config="config" />
+              </a-tab-pane>
+            </a-tabs>
           </a-tab-pane>
         </a-tabs>
-      </a-tab-pane>
-    </a-tabs>
-  </a-spin>
+      </a-card>
+    </a-spin>
+  </a-row>
 </template>
 
 <script>
@@ -89,7 +85,6 @@ import ActionButton from '@/components/view/ActionButton'
 import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
-import SearchView from '@/components/view/SearchView'
 import ConfigurationTab from './ConfigurationTab'
 import AllConfigurationsTab from './AllConfigurationsTab'
 
@@ -104,7 +99,6 @@ export default {
     InfoCard,
     QuickView,
     TooltipButton,
-    SearchView,
     ConfigurationTab,
     AllConfigurationsTab
   },
@@ -127,11 +121,22 @@ export default {
       configGroup: '',
       configSubGroup: '',
       dataView: true,
-      searchView: true,
-      searchFilters: [],
       searchParams: {},
       filter: '',
-      apiName: 'listConfigurations'
+      apiName: 'listConfigurations',
+      groupColumns: [
+        {
+          title: 'name',
+          dataIndex: 'name',
+          slots: { customRender: 'name' }
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          slots: { customRender: 'value' },
+          width: '29%'
+        }
+      ]
     }
   },
   created () {
@@ -168,15 +173,36 @@ export default {
       if (this.filter) {
         params.keyword = this.filter
       }
+      console.table(params)
+      console.time('fetchConfigurationData')
       api('listConfigurations', params).then(response => {
-        this.config = response.listconfigurationsresponse.configuration
+        this.config = response.listconfigurationsresponse.configuration || []
+        this.convertConfigDataToHierarchy(this.config)
         console.log(this.config)
+        console.timeEnd('fetchConfigurationData')
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.loading.setting'))
       }).finally(() => {
         this.configLoading = false
       })
+    },
+    convertConfigDataToHierarchy (data) {
+      var hierarchy = {}
+      for (var datum of data) {
+        if (datum.parent && datum.parent.length !== 0) {
+          if (hierarchy[datum.parent]) {
+            hierarchy[datum.parent].push(datum)
+          } else {
+            hierarchy[datum.parent] = [datum]
+          }
+        }
+      }
+      for (datum of data) {
+        if (hierarchy[datum.name]) {
+          datum.children = hierarchy[datum.name]
+        }
+      }
     },
     handleChangeConfigGroupTab (e) {
       this.configGroup = e
@@ -212,9 +238,11 @@ export default {
           '#' + this.$route.path
         )
       }
+      this.fetchConfigurationData()
+      console.log('End handleChangeConfigGroupTab')
     },
     handleChangeConfigSubGroupTab (e) {
-      this.configSubGroup = e
+      this.configSubGroup = e || this.configSubGroup
       if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
         const query = Object.assign({}, this.$route.query)
         delete query.page
@@ -237,52 +265,8 @@ export default {
           '#' + this.$route.path
         )
       }
-    },
-    refreshConfigurationData () {
-      // this.fetchConfigurationGroups()
-      // const query = Object.assign({}, this.$route.query)
-      // this.$router.push({ query })
-      // this.$router.push('/globalsetting')
-      this.onSearch({})
-    },
-    onSearch (opts) {
-      this.configLoading = true
-      const query = Object.assign({}, this.$route.query)
-      for (const key in this.searchParams) {
-        delete query[key]
-      }
-      delete query.name
-      delete query.q
-      this.searchParams = {}
-      if (opts && Object.keys(opts).length > 0) {
-        this.searchParams = opts
-        if ('searchQuery' in opts) {
-          const value = opts.searchQuery
-          if (value && value.length > 0) {
-            query.name = value
-            query.q = value
-          }
-          this.searchParams = {}
-        } else {
-          Object.assign(query, opts)
-        }
-      }
-      if (this.configGroup.length > 0) {
-        query.group = this.configGroup
-      }
-      if (this.configSubGroup.length > 0) {
-        query.subgroup = this.configSubGroup
-      }
-      if (this.filter) {
-        query.keyword = this.filter
-      }
-      this.$router.push({ query })
-      this.configLoading = false
-    },
-    changeFilter (filter) {
-      const query = Object.assign({}, this.$route.query)
-      query.filter = filter
-      this.$router.push({ query })
+      this.fetchConfigurationData()
+      console.log('End handleChangeConfigSubGroupTab')
     }
   }
 }
