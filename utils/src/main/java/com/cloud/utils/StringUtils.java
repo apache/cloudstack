@@ -249,16 +249,16 @@ public class StringUtils {
         final boolean applyPagination = startIndex != null && pageSizeVal != null
                 && startIndex <= Integer.MAX_VALUE && startIndex >= 0 && pageSizeVal <= Integer.MAX_VALUE
                 && pageSizeVal > 0;
-                List<T> listWPagination = null;
-                if (applyPagination) {
-                    listWPagination = new ArrayList<>();
-                    final int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
-                    final List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
-                    if (index < partitions.size()) {
-                        listWPagination = partitions.get(index);
-                    }
-                }
-                return listWPagination;
+        List<T> listWPagination = null;
+        if (applyPagination) {
+            listWPagination = new ArrayList<>();
+            final int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
+            final List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
+            if (index < partitions.size()) {
+                listWPagination = partitions.get(index);
+            }
+        }
+        return listWPagination;
     }
 
     private static <T> List<List<T>> partitionList(final List<T> originalList, final int chunkSize) {
