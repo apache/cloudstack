@@ -438,6 +438,7 @@
 "label.confirmpassword.description": "Please type the same password again.",
 "label.connectiontimeout": "Connection timeout",
 "label.conservemode": "Conserve mode",
+"label.considerlasthost": "Consider Last Host",
 "label.consoleproxy": "Console proxy",
 "label.console.proxy": "Console proxy",
 "label.console.proxy.vm": "Console proxy VM",
