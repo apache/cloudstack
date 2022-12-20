@@ -417,11 +417,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
             errorMessage = "Unable to get the 'init' value from 'configuration' table in the 'cloud' database";
             String sql = "SELECT value from configuration WHERE name = 'init'";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            ResultSet result = pstmt.executeQuery();
-            if (result.next()) {
-                String init = result.getString(1);
-                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet result = pstmt.executeQuery()) {
+                if (result.next()) {
+                    String init = result.getString(1);
+                    s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+                }
             }
 
             txn.commit();

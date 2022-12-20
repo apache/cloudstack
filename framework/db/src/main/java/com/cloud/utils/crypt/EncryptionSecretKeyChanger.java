@@ -245,13 +245,13 @@ public class EncryptionSecretKeyChanger {
             dbProps.load(db_prop_fstream);
             backupDBProps = new PropertiesConfiguration(dbPropsFile);
         } catch (FileNotFoundException e) {
-            System.out.println("db.properties file not found while reading DB secret key" + e.getMessage());
+            System.out.println("db.properties file not found while reading DB secret key: " + e.getMessage());
             return false;
         } catch (IOException e) {
-            System.out.println("Error while reading DB secret key from db.properties" + e.getMessage());
+            System.out.println("Error while reading DB secret key from db.properties: " + e.getMessage());
             return false;
         } catch (ConfigurationException e) {
-            e.printStackTrace();
+            System.out.println("Error while getting configurations from db.properties: " + e.getMessage());
             return false;
         }
 
@@ -374,7 +374,7 @@ public class EncryptionSecretKeyChanger {
             System.out.println("Error while reading server.properties: " + e.getMessage());
             return false;
         } catch (ConfigurationException e) {
-            e.printStackTrace();
+            System.out.println("Error while getting configurations from server.properties: " + e.getMessage());
             return false;
         }
 
@@ -399,7 +399,7 @@ public class EncryptionSecretKeyChanger {
             }
             newServerProps.save(serverPropsFile.getAbsolutePath());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return false;
         }
         System.out.println("Migrating server.properties Done.");
@@ -627,16 +627,17 @@ public class EncryptionSecretKeyChanger {
                 }
                 String key = name.startsWith("property-") ? name : "property-" + name;
 
-                PreparedStatement pstmt_template_deploy_as_is = conn.prepareStatement(String.format(sql_template_deploy_as_is_details, vmId, key));
-                ResultSet rs_template_deploy_as_is = pstmt_template_deploy_as_is.executeQuery();
-                if (rs_template_deploy_as_is.next()) {
-                    String template_deploy_as_is_detail_value = rs_template_deploy_as_is.getString(1);
-                    OVFPropertyTO property = gson.fromJson(template_deploy_as_is_detail_value, OVFPropertyTO.class);
-                    if (property != null && property.isPassword()) {
-                        String encryptedValue = migrateValue(value);
-                        pstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
-                        pstmt.setLong(2, id);
-                        pstmt.executeUpdate();
+                try (PreparedStatement pstmt_template_deploy_as_is = conn.prepareStatement(String.format(sql_template_deploy_as_is_details, vmId, key));
+                    ResultSet rs_template_deploy_as_is = pstmt_template_deploy_as_is.executeQuery()) {
+                    if (rs_template_deploy_as_is.next()) {
+                        String template_deploy_as_is_detail_value = rs_template_deploy_as_is.getString(1);
+                        OVFPropertyTO property = gson.fromJson(template_deploy_as_is_detail_value, OVFPropertyTO.class);
+                        if (property != null && property.isPassword()) {
+                            String encryptedValue = migrateValue(value);
+                            pstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
+                            pstmt.setLong(2, id);
+                            pstmt.executeUpdate();
+                        }
                     }
                 }
             }
@@ -759,9 +760,8 @@ public class EncryptionSecretKeyChanger {
     }
 
     private int getCountOfTable(Connection conn, String table) {
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(String.format("SELECT count(*) FROM %s", table));
-            ResultSet rs = pstmt.executeQuery();
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("SELECT count(*) FROM %s", table));
+             ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
                 return rs.getInt(1);
             }
