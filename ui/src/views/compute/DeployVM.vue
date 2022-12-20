@@ -1337,12 +1337,9 @@ export default {
         }
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
-        this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         if (this.zone) {
@@ -2594,6 +2591,19 @@ export default {
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection
+    },
+    getSelectedNetworksWithExistingConfig (networks) {
+      for (var i in this.networks) {
+        var n = this.networks[i]
+        for (var c of this.networkConfig) {
+          if (n.id === c.key) {
+            n = { ...n, ...c }
+            networks[i] = n
+            break
+          }
+        }
+      }
+      return networks
     }
   }
 }
