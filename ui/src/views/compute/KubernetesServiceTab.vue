@@ -88,7 +88,7 @@
           </a-timeline>
           <p>{{ $t('label.more.access.dashboard.ui') }}, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
         </a-card>
-        <a-card :title="$t('label.acess.kubernetes.nodes')">
+        <a-card :title="$t('label.access.kubernetes.nodes')">
           <p v-html="$t('label.kubernetes.access.details')"></p>
         </a-card>
       </a-tab-pane>
