@@ -992,7 +992,10 @@ test_data = {
             "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
             "requireshvm": "True",
             "ispublic": "True",
-            "isextractable": "True"
+            "isextractable": "True",
+            "checksum": "{SHA-1}6952e58f39b470bd166ace11ffd20bf479bed936",
+            "md5": "88c60fd500ce7ced985cf845df0db9da",
+            "sha256": "bc4cc040bbab843000fab78db6cb4a33f3a06ae1ced2cf563d36b38c7fee3049"
         },
         "xenserver": {
             "name": "tiny-xen",
@@ -1003,7 +1006,10 @@ test_data = {
             "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
             "requireshvm": "True",
             "ispublic": "True",
-            "isextractable": "True"
+            "isextractable": "True",
+            "checksum": "{SHA-1}80af2c18f96e94273188808c3d56e561a1cda717",
+            "md5": "1662bbf224e41bb62b1dee043d785731",
+            "sha256": "80fba5a7a83842ec4e5f67cc6755d61d4fca46ae170d59b0c6ed47ebf7162722"
         },
         "hyperv": {
             "name": "tiny-hyperv",
@@ -1025,6 +1031,9 @@ test_data = {
             "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
             "requireshvm": "True",
             "ispublic": "True",
+            "checksum": "{SHA-1}8b82224fd3c6429b6914f32d8339e650770c7526",
+            "md5": "b4e8bff3882b23175974e692533b4381",
+            "sha256": "e1dffca3c3ab545a753cb42d838a341624cf25841d1bcf3d1e45556c9fce7cf3",
             "deployasis": "True"
         }
     },
