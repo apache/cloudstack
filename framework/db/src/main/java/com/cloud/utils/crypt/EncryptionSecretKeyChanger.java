@@ -242,8 +242,8 @@ public class EncryptionSecretKeyChanger {
         PropertiesConfiguration backupDBProps = null;
 
         System.out.println("Parsing db.properties file");
-        try(FileInputStream db_prop_fstream = new FileInputStream(dbPropsFile)) {
-            dbProps.load(db_prop_fstream);
+        try(FileInputStream dbPropFstream = new FileInputStream(dbPropsFile)) {
+            dbProps.load(dbPropFstream);
             backupDBProps = new PropertiesConfiguration(dbPropsFile);
         } catch (FileNotFoundException e) {
             System.out.println("db.properties file not found while reading DB secret key: " + e.getMessage());
@@ -365,8 +365,8 @@ public class EncryptionSecretKeyChanger {
         final Properties serverProps = new Properties();
         PropertiesConfiguration newServerProps;
 
-        try(FileInputStream server_prop_fstream = new FileInputStream(serverPropsFile)) {
-            serverProps.load(server_prop_fstream);
+        try(FileInputStream serverPropFstream = new FileInputStream(serverPropsFile)) {
+            serverProps.load(serverPropFstream);
             newServerProps = new PropertiesConfiguration(serverPropsFile);
         } catch (FileNotFoundException e) {
             System.out.println("server.properties file not found: " + e.getMessage());

@@ -71,10 +71,10 @@ public class EncryptionCLI {
         }
 
         if (cmdLine.hasOption(VERBOSE_OPTION)) {
-            System.out.printf("Input: %s\n", inString);
-            System.out.printf("Encrypted: %s\n", result);
+            System.out.printf("Input: %s%n", inString);
+            System.out.printf("Encrypted: %s%n", result);
         } else {
-            System.out.printf("%s\n", result);
+            System.out.printf("%s%n", result);
         }
     }
 }

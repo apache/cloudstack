@@ -417,9 +417,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             decryptInit(conn);
             txn.commit();
         } catch (CloudRuntimeException e) {
-            errorMessage = "Unable to initialize the database encryptors due to " + errorMessage;
-            s_logger.error(errorMessage);
             s_logger.error(e.getMessage());
+            errorMessage = String.format("Unable to initialize the database encryptors due to %s. " +
+                    "Please check if database encryption key and database encryptor version are correct.", errorMessage);
+            s_logger.error(errorMessage);
             throw new CloudRuntimeException(errorMessage, e);
         } catch (SQLException e) {
             s_logger.error(errorMessage, e);

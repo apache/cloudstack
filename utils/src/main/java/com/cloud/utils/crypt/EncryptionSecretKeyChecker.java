@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.PostConstruct;
@@ -159,9 +160,9 @@ public class EncryptionSecretKeyChecker {
             throw new CloudRuntimeException("encryptor not initialized");
         }
 
-        for(Object prop : properties.keySet()) {
-            String value = (String) properties.get(prop);
-            properties.replace(prop, decryptPropertyIfNeeded(value));
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+            String value = (String) entry.getValue();
+            properties.replace(entry.getKey(), decryptPropertyIfNeeded(value));
         }
     }
 }
