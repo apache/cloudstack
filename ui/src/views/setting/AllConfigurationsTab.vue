@@ -16,124 +16,77 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="tabLoading">
-    <div class="config-row-element">
-      <a-table
-        class="config-list-view"
-        size="small"
-        :showHeader="false"
-        :pagination="false"
-        :loading="tabLoading"
-        :columns="columns"
-        :items="items"
-        :dataSource="items"
-        :columnKeys="columnKeys"
-        :rowKey="record => record.name"
-        :rowClassName="getRowClassName"
-        @refresh="fetchConfigData">
+  <div class="config-row-element">
+    <a-table
+      class="config-list-view"
+      size="small"
+      :showHeader="false"
+      :pagination="false"
+      :columns="columns"
+      :dataSource="config"
+      :rowKey="record => record.name"
+      :rowClassName="getRowClassName" >
 
-        <template #name="{ record }">
-          <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
-        </template>
-        <template #value="{ record }">
-          <ConfigurationValue :configrecord="record" :loading="tabLoading" />
-        </template>
-      </a-table>
-      <a-pagination
-        class="config-row-element"
-        style="margin-top: 10px"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="itemCount"
-        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="pageSizeOptions"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger
-        showQuickJumper>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
-    </div>
-  </a-spin>
+      <template #name="{ record }">
+        <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
+      </template>
+      <template #value="{ record }">
+        <ConfigurationValue :configrecord="record" />
+      </template>
+    </a-table>
+    <a-pagination
+      class="config-row-element"
+      style="margin-top: 10px"
+      size="small"
+      :current="page"
+      :pageSize="pagesize"
+      :total="count"
+      :showTotal="count => `${$t('label.showing')} ${Math.min(count, 1+((page-1)*pagesize))}-${Math.min(page*pagesize, count)} ${$t('label.of')} ${count} ${$t('label.items')}`"
+      :pageSizeOptions="pageSizeOptions"
+      @change="changePage"
+      @showSizeChange="changePage"
+      showSizeChanger
+      showQuickJumper>
+      <template #buildOptionText="props">
+        <span>{{ props.value }} / {{ $t('label.page') }}</span>
+      </template>
+    </a-pagination>
+  </div>
 </template>
 
 <script>
-import { api } from '@/api'
-import { genericCompare } from '@/utils/sort.js'
-import ListView from '@/components/view/ListView'
-import TooltipButton from '@/components/widgets/TooltipButton'
 import ConfigurationValue from './ConfigurationValue'
 
 export default {
   components: {
-    ListView,
-    TooltipButton,
     ConfigurationValue
   },
   name: 'AllConfigurationsTab',
   props: {
-    loading: {
-      type: Boolean,
-      required: true
+    config: {
+      type: Array,
+      default: () => { return [] }
+    },
+    columns: {
+      type: Array,
+      default: () => { return [] }
+    },
+    count: {
+      type: Number,
+      default: 0
+    },
+    page: {
+      type: Number,
+      default: 0
+    },
+    pagesize: {
+      type: Number,
+      default: 20
     }
   },
   data () {
     return {
-      apiName: 'listConfigurations',
-      columns: [
-        {
-          title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' },
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
-          width: '60%'
-        },
-        // {
-        //   title: this.$t('label.category'),
-        //   dataIndex: 'category',
-        //   slots: { customRender: 'category' },
-        //   sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
-        // },
-        {
-          title: this.$t('label.value'),
-          dataIndex: 'value',
-          slots: { customRender: 'value' }
-        }
-      ],
-      columnKeys: this.columns,
-      items: [],
-      itemCount: 0,
-      page: 1,
-      pageSize: this.$store.getters.defaultListViewPageSize,
-      editableValueKey: null,
-      editableValue: '',
-      tabLoading: this.loading,
-      filter: ''
-    }
-  },
-  created () {
-    this.fetchConfigData()
-  },
-  watch: {
-    '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
-        if ('page' in to.query) {
-          this.page = Number(to.query.page)
-          this.pageSize = Number(to.query.pagesize)
-        } else {
-          this.page = 1
-        }
-        this.itemCount = 0
-        this.fetchConfigData()
-      }
-    },
-    '$i18n.locale' (to, from) {
-      if (to !== from) {
-        this.fetchConfigData()
-      }
+      apiName: 'listConfigurations'
     }
   },
   computed: {
@@ -145,61 +98,8 @@ export default {
     }
   },
   methods: {
-    fetchConfigData (callback) {
-      this.tabLoading = true
-      const params = {
-        listAll: true
-      }
-      if (Object.keys(this.$route.query).length > 0) {
-        if ('page' in this.$route.query) {
-          this.page = Number(this.$route.query.page)
-        }
-        if ('pagesize' in this.$route.query) {
-          this.pagesize = Number(this.$route.query.pagesize)
-        }
-        Object.assign(params, this.$route.query)
-      }
-      if (this.filter) {
-        params.keyword = this.filter
-      }
-      this.columnKeys = [...new Set(this.columnKeys)]
-      this.columnKeys.sort(function (a, b) {
-        if (a === 'name' && b !== 'name') { return -1 }
-        if (a < b) { return -1 }
-        if (a > b) { return 1 }
-        return 0
-      })
-      if ('listview' in this.$refs && this.$refs.listview) {
-        this.$refs.listview.resetSelection()
-      }
-      params.page = this.page
-      params.pagesize = this.pageSize
-      api('listConfigurations', params).then(response => {
-        this.items = response.listconfigurationsresponse.configuration
-        if (!this.items || this.items.length === 0) {
-          this.items = []
-        }
-        this.itemCount = response.listconfigurationsresponse.count
-      }).catch(error => {
-        console.error(error)
-        this.$message.error(this.$t('message.error.loading.setting'))
-      }).finally(() => {
-        this.tabLoading = false
-        if (!callback) return
-        callback()
-      })
-    },
-    changePage (page, pageSize) {
-      const query = Object.assign({}, this.$route.query)
-      query.page = page
-      query.pagesize = pageSize
-      this.$router.push({ query })
-    },
-    changePageSize (currentPage, pageSize) {
-      const query = Object.assign({}, this.$route.query)
-      query.page = currentPage
-      query.pagesize = pageSize
-      this.$router.push({ query })
+    changePage (page, pagesize) {
+      this.$emit('change-page', page, pagesize)
     },
     getRowClassName (record, index) {
       if (index % 2 === 0) {

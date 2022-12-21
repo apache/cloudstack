@@ -46,26 +46,33 @@
         <a-tabs
           tabPosition="left"
           :animated="false"
-          :activeKey="this.configGroup || ''"
-          @change="handleChangeConfigGroupTab" >
+          :activeKey="this.group || ''"
+          @change="changeGroupTab" >
           <a-tab-pane
             key=''
             tab='All Settings' >
-              <AllConfigurationsTab :loading="configLoading" />
+              <AllConfigurationsTab
+                :columns="columns"
+                :config="config"
+                :count="count"
+                :page="page"
+                :pagesize="pagesize"
+                @change-page="changePage" />
           </a-tab-pane>
           <a-tab-pane
             v-for="(group) in groups"
             :key="group.name"
             :tab="group.name" >
             <a-tabs
-              :activeKey="this.configSubGroup || ''"
+              :activeKey="this.subgroup || ''"
               :animated="false"
-              @change="handleChangeConfigSubGroupTab" >
+              @change="changeSubgroupTab" >
               <a-tab-pane
                 v-for="(subgroup) in group.subgroup"
                 :key="subgroup.name"
                 :tab="subgroup.name" >
                 <ConfigurationTab
+                  :columns="columns"
                   :config="config" />
               </a-tab-pane>
             </a-tabs>
@@ -120,13 +127,14 @@ export default {
       groups: [],
       config: [],
       configLoading: this.loading,
-      configGroup: '',
-      configSubGroup: '',
-      dataView: true,
-      searchParams: {},
+      page: 1,
+      pagesize: this.$store.getters.defaultListViewPageSize,
+      group: '',
+      subgroup: '',
       filter: '',
+      count: 0,
       apiName: 'listConfigurations',
-      groupColumns: [
+      columns: [
         {
           title: 'name',
           dataIndex: 'name',
@@ -143,19 +151,15 @@ export default {
   },
   watch: {
     '$route.fullPath': function () {
-      this.configGroup = this.$route.query.group || ''
-      this.configSubGroup = this.$route.query.subgroup || ''
+      this.group = this.$route.query.group || ''
+      this.subgroup = this.$route.query.subgroup || ''
+      this.page = parseInt(this.$route.query.page) || 1
+      this.pagesize = parseInt(this.$route.query.pagesize) || this.pagesize
       this.fetchConfigurationData()
     }
   },
   created () {
     this.fetchConfigurationGroups()
-    // window.addEventListener('popstate', function () {
-    //   this.fetchConfigurationData()
-    // })
-    // window.addEventListener('pushstate', function () {
-    //   this.fetchConfigurationData()
-    // })
   },
   methods: {
     fetchConfigurationGroups () {
@@ -170,31 +174,42 @@ export default {
         console.error(error)
         this.$message.error(this.$t('message.error.loading.setting'))
       }).finally(() => {
+        this.group = this.$route.query.group || ''
+        this.subgroup = this.$route.query.subgroup || ''
+        this.fetchConfigurationData()
         this.configLoading = false
       })
     },
     fetchConfigurationData () {
       this.configLoading = true
       const params = {
-        listAll: true,
-        pagesize: -1
+        listAll: true
       }
-      if (this.configGroup.length > 0) {
-        params.group = this.configGroup
+      if (this.group.length > 0) {
+        params.group = this.group
+      } else {
+        params.pagesize = this.pagesize || 20
+        params.page = this.page || 1
       }
-      if (this.configSubGroup.length > 0) {
-        params.subgroup = this.configSubGroup
+      if (this.subgroup.length > 0) {
+        params.subgroup = this.subgroup
       }
       if (this.filter) {
         params.keyword = this.filter
       }
+
       console.table(params)
       console.time('fetchConfigurationData')
       api('listConfigurations', params).then(response => {
-        this.config = response.listconfigurationsresponse.configuration || []
-        console.time('hierarchy')
-        this.convertConfigDataToHierarchy(this.config)
-        console.timeEnd('hierarchy')
+        this.config = []
+        let config = response.listconfigurationsresponse.configuration || []
+        this.count = response.listconfigurationsresponse.count || 0
+        if (this.group.length > 0) {
+          console.time('hierarchy')
+          config = this.convertConfigToHierarchy(config)
+          console.timeEnd('hierarchy')
+        }
+        this.config = config
         // console.log(this.config)
         console.timeEnd('fetchConfigurationData')
       }).catch(error => {
@@ -204,78 +219,89 @@ export default {
         this.configLoading = false
       })
     },
-    convertConfigDataToHierarchy (data) {
+    convertConfigToHierarchy (config) {
       var hierarchy = {}
-      for (var datum of data) {
-        if (datum.parent && datum.parent.length !== 0) {
-          if (hierarchy[datum.parent]) {
-            hierarchy[datum.parent].push(datum)
+      for (var c of config) {
+        if (c.parent && c.parent.length !== 0) {
+          if (hierarchy[c.parent]) {
+            hierarchy[c.parent].push(c)
           } else {
-            hierarchy[datum.parent] = [datum]
+            hierarchy[c.parent] = [c]
           }
         }
       }
-      for (datum of data) {
-        if (hierarchy[datum.name]) {
-          datum.children = hierarchy[datum.name]
+      for (c of config) {
+        if (hierarchy[c.name]) {
+          c.children = hierarchy[c.name]
         }
       }
+      config = config.filter(c => !c.parent)
+      return config
     },
-    handleChangeConfigGroupTab (e) {
-      this.configGroup = e
-      if (this.configGroup.length > 0) {
+    changePage (page, pagesize) {
+      console.log(page, pagesize)
+      const query = {}
+      query.page = page
+      query.pagesize = pagesize
+      query.filter = this.filter
+      this.group = ''
+      this.subgroup = ''
+      this.page = page
+      this.pagesize = pagesize
+      this.pushToHistory(query)
+      this.fetchConfigurationData()
+    },
+    pushToHistory (query) {
+      history.pushState(
+        {},
+        null,
+        '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+          return (
+            encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+          )
+        }).join('&')
+      )
+    },
+    changeGroupTab (e) {
+      this.group = e
+      console.log('changeGroupTab : ' + e)
+      if (this.group.length > 0) {
         for (const groupIndex in this.groups) {
-          if (this.groups[groupIndex].name === this.configGroup) {
+          if (this.groups[groupIndex].name === this.group) {
             const group = this.groups[groupIndex]
-            this.configSubGroup = group.subgroup[0].name
+            this.subgroup = group.subgroup[0].name
           }
         }
       } else {
-        this.configSubGroup = ''
+        this.group = ''
+        this.subgroup = ''
+        this.changePage(1, this.pagesize)
       }
-      if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
+      if (this.group.length > 0 && this.subgroup.length > 0) {
         const query = Object.assign({}, this.$route.query)
         delete query.page
         delete query.pagesize
-        query.group = this.configGroup
-        query.subgroup = this.configSubGroup
+        query.group = this.group
+        query.subgroup = this.subgroup
         query.filter = this.filter
-        history.pushState(
-          {},
-          null,
-          '#' + this.$route.path + '?' + Object.keys(query).map(key => {
-            return (
-              encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
-            )
-          }).join('&')
-        )
+        // this.pagesize = -1
+        this.page = 0
+        this.pushToHistory(query)
         this.fetchConfigurationData()
-      } else {
-        history.pushState(
-          {},
-          null,
-          '#' + this.$route.path
-        )
       }
-      console.log('End handleChangeConfigGroupTab')
+      console.log('End changeGroupTab')
     },
-    handleChangeConfigSubGroupTab (e) {
-      this.configSubGroup = e || this.configSubGroup
-      if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
+    changeSubgroupTab (e) {
+      this.subgroup = e || this.subgroup
+      if (this.group.length > 0 && this.subgroup.length > 0) {
         const query = Object.assign({}, this.$route.query)
         delete query.page
         delete query.pagesize
-        query.group = this.configGroup
-        query.subgroup = this.configSubGroup
-        history.pushState(
-          {},
-          null,
-          '#' + this.$route.path + '?' + Object.keys(query).map(key => {
-            return (
-              encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
-            )
-          }).join('&')
-        )
+        query.group = this.group
+        query.subgroup = this.subgroup
+        // this.pagesize = -1
+        this.page = 0
+        this.pushToHistory(query)
         this.fetchConfigurationData()
       } else {
         history.pushState(
@@ -284,7 +310,7 @@ export default {
           '#' + this.$route.path
         )
       }
-      console.log('End handleChangeConfigSubGroupTab')
+      console.log('End changeSubgroupTab')
     }
   }
 }

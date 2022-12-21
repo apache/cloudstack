@@ -20,7 +20,7 @@
     size="small"
     :showHeader="false"
     :columns="columns"
-    :dataSource="config.filter(c => !c.parent)"
+    :dataSource="config"
     :rowKey="record => record.name"
     :pagination="false"
     :rowClassName="getRowClassName"
@@ -28,7 +28,7 @@
 
     <template #name="{ record }">
       <span :style="hierarchyExists ? 'padding-left: 0px;' : 'padding-left: 25px;'">
-        <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }}
+        <b><span v-if="record.parent">└─ &nbsp;</span>{{record.displaytext }} </b> {{ ' (' + record.name + ')' }}
       </span>
       <br/>
       <span :style="record.parent ? 'padding-left: 50px; display:block' : 'padding-left: 25px; display:block'">{{ record.description }}</span>
@@ -53,6 +53,10 @@ export default {
     config: {
       type: Array,
       default: () => { return [] }
+    },
+    columns: {
+      type: Array,
+      default: () => { return [] }
     }
   },
   computed: {
@@ -67,42 +71,20 @@ export default {
   },
   data () {
     return {
-      columns: [
-        {
-          title: 'name',
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
-        },
-        {
-          title: 'value',
-          dataIndex: 'value',
-          slots: { customRender: 'value' },
-          width: '29%'
-        }
-      ],
       apiName: 'listConfigurations',
       configdata: []
     }
   },
   methods: {
     getRowClassName (record, index) {
-      if (index % 2 === 0) {
-        return 'config-light-row'
+      if (record.parent) {
+        return 'child-row'
       }
-      return 'config-dark-row'
+      if (index % 2 === 0) {
+        return 'light-row'
+      }
+      return 'dark-row'
     }
   }
 }
 </script>
-
-<style scoped lang="scss">
-
-  .config-light-row {
-    background-color: #fff;
-  }
-
-  .config-dark-row {
-    background-color: #f9f9f9;
-  }
-
-</style>
