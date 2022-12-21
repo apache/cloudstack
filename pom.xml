@@ -1025,6 +1025,7 @@
                             <exclude>debian/rules</exclude>
                             <exclude>debian/source/format</exclude>
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
+                            <exclude>engine/schema/dist/**</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>

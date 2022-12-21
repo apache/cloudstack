@@ -15,30 +15,33 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: "PR Merge Conflict Check"
-on:
-  push:
-  pull_request_target:
-    types: [synchronize]
+name: RAT License Check
 
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
+on: [push, pull_request]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  triage:
-    permissions:
-      pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-20.04
     steps:
-    - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v2.0.0
-      with:
-        repoToken: "${{ secrets.GITHUB_TOKEN }}"
-        dirtyLabel: "status:has-conflicts"
-        removeOnDirtyLabel: "status:ready-for-review"
-        continueOnMissingPermissions: true
-        commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          architecture: x64
+          cache: maven
+      - name: RAT licence checks
+        run: |
+          git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
+          rm -fr nonoss
+          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
+      - name: Rat Report
+        if: always()
+        run: |
+          echo -e "Printing RAT report\n"
+          cat target/rat.txt || true

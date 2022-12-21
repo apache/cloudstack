@@ -1,4 +1,3 @@
-#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,8 +14,41 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
-# This script should run any tear down commands required.
-#
 
-mvn -Dsimulator -pl client jetty:stop 2>&1
+name: UI Build
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Env details
+        run: |
+          uname -a
+          whoami
+          free -m
+          nproc
+          npm version
+
+      - name: Build UI
+        run: |
+          cd ui
+          sudo npm install -g @vue/cli npm-check-updates
+          rm -f package-lock.json
+          npm install
+          npm run build
+          npm run lint
+          npm run test:unit
