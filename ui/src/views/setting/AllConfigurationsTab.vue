@@ -21,6 +21,7 @@
       <a-table
         class="config-list-view"
         size="small"
+        :showHeader="false"
         :pagination="false"
         :loading="tabLoading"
         :columns="columns"
@@ -90,12 +91,12 @@ export default {
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
           width: '60%'
         },
-        {
-          title: this.$t('label.category'),
-          dataIndex: 'category',
-          slots: { customRender: 'category' },
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
-        },
+        // {
+        //   title: this.$t('label.category'),
+        //   dataIndex: 'category',
+        //   slots: { customRender: 'category' },
+        //   sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        // },
         {
           title: this.$t('label.value'),
           dataIndex: 'value',

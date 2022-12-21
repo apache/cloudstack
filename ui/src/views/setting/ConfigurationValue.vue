@@ -21,7 +21,6 @@
       <span v-if="configrecord.type ==='Boolean'">
         <a-tooltip :title="editableValue?'true':'false'">
           <a-switch
-            :defaultChecked="configrecord.value==='true'?true:false"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:checked="editableValue"
             @keydown.esc="editableValueKey = null"
@@ -33,6 +32,7 @@
       <span v-else-if="configrecord.type ==='Number'">
         <a-tooltip :title="editableValue">
           <a-input-number
+            style="width: 90%;"
             :defaultValue="configrecord.value"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
@@ -45,6 +45,7 @@
       <span v-else-if="configrecord.type ==='Decimal'">
         <a-tooltip :title="editableValue">
           <a-input-number
+            style="width: 90%;"
             :defaultValue="configrecord.value"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
@@ -91,6 +92,7 @@
       <span v-else-if="configrecord.type ==='List'">
         <a-tooltip :title="editableValue">
           <a-select
+           style="width: 90%;"
             :defaultValue="configrecord.value"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
@@ -108,8 +110,7 @@
       <span v-else>
         <a-tooltip :title="editableValue">
           <a-textarea
-            autoSize="true"
-            style="width: 200px; word-break: break-all"
+            style="width: 90%; word-break: break-all"
             :defaultValue="configrecord.value"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"

@@ -46,6 +46,7 @@
         <a-tabs
           tabPosition="left"
           :animated="false"
+          :activeKey="this.configGroup || ''"
           @change="handleChangeConfigGroupTab" >
           <a-tab-pane
             key=''
@@ -57,6 +58,7 @@
             :key="group.name"
             :tab="group.name" >
             <a-tabs
+              :activeKey="this.configSubGroup || ''"
               :animated="false"
               @change="handleChangeConfigSubGroupTab" >
               <a-tab-pane
@@ -139,8 +141,21 @@ export default {
       ]
     }
   },
+  watch: {
+    '$route.fullPath': function () {
+      this.configGroup = this.$route.query.group || ''
+      this.configSubGroup = this.$route.query.subgroup || ''
+      this.fetchConfigurationData()
+    }
+  },
   created () {
     this.fetchConfigurationGroups()
+    // window.addEventListener('popstate', function () {
+    //   this.fetchConfigurationData()
+    // })
+    // window.addEventListener('pushstate', function () {
+    //   this.fetchConfigurationData()
+    // })
   },
   methods: {
     fetchConfigurationGroups () {
@@ -177,8 +192,10 @@ export default {
       console.time('fetchConfigurationData')
       api('listConfigurations', params).then(response => {
         this.config = response.listconfigurationsresponse.configuration || []
+        console.time('hierarchy')
         this.convertConfigDataToHierarchy(this.config)
-        console.log(this.config)
+        console.timeEnd('hierarchy')
+        // console.log(this.config)
         console.timeEnd('fetchConfigurationData')
       }).catch(error => {
         console.error(error)
@@ -222,6 +239,7 @@ export default {
         delete query.pagesize
         query.group = this.configGroup
         query.subgroup = this.configSubGroup
+        query.filter = this.filter
         history.pushState(
           {},
           null,
@@ -231,6 +249,7 @@ export default {
             )
           }).join('&')
         )
+        this.fetchConfigurationData()
       } else {
         history.pushState(
           {},
@@ -238,7 +257,6 @@ export default {
           '#' + this.$route.path
         )
       }
-      this.fetchConfigurationData()
       console.log('End handleChangeConfigGroupTab')
     },
     handleChangeConfigSubGroupTab (e) {
@@ -258,6 +276,7 @@ export default {
             )
           }).join('&')
         )
+        this.fetchConfigurationData()
       } else {
         history.pushState(
           {},
@@ -265,7 +284,6 @@ export default {
           '#' + this.$route.path
         )
       }
-      this.fetchConfigurationData()
       console.log('End handleChangeConfigSubGroupTab')
     }
   }
