@@ -82,21 +82,21 @@ public class EncryptionSecretKeyChanger {
     private static final String CMD_LINE_SYNTAX = "cloudstack-migrate-databases";
     private static final int WIDTH = 100;
     private static final String HEADER = "Options:";
-    private static final String FOOTER = " %nExamples: %n" +
-            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -v V2 %n" +
-            "       Migrate cloudstack properties (db.properties and server.properties) %n" +
-            "       with new management key and encryptor V2. %n" +
-            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -e newdbkey %n" +
-            "       Migrate cloudstack properties and databases with new management key and database secret key. %n" +
-            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -e newdbkey -s -v V2 %n" +
-            "       Migrate cloudstack properties with new keys and encryptor V2, but skip database migration. %n" +
-            "  " + CMD_LINE_SYNTAX + " -m password -d password -l -f %n" +
-            "       Migrate cloudstack properties with new management key (load from $CLOUD_SECRET_KEY_NEW), %n" +
-            "       and migrate database with old db key. %n" +
-            " %nReturn codes: %n" +
-            "  0 - Succeed to change keys and/or migrate databases %n" +
-            "  1 - Fail to parse the command line arguments %n" +
-            "  2 - Fail to validate parameters %n" +
+    private static final String FOOTER = " \nExamples: \n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -v V2 \n" +
+            "       Migrate cloudstack properties (db.properties and server.properties) \n" +
+            "       with new management key and encryptor V2. \n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -e newdbkey \n" +
+            "       Migrate cloudstack properties and databases with new management key and database secret key. \n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -e newdbkey -s -v V2 \n" +
+            "       Migrate cloudstack properties with new keys and encryptor V2, but skip database migration. \n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -l -f \n" +
+            "       Migrate cloudstack properties with new management key (load from $CLOUD_SECRET_KEY_NEW), \n" +
+            "       and migrate database with old db key. \n" +
+            " \nReturn codes: \n" +
+            "  0 - Succeed to change keys and/or migrate databases \n" +
+            "  1 - Fail to parse the command line arguments \n" +
+            "  2 - Fail to validate parameters \n" +
             "  3 - Fail to migrate database";
     private static final String OLD_MS_KEY_OPTION = "oldMSKey";
     private static final String OLD_DB_KEY_OPTION = "oldDBKey";
@@ -309,7 +309,7 @@ public class EncryptionSecretKeyChanger {
                 {
                     bwriter.write(newMSKey);
                 } catch (IOException e) {
-                    System.out.printf("Please update the file %s manually. Failed to write new secret to file with error %s%n", KEY_FILE, e.getMessage());
+                    System.out.printf("Please update the file %s manually. Failed to write new secret to file with error %s %n", KEY_FILE, e.getMessage());
                     return false;
                 }
             }
