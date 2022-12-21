@@ -410,28 +410,33 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private void initializeDatabaseEncryptors() {
         TransactionLegacy txn = TransactionLegacy.open("initializeDatabaseEncryptors");
         txn.start();
-        String errorMessage = "";
+        String errorMessage = "Unable to get the database connections";
         try {
-            errorMessage = "Unable to get the database connections";
             Connection conn = txn.getConnection();
-
             errorMessage = "Unable to get the 'init' value from 'configuration' table in the 'cloud' database";
-            String sql = "SELECT value from configuration WHERE name = 'init'";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql);
-                 ResultSet result = pstmt.executeQuery()) {
-                if (result.next()) {
-                    String init = result.getString(1);
-                    s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
-                }
-            }
-
+            decryptInit(conn);
             txn.commit();
-        } catch (CloudRuntimeException | SQLException e) {
+        } catch (CloudRuntimeException e) {
             errorMessage = "Unable to initialize the database encryptors due to " + errorMessage;
+            s_logger.error(errorMessage);
+            s_logger.error(e.getMessage());
+            throw new CloudRuntimeException(errorMessage, e);
+        } catch (SQLException e) {
             s_logger.error(errorMessage, e);
             throw new CloudRuntimeException(errorMessage, e);
         } finally {
             txn.close();
+        }
+    }
+
+    private void decryptInit(Connection conn) throws SQLException {
+        String sql = "SELECT value from configuration WHERE name = 'init'";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet result = pstmt.executeQuery()) {
+            if (result.next()) {
+                String init = result.getString(1);
+                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+            }
         }
     }
 

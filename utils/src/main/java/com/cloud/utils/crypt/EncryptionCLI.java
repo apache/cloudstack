@@ -28,19 +28,19 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public class EncryptionCLI {
-    private static final String verboseOption = "verbose";
-    private static final String decryptOption = "decrypt";
-    private static final String inputOption = "input";
-    private static final String passwordOption = "password";
-    private static final String encryptorVersionOption = "encryptorversion";
+    private static final String VERBOSE_OPTION = "verbose";
+    private static final String DECRYPT_OPTION = "decrypt";
+    private static final String INPUT_OPTION = "input";
+    private static final String PASSWORD_OPTION = "password";
+    private static final String ENCRYPTOR_VERSION_OPTION = "encryptorversion";
 
     public static void main(String[] args) throws ParseException {
         Options options = new Options();
-        Option verbose = Option.builder("v").longOpt(verboseOption).argName(verboseOption).required(false).desc("Verbose output").hasArg(false).build();
-        Option decrypt = Option.builder("d").longOpt(decryptOption).argName(decryptOption).required(false).desc("Decrypt instead of encrypt").hasArg(false).build();
-        Option input = Option.builder("i").longOpt(inputOption).argName(inputOption).required(true).hasArg().desc("The input string to process").build();
-        Option password = Option.builder("p").longOpt(passwordOption).argName(passwordOption).required(true).hasArg().desc("The encryption password").build();
-        Option encryptorVersion = Option.builder("e").longOpt(encryptorVersionOption).argName(encryptorVersionOption).required(false).hasArg().desc("The encryptor version").build();
+        Option verbose = Option.builder("v").longOpt(VERBOSE_OPTION).argName(VERBOSE_OPTION).required(false).desc("Verbose output").hasArg(false).build();
+        Option decrypt = Option.builder("d").longOpt(DECRYPT_OPTION).argName(DECRYPT_OPTION).required(false).desc("Decrypt instead of encrypt").hasArg(false).build();
+        Option input = Option.builder("i").longOpt(INPUT_OPTION).argName(INPUT_OPTION).required(true).hasArg().desc("The input string to process").build();
+        Option password = Option.builder("p").longOpt(PASSWORD_OPTION).argName(PASSWORD_OPTION).required(true).hasArg().desc("The encryption password").build();
+        Option encryptorVersion = Option.builder("e").longOpt(ENCRYPTOR_VERSION_OPTION).argName(ENCRYPTOR_VERSION_OPTION).required(false).hasArg().desc("The encryptor version").build();
 
         options.addOption(verbose);
         options.addOption(decrypt);
@@ -59,17 +59,18 @@ public class EncryptionCLI {
             System.exit(1);
         }
 
-        CloudStackEncryptor encryptor = new CloudStackEncryptor(cmdLine.getOptionValue(passwordOption), cmdLine.getOptionValue(encryptorVersion), EncryptionCLI.class);
+        CloudStackEncryptor encryptor = new CloudStackEncryptor(cmdLine.getOptionValue(PASSWORD_OPTION),
+                cmdLine.getOptionValue(encryptorVersion), EncryptionCLI.class);
 
         String result;
-        String inString = cmdLine.getOptionValue(inputOption);
-        if (cmdLine.hasOption(decryptOption)) {
+        String inString = cmdLine.getOptionValue(INPUT_OPTION);
+        if (cmdLine.hasOption(DECRYPT_OPTION)) {
             result = encryptor.decrypt(inString);
         } else {
             result = encryptor.encrypt(inString);
         }
 
-        if (cmdLine.hasOption(verboseOption)) {
+        if (cmdLine.hasOption(VERBOSE_OPTION)) {
             System.out.printf("Input: %s\n", inString);
             System.out.printf("Encrypted: %s\n", result);
         } else {

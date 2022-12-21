@@ -25,8 +25,6 @@ import java.util.Set;
 public class DBEncryptionFinderCLI {
     public static void main(String[] args) {
         Map<String, Set<String>> encryptedTableCols = EncryptionSecretKeyChanger.findEncryptedTableColumns();
-        encryptedTableCols.forEach((table, cols) -> {
-            System.out.printf("Table %s has encrypted columns %s\n", table, cols);
-        });
+        encryptedTableCols.forEach((table, cols) -> System.out.printf("Table %s has encrypted columns %s%n", table, cols));
     }
 }

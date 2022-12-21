@@ -72,44 +72,45 @@ public class EncryptionSecretKeyChanger {
 
     private CloudStackEncryptor oldEncryptor;
     private CloudStackEncryptor newEncryptor;
-    private static final String keyFile = "/etc/cloudstack/management/key";
-    private static final String envNewManagementKey = "CLOUD_SECRET_KEY_NEW";
+    private static final String KEY_FILE = "/etc/cloudstack/management/key";
+    private static final String ENV_NEW_MANAGEMENT_KEY = "CLOUD_SECRET_KEY_NEW";
     private final Gson gson = new Gson();
+    private static final String PASSWORD = "password";
 
     private static final Options options = initializeOptions();
     private static final HelpFormatter helper = initializeHelper();
-    private static final String cmdLineSyntax = "cloudstack-migrate-databases";
-    private static final int width = 100;
-    private static final String header = "Options:";
-    private static final String footer = "\nExamples:\n" +
-            "  " + cmdLineSyntax + " -m password -d password -n newmgmtkey -v V2 \n" +
-            "       Migrate cloudstack properties (db.properties and server.properties) \n" +
-            "       with new management key and encryptor V2.\n" +
-            "  " + cmdLineSyntax + " -m password -d password -n newmgmtkey -e newdbkey \n" +
-            "       Migrate cloudstack properties and databases with new management key and database secret key.\n" +
-            "  " + cmdLineSyntax + " -m password -d password -n newmgmtkey -e newdbkey -s -v V2 \n" +
-            "       Migrate cloudstack properties with new keys and encryptor V2, but skip database migration.\n" +
-            "  " + cmdLineSyntax + " -m password -d password -l -f \n" +
-            "       Migrate cloudstack properties with new management key (load from $CLOUD_SECRET_KEY_NEW),\n" +
-            "       and migrate database with old db key.\n" +
-            "\nReturn codes:\n" +
-            "  0 - Succeed to change keys and/or migrate databases \n" +
-            "  1 - Fail to parse the command line arguments \n" +
-            "  2 - Fail to validate parameters \n" +
+    private static final String CMD_LINE_SYNTAX = "cloudstack-migrate-databases";
+    private static final int WIDTH = 100;
+    private static final String HEADER = "Options:";
+    private static final String FOOTER = " %nExamples: %n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -v V2 %n" +
+            "       Migrate cloudstack properties (db.properties and server.properties) %n" +
+            "       with new management key and encryptor V2. %n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -e newdbkey %n" +
+            "       Migrate cloudstack properties and databases with new management key and database secret key. %n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -n newmgmtkey -e newdbkey -s -v V2 %n" +
+            "       Migrate cloudstack properties with new keys and encryptor V2, but skip database migration. %n" +
+            "  " + CMD_LINE_SYNTAX + " -m password -d password -l -f %n" +
+            "       Migrate cloudstack properties with new management key (load from $CLOUD_SECRET_KEY_NEW), %n" +
+            "       and migrate database with old db key. %n" +
+            " %nReturn codes: %n" +
+            "  0 - Succeed to change keys and/or migrate databases %n" +
+            "  1 - Fail to parse the command line arguments %n" +
+            "  2 - Fail to validate parameters %n" +
             "  3 - Fail to migrate database";
-    private static final String oldMSKeyOption = "oldMSKey";
-    private static final String oldDBKeyOption = "oldDBKey";
-    private static final String newMSKeyOption = "newMSKey";
-    private static final String newDBKeyOption = "newDBKey";
-    private static final String encryptorVersionOption = "version";
-    private static final String loadNewMsKeyFromEnvFlag = "load-new-management-key-from-env";
-    private static final String forceDatabaseMigrationFlag = "force-database-migration";
-    private static final String skipDatabaseMigrationFlag = "skip-database-migration";
-    private static final String helpFlag = "help";
+    private static final String OLD_MS_KEY_OPTION = "oldMSKey";
+    private static final String OLD_DB_KEY_OPTION = "oldDBKey";
+    private static final String NEW_MS_KEY_OPTION = "newMSKey";
+    private static final String NEW_DB_KEY_OPTION = "newDBKey";
+    private static final String ENCRYPTOR_VERSION_OPTION = "version";
+    private static final String LOAD_NEW_MS_KEY_FROM_ENV_FLAG = "load-new-management-key-from-env";
+    private static final String FORCE_DATABASE_MIGRATION_FLAG = "force-database-migration";
+    private static final String SKIP_DATABASE_MIGRATION_FLAG = "skip-database-migration";
+    private static final String HELP_FLAG = "help";
 
     public static void main(String[] args) {
         if (args.length == 0 || StringUtils.equalsAny(args[0], "-h", "--help")) {
-            helper.printHelp(width, cmdLineSyntax, header, options, footer, true);
+            helper.printHelp(WIDTH, CMD_LINE_SYNTAX, HEADER, options, FOOTER, true);
             System.exit(0);
         }
 
@@ -119,21 +120,21 @@ public class EncryptionSecretKeyChanger {
             cmdLine = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            helper.printHelp(width, cmdLineSyntax, header, options, footer, true);
+            helper.printHelp(WIDTH, CMD_LINE_SYNTAX, HEADER, options, FOOTER, true);
             System.exit(1);
         }
 
-        String oldMSKey = cmdLine.getOptionValue(oldMSKeyOption);
-        String oldDBKey = cmdLine.getOptionValue(oldDBKeyOption);
-        String newMSKey = cmdLine.getOptionValue(newMSKeyOption);
-        String newDBKey = cmdLine.getOptionValue(newDBKeyOption);
-        String newEncryptorVersion = cmdLine.getOptionValue(encryptorVersionOption);
-        boolean loadNewMsKeyFromEnv = cmdLine.hasOption(loadNewMsKeyFromEnvFlag);
-        boolean forced = cmdLine.hasOption(forceDatabaseMigrationFlag);
-        boolean skipped = cmdLine.hasOption(skipDatabaseMigrationFlag);
+        String oldMSKey = cmdLine.getOptionValue(OLD_MS_KEY_OPTION);
+        String oldDBKey = cmdLine.getOptionValue(OLD_DB_KEY_OPTION);
+        String newMSKey = cmdLine.getOptionValue(NEW_MS_KEY_OPTION);
+        String newDBKey = cmdLine.getOptionValue(NEW_DB_KEY_OPTION);
+        String newEncryptorVersion = cmdLine.getOptionValue(ENCRYPTOR_VERSION_OPTION);
+        boolean loadNewMsKeyFromEnv = cmdLine.hasOption(LOAD_NEW_MS_KEY_FROM_ENV_FLAG);
+        boolean forced = cmdLine.hasOption(FORCE_DATABASE_MIGRATION_FLAG);
+        boolean skipped = cmdLine.hasOption(SKIP_DATABASE_MIGRATION_FLAG);
 
         if (!validateParameters(oldMSKey, oldDBKey, newMSKey, newDBKey, newEncryptorVersion, loadNewMsKeyFromEnv)) {
-            helper.printHelp(width, cmdLineSyntax, header, options, footer, true);
+            helper.printHelp(WIDTH, CMD_LINE_SYNTAX, HEADER, options, FOOTER, true);
             System.exit(2);
         }
 
@@ -148,16 +149,16 @@ public class EncryptionSecretKeyChanger {
     private static Options initializeOptions() {
         Options options = new Options();
 
-        Option oldMSKey = Option.builder("m").longOpt(oldMSKeyOption).argName(oldMSKeyOption).required(true).hasArg().desc("(required) Current Mgmt Secret Key").build();
-        Option oldDBKey = Option.builder("d").longOpt(oldDBKeyOption).argName(oldDBKeyOption).required(true).hasArg().desc("(required) Current DB Secret Key").build();
-        Option newMSKey = Option.builder("n").longOpt(newMSKeyOption).argName(newMSKeyOption).required(false).hasArg().desc("New Mgmt Secret Key").build();
-        Option newDBKey = Option.builder("e").longOpt(newDBKeyOption).argName(newDBKeyOption).required(false).hasArg().desc("New DB Secret Key").build();
-        Option encryptorVersion = Option.builder("v").longOpt(encryptorVersionOption).argName(encryptorVersionOption).required(false).hasArg().desc("New DB Encryptor Version. Options are V1, V2.").build();
+        Option oldMSKey = Option.builder("m").longOpt(OLD_MS_KEY_OPTION).argName(OLD_MS_KEY_OPTION).required(true).hasArg().desc("(required) Current Mgmt Secret Key").build();
+        Option oldDBKey = Option.builder("d").longOpt(OLD_DB_KEY_OPTION).argName(OLD_DB_KEY_OPTION).required(true).hasArg().desc("(required) Current DB Secret Key").build();
+        Option newMSKey = Option.builder("n").longOpt(NEW_MS_KEY_OPTION).argName(NEW_MS_KEY_OPTION).required(false).hasArg().desc("New Mgmt Secret Key").build();
+        Option newDBKey = Option.builder("e").longOpt(NEW_DB_KEY_OPTION).argName(NEW_DB_KEY_OPTION).required(false).hasArg().desc("New DB Secret Key").build();
+        Option encryptorVersion = Option.builder("v").longOpt(ENCRYPTOR_VERSION_OPTION).argName(ENCRYPTOR_VERSION_OPTION).required(false).hasArg().desc("New DB Encryptor Version. Options are V1, V2.").build();
 
-        Option loadNewMsKeyFromEnv = Option.builder("l").longOpt(loadNewMsKeyFromEnvFlag).desc("Load new management key from environment variable " + envNewManagementKey).build();
-        Option forceDatabaseMigration = Option.builder("f").longOpt(forceDatabaseMigrationFlag).desc("Force database migration even if DB Secret key is not changed").build();
-        Option skipDatabaseMigration = Option.builder("s").longOpt(skipDatabaseMigrationFlag).desc("Skip database migration even if DB Secret key is changed").build();
-        Option help = Option.builder("h").longOpt(helpFlag).desc("Show help message").build();
+        Option loadNewMsKeyFromEnv = Option.builder("l").longOpt(LOAD_NEW_MS_KEY_FROM_ENV_FLAG).desc("Load new management key from environment variable " + ENV_NEW_MANAGEMENT_KEY).build();
+        Option forceDatabaseMigration = Option.builder("f").longOpt(FORCE_DATABASE_MIGRATION_FLAG).desc("Force database migration even if DB Secret key is not changed").build();
+        Option skipDatabaseMigration = Option.builder("s").longOpt(SKIP_DATABASE_MIGRATION_FLAG).desc("Skip database migration even if DB Secret key is changed").build();
+        Option help = Option.builder("h").longOpt(HELP_FLAG).desc("Show help message").build();
 
         options.addOption(oldMSKey);
         options.addOption(oldDBKey);
@@ -207,9 +208,9 @@ public class EncryptionSecretKeyChanger {
                 System.out.println("The new management key has already been set. Please check if it is set twice.");
                 return false;
             }
-            newMSKey = System.getenv(envNewManagementKey);
+            newMSKey = System.getenv(ENV_NEW_MANAGEMENT_KEY);
             if (StringUtils.isEmpty(newMSKey)) {
-                System.out.println("Environment variable " + envNewManagementKey + " is not set or empty");
+                System.out.println("Environment variable " + ENV_NEW_MANAGEMENT_KEY + " is not set or empty");
                 return false;
             }
         }
@@ -283,7 +284,7 @@ public class EncryptionSecretKeyChanger {
         }
 
         if (loadNewMsKeyFromEnv) {
-            newMSKey = System.getenv(envNewManagementKey);
+            newMSKey = System.getenv(ENV_NEW_MANAGEMENT_KEY);
         }
         if (newMSKey == null) {
             newMSKey = oldMSKey;
@@ -303,12 +304,12 @@ public class EncryptionSecretKeyChanger {
             //db.properties updated successfully
             if (encryptionType.equals("file")) {
                 //update key file with new MS key
-                try (FileWriter fwriter = new FileWriter(keyFile);
+                try (FileWriter fwriter = new FileWriter(KEY_FILE);
                      BufferedWriter bwriter = new BufferedWriter(fwriter))
                 {
                     bwriter.write(newMSKey);
                 } catch (IOException e) {
-                    System.out.printf("Please update the file %s manually. Failed to write new secret to file with error %s%n", keyFile, e.getMessage());
+                    System.out.printf("Please update the file %s manually. Failed to write new secret to file with error %s%n", KEY_FILE, e.getMessage());
                     return false;
                 }
             }
@@ -344,7 +345,7 @@ public class EncryptionSecretKeyChanger {
             }
             if (encryptionType.equals("file")) {
                 //revert secret key in file
-                try (FileWriter fwriter = new FileWriter(keyFile);
+                try (FileWriter fwriter = new FileWriter(KEY_FILE);
                      BufferedWriter bwriter = new BufferedWriter(fwriter))
                 {
                     bwriter.write(oldMSKey);
@@ -515,9 +516,9 @@ public class EncryptionSecretKeyChanger {
 
 
     private void migrateValueAndUpdateDatabaseById(Connection conn, String tableName, String selectSql, String updateSql, boolean isUrlOrPath) {
-        try( PreparedStatement select_pstmt = conn.prepareStatement(selectSql);
-             ResultSet rs = select_pstmt.executeQuery();
-             PreparedStatement update_pstmt = conn.prepareStatement(updateSql)
+        try( PreparedStatement selectPstmt = conn.prepareStatement(selectSql);
+             ResultSet rs = selectPstmt.executeQuery();
+             PreparedStatement updatePstmt = conn.prepareStatement(updateSql)
         ) {
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -526,9 +527,9 @@ public class EncryptionSecretKeyChanger {
                     continue;
                 }
                 String encryptedValue = isUrlOrPath ? migrateUrlOrPath(value) : migrateValue(value);
-                update_pstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
-                update_pstmt.setLong(2, id);
-                update_pstmt.executeUpdate();
+                updatePstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
+                updatePstmt.setLong(2, id);
+                updatePstmt.executeUpdate();
             }
         } catch (SQLException e) {
             throwCloudRuntimeException(String.format("Unable to update %s values", tableName), e);
@@ -536,9 +537,9 @@ public class EncryptionSecretKeyChanger {
     }
 
     private void migrateValueAndUpdateDatabaseByName(Connection conn, String tableName, String selectSql, String updateSql) {
-        try(PreparedStatement select_pstmt = conn.prepareStatement(selectSql);
-            ResultSet rs = select_pstmt.executeQuery();
-            PreparedStatement update_pstmt = conn.prepareStatement(updateSql)
+        try(PreparedStatement selectPstmt = conn.prepareStatement(selectSql);
+            ResultSet rs = selectPstmt.executeQuery();
+            PreparedStatement updatePstmt = conn.prepareStatement(updateSql)
         ) {
             while (rs.next()) {
                 String name = rs.getString(1);
@@ -547,9 +548,9 @@ public class EncryptionSecretKeyChanger {
                     continue;
                 }
                 String encryptedValue = migrateValue(value);
-                update_pstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
-                update_pstmt.setString(2, name);
-                update_pstmt.executeUpdate();
+                updatePstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
+                updatePstmt.setString(2, name);
+                updatePstmt.executeUpdate();
             }
         } catch (SQLException e) {
             throwCloudRuntimeException(String.format("Unable to update %s values", tableName), e);
@@ -558,13 +559,13 @@ public class EncryptionSecretKeyChanger {
 
     private void migrateHostDetails(Connection conn) {
         System.out.println("Begin migrate host details");
-        migrateDetails(conn, "host_details", "password");
+        migrateDetails(conn, "host_details", PASSWORD);
         System.out.println("End migrate host details");
     }
 
     private void migrateClusterDetails(Connection conn) {
         System.out.println("Begin migrate cluster details");
-        migrateDetails(conn, "cluster_details", "password");
+        migrateDetails(conn, "cluster_details", PASSWORD);
         System.out.println("End migrate cluster details");
     }
 
@@ -576,7 +577,7 @@ public class EncryptionSecretKeyChanger {
 
     private void migrateStoragePoolDetails(Connection conn) {
         System.out.println("Begin migrate storage pool details");
-        migrateDetails(conn, "storage_pool_details", "password");
+        migrateDetails(conn, "storage_pool_details", PASSWORD);
         System.out.println("End migrate storage pool details");
     }
 
@@ -588,7 +589,7 @@ public class EncryptionSecretKeyChanger {
 
     private void migrateUserVmDetails(Connection conn) {
         System.out.println("Begin migrate user vm details");
-        migrateDetails(conn, "user_vm_details", "password");
+        migrateDetails(conn, "user_vm_details", PASSWORD);
         System.out.println("End migrate user vm details");
     }
 
@@ -602,20 +603,20 @@ public class EncryptionSecretKeyChanger {
     private void migrateTemplateDeployAsIsDetails(Connection conn) throws SQLException {
         System.out.println("Begin migrate user vm deploy_as_is details");
         if (!ifTableExists(conn.getMetaData(), "user_vm_deploy_as_is_details")) {
-            System.out.printf("Skipped as table %s does not exist\n", "user_vm_deploy_as_is_details");
+            System.out.printf("Skipped as table %s does not exist %n", "user_vm_deploy_as_is_details");
             return;
         }
         if (!ifTableExists(conn.getMetaData(), "template_deploy_as_is_details")) {
-            System.out.printf("Skipped as table %s does not exist\n", "template_deploy_as_is_details");
+            System.out.printf("Skipped as table %s does not exist %n", "template_deploy_as_is_details");
             return;
         }
-        String sql_template_deploy_as_is_details = "SELECT template_deploy_as_is_details.value " +
+        String sqlTemplateDeployAsIsDetails = "SELECT template_deploy_as_is_details.value " +
                 "FROM template_deploy_as_is_details JOIN vm_instance " +
                 "WHERE template_deploy_as_is_details.template_id = vm_instance.vm_template_id " +
                 "vm_instance.id = %s AND template_deploy_as_is_details.name = '%s' LIMIT 1";
-        try (PreparedStatement sel_pstmt = conn.prepareStatement("SELECT id, vm_id, name, value FROM user_vm_deploy_as_is_details");
-             ResultSet rs = sel_pstmt.executeQuery();
-             PreparedStatement pstmt = conn.prepareStatement("UPDATE user_vm_deploy_as_is_details SET value=? WHERE id=?")
+        try (PreparedStatement selectPstmt = conn.prepareStatement("SELECT id, vm_id, name, value FROM user_vm_deploy_as_is_details");
+             ResultSet rs = selectPstmt.executeQuery();
+             PreparedStatement updatePstmt = conn.prepareStatement("UPDATE user_vm_deploy_as_is_details SET value=? WHERE id=?")
         ) {
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -627,16 +628,16 @@ public class EncryptionSecretKeyChanger {
                 }
                 String key = name.startsWith("property-") ? name : "property-" + name;
 
-                try (PreparedStatement pstmt_template_deploy_as_is = conn.prepareStatement(String.format(sql_template_deploy_as_is_details, vmId, key));
-                    ResultSet rs_template_deploy_as_is = pstmt_template_deploy_as_is.executeQuery()) {
-                    if (rs_template_deploy_as_is.next()) {
-                        String template_deploy_as_is_detail_value = rs_template_deploy_as_is.getString(1);
-                        OVFPropertyTO property = gson.fromJson(template_deploy_as_is_detail_value, OVFPropertyTO.class);
+                try (PreparedStatement pstmtTemplateDeployAsIs = conn.prepareStatement(String.format(sqlTemplateDeployAsIsDetails, vmId, key));
+                    ResultSet rsTemplateDeployAsIs = pstmtTemplateDeployAsIs.executeQuery()) {
+                    if (rsTemplateDeployAsIs.next()) {
+                        String templateDeployAsIsDetailValue = rsTemplateDeployAsIs.getString(1);
+                        OVFPropertyTO property = gson.fromJson(templateDeployAsIsDetailValue, OVFPropertyTO.class);
                         if (property != null && property.isPassword()) {
                             String encryptedValue = migrateValue(value);
-                            pstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
-                            pstmt.setLong(2, id);
-                            pstmt.executeUpdate();
+                            updatePstmt.setBytes(1, encryptedValue.getBytes(StandardCharsets.UTF_8));
+                            updatePstmt.setLong(2, id);
+                            updatePstmt.executeUpdate();
                         }
                     }
                 }
@@ -653,7 +654,7 @@ public class EncryptionSecretKeyChanger {
         String tableName = "image_store";
         String fieldName = "url";
         if (getCountOfTable(conn, tableName) == 0) {
-            System.out.printf("Skipped table %s as there is no data in the table\n", tableName);
+            System.out.printf("Skipped table %s as there is no image store with protocol is cifs in the table %n", tableName);
             return;
         }
         String selectSql = String.format("SELECT id, `%s` FROM %s WHERE protocol = 'cifs'", fieldName, tableName);
@@ -664,29 +665,29 @@ public class EncryptionSecretKeyChanger {
     }
 
     private void migrateStoragePoolPathForSMB(Connection conn) {
-        System.out.println("Begin migrate storage pool path if type is SMB");
+        System.out.println("Begin migrate storage pool path if pool type is SMB");
 
         String tableName = "storage_pool";
         String fieldName = "path";
         if (getCountOfTable(conn, tableName) == 0) {
-            System.out.printf("Skipped table %s as there is no data in the table\n", tableName);
+            System.out.printf("Skipped table %s as there is no storage pool with pool type is SMB in the table %n", tableName);
             return;
         }
         String selectSql = String.format("SELECT id, `%s` FROM %s WHERE pool_type = 'SMB'", fieldName, tableName);
         String updateSql = String.format("UPDATE %s SET `%s`=? WHERE id=?", tableName, fieldName);
         migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, true);
 
-        System.out.println("End migrate storage pool path if type is SMB");
+        System.out.println("End migrate storage pool path if pool type is SMB");
     }
 
     private void migrateDatabaseField(Connection conn, String tableName, String fieldName) {
-        System.out.printf("Begin migrate table %s field %s\n", tableName, fieldName);
+        System.out.printf("Begin migrate table %s field %s %n", tableName, fieldName);
 
         String selectSql = String.format("SELECT id, `%s` FROM %s", fieldName, tableName);
         String updateSql = String.format("UPDATE %s SET `%s`=? WHERE id=?", tableName, fieldName);
         migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
 
-        System.out.printf("Done migrating database field %s.%s\n", tableName, fieldName);
+        System.out.printf("Done migrating database field %s.%s %n", tableName, fieldName);
     }
 
     protected static Map<String, Set<String>> findEncryptedTableColumns() {
@@ -718,16 +719,16 @@ public class EncryptionSecretKeyChanger {
         DatabaseMetaData metadata = conn.getMetaData();
         encryptedTableCols.forEach((table, columns) -> {
             if (!ifTableExists(metadata, table)) {
-                System.out.printf("Skipped table %s as it does not exist\n", table);
+                System.out.printf("Skipped table %s as it does not exist %n", table);
                 return;
             }
             if (getCountOfTable(conn, table) == 0) {
-                System.out.printf("Skipped table %s as there is no data in the table\n", table);
+                System.out.printf("Skipped table %s as there is no data in the table %n", table);
                 return;
             }
             columns.forEach(column -> {
                 if (!ifTableColumnExists(metadata, table, column)) {
-                    System.out.printf("Skipped column %s in table %s as it does not exist\n", column, table);
+                    System.out.printf("Skipped column %s in table %s as it does not exist %n", column, table);
                     return;
                 }
                 migrateDatabaseField(conn, table, column);

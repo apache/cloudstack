@@ -219,7 +219,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         } catch (CloudRuntimeException e) {
             s_logger.error("Unhandled configuration exception: " + e.getMessage());
-            throw new RuntimeException("Unhandled configuration exception", e);
+            throw new CloudRuntimeException("Unhandled configuration exception", e);
         }
 
         String execTime = configs.get("usage.stats.job.exec.time");
