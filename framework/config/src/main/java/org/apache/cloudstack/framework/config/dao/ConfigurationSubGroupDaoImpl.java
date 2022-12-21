@@ -18,6 +18,7 @@ package org.apache.cloudstack.framework.config.dao;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.commons.lang3.StringUtils;
@@ -73,14 +74,7 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
         return findOneIncludingRemovedBy(sc);
     }
 
-    @Override
-    public ConfigurationSubGroupVO findByKeyword(String keyword) {
-        if (StringUtils.isBlank(keyword)) {
-            return null;
-        }
-
-        SearchCriteria<ConfigurationSubGroupVO> sc = KeywordSearch.create();
-        List<ConfigurationSubGroupVO> configurationSubGroups = listBy(sc);
+    private ConfigurationSubGroupVO matchKeywordBy(BiFunction<String, String, Boolean> matcher, List<ConfigurationSubGroupVO> configurationSubGroups, String keyword) {
         for (ConfigurationSubGroupVO configurationSubGroup : configurationSubGroups) {
             if (StringUtils.isBlank(configurationSubGroup.getKeywords())) {
                 continue;
@@ -94,15 +88,31 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
             List<String> keywords = Arrays.asList(configKeywords);
             for (String configKeyword : keywords) {
                 if (StringUtils.isNotBlank(configKeyword)) {
-                    configKeyword = configKeyword.strip();
-                    if (configKeyword.equalsIgnoreCase(keyword) || keyword.toLowerCase().startsWith(configKeyword.toLowerCase())) {
+                    configKeyword = configKeyword.strip().toLowerCase();
+                    if (matcher.apply(keyword, configKeyword)) {
                         return configurationSubGroup;
                     }
                 }
             }
         }
-
         return null;
+    }
+
+    @Override
+    public ConfigurationSubGroupVO findByKeyword(String keyword) {
+        if (StringUtils.isBlank(keyword)) {
+            return null;
+        }
+
+        SearchCriteria<ConfigurationSubGroupVO> sc = KeywordSearch.create();
+        List<ConfigurationSubGroupVO> configurationSubGroups = listBy(sc);
+        BiFunction<String, String, Boolean> equals = (a, b) -> { return a.equalsIgnoreCase(b); };
+        ConfigurationSubGroupVO configSubGroup = matchKeywordBy(equals, configurationSubGroups, keyword);
+        if (configSubGroup == null) {
+            BiFunction<String, String, Boolean> startsWith = (a, b) -> { return a.startsWith(b); };
+            configSubGroup = matchKeywordBy(startsWith, configurationSubGroups, keyword.toLowerCase());
+        }
+        return configSubGroup;
     }
 
     @Override

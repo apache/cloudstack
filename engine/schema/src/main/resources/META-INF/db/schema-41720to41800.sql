@@ -941,7 +941,7 @@ INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, 
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Jobs', 'job', 7, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Agent', NULL, 8, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Hypervisor', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Hypervisor', 'host', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('KVM', 'libvirt', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VMware', 'vcenter', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('XenServer', 'xen,xapi,XCP', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));

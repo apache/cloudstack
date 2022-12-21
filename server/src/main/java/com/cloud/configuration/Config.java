@@ -1217,7 +1217,7 @@ public enum Config {
     TrafficSentinelIncludeZones(
             "Usage",
             ManagementServer.class,
-            Integer.class,
+            String.class,
             "traffic.sentinel.include.zones",
             "EXTERNAL",
             "Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty",
@@ -1225,7 +1225,7 @@ public enum Config {
     TrafficSentinelExcludeZones(
             "Usage",
             ManagementServer.class,
-            Integer.class,
+            String.class,
             "traffic.sentinel.exclude.zones",
             "",
             "Traffic going into specified list of zones is not metered.",
