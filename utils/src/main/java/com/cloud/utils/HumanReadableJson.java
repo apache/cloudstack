@@ -18,13 +18,14 @@
 //
 package com.cloud.utils;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 
 public class HumanReadableJson {
@@ -64,11 +65,13 @@ public class HumanReadableJson {
             firstElement = false;
         }
         if (jsonElement.isJsonPrimitive()) {
+            String changedValue = jsonElement.getAsString();
             if (changeValue) {
-                output.append("\"" + toHumanReadableSize(jsonElement.getAsLong()) + "\"");
-            } else {
-                output.append("\"" + jsonElement.getAsString() + "\"");
+                try {
+                    changedValue = toHumanReadableSize(jsonElement.getAsLong());
+                } catch (NumberFormatException ignored) {}
             }
+            output.append("\"").append(changedValue).append("\"");
             firstElement = false;
         }
     }
