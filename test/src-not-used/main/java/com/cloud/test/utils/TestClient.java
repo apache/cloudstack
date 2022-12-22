@@ -198,7 +198,7 @@ public class TestClient {
                                     client.executeMethod(new GetMethod(url));
                                 } catch (Exception e1) {
                                     s_logger.info("[ignored]"
-                                            + "error while executing last resort stop attampt: " + e1.getLocalizedMessage());
+                                            + "error while executing last resort stop attempt: " + e1.getLocalizedMessage());
                                 }
                             } finally {
                                 NDC.clear();

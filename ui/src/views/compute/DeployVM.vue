@@ -468,7 +468,7 @@
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
-                            v-model:cheked="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:checked="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                           />
                         </span>
@@ -1337,12 +1337,9 @@ export default {
         }
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
-        this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         if (this.zone) {
@@ -1372,6 +1369,8 @@ export default {
           this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
         } else if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
+        } else {
+          this.vm.disksizetotalgb = null
         }
 
         if (this.diskSize) {
@@ -1940,6 +1939,7 @@ export default {
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
           deployVmData.templateid = values.templateid
+          values.hypervisor = null
         } else {
           deployVmData.templateid = values.isoid
         }
@@ -2099,7 +2099,11 @@ export default {
           }
         }
 
-        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
+        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
+        const args = httpMethod === 'POST' ? {} : deployVmData
+        const data = httpMethod === 'POST' ? deployVmData : {}
+
+        api('deployVirtualMachine', args, httpMethod, data).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -2587,6 +2591,19 @@ export default {
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection
+    },
+    getSelectedNetworksWithExistingConfig (networks) {
+      for (var i in this.networks) {
+        var n = this.networks[i]
+        for (var c of this.networkConfig) {
+          if (n.id === c.key) {
+            n = { ...n, ...c }
+            networks[i] = n
+            break
+          }
+        }
+      }
+      return networks
     }
   }
 }

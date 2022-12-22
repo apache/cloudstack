@@ -228,7 +228,7 @@ public enum Config {
             String.class,
             "network.loadbalancer.haproxy.stats.visibility",
             "global",
-            "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
+            "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
             null),
     NetworkLBHaproxyStatsUri(
             "Network",
@@ -1263,15 +1263,6 @@ public enum Config {
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
-    TaskCleanupRetryInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "task.cleanup.retry.interval",
-            "600",
-            "Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.",
-            "Seconds"),
-
     // Account Default Limits
     DefaultMaxAccountUserVms(
             "Account Defaults",
@@ -1696,7 +1687,7 @@ public enum Config {
             String.class,
             "baremetal.ipmi.lan.interface",
             "default",
-            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule 'default' means using default option of ipmitool",
+            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool",
             null),
 
     BaremetalIpmiRetryTimes("Advanced",

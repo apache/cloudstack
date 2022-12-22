@@ -1,6 +1,6 @@
 # Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
-![Apache CloudStack](tools/logo/apache_cloudstack.png)
+![Apache CloudStack](tools/logo/acsxmas.jpg)
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
@@ -38,7 +38,7 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 ![Screenshot](ui/docs/screenshot-dashboard.png)
 
 See the project user-interface QA website that runs CloudStack against simulator hypervisor:
-http://qa.cloudstack.cloud:8080/client
+https://qa.cloudstack.cloud/simulator
 
 ## Getting Started
 
@@ -51,13 +51,13 @@ Apache CloudStack project uses Git. The official Git repository is at:
 
     https://gitbox.apache.org/repos/asf/cloudstack.git
 
-And a mirror is hosted on Github:
+And a mirror is hosted on GitHub:
 
     https://github.com/apache/cloudstack
 
-The Github mirror is strictly read only and provides convenience to users and
+The GitHub mirror is strictly read only and provides convenience to users and
 developers to explore the code and for the community to accept contributions
-via Github pull requests.
+via GitHub pull requests.
 
 ## Documentation
 
@@ -95,7 +95,7 @@ Mailing lists:
 - [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
-Report and/or check bugs on [Github](https://github.com/apache/cloudstack/issues) and check our
+Report and/or check bugs on [GitHub](https://github.com/apache/cloudstack/issues) and check our
 developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
 
 ## Reporting Security Vulnerabilities

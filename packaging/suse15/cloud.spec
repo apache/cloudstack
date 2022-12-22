@@ -537,6 +537,12 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
 
+mkdir -p /usr/local/libexec
+if [ ! -f "/usr/local/libexec/sanity-check-last-id" ]; then
+    echo 1 > /usr/local/libexec/sanity-check-last-id
+fi
+chown cloud:cloud /usr/local/libexec/sanity-check-last-id
+
 %posttrans usage
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
@@ -671,6 +677,9 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Fri Oct 14 2022 Daan Hoogland <daan.hoogland@gmail.com> 4.18.0
+- initialising sanity check pointer file
+
 * Tue Jun 29 2021 David Jumani <dj.davidjumani1994@gmail.com> 4.16.0
 - Adding SUSE 15 support
 

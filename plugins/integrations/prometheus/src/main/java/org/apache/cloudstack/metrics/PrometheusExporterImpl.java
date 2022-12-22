@@ -151,7 +151,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 accountName = (account != null) ? account.getAccountName() : "";
 
                 DomainJoinVO domain = domainDao.findById(dr.getDomainId());
-                metricsList.add(new ItemHostDedicatedToAccount(zoneName, host.getName(), accountName, domain.getName(), isDedicated));
+                metricsList.add(new ItemHostDedicatedToAccount(zoneName, host.getName(), accountName, domain.getPath(), isDedicated));
             }
 
             final String cpuFactor = String.valueOf(CapacityManager.CpuOverprovisioningFactor.valueIn(host.getClusterId()));
@@ -368,10 +368,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     Resource.ResourceType.secondary_storage, domain.getId());
 
             // Add per domain cpu, memory and storage count
-            metricsList.add(new ItemPerDomainResourceLimit(cpuLimit, domain.getName(), Resource.ResourceType.cpu.getName()));
-            metricsList.add(new ItemPerDomainResourceLimit(memoryLimit, domain.getName(), Resource.ResourceType.memory.getName()));
-            metricsList.add(new ItemPerDomainResourceLimit(primaryStorageLimit, domain.getName(), Resource.ResourceType.primary_storage.getName()));
-            metricsList.add(new ItemPerDomainResourceLimit(secondaryStorageLimit, domain.getName(), Resource.ResourceType.secondary_storage.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(cpuLimit, domain.getPath(), Resource.ResourceType.cpu.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(memoryLimit, domain.getPath(), Resource.ResourceType.memory.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(primaryStorageLimit, domain.getPath(), Resource.ResourceType.primary_storage.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(secondaryStorageLimit, domain.getPath(), Resource.ResourceType.secondary_storage.getName()));
         }
         metricsList.add(new ItemDomainLimitCpu(totalCpuLimit));
         metricsList.add(new ItemDomainLimitMemory(totalMemoryLimit));
@@ -398,11 +398,11 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             long secondaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
                     Resource.ResourceType.secondary_storage);
 
-            metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getName(), Resource.ResourceType.memory.getName()));
-            metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getName(), Resource.ResourceType.cpu.getName()));
-            metricsList.add(new ItemPerDomainResourceCount(primaryStorageUsed, domain.getName(),
+            metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getPath(), Resource.ResourceType.memory.getName()));
+            metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getPath(), Resource.ResourceType.cpu.getName()));
+            metricsList.add(new ItemPerDomainResourceCount(primaryStorageUsed, domain.getPath(),
                     Resource.ResourceType.primary_storage.getName()));
-            metricsList.add(new ItemPerDomainResourceCount(secondaryStorageUsed, domain.getName(),
+            metricsList.add(new ItemPerDomainResourceCount(secondaryStorageUsed, domain.getPath(),
                     Resource.ResourceType.secondary_storage.getName()));
         }
     }

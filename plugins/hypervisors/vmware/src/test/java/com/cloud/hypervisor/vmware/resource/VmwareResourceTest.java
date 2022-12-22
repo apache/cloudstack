@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -50,9 +51,12 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
@@ -65,9 +69,14 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.network.router.VirtualRouterAutoScale;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
+import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
 import com.cloud.storage.resource.VmwareStorageProcessor;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
 import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmDetailConstants;
 import com.vmware.vim25.HostCapability;
@@ -79,10 +88,14 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CopyCommand.class, DatacenterMO.class, VmwareResource.class})
+@PrepareForTest({CopyCommand.class})
 public class VmwareResourceTest {
 
     private static final String VOLUME_PATH = "XXXXXXXXXXXX";
+
+    @Spy
+    @InjectMocks
+    VmwareResource vmwareResource = new VmwareResource();
 
     @Mock
     VmwareStorageProcessor storageProcessor;
@@ -162,6 +175,10 @@ public class VmwareResourceTest {
     private static final long VRAM_MEMORY_SIZE = 131072l;
     private static final long VIDEO_CARD_MEMORY_SIZE = 65536l;
     private static final Boolean FULL_CLONE_FLAG = true;
+
+    final static long[] vpcStats = { 1000L, 2000L };
+    final static long[] networkStats = { 3000L, 4000L };
+    final static long[] lbStats = { 5L };
 
     private Map<String,String> specsArray = new HashMap<String,String>();
 
@@ -403,6 +420,7 @@ public class VmwareResourceTest {
     }
 
     @Test
+    @PrepareForTest({DatacenterMO.class, VmwareResource.class})
     public void testFindVmOnDatacenter() throws Exception {
         when(hyperHost.getHyperHostDatacenter()).thenReturn(mor);
         when(datacenter.getMor()).thenReturn(mor);
@@ -435,4 +453,105 @@ public class VmwareResourceTest {
         verify(vmMo, never()).getRunningHost();
     }
 
+    @Test
+    public void testGetAutoScaleMetricsCommandForVpc() {
+        List<AutoScaleMetrics> metrics = new ArrayList<>();
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, metrics);
+
+        doReturn(vpcStats).when(vmwareResource).getVPCNetworkStats(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        doReturn(lbStats).when(vmwareResource).getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class));
+
+        Answer answer = vmwareResource.executeRequest(getAutoScaleMetricsCommand);
+        assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
+
+        GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
+        List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
+
+        assertEquals(3, values.size());
+        for (AutoScaleMetricsValue value : values) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
+                assertEquals(Double.valueOf(lbStats[0]), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(vpcStats[0]) / VirtualRouterAutoScale.MBITS_TO_BYTES), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(vpcStats[1]) / VirtualRouterAutoScale.MBITS_TO_BYTES), value.getValue());
+            }
+        }
+    }
+
+    @Test
+    public void testGetAutoScaleMetricsCommandForNetwork() {
+        List<AutoScaleMetrics> metrics = new ArrayList<>();
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS, 1L, 2L, 3L, 4));
+
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", false, "10.10.10.10", 8080, metrics);
+
+        doReturn(networkStats).when(vmwareResource).getNetworkStats(Mockito.anyString(), Mockito.anyString());
+        doReturn(lbStats).when(vmwareResource).getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class));
+
+        Answer answer = vmwareResource.executeRequest(getAutoScaleMetricsCommand);
+        assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
+
+        GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
+        List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
+
+        assertEquals(3, values.size());
+        for (AutoScaleMetricsValue value : values) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.LB_AVERAGE_CONNECTIONS)) {
+                assertEquals(Double.valueOf(lbStats[0]), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(networkStats[0]) / VirtualRouterAutoScale.MBITS_TO_BYTES), value.getValue());
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScale.VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS)) {
+                assertEquals(Double.valueOf(Double.valueOf(networkStats[1]) / VirtualRouterAutoScale.MBITS_TO_BYTES), value.getValue());
+            }
+        }
+    }
+
+    @Test
+    public void testGetStatsForVpcStats() {
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, null);
+
+        String args = "-l " + getAutoScaleMetricsCommand.getPublicIP() + " -g";
+        ExecutionResult executionResult = new ExecutionResult(true, vpcStats[0] + ":" + vpcStats[1]);
+        doReturn(executionResult).when(vmwareResource).executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "vpc_netusage.sh", args);
+
+        long[] stats = vmwareResource.getVPCNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP(), "get", "");
+        assertEquals(2, stats.length);
+        assertEquals(vpcStats[0], stats[0]);
+        assertEquals(vpcStats[1], stats[1]);
+    }
+
+    @Test
+    public void testGetStatsForNetworkStats() {
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", false, "10.10.10.10", 8080, null);
+
+        String args = "-g -l " + getAutoScaleMetricsCommand.getPublicIP();
+        ExecutionResult executionResult = new ExecutionResult(true, networkStats[0] + ":" + networkStats[1]);
+        doReturn(executionResult).when(vmwareResource).executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "netusage.sh", args);
+
+        long[] stats = vmwareResource.getNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP());
+        assertEquals(2, stats.length);
+        assertEquals(networkStats[0], stats[0]);
+        assertEquals(networkStats[1], stats[1]);
+    }
+
+    @Test
+    public void testGetStatsForLbStats() {
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, null);
+
+        String args = getAutoScaleMetricsCommand.getPublicIP() + " " + getAutoScaleMetricsCommand.getPort();
+        ExecutionResult executionResult = new ExecutionResult(true, String.valueOf(lbStats[0]));
+        doReturn(executionResult).when(vmwareResource).executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "get_haproxy_stats.sh", args);
+
+        long[] stats = vmwareResource.getNetworkLbStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP(), getAutoScaleMetricsCommand.getPort());
+
+        assertEquals(1, stats.length);
+        assertEquals(lbStats[0], stats[0]);
+    }
 }

@@ -93,7 +93,7 @@ public interface VirtualMachineManager extends Manager {
      *
      * @param vmInstanceName Instance name of the VM.  This name uniquely
      *        a VM in CloudStack's deploy environment.  The caller gets to
-     *        define this VM but it must be unqiue for all of CloudStack.
+     *        define this VM but it must be unique for all of CloudStack.
      * @param template The template this VM is based on.
      * @param serviceOffering The service offering that specifies the offering this VM should provide.
      * @param defaultNetwork The default network for the VM.

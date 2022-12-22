@@ -295,11 +295,11 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
@@ -448,6 +448,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     Ipv6Service ipv6Service;
     @Inject
     UserVmJoinDao userVmJoinDao;
+    @Inject
+    NetworkServiceMapDao ntwkSrvcDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2178,6 +2180,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 inline.setValue(offering.isInline() ? "true" : "false");
                 lbCapResponse.add(inline);
 
+                CapabilityResponse vmAutoScaling = new CapabilityResponse();
+                vmAutoScaling.setName(Capability.VmAutoScaling.getName());
+                vmAutoScaling.setValue(offering.isSupportsVmAutoScaling() ? "true" : "false");
+                lbCapResponse.add(vmAutoScaling);
+
                 svcRsp.setCapabilities(lbCapResponse);
             } else if (Service.SourceNat == service) {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
@@ -2523,6 +2530,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setExternalId(network.getExternalId());
         response.setRedundantRouter(network.isRedundant());
         response.setCreated(network.getCreated());
+        response.setSupportsVmAutoScaling(networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId()).isSupportsVmAutoScaling());
 
         Long bytesReceived = 0L;
         Long bytesSent = 0L;
@@ -3296,6 +3304,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSource(counter.getSource().toString());
         response.setName(counter.getName());
         response.setValue(counter.getValue());
+        response.setProvider(counter.getProvider());
         response.setObjectName("counter");
         return response;
     }
@@ -3304,9 +3313,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConditionResponse createConditionResponse(Condition condition) {
         ConditionResponse response = new ConditionResponse();
         response.setId(condition.getUuid());
-        List<CounterResponse> counterResponseList = new ArrayList<CounterResponse>();
-        counterResponseList.add(createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid())));
-        response.setCounterResponse(counterResponseList);
+        Counter counter = ApiDBUtils.getCounter(condition.getCounterId());
+        response.setCounterId(counter.getUuid());
+        response.setCounterName(counter.getName());
+        CounterResponse counterResponse = createCounterResponse(counter);
+        response.setCounterResponse(counterResponse);
         response.setRelationalOperator(condition.getRelationalOperator().toString());
         response.setThreshold(condition.getThreshold());
         response.setObjectName("condition");
@@ -3336,9 +3347,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setTemplateId(template.getUuid());
             }
         }
-        response.setOtherDeployParams(profile.getOtherDeployParams());
+        response.setUserData(profile.getUserData());
+        response.setOtherDeployParams(profile.getOtherDeployParamsList());
         response.setCounterParams(profile.getCounterParams());
-        response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
+        response.setExpungeVmGracePeriod(profile.getExpungeVmGracePeriod());
         User user = ApiDBUtils.findUserById(profile.getAutoScaleUserId());
         if (user != null) {
             response.setAutoscaleUserId(user.getUuid());
@@ -3354,9 +3366,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AutoScalePolicyResponse createAutoScalePolicyResponse(AutoScalePolicy policy) {
         AutoScalePolicyResponse response = new AutoScalePolicyResponse();
         response.setId(policy.getUuid());
+        response.setName(policy.getName());
         response.setDuration(policy.getDuration());
         response.setQuietTime(policy.getQuietTime());
-        response.setAction(policy.getAction());
+        response.setAction(policy.getAction().toString());
         List<ConditionVO> vos = ApiDBUtils.getAutoScalePolicyConditions(policy.getId());
         ArrayList<ConditionResponse> conditions = new ArrayList<ConditionResponse>(vos.size());
         for (ConditionVO vo : vos) {
@@ -3375,18 +3388,43 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup) {
         AutoScaleVmGroupResponse response = new AutoScaleVmGroupResponse();
         response.setId(vmGroup.getUuid());
+        response.setName(vmGroup.getName());
         response.setMinMembers(vmGroup.getMinMembers());
         response.setMaxMembers(vmGroup.getMaxMembers());
-        response.setState(vmGroup.getState());
+        response.setState(vmGroup.getState().toString());
         response.setInterval(vmGroup.getInterval());
         response.setForDisplay(vmGroup.isDisplay());
+        response.setCreated(vmGroup.getCreated());
         AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(vmGroup.getProfileId());
         if (profile != null) {
             response.setProfileId(profile.getUuid());
         }
-        FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(vmGroup.getLoadBalancerId());
+        response.setAvailableVirtualMachineCount(ApiDBUtils.countAvailableVmsByGroupId(vmGroup.getId()));
+        LoadBalancerVO fw = ApiDBUtils.findLoadBalancerById(vmGroup.getLoadBalancerId());
         if (fw != null) {
             response.setLoadBalancerId(fw.getUuid());
+
+            NetworkVO network = ApiDBUtils.findNetworkById(fw.getNetworkId());
+
+            if (network != null) {
+                response.setNetworkName(network.getName());
+                response.setNetworkId(network.getUuid());
+
+                String provider = ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+                if (provider != null) {
+                    response.setLbProvider(provider);
+                } else {
+                    response.setLbProvider(Network.Provider.None.toString());
+                }
+            }
+
+            IPAddressVO publicIp = ApiDBUtils.findIpAddressById(fw.getSourceIpAddressId());
+            if (publicIp != null) {
+                response.setPublicIpId(publicIp.getUuid());
+                response.setPublicIp(publicIp.getAddress().addr());
+                response.setPublicPort(Integer.toString(fw.getSourcePortStart()));
+                response.setPrivatePort(Integer.toString(fw.getDefaultPortStart()));
+            }
         }
 
         List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
@@ -3407,6 +3445,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             scaleDownPoliciesResponse.add(createAutoScalePolicyResponse(autoScalePolicy));
         }
 
+        response.setHasAnnotation(annotationDao.hasAnnotations(vmGroup.getUuid(), AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+
+        populateOwner(response, vmGroup);
         return response;
     }
 

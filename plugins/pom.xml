@@ -50,6 +50,8 @@
         <module>affinity-group-processors/explicit-dedication</module>
         <module>affinity-group-processors/host-affinity</module>
         <module>affinity-group-processors/host-anti-affinity</module>
+        <module>affinity-group-processors/non-strict-host-affinity</module>
+        <module>affinity-group-processors/non-strict-host-anti-affinity</module>
 
         <module>alert-handlers/snmp-alerts</module>
         <module>alert-handlers/syslog-alerts</module>

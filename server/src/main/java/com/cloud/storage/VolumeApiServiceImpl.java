@@ -96,6 +96,7 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -335,6 +336,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<Boolean>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
             "If true, volume's disk offering can be changed only with the matched storage tags", true, ConfigKey.Scope.Zone);
+
+    public static final ConfigKey<Long> WaitDetachDevice = new ConfigKey<>(
+            "Advanced",
+            Long.class,
+            "wait.detach.device",
+            "10000",
+            "Time (in milliseconds) to wait before assuming the VM was unable to detach a volume after the hypervisor sends the detach command.",
+            true);
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
@@ -1153,7 +1162,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 newSize = newSize << 30;
             } else {
                 if (cmd.getSize() != null) {
-                    throw new InvalidParameterValueException("You cannnot pass in a custom disk size to a non-custom disk offering.");
+                    throw new InvalidParameterValueException("You cannot pass in a custom disk size to a non-custom disk offering.");
                 }
 
                 newSize = newDiskOffering.getDiskSize();
@@ -1803,14 +1812,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volume;
         }
 
-        if (currentSize != newSize || newMaxIops != volume.getMaxIops() || newMinIops != volume.getMinIops()) {
+        if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
             volumeResizeRequired = true;
             validateVolumeReadyStateAndHypervisorChecks(volume, currentSize, newSize);
         }
 
         StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true, false);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true, false);
         List<? extends StoragePool> suitableStoragePools = poolsPair.second();
 
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
@@ -1857,6 +1866,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    /**
+     * This method is to compare long values, in miniops and maxiops a or b can be null or 0.
+     * Use this method to treat 0 and null as same
+     *
+     * @param a
+     * @param b
+     * @return true if a and b are equal excluding 0 and null values.
+     */
+    private boolean compareEqualsIncludingNullOrZero(Long a, Long b) {
+        a = ObjectUtils.defaultIfNull(a, 0L);
+        b = ObjectUtils.defaultIfNull(b, 0L);
+
+        return a.equals(b);
     }
 
     /**
@@ -2761,6 +2785,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             cmd.setStoragePort(volumePool.getPort());
 
             cmd.set_iScsiName(volume.get_iScsiName());
+            cmd.setWaitDetachDevice(WaitDetachDevice.value());
 
             try {
                 answer = _agentMgr.send(hostId, cmd);
@@ -4512,6 +4537,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, MatchStoragePoolTagsWithDiskOffering, UseHttpsToUpload};
+        return new ConfigKey<?>[] {
+                ConcurrentMigrationsThresholdPerDatastore,
+                AllowUserExpungeRecoverVolume,
+                MatchStoragePoolTagsWithDiskOffering,
+                UseHttpsToUpload,
+                WaitDetachDevice
+        };
     }
 }

@@ -1,0 +1,280 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: Simulator CI
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        tests: [ "smoke/test_accounts
+                  smoke/test_affinity_groups
+                  smoke/test_affinity_groups_projects
+                  smoke/test_annotations
+                  smoke/test_async_job
+                  smoke/test_attach_multiple_volumes
+                  smoke/test_backup_recovery_dummy
+                  smoke/test_certauthority_root
+                  smoke/test_console_endpoint
+                  smoke/test_create_list_domain_account_project
+                  smoke/test_create_network
+                  smoke/test_deploy_vgpu_enabled_vm
+                  smoke/test_deploy_virtio_scsi_vm
+                  smoke/test_deploy_vm_extra_config_data
+                  smoke/test_deploy_vm_iso
+                  smoke/test_deploy_vm_iso_uefi
+                  smoke/test_deploy_vm_root_resize
+                  smoke/test_deploy_vm_with_userdata
+                  smoke/test_deploy_vms_in_parallel
+                  smoke/test_deploy_vms_with_varied_deploymentplanners
+                  smoke/test_diagnostics
+                  smoke/test_direct_download
+                  smoke/test_disk_offerings
+                  smoke/test_disk_provisioning_types
+                  smoke/test_domain_disk_offerings
+                  smoke/test_domain_network_offerings
+                  smoke/test_domain_service_offerings
+                  smoke/test_domain_vpc_offerings",
+                "smoke/test_dynamicroles
+                  smoke/test_enable_account_settings_for_domain
+                  smoke/test_enable_role_based_users_in_projects
+                  smoke/test_events_resource
+                  smoke/test_global_settings
+                  smoke/test_guest_vlan_range
+                  smoke/test_host_maintenance
+                  smoke/test_hostha_kvm
+                  smoke/test_hostha_simulator
+                  smoke/test_internal_lb
+                  smoke/test_ipv6_infra
+                  smoke/test_iso
+                  smoke/test_kubernetes_clusters
+                  smoke/test_kubernetes_supported_versions
+                  smoke/test_list_ids_parameter
+                  smoke/test_loadbalance
+                  smoke/test_login
+                  smoke/test_metrics_api
+                  smoke/test_migration
+                  smoke/test_multipleips_per_nic
+                  smoke/test_nested_virtualization",
+                "smoke/test_network
+                  smoke/test_network_acl
+                  smoke/test_network_ipv6
+                  smoke/test_network_permissions
+                  smoke/test_nic
+                  smoke/test_nic_adapter_type
+                  smoke/test_non_contigiousvlan
+                  smoke/test_outofbandmanagement
+                  smoke/test_outofbandmanagement_nestedplugin
+                  smoke/test_over_provisioning
+                  smoke/test_password_server
+                  smoke/test_persistent_network
+                  smoke/test_portable_publicip
+                  smoke/test_portforwardingrules
+                  smoke/test_primary_storage
+                  smoke/test_privategw_acl
+                  smoke/test_privategw_acl_ovs_gre
+                  smoke/test_projects
+                  smoke/test_public_ip_range
+                  smoke/test_pvlan
+                  smoke/test_regions
+                  smoke/test_register_userdata
+                  smoke/test_reset_configuration_settings
+                  smoke/test_reset_vm_on_reboot
+                  smoke/test_resource_accounting
+                  smoke/test_resource_detail",
+                "smoke/test_router_dhcphosts
+                  smoke/test_router_dns
+                  smoke/test_router_dnsservice
+                  smoke/test_routers
+                  smoke/test_routers_iptables_default_policy
+                  smoke/test_routers_network_ops
+                  smoke/test_scale_vm
+                  smoke/test_secondary_storage
+                  smoke/test_service_offerings
+                  smoke/test_snapshots
+                  smoke/test_ssvm
+                  smoke/test_staticroles
+                  smoke/test_templates
+                  smoke/test_update_security_group
+                  smoke/test_usage
+                  smoke/test_usage_events
+                  smoke/test_vm_deployment_planner
+                  smoke/test_vm_life_cycle
+                  smoke/test_vm_lifecycle_unmanage_import
+                  smoke/test_vm_snapshot_kvm
+                  smoke/test_vm_snapshots
+                  smoke/test_volumes
+                  smoke/test_vpc_ipv6
+                  smoke/test_vpc_redundant
+                  smoke/test_vpc_router_nics
+                  smoke/test_vpc_vpn",
+                "component/find_hosts_for_migration
+                  component/test_acl_isolatednetwork
+                  component/test_acl_isolatednetwork_delete
+                  component/test_acl_listsnapshot",
+                "component/test_acl_listvm
+                  component/test_acl_listvolume",
+                "component/test_acl_sharednetwork
+                  component/test_acl_sharednetwork_deployVM-impersonation
+                  component/test_user_private_gateway
+                  component/test_user_shared_network",
+                "component/test_affinity_groups_projects
+                  component/test_allocation_states
+                  component/test_assign_vm",
+                "component/test_concurrent_snapshots_limit
+                  component/test_cpu_domain_limits
+                  component/test_cpu_limits
+                  component/test_cpu_max_limits
+                  component/test_cpu_project_limits
+                  component/test_deploy_vm_userdata_multi_nic",
+                "component/test_egress_fw_rules
+                  component/test_invalid_gw_nm
+                  component/test_ip_reservation",
+                "component/test_lb_secondary_ip
+                  component/test_list_nics
+                  component/test_list_pod
+                  component/test_memory_limits",
+                "component/test_mm_domain_limits
+                  component/test_mm_max_limits
+                  component/test_mm_project_limits
+                  component/test_network_offering
+                  component/test_non_contiguous_vlan",
+                "component/test_persistent_networks
+                  component/test_project_configs
+                  component/test_project_limits
+                  component/test_project_resources",
+                "component/test_project_usage
+                  component/test_protocol_number_security_group
+                  component/test_public_ip
+                  component/test_resource_limits",
+                "component/test_regions_accounts
+                  component/test_routers
+                  component/test_snapshots
+                  component/test_stopped_vm
+                  component/test_tags
+                  component/test_templates
+                  component/test_updateResourceCount
+                  component/test_update_vm",
+                "component/test_volumes
+                  component/test_vpc
+                  component/test_vpc_distributed_routing_offering
+                  component/test_vpc_network
+                  component/test_vpc_offerings
+                  component/test_vpc_routers
+                  component/test_vpn_users",
+                "component/test_vpc_network_lbrules" ]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          architecture: x64
+          cache: maven
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          architecture: 'x64'
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git uuid-runtime genisoimage netcat ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
+
+      - name: Env details
+        run: |
+          uname -a
+          whoami
+          javac -version
+          mvn -v
+          python3 --version
+          free -m
+          nproc
+          git status
+          ipmitool -V
+
+      - name: Setup MySQL Server
+        run: |
+          # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2004-Readme.md#mysql
+          sudo apt-get install -y mysql-server
+          sudo systemctl start mysql
+          sudo mysql -uroot -proot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+          sudo systemctl restart mysql
+          sudo mysql -uroot -e "SELECT VERSION();"
+
+      - name: Build with Maven
+        run: |
+          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
+
+      - name: Setup Simulator Prerequisites
+        run: |
+          sudo python3 -m pip install --upgrade netaddr mysql-connector-python
+          python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
+          mvn -q -Pdeveloper -pl developer -Ddeploydb
+          mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
+
+      - name: Start CloudStack Management Server with Simulator
+        run: |
+          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom"
+          echo -e "\nStarting simulator"
+          set +e
+          mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
+          while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
+          set -e
+          echo -e "\nStarting Advanced Zone DataCenter deployment"
+          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
+
+      - name: Run Integration Tests with Simulator
+        run: |
+          mkdir -p integration-test-results/smoke/misc
+          mkdir -p integration-test-results/component
+          set -e
+          TESTS="${{ matrix.tests }}"
+          echo "Tests in this job: $TESTS"
+
+          TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
+          for suite in "${TESTS[@]}" ; do
+            echo -e "Currently running test: $suite\n"
+            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
+          done
+
+          echo -e "Stopping Simulator, integration tests run completed\n"
+          mvn -Dsimulator -pl client jetty:stop 2>&1
+          find /tmp//MarvinLogs -type f -exec echo -e "Printing marvin logs {} :\n" \; -exec cat {} \;
+
+      - name: Integration Tests Result
+        run: |
+          echo -e "Simulator CI Test Results: (only failures listed)\n"
+          python3 ./tools/marvin/xunit-reader.py integration-test-results/

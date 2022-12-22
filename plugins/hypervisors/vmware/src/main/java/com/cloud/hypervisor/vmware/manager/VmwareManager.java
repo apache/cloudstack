@@ -41,7 +41,7 @@ public interface VmwareManager {
             "If a worker vm is older then twice the 'job.expire.minutes' + 'job.cancel.threshold.minutes' , remove it.", true, ConfigKey.Scope.Global);
 
     static final ConfigKey<String> s_vmwareSearchExcludeFolder = new ConfigKey<String>("Advanced", String.class, "vmware.search.exclude.folders", null,
-            "Comma seperated list of Datastore Folders to exclude from VMWare search", true, ConfigKey.Scope.Global);
+            "Comma separated list of Datastore Folders to exclude from VMWare search", true, ConfigKey.Scope.Global);
 
     static final ConfigKey<Integer> s_vmwareOVAPackageTimeout = new ConfigKey<Integer>(Integer.class, "vmware.package.ova.timeout", "Advanced", "3600",
             "Vmware script timeout for ova packaging process", true, ConfigKey.Scope.Global, 1000);

@@ -29,6 +29,7 @@ import junit.framework.TestCase;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuObject;
@@ -356,6 +357,28 @@ public class LibvirtVMDefTest extends TestCase {
                 "<read_iops_sec_max_length>"+iopsReadRateMaxLength+"</read_iops_sec_max_length>\n<write_iops_sec_max_length>"+iopsWriteRateMaxLength+"</write_iops_sec_max_length>\n</iotune>\n</disk>\n";
 
                 assertEquals(xmlDef, expectedXml);
+    }
+
+    @Test
+    public void memBalloonDefTestNone() {
+        String expectedXml = "<memballoon model='none'>\n</memballoon>";
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defNoneMemBalloon();
+
+        String xmlDef = memBalloonDef.toString();
+
+        assertEquals(xmlDef, expectedXml);
+    }
+
+    @Test
+    public void memBalloonDefTestVirtio() {
+        String expectedXml = "<memballoon model='virtio'>\n<stats period='60'/>\n</memballoon>";
+        MemBalloonDef memBalloonDef = new MemBalloonDef();
+        memBalloonDef.defVirtioMemBalloon("60");
+
+        String xmlDef = memBalloonDef.toString();
+
+        assertEquals(xmlDef, expectedXml);
     }
 
     @Test

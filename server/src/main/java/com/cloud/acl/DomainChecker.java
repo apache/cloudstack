@@ -120,7 +120,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
      */
 
     private void checkPublicTemplateAccess(VirtualMachineTemplate template, Account owner, Account caller){
-        if (!QueryService.SharePublicTemplatesWithOtherDomains.valueIn(owner.getDomainId()) ||
+        if (QueryService.SharePublicTemplatesWithOtherDomains.valueIn(owner.getDomainId()) ||
                 caller.getDomainId() == owner.getDomainId() ||
                 _domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
             return;
