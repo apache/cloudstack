@@ -1257,7 +1257,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     /**
-     * This method checks if the value for the configuration is valid for any of the ranges selected.
+     * Checks if the value for the configuration is valid for any of the ranges selected.
      */
     protected String validateIfStringValueIsInRange(String name, String value, String... range) {
         List<String> message = new ArrayList<String>();
@@ -1327,7 +1327,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (NetUtils.verifyInstanceName(value)) {
             return null;
         }
-        return "a valid instance name (instance names cannot contain hyphen, space or plus sign)";
+        return "a valid instance name (instance names cannot contain hyphens, spaces or plus signs)";
     }
 
     /**

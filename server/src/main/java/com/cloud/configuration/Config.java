@@ -426,7 +426,7 @@ public enum Config {
             "Console proxy command port that is used to communicate with management server",
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName","privateip"),
+    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName", "privateip"),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,
