@@ -1420,6 +1420,7 @@
 "label.reboot": "Reboot",
 "label.receivedbytes": "Bytes received",
 "label.recover.vm": "Recover VM",
+"label.redirect": "Redirect to:",
 "label.redundantrouter": "Redundant router",
 "label.redundantstate": "Redundant state",
 "label.redundantvpcrouter": "Redundant VPC",
