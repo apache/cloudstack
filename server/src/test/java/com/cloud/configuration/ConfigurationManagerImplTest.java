@@ -135,7 +135,7 @@ public class ConfigurationManagerImplTest {
         PowerMockito.mockStatic(NetUtils.class);
         PowerMockito.when(NetUtils.verifyInstanceName(Mockito.anyString())).thenReturn(false);
         String testVariable = configurationManagerImplSpy.validateRangeInstanceName("This string should not be valid.");
-        Assert.assertEquals("a valid instance name (instance names cannot contain hyphen, space or plus sign)", testVariable);
+        Assert.assertEquals("a valid instance name (instance names cannot contain hyphens, spaces or plus signs)", testVariable);
     }
 
     @Test
