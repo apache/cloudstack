@@ -2629,7 +2629,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (VirtualMachine.Type.User.equals(vmTO.getType())) {
             cmd.setFeatures(_cpuFeatures);
         }
-        setCpuTopology(cmd, vcpus, vmTO.getDetails());
+        int vCpusInDef = vmTO.getVcpuMaxLimit() == null ? vcpus : vmTO.getVcpuMaxLimit();
+        setCpuTopology(cmd, vCpusInDef, vmTO.getDetails());
         return cmd;
     }
 
@@ -4749,7 +4750,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return false;
     }
 
-    private void setCpuTopology(CpuModeDef cmd, int vcpus, Map<String, String> details) {
+    private void setCpuTopology(CpuModeDef cmd, int vCpusInDef, Map<String, String> details) {
         if (!enableManuallySettingCpuTopologyOnKvmVm) {
             s_logger.debug(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
               AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM.getName(), enableManuallySettingCpuTopologyOnKvmVm));
@@ -4760,19 +4761,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (details != null) {
             final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
             final int intCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, numCoresPerSocket);
-            if (intCoresPerSocket > 0 && vcpus % intCoresPerSocket == 0) {
+            if (intCoresPerSocket > 0 && vCpusInDef % intCoresPerSocket == 0) {
                 numCoresPerSocket = intCoresPerSocket;
             }
         }
         if (numCoresPerSocket <= 0) {
-            if (vcpus % 6 == 0) {
+            if (vCpusInDef % 6 == 0) {
                 numCoresPerSocket = 6;
-            } else if (vcpus % 4 == 0) {
+            } else if (vCpusInDef % 4 == 0) {
                 numCoresPerSocket = 4;
             }
         }
         if (numCoresPerSocket > 0) {
-            cmd.setTopology(numCoresPerSocket, vcpus / numCoresPerSocket);
+            cmd.setTopology(numCoresPerSocket, vCpusInDef / numCoresPerSocket);
         }
     }
 
