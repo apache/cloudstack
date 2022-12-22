@@ -2234,9 +2234,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         command.add("-c");
         command.add("iptables -I OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
 
-        String msg = null;
-        for (int retry = 3; retry > 0; retry--) {
-            String result = command.execute();
+        String result = command.execute();
+        if (result != null) {
+            s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
+            return "Error in allowing outgoing to " + destCidr + ", err=" + result;
             if (result != null) {
                 msg = "Error in allowing outgoing to " + destCidr + ", err=" + result;
                 s_logger.warn(msg);
