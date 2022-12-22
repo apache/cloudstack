@@ -2242,7 +2242,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
 
-        return msg;
+        return null;
     }
 
     private Answer execute(SecStorageFirewallCfgCommand cmd) {
