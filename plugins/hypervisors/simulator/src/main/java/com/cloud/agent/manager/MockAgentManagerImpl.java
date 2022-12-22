@@ -113,7 +113,8 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
         try {
             DataCenterVO zone = dcDao.findById(dcId);
             if (DataCenter.Type.Edge.equals(zone.getType())) {
-                String subnet = String.format("172.%d.%d.0", (int)(Math.random() * 15) + 16, (int)(Math.random() * 5));
+                SecureRandom random = new SecureRandom();
+                subnet = String.format("172.%d.%d.0", random.nextInt(15) + 16, random.nextInt(6) + 1);
                 s_logger.info(String.format("Pod belongs to an edge zone hence CIDR cannot be found, returning %s/24", subnet));
                 return new Pair<>(subnet, 24L);
             }
