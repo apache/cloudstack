@@ -193,7 +193,7 @@ export default {
       for (const item of this.items) {
         this.validNetworks[item.id] = this.networks
         if (this.filterUnimplementedNetworks) {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x.state === 'Implemented')
+          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && x.type === 'Shared')))
         }
         if (this.filterMatchKey) {
           this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
