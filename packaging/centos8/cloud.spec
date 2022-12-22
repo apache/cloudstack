@@ -27,9 +27,6 @@ Summary:   CloudStack IaaS Platform
 %define _maventag %{_fullver}
 Release:   %{_rel}
 
-%define __python python3
-%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
-
 Version:   %{_ver}
 License:   ASL 2.0
 Vendor:    Apache CloudStack <dev@cloudstack.apache.org>
@@ -145,13 +142,6 @@ Group: System Environment/Libraries
 %description ui
 The CloudStack UI
 
-%package cli
-Summary: Apache CloudStack CLI
-Provides: python-marvin
-Group: System Environment/Libraries
-%description cli
-Apache CloudStack command line interface
-
 %package marvin
 Summary: Apache CloudStack Marvin library
 Requires: python3-pip
@@ -228,14 +218,14 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d
 # Common
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
-mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/python-site
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/
-install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
-cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
-python3 -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
-python3 -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
+install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/python-site/cloud_utils.py
+cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/python-site/
+python3 -m py_compile ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/python-site/cloud_utils.py
+python3 -m compileall ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/python-site/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 cp packaging/centos8/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
 
@@ -361,10 +351,6 @@ install -D packaging/systemd/cloudstack-usage.service ${RPM_BUILD_ROOT}%{_unitdi
 install -D packaging/systemd/cloudstack-usage.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
-# CLI
-cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{python_sitearch}/
-install cloud-cli/cloudapis/cloud.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloudapis.py
-
 # Marvin
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin
 cp tools/marvin/dist/Marvin-*.tar.gz ${RPM_BUILD_ROOT}%{_datadir}/%{name}-marvin/
@@ -390,8 +376,6 @@ install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
-install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
-install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvin-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-marvin-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-integration-tests-%{version}/NOTICE
@@ -399,6 +383,16 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+
+%preun common
+
+rm -f %{_datadir}/%{name}-common/python-site || true
+
+%pre common
+
+python_dir=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
+mkdir -p %{_datadir}/%{name}-common
+ln -s $python_dir %{_datadir}/%{name}-common/python-site
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
@@ -622,16 +616,16 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-agent-%{version}/NOTICE
 
 %files common
-%dir %attr(0755,root,root) %{python_sitearch}/cloudutils
+%dir %attr(0755,root,root) %{_datadir}/%{name}-common/python-site/cloudutils
 %dir %attr(0755,root,root) %{_datadir}/%{name}-common/vms
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
 %attr(0755,root,root) /usr/bin/cloudstack-sccs
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/agent.zip
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/cloud-scripts.tgz
 %attr(0644, root, root) %{_datadir}/%{name}-common/vms/patch-sysvms.sh
-%attr(0644,root,root) %{python_sitearch}/cloud_utils.py
-%attr(0644,root,root) %{python_sitearch}/__pycache__/*
-%attr(0644,root,root) %{python_sitearch}/cloudutils/*
+%attr(0644,root,root) %{_datadir}/%{name}-common/python-site/cloud_utils.py
+%attr(0644,root,root) %{_datadir}/%{name}-common/python-site/__pycache__/*
+%attr(0644,root,root) %{_datadir}/%{name}-common/python-site/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
@@ -652,13 +646,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
-
-%files cli
-%attr(0644,root,root) %{python_sitearch}/cloudapis.py
-%attr(0644,root,root) %{python_sitearch}/cloudtool/__init__.py
-%attr(0644,root,root) %{python_sitearch}/cloudtool/utils.py
-%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
-%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 
 %files marvin
 %attr(0644,root,root) %{_datadir}/%{name}-marvin/Marvin*.tar.gz
