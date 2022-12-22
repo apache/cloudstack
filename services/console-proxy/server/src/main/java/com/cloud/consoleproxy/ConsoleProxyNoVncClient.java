@@ -24,7 +24,6 @@ import org.eclipse.jetty.websocket.api.extensions.Frame;
 import java.awt.Image;
 import java.io.IOException;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -81,7 +80,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         return true;
     }
 
-    public void sendClientFrame(Frame f) throws IOException {
+    public void sendClientFrame(Frame f) {
         client.writeFrame(f);
     }
 
@@ -245,10 +244,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                 ConsoleProxy.ensureRoute(getClientHostAddress());
                 client.connectTo(getClientHostAddress(), getClientHostPort());
             }
-        } catch (UnknownHostException e) {
-            s_logger.error("Unexpected exception", e);
-        } catch (IOException e) {
-            s_logger.error("Unexpected exception", e);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception", e);
         }

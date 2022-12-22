@@ -38,8 +38,8 @@ public interface NioSocketHandler {
     void writeBytes(ByteBuffer data, int length);
 
     // Additional operations
-    boolean checkIfBytesAreAvailableForReading(int bytes);
+    void waitForBytesAvailableForReading(int bytes);
     void flushWriteBuffer();
-    void startTLSConnection(SSLEngineManager sslEngineManager);
+    void startTLSConnection(NioSocketSSLEngineManager sslEngineManager);
     boolean isTLSConnection();
 }

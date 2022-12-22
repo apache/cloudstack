@@ -17,34 +17,38 @@
 package com.cloud.consoleproxy.vnc.network;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class NioSocketTLSInputStream extends NioSocketInputStream {
 
-    private final SSLEngineManager sslEngineManager;
+    private final NioSocketSSLEngineManager sslEngineManager;
 
-    public NioSocketTLSInputStream(SSLEngineManager sslEngineManager, NioSocket socket) {
+    private static final Logger s_logger = Logger.getLogger(NioSocketTLSInputStream.class);
+
+    public NioSocketTLSInputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
         super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
         this.sslEngineManager = sslEngineManager;
     }
 
-    protected int readTLS(byte[] buf, int bufPtr, int len) {
-        int n = -1;
+    protected int readFromSSLEngineManager(byte[] buffer, int startPos, int length) {
         try {
-            n = sslEngineManager.read(ByteBuffer.wrap(buf, bufPtr, len), len);
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
+            int readBytes = sslEngineManager.read(ByteBuffer.wrap(buffer, startPos, length));
+            if (readBytes < 0) {
+                throw new CloudRuntimeException("Invalid number of read bytes frm SSL engine manager " + readBytes);
+            }
+            return readBytes;
+        } catch (IOException e) {
+            s_logger.error("Error reading from SSL engine manager: " + e.getMessage(), e);
         }
-        if (n < 0) throw new CloudRuntimeException("readTLS" + n);
-        return n;
+        return 0;
     }
 
     @Override
     protected int rearrangeBufferToFitSize(int numberItems, int itemSize, boolean wait) {
-        if (itemSize > buffer.length) {
-            throw new CloudRuntimeException("Cannot read item longer than the buffer size");
-        }
+        checkItemSizeOnBuffer(itemSize);
 
         if (endPosition - currentPosition != 0) {
             System.arraycopy(buffer, currentPosition, buffer, 0, endPosition - currentPosition);
@@ -55,7 +59,7 @@ public class NioSocketTLSInputStream extends NioSocketInputStream {
         currentPosition = start;
 
         while ((endPosition - start) < itemSize) {
-            int n = readTLS(buffer, endPosition, start + buffer.length - endPosition);
+            int n = readFromSSLEngineManager(buffer, endPosition, start + buffer.length - endPosition);
             if (!wait && n == 0) {
                 return 0;
             }

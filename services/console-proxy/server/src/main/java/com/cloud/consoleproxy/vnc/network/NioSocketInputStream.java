@@ -21,6 +21,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class NioSocketInputStream extends NioSocketStream {
@@ -67,10 +68,7 @@ public class NioSocketInputStream extends NioSocketStream {
     }
 
     protected int rearrangeBufferToFitSize(int numberItems, int itemSize, boolean wait) {
-        if (itemSize > buffer.length) {
-            throw new CloudRuntimeException(String.format("The requested item size %s exceeds the buffer size %s",
-                    itemSize, buffer.length));
-        }
+        checkItemSizeOnBuffer(itemSize);
 
         moveDataToBufferStart();
 
@@ -123,13 +121,7 @@ public class NioSocketInputStream extends NioSocketStream {
 
         ByteBuffer str = ByteBuffer.allocate(len);
         readBytes(str, len);
-        String utf8string = new String();
-        try {
-            utf8string = new String(str.array(),"UTF8");
-        } catch(java.io.UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return utf8string;
+        return new String(str.array(), StandardCharsets.UTF_8);
     }
 
     /**

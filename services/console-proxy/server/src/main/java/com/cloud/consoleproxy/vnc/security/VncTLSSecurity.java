@@ -19,7 +19,7 @@ package com.cloud.consoleproxy.vnc.security;
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
-import com.cloud.consoleproxy.vnc.network.SSLEngineManager;
+import com.cloud.consoleproxy.vnc.network.NioSocketSSLEngineManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.Link;
 
@@ -35,7 +35,7 @@ public class VncTLSSecurity implements VncSecurity {
 
     private SSLContext ctx;
     private SSLEngine engine;
-    private SSLEngineManager manager;
+    private NioSocketSSLEngineManager manager;
 
     private final String host;
     private final int port;
@@ -90,14 +90,14 @@ public class VncTLSSecurity implements VncSecurity {
         }
 
         try {
-            manager = new SSLEngineManager(engine, socketHandler);
+            manager = new NioSocketSSLEngineManager(engine, socketHandler);
             manager.doHandshake();
         } catch(java.lang.Exception e) {
             throw new CloudRuntimeException(e.toString());
         }
     }
 
-    public SSLEngineManager getSSLEngineManager() {
+    public NioSocketSSLEngineManager getSSLEngineManager() {
         return manager;
     }
 }

@@ -18,24 +18,25 @@ package com.cloud.consoleproxy.vnc.network;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-public class SSLEngineManager {
+public class NioSocketSSLEngineManager {
 
-    private SSLEngine engine = null;
+    private final SSLEngine engine;
 
-    private ByteBuffer myNetData;
-    private ByteBuffer peerNetData;
+    private final ByteBuffer myNetData;
+    private final ByteBuffer peerNetData;
 
-    private Executor executor;
-    private NioSocketInputStream inputStream;
-    private NioSocketOutputStream outputStream;
+    private final Executor executor;
+    private final NioSocketInputStream inputStream;
+    private final NioSocketOutputStream outputStream;
 
-    public SSLEngineManager(SSLEngine sslEngine, NioSocketHandler socket) throws IOException {
+    public NioSocketSSLEngineManager(SSLEngine sslEngine, NioSocketHandler socket) {
         this.inputStream = socket.getInputStream();
         this.outputStream = socket.getOutputStream();
         engine = sslEngine;
@@ -47,17 +48,15 @@ public class SSLEngineManager {
         peerNetData = ByteBuffer.allocate(pktBufSize);
     }
 
-    public void doHandshake() throws Exception {
-
-        // Begin handshake
+    public void doHandshake() throws SSLException {
         engine.beginHandshake();
         SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
 
-        // Process handshaking message
-        SSLEngineResult res = null;
+        SSLEngineResult res;
         int appBufSize = engine.getSession().getApplicationBufferSize();
         ByteBuffer peerAppData = ByteBuffer.allocate(appBufSize);
         ByteBuffer myAppData = ByteBuffer.allocate(appBufSize);
+
         while (hs != SSLEngineResult.HandshakeStatus.FINISHED &&
                 hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
 
@@ -68,7 +67,6 @@ public class SSLEngineManager {
                     peerNetData.flip();
                     res = engine.unwrap(peerNetData, peerAppData);
                     peerNetData.compact();
-                    hs = res.getHandshakeStatus();
 
                     // Check status
                     switch (res.getStatus()) {
@@ -89,7 +87,6 @@ public class SSLEngineManager {
                 case NEED_WRAP:
                     // Generate handshaking data
                     res = engine.wrap(myAppData, myNetData);
-                    hs = res.getHandshakeStatus();
 
                     // Check status
                     switch (res.getStatus()) {
@@ -121,7 +118,7 @@ public class SSLEngineManager {
         }
     }
 
-    public int read(ByteBuffer data, int length) throws IOException {
+    public int read(ByteBuffer data) throws IOException {
         // Read SSL/TLS encoded data from peer
         peerNetData.flip();
         SSLEngineResult res = engine.unwrap(peerNetData, data);
@@ -145,7 +142,7 @@ public class SSLEngineManager {
         return 0;
     }
 
-    public int write(ByteBuffer data, int length) throws IOException {
+    public int write(ByteBuffer data) throws IOException {
         int n = 0;
         while (data.hasRemaining()) {
             SSLEngineResult res = engine.wrap(data, myNetData);

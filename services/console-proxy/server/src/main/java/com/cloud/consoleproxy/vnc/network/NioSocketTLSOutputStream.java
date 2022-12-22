@@ -16,15 +16,18 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.network;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class NioSocketTLSOutputStream extends NioSocketOutputStream {
 
-    private final SSLEngineManager sslEngineManager;
+    private final NioSocketSSLEngineManager sslEngineManager;
 
-    public NioSocketTLSOutputStream(SSLEngineManager sslEngineManager, NioSocket socket) {
+    private static final Logger s_logger = Logger.getLogger(NioSocketTLSOutputStream.class);
+
+    public NioSocketTLSOutputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
         super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
         this.sslEngineManager = sslEngineManager;
     }
@@ -33,7 +36,7 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
     public void flushWriteBuffer() {
         int sentUpTo = start;
         while (sentUpTo < currentPosition) {
-            int n = writeTLS(buffer, sentUpTo, currentPosition - sentUpTo);
+            int n = writeThroughSSLEngineManager(buffer, sentUpTo, currentPosition - sentUpTo);
             sentUpTo += n;
             offset += n;
         }
@@ -41,25 +44,22 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
         currentPosition = start;
     }
 
-    protected int writeTLS(byte[] data, int dataPtr, int length) {
-        int n;
+    protected int writeThroughSSLEngineManager(byte[] data, int startPos, int length) {
         try {
-            n = sslEngineManager.write(ByteBuffer.wrap(data, dataPtr, length), length);
-        } catch (java.io.IOException e) {
-            throw new CloudRuntimeException(e.getMessage());
+            return sslEngineManager.write(ByteBuffer.wrap(data, startPos, length));
+        } catch (IOException e) {
+            s_logger.error("Error writing though SSL engine manager: " + e.getMessage(), e);
+            return 0;
         }
-        return n;
     }
 
     @Override
     protected int rearrangeWriteBuffer(int itemSize, int numberItems) {
-        if (itemSize > buffer.length)
-            throw new CloudRuntimeException("TLSOutStream overrun: max itemSize exceeded");
+        checkItemSizeOnBuffer(itemSize);
 
         flushWriteBuffer();
 
         int window = endPosition - currentPosition;
         return Math.min(window / itemSize, numberItems);
-
     }
 }

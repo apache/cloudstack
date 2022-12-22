@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Iterator;
 import java.util.Set;
 
 public class NioSocket {
@@ -33,6 +32,7 @@ public class NioSocket {
     private Selector writeSelector;
     private Selector readSelector;
 
+    private static final int connectionTimeoutMillis = 3000;
     private static final Logger s_logger = Logger.getLogger(NioSocket.class);
 
     private void initializeSocket() {
@@ -49,33 +49,33 @@ public class NioSocket {
         }
     }
 
+    private void waitForSocketSelectorConnected(Selector selector) {
+        try {
+            while (selector.select(connectionTimeoutMillis) <= 0) {
+                s_logger.debug("Waiting for ready operations to connect to the socket");
+            }
+            Set<SelectionKey> keys = selector.selectedKeys();
+            for (SelectionKey selectionKey: keys) {
+                if (selectionKey.isConnectable()) {
+                    if (socketChannel.isConnectionPending()) {
+                        socketChannel.finishConnect();
+                    }
+                    s_logger.debug("Connected to the socket");
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            s_logger.error(String.format("Error waiting for socket selector ready: %s", e.getMessage()), e);
+        }
+    }
+
     private void connectSocket(String host, int port) {
         try {
             socketChannel.connect(new InetSocketAddress(host, port));
             Selector selector = Selector.open();
             socketChannel.register(selector, SelectionKey.OP_CONNECT);
-            boolean connected = false;
-            while (selector.select(3000) > 0) {
-                while (!connected) {
-                    Set keys = selector.selectedKeys();
-                    Iterator i = keys.iterator();
 
-                    while (i.hasNext()) {
-                        SelectionKey key = (SelectionKey)i.next();
-
-                        // Remove the current key
-                        i.remove();
-
-                        // Attempt a connection
-                        if (key.isConnectable()) {
-                            if (socketChannel.isConnectionPending()) {
-                                socketChannel.finishConnect();
-                            }
-                            connected = true;
-                        }
-                    }
-                }
-            }
+            waitForSocketSelectorConnected(selector);
             socketChannel.socket().setTcpNoDelay(false);
         } catch (IOException e) {
             s_logger.error(String.format("Error creating NioSocket to %s:%s: %s", host, port, e.getMessage()), e);

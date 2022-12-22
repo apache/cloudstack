@@ -32,15 +32,12 @@ public interface VncSecurity {
             case RfbConstants.NO_AUTH: return Collections.singletonList(new NoneVncSecurity());
             case RfbConstants.VNC_AUTH: return Collections.singletonList(new VncAuthSecurity(vmPassword));
 
-            // Do not add VCentrypt type = 19 but its supported subtypes
+            // Do not add VEncrypt type = 19 but its supported subtypes
             case RfbConstants.V_ENCRYPT_X509_VNC:
                 return Arrays.asList(new VncTLSSecurity(host, port), new VncAuthSecurity(vmPassword));
             default: throw new CloudRuntimeException("Unsupported security type " + securityType);
         }
     }
-
-    List<Integer> supportedSecurityTypes = Arrays.asList(RfbConstants.NO_AUTH, RfbConstants.VNC_AUTH,
-            RfbConstants.V_ENCRYPT, RfbConstants.V_ENCRYPT_X509_VNC);
 
     void process(NioSocketHandler socketHandler) throws IOException;
 }

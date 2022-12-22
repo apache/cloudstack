@@ -27,6 +27,7 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     private boolean isTLS = false;
 
     private static final int DEFAULT_BUF_SIZE = 16384;
+
     private static final Logger s_logger = Logger.getLogger(NioSocketHandlerImpl.class);
 
     public NioSocketHandlerImpl(NioSocket socket) {
@@ -50,8 +51,10 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     }
 
     @Override
-    public boolean checkIfBytesAreAvailableForReading(int bytes) {
-        return inputStream.checkForSizeWithoutWait(bytes);
+    public void waitForBytesAvailableForReading(int bytes) {
+        while (!inputStream.checkForSizeWithoutWait(bytes)) {
+            s_logger.trace("Waiting for inStream to be ready");
+        }
     }
 
     @Override
@@ -70,7 +73,7 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     }
 
     @Override
-    public void startTLSConnection(SSLEngineManager sslEngineManager) {
+    public void startTLSConnection(NioSocketSSLEngineManager sslEngineManager) {
         this.inputStream = new NioSocketTLSInputStream(sslEngineManager, this.inputStream.socket);
         this.outputStream = new NioSocketTLSOutputStream(sslEngineManager, this.outputStream.socket);
         this.isTLS = true;

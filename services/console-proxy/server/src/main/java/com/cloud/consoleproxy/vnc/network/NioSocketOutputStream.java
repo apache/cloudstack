@@ -23,23 +23,18 @@ import java.nio.ByteBuffer;
 public class NioSocketOutputStream extends NioSocketStream {
 
     private int sendPosition;
-    private boolean block;
 
     public NioSocketOutputStream(int bufferSize, NioSocket socket) {
         super(bufferSize, socket);
         this.endPosition = bufferSize;
         this.sendPosition = 0;
-        this.block = true;
     }
 
-    protected final int checkWriteBufferForSizeAndItemsNumber(int itemSize, int nItems) {
-        if (itemSize > (endPosition - currentPosition)) {
-            return rearrangeWriteBuffer(itemSize, nItems);
-        }
-
+    protected final int checkWriteBufferForSingleItems(int items) {
         int window = endPosition - currentPosition;
-        return Math.min(window / itemSize, nItems);
-
+        return window < 1 ?
+                rearrangeWriteBuffer(1, items) :
+                Math.min(window, items);
     }
 
     public final void checkWriteBufferForSize(int itemSize) {
@@ -82,9 +77,7 @@ public class NioSocketOutputStream extends NioSocketStream {
     }
 
     protected int rearrangeWriteBuffer(int itemSize, int numberItems) {
-        if (itemSize > this.buffer.length) {
-            throw new CloudRuntimeException("Cannot write item longer than the buffer size");
-        }
+        checkItemSizeOnBuffer(itemSize);
 
         flushWriteBuffer();
 
@@ -103,7 +96,7 @@ public class NioSocketOutputStream extends NioSocketStream {
     protected void writeBytes(byte[] data, int dataPtr, int length) {
         int dataEnd = dataPtr + length;
         while (dataPtr < dataEnd) {
-            int n = checkWriteBufferForSizeAndItemsNumber(1, dataEnd - dataPtr);
+            int n = checkWriteBufferForSingleItems(dataEnd - dataPtr);
             System.arraycopy(data, dataPtr, buffer, currentPosition, n);
             currentPosition += n;
             dataPtr += n;
@@ -112,7 +105,7 @@ public class NioSocketOutputStream extends NioSocketStream {
 
     protected void writeBytes(ByteBuffer data, int length) {
         while (length > 0) {
-            int n = checkWriteBufferForSizeAndItemsNumber(1, length);
+            int n = checkWriteBufferForSingleItems(length);
             data.get(buffer, currentPosition, n);
             currentPosition += n;
             length -= n;

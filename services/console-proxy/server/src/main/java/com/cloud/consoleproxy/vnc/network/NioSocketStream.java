@@ -78,4 +78,12 @@ public class NioSocketStream {
             buffer[currentPosition++] = (byte) value;
         }
     }
+
+    protected void checkItemSizeOnBuffer(int itemSize) {
+        if (itemSize > buffer.length) {
+            String msg = "Item size " + itemSize + " exceeds the buffer size " + buffer.length;
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
 }
