@@ -109,8 +109,8 @@ def download_systemplates_sec_storage(server, services):
                                           server["password"]
                                           )
     except Exception as e:
-        raise Exception("SSH access failted for server with IP address: %s" %
-                                                            server["ipaddess"])
+        raise Exception("SSH access failed for server with IP address: %s" %
+                                                            server["ipaddress"])
     # Mount Secondary Storage on Management Server
     cmds = [
             "mkdir -p %s" % services["mnt_dir"],
