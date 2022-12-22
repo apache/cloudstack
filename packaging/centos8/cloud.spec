@@ -25,7 +25,7 @@ Name:      cloudstack
 Summary:   CloudStack IaaS Platform
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %define _maventag %{_fullver}
-Release:   %{_rel}%{dist}
+Release:   %{_rel}
 
 %define __python python3
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
@@ -680,6 +680,9 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Thu Dec 22 2022 Rohit Yadav <rohit@apache.org> 4.18.0
+- Add support for EL9
+
 * Fri Oct 14 2022 Daan Hoogland <daan.hoogland@gmail.com> 4.18.0
 - initialising sanity check pointer file
 
