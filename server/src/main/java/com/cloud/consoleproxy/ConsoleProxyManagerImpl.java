@@ -1491,8 +1491,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public Long[] getScannablePools() {
-        List<DataCenterVO> zones = dataCenterDao.listEnabledNonEdgeZones();
-        List<Long> zoneIds = zones.stream().map(DataCenterVO::getId).collect(Collectors.toList());
+        List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
         }

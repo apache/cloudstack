@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1308,8 +1307,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public Long[] getScannablePools() {
-        List<DataCenterVO> zones = _dcDao.listEnabledNonEdgeZones();
-        List<Long> zoneIds = zones.stream().map(DataCenterVO::getId).collect(Collectors.toList());
+        List<Long> zoneIds = _dcDao.listEnabledNonEdgeZoneIds();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", StringUtils.join(zoneIds, ",")));
         }

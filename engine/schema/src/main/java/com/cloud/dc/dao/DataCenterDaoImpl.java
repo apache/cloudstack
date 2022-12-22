@@ -20,11 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -407,11 +409,15 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public List<DataCenterVO> listEnabledNonEdgeZones() {
+    public List<Long> listEnabledNonEdgeZoneIds() {
         SearchCriteria<DataCenterVO> sc = ZoneAllocationAndNotTypeSearch.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
         sc.setParameters("type", DataCenter.Type.Edge);
-        return listBy(sc);
+        List<DataCenterVO> zones = listBy(sc);
+        if (CollectionUtils.isEmpty(zones)) {
+            return new ArrayList<>();
+        }
+        return zones.stream().map(DataCenterVO::getId).collect(Collectors.toList());
     }
 
     @Override
