@@ -189,7 +189,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
             String serverName = String.format("%s %s", clientParam.getClientDisplayName(),
                     client.isTLSConnectionEstablished() ? "(TLS backend)" : "");
             byte[] bytesServerInit = rewriteServerNameInServerInit(client.readServerInit(), serverName);
-            s_logger.info(String.format("Server init message is %s (%s)", Arrays.toString(bytesServerInit), new String(bytesServerInit)));
+            s_logger.debug(String.format("Server init message is %s (%s)", Arrays.toString(bytesServerInit), new String(bytesServerInit)));
             session.getRemote().sendBytes(ByteBuffer.wrap(bytesServerInit));
             client.setWaitForNoVnc(true);
             while (client.isWaitForNoVnc()) {

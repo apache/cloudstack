@@ -37,14 +37,12 @@ public class VncTLSSecurity implements VncSecurity {
     private SSLEngine engine;
     private SSLEngineManager manager;
 
-    private boolean anon;
     private final String host;
     private final int port;
 
     public VncTLSSecurity(String host, int port) {
         this.host = host;
         this.port = port;
-        this.anon = false;
     }
 
     private void initGlobal() {
@@ -60,26 +58,15 @@ public class VncTLSSecurity implements VncSecurity {
         engine.setUseClientMode(true);
 
         String[] supported = engine.getSupportedProtocols();
-        ArrayList<String> enabled = new ArrayList<String>();
-        for (int i = 0; i < supported.length; i++)
-            if (supported[i].matches("TLS.*"))
-                enabled.add(supported[i]);
+        ArrayList<String> enabled = new ArrayList<>();
+        for (String s : supported) {
+            if (s.matches("TLS.*") || s.matches("X509.*")) {
+                enabled.add(s);
+            }
+        }
         engine.setEnabledProtocols(enabled.toArray(new String[0]));
 
-        if (anon) {
-            supported = engine.getSupportedCipherSuites();
-            enabled = new ArrayList<String>();
-            // prefer ECDH over DHE
-            for (int i = 0; i < supported.length; i++)
-                if (supported[i].matches("TLS_ECDH_anon.*"))
-                    enabled.add(supported[i]);
-            for (int i = 0; i < supported.length; i++)
-                if (supported[i].matches("TLS_DH_anon.*"))
-                    enabled.add(supported[i]);
-            engine.setEnabledCipherSuites(enabled.toArray(new String[0]));
-        } else {
-            engine.setEnabledCipherSuites(engine.getSupportedCipherSuites());
-        }
+        engine.setEnabledCipherSuites(engine.getSupportedCipherSuites());
     }
 
     @Override
