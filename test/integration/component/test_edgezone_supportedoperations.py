@@ -131,29 +131,3 @@ class TestEdgeZoneSupportedOperations(cloudstackTestCase):
             "Running",
             "Check VM deployed in edge zone with a L2 network is running"
         )
-
-    @skipTestIf("testsNotSupported")
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_01_deploy_vm_sharednetwork(self):
-        """Test to deploy VM in a L2 network
-        """
-        # TODO: register direct_download systemvm template, deploy a shared network and VM
-        network = Network.create(
-            self.apiclient,
-            self.services["l2-network"],
-            zoneid=self.zone.id,
-            networkofferingid=self.l2_network_offering.id
-        )
-        self.cleanup.append(network)
-        vm = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            serviceofferingid=self.service_offering.id
-            networkids=network.id
-        )
-        self.cleanup.append(vm)
-        self.assertEqual(
-            vm.state,
-            "Running",
-            "Check VM deployed in edge zone with a L2 network is running"
-        )
