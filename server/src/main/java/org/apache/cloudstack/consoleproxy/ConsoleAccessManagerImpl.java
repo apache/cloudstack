@@ -287,7 +287,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag, sessionUuid);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = generateConsoleProxyClientParam(parsedHostInfo, port, sid, tag, ticket,
-                sessionUuid, addr, extraSecurityToken, vm, hostVo, details, portInfo, host);
+                sessionUuid, addr, extraSecurityToken, vm, hostVo, details, portInfo, host, displayName);
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
         int vncPort = consoleProxyManager.getVncPort();
 
@@ -341,7 +341,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                                                                     String sessionUuid, String addr,
                                                                     String extraSecurityToken, VirtualMachine vm,
                                                                     HostVO hostVo, UserVmDetailVO details,
-                                                                    Pair<String, Integer> portInfo, String host) {
+                                                                    Pair<String, Integer> portInfo, String host,
+                                                                    String displayName) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(port);
