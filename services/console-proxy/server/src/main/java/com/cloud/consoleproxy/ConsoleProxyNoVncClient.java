@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.consoleproxy.vnc.NoVncClient;
@@ -80,8 +79,10 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         return true;
     }
 
-    public void sendClientFrame(Frame f) {
-        client.writeFrame(f);
+    public void sendClientFrame(Frame f) throws IOException {
+        byte[] data = new byte[f.getPayloadLength()];
+        f.getPayload().get(data);
+        client.write(data);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = client.isVncOverWebSocketConnectionAlive();
-                        } else if (!client.isVncOverTunnel()) {
+                        } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;
                             int nextBytes = client.getNextBytes();
                             bytesArr = new byte[nextBytes];
@@ -153,49 +154,86 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      * 3. Initialisation
      *
      * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#7protocol-messages
-     * @throws IOException
      */
     private void authenticateToVNCServer() throws IOException {
         if (client.isVncOverWebSocketConnection()) {
             return;
         }
 
-        if (client.isVncOverTunnel()) {
+        if (!client.isVncOverNioSocket()) {
             String ver = client.handshake();
             session.getRemote().sendBytes(ByteBuffer.wrap(ver.getBytes(), 0, ver.length()));
 
             byte[] b = client.authenticateTunnel(getClientHostPassword());
             session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, 4));
         } else {
-            ByteBuffer verStr = client.handshakeProtocolVersion();
-            sendMessageToVNCClient(verStr.array(), 12);
-
-            int secType = client.handshakeSecurityType();
-            byte[] numberTypesToClient = new byte[] { 1, (byte) secType };
-            sendMessageToVNCClient(numberTypesToClient, 2);
-
-            client.processHandshakeSecurityType(secType, getClientHostPassword(),
-                    getClientHostAddress(), getClientHostPort());
-
-            byte[] securityResultToClient = new byte[] { 0, 0, 0, 0 };
-            sendMessageToVNCClient(securityResultToClient, 4);
-            client.setWaitForNoVnc(true);
-
-            while (client.isWaitForNoVnc()) {
-                s_logger.debug("Waiting");
-            }
-
-            String serverName = String.format("%s %s", clientParam.getClientDisplayName(),
-                    client.isTLSConnectionEstablished() ? "(TLS backend)" : "");
-            byte[] bytesServerInit = rewriteServerNameInServerInit(client.readServerInit(), serverName);
-            s_logger.debug(String.format("Server init message is %s (%s)", Arrays.toString(bytesServerInit), new String(bytesServerInit)));
-            session.getRemote().sendBytes(ByteBuffer.wrap(bytesServerInit));
-            client.setWaitForNoVnc(true);
-            while (client.isWaitForNoVnc()) {
-                s_logger.debug("Waiting");
-            }
-            s_logger.info("Authenticated successfully");
+            authenticateVNCServerThroughNioSocket();
         }
+    }
+
+    /**
+     * Handshaking messages consist on 3 phases:
+     * - ProtocolVersion
+     * - Security
+     * - SecurityResult
+     *
+     * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#71handshaking-messages
+     */
+    protected void handshakePhase() {
+        handshakeProtocolVersion();
+        int securityType = handshakeSecurity();
+        handshakeSecurityResult(securityType);
+
+        client.waitForNoVNCReply();
+    }
+
+    protected void handshakeSecurityResult(int secType) {
+        client.processHandshakeSecurityType(secType, getClientHostPassword(),
+                getClientHostAddress(), getClientHostPort());
+
+        client.processSecurityResultMsg(secType);
+        byte[] securityResultToClient = new byte[] { 0, 0, 0, 0 };
+        sendMessageToVNCClient(securityResultToClient, 4);
+        client.setWaitForNoVnc(true);
+    }
+
+    protected int handshakeSecurity() {
+        int secType = client.handshakeSecurityType();
+        byte[] numberTypesToClient = new byte[] { 1, (byte) secType };
+        sendMessageToVNCClient(numberTypesToClient, 2);
+        return secType;
+    }
+
+    protected void handshakeProtocolVersion() {
+        ByteBuffer verStr = client.handshakeProtocolVersion();
+        sendMessageToVNCClient(verStr.array(), 12);
+    }
+
+    protected void authenticateVNCServerThroughNioSocket() {
+        handshakePhase();
+        initialisationPhase();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Authenticated successfully");
+        }
+    }
+
+    /**
+     * Initialisation messages consist on:
+     * - ClientInit
+     * - ServerInit
+     *
+     * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#73initialisation-messages
+     */
+    private void initialisationPhase() {
+        byte[] serverInitByteArray = client.readServerInit();
+
+        String displayNameForVM = String.format("%s %s", clientParam.getClientDisplayName(),
+                client.isTLSConnectionEstablished() ? "(TLS backend)" : "");
+        byte[] bytesServerInit = rewriteServerNameInServerInit(serverInitByteArray, displayNameForVM);
+
+        sendMessageToVNCClient(bytesServerInit, bytesServerInit.length);
+        client.setWaitForNoVnc(true);
+        client.waitForNoVNCReply();
     }
 
     /**
@@ -227,20 +265,20 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     private void connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl) {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
-                s_logger.info("Connect to VNC over websocket URL: " + websocketUrl);
+                s_logger.info(String.format("Connect to VNC over websocket URL: %s", websocketUrl));
                 client.connectToWebSocket(websocketUrl, session);
             } else if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
                     && !tunnelSession.isEmpty()) {
                 URI uri = new URI(tunnelUrl);
-                s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: "
-                        + tunnelSession);
+                s_logger.info(String.format("Connect to VNC server via tunnel. url: %s, session: %s",
+                        tunnelUrl, tunnelSession));
 
                 ConsoleProxy.ensureRoute(uri.getHost());
                 client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(),
                         tunnelSession, "https".equalsIgnoreCase(uri.getScheme()));
             } else {
-                s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: "
-                        + getClientHostPort());
+                s_logger.info(String.format("Connect to VNC server directly. host: %s, port: %s",
+                        getClientHostAddress(), getClientHostPort()));
                 ConsoleProxy.ensureRoute(getClientHostAddress());
                 client.connectTo(getClientHostAddress(), getClientHostPort());
             }

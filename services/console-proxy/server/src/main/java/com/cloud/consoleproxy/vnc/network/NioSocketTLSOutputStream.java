@@ -48,7 +48,7 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
         try {
             return sslEngineManager.write(ByteBuffer.wrap(data, startPos, length));
         } catch (IOException e) {
-            s_logger.error("Error writing though SSL engine manager: " + e.getMessage(), e);
+            s_logger.error(String.format("Error writing though SSL engine manager: %s", e.getMessage()), e);
             return 0;
         }
     }

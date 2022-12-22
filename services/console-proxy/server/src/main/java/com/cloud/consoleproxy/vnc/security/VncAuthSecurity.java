@@ -19,6 +19,7 @@ package com.cloud.consoleproxy.vnc.security;
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.NoVncClient;
 import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,7 +28,7 @@ public class VncAuthSecurity implements VncSecurity {
 
     private final String vmPass;
 
-    private static final int vncAuthChallengeSize = 16;
+    private static final int VNC_AUTH_CHALLENGE_SIZE = 16;
     private static final Logger s_logger = Logger.getLogger(VncAuthSecurity.class);
 
     public VncAuthSecurity(String vmPass) {
@@ -39,15 +40,15 @@ public class VncAuthSecurity implements VncSecurity {
         s_logger.info("VNC server requires password authentication");
 
         // Read the challenge & obtain the user's password
-        ByteBuffer challenge = ByteBuffer.allocate(vncAuthChallengeSize);
-        socketHandler.readBytes(challenge, vncAuthChallengeSize);
+        ByteBuffer challenge = ByteBuffer.allocate(VNC_AUTH_CHALLENGE_SIZE);
+        socketHandler.readBytes(challenge, VNC_AUTH_CHALLENGE_SIZE);
 
         byte[] encodedPassword;
         try {
             encodedPassword = NoVncClient.encodePassword(challenge.array(), vmPass);
         } catch (Exception e) {
             s_logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
-            throw new RuntimeException("Cannot encrypt client password to send to server: " + e.getMessage());
+            throw new CloudRuntimeException("Cannot encrypt client password to send to server: " + e.getMessage());
         }
 
         // Return the response to the server

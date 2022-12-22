@@ -32,7 +32,7 @@ public class NioSocket {
     private Selector writeSelector;
     private Selector readSelector;
 
-    private static final int connectionTimeoutMillis = 3000;
+    private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final Logger s_logger = Logger.getLogger(NioSocket.class);
 
     private void initializeSocket() {
@@ -51,7 +51,7 @@ public class NioSocket {
 
     private void waitForSocketSelectorConnected(Selector selector) {
         try {
-            while (selector.select(connectionTimeoutMillis) <= 0) {
+            while (selector.select(CONNECTION_TIMEOUT_MILLIS) <= 0) {
                 s_logger.debug("Waiting for ready operations to connect to the socket");
             }
             Set<SelectionKey> keys = selector.selectedKeys();

@@ -37,11 +37,12 @@ public class NioSocketTLSInputStream extends NioSocketInputStream {
         try {
             int readBytes = sslEngineManager.read(ByteBuffer.wrap(buffer, startPos, length));
             if (readBytes < 0) {
-                throw new CloudRuntimeException("Invalid number of read bytes frm SSL engine manager " + readBytes);
+                throw new CloudRuntimeException(String.format("Invalid number of read bytes frm SSL engine manager %s",
+                        readBytes));
             }
             return readBytes;
         } catch (IOException e) {
-            s_logger.error("Error reading from SSL engine manager: " + e.getMessage(), e);
+            s_logger.error(String.format("Error reading from SSL engine manager: %s", e.getMessage()), e);
         }
         return 0;
     }

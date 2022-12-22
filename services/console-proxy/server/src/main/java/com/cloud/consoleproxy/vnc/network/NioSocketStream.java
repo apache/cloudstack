@@ -81,7 +81,7 @@ public class NioSocketStream {
 
     protected void checkItemSizeOnBuffer(int itemSize) {
         if (itemSize > buffer.length) {
-            String msg = "Item size " + itemSize + " exceeds the buffer size " + buffer.length;
+            String msg = String.format("Item size: %s exceeds the buffer size: %s", itemSize, buffer.length);
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }

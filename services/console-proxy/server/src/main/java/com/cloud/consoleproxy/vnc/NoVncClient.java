@@ -24,9 +24,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import com.cloud.consoleproxy.util.Logger;
@@ -38,11 +40,14 @@ import com.cloud.consoleproxy.vnc.network.NioSocketSSLEngineManager;
 import com.cloud.consoleproxy.vnc.security.VncSecurity;
 import com.cloud.consoleproxy.vnc.security.VncTLSSecurity;
 import com.cloud.consoleproxy.websocket.WebSocketReverseProxy;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.extensions.Frame;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
@@ -50,11 +55,11 @@ import javax.crypto.spec.DESKeySpec;
 public class NoVncClient {
     private static final Logger s_logger = Logger.getLogger(NoVncClient.class);
 
-    private Socket tunnelSocket;
-    private DataInputStream tunnelInputStream;
-    private DataOutputStream tunnelOutputStream;
+    private Socket socket;
+    private DataInputStream is;
+    private DataOutputStream os;
 
-    private NioSocketHandler socketConnection;
+    private NioSocketHandler nioSocketConnection;
 
     private WebSocketReverseProxy webSocketReverseProxy;
 
@@ -74,18 +79,19 @@ public class NoVncClient {
         }
 
         RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
-        tunnelSocket = tunnel.connect();
+        socket = tunnel.connect();
         setTunnelSocketStreams();
     }
 
     public void connectTo(String host, int port) {
         // Connect to server
-        s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
+        s_logger.info(String.format("Connecting to VNC server %s:%s ...", host, port));
         try {
             NioSocket nioSocket = new NioSocket(host, port);
-            this.socketConnection = new NioSocketHandlerImpl(nioSocket);
+            this.nioSocketConnection = new NioSocketHandlerImpl(nioSocket);
         } catch (Exception e) {
-            s_logger.error("Cannot create socket to host: " + host + " and port " + port, e);
+            s_logger.error(String.format("Cannot create socket to host: %s and port %s: %s", host, port,
+                    e.getMessage()), e);
         }
     }
 
@@ -95,8 +101,8 @@ public class NoVncClient {
         webSocketReverseProxy.connect();
     }
 
-    public boolean isVncOverTunnel() {
-        return this.tunnelSocket != null;
+    public boolean isVncOverNioSocket() {
+        return this.nioSocketConnection != null;
     }
 
     public boolean isVncOverWebSocketConnection() {
@@ -118,8 +124,8 @@ public class NoVncClient {
     }
 
     private void setTunnelSocketStreams() throws IOException {
-        this.tunnelInputStream = new DataInputStream(this.tunnelSocket.getInputStream());
-        this.tunnelOutputStream = new DataOutputStream(this.tunnelSocket.getOutputStream());
+        this.is = new DataInputStream(this.socket.getInputStream());
+        this.os = new DataOutputStream(this.socket.getOutputStream());
     }
 
     public List<VncSecurity> getVncSecurityStack(int secType, String vmPassword, String host, int port) throws IOException {
@@ -136,14 +142,15 @@ public class NoVncClient {
 
         // Read protocol version
         byte[] buf = new byte[12];
-        tunnelInputStream.readFully(buf);
+        is.readFully(buf);
         String rfbProtocol = new String(buf);
 
         // Server should use RFB protocol 3.x
         if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR)) {
-            String msg = "Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".";
+            String msg = String.format("Cannot handshake with VNC server. Unsupported protocol version: [%s]",
+                    rfbProtocol);
             s_logger.error(msg);
-            throw new RuntimeException(msg);
+            throw new CloudRuntimeException(msg);
         }
 
         // Proxy that we support RFB 3.3 only
@@ -156,14 +163,14 @@ public class NoVncClient {
     public byte[] authenticateTunnel(String password)
             throws IOException {
         // Read security type
-        int authType = tunnelInputStream.readInt();
+        int authType = is.readInt();
 
         switch (authType) {
             case RfbConstants.CONNECTION_FAILED: {
                 // Server forbids to connect. Read reason and throw exception
-                int length = tunnelInputStream.readInt();
+                int length = is.readInt();
                 byte[] buf = new byte[length];
-                tunnelInputStream.readFully(buf);
+                is.readFully(buf);
                 String reason = new String(buf, RfbConstants.CHARSET);
 
                 s_logger.error("Authentication to VNC server is failed. Reason: " + reason);
@@ -177,7 +184,7 @@ public class NoVncClient {
 
             case RfbConstants.VNC_AUTH: {
                 s_logger.info("VNC server requires password authentication");
-                doVncAuth(tunnelInputStream, tunnelOutputStream, password);
+                doVncAuth(is, os, password);
                 break;
             }
 
@@ -215,28 +222,10 @@ public class NoVncClient {
 
         // Read security result
         int authResult = in.readInt();
-
-        String msg;
-        switch (authResult) {
-            case RfbConstants.VNC_AUTH_OK: {
-                // Nothing to do
-                break;
-            }
-
-            case RfbConstants.VNC_AUTH_TOO_MANY:
-                msg = "Connection to VNC server failed: too many wrong attempts.";
-                s_logger.error(msg);
-                throw new RuntimeException(msg);
-
-            case RfbConstants.VNC_AUTH_FAILED:
-                msg = "Connection to VNC server failed: wrong password.";
-                s_logger.error(msg);
-                throw new RuntimeException(msg);
-
-            default:
-                msg = "Connection to VNC server failed, reason code: " + authResult;
-                s_logger.error(msg);
-                throw new RuntimeException(msg);
+        Pair<Boolean, String> pair = processSecurityResultType(authResult);
+        if (!pair.first()) {
+            s_logger.error(pair.second());
+            throw new CloudRuntimeException(pair.second());
         }
     }
 
@@ -252,7 +241,9 @@ public class NoVncClient {
         return (byte) (b1_8 | b2_7 | b3_6 | b4_5 | b5_4 | b6_3 | b7_2 | b8_1);
     }
 
-    public static byte[] encodePassword(byte[] challenge, String password) throws Exception {
+    public static byte[] encodePassword(byte[] challenge, String password) throws InvalidKeyException,
+            InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException,
+            IllegalBlockSizeException, BadPaddingException {
         // VNC password consist of up to eight ASCII characters.
         byte[] key = { 0, 0, 0, 0, 0, 0, 0, 0 }; // Padding
         byte[] passwordAsciiBytes = password.getBytes(Charset.availableCharsets().get("US-ASCII"));
@@ -272,84 +263,98 @@ public class NoVncClient {
         return cipher.doFinal(challenge);
     }
 
+    private void agreeVEncryptVersion() throws IOException {
+        int majorVEncryptVersion = nioSocketConnection.readUnsignedInteger(8);
+        int minorVEncryptVersion = nioSocketConnection.readUnsignedInteger(8);
+        int vEncryptVersion = (majorVEncryptVersion << 8) | minorVEncryptVersion;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("VEncrypt version offered by the server: " + vEncryptVersion);
+        }
+        nioSocketConnection.writeUnsignedInteger(8, majorVEncryptVersion);
+        if (vEncryptVersion >= 0x0002) {
+            nioSocketConnection.writeUnsignedInteger(8, 2);
+            nioSocketConnection.flushWriteBuffer();
+        } else {
+            nioSocketConnection.writeUnsignedInteger(8, 0);
+            nioSocketConnection.flushWriteBuffer();
+            throw new CloudRuntimeException("Server reported an unsupported VeNCrypt version");
+        }
+        int ack = nioSocketConnection.readUnsignedInteger(8);
+        if (ack != 0) {
+            throw new IOException("The VNC server did not agree on the VEncrypt version");
+        }
+    }
+
+    private int selectVEncryptSubtype() {
+        int numberOfSubtypes = nioSocketConnection.readUnsignedInteger(8);
+        if (numberOfSubtypes <= 0) {
+            throw new CloudRuntimeException("The server reported no VeNCrypt sub-types");
+        }
+        for (int i = 0; i < numberOfSubtypes; i++) {
+            nioSocketConnection.waitForBytesAvailableForReading(4);
+            int subtype = nioSocketConnection.readUnsignedInteger(32);
+            if (subtype == RfbConstants.V_ENCRYPT_X509_VNC) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.info("Selected VEncrypt subtype " + subtype);
+                }
+                return subtype;
+            }
+        }
+        throw new CloudRuntimeException("Could not select a VEncrypt subtype");
+    }
     /**
      * Obtain the VEncrypt subtype from the VNC server
      *
      * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#724vencrypt
      */
     protected int getVEncryptSecuritySubtype() throws IOException {
-        int majorVEncryptVersion = socketConnection.readUnsignedInteger(8);
-        int minorVEncryptVersion = socketConnection.readUnsignedInteger(8);
-        int vEncryptVersion = (majorVEncryptVersion << 8) | minorVEncryptVersion;
-        s_logger.debug("VEncrypt version: " + vEncryptVersion);
-        socketConnection.writeUnsignedInteger(8, majorVEncryptVersion);
-        if (vEncryptVersion >= 0x0002) {
-            socketConnection.writeUnsignedInteger(8, 2);
-            socketConnection.flushWriteBuffer();
-        } else {
-            socketConnection.writeUnsignedInteger(8, 0);
-            socketConnection.flushWriteBuffer();
-            throw new CloudRuntimeException("Server reported an unsupported VeNCrypt version");
-        }
-        int ack = socketConnection.readUnsignedInteger(8);
-        if (ack != 0) {
-            throw new IOException("The VNC server did not agree on the VEncrypt version");
-        }
+        agreeVEncryptVersion();
 
-        int numberOfSubtypes = socketConnection.readUnsignedInteger(8);
-        if (numberOfSubtypes <= 0) {
-            throw new CloudRuntimeException("The server reported no VeNCrypt sub-types");
-        }
-        int selectedSubtype = 0;
-        for (int i = 0; i < numberOfSubtypes; i++) {
-            socketConnection.waitForBytesAvailableForReading(4);
-            int subtype = socketConnection.readUnsignedInteger(32);
-            if (subtype == RfbConstants.V_ENCRYPT_X509_VNC) {
-                selectedSubtype = subtype;
-                break;
-            }
-        }
-
-        s_logger.info("Selected VEncrypt subtype " + selectedSubtype);
-        socketConnection.writeUnsignedInteger(32, selectedSubtype);
-        socketConnection.flushWriteBuffer();
+        int selectedSubtype = selectVEncryptSubtype();
+        nioSocketConnection.writeUnsignedInteger(32, selectedSubtype);
+        nioSocketConnection.flushWriteBuffer();
 
         return selectedSubtype;
     }
 
     public int read(byte[] b) throws IOException {
-        return tunnelInputStream.read(b);
+        return is.read(b);
     }
 
     public void write(byte[] b) throws IOException {
         if (isVncOverWebSocketConnection()) {
             proxyMsgOverWebSocketConnection(ByteBuffer.wrap(b));
-        } else if (!isVncOverTunnel()) {
-            this.socketConnection.writeBytes(b, 0, b.length);
+        } else if (isVncOverNioSocket()) {
+            writeDataNioSocketConnection(b);
         } else {
-            tunnelOutputStream.write(b);
+            os.write(b);
         }
     }
 
-    public void writeFrame(Frame frame) {
-        byte[] data = new byte[frame.getPayloadLength()];
-        frame.getPayload().get(data);
+    private void writeDataAfterSecurityPhase(byte[] data) {
+        nioSocketConnection.writeBytes(ByteBuffer.wrap(data), data.length);
+        nioSocketConnection.flushWriteBuffer();
+        if (writerLeft == null) {
+            writerLeft = 3;
+            setWaitForNoVnc(false);
+        } else if (writerLeft > 0) {
+            writerLeft--;
+        }
+    }
 
+    private void writeDataBeforeSecurityPhase(byte[] data) {
+        nioSocketConnection.writeBytes(data, 0, data.length);
+        if (flushAfterReceivingNoVNCData) {
+            nioSocketConnection.flushWriteBuffer();
+            flushAfterReceivingNoVNCData = false;
+        }
+    }
+
+    protected void writeDataNioSocketConnection(byte[] data) {
         if (securityPhaseCompleted) {
-            socketConnection.writeBytes(ByteBuffer.wrap(data), data.length);
-            socketConnection.flushWriteBuffer();
-            if (writerLeft == null) {
-                writerLeft = 3;
-                setWaitForNoVnc(false);
-            } else if (writerLeft > 0) {
-                writerLeft--;
-            }
+            writeDataAfterSecurityPhase(data);
         } else {
-            socketConnection.writeBytes(data, 0, data.length);
-            if (flushAfterReceivingNoVNCData) {
-                socketConnection.flushWriteBuffer();
-                flushAfterReceivingNoVNCData = false;
-            }
+            writeDataBeforeSecurityPhase(data);
         }
 
         if (!securityPhaseCompleted || (writerLeft != null && writerLeft == 0)) {
@@ -367,7 +372,7 @@ public class NoVncClient {
 
         s_logger.debug("Reading RFB protocol version");
 
-        socketConnection.readBytes(verStr, 12);
+        nioSocketConnection.readBytes(verStr, 12);
 
         verStr.clear();
         String supportedRfbVersion = RfbConstants.RFB_PROTOCOL_VERSION + "\n";
@@ -377,6 +382,16 @@ public class NoVncClient {
         return verStr;
     }
 
+    public void waitForNoVNCReply() {
+        int cycles = 0;
+        while (isWaitForNoVnc()) {
+            cycles++;
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Waited %d cycles for NoVnc", cycles));
+        }
+    }
+
     /**
      * Once the protocol version has been decided, the server and client must agree on the type
      * of security to be used on the connection.
@@ -384,43 +399,38 @@ public class NoVncClient {
      * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#712security
      */
     public int handshakeSecurityType() {
-        while (isWaitForNoVnc()) {
-            s_logger.trace("Waiting for noVNC msg received");
+        waitForNoVNCReply();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Processing security types message");
         }
-        s_logger.debug("Processing security types message");
 
-        int secType = RfbConstants.CONNECTION_FAILED;
+        int selectedSecurityType = RfbConstants.CONNECTION_FAILED;
 
-        List<Integer> secTypes = Arrays.asList(1, 2, 19, 261);
+        List<Integer> supportedSecurityTypes = Arrays.asList(RfbConstants.NO_AUTH, RfbConstants.VNC_AUTH,
+                RfbConstants.V_ENCRYPT, RfbConstants.V_ENCRYPT_X509_VNC);
 
-        socketConnection.waitForBytesAvailableForReading(1);
-        int nServerSecTypes = socketConnection.readUnsignedInteger(8);
-        if (nServerSecTypes == 0) {
+        nioSocketConnection.waitForBytesAvailableForReading(1);
+        int serverOfferedSecurityTypes = nioSocketConnection.readUnsignedInteger(8);
+        if (serverOfferedSecurityTypes == 0) {
             throw new CloudRuntimeException("No security types provided by the server");
         }
 
-        Iterator<Integer> j;
-        for (int i = 0; i < nServerSecTypes; i++) {
-            int serverSecType = socketConnection.readUnsignedInteger(8);
-            s_logger.debug("Server offers security type " + serverSecType);
-
-            /*
-             * Use the first type sent by server which matches client's type.
-             * It means server's order specifies priority.
-             */
-            if (secType == RfbConstants.CONNECTION_FAILED) {
-                for (j = secTypes.iterator(); j.hasNext(); ) {
-                    int refType = j.next();
-                    if (refType == serverSecType) {
-                        secType = refType;
-                        break;
-                    }
+        for (int i = 0; i < serverOfferedSecurityTypes; i++) {
+            int serverSecurityType = nioSocketConnection.readUnsignedInteger(8);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Server offers security type: %s", serverSecurityType));
+            }
+            if (supportedSecurityTypes.contains(serverSecurityType)) {
+                selectedSecurityType = serverSecurityType;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Selected supported security type: %s", selectedSecurityType));
                 }
+                break;
             }
         }
         this.flushAfterReceivingNoVNCData = true;
         setWaitForNoVnc(true);
-        return secType;
+        return selectedSecurityType;
     }
 
     private final Object lock = new Object();
@@ -438,75 +448,83 @@ public class NoVncClient {
 
     private boolean waitForNoVnc = false;
 
-    public void processSecurityResultMsg(int secType) {
-        s_logger.info("Processing security result message");
-        int result;
-
-        if (secType == RfbConstants.NO_AUTH) {
-            result = RfbConstants.VNC_AUTH_OK;
-        } else {
-            socketConnection.waitForBytesAvailableForReading(1);
-            result = socketConnection.readUnsignedInteger(32);
-        }
-
-        switch (result) {
-            case RfbConstants.VNC_AUTH_OK:
-                s_logger.info("Security completed");
-                handleSecurityCompleted();
-                return;
-            case RfbConstants.VNC_AUTH_FAILED:
-                s_logger.debug("auth failed");
+    private Pair<Boolean, String> processSecurityResultType(int authResult) {
+        boolean result = false;
+        String message;
+        switch (authResult) {
+            case RfbConstants.VNC_AUTH_OK: {
+                result = true;
+                message = "Security completed";
                 break;
+            }
             case RfbConstants.VNC_AUTH_TOO_MANY:
-                s_logger.debug("auth failed - too many tries");
+                message = "Connection to VNC server failed: too many wrong attempts.";
+                break;
+            case RfbConstants.VNC_AUTH_FAILED:
+                message = "Connection to VNC server failed: wrong password.";
                 break;
             default:
-                throw new CloudRuntimeException("Unknown security result from server");
+                message = String.format("Connection to VNC server failed, reason code: %s", authResult);
         }
-        String reason = socketConnection.readString();
-        throw new CloudRuntimeException(reason);
+        return new Pair<>(result, message);
     }
 
-    private void handleSecurityCompleted() {
-        s_logger.info("Security completed");
-        this.securityPhaseCompleted = true;
+    public void processSecurityResultMsg(int securityType) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Processing security result message");
+        }
+
+        int result;
+        if (securityType == RfbConstants.NO_AUTH) {
+            result = RfbConstants.VNC_AUTH_OK;
+        } else {
+            nioSocketConnection.waitForBytesAvailableForReading(1);
+            result = nioSocketConnection.readUnsignedInteger(32);
+        }
+
+        Pair<Boolean, String> securityResultType = processSecurityResultType(result);
+        if (securityResultType.first()) {
+            securityPhaseCompleted = true;
+        } else {
+            s_logger.error(securityResultType.second());
+            String reason = nioSocketConnection.readString();
+            String msg = String.format("%s - Reason: %s", securityResultType.second(), reason);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     public byte[] readServerInit() {
-        return socketConnection.readServerInit();
+        return nioSocketConnection.readServerInit();
     }
 
     public int getNextBytes() {
-        return socketConnection.readNextBytes();
+        return nioSocketConnection.readNextBytes();
     }
 
     public boolean isTLSConnectionEstablished() {
-        return socketConnection.isTLSConnection();
+        return nioSocketConnection.isTLSConnection();
     }
 
     public void readBytes(byte[] arr, int len) {
-        socketConnection.readNextByteArray(arr, len);
+        nioSocketConnection.readNextByteArray(arr, len);
     }
 
     public void processHandshakeSecurityType(int secType, String vmPassword, String host, int port) {
-        while (isWaitForNoVnc()) {
-            s_logger.trace("Waiting for noVNC msg received");
-        }
+        waitForNoVNCReply();
 
         try {
             List<VncSecurity> vncSecurityStack = getVncSecurityStack(secType, vmPassword, host, port);
             for (VncSecurity security : vncSecurityStack) {
-                security.process(this.socketConnection);
+                security.process(this.nioSocketConnection);
                 if (security instanceof VncTLSSecurity) {
                     s_logger.debug("Setting new streams with SSLEngineManger after TLS security has passed");
                     NioSocketSSLEngineManager sslEngineManager = ((VncTLSSecurity) security).getSSLEngineManager();
-                    socketConnection.startTLSConnection(sslEngineManager);
+                    nioSocketConnection.startTLSConnection(sslEngineManager);
                 }
             }
         } catch (IOException e) {
             s_logger.error("Error processing handshake security type " + secType, e);
         }
-
-        processSecurityResultMsg(secType);
     }
 }
