@@ -28,7 +28,7 @@ export default {
       permission: ['listConfigurations'],
       listView: true,
       popup: true,
-      component: () => import('@/views/setting/GlobalConfiguration.vue')
+      component: () => import('@/views/setting/ConfigurationTab.vue')
     },
     {
       name: 'ldapsetting',

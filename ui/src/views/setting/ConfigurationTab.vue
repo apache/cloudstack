@@ -16,75 +16,347 @@
 // under the License.
 
 <template>
-  <a-table
-    size="small"
-    :showHeader="false"
-    :columns="columns"
-    :dataSource="config"
-    :rowKey="record => record.name"
-    :pagination="false"
-    :rowClassName="getRowClassName"
-    style="overflow-y: auto; margin-left: 10px" >
-
-    <template #name="{ record }">
-      <span :style="hierarchyExists ? 'padding-left: 0px;' : 'padding-left: 25px;'">
-        <b><span v-if="record.parent">└─ &nbsp;</span>{{record.displaytext }} </b> {{ ' (' + record.name + ')' }}
-      </span>
-      <br/>
-      <span :style="record.parent ? 'padding-left: 50px; display:block' : 'padding-left: 25px; display:block'">{{ record.description }}</span>
-    </template>
-
-    <template #value="{ record }">
-      <ConfigurationValue :configrecord="record" />
-    </template>
-
-  </a-table>
+  <a-row :gutter="12">
+    <a-col :md="24">
+      <a-card class="breadcrumb-card">
+        <a-col :span="12" style="display: inline-flex">
+          <breadcrumb style="padding-top: 6px; padding-left: 8px" />
+          <a-button
+            style="margin-left: 12px; margin-top: 4px"
+            :loading="loading"
+            size="small"
+            shape="round"
+            @click="fetchConfigurationData()" >
+            <template #icon><ReloadOutlined /></template>
+            {{ $t('label.refresh') }}
+          </a-button>
+        </a-col>
+        <a-col :span="12" style="float: right">
+          <a-input-search
+          style="width: 25vw; float: right; margin-bottom: 10px; z-index: 8; display: flex"
+          :placeholder="$t('label.search')"
+          v-model:value="filter"
+          @search="fetchConfigurationData()"
+          v-focus="true" />
+        </a-col>
+      </a-card>
+    </a-col>
+    <a-spin :spinning="configLoading" style="background-color: #fff;">
+      <a-card style="margin-left: 10px;">
+        <a-tabs
+          tabPosition="left"
+          :animated="false"
+          :activeKey="this.group || ''"
+          @change="changeGroupTab" >
+          <a-tab-pane
+            key=''
+            tab='All Settings' >
+              <ConfigurationTable
+                :columns="columns"
+                :config="config"
+                :count="count"
+                :page="page"
+                :pagesize="pagesize"
+                @change-page="changePage" />
+          </a-tab-pane>
+          <a-tab-pane
+            v-for="(group) in groups"
+            :key="group.name"
+            :tab="group.name" >
+            <a-tabs
+              :activeKey="this.subgroup || ''"
+              :animated="false"
+              @change="changeSubgroupTab" >
+              <a-tab-pane
+                v-for="(subgroup) in group.subgroup"
+                :key="subgroup.name"
+                :tab="subgroup.name" >
+                <ConfigurationHierarchy
+                  :columns="columns"
+                  :config="config" />
+              </a-tab-pane>
+            </a-tabs>
+          </a-tab-pane>
+        </a-tabs>
+      </a-card>
+    </a-spin>
+  </a-row>
 </template>
 
 <script>
-import ConfigurationValue from './ConfigurationValue'
+import { api } from '@/api'
+import { mixin, mixinDevice } from '@/utils/mixin.js'
+import Breadcrumb from '@/components/widgets/Breadcrumb'
+import Console from '@/components/widgets/Console'
+import OsLogo from '@/components/widgets/OsLogo'
+import Status from '@/components/widgets/Status'
+import ActionButton from '@/components/view/ActionButton'
+import InfoCard from '@/components/view/InfoCard'
+import QuickView from '@/components/view/QuickView'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import ConfigurationHierarchy from './ConfigurationHierarchy'
+import ConfigurationTable from './ConfigurationTable'
 
 export default {
   name: 'ConfigurationTab',
   components: {
-    ConfigurationValue
+    Breadcrumb,
+    Console,
+    OsLogo,
+    Status,
+    ActionButton,
+    InfoCard,
+    QuickView,
+    TooltipButton,
+    ConfigurationHierarchy,
+    ConfigurationTable
   },
+  mixins: [mixin, mixinDevice],
   props: {
-    config: {
-      type: Array,
-      default: () => { return [] }
+    loading: {
+      type: Boolean,
+      default: false
     },
-    columns: {
+    actions: {
       type: Array,
-      default: () => { return [] }
-    }
-  },
-  computed: {
-    hierarchyExists () {
-      for (var c of this.config) {
-        if (c.children) {
-          return true
-        }
-      }
-      return false
+      default: () => []
     }
   },
   data () {
     return {
+      groups: [],
+      config: [],
+      configLoading: this.loading,
+      page: 1,
+      pagesize: this.$store.getters.defaultListViewPageSize,
+      group: '',
+      subgroup: '',
+      filter: '',
+      count: 0,
       apiName: 'listConfigurations',
-      configdata: []
+      columns: [
+        {
+          title: 'name',
+          dataIndex: 'name',
+          slots: { customRender: 'name' }
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          slots: { customRender: 'value' },
+          width: '29%'
+        }
+      ]
     }
   },
+  watch: {
+    '$route.fullPath': function () {
+      this.group = this.$route.query.group || ''
+      this.subgroup = this.$route.query.subgroup || ''
+      this.page = parseInt(this.$route.query.page) || 1
+      this.pagesize = parseInt(this.$route.query.pagesize) || this.pagesize
+      this.fetchConfigurationData()
+    }
+  },
+  created () {
+    this.fetchConfigurationGroups()
+  },
   methods: {
-    getRowClassName (record, index) {
-      if (record.parent) {
-        return 'child-row'
+    fetchConfigurationGroups () {
+      this.configLoading = true
+      const params = {
+        pagesize: -1
       }
-      if (index % 2 === 0) {
-        return 'light-row'
+      api('listConfigurationGroups', params).then(response => {
+        this.groups = response.listconfigurationgroupsresponse.configurationgroup
+        console.log(this.groups)
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.loading.setting'))
+      }).finally(() => {
+        this.group = this.$route.query.group || ''
+        this.subgroup = this.$route.query.subgroup || ''
+        this.fetchConfigurationData()
+        this.configLoading = false
+      })
+    },
+    fetchConfigurationData () {
+      this.configLoading = true
+      const params = {
+        listAll: true
       }
-      return 'dark-row'
+      if (this.group.length > 0) {
+        params.group = this.group
+      } else {
+        params.pagesize = this.pagesize || 20
+        params.page = this.page || 1
+      }
+      if (this.subgroup.length > 0) {
+        params.subgroup = this.subgroup
+      }
+      if (this.filter) {
+        params.keyword = this.filter
+      }
+
+      console.table(params)
+      console.time('fetchConfigurationData')
+      api('listConfigurations', params).then(response => {
+        this.config = []
+        let config = response.listconfigurationsresponse.configuration || []
+        this.count = response.listconfigurationsresponse.count || 0
+        if (this.group.length > 0) {
+          console.time('hierarchy')
+          config = this.convertConfigToHierarchy(config)
+          console.timeEnd('hierarchy')
+        }
+        this.config = config
+        // console.log(this.config)
+        console.timeEnd('fetchConfigurationData')
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.loading.setting'))
+      }).finally(() => {
+        this.configLoading = false
+      })
+    },
+    convertConfigToHierarchy (config) {
+      var hierarchy = {}
+      for (var c of config) {
+        if (c.parent && c.parent.length !== 0) {
+          if (hierarchy[c.parent]) {
+            hierarchy[c.parent].push(c)
+          } else {
+            hierarchy[c.parent] = [c]
+          }
+        }
+      }
+      for (c of config) {
+        if (hierarchy[c.name]) {
+          c.children = hierarchy[c.name]
+        }
+      }
+      config = config.filter(c => !c.parent)
+      return config
+    },
+    changePage (page, pagesize) {
+      console.log(page, pagesize)
+      const query = {}
+      query.page = page
+      query.pagesize = pagesize
+      query.filter = this.filter
+      this.group = ''
+      this.subgroup = ''
+      this.page = page
+      this.pagesize = pagesize
+      this.pushToHistory(query)
+      this.fetchConfigurationData()
+    },
+    pushToHistory (query) {
+      history.pushState(
+        {},
+        null,
+        '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+          return (
+            encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+          )
+        }).join('&')
+      )
+    },
+    changeGroupTab (e) {
+      this.group = e
+      console.log('changeGroupTab : ' + e)
+      if (this.group.length > 0) {
+        for (const groupIndex in this.groups) {
+          if (this.groups[groupIndex].name === this.group) {
+            const group = this.groups[groupIndex]
+            this.subgroup = group.subgroup[0].name
+          }
+        }
+      } else {
+        this.group = ''
+        this.subgroup = ''
+        this.changePage(1, this.pagesize)
+      }
+      if (this.group.length > 0 && this.subgroup.length > 0) {
+        const query = Object.assign({}, this.$route.query)
+        delete query.page
+        delete query.pagesize
+        query.group = this.group
+        query.subgroup = this.subgroup
+        query.filter = this.filter
+        // this.pagesize = -1
+        this.page = 0
+        this.pushToHistory(query)
+        this.fetchConfigurationData()
+      }
+      console.log('End changeGroupTab')
+    },
+    changeSubgroupTab (e) {
+      this.subgroup = e || this.subgroup
+      if (this.group.length > 0 && this.subgroup.length > 0) {
+        const query = Object.assign({}, this.$route.query)
+        delete query.page
+        delete query.pagesize
+        query.group = this.group
+        query.subgroup = this.subgroup
+        // this.pagesize = -1
+        this.page = 0
+        this.pushToHistory(query)
+        this.fetchConfigurationData()
+      } else {
+        history.pushState(
+          {},
+          null,
+          '#' + this.$route.path
+        )
+      }
+      console.log('End changeSubgroupTab')
     }
   }
 }
+
 </script>
+
+<style scoped lang="scss">
+  .breadcrumb-card {
+    margin-left: -24px;
+    margin-right: -24px;
+    margin-top: -16px;
+    margin-bottom: 12px;
+  }
+
+  .shift-btns {
+    display: flex;
+  }
+
+  .shift-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+
+    &:not(:last-child) {
+      margin-right: 5px;
+    }
+
+    &--rotated {
+      font-size: 10px;
+      transform: rotate(90deg);
+    }
+
+  }
+
+  .alert-notification-threshold {
+    background-color: rgba(255, 231, 175, 0.75);
+    color: #e87900;
+    padding: 10%;
+  }
+
+  .alert-disable-threshold {
+    background-color: rgba(255, 190, 190, 0.75);
+    color: #f50000;
+    padding: 10%;
+  }
+</style>

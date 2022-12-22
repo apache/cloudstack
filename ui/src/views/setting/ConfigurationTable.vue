@@ -61,7 +61,7 @@ export default {
   components: {
     ConfigurationValue
   },
-  name: 'AllConfigurationsTab',
+  name: 'ConfigurationTable',
   props: {
     config: {
       type: Array,
