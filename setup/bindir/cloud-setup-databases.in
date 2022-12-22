@@ -606,7 +606,7 @@ for example:
         self.parser.add_option("-f", "--db-files-path", action="store", dest="dbFilesPath", help="The path to find sql files to create initial database(s)")
         self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The cloudstack jar to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
-        self.parser.add_option("-g", "--encryptor-version", action="store", dest="encryptorVersion", default="",
+        self.parser.add_option("-g", "--encryptor-version", action="store", dest="encryptorVersion", default="V2",
                                help="The encryptor version to be used to encrypt the values in db.properties")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
         (self.options, self.args) = self.parser.parse_args()

@@ -53,6 +53,10 @@ public class CloudStackEncryptor {
             }
             return null;
         }
+
+        public static EncryptorVersion defaultVersion() {
+            return V2;
+        }
     }
 
     public CloudStackEncryptor(String password, String version, Class callerClass) {

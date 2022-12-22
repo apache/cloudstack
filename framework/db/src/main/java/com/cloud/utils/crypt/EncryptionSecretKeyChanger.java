@@ -290,9 +290,14 @@ public class EncryptionSecretKeyChanger {
             newMSKey = oldMSKey;
             System.out.println("New Management Secret Key is not provided. Skipping migrating db.properties");
         } else {
-            if (newEncryptorVersion == null && oldEncryptorVersion != null) {
-                newEncryptorVersion = oldEncryptorVersion;
+            if (newEncryptorVersion == null) {
+                if (StringUtils.isNotEmpty(oldEncryptorVersion)) {
+                    newEncryptorVersion = oldEncryptorVersion;
+                } else {
+                    newEncryptorVersion = CloudStackEncryptor.EncryptorVersion.defaultVersion().name();
+                }
             }
+            System.out.println("INFO: Migrate using encryptor version: " + newEncryptorVersion);
             if (!keyChanger.migrateProperties(dbPropsFile, dbProps, newMSKey, (newDBKey != null ? newDBKey : oldDBKey), newEncryptorVersion)) {
                 System.out.println("Failed to update db.properties");
                 return false;
