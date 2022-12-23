@@ -35,14 +35,26 @@ public class ControlStateTest extends TestCase {
         verifyHostControlState(null, null, ControlState.Unknown);
         verifyHostControlState(null, ResourceState.Enabled, ControlState.Unknown);
         verifyHostControlState(Status.Up, null, ControlState.Unknown);
+        verifyHostControlState(Status.Disconnected, null, ControlState.Unknown);
+        verifyHostControlState(Status.Down, null, ControlState.Unknown);
+
+        verifyHostControlState(Status.Unknown, null, ControlState.Unknown);
         verifyHostControlState(Status.Unknown, ResourceState.Enabled, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.ErrorInPrepareForMaintenance, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.PrepareForMaintenance, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.ErrorInMaintenance, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.Maintenance, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.Creating, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.Disabled, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.Error, ControlState.Unknown);
+        verifyHostControlState(Status.Unknown, ResourceState.Degraded, ControlState.Unknown);
 
         // Host is Up and Enabled
         verifyHostControlState(Status.Creating, ResourceState.Enabled, ControlState.Enabled);
         verifyHostControlState(Status.Connecting, ResourceState.Enabled, ControlState.Enabled);
         verifyHostControlState(Status.Up, ResourceState.Enabled, ControlState.Enabled);
 
-        // Host is Up and Disabled
+        // Host is Up and not Enabled
         verifyHostControlState(Status.Up, ResourceState.Creating, ControlState.Disabled);
         verifyHostControlState(Status.Up, ResourceState.Disabled, ControlState.Disabled);
         verifyHostControlState(Status.Up, ResourceState.Error, ControlState.Disabled);
@@ -54,13 +66,33 @@ public class ControlStateTest extends TestCase {
         verifyHostControlState(Status.Up, ResourceState.ErrorInMaintenance, ControlState.Maintenance);
         verifyHostControlState(Status.Up, ResourceState.Maintenance, ControlState.Maintenance);
 
-        // Host in other states
+        // Host is Creating and not Enabled
+        verifyHostControlState(Status.Creating, ResourceState.Creating, ControlState.Disabled);
+        verifyHostControlState(Status.Creating, ResourceState.Disabled, ControlState.Disabled);
+        verifyHostControlState(Status.Creating, ResourceState.Error, ControlState.Disabled);
+        verifyHostControlState(Status.Creating, ResourceState.Degraded, ControlState.Disabled);
+
+        // Host is Connecting and not Enabled
+        verifyHostControlState(Status.Connecting, ResourceState.Creating, ControlState.Disabled);
+        verifyHostControlState(Status.Connecting, ResourceState.Disabled, ControlState.Disabled);
+        verifyHostControlState(Status.Connecting, ResourceState.Error, ControlState.Disabled);
+        verifyHostControlState(Status.Connecting, ResourceState.Degraded, ControlState.Disabled);
+
+        // Host in other states and Enabled
         verifyHostControlState(Status.Down, ResourceState.Enabled, ControlState.Offline);
         verifyHostControlState(Status.Disconnected, ResourceState.Enabled, ControlState.Offline);
         verifyHostControlState(Status.Alert, ResourceState.Enabled, ControlState.Offline);
         verifyHostControlState(Status.Removed, ResourceState.Enabled, ControlState.Offline);
         verifyHostControlState(Status.Error, ResourceState.Enabled, ControlState.Offline);
         verifyHostControlState(Status.Rebalancing, ResourceState.Enabled, ControlState.Offline);
+
+        // Host in other states and Disabled
+        verifyHostControlState(Status.Down, ResourceState.Disabled, ControlState.Offline);
+        verifyHostControlState(Status.Disconnected, ResourceState.Disabled, ControlState.Offline);
+        verifyHostControlState(Status.Alert, ResourceState.Disabled, ControlState.Offline);
+        verifyHostControlState(Status.Removed, ResourceState.Disabled, ControlState.Offline);
+        verifyHostControlState(Status.Error, ResourceState.Disabled, ControlState.Offline);
+        verifyHostControlState(Status.Rebalancing, ResourceState.Disabled, ControlState.Offline);
     }
 
 }
