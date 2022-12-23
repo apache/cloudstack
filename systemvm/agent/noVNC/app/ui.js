@@ -506,13 +506,13 @@ const UI = {
         statusElem.textContent = text;
         statusElem.classList.add("noVNC_open");
 
-        // If no time was specified, show the status for 1.5 seconds
+        // If no time was specified, show the status for 4 seconds
         if (typeof time === 'undefined') {
-            time = 1500;
+            time = 4000;
         }
 
         // Error messages do not timeout
-        if (statusType !== 'error' && UI.getSetting('encrypt') === false) {
+        if (statusType !== 'error') {
             UI.statusTimeout = window.setTimeout(UI.hideStatus, time);
         }
     },
@@ -1115,7 +1115,7 @@ const UI = {
         if (UI.getSetting('encrypt')) {
             msg = _("Connected (encrypted) to ") + UI.desktopName;
         } else {
-            msg = _("Connected")
+            msg = _("Connected (unencrypted) to ") + UI.desktopName;
         }
         UI.showStatus(msg);
         UI.updateVisualState('connected');
