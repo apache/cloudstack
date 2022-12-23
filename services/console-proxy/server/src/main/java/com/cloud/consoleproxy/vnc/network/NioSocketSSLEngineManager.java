@@ -48,66 +48,74 @@ public class NioSocketSSLEngineManager {
         peerNetData = ByteBuffer.allocate(pktBufSize);
     }
 
+    private void handshakeNeedUnwrap(ByteBuffer peerAppData) throws SSLException {
+        peerNetData.flip();
+        SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
+        peerNetData.compact();
+
+        switch (result.getStatus()) {
+            case BUFFER_UNDERFLOW:
+                int avail = inputStream.getReadBytesAvailableToFitSize(1, peerNetData.remaining(),
+                        false);
+                inputStream.readBytes(peerNetData, avail);
+                break;
+            case OK:
+            case BUFFER_OVERFLOW:
+                break;
+            case CLOSED:
+                engine.closeInbound();
+                break;
+        }
+    }
+
+    private void handshakeNeedWrap(ByteBuffer myAppData) throws SSLException {
+        SSLEngineResult result = engine.wrap(myAppData, myNetData);
+
+        switch (result.getStatus()) {
+            case OK:
+                myNetData.flip();
+                outputStream.writeBytes(myNetData, myNetData.remaining());
+                outputStream.flushWriteBuffer();
+                myNetData.compact();
+                break;
+            case CLOSED:
+                engine.closeOutbound();
+                break;
+            case BUFFER_OVERFLOW:
+            case BUFFER_UNDERFLOW:
+                break;
+        }
+    }
+
+    private void handleHandshakeStatus(SSLEngineResult.HandshakeStatus handshakeStatus,
+                                       ByteBuffer peerAppData, ByteBuffer myAppData) throws SSLException {
+        switch (handshakeStatus) {
+            case NEED_UNWRAP:
+                handshakeNeedUnwrap(peerAppData);
+                break;
+
+            case NEED_WRAP:
+                handshakeNeedWrap(myAppData);
+                break;
+
+            case NEED_TASK:
+                executeTasks();
+                break;
+        }
+    }
+
     public void doHandshake() throws SSLException {
         engine.beginHandshake();
-        SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
+        SSLEngineResult.HandshakeStatus handshakeStatus = engine.getHandshakeStatus();
 
-        SSLEngineResult res;
         int appBufSize = engine.getSession().getApplicationBufferSize();
         ByteBuffer peerAppData = ByteBuffer.allocate(appBufSize);
         ByteBuffer myAppData = ByteBuffer.allocate(appBufSize);
 
-        while (hs != SSLEngineResult.HandshakeStatus.FINISHED &&
-                hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-
-            switch (hs) {
-
-                case NEED_UNWRAP:
-                    // Receive handshaking data from peer
-                    peerNetData.flip();
-                    res = engine.unwrap(peerNetData, peerAppData);
-                    peerNetData.compact();
-
-                    // Check status
-                    switch (res.getStatus()) {
-                        case BUFFER_UNDERFLOW:
-                            int avail = inputStream.getReadBytesAvailableToFitSize(1, peerNetData.remaining(),
-                                    false);
-                            inputStream.readBytes(peerNetData, avail);
-                            break;
-                        case OK:
-                            // Process incoming handshaking data
-                            break;
-                        case CLOSED:
-                            engine.closeInbound();
-                            break;
-                    }
-                    break;
-
-                case NEED_WRAP:
-                    // Generate handshaking data
-                    res = engine.wrap(myAppData, myNetData);
-
-                    // Check status
-                    switch (res.getStatus()) {
-                        case OK:
-                            myNetData.flip();
-                            outputStream.writeBytes(myNetData, myNetData.remaining());
-                            outputStream.flushWriteBuffer();
-                            myNetData.compact();
-                            break;
-                        case CLOSED:
-                            engine.closeOutbound();
-                            break;
-                    }
-                    break;
-
-                case NEED_TASK:
-                    // Handle blocking tasks
-                    executeTasks();
-                    break;
-            }
-            hs = engine.getHandshakeStatus();
+        while (handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED &&
+                handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+            handleHandshakeStatus(handshakeStatus, peerAppData, myAppData);
+            handshakeStatus = engine.getHandshakeStatus();
         }
     }
 
@@ -119,25 +127,24 @@ public class NioSocketSSLEngineManager {
     }
 
     public int read(ByteBuffer data) throws IOException {
-        // Read SSL/TLS encoded data from peer
         peerNetData.flip();
-        SSLEngineResult res = engine.unwrap(peerNetData, data);
+        SSLEngineResult result = engine.unwrap(peerNetData, data);
         peerNetData.compact();
-        switch (res.getStatus()) {
-            case OK :
-                return res.bytesProduced();
 
+        switch (result.getStatus()) {
+            case OK :
+                return result.bytesProduced();
             case BUFFER_UNDERFLOW:
                 // attempt to drain the underlying buffer first
                 int need = peerNetData.remaining();
                 int available = inputStream.getReadBytesAvailableToFitSize(1, need, false);
                 inputStream.readBytes(peerNetData, available);
                 break;
-
             case CLOSED:
                 engine.closeInbound();
                 break;
-
+            case BUFFER_OVERFLOW:
+                break;
         }
         return 0;
     }
@@ -145,9 +152,9 @@ public class NioSocketSSLEngineManager {
     public int write(ByteBuffer data) throws IOException {
         int n = 0;
         while (data.hasRemaining()) {
-            SSLEngineResult res = engine.wrap(data, myNetData);
-            n += res.bytesConsumed();
-            switch (res.getStatus()) {
+            SSLEngineResult result = engine.wrap(data, myNetData);
+            n += result.bytesConsumed();
+            switch (result.getStatus()) {
                 case OK:
                     myNetData.flip();
                     outputStream.writeBytes(myNetData, myNetData.remaining());
@@ -156,7 +163,6 @@ public class NioSocketSSLEngineManager {
                     break;
 
                 case BUFFER_OVERFLOW:
-                    // Make room in the buffer by flushing the outstream
                     myNetData.flip();
                     outputStream.writeBytes(myNetData, myNetData.remaining());
                     myNetData.compact();
@@ -164,6 +170,9 @@ public class NioSocketSSLEngineManager {
 
                 case CLOSED:
                     engine.closeOutbound();
+                    break;
+
+                case BUFFER_UNDERFLOW:
                     break;
             }
         }

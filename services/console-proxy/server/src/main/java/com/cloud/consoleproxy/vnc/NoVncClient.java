@@ -42,6 +42,7 @@ import com.cloud.consoleproxy.vnc.security.VncTLSSecurity;
 import com.cloud.consoleproxy.websocket.WebSocketReverseProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.eclipse.jetty.websocket.api.Session;
 
 import javax.crypto.BadPaddingException;
@@ -223,7 +224,8 @@ public class NoVncClient {
         // Read security result
         int authResult = in.readInt();
         Pair<Boolean, String> pair = processSecurityResultType(authResult);
-        if (!pair.first()) {
+        boolean success = BooleanUtils.toBoolean(pair.first());
+        if (!success) {
             s_logger.error(pair.second());
             throw new CloudRuntimeException(pair.second());
         }
@@ -483,7 +485,8 @@ public class NoVncClient {
         }
 
         Pair<Boolean, String> securityResultType = processSecurityResultType(result);
-        if (securityResultType.first()) {
+        boolean success = BooleanUtils.toBoolean(securityResultType.first());
+        if (success) {
             securityPhaseCompleted = true;
         } else {
             s_logger.error(securityResultType.second());

@@ -172,7 +172,7 @@ public class NioSocketInputStream extends NioSocketStream {
         ret = ArrayUtils.addAll(ret, readAndCopyUnsignedInteger(8).second());
         ret = ArrayUtils.addAll(ret, readAndCopyUnsignedInteger(8).second());
         skipReadBytes(3);
-        return ArrayUtils.addAll(ret, new byte[] {0, 0, 0});
+        return ArrayUtils.addAll(ret, (byte) 0, (byte) 0, (byte) 0);
     }
 
     protected int getNextBytes() {
