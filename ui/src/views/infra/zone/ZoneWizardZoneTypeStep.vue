@@ -77,7 +77,7 @@
                 <span>{{ $t('label.edge.zone') }}</span>
               </a-col>
               <a-col :md="18" :lg="18" style="margin-top: 15px;">
-                <a-card class="zone-support">{{ $t(zoneDescription.Edge) }}</a-card>
+                <a-card class="zone-support"><span v-html="$t(zoneDescription.Edge)"></span></a-card>
               </a-col>
             </a-row>
           </a-card>
@@ -148,6 +148,9 @@ export default {
     },
     securityGroupsEnabled () {
       return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
+    },
+    isEdge () {
+      return this.isAdvancedZone && (this.prefillContent?.isEdge || false)
     }
   },
   methods: {
@@ -155,7 +158,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         zoneType: this.zoneType,
-        securityGroupsEnabled: this.securityGroupsEnabled
+        securityGroupsEnabled: this.securityGroupsEnabled,
+        isEdge: this.isEdge
       })
       this.rules = reactive({
         zoneType: [{ required: true, message: this.$t('message.error.zone.type') }]
