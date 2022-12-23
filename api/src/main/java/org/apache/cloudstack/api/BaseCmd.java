@@ -248,15 +248,12 @@ public abstract class BaseCmd {
     }
 
     /**
-     * For some reason this method does not return the actual command name, but more a name that
-     * is used to create the response. So you can expect for a XCmd a value like xcmdresponse. Anyways
-     * this methods is used in too many places so for now instead of changing it we just create another
-     * method {@link BaseCmd#getActualCommandName()} that returns the value from {@link APICommand#name()}
-     *
-     * @return
+     * Retrieves the name defined in {@link APICommand#name()}, in lower case, with the prefix {@link BaseCmd#RESPONSE_SUFFIX}
      */
-    public abstract String getCommandName();
 
+    public String getCommandName() {
+        return getActualCommandName().toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    }
 
     /**
      * Gets the CommandName based on the class annotations: the value from {@link APICommand#name()}
