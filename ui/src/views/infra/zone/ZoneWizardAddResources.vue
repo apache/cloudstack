@@ -238,7 +238,7 @@ export default {
         {
           title: 'label.cisco.nexus1000v.ip.address',
           key: 'vsmipaddress',
-          placeHolder: 'message.error.nexus1000v.ipaddess',
+          placeHolder: 'message.error.nexus1000v.ipaddress',
           required: false,
           display: {
             vSwitchEnabled: true
