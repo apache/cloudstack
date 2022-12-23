@@ -137,8 +137,8 @@ labelPRBasedOnFilePath:
     - systemvm/debian/etc/systemd/*
   "component:templates":
     - tools/appliance/*
-  "component:travis":
-    - ".travis.yml"
+  "component:integration":
+    - ".github/workflows/*"
   "component:UI":
     - ui/*
   "component:unit-test":

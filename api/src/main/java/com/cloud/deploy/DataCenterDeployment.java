@@ -21,7 +21,9 @@ import com.cloud.vm.ReservationContext;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
@@ -35,6 +37,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     ReservationContext _context;
     List<Long> preferredHostIds = new ArrayList<>();
     boolean migrationPlan;
+    Map<Long, Integer> hostPriorities = new HashMap<>();
 
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
@@ -124,4 +127,32 @@ public class DataCenterDeployment implements DeploymentPlan {
                 "migrationPlan");
     }
 
+    @Override
+    public void adjustHostPriority(Long hostId, HostPriorityAdjustment adjustment) {
+        Integer currentPriority = hostPriorities.get(hostId);
+        if (currentPriority == null) {
+            currentPriority = DEFAULT_HOST_PRIORITY;
+        } else if (currentPriority.equals(PROHIBITED_HOST_PRIORITY)) {
+            return;
+        }
+        if (HostPriorityAdjustment.HIGHER.equals(adjustment)) {
+            hostPriorities.put(hostId, currentPriority + ADJUST_HOST_PRIORITY_BY);
+        } else if (HostPriorityAdjustment.LOWER.equals(adjustment)) {
+            hostPriorities.put(hostId, currentPriority - ADJUST_HOST_PRIORITY_BY);
+        } else if (HostPriorityAdjustment.DEFAULT.equals(adjustment)) {
+            hostPriorities.put(hostId, DEFAULT_HOST_PRIORITY);
+        } else if (HostPriorityAdjustment.PROHIBIT.equals(adjustment)) {
+            hostPriorities.put(hostId, PROHIBITED_HOST_PRIORITY);
+        }
+    }
+
+    @Override
+    public Map<Long, Integer> getHostPriorities() {
+        return hostPriorities;
+    }
+
+    @Override
+    public void setHostPriorities(Map<Long, Integer> priorities) {
+        this.hostPriorities = priorities;
+    }
 }

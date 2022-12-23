@@ -634,6 +634,7 @@ public class ApiConstants {
     public static final String PURPOSE = "purpose";
     public static final String IS_TAGGED = "istagged";
     public static final String INSTANCE_NAME = "instancename";
+    public static final String CONSIDER_LAST_HOST = "considerlasthost";
     public static final String START_VM = "startvm";
     public static final String HA_HOST = "hahost";
     public static final String CUSTOM_DISK_OFF_MIN_SIZE = "customdiskofferingminsize";

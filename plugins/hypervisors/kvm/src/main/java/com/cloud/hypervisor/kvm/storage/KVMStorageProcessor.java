@@ -101,6 +101,8 @@ import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
 import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
 import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
 import com.cloud.agent.direct.download.NfsDirectTemplateDownloader;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
@@ -123,7 +125,6 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateLocation;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -172,10 +173,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         storageLayer = new JavaStorageLayer();
         storageLayer.configure("StorageLayer", params);
 
-        String storageScriptsDir = (String)params.get("storage.scripts.dir");
-        if (storageScriptsDir == null) {
-            storageScriptsDir = getDefaultStorageScriptsDir();
-        }
+        String storageScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.STORAGE_SCRIPTS_DIR);
 
         _createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
         if (_createTmplPath == null) {
@@ -187,8 +185,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             throw new ConfigurationException("Unable to find the managesnapshot.sh");
         }
 
-        final String value = (String)params.get("cmds.timeout");
-        _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
+        _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
         return true;
     }
 
