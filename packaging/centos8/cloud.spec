@@ -304,7 +304,7 @@ ln -sf /etc/%{name}/ui/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/confi
 # Package mysql-connector-python
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/e9/93/4860cebd5ad3ff2664ad3c966490ccb46e3b88458b2095145bca11727ca4/setuptools-47.3.1-py3-none-any.whl
-wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/ef/c8/2e7f7feaf804b7206e6cc8fa3f0f49834a78f7cb127813d2c45e42d5f7bf/protobuf-3.20.1-py2.py3-none-any.whl
+wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/32/27/1141a8232723dcb10a595cc0ce4321dcbbd5215300bf4acfc142343205bf/protobuf-3.19.6-py2.py3-none-any.whl
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
 
 chmod 440 ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
@@ -423,7 +423,7 @@ fi
 
 %post management
 # Install mysql-connector-python
-pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.20.1-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.31-py2.py3-none-any.whl
+pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/protobuf-3.19.6-py2.py3-none-any.whl %{_datadir}/%{name}-management/setup/wheel/mysql_connector_python-8.0.31-py2.py3-none-any.whl
 
 /usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
 /usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
