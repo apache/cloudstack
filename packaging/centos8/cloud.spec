@@ -66,8 +66,8 @@ Requires: bzip2
 Requires: gzip
 Requires: unzip
 Requires: /sbin/mount.nfs
-Requires: openssh-clients
-Requires: nfs-utils
+Requires: (openssh-clients or openssh)
+Requires: (nfs-utils or nfs-client)
 Requires: iproute
 Requires: wget
 Requires: mysql
@@ -75,15 +75,15 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: genisoimage
+Requires: (genisoimage or mkisofs)
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
-Requires: iptables-services
-Requires: qemu-img
+Requires: (iptables-services or iptables)
 Requires: rng-tools
+Requires: (qemu-img or qemu-tools)
 Requires: python3-pip
 Requires: python3-setuptools
-Requires: libgcrypt > 1.8.3
+Requires: (libgcrypt > 1.8.3 or libgcrypt20)
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -99,23 +99,24 @@ The Apache CloudStack files shared between agent and management server
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
-Requires: openssh-clients
+Requires: (openssh-clients or openssh)
 Requires: java-11-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
-Requires: net-tools
+Requires: (net-tools or net-tools-deprecated)
 Requires: iproute
 Requires: ipset
 Requires: perl
-Requires: python3-libvirt
-Requires: qemu-img
+Requires: (python3-libvirt or python3-libvirt-python)
+Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
 Requires: cryptsetup
 Requires: rng-tools
-Requires: libgcrypt > 1.8.3
+Requires: (libgcrypt > 1.8.3 or libgcrypt20)
+Requires: (selinux-tools if qemu-tools)
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
@@ -409,7 +410,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %pre management
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud || true
 
 rm -rf %{_localstatedir}/cache/cloudstack
 
@@ -686,6 +687,9 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 * Fri Oct 14 2022 Daan Hoogland <daan.hoogland@gmail.com> 4.18.0
 - initialising sanity check pointer file
 
+* Tue Jun 29 2021 David Jumani <dj.davidjumani1994@gmail.com> 4.16.0
+- Adding SUSE 15 support
+
 * Thu Apr 30 2015 Rohit Yadav <bhaisaab@apache.org> 4.6.0
 - Remove awsapi package
 
@@ -697,4 +701,3 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
-
