@@ -18,9 +18,8 @@ package org.apache.cloudstack.consoleproxy;
 
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
-import org.apache.cloudstack.framework.config.Configurable;
 
-public interface ConsoleAccessManager extends Manager, Configurable {
+public interface ConsoleAccessManager extends Manager {
 
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 
