@@ -384,14 +384,11 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
-%preun common
-
-rm -f %{_datadir}/%{name}-common/python-site || true
-
 %pre common
 
 python_dir=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 mkdir -p %{_datadir}/%{name}-common
+rm -f %{_datadir}/%{name}-common/python-site || true
 ln -s $python_dir %{_datadir}/%{name}-common/python-site
 
 %preun management
