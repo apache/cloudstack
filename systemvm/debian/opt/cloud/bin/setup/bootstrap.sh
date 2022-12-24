@@ -18,6 +18,7 @@
 set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
+PROPERTIES=usr/local/cloud/systemvm/conf/agent.properties
 
 rm -f /var/cache/cloud/enabled_svcs
 rm -f /var/cache/cloud/disabled_svcs
@@ -42,7 +43,21 @@ patch_systemvm() {
   mkdir -p /usr/local/cloud/systemvm
   ls -lrt $patchfile
 
-  echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >$logfile 2>&1
+  log_it "Unziping $patchfile"
+  echo "All" | unzip $patchfile -d /usr/local/cloud/systemvm >>$logfile 2>&1
+
+  if [ "$TYPE" = "secstorage" ]; then
+    log_it "As system VM type is $TYPE, we will remove the default properties 'instance' and 'resource' from $PROPERTIES"
+    sed -i '/instance=/d' $PROPERTIES
+    sed -i '/resource=/d' $PROPERTIES
+  fi
+
+  log_it "Copying content of $CMDLINE to $PROPERTIES"
+  for element in $(cat $CMDLINE)
+  do
+    echo $element >> $PROPERTIES
+  done
+
   find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
   if [ -f $backupfolder/cloud.jks ]; then
     cp -r $backupfolder/* /usr/local/cloud/systemvm/conf/
