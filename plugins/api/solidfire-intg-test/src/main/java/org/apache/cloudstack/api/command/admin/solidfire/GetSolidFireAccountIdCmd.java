@@ -47,11 +47,6 @@ public class GetSolidFireAccountIdCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return NAME;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return util.getAccountIdForAccountUuid(csAccountUuid);
     }

@@ -42,7 +42,6 @@ import com.cloud.vm.NicSecondaryIp;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveIpFromVmNicCmd.class.getName());
-    private static final String s_name = "removeipfromnicresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -102,11 +101,6 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "addressinfo";

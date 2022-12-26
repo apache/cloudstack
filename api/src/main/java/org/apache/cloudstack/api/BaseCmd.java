@@ -252,7 +252,7 @@ public abstract class BaseCmd {
      */
 
     public String getCommandName() {
-        return getActualCommandName().toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+        return getCommandNameByClass(this.getClass()).toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     /**
@@ -267,9 +267,22 @@ public abstract class BaseCmd {
         } else {
             cmdName = this.getClass().getName();
         }
-       return cmdName;
+        return cmdName;
     }
 
+    public static String getCommandNameByClass(Class<?> clazz) {
+        String cmdName = null;
+        if (clazz.getAnnotation(APICommand.class) != null) {
+            cmdName = clazz.getAnnotation(APICommand.class).name();
+        } else {
+            cmdName = clazz.getName();
+        }
+        return cmdName;
+    }
+
+    public static String getResponseNameByClass(Class<?> clazz) {
+        return getCommandNameByClass(clazz).toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    }
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.

@@ -35,7 +35,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18")
 public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUserDataCmd.class.getName());
-    private static final String s_name = "listuserdataresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -77,9 +76,4 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
         setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
@@ -40,12 +39,11 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = AssignVirtualMachineToBackupOfferingCmd.APINAME,
+@APICommand(name = "assignVirtualMachineToBackupOffering",
         description = "Assigns a VM to a backup offering",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
-    public static final String APINAME = "assignVirtualMachineToBackupOffering";
 
     @Inject
     private BackupManager backupManager;
@@ -97,11 +95,6 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

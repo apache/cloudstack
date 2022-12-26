@@ -50,11 +50,6 @@ public class GetSolidFireVolumeAccessGroupIdsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return NAME;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
 

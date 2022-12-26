@@ -88,11 +88,6 @@ public class ListOvsElementsCmd extends BaseListCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return Name;
-    }
-
-    @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
         List<? extends OvsProvider> providers = _service.get(0).searchForOvsElement(this);

@@ -44,7 +44,6 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreateGlobalLoadBalancerRuleCmd.class.getName());
 
-    private static final String s_name = "creategloballoadbalancerruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -139,11 +138,6 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {

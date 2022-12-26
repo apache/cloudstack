@@ -39,7 +39,6 @@ requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
-    private static final String s_name = "updateuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -130,11 +129,6 @@ public class UpdateUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

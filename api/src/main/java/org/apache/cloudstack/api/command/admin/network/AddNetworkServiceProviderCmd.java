@@ -45,7 +45,6 @@ import com.cloud.user.Account;
 public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkServiceProviderCmd.class.getName());
 
-    private static final String s_name = "addnetworkserviceproviderresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -96,11 +95,6 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -80,11 +80,6 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getCommandName() {
-        return Name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }

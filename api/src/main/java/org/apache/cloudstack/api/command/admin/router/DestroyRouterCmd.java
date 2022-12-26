@@ -39,7 +39,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyRouterCmd.class.getName());
-    private static final String s_name = "destroyrouterresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -59,11 +58,6 @@ public class DestroyRouterCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

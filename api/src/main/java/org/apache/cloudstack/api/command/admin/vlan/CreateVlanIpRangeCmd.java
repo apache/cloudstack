@@ -45,7 +45,6 @@ import com.cloud.user.Account;
 public class CreateVlanIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
-    private static final String s_name = "createvlaniprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -208,11 +207,6 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

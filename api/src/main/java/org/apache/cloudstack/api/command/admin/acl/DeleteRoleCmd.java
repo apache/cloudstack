@@ -33,12 +33,11 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 
-@APICommand(name = DeleteRoleCmd.APINAME, description = "Deletes a role", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteRole", description = "Deletes a role", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
 public class DeleteRoleCmd extends BaseCmd {
-    public static final String APINAME = "deleteRole";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,11 +58,6 @@ public class DeleteRoleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

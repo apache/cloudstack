@@ -45,11 +45,6 @@ public class GetSolidFireVolumeSizeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return NAME;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return util.getAccountIdForVolumeUuid(volumeUuid);
     }

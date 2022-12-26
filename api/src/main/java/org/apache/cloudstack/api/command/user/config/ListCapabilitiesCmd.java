@@ -31,12 +31,6 @@ import com.cloud.user.Account;
 public class ListCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
 
-    private static final String s_name = "listcapabilitiesresponse";
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

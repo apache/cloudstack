@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     public static final Logger s_logger = Logger.getLogger(LinkUserDataToTemplateCmd.class.getName());
 
-    private static final String s_name = "linkuserdatatotemplateresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -111,11 +110,6 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to link userdata to template");
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

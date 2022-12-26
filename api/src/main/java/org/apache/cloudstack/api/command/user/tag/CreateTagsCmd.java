@@ -40,7 +40,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 public class CreateTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
 
-    private static final String s_name = "createtagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -86,11 +85,6 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

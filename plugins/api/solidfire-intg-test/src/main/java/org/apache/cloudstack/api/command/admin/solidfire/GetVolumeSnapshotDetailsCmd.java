@@ -47,11 +47,6 @@ public class GetVolumeSnapshotDetailsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return NAME;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return util.getAccountIdForSnapshotUuid(snapshotUuid);
     }

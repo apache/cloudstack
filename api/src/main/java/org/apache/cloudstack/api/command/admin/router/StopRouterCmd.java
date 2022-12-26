@@ -41,7 +41,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
-    private static final String s_name = "stoprouterresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -64,11 +63,6 @@ public class StopRouterCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -42,11 +42,6 @@ public class GetPathForVolumeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return NAME;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return _util.getAccountIdForVolumeUuid(_volumeUuid);
     }

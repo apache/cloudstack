@@ -33,11 +33,10 @@ import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
-@APICommand(name = ListProjectRolesCmd.APINAME, description = "Lists Project roles in CloudStack", responseObject = ProjectRoleResponse.class,
+@APICommand(name = "listProjectRoles", description = "Lists Project roles in CloudStack", responseObject = ProjectRoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0", authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListProjectRolesCmd extends BaseListCmd {
-    public static final String APINAME = "listProjectRoles";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -102,11 +101,6 @@ public class ListProjectRolesCmd extends BaseListCmd {
         response.setDescription(role.getDescription());
         response.setObjectName("projectrole");
         return response;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override

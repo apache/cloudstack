@@ -44,7 +44,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DisableAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
-    private static final String s_name = "disableaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public String getEventType() {
