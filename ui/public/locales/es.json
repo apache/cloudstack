@@ -1493,7 +1493,7 @@
 "message.validate.range.length": "Por favor ingrese un valor entre {0} y {1} caracteres de longitud.",
 "message.vm.review.launch": "Por favor revise la siguiente informaci\u00f3n y confirme que su instancia virtual es correcta antes de lanzarla.",
 "message.zone.creation.complete": "Creaci\u00f3n de la zona completada",
-"messgae.validate.min": "Por favor ingrese un valor mayor o igual que {0}.",
+"message.validate.min": "Por favor ingrese un valor mayor o igual que {0}.",
 "side.by.side": "Juntos",
 "state.completed": "Completado",
 "state.declined": "Declinado",

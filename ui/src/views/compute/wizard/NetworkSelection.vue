@@ -131,6 +131,10 @@ export default {
       type: String,
       default: () => ''
     },
+    autoscale: {
+      type: Boolean,
+      default: () => false
+    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -177,26 +181,39 @@ export default {
         {
           dataIndex: 'type',
           title: this.$t('label.guestiptype'),
-          width: '30%'
+          width: '15%'
         },
         {
           dataIndex: 'vpcName',
           title: this.$t('label.vpc'),
-          width: '30%',
+          width: '20%',
           filters: vpcFilter,
           filteredValue: _.get(this.filteredInfo, 'id'),
           onFilter: (value, record) => {
             return record.vpcid === value
           }
+        },
+        {
+          dataIndex: 'supportsvmautoscaling',
+          title: this.$t('label.supportsvmautoscaling'),
+          width: '25%'
         }
       ]
     },
     rowSelection () {
-      return {
-        type: 'checkbox',
-        selectedRowKeys: this.selectedRowKeys,
-        onChange: (rows) => {
-          this.$emit('select-network-item', rows)
+      if (this.autoscale) {
+        return {
+          type: 'radio',
+          selectedRowKeys: this.selectedRowKeys,
+          onChange: this.onSelectRow
+        }
+      } else {
+        return {
+          type: 'checkbox',
+          selectedRowKeys: this.selectedRowKeys,
+          onChange: (rows) => {
+            this.$emit('select-network-item', rows)
+          }
         }
       }
     },
@@ -206,6 +223,7 @@ export default {
         return {
           ...network,
           ...{
+            supportsvmautoscaling: network.supportsvmautoscaling ? 'Yes' : 'No',
             vpcName: _.get(vpc, 'displaytext')
           }
         }
@@ -329,6 +347,10 @@ export default {
       this.options.page = page
       this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
+    },
+    onSelectRow (value) {
+      this.selectedRowKeys = value
+      this.$emit('select-network-item', value[0])
     },
     listNetworkOfferings () {
       return new Promise((resolve, reject) => {

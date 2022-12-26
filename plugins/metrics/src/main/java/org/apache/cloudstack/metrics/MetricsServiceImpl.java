@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.metrics;
 
+import static com.cloud.utils.NumbersUtil.toReadableSize;
+
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -28,14 +30,6 @@ import java.util.Properties;
 
 import javax.inject.Inject;
 
-import com.cloud.server.DbStatsCollection;
-import com.cloud.server.StatsCollector;
-import com.cloud.usage.UsageJobVO;
-import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.db.DbProperties;
-import com.cloud.utils.db.DbUtil;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.script.Script;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -45,6 +39,7 @@ import org.apache.cloudstack.api.ListMgmtsMetricsCmd;
 import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
 import org.apache.cloudstack.api.ListUsageServerMetricsCmd;
 import org.apache.cloudstack.api.ListVMsMetricsCmd;
+import org.apache.cloudstack.api.ListVMsMetricsCmdByAdmin;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVolumesMetricsCmd;
 import org.apache.cloudstack.api.ListZonesMetricsCmd;
@@ -52,8 +47,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.StatsResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.StatsResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -76,6 +71,10 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.alert.AlertManager;
@@ -103,13 +102,21 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.server.DbStatsCollection;
 import com.cloud.server.ManagementServerHostStats;
+import com.cloud.server.StatsCollector;
+import com.cloud.usage.UsageJobVO;
+import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.DbProperties;
+import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -119,12 +126,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.log4j.Logger;
-
-import static com.cloud.utils.NumbersUtil.toReadableSize;
 
 public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
     private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
@@ -878,6 +879,9 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         cmdList.add(ListVolumesMetricsCmd.class);
         cmdList.add(ListZonesMetricsCmd.class);
         cmdList.add(ListVMsUsageHistoryCmd.class);
+
+        // separate Admin commands
+        cmdList.add(ListVMsMetricsCmdByAdmin.class);
         return cmdList;
     }
 

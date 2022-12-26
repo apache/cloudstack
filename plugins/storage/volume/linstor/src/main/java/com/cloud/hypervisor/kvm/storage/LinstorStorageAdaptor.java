@@ -228,7 +228,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 null,
                 null);
 
-            // TODO make avialable on node
+            // TODO make available on node
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
                 final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();

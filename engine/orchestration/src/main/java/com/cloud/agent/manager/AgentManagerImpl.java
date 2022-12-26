@@ -1441,7 +1441,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } else if (action == TapAgentsAction.Contains) {
                 return _loadingAgents.contains(hostId);
             } else {
-                throw new CloudRuntimeException("Unkonwn TapAgentsAction " + action);
+                throw new CloudRuntimeException("Unknown TapAgentsAction " + action);
             }
         }
         return true;

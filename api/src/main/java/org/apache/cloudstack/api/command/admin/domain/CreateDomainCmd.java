@@ -49,7 +49,7 @@ public class CreateDomainCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PARENT_DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
+            description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specified, the ROOT domain is assumed.")
     private Long parentDomainId;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for networks in the domain")

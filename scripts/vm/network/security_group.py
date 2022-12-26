@@ -911,7 +911,7 @@ def cleanup_bridge(bridge):
         try:
             execute("iptables -F " + chain)
         except: pass
-    # Remove brige chains
+    # Remove bridge chains
     for chain in chains:
         try:
             execute("iptables -X " + chain)

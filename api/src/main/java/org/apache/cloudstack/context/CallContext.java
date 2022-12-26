@@ -223,6 +223,20 @@ public class CallContext {
         return register(user, account);
     }
 
+    /**
+     * Register child CallContext.
+     * @param parent - parent CallContext
+     * @param eventResourceType - command resource type
+     * @return Call context
+     * @throws CloudAuthenticationException
+     */
+    public static CallContext register(CallContext parent, ApiCommandResourceType eventResourceType) throws CloudAuthenticationException {
+        CallContext callContext = register(parent.getCallingUserId(), parent.getCallingAccountId());
+        callContext.setStartEventId(parent.getStartEventId());
+        callContext.setEventResourceType(eventResourceType);
+        return callContext;
+    }
+
     public static CallContext register(long callingUserId, long callingAccountId) throws CloudAuthenticationException {
         Account account = s_entityMgr.findById(Account.class, callingAccountId);
         if (account == null) {

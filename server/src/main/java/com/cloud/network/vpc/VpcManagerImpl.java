@@ -825,7 +825,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final int vpcCount = _vpcDao.getVpcCountByOfferingId(offId);
         if (vpcCount > 0) {
             throw new InvalidParameterValueException("Can't delete vpc offering " + offId + " as its used by " + vpcCount + " vpcs. "
-                    + "To make the network offering unavaiable, disable it");
+                    + "To make the network offering unavailable, disable it");
         }
 
         if (_vpcOffDao.remove(offId)) {

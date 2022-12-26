@@ -57,7 +57,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesC
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list remote access VPNs for ceratin network",
+               description = "list remote access VPNs for certain network",
                since = "4.3")
     private Long networkId;
 
