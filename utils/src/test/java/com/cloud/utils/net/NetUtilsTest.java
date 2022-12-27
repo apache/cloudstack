@@ -34,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -740,5 +741,31 @@ public class NetUtilsTest {
         assertEquals("255.255.255.0", NetUtils.cidr2Netmask("192.168.0.0/24"));
         assertEquals("255.255.0.0", NetUtils.cidr2Netmask("169.254.0.0/16"));
         assertEquals("255.255.240.0", NetUtils.cidr2Netmask("169.254.240.0/20"));
+    }
+
+    @Test
+    public void testGetAllIpsFromCidr() {
+        String cidr = "10.20.0.0";
+        int size = 22;
+        Set<Long> result = NetUtils.getAllIpsFromCidr(cidr, size, new TreeSet<>(), -1);
+        assertNotNull(result);
+        assertEquals(1022, result.size());
+        result = NetUtils.getAllIpsFromCidr(cidr, size, new TreeSet<>(), 255);
+        assertNotNull(result);
+        assertEquals(255, result.size());
+        result = NetUtils.getAllIpsFromCidr(cidr, size, new TreeSet<>(), 10);
+        assertNotNull(result);
+        assertEquals(10, result.size());
+        Long usedIp = NetUtils.ip2Long("10.20.0.100");
+        Set<Long> usedIps = new TreeSet<>();
+        usedIps.add(usedIp);
+        result = NetUtils.getAllIpsFromCidr(cidr, size, usedIps, -1);
+        assertNotNull(result);
+        assertEquals(1022 - usedIps.size(), result.size());
+        assertFalse(result.contains(usedIp));
+        result = NetUtils.getAllIpsFromCidr(cidr, size, usedIps, 50);
+        assertNotNull(result);
+        assertEquals(50, result.size());
+        assertFalse(result.contains(usedIp));
     }
 }
