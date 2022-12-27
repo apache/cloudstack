@@ -375,23 +375,16 @@ export default {
       }
       return new Date(date.getTime() + date.getTimezoneOffset() * 60000)
     },
-    convertAndFormatDateAppropriately (date) {
-      if (this.$store.getters.usebrowsertimezone) {
-        var dateInUTC = new Date(date).toISOString().split('T')
-        return dateInUTC[0] + ' ' + dateInUTC[1].split('-')[0].split('.')[0]
-      }
-      return moment(date).format('YYYY-MM-DD HH:mm:ss')
-    },
     fetchData () {
       this.loaded = false
       this.showResourceInfoModal = false
       this.formatPeriod()
       var params = { id: this.resource.id }
       if (this.startDate) {
-        params.startDate = this.convertAndFormatDateAppropriately(this.startDate)
+        params.startDate = moment(this.startDate).format()
       }
       if (this.endDate) {
-        params.endDate = this.convertAndFormatDateAppropriately(this.endDate)
+        params.endDate = moment(this.endDate).format()
       }
       api('listVirtualMachinesUsageHistory', params).then(response => {
         this.handleStatsResponse(response)

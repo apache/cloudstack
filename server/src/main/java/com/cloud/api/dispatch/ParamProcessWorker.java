@@ -63,8 +63,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ParamProcessWorker implements DispatchWorker {
 
     private static final Logger s_logger = Logger.getLogger(ParamProcessWorker.class.getName());
-    public final DateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
-    public final DateFormat newInputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final String inputFormatString = "yyyy-MM-dd";
+    private final String newInputFormatString = "yyyy-MM-dd HH:mm:ss";
+    public final DateFormat inputFormat = new SimpleDateFormat(inputFormatString);
+    public final DateFormat newInputFormat = new SimpleDateFormat(newInputFormatString);
 
     @Inject
     protected AccountManager _accountMgr;
@@ -335,13 +337,20 @@ public class ParamProcessWorker implements DispatchWorker {
             case DATE:
                 // This piece of code is for maintaining backward compatibility
                 // and support both the date formats(Bug 9724)
-                final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
-                if (isObjInNewDateFormat) {
+                try {
+                    field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
+                    break;
+                } catch (ParseException parseException) {
+                    s_logger.debug(String.format("Could not parse date [%s] with timezone parser, trying to parse without timezone.", paramObj));
+                }
+                if (isObjInNewDateFormat(paramObj.toString())) {
+                    s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, newInputFormatString));
                     final DateFormat newFormat = newInputFormat;
                     synchronized (newFormat) {
                         field.set(cmdObj, newFormat.parse(paramObj.toString()));
                     }
                 } else {
+                    s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, inputFormatString));
                     final DateFormat format = inputFormat;
                     synchronized (format) {
                         Date date = format.parse(paramObj.toString());
@@ -427,9 +436,6 @@ public class ParamProcessWorker implements DispatchWorker {
                         field.set(cmdObj, paramObj.toString());
                     }
                 }
-                break;
-            case TZDATE:
-                field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
                 break;
             case MAP:
             default:
