@@ -248,41 +248,37 @@ public abstract class BaseCmd {
     }
 
     /**
-     * Retrieves the name defined in {@link APICommand#name()}, in lower case, with the prefix {@link BaseCmd#RESPONSE_SUFFIX}
-     */
-
-    public String getCommandName() {
-        return getCommandNameByClass(this.getClass()).toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
-    /**
      * Gets the CommandName based on the class annotations: the value from {@link APICommand#name()}
      *
      * @return the value from {@link APICommand#name()}
      */
-    public String getActualCommandName() {
-        String cmdName = null;
-        if (this.getClass().getAnnotation(APICommand.class) != null) {
-            cmdName = this.getClass().getAnnotation(APICommand.class).name();
-        } else {
-            cmdName = this.getClass().getName();
-        }
-        return cmdName;
-    }
-
     public static String getCommandNameByClass(Class<?> clazz) {
         String cmdName = null;
-        if (clazz.getAnnotation(APICommand.class) != null) {
-            cmdName = clazz.getAnnotation(APICommand.class).name();
+        APICommand apiClassAnnotation = clazz.getAnnotation(APICommand.class);
+
+        if (apiClassAnnotation != null && apiClassAnnotation.name() != null) {
+            cmdName = apiClassAnnotation.name();
         } else {
             cmdName = clazz.getName();
         }
         return cmdName;
     }
 
+    public String getActualCommandName() {
+        return getCommandNameByClass(this.getClass());
+    }
+
+    public String getCommandName() {
+        return getResponseNameByClass(this.getClass());
+    }
+
+    /**
+     * Retrieves the name defined in {@link APICommand#name()}, in lower case, with the prefix {@link BaseCmd#RESPONSE_SUFFIX}
+     */
     public static String getResponseNameByClass(Class<?> clazz) {
         return getCommandNameByClass(clazz).toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
+
     /**
      * For commands the API framework needs to know the owner of the object being acted upon. This method is
      * used to determine that information.

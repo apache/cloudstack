@@ -52,7 +52,7 @@ public class CloudianIsEnabledCmd extends BaseCmd {
         final CloudianEnabledResponse response = new CloudianEnabledResponse();
         response.setEnabled(connector.isEnabled());
         response.setCmcUrl(connector.getCmcUrl());
-        response.setObjectName(this.getActualCommandName().toLowerCase());
+        response.setObjectName(getActualCommandName().toLowerCase());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
