@@ -369,12 +369,29 @@ export default {
           label: 'label.action.reset.password',
           message: 'message.action.instance.reset.password',
           dataView: true,
+          args: ['id', 'password'],
           show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
               message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
+            }
+          }
+          mapping: {
+            id: {
+              value: (record) => { return record.id }
+            }
+          },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.action.reset.password')}`,
+                description: `The password of VM ${name} is ${vm.password}`,
+                duration: 0
+              })
             }
           }
         },
