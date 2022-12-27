@@ -1444,6 +1444,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
+            if (CollectionUtils.isEmpty(filteredHosts)) {
+                return new Ternary<>(new Pair<>(allHosts, allHostsPair.second()), new ArrayList<>(), new HashMap<>());
+            }
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
@@ -1456,11 +1459,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHosts, allHostsPair.second());
+
         if (!filterUefiHostsForMigration(allHosts, filteredHosts, vm)) {
-            return new Ternary<>(new Pair<>(new ArrayList<HostVO>(), 0), new ArrayList<>(), new HashMap<>());
+            return new Ternary<>(otherHosts, new ArrayList<>(), new HashMap<>());
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHosts, allHostsPair.second());
         List<Host> suitableHosts = new ArrayList<>();
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
