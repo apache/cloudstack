@@ -68,7 +68,7 @@ def make_request(command, args, logger, host, port,
                        str.lower(urllib.quote_plus(str(r[1]))).replace("+",
                        "%20")]) for r in request])
 
-    sig = urllib.quote_plus(base64.encodestring(hmac.new(secretkey, hashStr,
+    sig = urllib.quote_plus(base64.encodebytes(hmac.new(secretkey, hashStr,
                             hashlib.sha1).digest()).strip())
     request_url += "&signature=%s" % sig
     request_url = "%s://%s:%s%s?%s" % (protocol, host, port, path, request_url)
