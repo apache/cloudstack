@@ -80,7 +80,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
         boolean hasHaPool = false;
         for (StoragePoolVO pool : clusterPools) {
-            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.RBD) {
+            if (supportsHa(pool.getPoolType())) {
                 hasHaPool = true;
                 break;
             }
@@ -88,7 +88,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (!hasHaPool) {
             List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
             for (StoragePoolVO pool : zonePools) {
-                if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.RBD) {
+                if (supportsHa(pool.getPoolType())) {
                     hasHaPool = true;
                     break;
                 }
@@ -144,5 +144,9 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         }
         s_logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
         return hostStatus;
+    }
+
+    public boolean supportsHa(StoragePoolType poolType) {
+        return poolType.equals(StoragePoolType.NetworkFilesystem) || poolType.equals(StoragePoolType.RBD);
     }
 }

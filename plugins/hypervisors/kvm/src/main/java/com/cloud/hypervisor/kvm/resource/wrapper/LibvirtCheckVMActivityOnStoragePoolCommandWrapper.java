@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.ha.KVMInvestigator;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.RbdStoragePool;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
@@ -36,15 +37,20 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 
+import javax.inject.Inject;
+
 @ResourceWrapper(handles = CheckVMActivityOnStoragePoolCommand.class)
 public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends CommandWrapper<CheckVMActivityOnStoragePoolCommand, Answer, LibvirtComputingResource> {
+
+    @Inject
+    private KVMInvestigator kvmInvestigator;
 
     @Override
     public Answer execute(final CheckVMActivityOnStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final ExecutorService executors = Executors.newSingleThreadExecutor();
         final KVMHAMonitor monitor = libvirtComputingResource.getMonitor();
         final StorageFilerTO pool = command.getPool();
-        if (Storage.StoragePoolType.NetworkFilesystem == pool.getType() || Storage.StoragePoolType.RBD == pool.getType()){
+        if (kvmInvestigator.supportsHa(pool.getType())) {
             final NfsStoragePool nfspool = monitor.getStoragePool(pool.getUuid());
             final RbdStoragePool rbdpool = monitor.getRbdStoragePool(pool.getUuid());
             String vmActivityCheckPath = "";
