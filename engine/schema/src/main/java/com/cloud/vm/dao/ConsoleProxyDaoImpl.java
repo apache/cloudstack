@@ -182,7 +182,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     public List<ConsoleProxyVO> listUpByHostId(long hostId) {
         SearchCriteria<ConsoleProxyVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging, State.Expunged});
         return listBy(sc);
     }
 

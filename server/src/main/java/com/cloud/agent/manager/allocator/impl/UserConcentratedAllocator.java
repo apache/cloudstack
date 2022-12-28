@@ -195,7 +195,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     }
 
     private boolean skipCalculation(VMInstanceVO vm) {
-        if (vm.getState() == State.Expunging) {
+        if (State.isVmExpungingOrExpunged(vm.getState())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
             }

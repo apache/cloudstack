@@ -979,9 +979,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged, State.Stopped});
         else
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged});
         sc1.setParameters("displayVm", 1);
         List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
         for (UserVmJoinVO vm : userVms) {
@@ -1003,9 +1003,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged, State.Stopped});
         else
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged});
         sc1.setParameters("displayVm", 1);
         List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
         for (UserVmJoinVO vm : userVms) {

@@ -1173,7 +1173,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
             // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
             VMInstanceVO vmByHostName = vmDao.findVMByHostNameInZone(hostName, zone.getId());
-            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
+            if (vmByHostName != null && !VirtualMachine.State.isVmExpungingOrExpunged(vmByHostName.getState())) {
                 throw new InvalidParameterValueException(String.format("Failed to import VM: %s. There already exists a VM by the hostname: %s in zone: %s", instanceName, hostName, zone.getUuid()));
             }
         }

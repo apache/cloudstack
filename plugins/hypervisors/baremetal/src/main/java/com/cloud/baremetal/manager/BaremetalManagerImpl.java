@@ -83,7 +83,7 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
     public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
       State newState = transition.getToState();
       State oldState = transition.getCurrentState();
-      if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
+      if (newState != State.Starting && newState != State.Error && State.isVmExpungingOrExpunged(newState)) {
         return true;
       }
 

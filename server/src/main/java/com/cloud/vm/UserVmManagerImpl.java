@@ -822,7 +822,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Fail to reset password for the virtual machine, the template is not password enabled");
         }
 
-        if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
+        if (userVm.getState() == State.Error || State.isVmExpungingOrExpunged(userVm.getState())) {
             s_logger.error("vm is not in the right state: " + vmId);
             throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
         }
@@ -968,7 +968,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Do parameters input validation
 
-        if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
+        if (userVm.getState() == State.Error || State.isVmExpungingOrExpunged(userVm.getState())) {
             s_logger.error("vm is not in the right state: " + vmId);
             throw new InvalidParameterValueException("Vm with specified id is not in the right state");
         }
@@ -1093,7 +1093,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.trace(String.format("reboot %s with enterSetup set to %s", vm.getInstanceName(), Boolean.toString(enterSetup)));
         }
 
-        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
+        if (vm == null || vm.getState() == State.Destroyed || State.isVmExpungingOrExpunged(vm.getState()) || vm.getRemoved() != null) {
             s_logger.warn("Vm id=" + vmId + " doesn't exist");
             return null;
         }
@@ -2926,7 +2926,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void saveUsageEvent(UserVmVO vm) {
 
         // If vm not destroyed
-        if( vm.getState() != State.Destroyed && vm.getState() != State.Expunging && vm.getState() != State.Error){
+        if( vm.getState() != State.Destroyed && !State.isVmExpungingOrExpunged(vm.getState()) && vm.getState() != State.Error){
 
             if(vm.isDisplayVm()){
                 //1. Allocated VM Usage Event
@@ -2984,7 +2984,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (vm.getState() == State.Error || vm.getState() == State.Expunging) {
+        if (vm.getState() == State.Error || State.isVmExpungingOrExpunged(vm.getState())) {
             s_logger.error("vm is not in the right state: " + id);
             throw new InvalidParameterValueException("Vm with id " + id + " is not in the right state");
         }
@@ -3304,7 +3304,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        if ((vm.getState() == State.Destroyed && !expunge) || vm.getState() == State.Expunging) {
+        if ((vm.getState() == State.Destroyed && !expunge) || vm.getState() == State.Expunged) {
             s_logger.debug("Vm id=" + vmId + " is already destroyed");
             return vm;
         }
@@ -4258,7 +4258,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
                 // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
                 VMInstanceVO vmByHostName = _vmInstanceDao.findVMByHostNameInZone(hostName, zone.getId());
-                if (vmByHostName != null && vmByHostName.getState() != State.Expunging) {
+                if (vmByHostName != null && !State.isVmExpungingOrExpunged(vmByHostName.getState())) {
                     throw new InvalidParameterValueException("There already exists a VM by the name: " + hostName + ".");
                 }
             } else {
@@ -4279,7 +4279,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Check if VM with instanceName already exists.
             VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
-            if (vmObj != null && vmObj.getState() != State.Expunging) {
+            if (vmObj != null && !State.isVmExpungingOrExpunged(vmObj.getState())) {
                 throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
             }
 
@@ -5554,7 +5554,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
-        if (vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
+        if (vm.getState() == State.Destroyed || State.isVmExpungingOrExpunged(vm.getState())) {
             s_logger.trace("Vm id=" + vmId + " is already destroyed");
             return vm;
         }
@@ -5745,7 +5745,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
-        if (!(vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getState() == State.Error)) {
+        if (!(vm.getState() == State.Destroyed || State.isVmExpungingOrExpunged(vm.getState()) || vm.getState() == State.Error)) {
             CloudRuntimeException ex = new CloudRuntimeException("Please destroy vm with specified vmId before expunge");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
@@ -8222,7 +8222,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void unmanageVMFromDB(long vmId) {
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         userVmDetailsDao.removeDetails(vmId);
-        vm.setState(State.Expunging);
+        vm.setState(State.Expunged);
         vm.setRemoved(new Date());
         _vmInstanceDao.update(vm.getId(), vm);
     }

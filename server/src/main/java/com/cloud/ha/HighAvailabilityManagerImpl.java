@@ -718,7 +718,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
         try {
             stopVMWithCleanup(vm, work.getPreviousState());
-            if (!VirtualMachine.State.Expunging.equals(work.getPreviousState())) {
+            if (!VirtualMachine.State.isVmExpungingOrExpunged(work.getPreviousState())) {
                 destroyVM(vm, expunge);
                 return null;
             } else {

@@ -2166,7 +2166,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (guestOSId != oldGuestOSId) { // vm guest os type need to be updated if template guest os id changes.
                 SearchCriteria<VMInstanceVO> sc = _vmInstanceDao.createSearchCriteria();
                 sc.addAnd("templateId", SearchCriteria.Op.EQ, id);
-                sc.addAnd("state", SearchCriteria.Op.NEQ, State.Expunging);
+                sc.addAnd("state", SearchCriteria.Op.NIN, State.Expunging, State.Expunged);
                 List<VMInstanceVO> vms = _vmInstanceDao.search(sc, null);
                 if (vms != null && !vms.isEmpty()) {
                     for (VMInstanceVO vm: vms) {

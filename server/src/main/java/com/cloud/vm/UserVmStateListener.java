@@ -104,7 +104,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vo.getAccountId(), vo.getDataCenterId(), vo.getId(),
                     Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, vo.getClass().getName(), vo.getUuid(), vo.isDisplay());
           }
-        } else if (newState == State.Destroyed || newState == State.Error || newState == State.Expunging) {
+        } else if (newState == State.Destroyed || newState == State.Error || State.isVmExpungingOrExpunged(newState)) {
           generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_DESTROY);
         }
       }

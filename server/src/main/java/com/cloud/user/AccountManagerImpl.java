@@ -845,7 +845,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             for (UserVmVO vm : vms) {
-                if (vm.getState() != VirtualMachine.State.Destroyed && vm.getState() != VirtualMachine.State.Expunging) {
+                if (vm.getState() != VirtualMachine.State.Destroyed && !VirtualMachine.State.isVmExpungingOrExpunged(vm.getState())) {
                     try {
                         _vmMgr.destroyVm(vm.getId(), false);
                     } catch (Exception e) {

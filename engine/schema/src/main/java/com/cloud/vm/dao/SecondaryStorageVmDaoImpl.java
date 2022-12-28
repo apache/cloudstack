@@ -155,7 +155,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     public List<SecondaryStorageVmVO> listUpByHostId(SecondaryStorageVm.Role role, long hostId) {
         SearchCriteria<SecondaryStorageVmVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging, State.Expunged});
         if (role != null) {
             sc.setParameters("role", role);
         }

@@ -232,6 +232,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             case Destroyed:
             case Error:
             case Expunging:
+            case Expunged:
                 return false;
 
             default:

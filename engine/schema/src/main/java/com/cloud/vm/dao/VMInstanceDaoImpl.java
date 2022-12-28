@@ -172,13 +172,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneTemplateNonExpungedSearch = createSearchBuilder();
         ZoneTemplateNonExpungedSearch.and("zone", ZoneTemplateNonExpungedSearch.entity().getDataCenterId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("template", ZoneTemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
-        ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NEQ);
+        ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NIN);
         ZoneTemplateNonExpungedSearch.done();
 
 
         TemplateNonExpungedSearch = createSearchBuilder();
         TemplateNonExpungedSearch.and("template", TemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
-        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NEQ);
+        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NIN);
         TemplateNonExpungedSearch.done();
 
         NameLikeSearch = createSearchBuilder();
@@ -382,7 +382,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = TemplateNonExpungedSearch.create();
 
         sc.setParameters("template", templateId);
-        sc.setParameters("state", State.Expunging);
+        sc.setParameters("state", State.Expunging, State.Expunged);
         return listBy(sc);
     }
 
@@ -392,7 +392,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         sc.setParameters("zone", zoneId);
         sc.setParameters("template", templateId);
-        sc.setParameters("state", State.Expunging);
+        sc.setParameters("state", State.Expunging, State.Expunged);
 
         return listBy(sc);
     }
@@ -429,7 +429,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = HostIdUpTypesSearch.create();
         sc.setParameters("hostid", hostid);
         sc.setParameters("types", (Object[])types);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging, State.Expunged});
         return listBy(sc);
     }
 
@@ -601,7 +601,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<Long> sc = FindIdsOfVirtualRoutersByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("type", VirtualMachine.Type.DomainRouter);
-        sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged});
         return customSearch(sc, null);
     }
 

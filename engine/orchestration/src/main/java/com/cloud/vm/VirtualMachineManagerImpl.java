@@ -576,6 +576,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             return;
         }
+        if (State.Expunged.equals(vm.getState())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("vm has already been expunged: " + vm);
+            }
+            return;
+        }
 
         advanceStop(vm.getUuid(), VmDestroyForcestop.value());
         vm = _vmDao.findByUuid(vm.getUuid());
@@ -1948,7 +1954,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
 
-        if (state == State.Destroyed || state == State.Expunging || state == State.Error) {
+        if (state == State.Destroyed || State.isVmExpungingOrExpunged(state) || state == State.Error) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Stopped called on " + vm + " but the state is " + state);
             }
@@ -2160,7 +2166,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void destroy(final String vmUuid, final boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
+        if (vm == null || vm.getState() == State.Destroyed || State.isVmExpungingOrExpunged(vm.getState()) || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
             }
@@ -4734,6 +4740,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         case Destroyed:
         case Expunging:
+        case Expunged:
             s_logger.info("Receive power on report when VM is in destroyed or expunging state. vm: "
                     + vm.getId() + ", state: " + vm.getState());
             break;
@@ -4812,6 +4819,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         case Destroyed:
         case Expunging:
+        case Expunged:
             break;
 
         case Error:

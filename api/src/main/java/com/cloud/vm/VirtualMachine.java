@@ -53,7 +53,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
         Stopped(false, "VM is stopped.  host id should be null."),
         Destroyed(false, "VM is marked for destroy."),
-        Expunging(true, "VM is being   expunged."),
+        Expunging(true, "VM is being expunged."),
+        Expunged(false, "VM is expunged"),
         Migrating(true, "VM is being migrated.  host id holds to from host"),
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
@@ -122,7 +123,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped, Arrays.asList(new Impact[]{Impact.USAGE})));
-            s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging,null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.OperationSucceeded, State.Expunged, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.OperationFailed, State.Error,null));
             s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging,null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging, null));
@@ -185,6 +187,10 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             }
 
             return false;
+        }
+
+        public static boolean isVmExpungingOrExpunged(State state) {
+            return State.Expunging.equals(state) || State.Expunged.equals(state);
         }
     }
 

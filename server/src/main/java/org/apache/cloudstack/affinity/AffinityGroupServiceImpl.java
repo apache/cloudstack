@@ -416,7 +416,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             return false;
         }
         State newState = transition.getToState();
-        if ((newState == State.Expunging) || (newState == State.Error)) {
+        if (State.isVmExpungingOrExpunged(newState) || newState == State.Error) {
             // cleanup all affinity groups associations of the Expunged VM
             SearchCriteria<AffinityGroupVMMapVO> sc = _affinityGroupVMMapDao.createSearchCriteria();
             sc.addAnd("instanceId", SearchCriteria.Op.EQ, vo.getId());

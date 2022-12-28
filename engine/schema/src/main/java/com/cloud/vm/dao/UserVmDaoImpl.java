@@ -288,7 +288,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     @Override
     public List<UserVmVO> findDestroyedVms(Date date) {
         SearchCriteria<UserVmVO> sc = DestroySearch.create();
-        sc.setParameters("state", State.Destroyed, State.Expunging, State.Error);
+        sc.setParameters("state", State.Destroyed, State.Expunging, State.Expunged, State.Error);
         sc.setParameters("updateTime", date);
 
         return listBy(sc);
@@ -320,7 +320,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public List<UserVmVO> listUpByHostId(Long hostId) {
         SearchCriteria<UserVmVO> sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
+        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging, State.Expunged});
         return listBy(sc);
     }
 
@@ -697,9 +697,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("account", accountId);
         sc.setParameters("type", VirtualMachine.Type.User);
         if (runningVMsonly)
-            sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+            sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged, State.Stopped});
         else
-            sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Expunged});
         sc.setParameters("displayVm", 1);
         return customSearch(sc, null).get(0);
     }

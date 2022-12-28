@@ -3104,7 +3104,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
         for (final UserVmVO vm : userVms) {
-            if (!(vm.getState() == VirtualMachine.State.Expunging && vm.getRemoved() != null)) {
+            if (!(VirtualMachine.State.isVmExpungingOrExpunged(vm.getState()) && vm.getRemoved() != null)) {
                 s_logger.warn("Can't delete the network, not all user vms are expunged. Vm " + vm + " is in " + vm.getState() + " state");
                 return false;
             }

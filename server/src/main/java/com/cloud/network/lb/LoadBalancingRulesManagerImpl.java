@@ -1075,7 +1075,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Set<Long> passedInstanceIds = vmIdIpMap.keySet();
         for (Long instanceId : passedInstanceIds) {
             UserVm vm = _vmDao.findById(instanceId);
-            if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
+            if (vm == null || vm.getState() == State.Destroyed || State.isVmExpungingOrExpunged(vm.getState())) {
                 InvalidParameterValueException ex = new InvalidParameterValueException("Invalid instance id specified");
                 if (vm == null) {
                     ex.addProxyObject(instanceId.toString(), "instanceId");
@@ -2359,6 +2359,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             switch (userVm.getState()) {
             case Destroyed:
             case Expunging:
+            case Expunged:
             case Error:
             case Unknown:
                 continue;

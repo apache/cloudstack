@@ -115,9 +115,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     public List<UserVmJoinVO> listActiveByIsoId(Long isoId) {
         SearchCriteria<UserVmJoinVO> sc = activeVmByIsoSearch.create();
         sc.setParameters("isoId", isoId);
-        State[] states = new State[2];
-        states[0] = State.Error;
-        states[1] = State.Expunging;
+        sc.setParameters("stateNotIn", State.Error, State.Expunging, State.Expunged);
         return listBy(sc);
     }
 

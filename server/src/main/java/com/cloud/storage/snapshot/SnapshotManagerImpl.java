@@ -1207,7 +1207,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (volume.getInstanceId() != null) {
             UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
             if (userVm != null) {
-                if (userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
+                if (userVm.getState().equals(State.Destroyed) || VirtualMachine.State.isVmExpungingOrExpunged(userVm.getState())) {
                     throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volume.getId() + " is associated with vm:" + userVm.getInstanceName() + " is in "
                             + userVm.getState().toString() + " state");
                 }

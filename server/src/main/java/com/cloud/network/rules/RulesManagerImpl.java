@@ -165,7 +165,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             return;
         }
 
-        if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
+        if (userVm.getState() == VirtualMachine.State.Destroyed || VirtualMachine.State.isVmExpungingOrExpunged(userVm.getState())) {
             if (!ignoreVmState) {
                 throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
             }
@@ -192,7 +192,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         _accountMgr.checkAccess(caller, null, false, rule, userVm);
 
-        if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
+        if (userVm.getState() == VirtualMachine.State.Destroyed || VirtualMachine.State.isVmExpungingOrExpunged(userVm.getState())) {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
         }
     }
@@ -264,7 +264,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (vm == null) {
                 throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" +
                     vmId + ").");
-            } else if (vm.getState() == VirtualMachine.State.Destroyed || vm.getState() == VirtualMachine.State.Expunging) {
+            } else if (vm.getState() == VirtualMachine.State.Destroyed || VirtualMachine.State.isVmExpungingOrExpunged(vm.getState())) {
                 throw new InvalidParameterValueException("Invalid user vm: " + vm.getId());
             }
 
