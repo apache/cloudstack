@@ -18,7 +18,6 @@ package com.cloud.user;
 
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -126,7 +125,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         VirtualMachineEntity vmEntity = mock(VirtualMachineEntity.class);
 
         when(_orchSrvc.getVirtualMachine(nullable(String.class))).thenReturn(vmEntity);
-        when(vmEntity.destroy(nullable(String.class), nullable(Boolean.class))).thenReturn(true);
+        when(vmEntity.destroy(nullable(Boolean.class))).thenReturn(true);
 
         Mockito.lenient().doReturn(vm).when(_vmDao).findById(nullable(Long.class));
 
@@ -149,11 +148,11 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         lenient().when(offering.getId()).thenReturn(1l);
         when(offering.getCpu()).thenReturn(500);
         when(offering.getRamSize()).thenReturn(500);
-        when(_serviceOfferingDao.findByIdIncludingRemoved(nullable(Long.class), nullable(Long.class))).thenReturn(offering);
+        when(serviceOfferingDao.findByIdIncludingRemoved(nullable(Long.class), nullable(Long.class))).thenReturn(offering);
 
         lenient().when(_domainMgr.getDomain(nullable(Long.class))).thenReturn(domain);
 
-        Mockito.lenient().doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class), anyLong(), any(Account.class));
+        Mockito.lenient().doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class));
 
     }
 

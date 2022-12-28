@@ -728,7 +728,7 @@ public class ByteBuffer {
         case 8:
             value = readSignedLong();
             if (value < 0)
-                throw new RuntimeException("Cannot read 64 bit integers which are larger than 0x7FffFFffFFffFFff, because of lack of unsinged long type in Java. Value: " + value
+                throw new RuntimeException("Cannot read 64 bit integers which are larger than 0x7FffFFffFFffFFff, because of lack of unsigned long type in Java. Value: " + value
                         + ". Data: " + this + ".");
             break;
         default:

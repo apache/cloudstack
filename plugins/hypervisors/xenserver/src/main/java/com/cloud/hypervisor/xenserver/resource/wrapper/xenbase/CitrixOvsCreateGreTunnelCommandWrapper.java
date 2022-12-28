@@ -43,7 +43,7 @@ public final class CitrixOvsCreateGreTunnelCommandWrapper extends CommandWrapper
         citrixResourceBase.setIsOvs(true);
 
         final Connection conn = citrixResourceBase.getConnection();
-        String bridge = "unkonwn";
+        String bridge = "unknown";
         try {
             final Network nw = citrixResourceBase.setupvSwitchNetwork(conn);
             bridge = nw.getBridge(conn);

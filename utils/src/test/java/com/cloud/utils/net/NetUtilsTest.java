@@ -33,11 +33,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -45,9 +47,17 @@ import com.cloud.utils.net.NetUtils.SupersetOrSubset;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
-public class NetUtilsTest {
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-    private static final Logger s_logger = Logger.getLogger(NetUtilsTest.class);
+
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"jdk.xml.internal.*", "javax.xml.parsers.*", "org.xml.sax.*", "org.w3c.dom.*"})
+public class NetUtilsTest {
 
     @Test
     public void testGetRandomIpFromCidrWithSize24() throws Exception {
@@ -135,14 +145,12 @@ public class NetUtilsTest {
         for (int i = 0; i < 5; i++) {
             final String ip = NetUtils.getIp6FromRange("1234:5678::1-1234:5678::2");
             assertThat(ip, anyOf(equalTo("1234:5678::1"), equalTo("1234:5678::2")));
-            s_logger.info("IP is " + ip);
         }
         String ipString = null;
         final IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
         final IPv6Address ipEnd = IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff");
         for (int i = 0; i < 10; i++) {
             ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
-            s_logger.info("IP is " + ipString);
             final IPv6Address ip = IPv6Address.fromString(ipString);
             assertThat(ip, greaterThanOrEqualTo(ipStart));
             assertThat(ip, lessThanOrEqualTo(ipEnd));
@@ -740,5 +748,49 @@ public class NetUtilsTest {
         assertEquals("255.255.255.0", NetUtils.cidr2Netmask("192.168.0.0/24"));
         assertEquals("255.255.0.0", NetUtils.cidr2Netmask("169.254.0.0/16"));
         assertEquals("255.255.240.0", NetUtils.cidr2Netmask("169.254.240.0/20"));
+    }
+
+    @Test
+    public void getNetworkInterfaceTestReturnNullWhenStringIsNull() {
+        NetworkInterface result = NetUtils.getNetworkInterface(null);
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void getNetworkInterfaceTestReturnNullWhenStringIsEmpty() {
+        NetworkInterface result = NetUtils.getNetworkInterface("     ");
+        Assert.assertNull(result);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void getNetworkInterfaceTestReturnNullWhenGetByNameReturnsNull() throws SocketException {
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(null);
+        NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void getNetworkInterfaceTestReturnNullWhenGetByNameThrowsException() throws SocketException {
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenThrow(SocketException.class);
+        NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void getNetworkInterfaceTestReturnInterfaceReturnedByGetByName() throws SocketException {
+        NetworkInterface expected = PowerMockito.mock(NetworkInterface.class);
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(expected);
+
+        NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
+
+        Assert.assertEquals(expected, result);
     }
 }

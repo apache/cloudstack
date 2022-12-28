@@ -367,6 +367,3 @@ class TestVMware(cloudstackTestCase):
             snapshot_created_1,
             "VM Snapshot creation failed"
         )
-
-
-

@@ -208,6 +208,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+        if (host == null) {
+            LOGGER.info("Declining to revoke access to PowerFlex volume when a host is not provided");
+            return;
+        }
+
         try {
             if (DataObjectType.VOLUME.equals(dataObject.getType())) {
                 final VolumeVO volume = volumeDao.findById(dataObject.getId());

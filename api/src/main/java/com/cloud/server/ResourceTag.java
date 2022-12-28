@@ -31,6 +31,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         Snapshot(true, false),
         Backup(true, false),
         Network(true, true, true),
+        DomainRouter(false, false),
         Nic(false, true),
         LoadBalancer(true, true),
         PortForwardingRule(true, true),

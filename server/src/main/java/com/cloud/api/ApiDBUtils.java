@@ -128,6 +128,7 @@ import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
@@ -418,6 +419,7 @@ public class ApiDBUtils {
     static ConditionDao s_asConditionDao;
     static AutoScalePolicyConditionMapDao s_asPolicyConditionMapDao;
     static AutoScaleVmGroupPolicyMapDao s_asVmGroupPolicyMapDao;
+    static AutoScaleVmGroupVmMapDao s_autoScaleVmGroupVmMapDao;
     static AutoScalePolicyDao s_asPolicyDao;
     static AutoScaleVmProfileDao s_asVmProfileDao;
     static AutoScaleVmGroupDao s_asVmGroupDao;
@@ -619,6 +621,8 @@ public class ApiDBUtils {
     @Inject
     private AutoScaleVmGroupPolicyMapDao asVmGroupPolicyMapDao;
     @Inject
+    private AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
+    @Inject
     private AutoScalePolicyDao asPolicyDao;
     @Inject
     private AutoScaleVmProfileDao asVmProfileDao;
@@ -799,6 +803,7 @@ public class ApiDBUtils {
         s_asPolicyConditionMapDao = asPolicyConditionMapDao;
         s_counterDao = counterDao;
         s_asVmGroupPolicyMapDao = asVmGroupPolicyMapDao;
+        s_autoScaleVmGroupVmMapDao = autoScaleVmGroupVmMapDao;
         s_tagJoinDao = tagJoinDao;
         s_vmGroupJoinDao = vmGroupJoinDao;
         s_eventJoinDao = eventJoinDao;
@@ -1552,7 +1557,7 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
-            if (autoScalePolicy.getAction().equals("scaleup")) {
+            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                 scaleUpPolicyIds.add(autoScalePolicy.getId());
             } else {
                 scaleDownPolicyIds.add(autoScalePolicy.getId());
@@ -1577,7 +1582,7 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
-            if (autoScalePolicy.getAction().equals("scaleup")) {
+            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                 scaleUpPolicies.add(autoScalePolicy);
             } else {
                 scaleDownPolicies.add(autoScalePolicy);
@@ -1619,6 +1624,10 @@ public class ApiDBUtils {
 
     public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId) {
         return s_asVmGroupDao.findById(groupId);
+    }
+
+    public static int countAvailableVmsByGroupId(long groupId) {
+        return s_autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(groupId);
     }
 
     public static GuestOSCategoryVO findGuestOsCategoryById(long catId) {

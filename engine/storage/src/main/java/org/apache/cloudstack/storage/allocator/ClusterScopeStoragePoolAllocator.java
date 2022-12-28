@@ -107,7 +107,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
         }
 
-        s_logger.debug(String.format("ClusterScopeStoragePoolAllocator is returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
+        logEndOfSearch(suitablePools);
 
         return suitablePools;
     }

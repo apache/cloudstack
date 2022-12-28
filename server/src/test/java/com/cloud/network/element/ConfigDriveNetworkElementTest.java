@@ -274,7 +274,7 @@ public class ConfigDriveNetworkElementTest {
         PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
         Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("buildConfigDrive")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString()).thenReturn("content");
+        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap()).thenReturn("content");
 
         final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
         final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);

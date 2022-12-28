@@ -70,6 +70,6 @@ public class AnswerTest {
         assertFalse(b);
 
         d = usa.getDetails();
-        assertTrue(d.equals("Unsuppored Version."));
+        assertTrue(d.equals("Unsupported Version."));
     }
 }

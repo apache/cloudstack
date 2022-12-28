@@ -2977,8 +2977,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return earliestNetwork != null ? new XsLocalNetwork(this, earliestNetwork, earliestNetworkRecord, null, null) : null;
     }
 
-    public long[] getNetworkStats(final Connection conn, final String privateIP) {
-        final String result = networkUsage(conn, privateIP, "get", null);
+    public long[] getNetworkStats(final Connection conn, final String privateIP, final String publicIp) {
+        final String result = networkUsage(conn, privateIP, "get", null, publicIp);
         final long[] stats = new long[2];
         if (result != null) {
             final String[] splitResult = result.split(":");
@@ -2987,6 +2987,37 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 stats[0] += Long.parseLong(splitResult[i++]);
                 stats[1] += Long.parseLong(splitResult[i++]);
             }
+        }
+        return stats;
+    }
+
+    public long[] getVPCNetworkStats(final String privateIP, final String publicIp) {
+        String args = " -l " + publicIp + " -g";
+        final ExecutionResult result = executeInVR(privateIP, "vpc_netusage.sh", args);
+        final String detail = result.getDetails();
+        final long[] stats = new long[2];
+        if (detail != null) {
+            final String[] splitResult = detail.split(":");
+            int i = 0;
+            while (i < splitResult.length - 1) {
+                stats[0] += Long.parseLong(splitResult[i++]);
+                stats[1] += Long.parseLong(splitResult[i++]);
+            }
+        }
+        return stats;
+    }
+
+    public long[] getNetworkLbStats(final String privateIp, final String publicIp, final Integer port) {
+        String args = publicIp + " " + port;
+        ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
+        String detail = callResult.getDetails();
+        if (detail == null || detail.isEmpty()) {
+            s_logger.error("Get network loadbalancer stats returns empty result");
+        }
+        final long[] stats = new long[1];
+        if (detail != null) {
+            final String[] splitResult = detail.split(",");
+            stats[0] += Long.parseLong(splitResult[0]);
         }
         return stats;
     }
@@ -3526,7 +3557,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 } else if (param.matches("vbd_.*_write")) {
                     vmStatsAnswer.setDiskWriteKBs(vmStatsAnswer.getDiskWriteKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.contains("memory_internal_free")) {
-                    vmStatsAnswer.setIntFreeMemoryKBs(vmStatsAnswer.getIntFreeMemoryKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
+                    vmStatsAnswer.setIntFreeMemoryKBs(vmStatsAnswer.getIntFreeMemoryKBs() + getDataAverage(dataNode, col, numRows));
                 } else if (param.contains("memory_target")) {
                     vmStatsAnswer.setTargetMemoryKBs(vmStatsAnswer.getTargetMemoryKBs() + getDataAverage(dataNode, col, numRows) / BASE_TO_CONVERT_BYTES_INTO_KILOBYTES);
                 } else if (param.contains("memory")) {
@@ -4020,7 +4051,12 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
     }
 
+
     public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif) {
+        return networkUsage(conn, privateIpAddress, option, vif, null);
+    }
+
+    public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif, final String publicIp) {
         if (option.equals("get")) {
             return "0:0";
         }
@@ -4049,7 +4085,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return states;
     }
 
-    public HashMap<String, String> parseDefaultOvsRuleComamnd(final String str) {
+    public HashMap<String, String> parseDefaultOvsRuleCommand(final String str) {
         final HashMap<String, String> cmd = new HashMap<String, String>();
         final String[] sarr = str.split("/");
         for (int i = 0; i < sarr.length; i++) {

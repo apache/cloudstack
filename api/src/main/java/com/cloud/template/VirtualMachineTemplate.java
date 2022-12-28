@@ -19,6 +19,7 @@ package com.cloud.template;
 import java.util.Date;
 import java.util.Map;
 
+import com.cloud.user.UserData;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -30,6 +31,8 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 public interface VirtualMachineTemplate extends ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachineTemplate.State> {
+    int MAXIMUM_TEMPLATE_NAME_LENGTH = 255;
+
     enum State {
         Active,
         Inactive,
@@ -140,4 +143,9 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
     Date getUpdated();
 
     boolean isDeployAsIs();
+
+    Long getUserDataId();
+
+    UserData.UserDataOverridePolicy getUserDataOverridePolicy();
+
 }

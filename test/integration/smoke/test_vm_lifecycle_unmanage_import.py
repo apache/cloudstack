@@ -60,6 +60,8 @@ class TestUnmanageVM(cloudstackTestCase):
             assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+        if cls.hypervisorNotSupported:
+            return
 
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
@@ -83,6 +85,12 @@ class TestUnmanageVM(cloudstackTestCase):
         )
         cls._cleanup.append(cls.network_offering)
         cls.network_offering.update(cls.apiclient, state='Enabled')
+        cls.isolated_network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["nw_off_isolated_persistent"],
+        )
+        cls._cleanup.append(cls.isolated_network_offering)
+        cls.isolated_network_offering.update(cls.apiclient, state='Enabled')
 
     @classmethod
     def tearDownClass(cls):
@@ -91,17 +99,41 @@ class TestUnmanageVM(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        self.created_networks = []
+        self.virtual_machine = None
+        self.unmanaged_instance = None
+        self.imported_vm = None
+        if self.hypervisorNotSupported:
+            return
         self.services["network"]["networkoffering"] = self.network_offering.id
+        network_data = self.services["l2-network"]
         self.network = Network.create(
             self.apiclient,
-            self.services["l2-network"],
+            network_data,
             zoneid=self.zone.id,
             networkofferingid=self.network_offering.id
         )
-        self.cleanup = [
-            self.network
-        ]
-        self.unmanaged_instance = None
+        self.cleanup.append(self.network)
+        self.created_networks.append(self.network)
+        network_data['name'] = "Test L2 Network1"
+        network_data['displaytext'] = "Test L2 Network1"
+        self.network1 = Network.create(
+            self.apiclient,
+            network_data,
+            zoneid=self.zone.id,
+            networkofferingid=self.network_offering.id
+        )
+        self.cleanup.append(self.network1)
+        self.created_networks.append(self.network1)
+        self.network2 = Network.create(
+            self.apiclient,
+            self.services["isolated_network"],
+            zoneid=self.zone.id,
+            networkofferingid=self.isolated_network_offering.id
+        )
+        self.cleanup.append(self.network2)
+        self.created_networks.append(self.network2)
 
     '''
     Fetch vmware datacenter login details
@@ -128,6 +160,9 @@ class TestUnmanageVM(cloudstackTestCase):
                 self.delete_vcenter_vm(self.unmanaged_instance)
             except Exception as e:
                 print("Warning: Exception during cleaning up vCenter VM: %s : %s" % (self.unmanaged_instance, e))
+        else:
+            if self.virtual_machine is not None and self.imported_vm is None:
+                self.cleanup.append(self.virtual_machine)
         super(TestUnmanageVM, self).tearDown()
 
     def check_vm_state(self, vm_id):
@@ -158,7 +193,8 @@ class TestUnmanageVM(cloudstackTestCase):
         3. Verify VM is not listed in CloudStack
         4. Verify VM is listed as part of the unmanaged instances
         5. Import VM
-        6. Destroy VM
+        6. Verify details of imported VM
+        7. Destroy VM
         """
 
         # 1 - Deploy VM
@@ -167,11 +203,18 @@ class TestUnmanageVM(cloudstackTestCase):
             self.services["virtual_machine"],
             templateid=self.template.id,
             serviceofferingid=self.small_offering.id,
-            networkids=self.network.id,
+            networkids=[self.network.id, self.network1.id, self.network2.id],
             zoneid=self.zone.id
         )
         vm_id = self.virtual_machine.id
         vm_instance_name = self.virtual_machine.instancename
+        networks = []
+        for network in self.created_networks:
+            n = Network.list(
+                self.apiclient,
+                id=network.id
+            )[0]
+            networks.append(n)
         hostid = self.virtual_machine.hostid
         hosts = Host.list(
             self.apiclient,
@@ -212,13 +255,20 @@ class TestUnmanageVM(cloudstackTestCase):
         )
         # 5 - Import VM
         unmanaged_vm_nic = unmanaged_vm.nic[0]
-        nicnetworklist = [{}]
-        nicnetworklist[0]["nic"] = unmanaged_vm_nic.id
-        nicnetworklist[0]["network"] = self.network.id
-        nicipaddresslist = [{}]
-        if self.network.type == "Isolated":
-            nicipaddresslist[0]["nic"] = unmanaged_vm_nic.id
-            nicipaddresslist[0]["ip4Address"] = "auto"
+        nicnetworklist = []
+        nicipaddresslist = []
+        for nic in unmanaged_vm.nic:
+            for network in networks:
+                if int(network.vlan) == int(nic.vlanid):
+                    nicnetworklist.append({
+                        "nic": nic.id,
+                        "network": network.id
+                    })
+                    if network.type == "Isolated":
+                        nicipaddresslist.append({
+                            "nic": nic.id,
+                            "ip4Address": "auto"
+                        })
         import_vm_service = {
             "nicnetworklist": nicnetworklist,
             "nicipaddresslist": nicipaddresslist
@@ -232,6 +282,7 @@ class TestUnmanageVM(cloudstackTestCase):
             templateid=self.template.id)
         self.cleanup.append(self.imported_vm)
         self.unmanaged_instance = None
+        # 6 - Verify details of the imported VM
         self.assertEqual(
             self.small_offering.id,
             self.imported_vm.serviceofferingid,
@@ -242,4 +293,17 @@ class TestUnmanageVM(cloudstackTestCase):
             self.imported_vm.templateid,
             "Imported VM template is different, expected: %s, actual: %s" % (self.template.id, self.imported_vm.templateid)
         )
+        self.assertEqual(
+            len(nicnetworklist),
+            len(self.imported_vm.nic),
+            "Imported VM number of NICs is different, expected: %d, actual: %d" % (len(nicnetworklist), len(self.imported_vm.nic))
+        )
+        for nic in self.imported_vm.nic:
+            index = int(nic.deviceid) # device id of imported nics will be in order of their import
+            self.assertEqual(
+                nicnetworklist[index]["network"],
+                nic.networkid,
+                "Imported VM NIC with id: %s has wrong network, expected: %s, actual: %s" % (nic.id, nicnetworklist[index]["network"], nic.networkid)
+            )
         self.check_vm_state(self.imported_vm.id)
+        # 7 - Destroy VM. This will be done during cleanup

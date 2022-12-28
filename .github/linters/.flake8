@@ -15,5 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# E223 Tab before operator
+# E224 Tab after operator
+# E242 Tab after ','
+# E273 Tab after keyword
+# E274 Tab before keyword
+# E901 SyntaxError or IndentationError
+# E902 IOError
+# W291 Trailing whitespace
+# W292 No newline at end of file
+# W293 Blank line contains whitespace
+# W391 Blank line at end of file
+
 [flake8]
-select = W291,W292,W293
+select = E223,E224,E242,E273,E274,E901,E902,W291,W292,W293,W391

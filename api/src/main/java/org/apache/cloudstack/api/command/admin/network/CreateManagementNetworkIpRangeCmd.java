@@ -89,7 +89,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.VLAN,
             type = CommandType.STRING,
-            description = "Optional. The vlan id the ip range sits on, default to Null when it is not specified which means you network is not on any Vlan")
+            description = "Optional. The vlan id the ip range sits on, default to Null when it is not specified which means your network is not on any Vlan")
     private String vlan;
 
     /////////////////////////////////////////////////////

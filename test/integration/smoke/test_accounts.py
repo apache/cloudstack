@@ -1420,16 +1420,16 @@ class TestUserLogin(cloudstackTestCase):
         self.cleanup.append(self.account)
 
         self.debug("Logging into the cloudstack with login API")
-        respose = User.login(
+        response = User.login(
             self.apiclient,
             username=self.account.name,
             password=self.services["account"]["password"]
         )
 
-        self.debug("Login API response: %s" % respose)
+        self.debug("Login API response: %s" % response)
 
         self.assertNotEqual(
-            respose.sessionkey,
+            response.sessionkey,
             None,
             "Login to the CloudStack should be successful" +
             "response shall have non Null key"
@@ -1574,15 +1574,15 @@ class TestUserLogin(cloudstackTestCase):
         )
 
         self.debug("Logging into the cloudstack with login API")
-        respose = User.login(
+        response = User.login(
             self.apiclient,
             username=self.account.name,
             password=self.services["account"]["password"],
             domainid=domain.id)
-        self.debug("Login API response: %s" % respose)
+        self.debug("Login API response: %s" % response)
 
         self.assertNotEqual(
-            respose.sessionkey,
+            response.sessionkey,
             None,
             "Login to the CloudStack should be successful" +
             "response shall have non Null key"

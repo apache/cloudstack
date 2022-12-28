@@ -20,7 +20,7 @@ under the License.
 // Version: 1.9.1.152
 
 //
-// Javascript logger utility
+// JavaScript logger utility
 // Author
 //		Kelven Yang
 //		2/25/2010

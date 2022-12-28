@@ -33,6 +33,8 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, 
     @Override
     public long getId();
 
+    String getUserData();
+
     public String getUuid();
 
     public Long getZoneId();
@@ -43,11 +45,13 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, 
 
     public String getOtherDeployParams();
 
+    public List<Pair<String, String>> getOtherDeployParamsList();
+
     List<Pair<String, String>> getCounterParams();
 
-    public Integer getDestroyVmGraceperiod();
+    public Integer getExpungeVmGracePeriod();
 
-    public long getAutoScaleUserId();
+    public Long getAutoScaleUserId();
 
     @Override
     boolean isDisplay();

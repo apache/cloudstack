@@ -36,15 +36,18 @@ import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource.BridgeType;
 import com.cloud.network.Networks.TrafficType;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
+@PrepareForTest(value = {MemStat.class, AgentPropertiesFileHandler.class})
 public class LibvirtVifDriverTest {
     private LibvirtComputingResource res;
 
@@ -132,40 +135,44 @@ public class LibvirtVifDriverTest {
     }
 
     @Test
-    public void testDefaultsWhenExplicitlySet() throws ConfigurationException {
+    public void configureVifDriversTestWhenSetEqualToDefault() throws Exception {
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.doReturn(LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME).when(AgentPropertiesFileHandler.class, "getPropertyValue", Mockito.eq(AgentProperties.LIBVIRT_VIF_DRIVER));
 
         Map<String, Object> params = new HashMap<String, Object>();
 
         // Switch res' bridge type for test purposes
-        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
         checkAllSame(bridgeVifDriver);
 
-        params.clear();
-        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.OPENVSWITCH;
         configure(params);
         checkAllSame(ovsVifDriver);
+
+        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.times(2));
+        AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_VIF_DRIVER);
     }
 
     @Test
-    public void testWhenExplicitlySetDifferentDefault() throws ConfigurationException {
+    public void configureVifDriversTestWhenSetDifferentFromDefault() throws Exception {
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.doReturn(LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME).when(AgentPropertiesFileHandler.class, "getPropertyValue", Mockito.eq(AgentProperties.LIBVIRT_VIF_DRIVER));
 
         // Tests when explicitly set vif driver to OVS when using regular bridges and vice versa
         Map<String, Object> params = new HashMap<String, Object>();
 
         // Switch res' bridge type for test purposes
-        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.NATIVE;
         configure(params);
         checkAllSame(ovsVifDriver);
 
-        params.clear();
-        params.put(LibVirtVifDriver, LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME);
         res._bridgeType = BridgeType.OPENVSWITCH;
         configure(params);
         checkAllSame(bridgeVifDriver);
+
+        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.times(2));
+        AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_VIF_DRIVER);
     }
 
     @Test
