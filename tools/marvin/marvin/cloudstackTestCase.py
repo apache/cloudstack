@@ -99,7 +99,9 @@ class cloudstackTestCase(unittest.case.TestCase):
             Delete resources (created during tests)
         """
         for obj in resources:
-            if isinstance(obj, VirtualMachine):
+            if isinstance(obj, Domain):
+                obj.delete(api_client, cleanup=true)
+            elif isinstance(obj, VirtualMachine):
                 obj.delete(api_client, expunge=True)
             else:
                 obj.delete(api_client)
