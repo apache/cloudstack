@@ -89,6 +89,24 @@ export default {
       ]
     },
     {
+      name: 'guestos',
+      title: 'label.guest.os',
+      icon: 'database-outlined',
+      permission: ['listOsTypes'],
+      columns: ['description', 'oscategoryname', 'isuserdefined'],
+      details: ['description', 'oscategoryname', 'isuserdefined'],
+      searchFilters: ['description'],
+      actions: [
+        {
+          api: 'updateGuestOs',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          args: ['osdisplayname']
+        }
+      ]
+    },
+    {
       name: 'guestoshypervisormapping',
       title: 'label.guest.os.mappings',
       icon: 'database-outlined',
@@ -96,7 +114,7 @@ export default {
       columns: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor'],
       details: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor', 'isuserdefined'],
       filters: ['all', 'kvm', 'vmware', 'xenserver', 'lxc', 'ovm3'],
-      searchFilters: ['hypervisor', 'hypervisorversion'],
+      searchFilters: ['osdisplayname', 'hypervisor', 'hypervisorversion'],
       actions: [
         {
           api: 'updateGuestOsMapping',

@@ -3664,10 +3664,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         GuestOSResponse response = new GuestOSResponse();
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(guestOS.getIsUserDefined());
+        response.setIsUserDefined(String.valueOf(guestOS.getIsUserDefined()));
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
+            response.setOsCategoryName(category.getName());
         }
 
         response.setObjectName("ostype");
