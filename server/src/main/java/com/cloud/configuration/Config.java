@@ -244,7 +244,7 @@ public enum Config {
             String.class,
             "network.loadbalancer.haproxy.stats.auth",
             "admin1:AdMiN123",
-            "Load Balancer(haproxy) authetication string in the format username:password",
+            "Load Balancer(haproxy) authentication string in the format username:password",
             null),
     NetworkLBHaproxyStatsPort(
             "Network",
@@ -426,7 +426,7 @@ public enum Config {
             "Console proxy command port that is used to communicate with management server",
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName"),
+    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName", "privateip"),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,
@@ -1783,7 +1783,7 @@ public enum Config {
     private final String _name;
     private final String _defaultValue;
     private final String _description;
-    private final String _range;
+    private final String[] _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
 
     private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
@@ -1833,7 +1833,7 @@ public enum Config {
         }
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
+    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String... range) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1896,7 +1896,7 @@ public enum Config {
         }
     }
 
-    public String getRange() {
+    public String[] getRange() {
         return _range;
     }
 

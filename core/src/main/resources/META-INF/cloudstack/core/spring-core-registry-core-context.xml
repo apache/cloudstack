@@ -248,7 +248,7 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="affinity.processors.order" />
         <property name="orderConfigDefault"
-            value="HostAntiAffinityProcessor,ExplicitDedicationProcessor,HostAffinityProcessor" />
+            value="HostAntiAffinityProcessor,ExplicitDedicationProcessor,HostAffinityProcessor,NonStrictHostAntiAffinityProcessor,NonStrictHostAffinityProcessor" />
         <property name="excludeKey" value="affinity.processors.exclude" />
     </bean>
 

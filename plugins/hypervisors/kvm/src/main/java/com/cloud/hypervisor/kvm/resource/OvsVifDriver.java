@@ -28,11 +28,14 @@ import com.cloud.hypervisor.kvm.dpdk.DpdkDriver;
 import com.cloud.hypervisor.kvm.dpdk.DpdkDriverImpl;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.network.Networks;
@@ -53,13 +56,7 @@ public class OvsVifDriver extends VifDriverBase {
 
         getPifs();
 
-        String networkScriptsDir = (String)params.get("network.scripts.dir");
-        if (networkScriptsDir == null) {
-            networkScriptsDir = "scripts/vm/network/vnet";
-        }
-
-        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
-        if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
+        if (BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED))) {
             dpdkDriver = new DpdkDriverImpl();
         }
 

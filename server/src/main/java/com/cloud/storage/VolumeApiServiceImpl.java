@@ -337,6 +337,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<Boolean>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
             "If true, volume's disk offering can be changed only with the matched storage tags", true, ConfigKey.Scope.Zone);
 
+    public static final ConfigKey<Long> WaitDetachDevice = new ConfigKey<>(
+            "Advanced",
+            Long.class,
+            "wait.detach.device",
+            "10000",
+            "Time (in milliseconds) to wait before assuming the VM was unable to detach a volume after the hypervisor sends the detach command.",
+            true);
+
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
@@ -2777,6 +2785,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             cmd.setStoragePort(volumePool.getPort());
 
             cmd.set_iScsiName(volume.get_iScsiName());
+            cmd.setWaitDetachDevice(WaitDetachDevice.value());
 
             try {
                 answer = _agentMgr.send(hostId, cmd);
@@ -4528,6 +4537,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, MatchStoragePoolTagsWithDiskOffering, UseHttpsToUpload};
+        return new ConfigKey<?>[] {
+                ConcurrentMigrationsThresholdPerDatastore,
+                AllowUserExpungeRecoverVolume,
+                MatchStoragePoolTagsWithDiskOffering,
+                UseHttpsToUpload,
+                WaitDetachDevice
+        };
     }
 }

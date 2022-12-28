@@ -80,6 +80,9 @@
         <template #vm="{record}">
           <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
         </template>
+        <template #cidrlist="{ record }">
+          <span style="white-space: pre-line"> {{ record.cidrlist.replaceAll(" ", "\n") }}</span>
+        </template>
       </a-table>
       <br/>
     </div>

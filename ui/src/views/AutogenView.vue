@@ -1405,6 +1405,17 @@ export default {
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
+              if (['createAffinityGroup'].includes(action.api) && key === 'type') {
+                if (params[key] === 'host anti-affinity (Strict)') {
+                  params[key] = 'host anti-affinity'
+                } else if (params[key] === 'host affinity (Strict)') {
+                  params[key] = 'host affinity'
+                } else if (params[key] === 'host anti-affinity (Non-Strict)') {
+                  params[key] = 'non-strict host anti-affinity'
+                } else if (params[key] === 'host affinity (Non-Strict)') {
+                  params[key] = 'non-strict host affinity'
+                }
+              }
             } else if (param.type === 'list') {
               params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
             } else if (param.name === 'account' || param.name === 'keypair') {
