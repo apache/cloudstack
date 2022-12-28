@@ -767,30 +767,30 @@ public class NetUtilsTest {
 
     @Test
     public void testGetAllIpsFromCidrNoneUsedNoLimit() {
-        runTestGetAllIpsFromCidr(22,-1,false, 1022);
+        runTestGetAllIpsFromCidr(22, -1, false, 1022);
     }
 
     @Test
     public void testGetAllIpsFromCidrNoneUsedLimit() {
-        runTestGetAllIpsFromCidr(22,255,false, 255);
+        runTestGetAllIpsFromCidr(22, 255, false, 255);
     }
 
     @Test
     public void testGetAllIpsFromCidrNoneUsedLessLimit() {
-        runTestGetAllIpsFromCidr(22,10, false, 10);
+        runTestGetAllIpsFromCidr(22, 10, false, 10);
     }
 
 
     @Test
     public void testGetAllIpsFromCidrUsedNoLimit() {
-        runTestGetAllIpsFromCidr(22,-1, true, 1022 - WIDE_SHARED_NET_USED_IPS.size());
+        runTestGetAllIpsFromCidr(22, -1, true, 1022 - WIDE_SHARED_NET_USED_IPS.size());
     }
 
     @Test
     public void testGetAllIpsFromCidrUsedLimit() {
-        runTestGetAllIpsFromCidr(22,50, true, 50);
+        runTestGetAllIpsFromCidr(22, 50, true, 50);
         List<String> usedIpsInRange = new ArrayList<>(WIDE_SHARED_NET_USED_IPS);
         usedIpsInRange = usedIpsInRange.stream().filter(x -> x.startsWith("10.20.0.")).collect(Collectors.toList());
-        runTestGetAllIpsFromCidr(24,255, true, 254 - usedIpsInRange.size());
+        runTestGetAllIpsFromCidr(24, 255, true, 254 - usedIpsInRange.size());
     }
 }
