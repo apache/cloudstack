@@ -32,7 +32,6 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetSolidFireAccountIdCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(GetSolidFireAccountIdCmd.class.getName());
-    private static final String NAME = "getsolidfireaccountidresponse";
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.STRING, description = "CloudStack Account UUID", required = true)
     private String csAccountUuid;

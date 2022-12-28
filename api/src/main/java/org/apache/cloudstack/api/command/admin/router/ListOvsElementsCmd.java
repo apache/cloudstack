@@ -44,7 +44,6 @@ import com.cloud.network.element.VirtualRouterElementService;
 public class ListOvsElementsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger
         .getLogger(ListNetworkOfferingsCmd.class.getName());
-    private static final String Name = "listovselementsresponse";
     @Inject
     private List<VirtualRouterElementService> _service;
     // ///////////////////////////////////////////////////
