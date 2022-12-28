@@ -561,7 +561,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void advanceExpunge(final String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-        advanceExpunge(vm);
+        boolean result = false;
+        try {
+            advanceExpunge(vm);
+            result = true;
+        } finally {
+            if (vm != null && !State.Expunged.equals(vm.getState())) {
+                Event event = result ? Event.OperationSucceeded : Event.OperationFailed;
+                try {
+                    stateTransitTo(_vmDao.findByUuid(vmUuid), event, null, null);
+                } catch (final NoTransitionException e) {
+                    s_logger.warn(e.getMessage());
+                }
+            }
+        }
     }
 
     private boolean isValidSystemVMType(VirtualMachine vm) {

@@ -171,7 +171,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         final DomainRouterVO router = createForUpdate();
         router.setPublicIpAddress(null);
         final UpdateBuilder ub = getUpdateBuilder(router);
-        ub.set(router, "state", State.Destroyed);
+        ub.set(router, "state", State.Expunged);
         update(id, ub, router);
 
         final boolean result = super.remove(id);

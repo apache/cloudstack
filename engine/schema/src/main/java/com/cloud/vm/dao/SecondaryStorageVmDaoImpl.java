@@ -110,7 +110,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         proxy.setPrivateIpAddress(null);
 
         UpdateBuilder ub = getUpdateBuilder(proxy);
-        ub.set(proxy, "state", State.Destroyed);
+        ub.set(proxy, "state", State.Expunged);
         ub.set(proxy, "privateIpAddress", null);
         update(id, ub, proxy);
 
