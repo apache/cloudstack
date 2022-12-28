@@ -254,6 +254,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
     private Long overrideDiskOfferingId;
 
+    @Parameter(name = ApiConstants.IOTHREADS_ENABLED, type = CommandType.BOOLEAN, required = false,
+            description = "IOThreads are dedicated event loop threads for supported disk devices to perform block I/O requests in order to improve scalability especially on an SMP host/guest with many LUNs.")
+    private Boolean iothreadsEnabled;
+
+    @Parameter(name = ApiConstants.IO_DRIVER_POLICY, type = CommandType.STRING, description = "Controls specific policies on IO")
+    private String ioDriverPolicy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -317,6 +324,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
+        }
+
+        if (getIoDriverPolicy() != null) {
+            customparameterMap.put(VmDetailConstants.IO_POLICY, getIoDriverPolicy().toString().toLowerCase());
+        }
+
+        if (iothreadsEnabled != null) {
+            customparameterMap.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
         }
 
         return customparameterMap;
@@ -682,6 +697,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return overrideDiskOfferingId;
     }
 
+    public ApiConstants.IoDriverPolicy getIoDriverPolicy() {
+        if (StringUtils.isNotBlank(ioDriverPolicy)) {
+            try {
+                String policyType = ioDriverPolicy.trim().toUpperCase();
+                return ApiConstants.IoDriverPolicy.valueOf(policyType);
+            } catch (IllegalArgumentException e) {
+                String errMesg = String.format("Invalid io policy %s specified for vm %s. Valid values are: ", ioDriverPolicy, getName(), Arrays.toString(ApiConstants.IoDriverPolicy.values()));
+                s_logger.warn(errMesg);
+                throw new InvalidParameterValueException(errMesg);
+            }
+        }
+        return null;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

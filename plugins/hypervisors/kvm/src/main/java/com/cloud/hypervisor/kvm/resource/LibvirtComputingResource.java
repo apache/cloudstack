@@ -180,7 +180,6 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
@@ -2687,9 +2686,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     guest.setBootMode(GuestDef.BootMode.SECURE);
                 }
             }
-            if (customParams.containsKey(VmDetailConstants.IOTHREADS)) {
-                guest.setIothreads(VmDetailConstants.IOTHREADS);
-            }
+            guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
         }
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
@@ -2925,9 +2922,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
 
                 boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
-                String ioDriver = volume.getDetails().get(StorageManager.STORAGE_POOL_IO_POLICY.toString());
+                disk.setIothreads(iothreadsEnabled);
 
-                setDiskIoDriver(disk, iothreadsEnabled, getIoDriverForTheStorage(ioDriver));
+                String ioDriver = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IO_POLICY) ? details.get(VmDetailConstants.IO_POLICY) : null;
+
+                ioDriver = iothreadsEnabled && ioDriver == null ? IoDriver.THREADS.ioDriver : ioDriver;
+
+                setDiskIoDriver(disk, getIoDriverForTheStorage(ioDriver));
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -3069,15 +3070,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
-    public void setDiskIoDriver(DiskDef disk, boolean iothreadsEnabled, IoDriver ioDriver) {
-        if (iothreadsEnabled) {
-            disk.setIothreads(iothreadsEnabled);
-            if (!enableIoUring && IoDriver.IOURING == ioDriver) {
-                //setting io=threads as default
-                disk.setIoDriver(IoDriver.THREADS);
-            } else {
-                disk.setIoDriver(ioDriver);
-            }
+    public void setDiskIoDriver(DiskDef disk, IoDriver ioDriver) {
+        if (ioDriver != null && (!enableIoUring && IoDriver.IOURING != ioDriver)) {
+            disk.setIoDriver(ioDriver);
         } else if (enableIoUring) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
@@ -3085,14 +3080,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public IoDriver getIoDriverForTheStorage(String ioDriver) {
         if (ioDriver == null) {
-            return IoDriver.THREADS;
+            return null;
         }
-        if (ioDriver.equals("native")) {
+        if ("native".equals(ioDriver)) {
             return IoDriver.NATIVE;
-        } else if (ioDriver.equals("io_uring")) {
+        } else if ("threads".equals(ioDriver)) {
+            return IoDriver.THREADS;
+        } else if ("io_uring".equals(ioDriver)) {
             return IoDriver.IOURING;
         }
-        return IoDriver.THREADS;
+        return null;
     }
 
     /**

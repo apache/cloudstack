@@ -656,6 +656,7 @@
 "label.duration": "Duration (in sec)",
 "label.dynamicscalingenabled": "Dynamic scaling enabled",
 "label.dynamicscalingenabled.tooltip": "VM can dynamically scale only when dynamic scaling is enabled on template, service offering and global setting.",
+"label.iothreadsenabled" : "Enable iothreads allocation for KVM hypervisor",
 "label.diskofferingstrictness": "Disk offering strictness",
 "label.disksizestrictness": "Disk size strictness",
 "label.computeonly.offering": "Compute only disk offering",

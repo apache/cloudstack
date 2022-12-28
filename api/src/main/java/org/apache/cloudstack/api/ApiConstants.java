@@ -922,6 +922,8 @@ public class ApiConstants {
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
+    public static final String IOTHREADS_ENABLED = "iothreadsenabled";
+    public static final String IO_DRIVER_POLICY = "iodriverpolicy";
 
     public static final String POOL_TYPE = "pooltype";
     public static final String REDUNDANT_STATE = "redundantstate";
@@ -935,6 +937,16 @@ public class ApiConstants {
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
+
+    public enum IoDriverPolicy {
+        THREADS, NATIVE, IO_URING;
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+    }
+
     public enum BootType {
         UEFI, BIOS;
 

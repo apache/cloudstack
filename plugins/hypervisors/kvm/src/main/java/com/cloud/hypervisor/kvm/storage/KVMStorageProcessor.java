@@ -119,7 +119,6 @@ import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
@@ -1453,14 +1452,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
 
-                boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
+                diskdef.setIothreads(details != null && details.containsKey(VmDetailConstants.IOTHREADS));
 
-                if (isIothreadsEnabled) {
-                    String ioDriver = details.containsKey(StorageManager.STORAGE_POOL_IO_POLICY.toString()) ? details.get(StorageManager.STORAGE_POOL_IO_POLICY.toString()) : null;
-                    resource.setDiskIoDriver(diskdef, isIothreadsEnabled, resource.getIoDriverForTheStorage(ioDriver));
-                    if (busT == DiskDef.DiskBus.VIRTIO) {
-                        diskdef.setIothreads(isIothreadsEnabled);
-                    }
+                String ioDriver = (details != null && details.containsKey(VmDetailConstants.IO_POLICY)) ? details.get(VmDetailConstants.IO_POLICY) : null;
+                if (ioDriver != null) {
+                    resource.setDiskIoDriver(diskdef, resource.getIoDriverForTheStorage(ioDriver));
                 }
             }
 

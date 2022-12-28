@@ -1535,9 +1535,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     private void setIoDriverPolicy(Map<String, String> details, StoragePoolVO storagePool, VolumeVO volume) {
         if (volume.getInstanceId() != null) {
-            UserVmDetailVO iothreads = userVmDetailsDao.findDetail(volume.getInstanceId(), VmDetailConstants.IOTHREADS);
-            if (iothreads != null) {
-                details.put(StorageManager.STORAGE_POOL_IO_POLICY.toString(), String.valueOf(StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId())));
+            UserVmDetailVO ioDriverPolicy = userVmDetailsDao.findDetail(volume.getInstanceId(),
+                    VmDetailConstants.IO_POLICY);
+            if (ioDriverPolicy != null) {
+                details.put(VmDetailConstants.IO_POLICY, ioDriverPolicy.getValue());
+            } else {
+                String storageIoPolicy = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId());
+                if (storageIoPolicy == null) {
+                    details.put(VmDetailConstants.IO_POLICY,
+                            String.valueOf(StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId())));
+                }
             }
         }
     }

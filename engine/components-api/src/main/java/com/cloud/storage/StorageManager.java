@@ -140,8 +140,8 @@ public interface StorageManager extends StorageService {
     ConfigKey<String> STORAGE_POOL_IO_POLICY = new ConfigKey<>(String.class,
             "kvm.storage.pool.io.policy",
             "Storage",
-            "threads",
-            "IO driver policy - 'threads' (default in qemu), 'native' or 'io_uring'. The policy will be set when the template has enabled the 'iothreads' option, and will be applied only on the volumes of that pool",
+            null,
+            "IO driver policy - 'threads', 'native' or 'io_uring'. If the IO policy is set for a specific storage and enabled in the VM settings this option will override be overridden from the VM's setting",
             false,
             ConfigKey.Scope.StoragePool,
             null);

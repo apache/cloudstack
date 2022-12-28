@@ -106,7 +106,7 @@ public class LibvirtVMDef {
         private String _machine;
         private String _nvram;
         private String _nvramTemplate;
-        private String iothreads;
+        private boolean iothreads;
 
         public static final String GUEST_LOADER_SECURE = "guest.loader.secure";
         public static final String GUEST_LOADER_LEGACY = "guest.loader.legacy";
@@ -169,11 +169,7 @@ public class LibvirtVMDef {
             this._bootmode = bootmode;
         }
 
-        public String getIothreads() {
-            return iothreads;
-        }
-
-        public void setIothreads(String iothreads) {
+        public void setIothreads(boolean iothreads) {
             this.iothreads = iothreads;
         }
 
@@ -229,7 +225,7 @@ public class LibvirtVMDef {
                     guestDef.append("<smbios mode='sysinfo'/>\n");
                 }
                 guestDef.append("</os>\n");
-                if (iothreads != null) {
+                if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", ioThreadsNum));
                 }
                 return guestDef.toString();
@@ -774,10 +770,6 @@ public class LibvirtVMDef {
 
         public void setDeviceType(DeviceType deviceType) {
             _deviceType = deviceType;
-        }
-
-        public boolean getIothreads() {
-            return iothreads;
         }
 
         public void setIothreads(boolean iothreads) {

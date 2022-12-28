@@ -4015,7 +4015,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _userVmDao.loadDetails(vm);
                 if (isIothreadsSupported(vm)) {
                     details.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
-                    details.put(StorageManager.STORAGE_POOL_IO_POLICY.toString(), String.valueOf(StorageManager.STORAGE_POOL_IO_POLICY.valueIn(volumeToAttachStoragePool.getId())));
+                }
+
+                String ioPolicy = getIoPolicy(vm, volumeToAttachStoragePool.getId());
+                if (ioPolicy != null) {
+                    details.put(VmDetailConstants.IO_POLICY, ioPolicy);
                 }
 
                 if (chapInfo != null) {
@@ -4133,6 +4137,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return vm.getHypervisorType() == HypervisorType.KVM
                 && vm.getDetails() != null
                 && vm.getDetail(VmDetailConstants.IOTHREADS) != null;
+    }
+
+    private String getIoPolicy(UserVmVO vm, long poolId) {
+        String ioPolicy = null;
+        if (vm.getHypervisorType() == HypervisorType.KVM) {
+            if (vm.getDetails() != null && vm.getDetail(VmDetailConstants.IO_POLICY) != null) {
+                ioPolicy = vm.getDetail(VmDetailConstants.IO_POLICY);
+            } else if (StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId) != null) {
+                ioPolicy = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId);
+            }
+        }
+        return ioPolicy;
     }
 
     private void provideVMInfo(DataStore dataStore, long vmId, Long volumeId) {

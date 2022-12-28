@@ -46,6 +46,7 @@ public interface VmDetailConstants {
 
     //KVM specific, loop threads for block IO requests
     String IOTHREADS = "iothreads";
+    String IO_POLICY = "io.policy";
 
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";

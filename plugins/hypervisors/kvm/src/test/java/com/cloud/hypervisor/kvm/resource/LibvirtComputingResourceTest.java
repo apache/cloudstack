@@ -5870,7 +5870,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
         Mockito.when(libvirtComputingResourceSpy.getHypervisorLibvirtVersion()).thenReturn(hypervisorLibvirtVersion);
         Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
-        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, false, IoDriver.THREADS);
+        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, IoDriver.THREADS);
         return diskDef;
     }
 
