@@ -34,9 +34,12 @@ import static org.junit.Assert.assertTrue;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -49,6 +52,8 @@ import com.googlecode.ipv6.IPv6Network;
 public class NetUtilsTest {
 
     private static final Logger s_logger = Logger.getLogger(NetUtilsTest.class);
+    private static final String WIDE_SHARED_NET_CIDR_IP = "10.20.0.0";
+    private static final List<String> WIDE_SHARED_NET_USED_IPS = List.of("10.20.0.22", "10.20.1.22", "10.20.2.22");
 
     @Test
     public void testGetRandomIpFromCidrWithSize24() throws Exception {
@@ -743,29 +748,49 @@ public class NetUtilsTest {
         assertEquals("255.255.240.0", NetUtils.cidr2Netmask("169.254.240.0/20"));
     }
 
-    @Test
-    public void testGetAllIpsFromCidr() {
-        String cidr = "10.20.0.0";
-        int size = 22;
-        Set<Long> result = NetUtils.getAllIpsFromCidr(cidr, size, new TreeSet<>(), -1);
-        assertNotNull(result);
-        assertEquals(1022, result.size());
-        result = NetUtils.getAllIpsFromCidr(cidr, size, new TreeSet<>(), 255);
-        assertNotNull(result);
-        assertEquals(255, result.size());
-        result = NetUtils.getAllIpsFromCidr(cidr, size, new TreeSet<>(), 10);
-        assertNotNull(result);
-        assertEquals(10, result.size());
-        Long usedIp = NetUtils.ip2Long("10.20.0.100");
+    private void runTestGetAllIpsFromCidr(int cidrSize, int maxIps, boolean usedIpPresent, int resultSize) {
         Set<Long> usedIps = new TreeSet<>();
-        usedIps.add(usedIp);
-        result = NetUtils.getAllIpsFromCidr(cidr, size, usedIps, -1);
+        if (usedIpPresent) {
+            for (String ip : WIDE_SHARED_NET_USED_IPS) {
+                usedIps.add(NetUtils.ip2Long(ip));
+            }
+        }
+        Set<Long> result = NetUtils.getAllIpsFromCidr(WIDE_SHARED_NET_CIDR_IP, cidrSize, usedIps, maxIps);
         assertNotNull(result);
-        assertEquals(1022 - usedIps.size(), result.size());
-        assertFalse(result.contains(usedIp));
-        result = NetUtils.getAllIpsFromCidr(cidr, size, usedIps, 50);
-        assertNotNull(result);
-        assertEquals(50, result.size());
-        assertFalse(result.contains(usedIp));
+        assertEquals(resultSize, result.size());
+        if (usedIpPresent) {
+            for (String ip : WIDE_SHARED_NET_USED_IPS) {
+                assertFalse(result.contains(NetUtils.ip2Long(ip)));
+            }
+        }
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrNoneUsedNoLimit() {
+        runTestGetAllIpsFromCidr(22,-1,false, 1022);
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrNoneUsedLimit() {
+        runTestGetAllIpsFromCidr(22,255,false, 255);
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrNoneUsedLessLimit() {
+        runTestGetAllIpsFromCidr(22,10, false, 10);
+    }
+
+
+    @Test
+    public void testGetAllIpsFromCidrUsedNoLimit() {
+        runTestGetAllIpsFromCidr(22,-1, true, 1022 - WIDE_SHARED_NET_USED_IPS.size());
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrUsedLimit() {
+        runTestGetAllIpsFromCidr(22,50, true, 50);
+        List<String> usedIpsInRange = new ArrayList<>(WIDE_SHARED_NET_USED_IPS);
+        usedIpsInRange = usedIpsInRange.stream().filter(x -> x.startsWith("10.20.0.")).collect(Collectors.toList());
+        runTestGetAllIpsFromCidr(24,255, true, 254 - usedIpsInRange.size());
     }
 }
