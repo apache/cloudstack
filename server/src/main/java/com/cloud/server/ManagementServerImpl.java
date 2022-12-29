@@ -810,7 +810,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private ClusterDao _clusterDao;
     @Inject
-    private UserVmDetailsDao _UserVmDetailsDao;
+    protected UserVmDetailsDao _UserVmDetailsDao;
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
@@ -826,7 +826,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostDao _hostDao;
     @Inject
-    private HostDetailsDao _detailsDao;
+    protected HostDetailsDao _detailsDao;
     @Inject
     private UserDao _userDao;
     @Inject
@@ -1280,7 +1280,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
-    private boolean filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VMInstanceVO vm) {
+    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VMInstanceVO vm) {
         UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
         if (userVmDetailVO != null &&
                 (ApiConstants.BootMode.LEGACY.toString().equalsIgnoreCase(userVmDetailVO.getValue()) ||
@@ -1292,11 +1292,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             List<DetailVO> details = _detailsDao.findByName(Host.HOST_UEFI_ENABLE);
             List<Long> uefiEnabledHosts = details.stream().filter(x -> Boolean.TRUE.toString().equalsIgnoreCase(x.getValue())).map(DetailVO::getHostId).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(uefiEnabledHosts)) {
-                return false;
+                return new Pair<>(false, null);
             }
             filteredHosts.removeIf(host -> !uefiEnabledHosts.contains(host.getId()));
+            return new Pair<>(!filteredHosts.isEmpty(), filteredHosts);
         }
-        return true;
+        return new Pair<>(true, filteredHosts);
     }
 
     @Override
@@ -1460,10 +1461,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHosts, allHostsPair.second());
-
-        if (!filterUefiHostsForMigration(allHosts, filteredHosts, vm)) {
+        Pair<Boolean, List<HostVO>> uefiFilteredResult = filterUefiHostsForMigration(allHosts, filteredHosts, vm);
+        if (!uefiFilteredResult.first()) {
             return new Ternary<>(otherHosts, new ArrayList<>(), new HashMap<>());
         }
+        filteredHosts = uefiFilteredResult.second();
 
         List<Host> suitableHosts = new ArrayList<>();
         final ExcludeList excludes = new ExcludeList();
