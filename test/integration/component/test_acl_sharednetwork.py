@@ -1119,4 +1119,3 @@ class TestSharedNetwork(cloudstackTestCase):
                         apiclient,
                         user.id
                       ))
-
