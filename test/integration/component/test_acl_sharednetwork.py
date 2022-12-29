@@ -59,7 +59,7 @@ class TestSharedNetwork(cloudstackTestCase):
         cls.acldata = cls.testdata["acl"]
         cls.domain_1 = None
         cls.domain_2 = None
-        cls.cleanup = []
+        cls._cleanup = []
 
 
         try:
@@ -67,11 +67,30 @@ class TestSharedNetwork(cloudstackTestCase):
             cls.default_apikey = cls.apiclient.connection.apiKey
             cls.default_secretkey = cls.apiclient.connection.securityKey
 
+            cls.zone = get_zone(cls.apiclient,cls.testclient.getZoneForTests())
+
+            list_shared_network_offerings_response = NetworkOffering.list(
+                                                             cls.apiclient,
+                                                             name="DefaultSharedNetworkOffering",
+                                                             displayText="Offering for Shared networks"
+                                                             )
+
+            cls.shared_network_offering_id = list_shared_network_offerings_response[0].id
+
+            cls.shared_network_all = Network.create(
+                             cls.apiclient,
+                             cls.acldata["network_all"],
+                             networkofferingid=cls.shared_network_offering_id,
+                             zoneid=cls.zone.id
+                             )
+            cls._cleanup.append(cls.shared_network_all)
+
             # Create domains
             cls.domain_1 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain1"]
                                        )
+            cls._cleanup.append(cls.domain_1)
             cls.domain_11 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain11"],
@@ -91,6 +110,7 @@ class TestSharedNetwork(cloudstackTestCase):
                                        cls.apiclient,
                                        cls.acldata["domain2"]
                                        )
+            cls._cleanup.append(cls.domain_2)
             # Create  1 admin account and 2 user accounts for doamin_1
             cls.account_d1 = Account.create(
                                 cls.apiclient,
@@ -231,6 +251,7 @@ class TestSharedNetwork(cloudstackTestCase):
                                 cls.acldata["accountROOTA"],
                                 admin=False,
                                 )
+            cls._cleanup.append(cls.account_roota)
 
             user = cls.generateKeysForUser(cls.apiclient,cls.account_roota)
             cls.user_roota_apikey = user.apikey
@@ -241,6 +262,7 @@ class TestSharedNetwork(cloudstackTestCase):
                                 cls.acldata["accountROOTA"],
                                 admin=True,
                                 )
+            cls._cleanup.append(cls.account_root)
 
             user = cls.generateKeysForUser(cls.apiclient,cls.account_root)
             cls.user_root_apikey = user.apikey
@@ -251,34 +273,19 @@ class TestSharedNetwork(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.acldata["service_offering"]["small"]
                                     )
+            cls._cleanup.append(cls.service_offering)
 
-            cls.zone = get_zone(cls.apiclient,cls.testclient.getZoneForTests())
             cls.acldata['mode'] = cls.zone.networktype
             cls.template = get_template(cls.apiclient, cls.zone.id, cls.acldata["ostype"])
 
             cls.apiclient.connection.apiKey = cls.default_apikey
             cls.apiclient.connection.securityKey = cls.default_secretkey
 
-            list_shared_network_offerings_response = NetworkOffering.list(
-                                                             cls.apiclient,
-                                                             name="DefaultSharedNetworkOffering",
-                                                             displayText="Offering for Shared networks"
-                                                             )
-
-            cls.shared_network_offering_id = list_shared_network_offerings_response[0].id
-
             #Override vlan parameter so that there is no overlap with vlans being used in other shared network impersonation test suite
             cls.acldata["network_all"]["vlan"]="3001"
             cls.acldata["network_domain_with_no_subdomain_access"]["vlan"]="3002"
             cls.acldata["network_domain_with_subdomain_access"]["vlan"]="3003"
             cls.acldata["network_account"]["vlan"]="3004"
-
-            cls.shared_network_all = Network.create(
-                             cls.apiclient,
-                             cls.acldata["network_all"],
-                             networkofferingid=cls.shared_network_offering_id,
-                             zoneid=cls.zone.id
-                             )
 
             cls.shared_network_domain_d11 =  Network.create(
                              cls.apiclient,
@@ -309,26 +316,14 @@ class TestSharedNetwork(cloudstackTestCase):
             cls.vmdata = {"name": "test",
                           "displayname" : "test"
                           }
-            cls.cleanup = [
-                            cls.account_root,
-                            cls.account_roota,
-                            cls.shared_network_all,
-                            cls.service_offering,
-                            ]
         except Exception as e:
-                cls.domain_1.delete(cls.apiclient,cleanup="true")
-                cls.domain_2.delete(cls.apiclient,cleanup="true")
-                cleanup_resources(cls.apiclient, cls.cleanup)
-                raise Exception("Failed to create the setup required to execute the test cases: %s" % e)
+            raise Exception("Failed to create the setup required to execute the test cases: %s" % e)
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestSharedNetwork, cls).getClsTestClient().getApiClient()
         cls.apiclient.connection.apiKey = cls.default_apikey
         cls.apiclient.connection.securityKey = cls.default_secretkey
-        cls.domain_1.delete(cls.apiclient,cleanup="true")
-        cls.domain_2.delete(cls.apiclient,cleanup="true")
-        cleanup_resources(cls.apiclient, cls.cleanup)
+        cls.apiclient = super(TestSharedNetwork, cls).tearDownClass()
         return
 
     def setUp(cls):
@@ -1124,3 +1119,4 @@ class TestSharedNetwork(cloudstackTestCase):
                         apiclient,
                         user.id
                       ))
+
