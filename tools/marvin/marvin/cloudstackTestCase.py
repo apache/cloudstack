@@ -100,7 +100,7 @@ class cloudstackTestCase(unittest.case.TestCase):
         """
         for obj in resources:
             if isinstance(obj, Domain):
-                obj.delete(api_client, cleanup=true)
+                obj.delete(api_client, cleanup=True)
             elif isinstance(obj, VirtualMachine):
                 obj.delete(api_client, expunge=True)
             else:
