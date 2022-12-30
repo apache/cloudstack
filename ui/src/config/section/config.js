@@ -119,6 +119,18 @@ export default {
           args: ['osdisplayname']
         },
         {
+          api: 'addGuestOsMapping',
+          icon: 'link-outlined',
+          label: 'label.add.guest.os.hypervisor.mapping',
+          dataView: true,
+          args: ['ostypeid', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced'],
+          mapping: {
+            ostypeid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'removeGuestOs',
           icon: 'delete-outlined',
           label: 'label.action.delete.guest.os',
@@ -146,7 +158,7 @@ export default {
           label: 'label.add.guest.os.hypervisor.mapping',
           listView: true,
           dataView: false,
-          args: ['ostypeid', 'osdisplayname', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced']
+          args: ['ostypeid', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced']
         },
         {
           api: 'updateGuestOsMapping',
