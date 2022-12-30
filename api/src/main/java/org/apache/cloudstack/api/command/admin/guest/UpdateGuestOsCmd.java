@@ -53,7 +53,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, required = true, description = "Unique display name for Guest OS")
     private String osDisplayName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
     private Map details;
 
 

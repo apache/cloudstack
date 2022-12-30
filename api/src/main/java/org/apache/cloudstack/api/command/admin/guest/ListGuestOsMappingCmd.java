@@ -48,6 +48,9 @@ public class ListGuestOsMappingCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false, description = "list mapping by Guest OS Type UUID")
     private Long osTypeId;
 
+    @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, required = false, description = "list Guest OS mapping by OS display name")
+    private String osDisplayName;
+
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = false, description = "list Guest OS mapping by hypervisor")
     private String hypervisor;
 
@@ -64,6 +67,10 @@ public class ListGuestOsMappingCmd extends BaseListCmd {
 
     public Long getOsTypeId() {
         return osTypeId;
+    }
+
+    public String getOsDisplayName() {
+        return osDisplayName;
     }
 
     public String getHypervisor() {

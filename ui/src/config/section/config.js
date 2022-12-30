@@ -91,24 +91,48 @@ export default {
     {
       name: 'guestos',
       title: 'label.guest.os',
+      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'database-outlined',
       permission: ['listOsTypes'],
-      columns: ['description', 'oscategoryname', 'isuserdefined'],
-      details: ['description', 'oscategoryname', 'isuserdefined'],
-      searchFilters: ['description'],
+      columns: ['osname', 'oscategoryname', 'isuserdefined'],
+      details: ['osname', 'oscategoryname', 'isuserdefined'],
+      related: [{
+        name: 'guestoshypervisormapping',
+        title: 'label.guest.os.hypervisor.mappings',
+        param: 'ostypeid'
+      }],
+      searchFilters: ['osname'],
       actions: [
+        {
+          api: 'addGuestOs',
+          icon: 'plus-outlined',
+          label: 'label.add.guest.os',
+          listView: true,
+          dataView: false,
+          args: ['osdisplayname', 'oscategoryid']
+        },
         {
           api: 'updateGuestOs',
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
           args: ['osdisplayname']
+        },
+        {
+          api: 'removeGuestOs',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.guest.os',
+          message: 'message.action.delete.guest.os',
+          docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
+          dataView: true,
+          popup: true
         }
       ]
     },
     {
       name: 'guestoshypervisormapping',
-      title: 'label.guest.os.mappings',
+      title: 'label.guest.os.hypervisor.mappings',
+      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'database-outlined',
       permission: ['listGuestOsMapping'],
       columns: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor'],
@@ -117,11 +141,28 @@ export default {
       searchFilters: ['osdisplayname', 'hypervisor', 'hypervisorversion'],
       actions: [
         {
+          api: 'addGuestOsMapping',
+          icon: 'plus-outlined',
+          label: 'label.add.guest.os.hypervisor.mapping',
+          listView: true,
+          dataView: false,
+          args: ['ostypeid', 'osdisplayname', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced']
+        },
+        {
           api: 'updateGuestOsMapping',
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['osnameforhypervisor']
+          args: ['osnameforhypervisor', 'osmappingcheckenabled']
+        },
+        {
+          api: 'removeGuestOsMapping',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.guest.os.hypervisor.mapping',
+          message: 'message.action.delete.guest.os.hypervisor.mapping',
+          docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
+          dataView: true,
+          popup: true
         }
       ]
     }

@@ -2690,6 +2690,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         searchFilter.addOrderBy(GuestOSHypervisorVO.class, "created", false);
         final Long id = cmd.getId();
         final Long osTypeId = cmd.getOsTypeId();
+        final String osDisplayName = cmd.getOsDisplayName();
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
@@ -2706,6 +2707,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (osTypeId != null) {
             sc.addAnd("guestOsId", SearchCriteria.Op.EQ, osTypeId);
+        }
+
+        if (osDisplayName != null) {
+            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osDisplayName + "%");
         }
 
         if (hypervisor != null) {
