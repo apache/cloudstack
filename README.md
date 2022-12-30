@@ -1,4 +1,4 @@
-# Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
+# Apache CloudStack [![Maven Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![RAT License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
 ![Apache CloudStack](tools/logo/acsxmas.jpg)
 
@@ -38,7 +38,7 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 ![Screenshot](ui/docs/screenshot-dashboard.png)
 
 See the project user-interface QA website that runs CloudStack against simulator hypervisor:
-https://qa.cloudstack.cloud/simulator
+https://qa.cloudstack.cloud/simulator/ (admin:password)
 
 ## Getting Started
 
