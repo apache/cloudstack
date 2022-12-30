@@ -792,7 +792,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case Network:
                 final NetworkVO network = _networkDao.findById(resourceId);
                 if (network == null) {
-                    throw new InvalidParameterValueException("unable to find network by id " + resourceId);
+                    throw new InvalidParameterValueException(String.format("Unable to find network by ID [%s].", resourceId));
                 }
                 NetworkDetailVO networkDetailVO = _networkDetailsDao.findDetail(resourceId, name);
                 if (networkDetailVO == null) {
@@ -1194,7 +1194,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case Network:
                 final NetworkVO network = _networkDao.findById(id);
                 if (network == null) {
-                    throw new InvalidParameterValueException("unable to find network by id " + id);
+                    throw new InvalidParameterValueException(String.format("Unable to find network by ID [%s].", id));
                 }
 
                 NetworkDetailVO networkDetailVO = _networkDetailsDao.findDetail(id, name);
