@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -271,19 +272,26 @@ public class VirtualMachineManagerImplTest {
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.KVM) == false);
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.Ovm3) == VirtualMachineManager.ExecuteInSequence.value());
     }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(configKey, value);
+    }
+
     @Test
-    public void testExeceuteInSequenceVmware() {
-        when(StorageManager.getFullCloneConfiguration(anyLong())).thenReturn(Boolean.FALSE);
-        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
+    public void testExeceuteInSequenceVmware() throws IllegalAccessException, NoSuchFieldException {
+        overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, "false");
+        overrideDefaultConfigValue(StorageManager.VmwareAllowParallelExecution, "false");
         assertFalse("no full clones so no need to execute in sequence", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
-        when(StorageManager.getFullCloneConfiguration(anyLong())).thenReturn(Boolean.TRUE);
-        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
+        overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, "true");
+        overrideDefaultConfigValue(StorageManager.VmwareAllowParallelExecution, "false");
         assertTrue("full clones and no explicit parallel execution allowed, should execute in sequence", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
-        when(StorageManager.getFullCloneConfiguration(anyLong())).thenReturn(Boolean.TRUE);
-        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
+        overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, "true");
+        overrideDefaultConfigValue(StorageManager.VmwareAllowParallelExecution, "true");
         assertFalse("execute in sequence should not be needed as parallel is allowed", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
-        when(StorageManager.getFullCloneConfiguration(anyLong())).thenReturn(Boolean.FALSE);
-        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
+        overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, "false");
+        overrideDefaultConfigValue(StorageManager.VmwareAllowParallelExecution, "true");
         assertFalse("double reasons to allow parallel execution", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
     }
 
@@ -299,7 +307,6 @@ public class VirtualMachineManagerImplTest {
         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
         when(diskOfferingDaoMock.findByIdIncludingRemoved(anyLong())).thenReturn(mockCurrentDiskOffering);
         when(diskOfferingDaoMock.findById(anyLong())).thenReturn(diskOfferingMock);
-        when(mockCurrentDiskOffering.isUseLocalStorage()).thenReturn(false);
         when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
         when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
         when(serviceOfferingMock.isSystemUse()).thenReturn(true);
@@ -333,8 +340,6 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void isStorageCrossClusterMigrationTestStorageTypeEqualsZone() {
-        Mockito.doReturn(1L).when(hostMock).getClusterId();
-        Mockito.doReturn(2L).when(storagePoolVoMock).getClusterId();
         Mockito.doReturn(ScopeType.ZONE).when(storagePoolVoMock).getScope();
 
         boolean returnedValue = virtualMachineManagerImpl.isStorageCrossClusterMigration(1L, storagePoolVoMock);
@@ -639,7 +644,6 @@ public class VirtualMachineManagerImplTest {
 
         Mockito.doReturn(ScopeType.CLUSTER).when(storagePoolVoMock).getScope();
         Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doNothing().when(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(Mockito.anyLong(), Mockito.any());
 
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, allVolumes);
