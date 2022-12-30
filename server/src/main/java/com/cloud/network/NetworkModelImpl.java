@@ -2001,7 +2001,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             usedIps.add(NetUtils.ip2Long(ip));
         }
 
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps, -1);
 
         String gateway = network.getGateway();
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
