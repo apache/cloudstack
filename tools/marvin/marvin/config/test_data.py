@@ -1007,9 +1007,9 @@ test_data = {
             "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "True",
-            "checksum": "{SHA-1}80af2c18f96e94273188808c3d56e561a1cda717",
+            "checksum": "{SHA-1}8b82224fd3c6429b6914f32d8339e650770c7526",
             "md5": "1662bbf224e41bb62b1dee043d785731",
-            "sha256": "80fba5a7a83842ec4e5f67cc6755d61d4fca46ae170d59b0c6ed47ebf7162722"
+            "sha256": "e1dffca3c3ab545a753cb42d838a341624cf25841d1bcf3d1e45556c9fce7cf3"
         },
         "hyperv": {
             "name": "tiny-hyperv",
