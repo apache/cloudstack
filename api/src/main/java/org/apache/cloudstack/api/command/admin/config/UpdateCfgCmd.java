@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
