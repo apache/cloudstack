@@ -99,48 +99,20 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls._cleanup.append(cls.project)
 
     def setUp(self):
+        self.test_template = registerTemplate.registerTemplateCmd()
+        self.test_template.zoneid = self.zone.id
+        self.test_template.hypervisor = self.hypervisor
 
-        if "kvm" in self.hypervisor.lower():
-            self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template.checksum = "{SHA-1}" + "bf580a13f791d86acf3449a7b457a91a14389264"
-            self.test_template.hypervisor = self.hypervisor
-            self.test_template.zoneid = self.zone.id
-            self.test_template.name = 'test sha-1'
-            self.test_template.displaytext = 'test sha-1'
-            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2"
-            self.test_template.format = "QCOW2"
-            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
-            self.md5 = "ada77653dcf1e59495a9e1ac670ad95f"
-            self.sha256 = "0efc03633f2b8f5db08acbcc5dc1be9028572dfd8f1c6c8ea663f0ef94b458c5"
+        hyperindex = self.hypervisor.lower()
 
-        if "vmware" in self.hypervisor.lower():
-            self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template.checksum = "{SHA-1}" + "b25d404de8335b4348ff01e49a95b403c90df466"
-            self.test_template.hypervisor = self.hypervisor
-            self.test_template.zoneid = self.zone.id
-            self.test_template.name = 'test sha-2333'
-            self.test_template.displaytext = 'test sha-1'
-            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova"
-            self.test_template.format = "OVA"
-            self.test_template.ostypeid = self.getOsType(self, "Other Linux (64-bit)")
-            self.md5 = "d6d97389b129c7d898710195510bf4fb"
-            self.sha256 = "f57b59f118ab59284a70d6c63229d1de8f2d69bffc5a82b773d6c47e769c12d9"
-
-        if "xen" in self.hypervisor.lower():
-            self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template = registerTemplate.registerTemplateCmd()
-            self.test_template.checksum = "{SHA-1}" + "427fad501d0d8a1d63b8600a9a469fbf91191314"
-            self.test_template.hypervisor = self.hypervisor
-            self.test_template.zoneid = self.zone.id
-            self.test_template.name = 'test sha-2333'
-            self.test_template.displaytext = 'test sha-1'
-            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2"
-            self.test_template.format = "VHD"
-            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
-            self.md5 = "54ebc933e6e07ae58c0dc97dfd37c824"
-            self.sha256 = "bddd9876021d33df9792b71ae4b776598680ac68ecf55e9d9af33c80904cc1f3"
+        self.test_template.ostypeid = self.getOsType(self.test_template[hyperindex].ostype)
+        self.test_template.name = self.services.test_templates[hyperindex].name
+        self.test_template.displaytext = self.services.test_templates[hyperindex].displaytext
+        self.test_template.url = self.services.test_templates[hyperindex].url
+        self.test_template.format = self.services.test_templates[hyperindex].format
+        self.test_template.checksum = self.services.test_templates[hyperindex].checksum
+        self.md5 = self.services.test_templates[hyperindex].md5
+        self.sha256 = self.services.test_templates[hyperindex].sha256
 
         if self.unsupportedHypervisor:
             self.skipTest("Skipping test because unsupported hypervisor\
