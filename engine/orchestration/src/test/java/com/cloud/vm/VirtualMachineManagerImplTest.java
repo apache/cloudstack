@@ -33,6 +33,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -58,11 +61,16 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -75,10 +83,14 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VirtualMachineManagerImplTest {
@@ -133,6 +145,26 @@ public class VirtualMachineManagerImplTest {
 
     @Mock
     private DiskOfferingDao diskOfferingDaoMock;
+
+    private String vmUuid = "5f515c66-86c6-11ed-81a3-43fdbfd10c20";
+    private long vmId = 1000L;
+    @Mock
+    private HypervisorGuruManager hvGuruMgrMock;
+    @Mock
+    private HypervisorGuru hvGuruMock;
+    @Mock
+    private NetworkOrchestrationService networkMgrMock;
+    @Mock
+    private VolumeOrchestrationService volumeMgrMock;
+    @Mock
+    private VirtualMachineGuru vmGuruMock;
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
+    @Mock
+    private UserVmDeployAsIsDetailsDao userVmDeployAsIsDetailsDao;
+    @Mock
+    private AnnotationDao annotationDao;
+
 
     @Mock
     private HostDao hostDaoMock;
@@ -767,5 +799,123 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn("vmInstanceMockedToString").when(vmInstanceMock).toString();
         Mockito.doReturn(isOfferingUsingLocal).when(diskOfferingMock).isUseLocalStorage();
         virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, diskOfferingMock);
+    }
+
+    @Test
+    public void expungeVmSucceed() throws OperationTimedoutException, ResourceUnavailableException, NoSuchFieldException, IllegalAccessException {
+        when(vmInstanceDaoMock.findByUuid(vmUuid)).thenReturn(vmInstanceMock);
+        when(vmInstanceMock.getId()).thenReturn(vmId);
+        when(vmInstanceMock.getUuid()).thenReturn(vmUuid);
+        when(vmInstanceMock.getRemoved()).thenReturn(null);
+        when(vmInstanceMock.getState()).thenReturn(State.Running).thenReturn(State.Stopped).thenReturn(State.Expunging);
+        when(vmInstanceMock.getHostId()).thenReturn(null);
+
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(VirtualMachineManagerImpl.VmDestroyForcestop, "false");
+        Mockito.doNothing().when(virtualMachineManagerImpl).advanceStop(vmUuid, false);
+
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.Any);
+        when(hvGuruMgrMock.getGuru(any())).thenReturn(hvGuruMock);
+        when(hvGuruMock.finalizeExpungeNics(any(), any())).thenReturn(new ArrayList<>());
+        Mockito.doNothing().when(networkMgrMock).cleanupNics(any());
+        when(hvGuruMock.finalizeExpungeVolumes(any())).thenReturn(new ArrayList<>());
+        Mockito.doNothing().when(volumeMgrMock).cleanupVolumes(vmId);
+
+        Map<VirtualMachine.Type, VirtualMachineGuru> vmGurus = new HashMap<>();
+        vmGurus.put(VirtualMachine.Type.User, vmGuruMock);
+        ReflectionTestUtils.setField(virtualMachineManagerImpl, "_vmGurus", vmGurus);
+        when(vmInstanceMock.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.doNothing().when(vmGuruMock).finalizeExpunge(any());
+
+        when(vmInstanceDaoMock.updateState(any(), any(), any(), any(), any())).thenReturn(true);
+
+        virtualMachineManagerImpl.expunge(vmUuid);
+
+        Mockito.verify(vmInstanceDaoMock).updateState(State.Expunging, VirtualMachine.Event.OperationSucceeded, State.Expunged, vmInstanceMock, new Pair<>(null, null));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void expungeVmFail1() throws OperationTimedoutException, ResourceUnavailableException, NoSuchFieldException, IllegalAccessException {
+        when(vmInstanceDaoMock.findByUuid(vmUuid)).thenReturn(vmInstanceMock);
+        when(vmInstanceMock.getUuid()).thenReturn(vmUuid);
+        when(vmInstanceMock.getRemoved()).thenReturn(null);
+        when(vmInstanceMock.getState()).thenReturn(State.Running).thenReturn(State.Stopped).thenReturn(State.Expunging);
+
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(VirtualMachineManagerImpl.VmDestroyForcestop, "false");
+        Mockito.doNothing().when(virtualMachineManagerImpl).advanceStop(vmUuid, false);
+
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.Any);
+        when(hvGuruMgrMock.getGuru(any())).thenReturn(hvGuruMock);
+        when(hvGuruMock.finalizeExpungeNics(any(), any())).thenReturn(new ArrayList<>());
+        Mockito.doThrow(CloudRuntimeException.class).when(networkMgrMock).cleanupNics(any());
+
+        when(vmInstanceDaoMock.updateState(any(), any(), any(), any(), any())).thenReturn(true);
+
+        virtualMachineManagerImpl.expunge(vmUuid);
+
+        Mockito.verify(vmInstanceDaoMock).updateState(State.Expunging, VirtualMachine.Event.OperationFailed, State.Error, vmInstanceMock, null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void expungeVmFail2() throws OperationTimedoutException, ResourceUnavailableException, NoSuchFieldException, IllegalAccessException {
+        when(vmInstanceDaoMock.findByUuid(vmUuid)).thenReturn(vmInstanceMock);
+        when(vmInstanceMock.getId()).thenReturn(vmId);
+        when(vmInstanceMock.getUuid()).thenReturn(vmUuid);
+        when(vmInstanceMock.getRemoved()).thenReturn(null);
+        when(vmInstanceMock.getState()).thenReturn(State.Running).thenReturn(State.Stopped).thenReturn(State.Expunging);
+
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(VirtualMachineManagerImpl.VmDestroyForcestop, "false");
+        Mockito.doNothing().when(virtualMachineManagerImpl).advanceStop(vmUuid, false);
+
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.Any);
+        when(hvGuruMgrMock.getGuru(any())).thenReturn(hvGuruMock);
+        when(hvGuruMock.finalizeExpungeNics(any(), any())).thenReturn(new ArrayList<>());
+        Mockito.doNothing().when(networkMgrMock).cleanupNics(any());
+        when(hvGuruMock.finalizeExpungeVolumes(any())).thenReturn(new ArrayList<>());
+        Mockito.doThrow(CloudRuntimeException.class).when(volumeMgrMock).cleanupVolumes(vmId);
+
+        when(vmInstanceDaoMock.updateState(any(), any(), any(), any(), any())).thenReturn(true);
+
+        virtualMachineManagerImpl.expunge(vmUuid);
+
+        Mockito.verify(vmInstanceDaoMock).updateState(State.Expunging, VirtualMachine.Event.OperationFailed, State.Error, vmInstanceMock, null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void expungeVmFail3() throws OperationTimedoutException, ResourceUnavailableException, NoSuchFieldException, IllegalAccessException {
+        when(vmInstanceDaoMock.findByUuid(vmUuid)).thenReturn(vmInstanceMock);
+        when(vmInstanceMock.getId()).thenReturn(vmId);
+        when(vmInstanceMock.getUuid()).thenReturn(vmUuid);
+        when(vmInstanceMock.getRemoved()).thenReturn(null);
+        when(vmInstanceMock.getState()).thenReturn(State.Running).thenReturn(State.Stopped).thenReturn(State.Expunging);
+
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(VirtualMachineManagerImpl.VmDestroyForcestop, "false");
+        Mockito.doNothing().when(virtualMachineManagerImpl).advanceStop(vmUuid, false);
+
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.Any);
+        when(hvGuruMgrMock.getGuru(any())).thenReturn(hvGuruMock);
+        when(hvGuruMock.finalizeExpungeNics(any(), any())).thenReturn(new ArrayList<>());
+        Mockito.doNothing().when(networkMgrMock).cleanupNics(any());
+        when(hvGuruMock.finalizeExpungeVolumes(any())).thenReturn(new ArrayList<>());
+        Mockito.doNothing().when(volumeMgrMock).cleanupVolumes(vmId);
+
+        Map<VirtualMachine.Type, VirtualMachineGuru> vmGurus = new HashMap<>();
+        vmGurus.put(VirtualMachine.Type.User, vmGuruMock);
+        ReflectionTestUtils.setField(virtualMachineManagerImpl, "_vmGurus", vmGurus);
+        when(vmInstanceMock.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.doThrow(CloudRuntimeException.class).when(vmGuruMock).finalizeExpunge(any());
+
+        when(vmInstanceDaoMock.updateState(any(), any(), any(), any(), any())).thenReturn(true);
+
+        virtualMachineManagerImpl.expunge(vmUuid);
+
+        Mockito.verify(vmInstanceDaoMock).updateState(State.Expunging, VirtualMachine.Event.OperationFailed, State.Error, vmInstanceMock, null);
     }
 }
