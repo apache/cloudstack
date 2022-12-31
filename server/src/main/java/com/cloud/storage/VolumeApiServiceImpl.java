@@ -412,11 +412,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
                 throw new CloudRuntimeException(details);
             }
-            if (!Objects.equals(sizeInGB, vol.getSize())) {
-                if (sizeInGB !=null) {
-                    volume.setSize(sizeInGB * GiB_TO_BYTES);
-                    _volsDao.persist(volume);
-                }
+            if (! (sizeInGB ==null || Objects.equals(sizeInGB, vol.getSize())) {
+                volume.setSize(sizeInGB * GiB_TO_BYTES);
+                _volsDao.persist(volume);
             }
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to register volume due to - %s", e.getMessage()), e);
