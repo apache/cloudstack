@@ -412,7 +412,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
                 throw new CloudRuntimeException(details);
             }
-            if (! (sizeInGB ==null || Objects.equals(sizeInGB, vol.getSize())) {
+            if (! (sizeInGB ==null || Objects.equals(sizeInGB, vol.getSize()))) {
                 volume.setSize(sizeInGB * GiB_TO_BYTES);
                 _volsDao.persist(volume);
             }
