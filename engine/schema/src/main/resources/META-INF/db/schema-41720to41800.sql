@@ -869,3 +869,17 @@ WHERE   usage_unit = 'Policy-Month';
 
 -- delete configuration task.cleanup.retry.interval #6910
 DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
+
+--- #6888 add index to speed up querying IPs in the network-tab
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_KEY`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_KEY` (
+		IN in_index_name VARCHAR(200)
+    , IN in_table_name VARCHAR(200)
+    , IN in_key_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
