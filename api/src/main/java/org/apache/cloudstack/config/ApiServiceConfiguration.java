@@ -27,8 +27,8 @@ public class ApiServiceConfiguration implements Configurable {
             "The default pagesize to be used by UI and other clients when making list* API calls", true, ConfigKey.Scope.Global);
     public static final ConfigKey<Boolean> ApiSourceCidrChecksEnabled = new ConfigKey<>("Advanced", Boolean.class, "api.source.cidr.checks.enabled",
             "true", "Are the source checks on API calls enabled (true) or not (false)? See api.allowed.source.cidr.list", true, ConfigKey.Scope.Global);
-    public static final ConfigKey<String> ApiAllowedSourceCidrList = new ConfigKey<String>("Advanced", String.class, "api.allowed.source.cidr.list",
-            "0.0.0.0/0,::/0", "Comma separated list of IPv4/IPv6 CIDRs from which API calls can be performed. Can be set on Global and Account levels.", true, ConfigKey.Scope.Account);
+    public static final ConfigKey<String> ApiAllowedSourceCidrList = new ConfigKey<String>(String.class, "api.allowed.source.cidr.list", "Advanced",
+            "0.0.0.0/0,::/0", "Comma separated list of IPv4/IPv6 CIDRs from which API calls can be performed. Can be set on Global and Account levels.", true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.csv, null);
     @Override
     public String getConfigComponentName() {
         return ApiServiceConfiguration.class.getSimpleName();

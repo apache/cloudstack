@@ -978,3 +978,132 @@ UPDATE `cloud`.`configuration` SET parent = 'storage.cleanup.enabled' WHERE name
 UPDATE `cloud`.`configuration` SET parent = 'vm.configdrive.primarypool.enabled' WHERE name IN ('vm.configdrive.use.host.cache.on.unsupported.pool');
 
 UPDATE `cloud`.`configuration` SET display_text = CONCAT(UCASE(LEFT(REPLACE(name, ".", " "), 1)), LCASE(SUBSTRING(REPLACE(name, ".", " "), 2)));
+
+ALTER TABLE `cloud`.`configuration` ADD COLUMN `kind` VARCHAR(255) DEFAULT NULL COMMENT 'kind of the value such as order, csv, etc';
+ALTER TABLE `cloud`.`configuration` ADD COLUMN `options` VARCHAR(255) DEFAULT NULL COMMENT 'possible options for the value';
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'HostAntiAffinityProcessor,ExplicitDedicationProcessor,HostAffinityProcessor'
+where `name` = 'affinity.processors.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner,ImplicitDedicationPlanner,BareMetalPlanner'
+    where `name` = 'deployment.planners.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'SimpleInvestigator,XenServerInvestigator,KVMInvestigator,HypervInvestigator,VMwareInvestigator,PingInvestigator,ManagementIPSysVMInvestigator,Ovm3Investigator'
+where `name` = 'ha.investigators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'FirstFitRouting'
+where `name` = 'host.allocators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'SAML2Auth'
+where `name` = 'pluggableApi.authenticators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'AffinityGroupAccessChecker,DomainChecker'
+where `name` = 'security.checkers.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'LocalStorage,ClusterScopeStoragePoolAllocator,ZoneWideStoragePoolAllocator'
+where `name` = 'storage.pool.allocators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT'
+where `name` = 'user.authenticators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'order',
+    `options` = 'PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT'
+where `name` = 'user.password.encoders.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'csv'
+where `name` like "%.list" ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'csv'
+where `name` like "%.defaults" ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'csv'
+where `name` like "%.details" ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'csv'
+where `name` like "%.exclude" ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'Error,Migration,ForceStop'
+where `name` = 'host.maintenance.local.storage.strategy' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'SHA256withRSA'
+where `name` = 'ca.framework.cert.signature.algorithm' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'firstfitleastconsumed,random'
+where `name` = 'image.store.allocation.algorithm' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'static,roundrobin,shuffle'
+where `name` = 'indirect.agent.lb.algorithm' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed'
+where `name` = 'vm.allocation.algorithm' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'all,pod'
+where `name` = 'network.dns.basiczone.updates' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'global,guest-network,link-local,disabled,all,default'
+where `name` = 'network.loadbalancer.haproxy.stats.visibility' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'SHA1,SHA256,SHA384,SHA512'
+where `name` = 'saml2.sigalg' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner'
+where `name` = 'vm.deployment.planner' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'scsi,ide,osdefault'
+where `name` = 'vmware.root.disk.controller' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'E1000,PCNet32,Vmxnet2,Vmxnet3'
+where `name` = 'vmware.systemvm.nic.device.type' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'first,last,random'
+where `name` = 'vrouter.redundant.tiers.placement' ;
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'select',
+    `options` = 'xenserver56,xenserver61'
+where `name` = 'xenserver.pvdriver.version' ;

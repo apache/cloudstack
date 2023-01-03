@@ -257,6 +257,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
+    public static final String KIND = "kind";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LAST_BOOT = "lastboottime";
@@ -297,6 +298,7 @@ public class ApiConstants {
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
+    public static final String OPTIONS = "options";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_ID = "osid";

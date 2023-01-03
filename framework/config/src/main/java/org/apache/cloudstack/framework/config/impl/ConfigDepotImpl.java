@@ -185,6 +185,12 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 vo.setGroupId(groupId);
                 vo.setSubGroupId(subGroupId);
             }
+            if (key.kind() != null) {
+                vo.setKind(key.kind().toString());
+            }
+            if (key.options() != null) {
+                vo.setOptions(key.options());
+            }
 
             _configDao.persist(vo);
         } else {
@@ -227,6 +233,15 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
             if (key.subGroup() != null && vo.getSubGroupId() != subGroupId) {
                 vo.setSubGroupId(subGroupId);
+                configUpdated = true;
+            }
+
+            if (key.kind() != null) {
+                vo.setKind(key.kind().toString());
+                configUpdated = true;
+            }
+            if (key.options() != null) {
+                vo.setOptions(key.options());
                 configUpdated = true;
             }
 

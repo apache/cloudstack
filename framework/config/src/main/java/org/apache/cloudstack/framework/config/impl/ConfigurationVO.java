@@ -78,6 +78,12 @@ public class ConfigurationVO implements Configuration {
     @Column(name = "display_text", length = 255)
     private String displayText;
 
+    @Column(name = "kind")
+    private String kind;
+
+    @Column(name = "options")
+    private String options;
+
     protected ConfigurationVO() {
     }
 
@@ -273,4 +279,21 @@ public class ConfigurationVO implements Configuration {
 
         this.displayText = displayText;
     }
+
+    public String getKind() {
+        return kind;
+    }
+
+    public void setKind(String kind) {
+        this.kind = kind;
+    }
+
+    public String getOptions() {
+        return options;
+    }
+
+    public void setOptions(String options) {
+        this.options = options;
+    }
+
 }

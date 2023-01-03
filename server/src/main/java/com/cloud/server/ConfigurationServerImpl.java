@@ -206,6 +206,13 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     Pair<Long, Long> configGroupAndSubGroup = _configDepotAdmin.getConfigurationGroupAndSubGroupByName(name);
                     configVO.setGroupId(configGroupAndSubGroup.first());
                     configVO.setSubGroupId(configGroupAndSubGroup.second());
+                    if (c.getKind() != null) {
+                        configVO.setKind(c.getKind());
+                    }
+                    if (c.getOptions() != null) {
+                        configVO.setOptions(c.getOptions());
+                    }
+
                     _configDao.persist(configVO);
                 }
             }

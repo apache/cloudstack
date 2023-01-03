@@ -108,4 +108,8 @@ public interface Configuration {
     Long getGroupId();
 
     Long getSubGroupId();
+
+    String getKind();
+
+    String getOptions();
 }
