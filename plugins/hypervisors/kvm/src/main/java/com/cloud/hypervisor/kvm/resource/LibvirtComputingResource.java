@@ -4010,8 +4010,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 String diskPath = null;
                 if (path != null) {
                     final String[] token = path.split("/");
-                    if (token.length > 3) {
+                    if (DiskProtocol.RBD.equals(disk.getDiskProtocol())) {
+                        if (token.length > 1) {
+                          diskPath = token[1];
+                        }
+                    } else if (token.length > 3) {
                         diskPath = token[3];
+                    }
+                    if (diskPath != null) {
                         final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
                         stats.add(stat);
                     }
