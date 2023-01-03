@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
 public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVpnConnectionsCmd.class.getName());
 
-    private static final String s_name = "listvpnconnectionsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -75,11 +74,6 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

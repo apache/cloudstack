@@ -34,7 +34,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listStaticRoutes", description = "Lists all static routes", responseObject = StaticRouteResponse.class, entityType = {StaticRoute.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
-    private static final String s_name = "liststaticroutesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -70,11 +69,6 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public void execute() {
         Pair<List<? extends StaticRoute>, Integer> result = _vpcService.listStaticRoutes(this);

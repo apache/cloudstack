@@ -44,7 +44,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
-    private static final String s_name = "createvirtualrouterelementresponse";
 
     @Inject
     private List<VirtualRouterElementService> _service;
@@ -93,11 +92,6 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

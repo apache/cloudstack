@@ -39,7 +39,6 @@ import com.cloud.network.rules.LoadBalancer;
 public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListLBHealthCheckPoliciesCmd.class.getName());
 
-    private static final String s_name = "listlbhealthcheckpoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -77,11 +76,6 @@ public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

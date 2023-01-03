@@ -35,7 +35,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectInvitationCmd.class.getName());
-    private static final String s_name = "deleteprojectinvitationresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -48,11 +47,6 @@ public class DeleteProjectInvitationCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     // ///////////////////////////////////////////////////

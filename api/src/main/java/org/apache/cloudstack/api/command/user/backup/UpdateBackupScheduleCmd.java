@@ -21,10 +21,9 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.response.BackupResponse;
 
-@APICommand(name = UpdateBackupScheduleCmd.APINAME,
+@APICommand(name = "updateBackupSchedule",
         description = "Updates a user-defined VM backup schedule",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateBackupScheduleCmd extends CreateBackupScheduleCmd {
-    public static final String APINAME = "updateBackupSchedule";
 }

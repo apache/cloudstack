@@ -37,7 +37,6 @@ import com.cloud.user.Account;
 public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddGuestOsMappingCmd.class.getName());
 
-    private static final String s_name = "addguestosmappingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,11 +84,6 @@ public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

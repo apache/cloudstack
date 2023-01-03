@@ -40,13 +40,12 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.Map;
 
-@APICommand(name = CreateConsoleEndpointCmd.APINAME, description = "Create a console endpoint to connect to a VM console",
+@APICommand(name = "createConsoleEndpoint", description = "Create a console endpoint to connect to a VM console",
         responseObject = CreateConsoleEndpointResponse.class, since = "4.18.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateConsoleEndpointCmd extends BaseCmd {
 
-    public static final String APINAME = "createConsoleEndpoint";
     public static final Logger s_logger = Logger.getLogger(CreateConsoleEndpointCmd.class.getName());
 
     @Inject
@@ -106,11 +105,6 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
 
     private String getClientAddress() {
         return getParameterBase(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

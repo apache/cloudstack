@@ -36,7 +36,6 @@ import com.cloud.configuration.ResourceLimit;
 public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
-    private static final String s_name = "listresourcelimitsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -94,11 +93,6 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

@@ -37,7 +37,6 @@ import com.cloud.utils.Pair;
 public class ListPodsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 
-    private static final String s_name = "listpodsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,11 +84,6 @@ public class ListPodsByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

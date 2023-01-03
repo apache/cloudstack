@@ -32,7 +32,6 @@ import com.cloud.vm.InstanceGroup;
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 
-    private static final String s_name = "listinstancegroupsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,11 +58,6 @@ public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

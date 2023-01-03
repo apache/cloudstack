@@ -35,7 +35,6 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetSolidFireVolumeAccessGroupIdsCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeAccessGroupIdsCmd.class.getName());
-    private static final String NAME = "getsolidfirevolumeaccessgroupidsresponse";
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.STRING, description = "Cluster UUID", required = true)
     private String clusterUuid;
@@ -48,11 +47,6 @@ public class GetSolidFireVolumeAccessGroupIdsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return NAME;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -42,7 +42,6 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePrivateGatewayCmd.class.getName());
-    private static final String s_name = "deleteprivategatewayresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,11 +61,6 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PRIVATE_GATEWAY_DELETE;

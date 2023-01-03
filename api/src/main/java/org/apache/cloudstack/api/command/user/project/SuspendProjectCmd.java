@@ -40,7 +40,6 @@ import com.cloud.projects.Project;
 public class SuspendProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(SuspendProjectCmd.class.getName());
 
-    private static final String s_name = "suspendprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,11 +54,6 @@ public class SuspendProjectCmd extends BaseAsyncCmd {
 
     public Long geId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     /////////////////////////////////////////////////////
