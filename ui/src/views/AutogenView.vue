@@ -1161,7 +1161,7 @@ export default {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
-            if (possibleApi === 'listBackupOfferings') {
+            if (possibleApi === 'listBackupOfferings' && json[obj].backupoffering) {
               json[obj].backupoffering.sort((a, b) => {
                 return a.name > b.name
               })
