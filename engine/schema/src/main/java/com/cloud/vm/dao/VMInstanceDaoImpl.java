@@ -172,13 +172,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneTemplateNonExpungedSearch = createSearchBuilder();
         ZoneTemplateNonExpungedSearch.and("zone", ZoneTemplateNonExpungedSearch.entity().getDataCenterId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("template", ZoneTemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
-        ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NIN);
+        ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NEQ);
         ZoneTemplateNonExpungedSearch.done();
 
 
         TemplateNonExpungedSearch = createSearchBuilder();
         TemplateNonExpungedSearch.and("template", TemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
-        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NIN);
+        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NEQ);
         TemplateNonExpungedSearch.done();
 
         NameLikeSearch = createSearchBuilder();
@@ -382,7 +382,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = TemplateNonExpungedSearch.create();
 
         sc.setParameters("template", templateId);
-        sc.setParameters("state", State.Expunging, State.Expunged);
+        sc.setParameters("state", State.Expunged);
         return listBy(sc);
     }
 
@@ -392,7 +392,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         sc.setParameters("zone", zoneId);
         sc.setParameters("template", templateId);
-        sc.setParameters("state", State.Expunging, State.Expunged);
+        sc.setParameters("state", State.Expunged);
 
         return listBy(sc);
     }
