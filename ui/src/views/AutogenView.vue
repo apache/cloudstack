@@ -1692,7 +1692,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
-          console.log('op: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
@@ -1703,20 +1702,17 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (field.type === 'uuid'):
-          console.log('uuid: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'list'):
-          console.log('list: ' + field)
           rule.type = 'array'
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'long'):
-          console.log(field)
           rule.type = 'number'
           rule.required = field.required
           rule.message = this.$t('message.validate.number')
@@ -1737,7 +1733,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         default:
-          console.log('hererere')
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)

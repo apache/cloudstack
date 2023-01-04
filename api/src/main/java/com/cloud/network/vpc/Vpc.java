@@ -96,8 +96,6 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
 
     Date getCreated();
 
-    Integer getPublicMtu();
-
     String getIp4Dns1();
 
     String getIp4Dns2();

@@ -1,5 +1,4 @@
 # Licensed to the Apache Software Foundation (ASF) under one
-# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -50,13 +49,10 @@ from marvin.lib.common import (get_domain,
                                list_virtual_machines,
                                list_lb_rules,
                                list_configurations,
-                               verifyGuestTrafficPortGroups,
-                               verifyNetworkState)
-
+                               verifyGuestTrafficPortGroups)
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 from ddt import ddt, data
-import unittest
 # Import System modules
 import time
 import logging
@@ -68,7 +64,6 @@ logger = logging.getLogger('TestNetworkOps')
 stream_handler = logging.StreamHandler()
 logger.setLevel(logging.DEBUG)
 logger.addHandler(stream_handler)
-
 
 class TestPublicIP(cloudstackTestCase):
 
@@ -238,9 +233,9 @@ class TestPublicIP(cloudstackTestCase):
         if list_pub_ip_addr_resp is None:
             return
         if (list_pub_ip_addr_resp) and (
-                isinstance(
-                    list_pub_ip_addr_resp,
-                    list)) and (
+            isinstance(
+                list_pub_ip_addr_resp,
+                list)) and (
                 len(list_pub_ip_addr_resp) > 0):
             self.fail("list public ip response is not empty")
         return
@@ -446,10 +441,10 @@ class TestPortForwarding(cloudstackTestCase):
         # SSH virtual machine to test port forwarding
         try:
             logger.debug("SSHing into VM with IP address %s with NAT IP %s" %
-                         (
-                             self.virtual_machine.ipaddress,
-                             src_nat_ip_addr.ipaddress
-                         ))
+                       (
+                           self.virtual_machine.ipaddress,
+                           src_nat_ip_addr.ipaddress
+                       ))
 
             self.virtual_machine.get_ssh_client(src_nat_ip_addr.ipaddress)
             vm_response = VirtualMachine.list(
@@ -574,10 +569,10 @@ class TestPortForwarding(cloudstackTestCase):
 
         try:
             logger.debug("SSHing into VM with IP address %s with NAT IP %s" %
-                         (
-                             self.virtual_machine.ipaddress,
-                             ip_address.ipaddress.ipaddress
-                         ))
+                       (
+                           self.virtual_machine.ipaddress,
+                           ip_address.ipaddress.ipaddress
+                       ))
             self.virtual_machine.get_ssh_client(ip_address.ipaddress.ipaddress)
         except Exception as e:
             self.fail(
@@ -1092,8 +1087,7 @@ class TestRouterRules(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
-        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
-            0].__dict__
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         template = get_test_template(
             cls.apiclient,
             cls.zone.id,
@@ -1285,10 +1279,10 @@ class TestRouterRules(cloudstackTestCase):
 
         try:
             logger.debug("SSHing into VM with IP address %s with NAT IP %s" %
-                         (
-                             self.virtual_machine.ipaddress,
-                             self.ipaddress.ipaddress.ipaddress
-                         ))
+                       (
+                           self.virtual_machine.ipaddress,
+                           self.ipaddress.ipaddress.ipaddress
+                       ))
             self.virtual_machine.get_ssh_client(
                 self.ipaddress.ipaddress.ipaddress)
         except Exception as e:
@@ -1324,7 +1318,6 @@ class TestRouterRules(cloudstackTestCase):
                 delay=0
             )
         return
-
 
 class TestL2Networks(cloudstackTestCase):
 
@@ -1418,7 +1411,7 @@ class TestL2Networks(cloudstackTestCase):
 
         list_vm = list_virtual_machines(
             self.apiclient,
-            id=self.virtual_machine.id
+            id = self.virtual_machine.id
         )
         self.assertEqual(
             isinstance(list_vm, list),
@@ -1463,7 +1456,7 @@ class TestL2Networks(cloudstackTestCase):
 
         list_vm = list_virtual_machines(
             self.apiclient,
-            id=self.virtual_machine.id
+            id = self.virtual_machine.id
         )
         self.assertEqual(
             isinstance(list_vm, list),
@@ -1519,7 +1512,7 @@ class TestL2Networks(cloudstackTestCase):
 
         list_vm = list_virtual_machines(
             self.apiclient,
-            id=self.virtual_machine.id
+            id = self.virtual_machine.id
         )
         self.assertEqual(
             isinstance(list_vm, list),
@@ -1548,7 +1541,6 @@ class TestL2Networks(cloudstackTestCase):
         )
 
         return
-
 
 class TestPrivateVlansL2Networks(cloudstackTestCase):
 
@@ -1588,17 +1580,16 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         # Supported hypervisor = KVM using OVS
         isKVM = cls.hypervisor.lower() in ["kvm"]
         isOVSEnabled = False
-        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
-            0].__dict__
-        if isKVM:
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        if isKVM :
             # Test only if all the hosts use OVS
             grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
             hosts = list_hosts(cls.apiclient, type='Routing', hypervisor='kvm')
-            if len(hosts) > 0:
+            if len(hosts) > 0 :
                 isOVSEnabled = True
-            for host in hosts:
+            for host in hosts :
                 isOVSEnabled = isOVSEnabled and len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
-                                                              passwd=hostConfig["password"]).execute(grepCmd)) != 0
+                    passwd=hostConfig["password"]).execute(grepCmd)) != 0
 
         supported = isVmware and isDvSwitch or isKVM and isOVSEnabled
         cls.unsupportedHardware = not supported
@@ -1606,6 +1597,7 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         cls._cleanup = []
 
         if supported:
+
             cls.account = Account.create(
                 cls.apiclient,
                 cls.services["account"],
@@ -1643,16 +1635,16 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                 "name": "Test Network L2 PVLAN Promiscuous",
                 "displaytext": "Test Network L2 PVLAN Promiscuous",
                 "vlan": 900,
-                "isolatedpvlan": "900",
+                "isolatedpvlan" : "900",
                 "isolatedpvlantype": "promiscuous"
             }
             cls.services["l2-network-pvlan-isolated"] = {
-                "name": "Test Network L2 PVLAN Isolated",
-                "displaytext": "Test Network L2 PVLAN Isolated",
-                "vlan": 900,
-                "isolatedpvlan": "903",
-                "isolatedpvlantype": "isolated"
-            }
+                 "name": "Test Network L2 PVLAN Isolated",
+                 "displaytext": "Test Network L2 PVLAN Isolated",
+                 "vlan": 900,
+                 "isolatedpvlan": "903",
+                 "isolatedpvlantype": "isolated"
+             }
 
             cls.l2_network_offering = NetworkOffering.create(
                 cls.apiclient,
@@ -1788,15 +1780,10 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             vm_promiscuous2_ip, vm_promiscuous2_eth = self.enable_l2_nic(vm_promiscuous2)
 
             # Community PVLAN checks
-            different_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth,
-                                                                            vm_community2_ip)
-            same_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth,
-                                                                       vm_community1_two_ip)
-            community_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one,
-                                                                                 vm_community1_one_eth,
-                                                                                 vm_promiscuous1_ip)
-            community_to_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth,
-                                                                     vm_isolated1_ip)
+            different_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_community2_ip)
+            same_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_community1_two_ip)
+            community_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_promiscuous1_ip)
+            community_to_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_isolated1_ip)
 
             self.assertTrue(
                 different_community_isolated,
@@ -1820,10 +1807,8 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
 
             # Isolated PVLAN checks
             same_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_isolated2_ip)
-            isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth,
-                                                                              vm_community1_one_ip)
-            isolated_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth,
-                                                                                vm_promiscuous1_ip)
+            isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_community1_one_ip)
+            isolated_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_promiscuous1_ip)
 
             self.assertTrue(
                 same_isolated,
@@ -1839,10 +1824,8 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             )
 
             # Promiscuous PVLAN checks
-            same_promiscuous = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth,
-                                                                vm_promiscuous2_ip)
-            prom_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth,
-                                                                          vm_community1_one_ip)
+            same_promiscuous = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_promiscuous2_ip)
+            prom_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_community1_one_ip)
             prom_to_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_isolated1_ip)
 
             self.assertFalse(

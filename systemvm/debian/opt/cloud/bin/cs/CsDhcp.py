@@ -19,11 +19,9 @@ import logging
 import os
 from netaddr import *
 from random import randint
-import json
 from CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
-from cs.CsAddress import CsIP
 
 LEASES = "/var/lib/misc/dnsmasq.leases"
 DHCP_HOSTS = "/etc/dhcphosts.txt"
@@ -122,12 +120,7 @@ class CsDhcp(CsDataBag):
                 sline = "dhcp-option=tag:interface-%s-%s,3," % (device, idx)
                 line = "dhcp-option=tag:interface-%s-%s,3,%s" % (device, idx, gateway)
                 self.conf.search(sline, line)
-
-            sline = "dhcp-option=%s,26" % device
-            line = "dhcp-option=%s,26,%s" % (device, i['mtu'])
-            self.conf.search(sline, line)
-
-        # Netmask
+            # Netmask
             netmask = ''
             if self.config.is_vpc():
                 netmask = gn.get_netmask()

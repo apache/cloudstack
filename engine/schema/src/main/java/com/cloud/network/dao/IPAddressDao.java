@@ -94,6 +94,4 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     IPAddressVO findByVmIdAndNetworkId(long networkId, long vmId);
 
     IPAddressVO findByAccountIdAndZoneIdAndStateAndIpAddress(long accountId, long dcId, State state, String ipAddress);
-
-    List<IPAddressVO> listByNetworkId(long networkId);
 }

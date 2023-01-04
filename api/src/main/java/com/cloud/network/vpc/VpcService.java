@@ -53,7 +53,7 @@ public interface VpcService {
      * @throws ResourceAllocationException TODO
      */
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain,
-                         String dns1, String dns2, String ip6Dns1, String ip6Dns2, Boolean displayVpc, Integer publicMtu)
+                         String dns1, String dns2, String ip6Dns1, String ip6Dns2, Boolean displayVpc)
             throws ResourceAllocationException;
 
     /**
@@ -73,12 +73,11 @@ public interface VpcService {
      * @param vpcId
      * @param vpcName
      * @param displayText
-     * @param customId    TODO
-     * @param displayVpc  TODO
-     * @param mtu
+     * @param customId TODO
+     * @param displayVpc TODO
      * @return
      */
-    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc, Integer mtu);
+    public Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc);
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call

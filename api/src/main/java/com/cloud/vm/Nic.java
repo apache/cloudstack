@@ -160,6 +160,4 @@ public interface Nic extends Identity, InternalIdentity {
     String getIPv6Cidr();
 
     String getIPv6Address();
-
-    Integer getMtu();
 }

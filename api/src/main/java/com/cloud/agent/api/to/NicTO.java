@@ -31,7 +31,6 @@ public class NicTO extends NetworkTO {
     List<String> nicSecIps;
     Map<NetworkOffering.Detail, String> details;
     boolean dpdkEnabled;
-    Integer mtu;
 
     public NicTO() {
         super();
@@ -118,13 +117,5 @@ public class NicTO extends NetworkTO {
 
     public void setDpdkEnabled(boolean dpdkEnabled) {
         this.dpdkEnabled = dpdkEnabled;
-    }
-
-    public Integer getMtu() {
-        return mtu;
-    }
-
-    public void setMtu(Integer mtu) {
-        this.mtu = mtu;
     }
 }

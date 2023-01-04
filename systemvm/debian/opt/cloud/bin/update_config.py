@@ -19,6 +19,8 @@
 import sys
 from merge import QueueFile
 import logging
+import subprocess
+from subprocess import PIPE, STDOUT
 import os
 import os.path
 import configure

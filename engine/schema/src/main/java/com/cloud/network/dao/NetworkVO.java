@@ -39,7 +39,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.Logger;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.
@@ -48,7 +47,6 @@ import org.apache.log4j.Logger;
 @Entity
 @Table(name = "networks")
 public class NetworkVO implements Network {
-    static final Logger s_logger = Logger.getLogger(NetworkVO.class);
     @Id
     @TableGenerator(name = "networks_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "networks_seq", allocationSize = 1)
     @Column(name = "id")
@@ -199,12 +197,6 @@ public class NetworkVO implements Network {
     @Transient
     PVlanType pVlanType;
 
-    @Column(name = "public_mtu")
-    Integer publicMtu;
-
-    @Column(name = "private_mtu")
-    Integer privateMtu;
-
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -283,8 +275,6 @@ public class NetworkVO implements Network {
             this.ip6Dns2 = that.getIp6Dns2();
         }
         this.externalId = externalId;
-        this.publicMtu = that.getPublicMtu();
-        this.privateMtu = that.getPrivateMtu();
     }
 
     /**
@@ -740,21 +730,5 @@ public class NetworkVO implements Network {
 
     public void setRouterIpv6(String routerIpv6) {
         this.routerIpv6 = routerIpv6;
-    }
-
-    public Integer getPublicMtu() {
-        return publicMtu;
-    }
-
-    public void setPublicMtu(Integer publicMtu) {
-        this.publicMtu = publicMtu;
-    }
-
-    public Integer getPrivateMtu() {
-        return privateMtu;
-    }
-
-    public void setPrivateMtu(Integer privateMtu) {
-        this.privateMtu = privateMtu;
     }
 }
