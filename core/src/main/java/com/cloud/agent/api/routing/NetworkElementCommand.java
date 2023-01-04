@@ -80,7 +80,7 @@ public abstract class NetworkElementCommand extends Command {
     }
 
     public int getAnswersCount() {
-        return 1;
+        return 2;
     }
 
     public boolean isQuery() {
