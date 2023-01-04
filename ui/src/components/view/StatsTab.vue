@@ -289,24 +289,10 @@ export default {
   mounted () {
     this.fetchData()
   },
-  computed: {
-    usebrowsertimezone: function () {
-      return this.$store.getters.usebrowsertimezone
-    }
-  },
   watch: {
     resource: function (newItem) {
       if (!newItem || !newItem.id) {
         return
-      }
-      this.fetchData()
-    },
-    usebrowsertimezone: function () {
-      if (this.startDate) {
-        this.startDate = this.onToggleUseBrowserTimezone(new Date(this.startDate))
-      }
-      if (this.endDate) {
-        this.endDate = this.onToggleUseBrowserTimezone(new Date(this.endDate))
       }
       this.fetchData()
     }
@@ -355,25 +341,11 @@ export default {
     },
     getStartDate () {
       var now = new Date()
-      if (!this.$store.getters.usebrowsertimezone) {
-        var dateInUTC = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
-        return dateInUTC.setHours(dateInUTC.getHours() - 1)
-      }
       now.setHours(now.getHours() - 1)
       return now
     },
     getEndDate () {
-      var now = new Date()
-      if (this.$store.getters.usebrowsertimezone) {
-        return now
-      }
-      return new Date(now.getTime() + now.getTimezoneOffset() * 60000)
-    },
-    onToggleUseBrowserTimezone (date) {
-      if (this.$store.getters.usebrowsertimezone) {
-        return this.$toLocalDate(date)
-      }
-      return new Date(date.getTime() + date.getTimezoneOffset() * 60000)
+      return new Date()
     },
     fetchData () {
       this.loaded = false
