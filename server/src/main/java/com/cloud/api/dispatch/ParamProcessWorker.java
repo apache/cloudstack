@@ -422,7 +422,6 @@ public class ParamProcessWorker implements DispatchWorker {
                     " is not accessible]");
         }
     }
-    
     private void parseAndSetDate(Field field, BaseCmd cmdObj, Object paramObj) throws IllegalAccessException, ParseException {
         try {
             field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
