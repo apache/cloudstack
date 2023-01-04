@@ -69,7 +69,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 //
 public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(ClusterMO.class);
-    private ManagedObjectReference _environmentBrowser = null;
+    public ManagedObjectReference _environmentBrowser = null;
 
     public ClusterMO(VmwareContext context, ManagedObjectReference morCluster) {
         super(context, morCluster);
