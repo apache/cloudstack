@@ -1161,6 +1161,11 @@ export default {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
+            if (possibleApi === 'listBackupOfferings' && json[obj].backupoffering) {
+              json[obj].backupoffering.sort((a, b) => {
+                return a.name > b.name
+              })
+            }
             for (const res in json[obj]) {
               if (res === 'count') {
                 continue
