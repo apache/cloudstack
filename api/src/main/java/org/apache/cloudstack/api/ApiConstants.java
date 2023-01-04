@@ -618,6 +618,7 @@ public class ApiConstants {
     public static final String RESTART_REQUIRED = "restartrequired";
     public static final String ALLOW_USER_CREATE_PROJECTS = "allowusercreateprojects";
     public static final String ALLOW_USER_DRIVEN_BACKUPS = "allowuserdrivenbackups";
+    public static final String ALLOW_USER_SPECIFY_VR_MTU = "allowuserspecifyvrmtu";
     public static final String CONSERVE_MODE = "conservemode";
     public static final String TRAFFIC_TYPE_IMPLEMENTOR = "traffictypeimplementor";
     public static final String KEYWORD = "keyword";
@@ -882,6 +883,8 @@ public class ApiConstants {
     public static final String ROUTER_CHECK_TYPE = "checktype";
     public static final String ROUTER_IP = "routerip";
     public static final String ROUTER_IPV6 = "routeripv6";
+    public static final String ROUTER_PRIVATE_INTERFACE_MAX_MTU = "routerprivateinterfacemaxmtu";
+    public static final String ROUTER_PUBLIC_INTERFACE_MAX_MTU = "routerpublicinterfacemaxmtu";
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
     public static final String CACHE_MODE = "cachemode";
@@ -920,6 +923,7 @@ public class ApiConstants {
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
     public static final String POOL_TYPE = "pooltype";
+    public static final String REDUNDANT_STATE = "redundantstate";
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
@@ -927,6 +931,9 @@ public class ApiConstants {
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
 
+    public static final String PUBLIC_MTU = "publicmtu";
+    public static final String PRIVATE_MTU = "privatemtu";
+    public static final String MTU = "mtu";
     public enum BootType {
         UEFI, BIOS;
 

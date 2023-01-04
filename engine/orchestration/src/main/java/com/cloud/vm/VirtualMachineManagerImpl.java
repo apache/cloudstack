@@ -3510,6 +3510,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return nicId1.compareTo(nicId2);
             }
         });
+
         for (final NicVO nic : nics) {
             final Network network = _networkModel.getNetwork(nic.getNetworkId());
             final NicProfile nicProfile =

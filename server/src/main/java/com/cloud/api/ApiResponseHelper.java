@@ -2380,7 +2380,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setRelated(nw.getUuid());
         }
         response.setNetworkDomain(network.getNetworkDomain());
-
+        response.setPublicMtu(network.getPublicMtu());
+        response.setPrivateMtu(network.getPrivateMtu());
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         response.setIpv6Dns1(profile.getIp6Dns1());
@@ -3234,6 +3235,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
+        response.setPublicMtu(vpc.getPublicMtu());
         populateOwner(response, vpc);
 
         // set tag information
