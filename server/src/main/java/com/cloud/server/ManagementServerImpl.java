@@ -1508,6 +1508,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
+        // re-order hosts by priority
+        _dpMgr.reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
+
         if (s_logger.isDebugEnabled()) {
             if (suitableHosts.isEmpty()) {
                 s_logger.debug("No suitable hosts found");

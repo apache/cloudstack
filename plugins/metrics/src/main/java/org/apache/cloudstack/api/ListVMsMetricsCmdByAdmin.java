@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.response.VmMetricsResponse;
 
-@APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
+@APICommand(name = "listVirtualMachinesMetrics", description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         authorized = {RoleType.Admin})
 public class ListVMsMetricsCmdByAdmin extends ListVMsMetricsCmd implements AdminCmd {

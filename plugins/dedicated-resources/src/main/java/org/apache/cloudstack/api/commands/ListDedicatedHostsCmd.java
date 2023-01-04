@@ -45,7 +45,6 @@ import com.cloud.utils.Pair;
 public class ListDedicatedHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedHostsCmd.class.getName());
 
-    private static final String s_name = "listdedicatedhostsresponse";
     @Inject
     DedicatedService dedicatedService;
 
@@ -90,11 +89,6 @@ public class ListDedicatedHostsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////l
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

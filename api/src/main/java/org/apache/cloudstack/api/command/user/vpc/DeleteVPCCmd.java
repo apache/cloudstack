@@ -40,7 +40,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
-    private static final String s_name = "deletevpcresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class DeleteVPCCmd extends BaseAsyncCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

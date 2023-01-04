@@ -117,7 +117,8 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          args: ['considerlasthost'],
           show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
@@ -850,7 +851,7 @@ export default {
           args: ['name', 'description', 'type'],
           mapping: {
             type: {
-              options: ['host anti-affinity', 'host affinity']
+              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
             }
           }
         },

@@ -35,7 +35,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
-    private static final String s_name = "deletestoragepoolresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class DeletePoolCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

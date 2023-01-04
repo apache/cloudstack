@@ -45,7 +45,6 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());
 
-    private static final String s_name = "createportableiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -100,11 +99,6 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -41,7 +41,6 @@ import com.cloud.utils.Pair;
 public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHypervisorCapabilitiesCmd.class.getName());
 
-    private static final String s_name = "listhypervisorcapabilitiesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,11 +71,6 @@ public class ListHypervisorCapabilitiesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

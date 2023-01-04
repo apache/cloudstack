@@ -63,7 +63,7 @@
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
-              :tooltip="$t('label.change.ip.addess')"
+              :tooltip="$t('label.change.ip.address')"
               icon="swap-outlined"
               :disabled="!('updateVmNicIp' in $store.getters.apis)"
               @onClick="onChangeIPAddress(record)" />

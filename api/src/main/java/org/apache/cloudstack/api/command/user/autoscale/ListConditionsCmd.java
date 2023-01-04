@@ -37,7 +37,6 @@ import com.cloud.network.as.Condition;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListConditionsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListConditionsCmd.class.getName());
-    private static final String s_name = "listconditionsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -92,9 +91,4 @@ public class ListConditionsCmd extends BaseListProjectAndAccountResourcesCmd {
         return policyId;
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

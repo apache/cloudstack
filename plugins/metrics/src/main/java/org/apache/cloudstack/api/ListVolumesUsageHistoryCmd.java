@@ -25,11 +25,10 @@ import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 
-@APICommand(name = ListVolumesUsageHistoryCmd.APINAME, description = "Lists volume stats", responseObject = VolumeMetricsStatsResponse.class,
+@APICommand(name = "listVolumesUsageHistory", description = "Lists volume stats", responseObject = VolumeMetricsStatsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVolumesUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
-    public static final String APINAME = "listVolumesUsageHistory";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class ListVolumesUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

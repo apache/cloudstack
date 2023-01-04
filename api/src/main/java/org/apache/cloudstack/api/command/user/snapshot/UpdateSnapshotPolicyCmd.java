@@ -40,7 +40,6 @@ import org.apache.log4j.Logger;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateSnapshotPolicyCmd.class.getName());
-    private static final String s_name = "updatesnapshotpolicyresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,11 +71,6 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public Long getApiResourceId() {

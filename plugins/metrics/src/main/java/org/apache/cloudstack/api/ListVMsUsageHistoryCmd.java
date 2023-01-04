@@ -24,11 +24,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 
-@APICommand(name = ListVMsUsageHistoryCmd.APINAME, description = "Lists VM stats", responseObject = VmMetricsStatsResponse.class,
+@APICommand(name = "listVirtualMachinesUsageHistory", description = "Lists VM stats", responseObject = VmMetricsStatsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.17",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
-    public static final String APINAME = "listVirtualMachinesUsageHistory";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,11 +61,6 @@ public class ListVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

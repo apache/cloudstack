@@ -37,7 +37,6 @@ import com.cloud.network.as.AutoScalePolicy;
 public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScalePoliciesCmd.class.getName());
 
-    private static final String s_name = "listautoscalepoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -87,11 +86,6 @@ public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResources
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

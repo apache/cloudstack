@@ -41,6 +41,13 @@ case "$1" in
             ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
         fi
 
+        # creating the last sanity checked id pointer
+        mkdir -p /usr/local/libexec
+        if [ ! -f "/usr/local/libexec/sanity-check-last-id" ]; then
+            echo 1 > /usr/local/libexec/sanity-check-last-id
+        fi
+        chown cloud:cloud /usr/local/libexec/sanity-check-last-id
+
         # Print help message
         if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
             acs_version=$(dpkg -l |grep cloudstack-usage |head -n1 |awk '{print $3}')

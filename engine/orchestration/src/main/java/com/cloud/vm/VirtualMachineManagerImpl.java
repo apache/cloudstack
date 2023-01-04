@@ -1421,6 +1421,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             msgBuf.append(String.format("Boot into Setup: %s ", params.get(VirtualMachineProfile.Param.BootIntoSetup)));
             log = true;
         }
+        if (params.get(VirtualMachineProfile.Param.ConsiderLastHost) != null) {
+            msgBuf.append(String.format("Consider last host: %s ", params.get(VirtualMachineProfile.Param.ConsiderLastHost)));
+            log = true;
+        }
         if (log) {
             s_logger.info(msgBuf.toString());
         }
@@ -4578,11 +4582,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new CloudRuntimeException("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
             }
 
+            upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
+
             if (vm.getType().equals(VirtualMachine.Type.User)) {
                 _userVmMgr.generateUsageEvent(vm, vm.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
             }
-
-            upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
 
             if (reconfiguringOnExistingHost) {
                 vm.setServiceOfferingId(oldServiceOffering.getId());

@@ -144,8 +144,8 @@ class TestVmAutoScaling(cloudstackTestCase):
             cls.apiclient,
             cls.services["isolated_network_offering"]
         )
-        cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
         cls._cleanup.append(cls.network_offering_isolated)
+        cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
 
         # 4. Create sub-domain
         cls.sub_domain = Domain.create(
@@ -176,6 +176,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             networkofferingid=cls.network_offering_isolated.id,
             zoneid=cls.zone.id
         )
+        cls._cleanup.append(cls.user_network_1)
 
         cls.services["network"]["name"] = "Test Network Isolated - Regular user - 2"
         cls.user_network_2 = Network.create(
@@ -184,12 +185,14 @@ class TestVmAutoScaling(cloudstackTestCase):
             networkofferingid=cls.network_offering_isolated.id,
             zoneid=cls.zone.id
         )
+        cls._cleanup.append(cls.user_network_2)
 
         # 8. Create SSH Keypairs
         cls.keypair_1 = SSHKeyPair.create(
             cls.regular_user_apiclient,
             name="keypair1"
         )
+
         cls.keypair_2 = SSHKeyPair.create(
             cls.regular_user_apiclient,
             name="keypair2"
@@ -224,6 +227,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             relationaloperator = "GE",
             threshold = 1
         )
+        cls._cleanup.append(cls.scale_up_condition)
 
         cls.scale_down_condition = AutoScaleCondition.create(
             cls.regular_user_apiclient,
@@ -231,9 +235,32 @@ class TestVmAutoScaling(cloudstackTestCase):
             relationaloperator = "LE",
             threshold = 100
         )
-
-        cls._cleanup.append(cls.scale_up_condition)
         cls._cleanup.append(cls.scale_down_condition)
+
+        # 10.2 Create new AS conditions for VM group update
+        cls.new_condition_1 = AutoScaleCondition.create(
+            cls.regular_user_apiclient,
+            counterid=cls.counter_network_received_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        cls._cleanup.append(cls.new_condition_1)
+
+        cls.new_condition_2 = AutoScaleCondition.create(
+            cls.regular_user_apiclient,
+            counterid=cls.counter_network_transmit_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        cls._cleanup.append(cls.new_condition_2)
+
+        cls.new_condition_3 = AutoScaleCondition.create(
+            cls.regular_user_apiclient,
+            counterid=cls.counter_lb_connection_id,
+            relationaloperator="GE",
+            threshold=0
+        )
+        cls._cleanup.append(cls.new_condition_3)
 
         # 11. Create AS policies
         cls.scale_up_policy = AutoScalePolicy.create(
@@ -243,6 +270,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
+        cls._cleanup.append(cls.scale_up_policy)
 
         cls.scale_down_policy = AutoScalePolicy.create(
             cls.regular_user_apiclient,
@@ -251,8 +279,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
-
-        cls._cleanup.append(cls.scale_up_policy)
         cls._cleanup.append(cls.scale_down_policy)
 
         # 12. Create AS VM Profile
@@ -288,6 +314,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             ipaddressid=cls.public_ip_address.ipaddress.id,
             networkid=cls.user_network_1.id
         )
+        cls._cleanup.append(cls.load_balancer_rule)
 
         # 14. Create AS VM Group
         cls.autoscaling_vmgroup = AutoScaleVmGroup.create(
@@ -663,28 +690,10 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         scale_down_policy = policies[0]
 
-        new_condition_1 = AutoScaleCondition.create(
-            self.regular_user_apiclient,
-            counterid=self.counter_network_received_id,
-            relationaloperator="GE",
-            threshold=0
-        )
-        new_condition_2 = AutoScaleCondition.create(
-            self.regular_user_apiclient,
-            counterid=self.counter_network_transmit_id,
-            relationaloperator="GE",
-            threshold=0
-        )
-        new_condition_3 = AutoScaleCondition.create(
-            self.regular_user_apiclient,
-            counterid=self.counter_lb_connection_id,
-            relationaloperator="GE",
-            threshold=0
-        )
         Autoscale.updateAutoscalePolicy(
             self.regular_user_apiclient,
             id=scale_down_policy.id,
-            conditionids=','.join([new_condition_1.id, new_condition_2.id, new_condition_3.id])
+            conditionids=','.join([self.new_condition_1.id, self.new_condition_2.id, self.new_condition_3.id])
         )
 
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
@@ -807,6 +816,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             relationaloperator = "GE",
             threshold = 1
         )
+        self.cleanup.append(scale_up_condition_project)
 
         scale_down_condition_project = AutoScaleCondition.create(
             self.regular_user_apiclient,
@@ -815,8 +825,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             relationaloperator = "LE",
             threshold = 100
         )
-
-        self.cleanup.append(scale_up_condition_project)
         self.cleanup.append(scale_down_condition_project)
 
         # Create AS policies for project
@@ -827,6 +835,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
+        self.cleanup.append(scale_up_policy_project)
 
         scale_down_policy_project = AutoScalePolicy.create(
             self.regular_user_apiclient,
@@ -835,8 +844,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
-
-        self.cleanup.append(scale_up_policy_project)
         self.cleanup.append(scale_down_policy_project)
 
         # Create AS VM Profile for project
@@ -848,6 +855,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             expungevmgraceperiod=DEFAULT_EXPUNGE_VM_GRACE_PERIOD,
             projectid = project.id
         )
+        self.cleanup.append(autoscaling_vmprofile_project)
 
         # Create AS VM Group for project
         autoscaling_vmgroup_project = AutoScaleVmGroup.create(
@@ -989,24 +997,31 @@ class TestVmAutoScaling(cloudstackTestCase):
             relationaloperator = "GE",
             threshold = 1
         )
-        scale_up_condition_3 = AutoScaleCondition.create(
+        self.cleanup.append(scale_up_condition_1)
+
+        scale_up_condition_2 = AutoScaleCondition.create(
             self.regular_user_apiclient,
             counterid=self.counter_network_received_id,
             relationaloperator="GE",
             threshold=0
         )
-        scale_up_condition_4 = AutoScaleCondition.create(
+        self.cleanup.append(scale_up_condition_2)
+
+        scale_up_condition_3 = AutoScaleCondition.create(
             self.regular_user_apiclient,
             counterid=self.counter_network_transmit_id,
             relationaloperator="GE",
             threshold=0
         )
-        scale_up_condition_5 = AutoScaleCondition.create(
+        self.cleanup.append(scale_up_condition_3)
+
+        scale_up_condition_4 = AutoScaleCondition.create(
             self.regular_user_apiclient,
             counterid=self.counter_lb_connection_id,
             relationaloperator="GE",
             threshold=0
         )
+        self.cleanup.append(scale_up_condition_4)
 
         scale_down_condition_vpc = AutoScaleCondition.create(
             self.regular_user_apiclient,
@@ -1014,22 +1029,18 @@ class TestVmAutoScaling(cloudstackTestCase):
             relationaloperator = "LE",
             threshold = 100
         )
-
-        self.cleanup.append(scale_up_condition_1)
-        self.cleanup.append(scale_up_condition_3)
-        self.cleanup.append(scale_up_condition_4)
-        self.cleanup.append(scale_up_condition_5)
         self.cleanup.append(scale_down_condition_vpc)
 
         # Create AS policies for vpc
         scale_up_policy_vpc = AutoScalePolicy.create(
             self.regular_user_apiclient,
             action='ScaleUp',
-            conditionids=','.join([scale_up_condition_1.id, scale_up_condition_3.id,
-                                   scale_up_condition_4.id, scale_up_condition_5.id]),
+            conditionids=','.join([scale_up_condition_1.id, scale_up_condition_2.id,
+                                   scale_up_condition_3.id, scale_up_condition_4.id]),
             quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
+        self.cleanup.append(scale_up_policy_vpc)
 
         scale_down_policy_vpc = AutoScalePolicy.create(
             self.regular_user_apiclient,
@@ -1038,8 +1049,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             quiettime=DEFAULT_QUIETTIME,
             duration=DEFAULT_DURATION
         )
-
-        self.cleanup.append(scale_up_policy_vpc)
         self.cleanup.append(scale_down_policy_vpc)
 
         # Create AS VM Profile for vpc

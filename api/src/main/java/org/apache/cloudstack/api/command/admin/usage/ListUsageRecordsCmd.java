@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -37,13 +36,12 @@ import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.utils.Pair;
 
-@APICommand(name = ListUsageRecordsCmd.APINAME,
+@APICommand(name = "listUsageRecords",
         description = "Lists usage records for accounts",
         responseObject = UsageRecordResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class ListUsageRecordsCmd extends BaseListCmd {
-    public static final String APINAME = "listUsageRecords";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -165,11 +163,6 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {
