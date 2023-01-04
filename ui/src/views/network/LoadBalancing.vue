@@ -36,6 +36,10 @@
         </div>
       </div>
       <div class="form">
+        <div class="form__item" ref="newCidrList">
+          <tooltip-label :title="$t('label.cidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
+          <a-input v-model:value="newRule.cidrlist"></a-input>
+        </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select
@@ -114,6 +118,9 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
+      <template #cidrlist="{ record }">
+        <span style="white-space: pre-line"> {{ record.cidrlist.replaceAll(" ", "\n") }}</span>
+      </template>
       <template #algorithm="{ record }">
         {{ returnAlgorithmName(record.algorithm) }}
       </template>
@@ -532,6 +539,7 @@ import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'LoadBalancing',
@@ -539,7 +547,8 @@ export default {
   components: {
     Status,
     TooltipButton,
-    BulkActionView
+    BulkActionView,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -586,7 +595,8 @@ export default {
         publicport: '',
         protocol: 'tcp',
         virtualmachineid: [],
-        vmguestip: []
+        vmguestip: [],
+        cidrlist: ''
       },
       addVmModalVisible: false,
       addVmModalLoading: false,
@@ -608,6 +618,10 @@ export default {
         {
           title: this.$t('label.privateport'),
           dataIndex: 'privateport'
+        },
+        {
+          title: this.$t('label.cidrlist'),
+          slots: { customRender: 'cidrlist' }
         },
         {
           title: this.$t('label.algorithm'),
@@ -683,6 +697,9 @@ export default {
     hasSelected () {
       return this.selectedRowKeys.length > 0
     }
+  },
+  beforeCreate () {
+    this.createLoadBalancerRuleParams = this.$getApiParams('createLoadBalancerRule')
   },
   created () {
     this.initForm()
@@ -1403,7 +1420,8 @@ export default {
         name: this.newRule.name,
         privateport: this.newRule.privateport,
         protocol: this.newRule.protocol,
-        publicport: this.newRule.publicport
+        publicport: this.newRule.publicport,
+        cidrlist: this.newRule.cidrlist
       }).then(response => {
         this.addVmModalVisible = false
         this.handleAssignToLBRule(response.createloadbalancerruleresponse.id)

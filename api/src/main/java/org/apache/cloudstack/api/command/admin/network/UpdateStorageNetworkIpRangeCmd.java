@@ -42,7 +42,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStorageNetworkIpRangeCmd.class);
-    private static final String s_name = "updatestoragenetworkiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -112,11 +111,6 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
 
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

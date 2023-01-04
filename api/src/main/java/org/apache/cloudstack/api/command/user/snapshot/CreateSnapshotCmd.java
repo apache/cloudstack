@@ -49,7 +49,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
-    private static final String s_name = "createsnapshotresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -152,11 +151,6 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return ApiConstants.SNAPSHOT;

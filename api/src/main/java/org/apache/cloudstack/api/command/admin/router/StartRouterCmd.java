@@ -42,7 +42,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StartRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
-    private static final String s_name = "startrouterresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,11 +61,6 @@ public class StartRouterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "router";

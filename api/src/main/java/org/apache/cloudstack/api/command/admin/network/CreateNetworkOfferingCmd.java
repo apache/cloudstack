@@ -50,7 +50,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
-    private static final String s_name = "createnetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -199,10 +198,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Integer getNetworkRate() {
         return networkRate;
-    }
-
-    public static String getName() {
-        return s_name;
     }
 
     public Long getServiceOfferingId() {
@@ -362,11 +357,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

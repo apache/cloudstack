@@ -31,12 +31,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEventTypesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventTypesCmd.class.getName());
-    private static final String s_name = "listeventtypesresponse";
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

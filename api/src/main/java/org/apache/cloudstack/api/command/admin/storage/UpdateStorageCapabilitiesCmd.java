@@ -31,13 +31,11 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import java.util.Locale;
 
-@APICommand(name = UpdateStorageCapabilitiesCmd.APINAME, description = "Syncs capabilities of storage pools",
+@APICommand(name = "updateStorageCapabilities", description = "Syncs capabilities of storage pools",
         responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateStorageCapabilitiesCmd extends BaseCmd {
-    public static final String APINAME = "updateStorageCapabilities";
     private static final Logger LOG = Logger.getLogger(UpdateStorageCapabilitiesCmd.class.getName());
 
     /////////////////////////////////////////////////////
@@ -72,11 +70,6 @@ public class UpdateStorageCapabilitiesCmd extends BaseCmd {
         ListResponse<StoragePoolResponse> listResponse = _queryService.searchForStoragePools(listStoragePoolCmd);
         listResponse.setResponseName(getCommandName());
         this.setResponseObject(listResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase(Locale.ROOT) + "response" ;
     }
 
     @Override

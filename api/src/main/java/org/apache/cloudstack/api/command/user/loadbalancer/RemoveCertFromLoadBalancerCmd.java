@@ -42,7 +42,6 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(RemoveCertFromLoadBalancerCmd.class.getName());
 
-    private static final String s_name = "removecertfromloadbalancerresponse";
 
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
@@ -66,11 +65,6 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_LB_CERT_REMOVE;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

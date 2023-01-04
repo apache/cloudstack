@@ -46,7 +46,6 @@ import com.cloud.projects.ProjectAccount;
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
 
-    private static final String s_name = "addaccounttoprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -102,11 +101,6 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
             return Enum.valueOf(ProjectAccount.Role.class, role);
         }
         return null;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     /////////////////////////////////////////////////////

@@ -18,14 +18,8 @@ package org.apache.cloudstack.consoleproxy;
 
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 
-public interface ConsoleAccessManager extends Manager, Configurable {
-
-    ConfigKey<Boolean> ConsoleProxyExtraSecurityValidationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "consoleproxy.extra.security.validation.enabled", "false",
-            "Enable/disable extra security validation for console proxy using an extra token.", true);
+public interface ConsoleAccessManager extends Manager {
 
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 

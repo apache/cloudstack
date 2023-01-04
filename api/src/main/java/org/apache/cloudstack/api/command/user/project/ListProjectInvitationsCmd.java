@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
             responseHasSensitiveInfo = false)
 public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectInvitationsCmd.class.getName());
-    private static final String s_name = "listprojectinvitationsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -78,11 +77,6 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
 
     public Long getUserId() {
         return userId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     // ///////////////////////////////////////////////////

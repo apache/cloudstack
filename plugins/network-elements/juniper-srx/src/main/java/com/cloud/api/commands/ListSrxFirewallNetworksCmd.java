@@ -48,7 +48,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ListSrxFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListSrxFirewallNetworksCmd.class.getName());
-    private static final String s_name = "listsrxfirewallnetworksresponse";
     @Inject
     JuniperSRXFirewallElementService _srxFwService;
 
@@ -100,8 +99,4 @@ public class ListSrxFirewallNetworksCmd extends BaseListCmd {
         }
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-}

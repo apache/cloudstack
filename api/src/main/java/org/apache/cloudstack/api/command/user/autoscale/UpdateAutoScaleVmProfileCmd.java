@@ -47,7 +47,6 @@ import com.cloud.user.Account;
 public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmProfileCmd.class.getName());
 
-    private static final String s_name = "updateautoscalevmprofileresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -177,11 +176,6 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     @Override
     public String getEventDescription() {
         return "Updating AutoScale Vm Profile. Vm Profile Id: " + getId();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

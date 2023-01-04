@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
-    private static final String s_name = "disassociateipaddressresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,11 +65,6 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws InsufficientAddressCapacityException {

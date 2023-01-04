@@ -37,7 +37,6 @@ import javax.inject.Inject;
 @APICommand(name = "addBaremetalRct", description = "adds baremetal rack configuration text", responseObject = BaremetalRctResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class AddBaremetalRctCmd extends BaseAsyncCmd {
-    private static final String s_name = "addbaremetalrctresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalRctCmd.class);
 
     @Inject
@@ -72,11 +71,6 @@ public class AddBaremetalRctCmd extends BaseAsyncCmd {
             s_logger.warn(String.format("unable to add baremetal RCT[%s]", getRctUrl()), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

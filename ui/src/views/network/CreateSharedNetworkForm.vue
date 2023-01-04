@@ -243,6 +243,38 @@
               <template #message>{{ $t('message.shared.network.offering.warning') }}</template>
             </a-alert>
           </a-form-item>
+          <a-row :gutter="12" v-if="setMTU">
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input-number
+                style="width: 100%;"
+                v-model:value="form.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"
+                  @change="updateMtu(true)"/>
+                <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input-number
+                style="width: 100%;"
+                v-model:value="form.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"
+                  @change="updateMtu(false)"/>
+                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu"></div>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.specifyvlan" name="associatednetworkid" ref="associatednetworkid">
             <template #label>
               <tooltip-label :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
@@ -497,6 +529,7 @@ export default {
       networkOfferingLoading: false,
       networkOfferingWarning: false,
       selectedNetworkOffering: {},
+      isRedundant: false,
       networks: [],
       networkLoading: false,
       selectedNetwork: {},
@@ -507,7 +540,13 @@ export default {
       projectLoading: false,
       selectedProject: {},
       isVirtualRouterForAtLeastOneService: false,
-      selectedServiceProviderMap: {}
+      selectedServiceProviderMap: {},
+      privateMtuMax: 1500,
+      publicMtuMax: 1500,
+      minMTU: 68,
+      setMTU: false,
+      errorPublicMtu: '',
+      errorPrivateMtu: ''
     }
   },
   watch: {
@@ -624,6 +663,9 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      this.setMTU = zone?.allowuserspecifyvrmtu || false
+      this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
+      this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
@@ -1027,6 +1069,12 @@ export default {
         if (hideipaddressusage) {
           params.hideipaddressusage = true
         }
+        if (this.isValidTextValueForKey(values, 'publicmtu')) {
+          params.publicmtu = values.publicmtu
+        }
+        if (this.isValidTextValueForKey(values, 'privatemtu')) {
+          params.privatemtu = values.privatemtu
+        }
         api('createNetwork', params).then(json => {
           this.$notification.success({
             message: this.$t('label.network'),
@@ -1056,6 +1104,29 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    updateMtu (isPublic) {
+      if (isPublic) {
+        if (this.form.publicmtu > this.publicMtuMax) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed').replace('%x', this.publicMtuMax)}`
+          this.form.publicmtu = this.publicMtuMax
+        } else if (this.form.publicmtu < this.minMTU) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.publicmtu = this.minMTU
+        } else {
+          this.errorPublicMtu = ''
+        }
+      } else {
+        if (this.form.privatemtu > this.privateMtuMax) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed').replace('%x', this.privateMtuMax)}`
+          this.form.privatemtu = this.privateMtuMax
+        } else if (this.form.privatemtu < this.minMTU) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.privatemtu = this.minMTU
+        } else {
+          this.errorPrivateMtu = ''
+        }
+      }
     }
   }
 }

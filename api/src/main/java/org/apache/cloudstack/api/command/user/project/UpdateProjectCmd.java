@@ -42,7 +42,6 @@ import org.apache.commons.lang3.StringUtils;
 public class UpdateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
-    private static final String s_name = "updateprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -101,11 +100,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             return getRoleType(roleType);
         }
         return ProjectAccount.Role.Regular;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public Boolean isSwapOwner() {
