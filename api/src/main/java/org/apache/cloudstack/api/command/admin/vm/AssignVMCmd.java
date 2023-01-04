@@ -120,7 +120,7 @@ public class AssignVMCmd extends BaseCmd  {
     @Override
     public void execute() {
         try {
-            UserVm userVm = _userVmService.moveVMToUser(this);
+            UserVm userVm = _userVmService.moveVmToUser(this);
             if (userVm == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
             }
