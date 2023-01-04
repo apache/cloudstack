@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupEgressCmd.class.getName());
 
-    private static final String s_name = "revokesecuritygroupegressresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -60,11 +59,6 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "revokesecuritygroupegress";

@@ -37,7 +37,6 @@ import com.cloud.user.Account;
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 
-    private static final String s_name = "createdomainresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -49,7 +48,7 @@ public class CreateDomainCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PARENT_DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
+            description = "assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specified, the ROOT domain is assumed.")
     private Long parentDomainId;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for networks in the domain")
@@ -81,11 +80,6 @@ public class CreateDomainCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

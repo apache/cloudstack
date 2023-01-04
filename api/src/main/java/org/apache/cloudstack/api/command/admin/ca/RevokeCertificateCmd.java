@@ -36,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 
-@APICommand(name = RevokeCertificateCmd.APINAME,
+@APICommand(name = "revokeCertificate",
         description = "Revokes certificate using configured CA plugin",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = true,
@@ -45,7 +45,6 @@ import com.cloud.event.EventTypes;
         authorized = {RoleType.Admin})
 public class RevokeCertificateCmd extends BaseAsyncCmd {
 
-    public static final String APINAME = "revokeCertificate";
 
     @Inject
     private CAManager caManager;
@@ -92,11 +91,6 @@ public class RevokeCertificateCmd extends BaseAsyncCmd {
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

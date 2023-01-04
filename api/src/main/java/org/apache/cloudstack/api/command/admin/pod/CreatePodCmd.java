@@ -36,7 +36,6 @@ import com.cloud.user.Account;
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 
-    private static final String s_name = "createpodresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -101,13 +100,6 @@ public class CreatePodCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-
 
     @Override
     public long getEntityOwnerId() {

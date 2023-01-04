@@ -20,23 +20,23 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.resource.icon.ResourceIconVO;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.network.NetworkService;
+import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
@@ -120,6 +120,9 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
         zoneResponse.setHasAnnotation(annotationDao.hasAnnotations(dataCenter.getUuid(), AnnotationService.EntityType.ZONE.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        zoneResponse.setAllowUserSpecifyVRMtu(NetworkService.AllowUsersToSpecifyVRMtu.valueIn(dataCenter.getId()));
+        zoneResponse.setRouterPrivateInterfaceMaxMtu(NetworkService.VRPrivateInterfaceMtu.valueIn(dataCenter.getId()));
+        zoneResponse.setRouterPublicInterfaceMaxMtu(NetworkService.VRPublicInterfaceMtu.valueIn(dataCenter.getId()));
 
         zoneResponse.setObjectName("zone");
         return zoneResponse;

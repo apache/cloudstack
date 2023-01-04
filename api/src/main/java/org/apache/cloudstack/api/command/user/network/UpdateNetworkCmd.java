@@ -78,11 +78,19 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
- description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
+               description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     @Parameter(name= ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Setting this to true will cause a forced network update,", authorized = {RoleType.Admin})
     private Boolean forced;
+
+    @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer publicMtu;
+
+    @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer privateMtu;
 
     @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network. Empty string will update the first IPv4 DNS with the value from the zone", since = "4.18.0")
     private String ip4Dns1;
@@ -147,6 +155,14 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
             return false;
         }
         return forced;
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu;
     }
 
     public String getIp4Dns1() {

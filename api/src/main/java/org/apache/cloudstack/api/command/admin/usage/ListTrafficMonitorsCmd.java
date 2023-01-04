@@ -35,7 +35,6 @@ import com.cloud.host.Host;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTrafficMonitorsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficMonitorsCmd.class.getName());
-    private static final String s_name = "listtrafficmonitorsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,11 +54,6 @@ public class ListTrafficMonitorsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

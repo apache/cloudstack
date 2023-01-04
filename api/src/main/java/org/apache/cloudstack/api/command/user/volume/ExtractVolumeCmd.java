@@ -43,7 +43,6 @@ import com.cloud.user.Account;
 public class ExtractVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
-    private static final String s_name = "extractvolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -90,15 +89,6 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    public static String getStaticName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

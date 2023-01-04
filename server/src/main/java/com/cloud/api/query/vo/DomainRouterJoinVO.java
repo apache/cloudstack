@@ -262,6 +262,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name = "software_version")
     private String softwareVersion;
 
+    @Column(name = "mtu")
+    private Integer mtu;
+
     public DomainRouterJoinVO() {
     }
 
@@ -556,5 +559,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public String getSoftwareVersion() {
         return softwareVersion;
+    }
+
+    public Integer getMtu() {
+        return mtu;
     }
 }

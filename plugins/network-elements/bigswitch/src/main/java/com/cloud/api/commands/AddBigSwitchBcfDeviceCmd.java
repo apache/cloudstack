@@ -43,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "addBigSwitchBcfDevice", responseObject = BigSwitchBcfDeviceResponse.class, description = "Adds a BigSwitch BCF Controller device", since = "4.6.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
-    private static final String S_NAME = "addbigswitchbcfdeviceresponse";
     @Inject
     private BigSwitchBcfElementService bcfElementService;
 
@@ -118,11 +117,6 @@ public class AddBigSwitchBcfDeviceCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage(), runtimeExcp);
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return S_NAME;
     }
 
     @Override

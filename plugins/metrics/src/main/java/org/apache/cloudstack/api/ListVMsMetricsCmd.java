@@ -43,7 +43,7 @@ import org.apache.cloudstack.response.VmMetricsResponse;
  * </ul>
  */
 @APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Restricted,
         since = "4.9.3", authorized = {RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMsMetricsCmd extends ListVMsCmd implements UserCmd {
     public static final String APINAME = "listVirtualMachinesMetrics";

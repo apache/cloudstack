@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -41,12 +40,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = RestoreVolumeFromBackupAndAttachToVMCmd.APINAME,
+@APICommand(name = "restoreVolumeFromBackupAndAttachToVM",
         description = "Restore and attach a backed up volume to VM",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
-    public static final String APINAME = "restoreVolumeFromBackupAndAttachToVM";
 
     @Inject
     private BackupManager backupManager;
@@ -89,11 +87,6 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
 
     public Long getBackupId() {
         return backupId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

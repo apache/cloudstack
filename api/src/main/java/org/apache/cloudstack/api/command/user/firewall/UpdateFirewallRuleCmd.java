@@ -39,7 +39,6 @@ import com.cloud.network.rules.FirewallRule.TrafficType;
 public class UpdateFirewallRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateFirewallRuleCmd.class.getName());
 
-    private static final String s_name = "updatefirewallruleresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -70,11 +69,6 @@ public class UpdateFirewallRuleCmd extends BaseAsyncCustomIdCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws ResourceUnavailableException {

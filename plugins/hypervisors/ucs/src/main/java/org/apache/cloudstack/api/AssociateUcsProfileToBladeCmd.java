@@ -62,11 +62,6 @@ public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return "associateucsprofiletobladeresponse";
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }

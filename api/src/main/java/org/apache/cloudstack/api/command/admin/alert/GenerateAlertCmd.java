@@ -37,7 +37,6 @@ public class GenerateAlertCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(GenerateAlertCmd.class.getName());
 
-    private static final String s_name = "generatealertresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -61,11 +60,6 @@ public class GenerateAlertCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public Short getType() {
         return type;
     }

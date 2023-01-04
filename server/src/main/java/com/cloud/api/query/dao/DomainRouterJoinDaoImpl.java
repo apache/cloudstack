@@ -63,6 +63,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
     private final SearchBuilder<DomainRouterJoinVO> vrIdSearch;
+    private final SearchBuilder<DomainRouterJoinVO> vrIdTrafficSearch;
 
     protected DomainRouterJoinDaoImpl() {
 
@@ -73,6 +74,11 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         vrIdSearch = createSearchBuilder();
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         vrIdSearch.done();
+
+        vrIdTrafficSearch = createSearchBuilder();
+        vrIdTrafficSearch.and("id", vrIdTrafficSearch.entity().getId(), SearchCriteria.Op.EQ);
+        vrIdTrafficSearch.and("trafficType", vrIdTrafficSearch.entity().getTrafficType(), SearchCriteria.Op.IN);
+        vrIdTrafficSearch.done();
 
         _count = "select count(distinct id) from domain_router_view WHERE ";
     }
@@ -119,7 +125,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             routerResponse.setRequiresUpgrade(true);
         }
 
-        routerResponse.setHypervisor(router.getHypervisorType().toString());
+        if (router.getHypervisorType() != null) {
+            routerResponse.setHypervisor(router.getHypervisorType().toString());
+        }
         routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
@@ -184,6 +192,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 }
                 if (router.getGuestType() != null) {
                     nicResponse.setType(router.getGuestType().toString());
+                }
+                if (router.getMtu() != null){
+                    nicResponse.setMtu(router.getMtu());
                 }
                 nicResponse.setIsDefault(router.isDefaultNic());
                 nicResponse.setObjectName("nic");
@@ -278,6 +289,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             if (vr.getGuestType() != null) {
                 nicResponse.setType(vr.getGuestType().toString());
             }
+            if (vr.getMtu() != null) {
+                nicResponse.setMtu(vr.getMtu());
+            }
             nicResponse.setIsDefault(vr.isDefaultNic());
             nicResponse.setObjectName("nic");
             vrData.addNic(nicResponse);
@@ -327,6 +341,14 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             }
         }
         return uvList;
+    }
+
+    @Override
+    public List<DomainRouterJoinVO> getRouterByIdAndTrafficType(Long id, TrafficType... trafficType) {
+        SearchCriteria<DomainRouterJoinVO> sc = vrIdTrafficSearch.create();
+        sc.setParameters("id", id);
+        sc.setParameters("trafficType", (Object[])trafficType);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
     @Override

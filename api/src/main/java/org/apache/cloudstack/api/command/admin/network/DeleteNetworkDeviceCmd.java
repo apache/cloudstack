@@ -41,7 +41,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkDeviceCmd.class);
-    private static final String s_name = "deletenetworkdeviceresponse";
 
     @Inject
     ExternalNetworkDeviceManager nwDeviceMgr;
@@ -75,11 +74,6 @@ public class DeleteNetworkDeviceCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
 
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

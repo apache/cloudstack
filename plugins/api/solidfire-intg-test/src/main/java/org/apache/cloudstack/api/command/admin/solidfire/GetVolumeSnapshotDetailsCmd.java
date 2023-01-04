@@ -35,7 +35,6 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 
 public class GetVolumeSnapshotDetailsCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(GetVolumeSnapshotDetailsCmd.class.getName());
-    private static final String NAME = "getvolumesnapshotdetailsresponse";
 
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.STRING, description = "CloudStack Snapshot UUID", required = true)
     private String snapshotUuid;
@@ -45,11 +44,6 @@ public class GetVolumeSnapshotDetailsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return NAME;
-    }
 
     @Override
     public long getEntityOwnerId() {

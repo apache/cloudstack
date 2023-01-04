@@ -16,7 +16,7 @@
 # under the License.
 """
 
-Test cases relating to acess checks for deleteNetwork() for Admin, domain admin and regular users
+Test cases relating to access checks for deleteNetwork() for Admin, domain admin and regular users
 
 """
 #Import Local Modules
