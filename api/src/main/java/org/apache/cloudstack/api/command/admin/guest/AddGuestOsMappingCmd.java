@@ -51,7 +51,7 @@ public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "Hypervisor type. One of : XenServer, KVM, VMWare")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = true, description = "Hypervisor version to create the mapping for. Use 'default' for default versions")
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = true, description = "Hypervisor version to create the mapping. Use 'default' for default versions. Please check hypervisor capabilities for correct version")
     private String hypervisorVersion;
 
     @Parameter(name = ApiConstants.OS_NAME_FOR_HYPERVISOR, type = CommandType.STRING, required = true, description = "OS name specific to the hypervisor")
