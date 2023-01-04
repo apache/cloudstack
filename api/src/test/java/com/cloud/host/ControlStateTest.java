@@ -30,7 +30,7 @@ public class ControlStateTest extends TestCase {
     }
 
     @Test
-    public void testHostControlState() {
+    public void testHostControlState1() {
         // Unknown state
         verifyHostControlState(null, null, ControlState.Unknown);
         verifyHostControlState(null, ResourceState.Enabled, ControlState.Unknown);
@@ -48,23 +48,22 @@ public class ControlStateTest extends TestCase {
         verifyHostControlState(Status.Unknown, ResourceState.Disabled, ControlState.Unknown);
         verifyHostControlState(Status.Unknown, ResourceState.Error, ControlState.Unknown);
         verifyHostControlState(Status.Unknown, ResourceState.Degraded, ControlState.Unknown);
-
+    }
+    @Test
+    public void testHostControlState2() {
         // Host is Up and Enabled
         verifyHostControlState(Status.Creating, ResourceState.Enabled, ControlState.Enabled);
         verifyHostControlState(Status.Connecting, ResourceState.Enabled, ControlState.Enabled);
         verifyHostControlState(Status.Up, ResourceState.Enabled, ControlState.Enabled);
+    }
 
+    @Test
+    public void testHostControlState3() {
         // Host is Up and not Enabled
         verifyHostControlState(Status.Up, ResourceState.Creating, ControlState.Disabled);
         verifyHostControlState(Status.Up, ResourceState.Disabled, ControlState.Disabled);
         verifyHostControlState(Status.Up, ResourceState.Error, ControlState.Disabled);
         verifyHostControlState(Status.Up, ResourceState.Degraded, ControlState.Disabled);
-
-        // Host is Up and Maintenance mode
-        verifyHostControlState(Status.Up, ResourceState.ErrorInPrepareForMaintenance, ControlState.Maintenance);
-        verifyHostControlState(Status.Up, ResourceState.PrepareForMaintenance, ControlState.Maintenance);
-        verifyHostControlState(Status.Up, ResourceState.ErrorInMaintenance, ControlState.Maintenance);
-        verifyHostControlState(Status.Up, ResourceState.Maintenance, ControlState.Maintenance);
 
         // Host is Creating and not Enabled
         verifyHostControlState(Status.Creating, ResourceState.Creating, ControlState.Disabled);
@@ -77,7 +76,19 @@ public class ControlStateTest extends TestCase {
         verifyHostControlState(Status.Connecting, ResourceState.Disabled, ControlState.Disabled);
         verifyHostControlState(Status.Connecting, ResourceState.Error, ControlState.Disabled);
         verifyHostControlState(Status.Connecting, ResourceState.Degraded, ControlState.Disabled);
+    }
 
+    @Test
+    public void testHostControlState4() {
+        // Host is Up and Maintenance mode
+        verifyHostControlState(Status.Up, ResourceState.ErrorInPrepareForMaintenance, ControlState.Maintenance);
+        verifyHostControlState(Status.Up, ResourceState.PrepareForMaintenance, ControlState.Maintenance);
+        verifyHostControlState(Status.Up, ResourceState.ErrorInMaintenance, ControlState.Maintenance);
+        verifyHostControlState(Status.Up, ResourceState.Maintenance, ControlState.Maintenance);
+    }
+
+    @Test
+    public void testHostControlState5() {
         // Host in other states and Enabled
         verifyHostControlState(Status.Down, ResourceState.Enabled, ControlState.Offline);
         verifyHostControlState(Status.Disconnected, ResourceState.Enabled, ControlState.Offline);
