@@ -93,15 +93,15 @@ export default {
       title: 'label.guest.os',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'database-outlined',
-      permission: ['listOsTypes'],
-      columns: ['osname', 'oscategoryname', 'isuserdefined'],
-      details: ['osname', 'oscategoryname', 'isuserdefined'],
+      permission: ['listOsTypes', 'listOsCategories'],
+      columns: ['name', 'oscategoryname', 'isuserdefined'],
+      details: ['name', 'oscategoryname', 'isuserdefined'],
       related: [{
         name: 'guestoshypervisormapping',
         title: 'label.guest.os.hypervisor.mappings',
         param: 'ostypeid'
       }],
-      searchFilters: ['osname'],
+      searchFilters: ['name'],
       actions: [
         {
           api: 'addGuestOs',
@@ -109,7 +109,13 @@ export default {
           label: 'label.add.guest.os',
           listView: true,
           dataView: false,
-          args: ['osdisplayname', 'oscategoryid']
+          args: ['osdisplayname', 'oscategoryid'],
+          mapping: {
+            oscategoryid: {
+              api: 'listOsCategories',
+              params: (record) => { return { oscategoryid: record.id } }
+            }
+          }
         },
         {
           api: 'updateGuestOs',
@@ -126,7 +132,8 @@ export default {
           args: ['ostypeid', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced'],
           mapping: {
             ostypeid: {
-              value: (record) => { return record.id }
+              api: 'listOsTypes',
+              params: (record) => { return { ostypeid: record.id } }
             }
           }
         },
@@ -150,7 +157,7 @@ export default {
       columns: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor'],
       details: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor', 'isuserdefined'],
       filters: ['all', 'kvm', 'vmware', 'xenserver', 'lxc', 'ovm3'],
-      searchFilters: ['osdisplayname', 'hypervisor', 'hypervisorversion'],
+      searchFilters: ['osdisplayname', 'osnameforhypervisor', 'hypervisor', 'hypervisorversion'],
       actions: [
         {
           api: 'addGuestOsMapping',

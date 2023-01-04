@@ -39,9 +39,9 @@ public class GuestOSResponse extends BaseResponse {
     @Param(description = "the name of the OS category")
     private String osCategoryName;
 
-    @SerializedName(ApiConstants.OS_NAME)
+    @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the OS type")
-    private String osName;
+    private String name;
 
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "is the guest OS user defined")
@@ -71,12 +71,12 @@ public class GuestOSResponse extends BaseResponse {
         this.osCategoryName = osCategoryName;
     }
 
-    public String getOsName() {
-        return osName;
+    public String getName() {
+        return name;
     }
 
-    public void setOsName(String osName) {
-        this.osName = osName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getIsUserDefined() {

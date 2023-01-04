@@ -2691,6 +2691,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long id = cmd.getId();
         final Long osTypeId = cmd.getOsTypeId();
         final String osDisplayName = cmd.getOsDisplayName();
+        final String osNameForHypervisor = cmd.getOsNameForHypervisor();
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
@@ -2709,8 +2710,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.addAnd("guestOsId", SearchCriteria.Op.EQ, osTypeId);
         }
 
-        if (osDisplayName != null) {
-            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osDisplayName + "%");
+        if (osNameForHypervisor != null) {
+            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osNameForHypervisor + "%");
         }
 
         if (hypervisor != null) {
@@ -2719,6 +2720,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (hypervisorVersion != null) {
             sc.addAnd("hypervisorVersion", SearchCriteria.Op.EQ, hypervisorVersion);
+        }
+
+        if (osDisplayName != null) {
+            List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
+            List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+            sc.addAnd("guestOsId", SearchCriteria.Op.IN, guestOSids.toArray());
         }
 
         final Pair<List<GuestOSHypervisorVO>, Integer> result = _guestOSHypervisorDao.searchAndCount(sc, searchFilter);

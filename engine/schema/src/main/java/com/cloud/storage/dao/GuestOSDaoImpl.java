@@ -33,12 +33,19 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
 
     protected final SearchBuilder<GuestOSVO> Search;
 
+    protected final SearchBuilder<GuestOSVO> displayNameSearch;
+
     public GuestOSDaoImpl() {
         Search = createSearchBuilder();
         Search.and("category_id", Search.entity().getCategoryId(), SearchCriteria.Op.EQ);
         Search.and("display_name", Search.entity().getDisplayName(), SearchCriteria.Op.EQ);
         Search.and("is_user_defined", Search.entity().getIsUserDefined(), SearchCriteria.Op.EQ);
         Search.done();
+
+        displayNameSearch = createSearchBuilder();
+        displayNameSearch.and("display_name", displayNameSearch.entity().getDisplayName(), SearchCriteria.Op.LIKE);
+        displayNameSearch.done();
+
     }
 
     @Override
@@ -46,6 +53,13 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
         SearchCriteria<GuestOSVO> sc = Search.create();
         sc.setParameters("display_name", displayName);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<GuestOSVO> listLikeDisplayName(String displayName) {
+        SearchCriteria<GuestOSVO> sc = displayNameSearch.create();
+        sc.setParameters("display_name", "%" + displayName + "%");
+        return listBy(sc);
     }
 
     @Override
