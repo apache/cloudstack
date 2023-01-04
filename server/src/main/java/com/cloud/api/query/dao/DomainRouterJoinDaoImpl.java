@@ -37,6 +37,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.host.ControlState;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -110,6 +111,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostUuid());
                 routerResponse.setHostName(router.getHostName());
+                routerResponse.setHostControlState(ControlState.getControlState(router.getHostStatus(), router.getHostResourceState()).toString());
                 routerResponse.setHypervisor(router.getHypervisorType().toString());
             }
             routerResponse.setPodId(router.getPodUuid());

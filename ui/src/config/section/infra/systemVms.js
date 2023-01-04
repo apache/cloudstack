@@ -24,7 +24,7 @@ export default {
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate'],
   resourceType: 'SystemVm',
   tabs: [
     {
@@ -100,6 +100,7 @@ export default {
       message: 'message.migrate.systemvm.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      disabled: (record) => { return record.hostcontrolstate === 'Offline' },
       component: () => import('@/views/compute/MigrateWizard'),
       popup: true
     },
@@ -109,6 +110,7 @@ export default {
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
       show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      disabled: (record) => { return record.hostcontrolstate === 'Offline' },
       component: () => import('@/views/compute/MigrateVMStorage'),
       popup: true
     },

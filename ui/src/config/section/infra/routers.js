@@ -26,7 +26,7 @@ export default {
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
-  details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created', 'hostcontrolstate'],
   resourceType: 'VirtualRouter',
   tabs: [{
     name: 'details',
@@ -127,6 +127,7 @@ export default {
       message: 'message.migrate.router.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      disabled: (record) => { return record.hostcontrolstate === 'Offline' },
       component: () => import('@/views/compute/MigrateWizard'),
       popup: true
     },
@@ -136,6 +137,7 @@ export default {
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
       show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      disabled: (record) => { return record.hostcontrolstate === 'Offline' },
       component: () => import('@/views/compute/MigrateVMStorage'),
       popup: true
     },
