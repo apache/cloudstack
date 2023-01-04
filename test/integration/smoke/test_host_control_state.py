@@ -60,19 +60,24 @@ class TestHostControlState(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.domain = Domain.create(
             cls.apiclient,
             cls.services["acl"]["domain1"]
         )
+        cls._cleanup.append(cls.domain)
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.vm = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
@@ -81,14 +86,7 @@ class TestHostControlState(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-
-        cls._cleanup = [
-            cls.domain,
-            cls.account,
-            cls.vm,
-            cls.service_offering
-        ]
-        return
+        cls._cleanup.append(cls.vm)
 
     @classmethod
     def tearDownClass(cls):
