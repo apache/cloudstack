@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class CreateProjectCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateProjectCmd.class.getName());
 
-    private static final String s_name = "createprojectresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -100,11 +99,6 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
 
     public String getDisplayText() {
         return displayText;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -40,7 +40,6 @@ import com.cloud.user.UserAccount;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DisableUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
-    private static final String s_name = "disableuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class DisableUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public String getEventType() {

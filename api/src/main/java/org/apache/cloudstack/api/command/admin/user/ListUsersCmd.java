@@ -36,7 +36,6 @@ import java.util.List;
 public class ListUsersCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
-    private static final String s_name = "listusersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,11 +86,6 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

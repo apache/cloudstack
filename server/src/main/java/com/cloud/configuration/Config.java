@@ -248,7 +248,7 @@ public enum Config {
             String.class,
             "network.loadbalancer.haproxy.stats.auth",
             "admin1:AdMiN123",
-            "Load Balancer(haproxy) authetication string in the format username:password",
+            "Load Balancer(haproxy) authentication string in the format username:password",
             null),
     NetworkLBHaproxyStatsPort(
             "Network",
@@ -431,8 +431,22 @@ public enum Config {
             "8001",
             "Console proxy command port that is used to communicate with management server",
             null),
-    ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName"),
+    ConsoleProxyRestart(
+        "Console Proxy",
+        AgentManager.class,
+        Boolean.class,
+        "consoleproxy.restart",
+        "true",
+        "Console proxy restart flag, defaulted to true",
+        null),
+    ConsoleProxyUrlDomain(
+        "Console Proxy",
+        AgentManager.class,
+        String.class,
+        "consoleproxy.url.domain",
+        "",
+        "Console proxy url domain",
+        "domainName,privateip"),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,

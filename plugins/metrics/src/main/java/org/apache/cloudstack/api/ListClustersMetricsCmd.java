@@ -29,19 +29,13 @@ import java.util.List;
 
 import com.cloud.utils.Pair;
 
-@APICommand(name = ListClustersMetricsCmd.APINAME, description = "Lists clusters metrics", responseObject = ClusterMetricsResponse.class,
+@APICommand(name = "listClustersMetrics", description = "Lists clusters metrics", responseObject = ClusterMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin})
 public class ListClustersMetricsCmd extends ListClustersCmd {
-    public static final String APINAME = "listClustersMetrics";
 
     @Inject
     private MetricsService metricsService;
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

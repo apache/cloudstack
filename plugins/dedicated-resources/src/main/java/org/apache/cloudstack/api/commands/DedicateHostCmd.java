@@ -43,7 +43,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DedicateHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateHostCmd.class.getName());
-    private static final String s_name = "dedicatehostresponse";
     @Inject
     DedicatedService dedicatedService;
 
@@ -83,11 +82,6 @@ public class DedicateHostCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -41,7 +41,6 @@ import com.cloud.network.as.AutoScaleVmGroup;
 public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmGroupsCmd.class.getName());
 
-    private static final String s_name = "listautoscalevmgroupsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -107,11 +106,6 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

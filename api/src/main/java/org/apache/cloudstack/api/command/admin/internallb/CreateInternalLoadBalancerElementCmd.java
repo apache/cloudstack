@@ -46,7 +46,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateInternalLoadBalancerElementCmd.class.getName());
-    private static final String s_name = "createinternalloadbalancerelementresponse";
 
     @Inject
     private List<InternalLoadBalancerElementService> _service;
@@ -77,11 +76,6 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

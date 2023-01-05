@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmGroupCmd.class.getName());
 
-    private static final String s_name = "updateautoscalevmgroupresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -155,11 +154,6 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
     @Override
     public String getEventDescription() {
         return "Updating AutoScale Vm Group. Vm Group Id: " + getId();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

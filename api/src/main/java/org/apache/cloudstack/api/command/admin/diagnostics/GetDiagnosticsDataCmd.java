@@ -43,7 +43,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = GetDiagnosticsDataCmd.APINAME,
+@APICommand(name = "getDiagnosticsData",
         responseObject = GetDiagnosticsDataResponse.class,
         entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
@@ -52,7 +52,6 @@ import com.cloud.vm.VirtualMachine;
         since = "4.14.0.0",
         authorized = {RoleType.Admin})
 public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
-    public static final String APINAME = "getDiagnosticsData";
 
     @Inject
     private DiagnosticsService diagnosticsService;
@@ -89,11 +88,6 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Implementation //////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

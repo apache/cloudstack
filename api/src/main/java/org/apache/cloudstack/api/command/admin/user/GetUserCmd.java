@@ -32,7 +32,6 @@ import com.cloud.user.UserAccount;
 public class GetUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetUserCmd.class.getName());
 
-    private static final String s_name = "getuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -52,11 +51,6 @@ public class GetUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

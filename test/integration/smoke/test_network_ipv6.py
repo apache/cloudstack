@@ -135,7 +135,7 @@ class TestIpv6Network(cloudstackTestCase):
             cls.account = Account.create(
                 cls.apiclient,
                 cls.services["account"],
-                admin=True,
+                admin=False,
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)

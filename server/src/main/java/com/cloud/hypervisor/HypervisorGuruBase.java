@@ -143,6 +143,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setIp6Address(profile.getIPv6Address());
         to.setIp6Gateway(profile.getIPv6Gateway());
         to.setIp6Cidr(profile.getIPv6Cidr());
+        to.setMtu(profile.getMtu());
         to.setIp6Dns1(profile.getIPv6Dns1());
         to.setIp6Dns2(profile.getIPv6Dns2());
 

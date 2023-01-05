@@ -23,7 +23,26 @@
 #set -x
 
 usage() {
-  printf "\nThe tool stopping/starting running system vms and domain routers \n\nUsage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-t] [-n] [-z] [-v]\n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password if not specified \n\n -m - the ip address of management server, defaulted to localhost if not specified\n\n -s - stop then start all running SSVMs and Console Proxies \n -r - stop then start all running Virtual Routers\n -a - stop then start all running SSVMs, Console Proxies, and Virtual Routers \n -n - restart all Guest networks \n -t - number of parallel threads used for stopping Domain Routers. Default is 10.\n -l - log file location. Default is cloud.log under current directory.\n -z - do restart only for the instances in the specific zone. If not specified, restart will apply to instances in all zones\n -v - do restart all VPCs in the entire system\n\n" $(basename $0) >&2
+  usage_content="
+  The tool for stopping/starting running system vms and domain routers
+
+  Usage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-n] [-t] [-l] [-z] [-v] [-i] [-j]
+
+   -d - cloud DB server ip address, defaulted to localhost if not specified
+   -u - user name to access cloud DB, defaulted to \"root\" if not specified
+   -p - cloud DB user password, defaulted to no password if not specified
+   -m - the ip address of management server, defaulted to localhost if not specified
+   -s - stop then start all running SSVMs and Console Proxies
+   -r - stop then start all running Virtual Routers
+   -a - stop then start all running SSVMs, Console Proxies, and Virtual Routers
+   -n - restart all Guest networks
+   -t - number of parallel threads used for stopping Domain Routers. Default is 10
+   -l - log file location. Default is cloud.log under current directory
+   -z - do restart only for the instances in the specific zone. If not specified, restart will apply to instances in all zones
+   -v - do restart all VPCs in the entire system
+   -i - do restart on instances with specific IDs. Comma-separated instance IDs to be provided. Works only when restarting SSVMs, CPVMs or VRs
+   -j - do restart on instances from the specified database table. If not specified, restart will apply on instances present in cloud.vm_instance database table. Works only when restarting SSVMs, CPVMs or VRs\n\n"
+  printf "$usage_content" "$(basename $0)" >&2
 }
 
 
@@ -40,10 +59,14 @@ maxthreads=10
 LOGFILE=cloud.log
 zone=""
 inzone=""
+vmids=""
+vmidsclause=""
+withids=""
+vmtable="vm_instance"
 
 
 
-while getopts 'sarhnvd:m:u:p:t:l:z:' OPTION
+while getopts 'sarhnvd:m:u:p:t:l:z:i:j:' OPTION
 do
   case $OPTION in
   s)    system=1
@@ -72,21 +95,36 @@ do
         ;;
   z)    zone=" AND data_center_id=""$OPTARG"
         inzone=" in zone id=""$OPTARG"
+        ;;
+  i)    vmids="$OPTARG"
+        withids=" with id=""$OPTARG"
+        ;;
+  j)    vmtable="$OPTARG"
   esac
 done
 
 
-
+prepare_ids_clause() {
+  if [[ ! -z "$vmidsclause" ]]; then
+    return
+  fi
+  vmidsclause=""
+  if [[ ! -z "$vmids" ]]; then
+    vmidsclause=" AND uuid IN ('$vmids')"
+    vmidsclause=${vmidsclause/,/"','"}
+  fi
+}
 
 stop_start_system() {
-secondary=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"SecondaryStorageVm\"$zone"`)
-console=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"ConsoleProxy\"$zone"`)
+    prepare_ids_clause
+secondary=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from $vmtable where state=\"Running\" and type=\"SecondaryStorageVm\"$zone$vmidsclause"`)
+console=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from $vmtable where state=\"Running\" and type=\"ConsoleProxy\"$zone$vmidsclause"`)
 length_secondary=(${#secondary[@]})
 length_console=(${#console[@]})
 
 
-echo -e "\nStopping and starting $length_secondary secondary storage vm(s)$inzone..."
-echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_secondary secondary storage vm(s)$inzone..." >>$LOGFILE
+echo -e "\nStopping and starting $length_secondary secondary storage vm(s)$inzone$withids..."
+echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_secondary secondary storage vm(s)$inzone$withids..." >>$LOGFILE
 
 for d in "${secondary[@]}"; do
 	echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
@@ -107,12 +145,12 @@ done
 if [ "$length_secondary" == "0" ];then
 	echo -e "No running secondary storage vms found \n"
 else
-	echo -e "Done stopping and starting secondary storage vm(s)$inzone"
-	echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done stopping and starting secondary storage vm(s)$inzone." >>$LOGFILE
+	echo -e "Done stopping and starting secondary storage vm(s)$inzone$withids"
+	echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done stopping and starting secondary storage vm(s)$inzone$withids." >>$LOGFILE
 fi
 
-echo -e "\nStopping and starting $length_console console proxy vm(s)$inzone..."
-echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_console console proxy vm(s)$inzone..." >>$LOGFILE
+echo -e "\nStopping and starting $length_console console proxy vm(s)$inzone$withids..."
+echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_console console proxy vm(s)$inzone$withids..." >>$LOGFILE
 
 for d in "${console[@]}"; do
 	echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Stopping console proxy with id $d" >>$LOGFILE
@@ -133,17 +171,18 @@ done
 if [ "$length_console" == "0" ];then
         echo -e "No running console proxy vms found \n"
 else
-        echo "Done stopping and starting console proxy vm(s) $inzone."
-		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] Done stopping and starting console proxy vm(s) $inzone." >>$LOGFILE
+        echo "Done stopping and starting console proxy vm(s) $inzone$withids."
+		echo "[$(date "+%Y.%m.%d-%H.%M.%S")] Done stopping and starting console proxy vm(s) $inzone$withids." >>$LOGFILE
 fi
 }
 
 stop_start_router() {
-	router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"DomainRouter\"$zone"`)
+    prepare_ids_clause
+	router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"DomainRouter\"$zone$vmidsclause"`)
 	length_router=(${#router[@]})
 
-	echo -e "\nStopping and starting $length_router running routing vm(s)$inzone... "
-	echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_router running routing vm(s)$inzone... " >>$LOGFILE
+	echo -e "\nStopping and starting $length_router running routing vm(s)$inzone$withids... "
+	echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Stopping and starting $length_router running routing vm(s)$inzone$withids... " >>$LOGFILE
 
 	#Spawn reboot router in parallel - run commands in <n> chunks - number of threads is configurable
 
@@ -194,8 +233,8 @@ stop_start_router() {
 			sleep 10
 		done
 
-		echo -e "Done restarting router(s)$inzone. \n"
-		echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done restarting router(s)$inzone. \n" >>$LOGFILE
+		echo -e "Done restarting router(s)$inzone$withids. \n"
+		echo -e "[$(date "+%Y.%m.%d-%H.%M.%S")] Done restarting router(s)$inzone$withids. \n" >>$LOGFILE
 
 	fi
 }

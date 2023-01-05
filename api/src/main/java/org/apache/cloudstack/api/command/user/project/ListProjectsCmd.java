@@ -45,7 +45,6 @@ import com.cloud.exception.InvalidParameterValueException;
             responseHasSensitiveInfo = false)
 public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectsCmd.class.getName());
-    private static final String s_name = "listprojectsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -101,11 +100,6 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     public String getUsername() {
         return username;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public Map<String, String> getTags() {

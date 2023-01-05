@@ -37,6 +37,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
@@ -361,7 +362,7 @@ public class ApiServlet extends HttpServlet {
 
     protected void setClientAddressForConsoleEndpointAccess(String command, Map<String, Object[]> params, HttpServletRequest req) throws UnknownHostException {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(command) &&
-                command.equalsIgnoreCase(CreateConsoleEndpointCmd.APINAME)) {
+                command.equalsIgnoreCase(BaseCmd.getCommandNameByClass(CreateConsoleEndpointCmd.class))) {
             InetAddress addr = getClientAddress(req);
             String clientAddress = addr != null ? addr.getHostAddress() : null;
             params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] {clientAddress});
