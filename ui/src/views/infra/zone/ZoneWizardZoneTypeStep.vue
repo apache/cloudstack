@@ -110,6 +110,9 @@ export default {
       this.formModel = toRaw(this.form)
     },
     handleSubmit () {
+      if (this.form.zoneSuperType === 'Edge') {
+        this.form.zoneType = 'Advanced'
+      }
       this.formRef.value.validate().then(() => {
         this.$emit('nextPressed')
       }).catch(error => {
