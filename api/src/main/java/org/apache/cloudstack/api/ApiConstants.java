@@ -203,6 +203,7 @@ public class ApiConstants {
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
     public static final String HOST_NAME = "hostname";
+    public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";

@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.host.ControlState;
 import com.cloud.utils.security.CertificateHelper;
 import com.cloud.user.UserData;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -1549,6 +1550,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (host != null) {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
+                    vmResponse.setHostControlState(ControlState.getControlState(host.getStatus(), host.getResourceState()).toString());
                 }
             }
 
