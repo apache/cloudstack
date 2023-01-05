@@ -178,7 +178,7 @@
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="maclearning" ref="maclearning">
               <template #label>
                 <tooltip-label :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
               </template>
@@ -237,7 +237,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
+        <a-form-item name="serviceofferingid" ref="serviceofferingid" v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
           <template #label>
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
