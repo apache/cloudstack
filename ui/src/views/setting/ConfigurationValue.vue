@@ -32,8 +32,8 @@
       <span v-else-if="configrecord.type ==='Number'">
         <a-tooltip :title="editableValue">
           <a-input-number
-            style="width: 90%;"
-            :defaultValue="configrecord.value"
+            style="width: 20vw;"
+            :defaultValue="actualValue"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
             @keydown.esc="editableValueKey = null"
@@ -45,8 +45,8 @@
       <span v-else-if="configrecord.type ==='Decimal'">
         <a-tooltip :title="editableValue">
           <a-input-number
-            style="width: 90%;"
-            :defaultValue="configrecord.value"
+            style="width: 20vw"
+            :defaultValue="actualValue"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
             @keydown.esc="editableValueKey = null"
@@ -56,10 +56,11 @@
         </a-tooltip>
       </span>
       <span v-else-if="configrecord.type ==='Range'">
-        <a-row :gutter="12">
-          <a-col :md="10" :lg="11">
+        <a-row>
+          <a-col>
             <a-tooltip :title="editableValue">
               <a-slider
+                style="width: 13vw"
                 class="config-slider-value"
                 :defaultValue="configrecord.value * 100"
                 :min="0"
@@ -72,9 +73,10 @@
               />
             </a-tooltip>
           </a-col>
-          <a-col :md="4" :lg="4">
+          <a-col>
             <a-tooltip :title="editableValue">
               <a-input-number
+                style="width: 5vw; margin-left: 10px; float: right"
                 class="config-slider-text"
                 :defaultValue="configrecord.value * 100"
                 :min="0"
@@ -89,29 +91,61 @@
           </a-col>
         </a-row>
       </span>
-      <span v-else-if="configrecord.type ==='List'">
+      <span v-else-if="configrecord.type === 'Select'">
         <a-tooltip :title="editableValue">
           <a-select
-           style="width: 90%;"
-            :defaultValue="configrecord.value"
+            style="width: 20vw"
+            :defaultValue="actualValue"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)">
             <a-select-option
-              v-for="value in configrecord.values"
-              :key="value.val">
-              {{ value.text }}
+              v-for="value of configrecord.options.split(',')"
+              :key="value">
+              {{ value }}
             </a-select-option>
+          </a-select>
+        </a-tooltip>
+      </span>
+      <span v-else-if="configrecord.type === 'Order'">
+        <a-tooltip :title="editableValue">
+          <a-select
+            style="width: 20vw"
+            mode="multiple"
+            :defaultValue="actualValue"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:value="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)">
+            <a-select-option
+              v-for="value of configrecord.options.split(',')"
+              :key="value">
+              {{ value }}
+            </a-select-option>
+          </a-select>
+        </a-tooltip>
+      </span>
+      <span v-else-if="configrecord.type === 'CSV'">
+        <a-tooltip :title="editableValue">
+          <a-select
+            style="width: 20vw"
+            mode="tags"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:value="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)">
           </a-select>
         </a-tooltip>
       </span>
       <span v-else>
         <a-tooltip :title="editableValue">
           <a-textarea
-            style="width: 90%; word-break: break-all"
-            :defaultValue="configrecord.value"
+            style="width: 20vw; word-break: break-all"
+            :defaultValue="actualValue"
             :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
             v-model:value="editableValue"
             @keydown.esc="editableValueKey = null"
@@ -188,7 +222,7 @@ export default {
   methods: {
     setConfigData () {
       this.valueLoading = false
-      this.setEditableValue(this.configrecord)
+      this.editableValue = this.getEditableValue(this.configrecord)
       this.actualValue = this.editableValue
       this.editableValueKey = null
     },
@@ -201,11 +235,16 @@ export default {
       if (configrecord.type === 'Range') {
         newValue = newValue / 100
       }
+      if (['Order', 'CSV'].includes(configrecord.kind)) {
+        console.table(configrecord)
+        newValue = newValue.join(',')
+      }
       const params = {
         name: configrecord.name,
         value: newValue
       }
       api('updateConfiguration', params).then(json => {
+        this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
@@ -238,7 +277,7 @@ export default {
       api('resetConfiguration', {
         name: configrecord.name
       }).then(json => {
-        this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration.value)
+        this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         var newValue = this.editableValue
         if (configrecord.type === 'Range') {
@@ -269,53 +308,39 @@ export default {
         this.$emit('refresh')
       })
     },
-    setEditableValue (configrecord) {
+    getEditableValue (configrecord) {
       if (configrecord.type === 'Range') {
-        this.editableValue = Number(configrecord.value) * 100
-      } else if (configrecord.type === 'Boolean') {
-        if (configrecord.value === 'true') {
-          this.editableValue = true
-        } else {
-          this.editableValue = false
-        }
-      } else if (configrecord.type === 'Number' || configrecord.type === 'Decimal') {
+        return Number(configrecord.value) * 100 || 0
+      }
+      if (configrecord.type === 'Boolean') {
+        return configrecord.value === 'true'
+      }
+      if (configrecord.type === 'Number' || configrecord.type === 'Decimal') {
         if (configrecord.value) {
-          this.editableValue = Number(configrecord.value)
+          return Number(configrecord.value)
         } else if (configrecord.defaultvalue) {
-          this.editableValue = Number(configrecord.defaultvalue)
+          return Number(configrecord.defaultvalue)
         }
-      } else {
-        if (configrecord.value) {
-          this.editableValue = String(configrecord.value)
-        } else if (configrecord.defaultvalue) {
-          this.editableValue = String(configrecord.defaultvalue)
+        return 0
+      }
+      if (['Order', 'CSV'].includes(configrecord.kind)) {
+        if (configrecord.value && configrecord.value.length > 0) {
+          return String(configrecord.value).split(',')
         } else {
-          this.editableValue = ''
+          return []
         }
       }
-    },
-    getEditableValue (strValue) {
-      if (this.configrecord.type === 'Range') {
-        return Number(strValue) * 100
-      } else if (this.configrecord.type === 'Boolean') {
-        if (strValue === 'true') {
-          return true
-        } else {
-          return false
-        }
-      } else if (this.configrecord.type === 'Number' || this.configrecord.type === 'Decimal') {
-        return Number(strValue)
-      } else {
-        if (strValue) {
-          return String(strValue)
-        } else {
-          return ''
-        }
+      if (configrecord.value) {
+        return String(configrecord.value)
       }
+      if (configrecord.defaultvalue) {
+        return String(configrecord.defaultvalue)
+      }
+      return ''
     },
     cancelEditConfigurationValue (configrecord) {
       this.editableValueKey = null
-      this.setEditableValue(configrecord)
+      this.editableValue = this.getEditableValue(configrecord)
     },
     setConfigurationEditable (configrecord, value) {
       if (this.actualValue !== this.editableValue) {
@@ -330,25 +355,7 @@ export default {
 
 <style lang="scss" scoped>
 .actions {
-    margin-top: 20px;
-    margin-left: -12px;
-
-    @media (min-width: 480px) {
-      margin-left: -24px;
-    }
-
-    @media (min-width: 760px) {
-      margin-top: 0;
-      margin-left: 0;
-    }
-}
-
-.config-slider-value {
-  width: 70px;
-}
-
-.config-slider-text {
-  width: 65px;
-  margin-left: 10px;
+    margin-left: 10px;
+    width: 100px;
 }
 </style>

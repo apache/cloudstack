@@ -49,7 +49,7 @@ public interface CAManager extends CAService, Configurable, PluggableService {
     ConfigKey<String> CertSignatureAlgorithm = new ConfigKey<String>(String.class,
     "ca.framework.cert.signature.algorithm", "Advanced",
             "SHA256withRSA",
-            "The default signature algorithm to use for certificate generation.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.select, "SHA256withRSA");
+            "The default signature algorithm to use for certificate generation.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "SHA256withRSA");
 
 
     ConfigKey<Integer> CertValidityPeriod = new ConfigKey<>("Advanced", Integer.class,

@@ -59,7 +59,7 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "The default strategy is 'Error', preventing maintenance in such a case. "
                     + "Choose 'Migration' strategy to migrate away VMs running on local storage. "
                     + "To force-stop VMs, choose 'ForceStop' strategy",
-            true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.select, "Error,Migration,ForceStop");
+            true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
 
     /**
      * Register a listener for different types of resource life cycle events.

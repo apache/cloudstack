@@ -40,7 +40,7 @@ public class ConfigKey<T> {
     }
 
     public static enum Kind {
-        csv, order, select
+        CSV, Order, Select
     }
 
     private final String _category;

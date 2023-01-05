@@ -7511,25 +7511,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             type = c.getType();
         }
 
-        return getInputType(type);
+        return getInputType(type, cfg);
     }
 
-    private String getInputType(Class<?> type) {
+    private String getInputType(Class<?> type, ConfigurationVO cfg) {
         if (type == null) {
             return Configuration.ValueType.String.name();
         }
 
         if (type == String.class || type == Character.class) {
-            return Configuration.ValueType.String.name();
-        } else if (type == Integer.class || type == Long.class || type == Short.class) {
-            return Configuration.ValueType.Number.name();
-        } else if (type == Float.class || type == Double.class) {
-            return Configuration.ValueType.Decimal.name();
-        } else if (type == Boolean.class) {
-            return Configuration.ValueType.Boolean.name();
-        } else {
-            return Configuration.ValueType.String.name();
+            if (cfg.getKind() == null) {
+                return Configuration.ValueType.String.name();
+            }
+            return cfg.getKind();
         }
+        if (type == Integer.class || type == Long.class || type == Short.class) {
+            return Configuration.ValueType.Number.name();
+        }
+        if (type == Float.class || type == Double.class) {
+            return Configuration.ValueType.Decimal.name();
+        }
+        if (type == Boolean.class) {
+            return Configuration.ValueType.Boolean.name();
+        }
+        return Configuration.ValueType.String.name();
     }
 
     @Override

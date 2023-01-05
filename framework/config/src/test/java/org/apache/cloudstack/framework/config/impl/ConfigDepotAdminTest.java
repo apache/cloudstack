@@ -98,9 +98,6 @@ public class ConfigDepotAdminTest extends TestCase {
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
         ConfigurationVO testCV = new ConfigurationVO("UnitTestComponent", TestCK);
-        ConfigurationGroupVO testGroup = new ConfigurationGroupVO("TestGroup", "Test Group", 3L);
-        ConfigurationSubGroupVO testSubGroup = new ConfigurationSubGroupVO("TestSubGroup", null, 1L);
-        testSubGroup.setGroupId(9L);
 
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
@@ -108,18 +105,10 @@ public class ConfigDepotAdminTest extends TestCase {
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
         when(_configDao.findById(TestCK.key())).thenReturn(testCV);
         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
-        when(_configSubGroupDao.findByName(StaticIntCK.key())).thenReturn(testSubGroup);
-        when(_configGroupDao.findByName(TestCK.group().first())).thenReturn(null);
-        when(_configSubGroupDao.findByNameAndGroup(TestCK.subGroup().first(), TestCK.subGroup().second())).thenReturn(null);
-        when(_configGroupDao.persist(any(ConfigurationGroupVO.class))).thenReturn(testGroup);
-        when(_configSubGroupDao.persist(any(ConfigurationSubGroupVO.class))).thenReturn(testSubGroup);
-
         _depotAdmin.populateConfigurations();
 
         // This is once because DynamicIntCK is returned.
         verify(_configDao, times(1)).persist(any(ConfigurationVO.class));
-        verify(_configGroupDao, times(1)).persist(any(ConfigurationGroupVO.class));
-        verify(_configSubGroupDao, times(1)).persist(any(ConfigurationSubGroupVO.class));
 
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
         when(_configDao.findById(TestCK.key())).thenReturn(null);
@@ -127,8 +116,6 @@ public class ConfigDepotAdminTest extends TestCase {
         _depotAdmin.populateConfigurations();
         // This is three because DynamicIntCK, TestCK also returns null.
         verify(_configDao, times(3)).persist(any(ConfigurationVO.class));
-        verify(_configGroupDao, times(2)).persist(any(ConfigurationGroupVO.class));
-        verify(_configSubGroupDao, times(2)).persist(any(ConfigurationSubGroupVO.class));
     }
 
     @Test

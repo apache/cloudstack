@@ -581,9 +581,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         cfgResponse.setDisplayText(cfg.getDisplayText());
         cfgResponse.setType(_configMgr.getConfigurationType(cfg.getName()));
-        if (cfg.getKind() != null) {
-            cfgResponse.setKind(cfg.getKind());
-        }
         if (cfg.getOptions() != null) {
             cfgResponse.setOptions(cfg.getOptions());
         }

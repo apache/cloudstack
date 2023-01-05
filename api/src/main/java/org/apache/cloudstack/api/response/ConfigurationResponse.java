@@ -80,10 +80,6 @@ public class ConfigurationResponse extends BaseResponse {
     @Param(description = "the type of the configuration value", since = "4.17.0")
     private String type;
 
-    @SerializedName(ApiConstants.KIND)
-    @Param(description = "the kind of the configuration value", since = "4.18.0")
-    private String kind;
-
     @SerializedName(ApiConstants.OPTIONS)
     @Param(description = "the possible options of the configuration value", since = "4.18.0")
     private String options;
@@ -190,14 +186,6 @@ public class ConfigurationResponse extends BaseResponse {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public String getKind() {
-        return kind;
-    }
-
-    public void setKind(String kind) {
-        this.kind = kind;
     }
 
     public String getOptions() {

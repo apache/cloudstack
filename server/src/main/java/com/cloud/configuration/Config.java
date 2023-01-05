@@ -54,6 +54,8 @@ public enum Config {
             "alert.email.addresses",
             null,
             "Comma separated list of email addresses which are going to receive alert emails.",
+            null,
+            ConfigKey.Kind.CSV,
             null),
     AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
     AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
@@ -230,7 +232,7 @@ public enum Config {
             "global",
             "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
             null,
-            "select",
+            ConfigKey.Kind.Select,
             "global,guest-network,link-local,disabled,all,default"),
     NetworkLBHaproxyStatsUri(
             "Network",
@@ -356,6 +358,8 @@ public enum Config {
             "network.dhcp.nondefaultnetwork.setgateway.guestos",
             "Windows",
             "The guest OS's name start with this fields would result in DHCP server response gateway information even when the network it's on is not default network. Names are separated by comma.",
+            null,
+            ConfigKey.Kind.CSV,
             null),
 
     //VPN
@@ -652,7 +656,7 @@ public enum Config {
                     HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
-            "csv",
+            ConfigKey.Kind.CSV,
             null),
     ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
     EventPurgeDelay(
@@ -908,7 +912,7 @@ public enum Config {
             "random",
             "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
             null,
-            "select",
+            ConfigKey.Kind.Select,
             "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed"),
     VmDeploymentPlanner(
             "Advanced",
@@ -918,7 +922,7 @@ public enum Config {
             "FirstFitPlanner",
             "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
             null,
-            "select",
+            ConfigKey.Kind.Select,
             "FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner"),
     ElasticLoadBalancerEnabled(
             "Advanced",
@@ -1070,7 +1074,7 @@ public enum Config {
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             "xenserver56,xenserver61",
-            "select",
+            ConfigKey.Kind.Select,
             "xenserver56,xenserver61"),
     XenServerHotFix("Advanced",
             ManagementServer.class,
@@ -1138,7 +1142,7 @@ public enum Config {
             "ide",
             "Specify the default disk controller for root volumes, valid values are scsi, ide, osdefault. Please check documentation for more details on each of these values.",
             null,
-            "select",
+            ConfigKey.Kind.Select,
             "scsi,ide,osdefault"),
     VmwareSystemVmNicDeviceType(
             "Advanced",
@@ -1148,7 +1152,7 @@ public enum Config {
             "E1000",
             "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
             null,
-            "select",
+            ConfigKey.Kind.Select,
             "E1000,PCNet32,Vmxnet2,Vmxnet3"),
     VmwareRecycleHungWorker(
             "Advanced",
@@ -1376,7 +1380,7 @@ public enum Config {
             "all",
             "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod",
             "all,pod",
-            "select",
+            ConfigKey.Kind.Select,
             "all,pod"),
 
     ClusterMessageTimeOutSeconds(
@@ -1801,7 +1805,7 @@ public enum Config {
     private final String _description;
     private final String _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
-    private final String _kind;
+    private final ConfigKey.Kind _kind;
     private final String _options;
 
     private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
@@ -1855,7 +1859,7 @@ public enum Config {
         this(category, componentClass, type, name, defaultValue, description, range, null, null);
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, String kind, String options) {
+    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1893,7 +1897,10 @@ public enum Config {
     }
 
     public String getKind() {
-        return _kind;
+        if (_kind == null) {
+                return null;
+        }
+        return _kind.toString();
     }
 
     public String getOptions() {

@@ -96,11 +96,11 @@ public interface QueryService {
 
     static final ConfigKey<String> UserVMDeniedDetails = new ConfigKey<String>(String.class,
     "user.vm.denied.details", "Advanced", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
-            "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.csv, null);
+            "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<String>(String.class,
     "user.vm.readonly.details", "Advanced", "dataDiskController, rootDiskController",
-            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.csv, null);
+            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
             "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +
