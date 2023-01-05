@@ -7732,7 +7732,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
-    private CheckGuestOsMappingAnswer execute(CheckGuestOsMappingCommand cmd) {
+    protected CheckGuestOsMappingAnswer execute(CheckGuestOsMappingCommand cmd) {
         String guestOsName = cmd.getGuestOsName();
         String guestOsMappingName = cmd.getGuestOsHypervisorMappingName();
         s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
@@ -7756,7 +7756,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
-    private GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {
+    protected GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {
         String keyword = cmd.getKeyword();
         s_logger.info("Getting guest os names in the hypervisor");
         try {
@@ -7768,13 +7768,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
             List<Pair<String, String>> hypervisorGuestOsNames = new ArrayList<>();
             for (GuestOsDescriptor guestOsDescriptor : guestOsDescriptors) {
+                String osDescriptorFullName = guestOsDescriptor.getFullName();
+                String osDescriptorId = guestOsDescriptor.getId();
                 if (StringUtils.isNotBlank(keyword)) {
-                    if (guestOsDescriptor.getFullName().toLowerCase().contains(keyword.toLowerCase()) || guestOsDescriptor.getId().toLowerCase().contains(keyword.toLowerCase())) {
-                        Pair<String, String> hypervisorGuestOs = new Pair<>(guestOsDescriptor.getFullName(), guestOsDescriptor.getId());
+                    if (osDescriptorFullName.toLowerCase().contains(keyword.toLowerCase()) || osDescriptorId.toLowerCase().contains(keyword.toLowerCase())) {
+                        Pair<String, String> hypervisorGuestOs = new Pair<>(osDescriptorFullName, osDescriptorId);
                         hypervisorGuestOsNames.add(hypervisorGuestOs);
                     }
                 } else {
-                    Pair<String, String> hypervisorGuestOs = new Pair<>(guestOsDescriptor.getFullName(), guestOsDescriptor.getId());
+                    Pair<String, String> hypervisorGuestOs = new Pair<>(osDescriptorFullName, osDescriptorId);
                     hypervisorGuestOsNames.add(hypervisorGuestOs);
                 }
             }
