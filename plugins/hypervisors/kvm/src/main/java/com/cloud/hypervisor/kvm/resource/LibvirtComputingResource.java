@@ -4006,7 +4006,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     break;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                String diskPath = getDiskPath(disk);
+                String diskPath = getDiskPathFromDiskDef(disk);
                 if (diskPath != null) {
                     final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
                     stats.add(stat);
@@ -4021,7 +4021,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private String getDiskPath(DiskDef disk) {
+    protected String getDiskPathFromDiskDef(DiskDef disk) {
         final String path = disk.getDiskPath();
         if (path != null) {
             final String[] token = path.split("/");

@@ -5901,4 +5901,20 @@ public class LibvirtComputingResourceTest {
         configLocalStorageTests(params);
     }
 
+   @Test
+    public void testGetDiskPathFromDiskDefForRBD() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defNetworkBasedDisk("cloudstack/diskpath", "1.1.1.1", 3300, "username", "uuid", 0,
+                DiskDef.DiskBus.VIRTIO, DiskDef.DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertEquals("diskpath", diskPath);
+    }
+
+    @Test
+    public void testGetDiskPathFromDiskDefForNFS() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk("/mnt/pool/filepath", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertEquals("filepath", diskPath);
+    }
 }
