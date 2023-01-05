@@ -306,7 +306,7 @@ export default {
       return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     },
     isEdgeZone () {
-      return this.isAdvancedZone && (this.prefillContent?.isEdge || false)
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     networkOfferingSelected () {
       return this.prefillContent.networkOfferingSelected

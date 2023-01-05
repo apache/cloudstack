@@ -162,7 +162,7 @@ export default {
       return this.prefillContent?.securityGroupsEnabled || false
     },
     isEdgeZone () {
-      return this.prefillContent?.isEdge || false
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     havingNetscaler () {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
@@ -337,7 +337,7 @@ export default {
       params.internaldns1 = this.prefillContent?.internalDns1 || null
       params.internaldns2 = this.prefillContent?.internalDns2 || null
       params.domain = this.prefillContent?.networkDomain || null
-      params.isEdge = this.prefillContent?.isEdge || false
+      params.isedge = this.prefillContent?.zoneSuperType === 'Edge' || false
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {

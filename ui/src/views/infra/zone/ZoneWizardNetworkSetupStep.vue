@@ -161,7 +161,7 @@ export default {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
     isEdgeZone () {
-      return this.isAdvancedZone && (this.prefillContent?.isEdge || false)
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     guestTrafficRangeMode () {
       return this.zoneType === 'Basic' ||

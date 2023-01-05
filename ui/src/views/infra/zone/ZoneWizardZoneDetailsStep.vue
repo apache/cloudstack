@@ -340,7 +340,7 @@ export default {
       return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     },
     isEdgeZone () {
-      return this.isAdvancedZone && (this.prefillContent?.isEdge || false)
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     description () {
       return this.isEdgeZone ? 'message.desc.zone.edge' : 'message.desc.zone'
