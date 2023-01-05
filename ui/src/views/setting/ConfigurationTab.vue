@@ -36,7 +36,7 @@
           style="width: 25vw; float: right; margin-bottom: 10px; z-index: 8; display: flex"
           :placeholder="$t('label.search')"
           v-model:value="filter"
-          @search="fetchConfigurationData()"
+          @search="changePage()"
           v-focus="true" />
         </a-col>
       </a-card>
@@ -155,6 +155,7 @@ export default {
       this.subgroup = this.$route.query.subgroup || ''
       this.page = parseInt(this.$route.query.page) || 1
       this.pagesize = parseInt(this.$route.query.pagesize) || this.pagesize
+      this.filter = this.$route.query.filter || ''
       this.fetchConfigurationData()
     }
   },
@@ -187,6 +188,7 @@ export default {
       }
       if (this.group.length > 0) {
         params.group = this.group
+        params.pagesize = -1
       } else {
         params.pagesize = this.pagesize || 20
         params.page = this.page || 1
@@ -241,13 +243,25 @@ export default {
     changePage (page, pagesize) {
       console.log(page, pagesize)
       const query = {}
-      query.page = page
-      query.pagesize = pagesize
-      query.filter = this.filter
-      this.group = ''
-      this.subgroup = ''
-      this.page = page
-      this.pagesize = pagesize
+      if (page) {
+        query.page = page
+        this.page = page
+      } else {
+        this.page = 1
+      }
+      if (pagesize) {
+        query.pagesize = pagesize
+        this.pagesize = pagesize
+      }
+      if (this.filter) {
+        query.filter = this.filter
+      }
+      if (this.group !== '') {
+        query.group = this.group
+      }
+      if (this.subgroup !== '') {
+        query.subgroup = this.subgroup
+      }
       this.pushToHistory(query)
       this.fetchConfigurationData()
     },

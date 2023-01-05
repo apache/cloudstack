@@ -110,7 +110,9 @@
         </a-tooltip>
       </span>
       <span v-else-if="configrecord.type === 'Order'">
-        <a-tooltip :title="editableValue">
+        <a-tooltip :title="editableValue.join(', ')">
+          <b>{{ $t('message.order') }}</b>
+          <br />
           <a-select
             style="width: 20vw"
             mode="multiple"
@@ -129,7 +131,9 @@
         </a-tooltip>
       </span>
       <span v-else-if="configrecord.type === 'CSV'">
-        <a-tooltip :title="editableValue">
+        <a-tooltip :title="editableValue.join(', ')">
+          <b>{{ $t('message.csv') }}</b>
+          <br />
           <a-select
             style="width: 20vw"
             mode="tags"
