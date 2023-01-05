@@ -147,7 +147,7 @@ export default {
       return this.prefillContent?.localstorageenabledforsystemvm || false
     },
     isEdgeZone () {
-      return this.isAdvancedZone && (this.prefillContent?.isEdge || false)
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     steps () {
       const steps = []

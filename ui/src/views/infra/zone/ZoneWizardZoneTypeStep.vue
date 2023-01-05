@@ -139,6 +139,8 @@ export default {
 
     .card-form-item {
       float: left;
+      font-weight: bold;
+        font-size: 15px;
     }
 
     .checkbox-advance {
