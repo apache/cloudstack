@@ -29,11 +29,11 @@ public class ConfigurationResponse extends BaseResponse {
     private String category;
 
     @SerializedName(ApiConstants.GROUP)
-    @Param(description = "the group of the configuration", since = "4.17.0")
+    @Param(description = "the group of the configuration", since = "4.18.0")
     private String group;
 
     @SerializedName(ApiConstants.SUBGROUP)
-    @Param(description = "the subgroup of the configuration", since = "4.17.0")
+    @Param(description = "the subgroup of the configuration", since = "4.18.0")
     private String subGroup;
 
     @SerializedName(ApiConstants.NAME)
@@ -45,7 +45,7 @@ public class ConfigurationResponse extends BaseResponse {
     private String value;
 
     @SerializedName(ApiConstants.DEFAULT_VALUE)
-    @Param(description = "the default value of the configuration", since = "4.17.0")
+    @Param(description = "the default value of the configuration", since = "4.18.0")
     private String defaultValue;
 
     @SerializedName(ApiConstants.SCOPE)
@@ -65,19 +65,19 @@ public class ConfigurationResponse extends BaseResponse {
     private boolean isDynamic;
 
     @SerializedName(ApiConstants.COMPONENT)
-    @Param(description = "the component of the configuration", since = "4.17.0")
+    @Param(description = "the component of the configuration", since = "4.18.0")
     private String component;
 
     @SerializedName(ApiConstants.PARENT)
-    @Param(description = "the name of the parent configuration", since = "4.17.0")
+    @Param(description = "the name of the parent configuration", since = "4.18.0")
     private String parent;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "the display text of the configuration", since = "4.17.0")
+    @Param(description = "the display text of the configuration", since = "4.18.0")
     private String displayText;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the configuration value", since = "4.17.0")
+    @Param(description = "the type of the configuration value", since = "4.18.0")
     private String type;
 
     @SerializedName(ApiConstants.OPTIONS)

@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.Pair;
 
 @APICommand(name = ListCfgGroupsByCmd.APINAME, description = "Lists all configuration groups (primarily used for UI).", responseObject = ConfigurationGroupResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.17.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class ListCfgGroupsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgGroupsByCmd.class.getName());
 
