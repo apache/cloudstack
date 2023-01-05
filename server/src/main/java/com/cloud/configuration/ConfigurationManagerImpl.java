@@ -6408,7 +6408,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.internetProtocol, String.valueOf(internetProtocol), true));
                         }
                         if (!detailsVO.isEmpty()) {
-                            networkOfferingDetailsDao.saveDetails(detailsVO);
+                            for (NetworkOfferingDetailsVO detail : detailsVO) {
+                                networkOfferingDetailsDao.persist(detail);
+                            }
                         }
                     }
                 }
@@ -6769,6 +6771,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.NETWORK_OFFERING.name(), offering.getUuid());
         if (_networkOfferingDao.remove(offeringId)) {
+            networkOfferingDetailsDao.removeDetails(offeringId);
             return true;
         } else {
             return false;
