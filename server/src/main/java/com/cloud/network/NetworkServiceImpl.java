@@ -3950,6 +3950,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterException("Unable to support more than one tag on network yet");
         }
 
+        // If tags are null, then check if there are any other networks with null tags
+        // of the same traffic type. If so then dont update the tags
+        if (tags != null && tags.size() == 0) {
+            checkForPhysicalNetworksWithoutTag(network);
+        }
+
         PhysicalNetwork.State networkState = null;
         if (state != null && !state.isEmpty()) {
             try {
@@ -3978,6 +3984,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _physicalNetworkDao.update(id, network);
         return network;
 
+    }
+
+    private void checkForPhysicalNetworksWithoutTag(PhysicalNetworkVO network) {
+        // Get all physical networks according to traffic type
+        Pair<List<PhysicalNetworkTrafficTypeVO>, Integer> result = _pNTrafficTypeDao
+                .listAndCountBy(network.getId());
+        if (result.second() > 0) {
+            for (PhysicalNetworkTrafficTypeVO physicalNetworkTrafficTypeVO : result.first()) {
+                TrafficType trafficType = physicalNetworkTrafficTypeVO.getTrafficType();
+                checkForPhysicalNetworksWithoutTag(network, trafficType);
+            }
+        }
     }
 
     @DB
@@ -4849,36 +4867,30 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType) {
-        List<PhysicalNetworkVO> pNtwks = new ArrayList<PhysicalNetworkVO>();
-        if (trafficType != null) {
-            pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
-        } else {
-            pNtwks = _physicalNetworkDao.listByZone(zoneId);
+        return _networkModel.findPhysicalNetworkId(zoneId, tag, trafficType);
+    }
+
+    /**
+     * Function to check if there are any physical networks with traffic type of "trafficType"
+     * and check their tags. If there is more than one network with null tags then throw exception
+     * @param physicalNetwork
+     * @param trafficType
+     */
+    private void checkForPhysicalNetworksWithoutTag(PhysicalNetworkVO physicalNetwork, TrafficType trafficType) {
+        int networkWithoutTagCount = 0;
+        List<PhysicalNetworkVO> physicalNetworkVOList = _physicalNetworkDao
+                .listByZoneAndTrafficType(physicalNetwork.getDataCenterId(), trafficType);
+
+        for (PhysicalNetworkVO physicalNetworkVO : physicalNetworkVOList) {
+            List<String> tags = physicalNetworkVO.getTags();
+            if (CollectionUtils.isEmpty(tags)) {
+                networkWithoutTagCount++;
+            }
         }
-
-        if (pNtwks.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find physical network in zone id=" + zoneId);
-        }
-
-        if (pNtwks.size() > 1) {
-            if (tag == null) {
-                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " and no tags are specified in order to make a choice");
-            }
-
-            Long pNtwkId = null;
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                if (pNtwk.getTags().contains(tag)) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
-                    pNtwkId = pNtwk.getId();
-                    break;
-                }
-            }
-            if (pNtwkId == null) {
-                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
-            }
-            return pNtwkId;
-        } else {
-            return pNtwks.get(0).getId();
+        if (networkWithoutTagCount > 0) {
+            s_logger.error("Number of physical networks without tags are " + networkWithoutTagCount);
+            throw new CloudRuntimeException("There are more than 1 physical network without tags in the zone= " +
+                    physicalNetwork.getDataCenterId());
         }
     }
 
@@ -4927,6 +4939,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
                 throw new CloudRuntimeException(sb.toString());
             }
+        }
+
+        // Check if there are more than 1 physical network with null tags in same traffic type.
+        // If so then dont allow to add traffic type.
+        List<String> tags = network.getTags();
+        if (CollectionUtils.isEmpty(tags)) {
+            checkForPhysicalNetworksWithoutTag(network, trafficType);
         }
 
         try {
