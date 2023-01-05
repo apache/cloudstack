@@ -5917,4 +5917,20 @@ public class LibvirtComputingResourceTest {
         String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
         Assert.assertEquals("filepath", diskPath);
     }
+
+    @Test
+    public void testGetDiskPathFromDiskDefForNFSWithNullPath() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk(null, 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertNull(diskPath);
+    }
+
+    @Test
+    public void testGetDiskPathFromDiskDefForNFSWithUnsupportedPath() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk("/mnt/unsupported-path", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertNull(diskPath);
+    }
 }
