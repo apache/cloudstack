@@ -235,7 +235,7 @@ export default {
       if (configrecord.type === 'Range') {
         newValue = newValue / 100
       }
-      if (['Order', 'CSV'].includes(configrecord.kind)) {
+      if (['Order', 'CSV'].includes(configrecord.type)) {
         console.table(configrecord)
         newValue = newValue.join(',')
       }
@@ -323,7 +323,7 @@ export default {
         }
         return 0
       }
-      if (['Order', 'CSV'].includes(configrecord.kind)) {
+      if (['Order', 'CSV'].includes(configrecord.type)) {
         if (configrecord.value && configrecord.value.length > 0) {
           return String(configrecord.value).split(',')
         } else {
