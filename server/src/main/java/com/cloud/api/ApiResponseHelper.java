@@ -43,6 +43,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -3702,8 +3703,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             HypervisorGuestOsResponse hypervisorGuestOsResponse = createHypervisorGuestOsResponse(hypervisorGuestOsName);
             hypervisorGuestOsResponses.add(hypervisorGuestOsResponse);
         }
-        response.setGuestOSes(hypervisorGuestOsResponses);
-        response.setGuestOSesCount(hypervisorGuestOsResponses.size());
+        response.setGuestOSList(hypervisorGuestOsResponses);
+        response.setGuestOSCount(hypervisorGuestOsResponses.size());
         response.setObjectName("hypervisorguestosnames");
         return response;
     }
@@ -3712,7 +3713,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         HypervisorGuestOsResponse hypervisorGuestOsResponse = new HypervisorGuestOsResponse();
         hypervisorGuestOsResponse.setOsStdName(hypervisorGuestOsName.first());
         hypervisorGuestOsResponse.setOsNameForHypervisor(hypervisorGuestOsName.second());
-        hypervisorGuestOsResponse.setObjectName("guestoses");
+        hypervisorGuestOsResponse.setObjectName(ApiConstants.GUEST_OS_LIST);
         return hypervisorGuestOsResponse;
     }
 

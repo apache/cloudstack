@@ -34,13 +34,13 @@ public class HypervisorGuestOsNamesResponse extends BaseResponse {
     @Param(description = "version of the hypervisor for guest os names")
     private String hypervisorVersion;
 
-    @SerializedName(ApiConstants.GUEST_OSES)
-    @Param(description = "the guest OSes of the hypervisor", responseObject = HypervisorGuestOsResponse.class)
-    private List<HypervisorGuestOsResponse> guestOSes;
+    @SerializedName(ApiConstants.GUEST_OS_LIST)
+    @Param(description = "the guest OS list of the hypervisor", responseObject = HypervisorGuestOsResponse.class)
+    private List<HypervisorGuestOsResponse> guestOSList;
 
-    @SerializedName(ApiConstants.GUEST_OSES_COUNT)
-    @Param(description = "the count of guest OSes of the hypervisor")
-    private Integer guestOSesCount;
+    @SerializedName(ApiConstants.GUEST_OS_COUNT)
+    @Param(description = "the guest OS count of the hypervisor")
+    private Integer guestOSCount;
 
     public String getHypervisor() {
         return hypervisor;
@@ -58,19 +58,19 @@ public class HypervisorGuestOsNamesResponse extends BaseResponse {
         this.hypervisorVersion = hypervisorVersion;
     }
 
-    public List<HypervisorGuestOsResponse> getGuestOSes() {
-        return guestOSes;
+    public List<HypervisorGuestOsResponse> getGuestOSList() {
+        return guestOSList;
     }
 
-    public void setGuestOSes(List<HypervisorGuestOsResponse> guestOSes) {
-        this.guestOSes = guestOSes;
+    public void setGuestOSList(List<HypervisorGuestOsResponse> guestOSList) {
+        this.guestOSList = guestOSList;
     }
 
-    public Integer getGuestOSesCount() {
-        return guestOSesCount;
+    public Integer getGuestOSCount() {
+        return guestOSCount;
     }
 
-    public void setGuestOSesCount(Integer guestOSesCount) {
-        this.guestOSesCount = guestOSesCount;
+    public void setGuestOSCount(Integer guestOSCount) {
+        this.guestOSCount = guestOSCount;
     }
 }

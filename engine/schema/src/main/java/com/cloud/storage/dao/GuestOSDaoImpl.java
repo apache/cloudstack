@@ -70,9 +70,9 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
         sc.setParameters("is_user_defined", false);
 
         Filter orderByFilter = new Filter(GuestOSVO.class, "created", false, null, 1L);
-        List<GuestOSVO> guestOSes = listBy(sc, orderByFilter);
-        if (CollectionUtils.isNotEmpty(guestOSes)) {
-            return guestOSes.get(0);
+        List<GuestOSVO> guestOSlist = listBy(sc, orderByFilter);
+        if (CollectionUtils.isNotEmpty(guestOSlist)) {
+            return guestOSlist.get(0);
         }
         return null;
     }
