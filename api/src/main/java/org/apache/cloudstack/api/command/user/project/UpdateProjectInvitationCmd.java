@@ -36,7 +36,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateProjectInvitationCmd.class.getName());
-    private static final String s_name = "updateprojectinvitationresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -71,11 +70,6 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
     }
 
     public Long getUserId() { return userId; }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public String getToken() {
         return token;

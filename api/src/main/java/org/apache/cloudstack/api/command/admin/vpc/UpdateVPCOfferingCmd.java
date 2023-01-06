@@ -41,7 +41,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCOfferingCmd.class.getName());
-    private static final String s_name = "updatevpcofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -161,11 +160,6 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

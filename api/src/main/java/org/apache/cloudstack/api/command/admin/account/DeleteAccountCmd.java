@@ -40,7 +40,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
-    private static final String s_name = "deleteaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,15 +62,6 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    public static String getStaticName() {
-        return s_name;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

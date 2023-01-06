@@ -2033,12 +2033,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 }
             } else if (nic.getTrafficType() == TrafficType.Guest) {
+                s_logger.info("Guest IP : " + nic.getIPv4Address());
                 dnsProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
                 dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
+                buf.append(" privateMtu=").append(nic.getMtu());
                 // build bootloader parameter for the guest
                 buf.append(createGuestBootLoadArgs(nic, defaultDns1, defaultDns2, router));
             } else if (nic.getTrafficType() == TrafficType.Public) {
+                s_logger.info("Public IP : " + nic.getIPv4Address());
                 publicNetwork = true;
+                buf.append(" publicMtu=").append(nic.getMtu());
             }
         }
 
@@ -2304,6 +2308,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return true;
     }
 
+    private Provider getVrProvider(DomainRouterVO router) {
+        final VirtualRouterProvider vrProvider = _vrProviderDao.findById(router.getElementId());
+        if (vrProvider == null) {
+            throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
+        }
+        final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
+        if (provider == null) {
+            throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
+        }
+        return provider;
+    }
+
     @Override
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         final DomainRouterVO router = _routerDao.findById(profile.getId());
@@ -2323,14 +2339,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             reprogramGuestNtwks = false;
         }
 
-        final VirtualRouterProvider vrProvider = _vrProviderDao.findById(router.getElementId());
-        if (vrProvider == null) {
-            throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
-        }
-        final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
-        if (provider == null) {
-            throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
-        }
+        final Provider provider = getVrProvider(router);
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (final Long guestNetworkId : routerGuestNtwkIds) {

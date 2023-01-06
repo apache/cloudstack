@@ -32,7 +32,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSwiftsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSwiftsCmd.class.getName());
-    private static final String s_name = "listswiftsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -47,11 +46,6 @@ public class ListSwiftsCmd extends BaseListCmd {
 
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -248,29 +248,35 @@ public abstract class BaseCmd {
     }
 
     /**
-     * For some reason this method does not return the actual command name, but more a name that
-     * is used to create the response. So you can expect for a XCmd a value like xcmdresponse. Anyways
-     * this methods is used in too many places so for now instead of changing it we just create another
-     * method {@link BaseCmd#getActualCommandName()} that returns the value from {@link APICommand#name()}
-     *
-     * @return
-     */
-    public abstract String getCommandName();
-
-
-    /**
      * Gets the CommandName based on the class annotations: the value from {@link APICommand#name()}
      *
      * @return the value from {@link APICommand#name()}
      */
-    public String getActualCommandName() {
+    public static String getCommandNameByClass(Class<?> clazz) {
         String cmdName = null;
-        if (this.getClass().getAnnotation(APICommand.class) != null) {
-            cmdName = this.getClass().getAnnotation(APICommand.class).name();
+        APICommand apiClassAnnotation = clazz.getAnnotation(APICommand.class);
+
+        if (apiClassAnnotation != null && apiClassAnnotation.name() != null) {
+            cmdName = apiClassAnnotation.name();
         } else {
-            cmdName = this.getClass().getName();
+            cmdName = clazz.getName();
         }
-       return cmdName;
+        return cmdName;
+    }
+
+    public String getActualCommandName() {
+        return getCommandNameByClass(this.getClass());
+    }
+
+    public String getCommandName() {
+        return getResponseNameByClass(this.getClass());
+    }
+
+    /**
+     * Retrieves the name defined in {@link APICommand#name()}, in lower case, with the prefix {@link BaseCmd#RESPONSE_SUFFIX}
+     */
+    public static String getResponseNameByClass(Class<?> clazz) {
+        return getCommandNameByClass(clazz).toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     /**

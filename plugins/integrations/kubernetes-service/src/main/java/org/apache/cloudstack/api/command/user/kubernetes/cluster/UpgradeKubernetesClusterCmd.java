@@ -38,7 +38,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = UpgradeKubernetesClusterCmd.APINAME, description = "Upgrades a running Kubernetes cluster",
+@APICommand(name = "upgradeKubernetesCluster", description = "Upgrades a running Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -47,7 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(UpgradeKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "upgradeKubernetesCluster";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -92,11 +91,6 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
             description += String.format(" ID: %d", getId());
         }
         return description;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

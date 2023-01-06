@@ -1104,8 +1104,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         Class<?> type = null;
-        final Config c = Config.getConfig(name);
-        if (c == null) {
+        final Config configuration = Config.getConfig(name);
+        if (configuration == null) {
             s_logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
             final ConfigKey<?> configKey = _configDepot.get(name);
             if(configKey == null) {
@@ -1114,7 +1114,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             type = configKey.type();
         } else {
-            type = c.getType();
+            type = configuration.getType();
         }
         //no need to validate further if a
         //config can have null value.
@@ -1223,95 +1223,144 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if(c == null ) {
+        if (configuration == null ) {
             //range validation has to be done per case basis, for now
             //return in case of Configkey parameters
             return null;
         }
 
-        final String range = c.getRange();
+        final String[] range = configuration.getRange();
         if (range == null) {
             return null;
         }
 
         if (type.equals(String.class)) {
-            if (range.equals("privateip")) {
-                try {
-                    if (!NetUtils.isSiteLocalAddress(value)) {
-                        s_logger.error("privateip range " + value + " is not a site local address for configuration variable " + name);
-                        return "Please enter a site local IP address.";
-                    }
-                } catch (final NullPointerException e) {
-                    s_logger.error("Error parsing ip address for " + name);
-                    throw new InvalidParameterValueException("Error parsing ip address");
-                }
-            } else if (range.equals("netmask")) {
-                if (!NetUtils.isValidIp4Netmask(value)) {
-                    s_logger.error("netmask " + value + " is not a valid net mask for configuration variable " + name);
-                    return "Please enter a valid netmask.";
-                }
-            } else if (range.equals("hypervisorList")) {
-                final String[] hypervisors = value.split(",");
-                if (hypervisors == null) {
-                    return "Please enter hypervisor list, separated by comma";
-                }
-                for (final String hypervisor : hypervisors) {
-                    if (HypervisorType.getType(hypervisor) == HypervisorType.Any || HypervisorType.getType(hypervisor) == HypervisorType.None) {
-                        return "Please enter a valid hypervisor type";
-                    }
-                }
-            } else if (range.equalsIgnoreCase("instanceName")) {
-                if (!NetUtils.verifyInstanceName(value)) {
-                    return "Instance name can not contain hyphen, space or plus sign";
-                }
-            } else if (range.equalsIgnoreCase("domainName")) {
-                String domainName = value;
-                if (value.startsWith("*")) {
-                    domainName = value.substring(2); //skip the "*."
-                }
-                //max length for FQDN is 253 + 2, code adds xxx-xxx-xxx-xxx to domain name when creating URL
-                if (domainName.length() >= 238 || !domainName.matches(DOMAIN_NAME_PATTERN)) {
-                    return "Please enter a valid string for domain name, prefixed with '*.' if applicable";
-                }
-            } else if (range.equals("routes")) {
-                final String[] routes = value.split(",");
-                for (final String route : routes) {
-                    if (route != null) {
-                        final String routeToVerify = route.trim();
-                        if (!NetUtils.isValidIp4Cidr(routeToVerify)) {
-                            throw new InvalidParameterValueException("Invalid value for route: " + route + " in deny list. Valid format is list"
-                                    + " of cidrs separated by coma. Example: 10.1.1.0/24,192.168.0.0/24");
-                        }
-                    }
-                }
-            } else {
-                final String[] options = range.split(",");
-                for (final String option : options) {
-                    if (option.trim().equalsIgnoreCase(value)) {
-                        return null;
-                    }
-                }
-                s_logger.error("configuration value for " + name + " is invalid");
-                return "Please enter : " + range;
-
-            }
+            return validateIfStringValueIsInRange(name, value, range);
         } else if (type.equals(Integer.class)) {
-            final String[] options = range.split("-");
-            if (options.length != 2) {
-                final String msg = "configuration range " + range + " for " + name + " is invalid";
-                s_logger.error(msg);
-                return msg;
+            return validateIfIntValueIsInRange(name, value, range[0]);
+        }
+        return String.format("Invalid value for configuration [%s].", name);
+    }
+
+    /**
+     * A valid value should be an integer between min and max (the values from the range).
+     */
+    protected String validateIfIntValueIsInRange(String name, String value, String range) {
+        final String[] options = range.split("-");
+        final int min = Integer.parseInt(options[0]);
+        final int max = Integer.parseInt(options[1]);
+        final int val = Integer.parseInt(value);
+        if (val < min || val > max) {
+            s_logger.error(String.format("Invalid value for configuration [%s]. Please enter a value in the range [%s].", name, range));
+            return String.format("The provided value is not valid for this configuration. Please enter an integer in the range: [%s]", range);
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the value for the configuration is valid for any of the ranges selected.
+     */
+    protected String validateIfStringValueIsInRange(String name, String value, String... range) {
+        List<String> message = new ArrayList<String>();
+        String errMessage = "";
+        for (String rangeOption : range) {
+            switch (rangeOption) {
+                case "privateip":
+                    errMessage = validateRangePrivateIp(name, value);
+                    break;
+                case "hypervisorList":
+                    errMessage = validateRangeHypervisorList(value);
+                    break;
+                case "instanceName":
+                    errMessage = validateRangeInstanceName(value);
+                    break;
+                case "domainName":
+                    errMessage = validateRangeDomainName(value);
+                    break;
+                default:
+                    errMessage = validateRangeOther(name, value, rangeOption);
             }
-            final int min = Integer.parseInt(options[0]);
-            final int max = Integer.parseInt(options[1]);
-            final int val = Integer.parseInt(value);
-            if (val < min || val > max) {
-                s_logger.error("configuration value for " + name + " is invalid");
-                return "Please enter : " + range;
+            if (StringUtils.isEmpty(errMessage)) {
+                return null;
+            }
+            message.add(errMessage);
+        }
+        if (message.size() == 1) {
+            return String.format("The provided value is not %s.", message.get(0));
+        }
+        return String.format("The provided value is neither %s.", String.join(" NOR ", message));
+    }
+
+    /**
+     * Checks if the value is a private IP according to {@link NetUtils#isSiteLocalAddress(String)}.
+     */
+    protected String validateRangePrivateIp(String name, String value) {
+        try {
+            if (NetUtils.isSiteLocalAddress(value)) {
+                return null;
+            }
+            s_logger.error(String.format("Value [%s] is not a valid private IP range for configuration [%s].", value, name));
+        } catch (final NullPointerException e) {
+            s_logger.error(String.format("Error while parsing IP address for [%s].", name));
+        }
+        return "a valid site local IP address";
+    }
+
+    /**
+     * Valid values are XenServer, KVM, VMware, Hyperv, VirtualBox, Parralels, BareMetal, Simulator, Ovm, Ovm3, LXC.
+     * Inputting "Any" will return the hypervisor type Any, other inputs will result in the hypervisor type none.
+     * Both of these are invalid values and will return an error message.
+     */
+    protected String validateRangeHypervisorList(String value) {
+        final String[] hypervisors = value.split(",");
+        for (final String hypervisor : hypervisors) {
+            if (HypervisorType.getType(hypervisor) == HypervisorType.Any || HypervisorType.getType(hypervisor) == HypervisorType.None) {
+                return "a valid hypervisor type";
             }
         }
         return null;
     }
+
+    /**
+     * Valid values are instance names, the only restriction is that they may not have hyphens, spaces or plus signs.
+     */
+    protected String validateRangeInstanceName(String value) {
+        if (NetUtils.verifyInstanceName(value)) {
+            return null;
+        }
+        return "a valid instance name (instance names cannot contain hyphens, spaces or plus signs)";
+    }
+
+    /**
+     * Verifies if the value is a valid domain name. If it starts with "*.", these two symbols are ignored and do not count towards the character limit.
+     * Max length for FQDN is 253 + 2, code adds xxx-xxx-xxx-xxx to domain name when creating URL.
+     */
+    protected String validateRangeDomainName(String value) {
+        String domainName = value;
+        if (value.startsWith("*")) {
+            domainName = value.substring(2);
+        }
+        if (domainName.length() >= 238 || !domainName.matches(DOMAIN_NAME_PATTERN)) {
+            return "a valid domain name";
+        }
+        return null;
+    }
+
+    /**
+     * In configurations where this type of range is used, a list of possible values is passed as argument in the creation of the configuration,
+     * a valid value is any option within this list.
+     */
+    protected String validateRangeOther(String name, String value, String rangeOption) {
+        final String[] options = rangeOption.split(",");
+        for (final String option : options) {
+            if (option.trim().equalsIgnoreCase(value)) {
+                return null;
+            }
+        }
+        s_logger.error(String.format("Invalid value for configuration [%s].", name));
+        return String.format("a valid value for this configuration (Options are: [%s])", rangeOption);
+    }
+
 
     private boolean podHasAllocatedPrivateIPs(final long podId) {
         final HostPodVO pod = _podDao.findById(podId);
@@ -6708,19 +6757,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean sourceNatSupported = cmd.getSourceNatSupported();
         final List<String> pNtwkTags = new ArrayList<String>();
         boolean checkForTags = false;
+        boolean allowNullTag = false;
         if (zone != null) {
-            final List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
-            if (pNtwks.size() > 1) {
-                checkForTags = true;
-                // go through tags
-                for (final PhysicalNetworkVO pNtwk : pNtwks) {
-                    final List<String> pNtwkTag = pNtwk.getTags();
-                    if (pNtwkTag == null || pNtwkTag.isEmpty()) {
-                        throw new CloudRuntimeException("Tags are not defined for physical network in the zone id=" + zoneId);
-                    }
-                    pNtwkTags.addAll(pNtwkTag);
-                }
-            }
+            allowNullTag = allowNetworkOfferingWithNullTag(zoneId, pNtwkTags);
+            checkForTags = !pNtwkTags.isEmpty() || allowNullTag;
         }
 
         // filter by supported services
@@ -6750,10 +6790,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
 
-                if (checkForTags) {
-                    if (!pNtwkTags.contains(offering.getTags())) {
-                        continue;
-                    }
+                if (checkForTags && ! checkNetworkOfferingTags(pNtwkTags, allowNullTag, offering.getTags())) {
+                    continue;
                 }
 
                 if (listBySupportedServices) {
@@ -6801,6 +6839,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(offerings, offerings.size());
         }
+    }
+
+    private boolean allowNetworkOfferingWithNullTag(Long zoneId, List<String> allPhysicalNetworkTags) {
+        boolean allowNullTag = false;
+        final List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+        for (final PhysicalNetworkVO physicalNetwork : physicalNetworks) {
+            final List<String> physicalNetworkTags = physicalNetwork.getTags();
+            if (CollectionUtils.isEmpty(physicalNetworkTags)) {
+                if (!allowNullTag) {
+                    allowNullTag = true;
+                } else {
+                    throw new CloudRuntimeException("There are more than 1 physical network with empty tag in the zone id=" + zoneId);
+                }
+            } else {
+                allPhysicalNetworkTags.addAll(physicalNetworkTags);
+            }
+        }
+        return allowNullTag;
+    }
+
+    private boolean checkNetworkOfferingTags(List<String> physicalNetworkTags, boolean allowNullTag, String offeringTags) {
+      return (offeringTags != null || allowNullTag) && (offeringTags == null || physicalNetworkTags.contains(offeringTags));
     }
 
     @Override

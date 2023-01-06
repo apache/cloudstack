@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -36,7 +35,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 
-@APICommand(name = ProvisionCertificateCmd.APINAME,
+@APICommand(name = "provisionCertificate",
         description = "Issues and propagates client certificate on a connected host/agent using configured CA plugin",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
@@ -44,7 +43,6 @@ import com.cloud.host.Host;
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class ProvisionCertificateCmd extends BaseAsyncCmd {
-    public static final String APINAME = "provisionCertificate";
 
     @Inject
     private CAManager caManager;
@@ -96,11 +94,6 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

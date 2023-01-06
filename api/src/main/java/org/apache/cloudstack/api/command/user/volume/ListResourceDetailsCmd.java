@@ -33,7 +33,6 @@ import com.cloud.server.ResourceTag;
 @APICommand(name = "listResourceDetails", description = "List resource detail(s)", responseObject = ResourceTagResponse.class, since = "4.2",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCmd {
-    private static final String s_name = "listresourcedetailsresponse";
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "list by resource type", required = true)
     private String resourceType;
@@ -62,11 +61,6 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
 
     public String getValue() {
         return value;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

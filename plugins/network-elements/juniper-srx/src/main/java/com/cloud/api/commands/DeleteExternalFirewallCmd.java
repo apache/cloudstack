@@ -37,7 +37,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteExternalFirewallCmd.class.getName());
-    private static final String s_name = "deleteexternalfirewallresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,11 +59,6 @@ public class DeleteExternalFirewallCmd extends BaseCmd {
 
     @Inject
     JuniperSRXFirewallElementService _srxElementService;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

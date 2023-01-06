@@ -43,7 +43,6 @@ import com.cloud.user.Account;
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 
-    private static final String s_name = "createstoragepoolresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -145,11 +144,6 @@ public class CreateStoragePoolCmd extends BaseCmd {
 
     public String getHypervisor() {
         return hypervisor;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

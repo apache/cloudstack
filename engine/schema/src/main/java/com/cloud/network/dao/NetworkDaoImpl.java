@@ -129,7 +129,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), Op.EQ);
-        AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        AllFieldsSearch.and("physicalNetworkId", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.and("aclId", AllFieldsSearch.entity().getNetworkACLId(), Op.EQ);

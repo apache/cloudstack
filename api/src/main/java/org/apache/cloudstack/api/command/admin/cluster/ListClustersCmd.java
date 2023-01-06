@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
 public class ListClustersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListClustersCmd.class.getName());
 
-    private static final String s_name = "listclustersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -118,11 +117,6 @@ public class ListClustersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     protected Pair<List<ClusterResponse>, Integer> getClusterResponses() {
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);

@@ -281,12 +281,14 @@ export function asyncRouterMap () {
   const plugins = vueProps.$config.plugins
   if (plugins && plugins.length > 0) {
     plugins.map(plugin => {
-      routerMap[0].children.push({
-        path: '/plugins/' + plugin.name,
-        name: plugin.name,
-        component: IFramePlugin,
-        meta: { title: plugin.name, icon: plugin.icon, path: plugin.path }
-      })
+      if (!plugin.isExternalLink && plugin.path) {
+        routerMap[0].children.push({
+          path: '/plugins/' + plugin.name,
+          name: plugin.name,
+          component: IFramePlugin,
+          meta: { title: plugin.name, icon: plugin.icon, path: plugin.path }
+        })
+      }
     })
   }
 

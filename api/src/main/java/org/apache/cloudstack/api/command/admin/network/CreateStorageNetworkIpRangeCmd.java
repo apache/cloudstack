@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 
-    private static final String s_name = "createstoragenetworkiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -123,11 +122,6 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             s_logger.warn("Create storage network IP range failed", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

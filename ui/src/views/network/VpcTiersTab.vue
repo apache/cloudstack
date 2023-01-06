@@ -195,6 +195,20 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item
+            v-if="setMTU"
+            ref="privatemtu"
+            name="privatemtu">
+            <template #label>
+              <tooltip-label :title="$t('label.privatemtu')" :tooltip="$t('label.privatemtu')"/>
+            </template>
+            <a-input-number
+              style="width: 100%;"
+              v-model:value="form.privatemtu"
+              :placeholder="$t('label.privatemtu')"
+              @change="updateMtu()"/>
+              <div style="color: red" v-if="errorPrivateMtu" v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
+          </a-form-item>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
@@ -361,6 +375,8 @@ export default {
       staticNats: {},
       vms: {},
       selectedNetworkOffering: {},
+      privateMtuMax: 1500,
+      errorPrivateMtu: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -453,7 +469,8 @@ export default {
           vpc: ['Netscaler']
         }
       },
-      publicLBExists: false
+      publicLBExists: false,
+      setMTU: false
     }
   },
   created () {
@@ -479,8 +496,17 @@ export default {
     showIlb (network) {
       return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
     },
+    updateMtu () {
+      if (this.form.privatemtu > this.privateMtuMax) {
+        this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed')}`
+        this.form.privatemtu = this.privateMtuMax
+      } else {
+        this.errorPrivateMtu = ''
+      }
+    },
     fetchData () {
       this.networks = this.resource.network
+      this.fetchMtuForZone()
       if (!this.networks || this.networks.length === 0) {
         return
       }
@@ -489,6 +515,14 @@ export default {
         this.fetchVMs(network.id)
       }
       this.publicLBNetworkExists()
+    },
+    fetchMtuForZone () {
+      api('listZones', {
+        id: this.resource.zoneid
+      }).then(json => {
+        this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
+        this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
+      })
     },
     fetchNetworkAclList () {
       this.fetchLoading = true
@@ -658,6 +692,10 @@ export default {
 
         if (values.vlan) {
           params.vlan = values.vlan
+        }
+
+        if (values.privatemtu) {
+          params.privatemtu = values.privatemtu
         }
 
         api('createNetwork', params).then(() => {

@@ -37,7 +37,6 @@ import org.apache.cloudstack.region.RegionService;
 public class ListRegionsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
 
-    private static final String s_name = "listregionsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,11 +66,6 @@ public class ListRegionsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

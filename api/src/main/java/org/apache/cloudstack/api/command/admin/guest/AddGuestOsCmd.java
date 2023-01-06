@@ -43,7 +43,6 @@ import java.util.Map;
 public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddGuestOsCmd.class.getName());
 
-    private static final String s_name = "addguestosresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -97,11 +96,6 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {
