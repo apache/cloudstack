@@ -17,7 +17,6 @@
 package org.apache.cloudstack.framework.config.dao;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -26,20 +25,19 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class ConfigurationGroupDaoImpl extends GenericDaoBase<ConfigurationGroupVO, Long> implements ConfigurationGroupDao {
-    private static final Logger s_logger = Logger.getLogger(ConfigurationGroupDaoImpl.class);
 
-    final SearchBuilder<ConfigurationGroupVO> NameSearch;
+    final SearchBuilder<ConfigurationGroupVO> nameSearch;
 
     public ConfigurationGroupDaoImpl() {
         super();
 
-        NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        nameSearch = createSearchBuilder();
+        nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
     }
 
     @Override
     public ConfigurationGroupVO findByName(String name) {
-        SearchCriteria<ConfigurationGroupVO> sc = NameSearch.create();
+        SearchCriteria<ConfigurationGroupVO> sc = nameSearch.create();
         sc.setParameters("name", name);
         return findOneIncludingRemovedBy(sc);
     }

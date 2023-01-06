@@ -136,17 +136,14 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
         List<ConfigKey<String>> result = new ArrayList<ConfigKey<String>>();
 
         if (orderConfigKey != null && orderConfigKeyObj == null) {
-            orderConfigKeyObj = new ConfigKey<String>(String.class, orderConfigKey, "Advanced", orderConfigDefault, "The order of precedence for the extensions", false, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Order, orderConfigDefault);
+            orderConfigKeyObj = new ConfigKey<>(String.class, orderConfigKey, "Advanced", orderConfigDefault, "The order of precedence for the extensions", false, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Order, orderConfigDefault);
         }
-
-        // orderConfigKeyObj = new ConfigKey<String>("Advanced", String.class, orderConfigKey, orderConfigDefault, "The order of precedence for the extensions", false, Scope.Global, null, null, null, null, null, null, null);
-
 
         if (orderConfigKeyObj != null)
             result.add(orderConfigKeyObj);
 
         if (excludeKey != null && excludeKeyObj == null) {
-            excludeKeyObj = new ConfigKey<String>(String.class, excludeKey, "Advanced", excludeDefault, "Extensions to exclude from being registered", false, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+            excludeKeyObj = new ConfigKey<>(String.class, excludeKey, "Advanced", excludeDefault, "Extensions to exclude from being registered", false, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
         }
 
         if (excludeKeyObj != null) {

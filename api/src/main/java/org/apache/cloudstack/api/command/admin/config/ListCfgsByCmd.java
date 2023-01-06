@@ -177,37 +177,41 @@ public class ListCfgsByCmd extends BaseListCmd {
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
+    private void setScope(ConfigurationResponse cfgResponse) {
+        if (!matchesConfigurationGroup(cfgResponse)) {
+            return;
+        }
+        cfgResponse.setObjectName("configuration");
+        if (getZoneId() != null) {
+            cfgResponse.setScope("zone");
+        }
+        if (getClusterId() != null) {
+            cfgResponse.setScope("cluster");
+        }
+        if (getStoragepoolId() != null) {
+            cfgResponse.setScope("storagepool");
+        }
+        if (getAccountId() != null) {
+            cfgResponse.setScope("account");
+        }
+        if (getDomainId() != null) {
+            cfgResponse.setScope("domain");
+        }
+        if (getImageStoreId() != null){
+            cfgResponse.setScope("imagestore");
+        }
+    }
+
     @Override
     public void execute() {
         validateParameters();
         try {
-            Pair<List<Configuration>, Integer> result = _mgr.searchForConfigurations(this);
+            Pair<List<? extends Configuration>, Integer> result = _mgr.searchForConfigurations(this);
             ListResponse<ConfigurationResponse> response = new ListResponse<>();
             List<ConfigurationResponse> configResponses = new ArrayList<>();
             for (Configuration cfg : result.first()) {
                 ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
-                if (!matchesConfigurationGroup(cfgResponse)) {
-                    continue;
-                }
-                cfgResponse.setObjectName("configuration");
-                if (getZoneId() != null) {
-                    cfgResponse.setScope("zone");
-                }
-                if (getClusterId() != null) {
-                    cfgResponse.setScope("cluster");
-                }
-                if (getStoragepoolId() != null) {
-                    cfgResponse.setScope("storagepool");
-                }
-                if (getAccountId() != null) {
-                    cfgResponse.setScope("account");
-                }
-                if (getDomainId() != null) {
-                    cfgResponse.setScope("domain");
-                }
-                if (getImageStoreId() != null){
-                    cfgResponse.setScope("imagestore");
-                }
+                setScope(cfgResponse);
                 configResponses.add(cfgResponse);
             }
 
@@ -237,7 +241,7 @@ public class ListCfgsByCmd extends BaseListCmd {
                 return false;
             }
             if (StringUtils.isNotEmpty(getSubGroupName()) &&
-                ! getSubGroupName().equalsIgnoreCase(cfgResponse.getSubGroup())) {
+                !getSubGroupName().equalsIgnoreCase(cfgResponse.getSubGroup())) {
                 return false;
             }
         }

@@ -64,7 +64,7 @@ public class ListCfgGroupsByCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<ConfigurationGroup>, Integer> result = _mgr.listConfigurationGroups(this);
+        Pair<List<? extends ConfigurationGroup>, Integer> result = _mgr.listConfigurationGroups(this);
         ListResponse<ConfigurationGroupResponse> response = new ListResponse<>();
         List<ConfigurationGroupResponse> configGroupResponses = new ArrayList<>();
         for (ConfigurationGroup cfgGroup : result.first()) {

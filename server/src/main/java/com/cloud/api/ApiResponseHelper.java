@@ -597,7 +597,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgGroupResponse.setPrecedence(cfgGroup.getPrecedence());
 
         List<? extends ConfigurationSubGroup> subgroups = _configMgr.getConfigurationSubGroups(cfgGroup.getId());
-        List<ConfigurationSubGroupResponse> cfgSubGroupResponses = new ArrayList<ConfigurationSubGroupResponse>();
+        List<ConfigurationSubGroupResponse> cfgSubGroupResponses = new ArrayList<>();
         for (ConfigurationSubGroup subgroup : subgroups) {
             ConfigurationSubGroupResponse cfgSubGroupResponse = createConfigurationSubGroupResponse(subgroup);
             cfgSubGroupResponses.add(cfgSubGroupResponse);

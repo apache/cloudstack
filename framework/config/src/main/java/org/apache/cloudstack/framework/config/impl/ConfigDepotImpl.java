@@ -226,12 +226,12 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 }
             }
 
-            if (key.group() != null && vo.getGroupId() != groupId) {
+            if (key.group() != null && !ObjectUtils.equals(vo.getGroupId(), groupId)) {
                 vo.setGroupId(groupId);
                 configUpdated = true;
             }
 
-            if (key.subGroup() != null && vo.getSubGroupId() != subGroupId) {
+            if (key.subGroup() != null && !ObjectUtils.equals(vo.getSubGroupId(), subGroupId)) {
                 vo.setSubGroupId(subGroupId);
                 configUpdated = true;
             }
@@ -341,6 +341,6 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             }
         }
 
-        return new Pair<Long, Long>(groupId, subGroupId);
+        return new Pair<>(groupId, subGroupId);
     }
 }

@@ -35,11 +35,11 @@ public class ConfigKey<T> {
     public static final String CATEGORY_ADVANCED = "Advanced";
     public static final String CATEGORY_ALERT = "Alert";
 
-    public static enum Scope {
+    public enum Scope {
         Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain
     }
 
-    public static enum Kind {
+    public enum Kind {
         CSV, Order, Select
     }
 

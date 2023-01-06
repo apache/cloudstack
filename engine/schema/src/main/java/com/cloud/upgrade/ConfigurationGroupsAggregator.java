@@ -36,7 +36,7 @@ import com.cloud.utils.Pair;
 
 public class ConfigurationGroupsAggregator {
 
-    final static Logger LOG = Logger.getLogger(ConfigurationGroupsAggregator.class);
+    static final Logger LOG = Logger.getLogger(ConfigurationGroupsAggregator.class);
 
     @Inject
     ConfigurationDao configDao;
@@ -101,6 +101,6 @@ public class ConfigurationGroupsAggregator {
             }
         }
 
-        return new Pair<Long, Long>(groupId, subGroupId);
+        return new Pair<>(groupId, subGroupId);
     }
 }
