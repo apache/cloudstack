@@ -4,9 +4,9 @@
     {
       "accelerator": "kvm",
       "boot_command": [
-        "<esc><wait>",
-        "install <wait>",
-        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
+        "c<wait>",
+        "linux /install.a64/vmlinuz <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed_aarch64.cfg <wait>",
         "debian-installer=en_US.UTF-8 <wait>",
         "auto <wait>",
         "language=en locale=en_US.UTF-8 <wait>",
@@ -19,31 +19,49 @@
         "debconf/frontend=noninteractive <wait>",
         "console-setup/ask_detect=false <wait>",
         "console-keymaps-at/keymap=us <wait>",
-        "<enter><wait>"
+	"---",
+        "<enter><wait>",
+	"initrd /install.a64/initrd.gz",
+	"<enter><wait>",
+	"boot<enter><wait>"
       ],
-      "boot_wait": "5s",
+      "boot_wait": "180s",
       "disk_interface": "virtio",
+      "cdrom_interface": "virtio-scsi",
       "disk_size": "5000M",
       "format": "qcow2",
       "headless": true,
       "http_directory": "http",
-      "iso_checksum": "sha512:224cd98011b9184e49f858a46096c6ff4894adff8945ce89b194541afdfd93b73b4666b0705234bd4dff42c0a914fdb6037dd0982efb5813e8a553d8e92e6f51",
-      "iso_url": "https://cdimage.debian.org/debian-cd/11.6.0/amd64/iso-cd/debian-11.6.0-amd64-netinst.iso",
+      "iso_checksum": "sha512:7b575eb212aba8921c314dc3b0fb29e6fc54c931013cad6764f10a26d9363c257f027a45d96bb750e48638ea4a1f223ab86ccc024d3e983853420fcde54ac999",
+      "iso_url": "https://cdimage.debian.org/debian-cd/11.6.0/arm64/iso-cd/debian-11.6.0-arm64-netinst.iso",
       "net_device": "virtio-net",
       "output_directory": "../dist",
+      "qemu_binary": "qemu-system-aarch64",
       "qemuargs": [
         [
           "-m",
           "500M"
         ],
+	[
+          "-machine",
+          "virt"
+        ],
+	[
+          "-cpu",
+          "host"
+        ],
         [
           "-smp",
           "1"
-        ]
+        ],
+	[ "-pflash", "/usr/share/AAVMF/AAVMF_CODE.fd" ],
+	[ "-monitor", "none" ],
+	[ "-enable-kvm" ],
+	[ "-boot", "strict=off" ]
       ],
       "shutdown_command": "sudo halt -p",
       "ssh_password": "cloud",
-      "ssh_timeout": "30m",
+      "ssh_timeout": "120m",
       "ssh_username": "cloud",
       "type": "qemu",
       "vm_name": "systemvmtemplate"
