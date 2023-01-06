@@ -57,6 +57,7 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -230,6 +231,13 @@ public class VirtualMachineManagerImplTest {
         when(serviceOfferingMock.isSystemUse()).thenReturn(true);
         when(mockCurrentDiskOffering.getTags()).thenReturn("x,y");
         when(diskOfferingMock.getTags()).thenReturn("z,x,y");
+
+        virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckIfCanUpgradeFail() {
+        when(serviceOfferingMock.getState()).thenReturn(ServiceOffering.State.Inactive);
 
         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
     }
