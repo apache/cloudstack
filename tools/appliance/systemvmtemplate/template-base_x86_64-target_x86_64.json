@@ -6,7 +6,7 @@
       "boot_command": [
         "<esc><wait>",
         "install <wait>",
-        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed_x86_64.cfg <wait>",
         "debian-installer=en_US.UTF-8 <wait>",
         "auto <wait>",
         "language=en locale=en_US.UTF-8 <wait>",
