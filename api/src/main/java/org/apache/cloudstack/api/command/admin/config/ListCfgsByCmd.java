@@ -181,9 +181,9 @@ public class ListCfgsByCmd extends BaseListCmd {
     public void execute() {
         validateParameters();
         try {
-            Pair<List<? extends Configuration>, Integer> result = _mgr.searchForConfigurations(this);
-            ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
-            List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
+            Pair<List<Configuration>, Integer> result = _mgr.searchForConfigurations(this);
+            ListResponse<ConfigurationResponse> response = new ListResponse<>();
+            List<ConfigurationResponse> configResponses = new ArrayList<>();
             for (Configuration cfg : result.first()) {
                 ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
                 if (!matchesConfigurationGroup(cfgResponse)) {
@@ -236,10 +236,9 @@ public class ListCfgsByCmd extends BaseListCmd {
             if (!(getGroupName().equalsIgnoreCase(cfgResponse.getGroup()))) {
                 return false;
             }
-            if (StringUtils.isNotEmpty(getSubGroupName())) {
-                if (!(getSubGroupName().equalsIgnoreCase(cfgResponse.getSubGroup()))) {
-                    return false;
-                }
+            if (StringUtils.isNotEmpty(getSubGroupName()) &&
+                ! getSubGroupName().equalsIgnoreCase(cfgResponse.getSubGroup())) {
+                return false;
             }
         }
         return true;

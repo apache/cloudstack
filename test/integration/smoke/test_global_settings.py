@@ -87,25 +87,14 @@ class TestListConfigurations(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestListConfigurations, cls).tearDownClass()
 
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
 
     def tearDown(self):
-        """
-        Revert any configuration changes
-        """
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestListConfigurations, self).tearDown()
 
     @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
     def test_01_list_configs(self):
