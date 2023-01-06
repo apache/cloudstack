@@ -2724,8 +2724,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (osDisplayName != null) {
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
-            List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
-            sc.addAnd("guestOsId", SearchCriteria.Op.IN, guestOSids.toArray());
+            if (CollectionUtils.isNotEmpty(guestOSVOS)) {
+                List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                sc.addAnd("guestOsId", SearchCriteria.Op.IN, guestOSids.toArray());
+            }
         }
 
         final Pair<List<GuestOSHypervisorVO>, Integer> result = _guestOSHypervisorDao.searchAndCount(sc, searchFilter);

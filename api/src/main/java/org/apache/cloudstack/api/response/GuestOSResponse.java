@@ -43,6 +43,11 @@ public class GuestOSResponse extends BaseResponse {
     @Param(description = "the name of the OS type")
     private String name;
 
+    @Deprecated
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the name/description of the OS type")
+    private String description;
+
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "is the guest OS user defined")
     private String isUserDefined;
@@ -77,6 +82,14 @@ public class GuestOSResponse extends BaseResponse {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getIsUserDefined() {
