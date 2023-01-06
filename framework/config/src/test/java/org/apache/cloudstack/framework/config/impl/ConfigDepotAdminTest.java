@@ -48,8 +48,8 @@ import com.cloud.utils.db.EntityManager;
 public class ConfigDepotAdminTest extends TestCase {
     private final static ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
     private final static ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
-    private final static ConfigKey<Integer> TestCK = new ConfigKey<Integer>(Integer.class, "testKey", "Advance", "30", "Test Key", false,
-            ConfigKey.Scope.Global, null, "Test Display Text", null, new Ternary<String, String, Long>("TestGroup", "Test Group", 3L), new Pair<String, Long>("Test SubGroup", 1L));
+    private final static ConfigKey<Integer> TestCK = new ConfigKey<>(Integer.class, "testKey", "Advance", "30", "Test Key", false,
+            ConfigKey.Scope.Global, null, "Test Display Text", null, new Ternary<>("TestGroup", "Test Group", 3L), new Pair<>("Test SubGroup", 1L));
 
     @Mock
     Configurable _configurable;

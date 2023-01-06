@@ -65,7 +65,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
     Map<String, ImageStoreDriver> driverMaps;
 
-    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey<String>(String.class, "image.store.allocation.algorithm", "Advanced", "firstfitleastconsumed",
+    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey<>(String.class, "image.store.allocation.algorithm", "Advanced", "firstfitleastconsumed",
             "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "firstfitleastconsumed,random" );
 
     @PostConstruct
