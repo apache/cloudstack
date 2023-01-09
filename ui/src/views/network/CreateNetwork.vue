@@ -26,7 +26,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.l2')" key="2">
+      <a-tab-pane :tab="$t('label.l2')" key="3" v-if="isAdvancedZoneWithoutSGAvailable">
         <CreateL2NetworkForm
           :loading="loading"
           :resource="resource"
@@ -34,7 +34,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.shared')" key="3">
+      <a-tab-pane :tab="$t('label.shared')" key="2">
         <CreateSharedNetworkForm
           :loading="loading"
           :resource="resource"
