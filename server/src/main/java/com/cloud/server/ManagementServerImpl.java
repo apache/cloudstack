@@ -788,6 +788,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.MacAddress;
@@ -2639,6 +2640,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        } else {
+            GenericSearchBuilder<GuestOSVO, Long> sb = _guestOSDao.createSearchBuilder(Long.class);
+            sb.select(null, SearchCriteria.Func.MAX, sb.entity().getId());
+            sb.groupBy(sb.entity().getCategoryId(), sb.entity().getDisplayName());
+            sb.done();
+
+            final SearchCriteria<Long> scGuestOs = sb.create();
+            final List<Long> guestOSVOList = _guestOSDao.customSearch(scGuestOs, null);
+            if (CollectionUtils.isNotEmpty(guestOSVOList)) {
+                sc.addAnd("id", SearchCriteria.Op.IN, guestOSVOList.toArray());
+            }
         }
 
         if (osCategoryId != null) {
