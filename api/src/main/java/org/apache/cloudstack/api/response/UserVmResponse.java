@@ -110,10 +110,6 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName(ApiConstants.ZONE_TYPE)
-    @Param(description = "the type of the availability zone for the virtual machine", since = "4.18.0")
-    private String zoneType;
-
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "the ID of the host for the virtual machine")
     private String hostId;
@@ -705,10 +701,6 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
-    }
-
-    public void setZoneType(String zoneType) {
-        this.zoneType = zoneType;
     }
 
     public void setHostId(String hostId) {
