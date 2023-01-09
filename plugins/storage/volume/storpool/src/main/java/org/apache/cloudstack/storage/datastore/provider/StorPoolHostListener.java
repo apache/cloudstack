@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -168,7 +169,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
     }
 
     private boolean isStorPoolVolumeOrStorageNotExistsOnHost(final Answer answer) {
-        return answer.getDetails().equals("objectDoesNotExist") || answer.getDetails().equals("spNotFound");
+        return StringUtils.equalsAny(answer.getDetails(), "objectDoesNotExist", "spNotFound");
     }
 
     private void deleteVolumeWhenHostCannotConnectPool(SpConnectionDesc conn, StoragePoolDetailVO volumeOnPool) {

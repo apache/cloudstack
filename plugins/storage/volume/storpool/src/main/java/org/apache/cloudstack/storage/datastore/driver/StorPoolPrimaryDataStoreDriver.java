@@ -677,7 +677,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                         EndPoint ep = selector.select(srcData, dstData);
 
-                        if( ep == null || storagePoolHostDao.findByPoolHost(dstData.getId(), ep.getId()) == null) {
+                        if (ep == null || storagePoolHostDao.findByPoolHost(dstData.getId(), ep.getId()) == null) {
                             StorPoolUtil.spLog("select(srcData, dstData) returned NULL or the destination pool is not connected to the selected host. Trying dstData");
                             ep = selector.select(dstData); // Storpool is zone
                         }
