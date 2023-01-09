@@ -51,7 +51,6 @@ public final class CitrixCheckGuestOsMappingCommandWrapper extends CommandWrappe
             for (VM vm : vms) {
                 if (vm != null && vm.getIsATemplate(conn) && guestOsMappingName.equalsIgnoreCase(vm.getNameLabel(conn))) {
                     if (guestOsName.equalsIgnoreCase(vm.getNameLabel(conn))) {
-                        // Exact matching may fail, try with regex?
                         s_logger.debug("Hypervisor guest os name label matches with os name: " + guestOsName);
                     }
                     s_logger.info("Hypervisor guest os name label matches with os mapping: " + guestOsMappingName + " from user");

@@ -7745,7 +7745,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
             s_logger.debug("Matching hypervisor guest os - id: " + guestOsDescriptor.getId() + ", full name: " + guestOsDescriptor.getFullName() + ", family: " + guestOsDescriptor.getFamily());
             if (guestOsDescriptor.getFullName().equalsIgnoreCase(guestOsName)) {
-                // Exact matching may fail, try with regex?
                 s_logger.debug("Hypervisor guest os name in the descriptor matches with os name: " + guestOsName);
             }
             s_logger.info("Hypervisor guest os name in the descriptor matches with os mapping: " + guestOsMappingName + " from user");
