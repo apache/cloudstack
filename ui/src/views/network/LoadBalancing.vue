@@ -119,7 +119,7 @@
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template #cidrlist="{ record }">
-        <span style="white-space: pre-line"> {{ record.cidrlist.replaceAll(" ", "\n") }}</span>
+        <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
       </template>
       <template #algorithm="{ record }">
         {{ returnAlgorithmName(record.algorithm) }}
