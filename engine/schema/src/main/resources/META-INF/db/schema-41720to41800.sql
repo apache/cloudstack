@@ -997,3 +997,35 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
