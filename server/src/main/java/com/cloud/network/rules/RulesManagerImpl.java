@@ -114,7 +114,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Inject
     PortForwardingRulesDao _portForwardingDao;
     @Inject
-    FirewallRulesCidrsDao _firewallCidrsDao;
+    FirewallRulesCidrsDao firewallCidrsDao;
     @Inject
     FirewallRulesDao _firewallDao;
     @Inject
@@ -249,6 +249,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
                 final Long accountId = ipAddress.getAllocatedToAccountId();
                 final Long domainId = ipAddress.getAllocatedInDomainId();
+                List<String> cidrList = rule.getSourceCidrList();
 
                 // start port can't be bigger than end port
                 if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
@@ -312,8 +313,13 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 final IPAddressVO ipAddressFinal = ipAddress;
                 return Transaction.execute((TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>) status -> {
                     PortForwardingRuleVO newRule =
+<<<<<<< HEAD
                             new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIpFinal,
                                     rule.getDestinationPortStart(), rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
+=======
+                        new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIpFinal,
+                            rule.getDestinationPortStart(), rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId, cidrList);
+>>>>>>> 0b9b44a3eb2 (enable to create VPC porfowarding rules with source cidr)
 
                     if (forDisplay != null) {
                         newRule.setDisplay(forDisplay);
@@ -896,6 +902,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, true, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+        }
+
+        for (PortForwardingRuleVO rule: rules){
+            rule.setSourceCidrList(firewallCidrsDao.getSourceCidrs(rule.getId()));
         }
 
         try {

@@ -330,7 +330,7 @@ class CsNetfilter(object):
         """ Convert the rule back into aynactically correct iptables command """
         # Order is important
         order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state',
-                 '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',
+                 '--dport', '--destination-port', '-o', '!_-o', '-j', '--save-mark', '--set-xmark', '--checksum',
                  '--to-source', '--to-destination', '--mark']
         str = ''
         for k in order:
@@ -339,6 +339,9 @@ class CsNetfilter(object):
                 printable = printable.replace('!_-', '! -')
                 if delete:
                     printable = printable.replace('-A', '-D')
+                    if k == "--save-mark":
+                        str = "%s %s" % (str, printable)
+                        continue
                 if str == '':
                     str = "%s %s" % (printable, self.rule[k])
                 else:

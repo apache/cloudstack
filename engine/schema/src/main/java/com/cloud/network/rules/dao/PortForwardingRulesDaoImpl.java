@@ -20,6 +20,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.dao.FirewallRulesCidrsDao;
@@ -41,7 +44,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     protected final SearchBuilder<PortForwardingRuleVO> ActiveRulesSearchByAccount;
 
     @Inject
-    protected FirewallRulesCidrsDao _portForwardingRulesCidrsDao;
+    protected FirewallRulesCidrsDao portForwardingRulesCidrsDao;
 
     protected PortForwardingRulesDaoImpl() {
         super();
@@ -169,5 +172,19 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         sc.setParameters("id", id);
         sc.setParameters("dstIp", secondaryIp);
         return findOneBy(sc);
+    }
+
+    @Override
+    public PortForwardingRuleVO persist(PortForwardingRuleVO portForwardingRule) {
+        return Transaction.execute((TransactionCallback<PortForwardingRuleVO>) transactionStatus -> {
+            PortForwardingRuleVO dbPfRule = super.persist(portForwardingRule);
+            if (CollectionUtils.isNotEmpty(portForwardingRule.getSourceCidrList())) {
+                portForwardingRulesCidrsDao.persist(portForwardingRule.getId(), portForwardingRule.getSourceCidrList());
+            }
+            List<String> cidrList = portForwardingRulesCidrsDao.getSourceCidrs(portForwardingRule.getId());
+            portForwardingRule.setSourceCidrList(cidrList);
+            return dbPfRule;
+        });
+
     }
 }

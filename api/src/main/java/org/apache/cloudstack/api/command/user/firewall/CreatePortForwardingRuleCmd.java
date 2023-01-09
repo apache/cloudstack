@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -107,8 +108,13 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                 description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
-    private List<String> cidrlist;
+    @Parameter(name = ApiConstants.CIDR_LIST,
+            type = CommandType.LIST,
+            collectionType = CommandType.STRING,
+            description = "the CIDR list to allow traffic, all other CIDRs will be blocked. " +
+                    "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC's networks. By default, all CIDRs are allowed.")
+    private List<String> cidrList;
+
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end public port is automatically created; "
         + "if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when PF"
@@ -157,11 +163,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
-            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall "
-                + "rule for the specific cidr, please refer to createFirewallRule command");
-        }
-        return null;
+        return cidrList;
     }
 
     public Boolean getOpenFirewall() {
@@ -334,18 +336,14 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public void create() {
-        // cidr list parameter is deprecated
-        if (cidrlist != null) {
-            throw new InvalidParameterValueException(
-                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
-        }
-
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
             if (!NetUtils.isValidIp4(privateIp.toString())) {
                 throw new InvalidParameterValueException("Invalid vm ip address");
             }
         }
+
+        validateGivenCidrList();
 
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall(), isDisplay());
@@ -444,6 +442,18 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Override
     public String getName() {
         return null;
+    }
+
+    public void validateGivenCidrList() {
+        if (CollectionUtils.isEmpty(cidrList)) {
+            return;
+        }
+
+        for (String cidr : cidrList) {
+            if (!NetUtils.isValidCidrList(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
+                throw new InvalidParameterValueException(String.format("The given CIDR [%s] is invalid.", cidr));
+            }
+        }
     }
 
 }
