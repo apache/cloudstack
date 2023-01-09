@@ -577,7 +577,8 @@ public class UserVmManagerImplTest {
                 Mockito.anyBoolean(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(HTTPMethod.class), Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.anyListOf(Long.class), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmExistsAndIsNotRunning(Mockito.any(), Mockito.anyLong());
-        Mockito.doNothing().when(userVmManagerImpl).validateAccountsAndCallerAccessToThem(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).checkCallerAccessToAccounts(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyList());
@@ -1346,18 +1347,6 @@ public class UserVmManagerImplTest {
     @Test
     public void validateIfVmExistsAndIsNotRunningTestVmIsNotRunningDoesNotThrowInvalidParameterValueException() {
         userVmManagerImpl.validateIfVmExistsAndIsNotRunning(userVmVoMock, 1l);
-    }
-
-    @Test
-    public void validateAccountsAndCallerAccessToThemTestCallsValidateOldAndNewAccountsAndCheckCallerAccessToAccounts() {
-        Account newAccount = Mockito.mock(Account.class);
-
-        Mockito.doReturn(1l).when(newAccount).getAccountId();
-
-        userVmManagerImpl.validateAccountsAndCallerAccessToThem(callerAccount, accountMock, newAccount, 1l, "", 1l);
-
-        Mockito.verify(userVmManagerImpl).validateOldAndNewAccounts(accountMock, newAccount, 1l, "", 1l);
-        Mockito.verify(userVmManagerImpl).checkCallerAccessToAccounts(callerAccount, accountMock, newAccount);;
     }
 
     @Test
@@ -2508,9 +2497,12 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void moveVmToUserTestValidateAccountsAndCallerAccessToThemThrowsInvalidParameterValueException() {
+    public void moveVmToUserTestValidateOldAndNewAccountsThrowsInvalidParameterValueException() {
         Mockito.doReturn(true).when(accountManager).isRootAdmin(Mockito.anyLong());
         Mockito.doReturn(userVmVoMock).when(userVmDao).findById(Mockito.anyLong());
+
+        Mockito.doThrow(InvalidParameterValueException.class).when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any());
 
         Assert.assertThrows(InvalidParameterValueException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
     }

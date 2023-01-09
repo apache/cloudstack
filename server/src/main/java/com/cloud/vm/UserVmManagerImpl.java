@@ -7116,7 +7116,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String newAccountName = cmd.getAccountName();
         final Account oldAccount = _accountService.getActiveAccountById(oldAccountId);
         final Account newAccount = _accountMgr.finalizeOwner(caller, newAccountName, domainId, projectId);
-        validateAccountsAndCallerAccessToThem(caller, oldAccount, newAccount, oldAccountId, newAccountName, domainId);
+        validateOldAndNewAccounts(oldAccount, newAccount, oldAccountId, newAccountName, domainId);
+
+        checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
         s_logger.trace(String.format("Verifying if the provided domain ID [%s] is valid.", domainId));
         if (projectId != null && domainId == null) {
@@ -7162,21 +7164,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
-     * Verifies if both old and new accounts are valid ({@link #validateOldAndNewAccounts}) and if the caller has access to them ({@link #checkCallerAccessToAccounts}).
-     * @param caller The caller to check for access.
-     * @param oldAccount The old account to be checked for validity.
-     * @param newAccount The new account to be checked for validity.
-     * @param oldAccountId The ID of the old account to be checked for validity.
-     * @param newAccountName The name of the new account to be checked for validity.
-     * @param domainId The ID of the domain where to validate the conditions.
-     */
-    protected void validateAccountsAndCallerAccessToThem(Account caller, Account oldAccount, Account newAccount, Long oldAccountId, String newAccountName, Long domainId) {
-        validateOldAndNewAccounts(oldAccount, newAccount, oldAccountId, newAccountName, domainId);
-
-        checkCallerAccessToAccounts(caller, oldAccount, newAccount);
-    }
-
-    /**
      * Validates if the provided VM does not have any existing Port Forwarding, Load Balancer, Static Nat, and One to One Nat rules.
      * If any rules exist, throws a {@link InvalidParameterValueException}.
      * @param vm the VM to be checked for the rules.
@@ -7210,7 +7197,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void validateIfVolumesHaveNoSnapshots(List<VolumeVO> volumes) throws InvalidParameterValueException {
-        s_logger.trace(String.format("Verifying if there are any snapshots for any of the VM volumes."));
+        s_logger.trace("Verifying if there are any snapshots for any of the VM volumes.");
         for (VolumeVO volume : volumes) {
             s_logger.trace(String.format("Verifying snapshots for volume [%s].", volume));
             List<SnapshotVO> snapshots = _snapshotDao.listByStatusNotIn(volume.getId(), Snapshot.State.Destroyed, Snapshot.State.Error);
@@ -7236,7 +7223,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         s_logger.trace(String.format("Verifying if CPU and RAM for VM [%s] do not exceed account [%s] limit.", vm, account));
         if (!isResourceCountRunningVmsOnlyEnabled()) {
-            resourceLimitCheck(account, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceLimitCheck(account, vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
 
         s_logger.trace(String.format("Verifying if volume size for VM [%s] does not exceed account [%s] limit.", vm, account));
@@ -7290,7 +7277,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
 
         s_logger.trace(String.format("Decrementing old account [%s] resource count.", oldAccount));
-        resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
 
         s_logger.trace(String.format("Removing VM [%s] from its instance group.", vm));
         removeInstanceFromInstanceGroup(vm.getId());
@@ -7308,7 +7295,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         s_logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
         if (!isResourceCountRunningVmsOnlyEnabled()) {
-            resourceCountIncrement(newAccountId, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            resourceCountIncrement(newAccountId, vm.isDisplayVm(), Long.valueOf(offering.getCpu()), Long.valueOf(offering.getRamSize()));
         }
 
         s_logger.trace(String.format("Generating create event for VM [%s].", vm));
@@ -7336,7 +7323,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             s_logger.trace(String.format("Decrementing volume [%s] and primary storage resource count for the old account [%s].", volume, oldAccount));
             _resourceLimitMgr.decrementResourceCount(oldAccountId, ResourceType.volume);
-            _resourceLimitMgr.decrementResourceCount(oldAccountId, ResourceType.primary_storage, new Long(volume.getSize()));
+            _resourceLimitMgr.decrementResourceCount(oldAccountId, ResourceType.primary_storage, volume.getSize());
 
             s_logger.trace(String.format("Setting the new account [%s] and domain [%s] for volume [%s].", newAccount, newAccount.getDomainId(), volume));
             volume.setAccountId(newAccountId);
@@ -7346,7 +7333,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             s_logger.trace(String.format("Incrementing volume [%s] and primary storage resource count for the new account [%s].", volume, newAccount));
             _resourceLimitMgr.incrementResourceCount(newAccountId, ResourceType.volume);
-            _resourceLimitMgr.incrementResourceCount(newAccountId, ResourceType.primary_storage, new Long(volume.getSize()));
+            _resourceLimitMgr.incrementResourceCount(newAccountId, ResourceType.primary_storage, volume.getSize());
 
             s_logger.trace(String.format("Generating a create volume event for volume [%s].", volume));
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
