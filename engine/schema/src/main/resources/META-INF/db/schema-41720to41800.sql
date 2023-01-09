@@ -695,28 +695,6 @@ CREATE VIEW `cloud`.`template_view` AS
              AND ((`resource_tags`.`resource_type` = 'Template')
              OR (`resource_tags`.`resource_type` = 'ISO')))));
 
--- Improve alert.email.addresses description #6806.
-UPDATE  cloud.configuration
-SET     description = 'Comma separated list of email addresses which are going to receive alert emails.'
-WHERE   name = 'alert.email.addresses';
-
--- Improve description of configuration `secstorage.encrypt.copy` #6811.
-UPDATE  cloud.configuration
-SET     description = "Use SSL method used to encrypt copy traffic between zones. Also ensures that the certificate assigned to the zone is used when
-generating links for external access."
-WHERE   name = 'secstorage.encrypt.copy';
-
--- allow isolated networks without services to be used as is.
-UPDATE `cloud`.`networks` ntwk
-  SET ntwk.state = 'Implemented'
-  WHERE ntwk.network_offering_id in
-    (SELECT id FROM `cloud`.`network_offerings` ntwkoff
-      WHERE (SELECT count(*) FROM `cloud`.`ntwk_offering_service_map` ntwksrvcmp WHERE ntwksrvcmp.network_offering_id = ntwkoff.id) = 0
-        AND ntwkoff.is_persistent = 1) AND
-    ntwk.state = 'Setup' AND
-    ntwk.removed is NULL AND
-    ntwk.guest_type = 'Isolated';
-
 -- Add type column to data_center table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'type', 'varchar(32) DEFAULT ''Core'' COMMENT ''the type of the zone'' ');
 
@@ -1168,47 +1146,3 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
-
--- Add type column to data_center table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'type', 'varchar(32) DEFAULT ''Core'' COMMENT ''the type of the zone'' ');
-
--- Recreate data_center_view
-DROP VIEW IF EXISTS `cloud`.`data_center_view`;
-CREATE VIEW `cloud`.`data_center_view` AS
-    select
-        data_center.id,
-        data_center.uuid,
-        data_center.name,
-        data_center.is_security_group_enabled,
-        data_center.is_local_storage_enabled,
-        data_center.description,
-        data_center.dns1,
-        data_center.dns2,
-        data_center.ip6_dns1,
-        data_center.ip6_dns2,
-        data_center.internal_dns1,
-        data_center.internal_dns2,
-        data_center.guest_network_cidr,
-        data_center.domain,
-        data_center.networktype,
-        data_center.allocation_state,
-        data_center.zone_token,
-        data_center.dhcp_provider,
-        data_center.type,
-        data_center.removed,
-        data_center.sort_key,
-        domain.id domain_id,
-        domain.uuid domain_uuid,
-        domain.name domain_name,
-        domain.path domain_path,
-        dedicated_resources.affinity_group_id,
-        dedicated_resources.account_id,
-        affinity_group.uuid affinity_group_uuid
-    from
-        `cloud`.`data_center`
-            left join
-        `cloud`.`domain` ON data_center.domain_id = domain.id
-            left join
-        `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
-            left join
-        `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;
