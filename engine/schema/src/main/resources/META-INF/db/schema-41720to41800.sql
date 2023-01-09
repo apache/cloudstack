@@ -163,12 +163,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Add passphrase column to volumes table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'passphrase_id', 'bigint unsigned DEFAULT NULL COMMENT ''encryption passphrase id'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'passphrase_id', 'bigint unsigned DEFAULT NULL COMMENT "encryption passphrase id" ');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'passphrase', 'id');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'encrypt_format', 'varchar(64) DEFAULT NULL COMMENT ''encryption format'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'encrypt_format', 'varchar(64) DEFAULT NULL COMMENT "encryption format" ');
 
 -- Add encrypt column to disk_offering
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'encrypt', 'tinyint(1) DEFAULT 0 COMMENT ''volume encrypt requested'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'encrypt', 'tinyint(1) DEFAULT 0 COMMENT "volume encrypt requested" ');
 
 -- add encryption support to disk offering view
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
@@ -996,10 +996,12 @@ CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '
 --
 -- Update Configuration Groups and Subgroups
 --
-ALTER TABLE `cloud`.`configuration` ADD COLUMN `group_id` bigint(20) unsigned DEFAULT '1' COMMENT 'group id this configuration belongs to';
-ALTER TABLE `cloud`.`configuration` ADD COLUMN `subgroup_id` bigint(20) unsigned DEFAULT '1' COMMENT 'subgroup id this configuration belongs to';
-ALTER TABLE `cloud`.`configuration` ADD COLUMN `parent` VARCHAR(255) DEFAULT NULL COMMENT 'name of the parent configuration if this depends on it';
-ALTER TABLE `cloud`.`configuration` ADD COLUMN `display_text` VARCHAR(255) DEFAULT NULL COMMENT 'Short text about configuration to display to the users';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.configuration', 'group_id', 'bigint unsigned DEFAULT 1 COMMENT "group id this configuration belongs to" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.configuration', 'subgroup_id', 'bigint unsigned DEFAULT 1 COMMENT "subgroup id this configuration belongs to" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.configuration', 'parent', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the parent configuration if this depends on it" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.configuration', 'display_text', 'VARCHAR(255) DEFAULT NULL COMMENT "Short text about configuration to display to the users" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.configuration', 'kind', 'VARCHAR(255) DEFAULT NULL COMMENT "kind of the value such as order, csv, etc" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.configuration', 'options', 'VARCHAR(255) DEFAULT NULL COMMENT "possible options for the value" ');
 
 CREATE TABLE `cloud`.`configuration_group` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -1102,9 +1104,6 @@ UPDATE `cloud`.`configuration` SET parent = 'storage.cleanup.enabled' WHERE name
 UPDATE `cloud`.`configuration` SET parent = 'vm.configdrive.primarypool.enabled' WHERE name IN ('vm.configdrive.use.host.cache.on.unsupported.pool');
 
 UPDATE `cloud`.`configuration` SET display_text = CONCAT(UCASE(LEFT(REPLACE(name, ".", " "), 1)), LCASE(SUBSTRING(REPLACE(name, ".", " "), 2)));
-
-ALTER TABLE `cloud`.`configuration` ADD COLUMN `kind` VARCHAR(255) DEFAULT NULL COMMENT 'kind of the value such as order, csv, etc';
-ALTER TABLE `cloud`.`configuration` ADD COLUMN `options` VARCHAR(255) DEFAULT NULL COMMENT 'possible options for the value';
 
 UPDATE `cloud`.`configuration` SET
     `kind` = 'Order',
