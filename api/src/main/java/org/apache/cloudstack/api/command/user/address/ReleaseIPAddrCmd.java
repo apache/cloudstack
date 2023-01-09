@@ -43,7 +43,6 @@ import com.cloud.network.IpAddress;
 public class ReleaseIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseIPAddrCmd.class.getName());
 
-    private static final String s_name = "releaseipaddressresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,11 +63,6 @@ public class ReleaseIPAddrCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

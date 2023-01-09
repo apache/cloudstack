@@ -95,7 +95,7 @@ log="${log}"`grep "^dhcp-range=" "$DHCP_CONFIG_MAIN"`"\n"
 
 if [ "$log" != '\n\n\n' ]
 then
- #Cleaning the existing dhcp confgiuration
+ #Cleaning the existing dhcp configuration
  logger -t cloud "dnsmasq.sh: remvoing the primaryip confg from dnsmasq.conf and adding it to /etc/dnsmaq.d/multiple_ranges.conf"
  logger -t cloud "dnsmasq.sh: config removed from dnsmasq.conf is $log"
  sed -i -e '/dhcp-option=6/d'  "$DHCP_CONFIG_MAIN"
@@ -103,7 +103,7 @@ then
  sed -i -e '/^dhcp-range=/d' "$DHCP_CONFIG_MAIN"
 fi
 
-#wrting the new config into the config file.
+#writing the new config into the config file.
 echo -e "$dhcp_range" >> "$DHCP_CONFIG"
 echo -e "$dhcp_gateway" >> "$DHCP_CONFIG"
 echo -e "$dhcp_netmask" >> "$DHCP_CONFIG"

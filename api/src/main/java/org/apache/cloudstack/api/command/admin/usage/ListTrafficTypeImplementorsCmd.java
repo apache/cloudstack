@@ -45,7 +45,6 @@ import com.cloud.utils.Pair;
             responseHasSensitiveInfo = false)
 public class ListTrafficTypeImplementorsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypeImplementorsCmd.class);
-    private static final String s_name = "listtraffictypeimplementorsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,8 +86,4 @@ public class ListTrafficTypeImplementorsCmd extends BaseListCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-}

@@ -317,6 +317,13 @@
             </div>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.loadbalancer">
+          <div class="resource-detail-item__label">{{ $t('label.loadbalancerrule') }}</div>
+          <div class="resource-detail-item__details">
+            <api-outlined />
+            <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.ipaddress">
           <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
           <div class="resource-detail-item__details">
@@ -351,6 +358,13 @@
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.autoscalevmgroupid">
+          <div class="resource-detail-item__label">{{ $t('label.autoscalevmgroupname') }}</div>
+          <div class="resource-detail-item__details">
+            <gold-outlined />
+            <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">
@@ -370,7 +384,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
             <desktop-outlined />
-            <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
             <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
           </div>
         </div>
@@ -400,6 +414,13 @@
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.publicip">
+          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__details">
+            <gateway-outlined />
+            <router-link :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
@@ -531,6 +552,14 @@
             <global-outlined v-else />
             <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.userdataname">
+          <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+          <div class="resource-detail-item__details">
+            <solution-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
+            <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.owner">
@@ -697,6 +726,7 @@
 
 <script>
 import { api } from '@/api'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
@@ -803,7 +833,7 @@ export default {
         'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
     },
     name () {
-      return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
+      return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
     },
     keypairs () {
@@ -829,6 +859,7 @@ export default {
     }
   },
   methods: {
+    createPathBasedOnVmType: createPathBasedOnVmType,
     updateResourceAdditionalData () {
       if (!this.resource) return
       this.resourceType = this.$route.meta.resourceType

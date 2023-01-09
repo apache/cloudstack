@@ -389,7 +389,7 @@ namespace HypervResource
                     }
 
                     // Assert
-                    errMsg = "No valide path in DestroyCommand in " + CloudStackTypes.DestroyCommand + " " + (String)cmd.ToString();
+                    errMsg = "No valid path in DestroyCommand in " + CloudStackTypes.DestroyCommand + " " + (String)cmd.ToString();
                     if (cmd.volume.path == null)
                     {
                         logger.Error(errMsg);

@@ -40,11 +40,10 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 
 import javax.inject.Inject;
 
-@APICommand(name = EnableOutOfBandManagementForZoneCmd.APINAME, description = "Enables out-of-band management for a zone",
+@APICommand(name = "enableOutOfBandManagementForZone", description = "Enables out-of-band management for a zone",
         responseObject = OutOfBandManagementResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0", authorized = {RoleType.Admin})
 public class EnableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
-    public static final String APINAME = "enableOutOfBandManagementForZone";
 
     @Inject
     private OutOfBandManagementService outOfBandManagementService;
@@ -75,11 +74,6 @@ public class EnableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
 
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     final public Long getZoneId() {

@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureSrxFirewallCmd.class.getName());
-    private static final String s_name = "configuresrxfirewallresponse";
     @Inject
     JuniperSRXFirewallElementService _srxFwService;
 
@@ -109,11 +108,6 @@ public class ConfigureSrxFirewallCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -40,7 +40,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTemplateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
-    private static final String s_name = "deletetemplateresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -73,15 +72,6 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    public static String getStaticName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

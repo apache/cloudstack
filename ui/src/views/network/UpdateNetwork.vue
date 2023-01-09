@@ -43,6 +43,43 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
+        <div v-if="setMTU">
+          <a-row :gutter="12" v-if="resource.type !== 'L2'">
+            <a-col :md="12" :lg="12">
+              <a-form-item
+              v-if="!resource.vpcid"
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input-number
+                  style="width: 100%;"
+                  v-model:value="form.publicmtu"
+                  :defaultValue="resource.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"
+                  @change="updateMtu(true)"/>
+                <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input-number
+                  v-model:value="form.privatemtu"
+                  style="width: 100%;"
+                  :defaultValue="resource.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"
+                  @change="updateMtu(false)"/>
+                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu"></div>
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </div>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -101,6 +138,52 @@
           </template>
           <a-switch v-model:checked="form.updateinsequence" />
         </a-form-item>
+        <div v-if="selectedNetworkOfferingSupportsDns">
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
+                <template #label>
+                  <tooltip-label :title="$t('label.dns1')" :tooltip="apiParams.dns1.description"/>
+                </template>
+                <a-input
+                  v-model:value="form.dns1"
+                  :placeholder="apiParams.dns1.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item v-if="'dns2' in apiParams" name="dns2" ref="dns2">
+                <template #label>
+                  <tooltip-label :title="$t('label.dns2')" :tooltip="apiParams.dns2.description"/>
+                </template>
+                <a-input
+                  v-model:value="form.dns2"
+                  :placeholder="apiParams.dns2.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item v-if="networkOffering && ((networkOffering.guestiptype === 'Isolated' && networkOffering.internetprotocol === 'DualStack') || (networkOffering.guestiptype === 'Shared' && resource.ip6cidr)) && 'ip6dns1' in apiParams" name="ip6dns1" ref="ip6dns1">
+                <template #label>
+                  <tooltip-label :title="$t('label.ip6dns1')" :tooltip="apiParams.ip6dns1.description"/>
+                </template>
+                <a-input
+                  v-model:value="form.ip6dns1"
+                  :placeholder="apiParams.ip6dns1.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item v-if="networkOffering && ((networkOffering.guestiptype === 'Isolated' && networkOffering.internetprotocol === 'DualStack') || (networkOffering.guestiptype === 'Shared' && resource.ip6cidr)) && 'ip6dns1' in apiParams" name="ip6dns2" ref="ip6dns2">
+                <template #label>
+                  <tooltip-label :title="$t('label.ip6dns2')" :tooltip="apiParams.ip6dns2.description"/>
+                </template>
+                <a-input
+                  v-model:value="form.ip6dns2"
+                  :placeholder="apiParams.ip6dns2.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </div>
         <a-form-item name="displaynetwork" ref="displaynetwork" v-if="isAdmin()">
           <template #label>
             <tooltip-label :title="$t('label.displaynetwork')" :tooltip="apiParams.displaynetwork.description"/>
@@ -149,7 +232,13 @@ export default {
       networkOfferingLoading: false,
       networkOffering: {},
       cidrChanged: false,
-      loading: false
+      loading: false,
+      privateMtuMax: 1500,
+      publicMtuMax: 1500,
+      minMTU: 68,
+      errorPrivateMtu: '',
+      errorPublicMtu: '',
+      setMTU: false
     }
   },
   beforeCreate () {
@@ -160,7 +249,11 @@ export default {
     this.resourceValues = {
       name: this.resource.name,
       displaytext: this.resource.displaytext,
-      guestvmcidr: this.resource.cidr
+      guestvmcidr: this.resource.cidr,
+      dns1: this.resource.dns1,
+      dns2: this.resource.dns2,
+      ip6dns1: this.resource.ip6dns1,
+      ip6dns2: this.resource.ip6dns2
     }
     if (this.isUpdatingIsolatedNetwork) {
       this.resourceValues.networkdomain = this.resource.networkdomain
@@ -176,13 +269,23 @@ export default {
   computed: {
     isUpdatingIsolatedNetwork () {
       return this.resource && this.resource.type === 'Isolated'
+    },
+    selectedNetworkOfferingSupportsDns () {
+      if (this.networkOffering) {
+        const services = this.networkOffering?.service || []
+        const dnsServices = services.filter(service => service.name === 'Dns')
+        return dnsServices && dnsServices.length === 1
+      }
+      return false
     }
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        displaynetwork: this.resource.displaynetwork
+        displaynetwork: this.resource.displaynetwork,
+        privatemtu: this.resource.privatemtu,
+        publicmtu: this.resource.publicmtu
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -191,6 +294,7 @@ export default {
     },
     fetchData () {
       this.fetchNetworkOfferingData()
+      this.fetchMtuForZone()
     },
     isAdmin () {
       return isAdmin()
@@ -198,14 +302,25 @@ export default {
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
+    fetchMtuForZone () {
+      api('listZones', {
+        id: this.resource.zoneid
+      }).then(json => {
+        this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
+        this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
+        this.publicMtuMax = json?.listzonesresponse?.zone?.[0]?.routerpublicinterfacemaxmtu || 1500
+      })
+    },
     fetchNetworkOfferingData () {
       this.networkOfferings = []
-      if (!this.isUpdatingIsolatedNetwork) return
       const params = {
         zoneid: this.resource.zoneid,
         state: 'Enabled',
         guestiptype: this.resource.type,
         forvpc: !!this.resource.vpcid
+      }
+      if (!this.isUpdatingIsolatedNetwork) {
+        params.id = this.resource.networkofferingid
       }
       this.networkOfferingLoading = true
       api('listNetworkOfferings', params).then(json => {
@@ -222,6 +337,29 @@ export default {
           }
         }
       })
+    },
+    updateMtu (isPublic) {
+      if (isPublic) {
+        if (this.form.publicmtu > this.publicMtuMax) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed').replace('%x', this.publicMtuMax)}`
+          this.form.publicmtu = this.publicMtuMax
+        } else if (this.form.publicmtu < this.minMTU) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.publicmtu = this.minMTU
+        } else {
+          this.errorPublicMtu = ''
+        }
+      } else {
+        if (this.form.privatemtu > this.privateMtuMax) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed').replace('%x', this.privateMtuMax)}`
+          this.form.privatemtu = this.privateMtuMax
+        } else if (this.form.privatemtu < this.minMTU) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.privatemtu = this.minMTU
+        } else {
+          this.errorPrivateMtu = ''
+        }
+      }
     },
     handleSubmit (e) {
       e.preventDefault()

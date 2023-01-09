@@ -40,11 +40,11 @@ public class AnnotationResponse extends BaseResponse {
     private String entityType;
 
     @SerializedName(ApiConstants.ENTITY_ID)
-    @Param(description = "the (uu)id of the entitiy to which this annotation pertains")
+    @Param(description = "the (uu)id of the entity to which this annotation pertains")
     private String entityUuid;
 
     @SerializedName(ApiConstants.ENTITY_NAME)
-    @Param(description = "the name of the entitiy to which this annotation pertains")
+    @Param(description = "the name of the entity to which this annotation pertains")
     private String entityName;
 
     @SerializedName(ApiConstants.ANNOTATION)

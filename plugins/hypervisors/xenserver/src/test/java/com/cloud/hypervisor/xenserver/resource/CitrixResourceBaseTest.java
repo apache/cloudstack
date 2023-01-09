@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.StringUtils;
 import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +43,8 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.ExecutionResult;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -53,6 +54,8 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
 
 import static com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.PLATFORM_CORES_PER_SOCKET_KEY;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Host.class, Script.class, SR.class})
@@ -76,6 +79,13 @@ public class CitrixResourceBaseTest {
     private String hostUuidMock = "hostUuidMock";
 
     private static final String platformString = "device-model:qemu-upstream-compat;vga:std;videoram:8;apic:true;viridian:false;timeoffset:0;pae:true;acpi:1;hpet:true;secureboot:false;nx:true";
+
+    final static long[] vpcStats = { 1L, 2L };
+    final static long[] networkStats = { 3L, 4L };
+    final static long[] lbStats = { 5L };
+    final static String privateIp = "192.168.1.1";
+    final static String publicIp = "10.10.10.10";
+    final static Integer port = 8080;
 
     @Before
     public void beforeTest() throws XenAPIException, XmlRpcException {
@@ -401,5 +411,59 @@ public class CitrixResourceBaseTest {
         citrixResourceBase.syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
         Assert.assertTrue(platform.containsKey(PLATFORM_CORES_PER_SOCKET_KEY));
         Assert.assertEquals(coresPerSocket, platform.get(PLATFORM_CORES_PER_SOCKET_KEY));
+    }
+
+    @Test
+    public void testGetStatsForVpcStats() {
+        CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+
+        String args = " -l " + publicIp + " -g";
+        ExecutionResult executionResult = new ExecutionResult(true, vpcStats[0] + ":" + vpcStats[1]);
+        doReturn(executionResult).when(citrixResourceBaseSpy).executeInVR(privateIp, "vpc_netusage.sh", args);
+
+        long[] stats = citrixResourceBaseSpy.getVPCNetworkStats(privateIp, publicIp);
+        assertEquals(2, stats.length);
+        assertEquals(vpcStats[0], stats[0]);
+        assertEquals(vpcStats[1], stats[1]);
+    }
+
+    @Test
+    public void testGetStatsForNetworkStats() {
+        CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+        Connection connection = Mockito.mock(Connection.class);
+
+        String args = "-g -l " + publicIp;
+        doReturn(networkStats[0] + ":" + networkStats[1]).when(citrixResourceBaseSpy).networkUsage(Mockito.any(Connection.class),
+                Mockito.eq(privateIp), Mockito.eq("get"), Mockito.any(), Mockito.eq(publicIp));
+
+        long[] stats = citrixResourceBaseSpy.getNetworkStats(connection, privateIp, publicIp);
+        assertEquals(2, stats.length);
+        assertEquals(networkStats[0], stats[0]);
+        assertEquals(networkStats[1], stats[1]);
+    }
+
+    @Test
+    public void testGetStatsForLbStats() {
+        CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+
+        String args = publicIp + " " + port;
+        ExecutionResult executionResult = new ExecutionResult(true, String.valueOf(lbStats[0]));
+        doReturn(executionResult).when(citrixResourceBaseSpy).executeInVR(privateIp, "get_haproxy_stats.sh", args);
+
+        long[] stats = citrixResourceBaseSpy.getNetworkLbStats(privateIp, publicIp, port);
+
+        assertEquals(1, stats.length);
+        assertEquals(lbStats[0], stats[0]);
+    }
+
+    @Test
+    public void testNetworkUsage() {
+        CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+
+        String result = citrixResourceBaseSpy.networkUsage(connectionMock, null, "get", null);
+        Assert.assertEquals("0:0", result);
+
+        result = citrixResourceBaseSpy.networkUsage(connectionMock, null, "put", null);
+        Assert.assertNull(result);
     }
 }

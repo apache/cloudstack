@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 
-@APICommand(name = IssueCertificateCmd.APINAME,
+@APICommand(name = "issueCertificate",
         description = "Issues a client certificate using configured or provided CA plugin",
         responseObject = CertificateResponse.class,
         requestHasSensitiveInfo = true,
@@ -51,7 +51,6 @@ import com.cloud.event.EventTypes;
 public class IssueCertificateCmd extends BaseAsyncCmd {
     private static final Logger LOG = Logger.getLogger(IssueCertificateCmd.class);
 
-    public static final String APINAME = "issueCertificate";
 
     @Inject
     private CAManager caManager;
@@ -138,11 +137,6 @@ public class IssueCertificateCmd extends BaseAsyncCmd {
         }
         certificateResponse.setResponseName(getCommandName());
         setResponseObject(certificateResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

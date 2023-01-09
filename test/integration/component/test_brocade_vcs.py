@@ -329,4 +329,3 @@ class TestBrocadeVcs(cloudstackTestCase):
         Network.delete(self.network, self.apiclient)
 
         return
-

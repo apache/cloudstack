@@ -34,7 +34,6 @@ import com.cloud.hypervisor.hyperv.manager.HypervManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
@@ -51,7 +50,6 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     private GuestOSDao _guestOsDao;
     @Inject HypervManager _hypervMgr;
-    @Inject NetworkDao _networkDao;
     @Inject NetworkModel _networkMgr;
     int MaxNicSupported = 8;
     @Override
@@ -109,7 +107,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                     profile = controlNicProfile;
                 }
 
-                NetworkVO network = _networkDao.findById(networkId);
+                NetworkVO network = networkDao.findById(networkId);
                 // for Hyperv Hot Nic plug is not supported and it will support upto 8 nics.
                 // creating the VR with extra nics (actual nics(3) + extra nics) will be 8
                 for(; i < MaxNicSupported; i++) {

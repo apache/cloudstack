@@ -105,11 +105,6 @@ public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return _name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }

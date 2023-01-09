@@ -955,7 +955,7 @@ namespace HypervResource
 
             if (vlanSettings == null)
             {
-                // when modifying  nic to not connected dont create vlan
+                // when modifying  nic to not connected don't create vlan
                 if (enable)
                 {
                     if (vlanid != null)
@@ -1024,7 +1024,7 @@ namespace HypervResource
                 index++;
             }
 
-            //TODO: make sure the index wont be out of range.
+            //TODO: make sure the index won't be out of range.
 
             EthernetPortAllocationSettingData[] ethernetConnections = GetEthernetConnections(vm);
             EthernetSwitchPortVlanSettingData vlanSettings = GetVlanSettings(ethernetConnections[index]);
@@ -1119,7 +1119,7 @@ namespace HypervResource
 
             if (vlanSettings == null)
             {
-                // when modifying  nic to not connected dont create vlan
+                // when modifying  nic to not connected don't create vlan
                 if (enable)
                 {
                     if (vlanid != null)

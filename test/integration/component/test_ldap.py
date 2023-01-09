@@ -304,4 +304,3 @@ class TestLdap(cloudstackTestCase):
         except Exception as p:
             self.debug("login operation failed %s" % p)
             self.reason = "Login operation Failed %s" % p
-

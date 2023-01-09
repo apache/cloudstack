@@ -93,6 +93,14 @@ setup_interface() {
        echo "  address $ip " >> /etc/network/interfaces
        echo "  netmask $mask" >> /etc/network/interfaces
      fi
+
+     if [ ! -z "$PRIVATEMTU" ] && [ $intf == "eth0" ]; then
+       echo "  mtu $PRIVATEMTU" >> /etc/network/interfaces
+     fi
+
+     if [ ! -z "$PUBLICMTU" ] && [ $intf == "eth2" ]; then
+       echo "  mtu $PUBLICMTU" >> /etc/network/interfaces
+     fi
   fi
 
   if [ "$ip" == "0.0.0.0" -o "$ip" == "" ]
@@ -576,6 +584,25 @@ setup_vpc_apache2() {
   setup_apache2_common
 }
 
+setup_vpc_mgmt_route() {
+  log_it "Set up route for management network: $MGMTNET via local gateway: $LOCAL_GW for device eth$1 for hypervisor: $HYPERVISOR"
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    mgmt_route_rule="$MGMTNET via $LOCAL_GW dev eth${1}"
+    if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];
+    then
+      exist=`sudo ip route show $mgmt_route_rule | wc -l`
+      if [ $exist -eq 0 ]
+      then
+          log_it "Add route for management network via local gateway, hypervisor: $HYPERVISOR, rule: $mgmt_route_rule"
+          sudo ip route add $mgmt_route_rule
+          # workaround to activate vSwitch under VMware
+          timeout 3 ping -n -c 3 $LOCAL_GW || true
+      fi
+    fi
+  fi
+}
+
 clean_ipalias_config() {
   rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
   rm -f /etc/apache2/sites-available/ipAlias*
@@ -881,6 +908,21 @@ parse_cmd_line() {
           ;;
         privatekey)
           export PRIVATEKEY=$VALUE
+          ;;
+        logrotatefrequency)
+          export LOGROTATE_FREQUENCY=$VALUE
+          ;;
+        publicMtu)
+          export PUBLICMTU=$VALUE
+          ;;
+        privateMtu)
+          export PRIVATEMTU=$VALUE
+          ;;
+        useHttpsToUpload)
+          export USEHTTPS=$VALUE
+          ;;
+        vncport)
+          export VNCPORT=$VALUE
           ;;
       esac
   done

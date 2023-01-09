@@ -34,7 +34,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41610to41700.class);
+    final static Logger LOG = Logger.getLogger(Upgrade41700to41710.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     private PrimaryDataStoreDao storageDao;

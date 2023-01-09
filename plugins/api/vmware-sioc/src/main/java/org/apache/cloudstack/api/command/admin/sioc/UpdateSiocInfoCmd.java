@@ -32,14 +32,13 @@ import org.apache.cloudstack.sioc.SiocManager;
 
 import com.cloud.user.Account;
 
-@APICommand(name = UpdateSiocInfoCmd.APINAME, description = "Update SIOC info", responseObject = ApiUpdateSiocInfoResponse.class,
+@APICommand(name = "updateSiocInfo", description = "Update SIOC info", responseObject = ApiUpdateSiocInfoResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class UpdateSiocInfoCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(UpdateSiocInfoCmd.class.getName());
 
-    public static final String APINAME = "updateSiocInfo";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,11 +64,6 @@ public class UpdateSiocInfoCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

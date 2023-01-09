@@ -285,6 +285,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability NoVlan = new Capability("NoVlan");
         public static final Capability PublicAccess = new Capability("PublicAccess");
         public static final Capability ExtraDhcpOptions = new Capability("ExtraDhcpOptions");
+        public static final Capability VmAutoScaling = new Capability("VmAutoScaling");
 
         private final String name;
 
@@ -483,5 +484,17 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     String getRouterIpv6();
 
+    String getDns1();
+
+    String getDns2();
+
+    String getIp6Dns1();
+
+    String getIp6Dns2();
+
     Date getCreated();
+
+    Integer getPublicMtu();
+
+    Integer getPrivateMtu();
 }

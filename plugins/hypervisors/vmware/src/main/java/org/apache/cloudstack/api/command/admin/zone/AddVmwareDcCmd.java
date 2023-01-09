@@ -46,7 +46,6 @@ public class AddVmwareDcCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddVmwareDcCmd.class.getName());
 
-    private static final String s_name = "addvmwaredcresponse";
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of VMware datacenter to be added to specified zone.")
     private String name;
@@ -84,11 +83,6 @@ public class AddVmwareDcCmd extends BaseCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -38,7 +38,6 @@ import com.cloud.network.element.JuniperSRXFirewallElementService;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListExternalFirewallsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListExternalFirewallsCmd.class.getName());
-    private static final String s_name = "listexternalfirewallsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -61,11 +60,6 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
 
     @Inject
     JuniperSRXFirewallElementService _srxElementService;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @SuppressWarnings("deprecation")
     @Override

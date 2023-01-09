@@ -194,5 +194,3 @@ for name,meth in load_dynamic_methods():
 implementor = CloudAPI
 
 del name,meth,describe,load_dynamic_methods
-
-

@@ -2314,7 +2314,7 @@ class TestVMDeployVPC(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_08_ip_reallocation_CS5986(self):
         """
-        @Desc: Test to verify dnsmasq dhcp conflict issue due to /ect/hosts not getting udpated
+        @Desc: Test to verify dnsmasq dhcp conflict issue due to /ect/hosts not getting updated
 	    @Steps:
 	    Step1: Create a VPC
         Step2: Create one network in vpc

@@ -460,10 +460,10 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 is still in progress start the VM and check
                 the integrity of the snapshot
             6. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Stop the VM Verify that the VM stops
+                in progress Stop the VM Verify that the VM stops
                 successfully and check integrity of snapshot
             7. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Reboot the VM
+                in progress Reboot the VM
                 Verify that the VM reboot successfully and
                 check integrity of snapshot
             8. Initiate ROOT volume snapshot and while snapshot is
@@ -875,15 +875,15 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 while snapshot is still in progress
                 start the VM and check the integrity of the snapshot
             6. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Stop the VM
+                in progress Stop the VM
                 Verify that the VM stops successfully and
                 check integrity of snapshot
             7. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Reboot the VM
+                in progress Reboot the VM
                 Verify that the VM reboot successfully and
                 check integrity of snapshot
             8. Initiate ROOT volume snapshot and while snapshot is
-                in pregress create snapshot of the same volume
+                in progress create snapshot of the same volume
                 and check integrity of both the snapshots
             9. Initiate snapshot of DATA volume and while snapshot
                 is in progress detach the volume

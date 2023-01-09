@@ -41,6 +41,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -49,6 +50,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
@@ -74,6 +76,8 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
     PodVlanMapDao _podVlanDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    NetworkModel networkModel;
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
@@ -125,8 +129,9 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
         }
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
-        nic.setIPv4Dns1(dc.getDns1());
-        nic.setIPv4Dns2(dc.getDns2());
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
+        nic.setIPv4Dns1(dns.first());
+        nic.setIPv4Dns2(dns.second());
 
         /*
          * Pod pod = dest.getPod(); Pair<String, Long> ip =
@@ -167,7 +172,8 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
         }
-        nic.setIPv4Dns1(dc.getDns1());
-        nic.setIPv4Dns2(dc.getDns2());
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
+        nic.setIPv4Dns1(dns.first());
+        nic.setIPv4Dns2(dns.second());
     }
 }

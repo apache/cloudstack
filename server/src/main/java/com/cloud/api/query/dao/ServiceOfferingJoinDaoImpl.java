@@ -130,6 +130,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setIscutomized(offering.isDynamic());
         offeringResponse.setCacheMode(offering.getCacheMode());
         offeringResponse.setDynamicScalingEnabled(offering.isDynamicScalingEnabled());
+        offeringResponse.setEncryptRoot(offering.getEncryptRoot());
 
         if (offeringDetails != null && !offeringDetails.isEmpty()) {
             String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);

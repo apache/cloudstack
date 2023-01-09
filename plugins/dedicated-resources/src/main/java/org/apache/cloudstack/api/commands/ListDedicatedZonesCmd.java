@@ -45,7 +45,6 @@ import com.cloud.utils.Pair;
 public class ListDedicatedZonesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
 
-    private static final String s_name = "listdedicatedzonesresponse";
     @Inject
     DedicatedService _dedicatedservice;
 
@@ -90,11 +89,6 @@ public class ListDedicatedZonesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {
