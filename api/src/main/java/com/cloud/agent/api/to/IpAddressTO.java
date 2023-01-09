@@ -39,10 +39,12 @@ public class IpAddressTO {
     private boolean newNic;
     private boolean isPrivateGateway;
     private NicTO nicTO;
+
+    private Integer mtu;
     Map<String, String> details;
 
     public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String broadcastUri, String vlanGateway, String vlanNetmask,
-            String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
+                       String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
         this.add = add;
@@ -54,6 +56,12 @@ public class IpAddressTO {
         this.vifMacAddress = vifMacAddress;
         this.networkRate = networkRate;
         this.oneToOneNat = isOneToOneNat;
+    }
+
+    public IpAddressTO(String ipAddress, Integer mtu, String vlanNetmask ) {
+        this.publicIp = ipAddress;
+        this.mtu = mtu;
+        this.vlanNetmask = vlanNetmask;
     }
 
     protected IpAddressTO() {
@@ -153,6 +161,14 @@ public class IpAddressTO {
 
     public void setNicTO(NicTO nicTO) {
         this.nicTO = nicTO;
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
     }
 
 

@@ -6720,19 +6720,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Boolean sourceNatSupported = cmd.getSourceNatSupported();
         final List<String> pNtwkTags = new ArrayList<String>();
         boolean checkForTags = false;
+        boolean allowNullTag = false;
         if (zone != null) {
-            final List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
-            if (pNtwks.size() > 1) {
-                checkForTags = true;
-                // go through tags
-                for (final PhysicalNetworkVO pNtwk : pNtwks) {
-                    final List<String> pNtwkTag = pNtwk.getTags();
-                    if (pNtwkTag == null || pNtwkTag.isEmpty()) {
-                        throw new CloudRuntimeException("Tags are not defined for physical network in the zone id=" + zoneId);
-                    }
-                    pNtwkTags.addAll(pNtwkTag);
-                }
-            }
+            allowNullTag = allowNetworkOfferingWithNullTag(zoneId, pNtwkTags);
+            checkForTags = !pNtwkTags.isEmpty() || allowNullTag;
         }
 
         // filter by supported services
@@ -6762,10 +6753,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
 
-                if (checkForTags) {
-                    if (!pNtwkTags.contains(offering.getTags())) {
-                        continue;
-                    }
+                if (checkForTags && ! checkNetworkOfferingTags(pNtwkTags, allowNullTag, offering.getTags())) {
+                    continue;
                 }
 
                 if (listBySupportedServices) {
@@ -6813,6 +6802,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(offerings, offerings.size());
         }
+    }
+
+    private boolean allowNetworkOfferingWithNullTag(Long zoneId, List<String> allPhysicalNetworkTags) {
+        boolean allowNullTag = false;
+        final List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, TrafficType.Guest);
+        for (final PhysicalNetworkVO physicalNetwork : physicalNetworks) {
+            final List<String> physicalNetworkTags = physicalNetwork.getTags();
+            if (CollectionUtils.isEmpty(physicalNetworkTags)) {
+                if (!allowNullTag) {
+                    allowNullTag = true;
+                } else {
+                    throw new CloudRuntimeException("There are more than 1 physical network with empty tag in the zone id=" + zoneId);
+                }
+            } else {
+                allPhysicalNetworkTags.addAll(physicalNetworkTags);
+            }
+        }
+        return allowNullTag;
+    }
+
+    private boolean checkNetworkOfferingTags(List<String> physicalNetworkTags, boolean allowNullTag, String offeringTags) {
+      return (offeringTags != null || allowNullTag) && (offeringTags == null || physicalNetworkTags.contains(offeringTags));
     }
 
     @Override

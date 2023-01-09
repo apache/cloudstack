@@ -96,6 +96,21 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <div v-if="setMTU">
+          <a-form-item
+            ref="publicmtu"
+            name="publicmtu">
+            <template #label>
+              <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+            </template>
+            <a-input-number
+              style="width: 100%;"
+              v-model:value="form.publicmtu"
+              :placeholder="apiParams.publicmtu.description"
+              @change="updateMtu()"/>
+              <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
+          </a-form-item>
+        </div>
         <a-row :gutter="12" v-if="selectedVpcOfferingSupportsDns">
           <a-col :md="12" :lg="12">
             <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
@@ -171,8 +186,13 @@ export default {
       loading: false,
       loadingZone: false,
       loadingOffering: false,
+      setMTU: false,
+      zoneid: '',
       zones: [],
       vpcOfferings: [],
+      publicMtuMax: 1500,
+      minMTU: 68,
+      errorPublicMtu: '',
       selectedVpcOffering: {}
     }
   },
@@ -182,6 +202,7 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+    console.log(this.setMTU)
   },
   computed: {
     selectedVpcOfferingSupportsDns () {
@@ -207,8 +228,16 @@ export default {
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
-    fetchData () {
+    async fetchData () {
       this.fetchZones()
+    },
+    fetchPublicMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.public.interface.mtu',
+        zoneid: this.form.zoneid
+      }).then(json => {
+        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
     },
     fetchZones () {
       this.loadingZone = true
@@ -229,6 +258,12 @@ export default {
       if (this.form.zoneid === '') {
         this.form.vpcofferingid = ''
         return
+      }
+      for (var zone of this.zones) {
+        if (zone.id === value) {
+          this.setMTU = zone?.allowuserspecifyvrmtu || false
+          this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+        }
       }
       this.fetchOfferings()
     },
@@ -256,6 +291,17 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    updateMtu () {
+      if (this.form.publicmtu > this.publicMtuMax) {
+        this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed').replace('%x', this.publicMtuMax)}`
+        this.form.publicmtu = this.publicMtuMax
+      } else if (this.form.publicmtu < this.minMTU) {
+        this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+        this.form.publicmtu = this.minMTU
+      } else {
+        this.errorPublicMtu = ''
+      }
     },
     handleSubmit (e) {
       e.preventDefault()
