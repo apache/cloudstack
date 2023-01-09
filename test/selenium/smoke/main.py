@@ -140,6 +140,3 @@ runner = xmlrunner.XMLTestRunner(output='test-reports')
 
 # Leave following as is for either XML or HTML
 runner.run(suite)
-
-
-

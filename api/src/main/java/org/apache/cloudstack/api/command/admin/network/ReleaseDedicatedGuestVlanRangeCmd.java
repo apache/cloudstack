@@ -37,7 +37,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedGuestVlanRangeCmd.class.getName());
-    private static final String s_name = "releasededicatedguestvlanrangeresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -53,11 +52,6 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public Long getId() {
         return id;

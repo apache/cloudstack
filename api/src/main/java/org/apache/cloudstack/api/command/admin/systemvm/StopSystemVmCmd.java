@@ -41,7 +41,6 @@ import com.cloud.vm.VirtualMachine;
 public class StopSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
-    private static final String s_name = "stopsystemvmresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -69,11 +68,6 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

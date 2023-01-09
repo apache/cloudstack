@@ -181,19 +181,22 @@ class CsAcl(CsDataBag):
 
             if self.direction == 'ingress':
                 for cidr in self.rule['cidr']:
+                    action = self.rule['action']
+                    if action == "ACCEPT":
+                        action = "RETURN"
                     if rule['protocol'] == "icmp":
                         self.fw.append(["mangle", "front",
                                         " -A FIREWALL_%s" % self.ip +
                                         " -s %s " % cidr +
                                         " -p %s " % rule['protocol'] +
-                                        " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
+                                        " --icmp-type %s -j %s" % (icmp_type, action)])
                     else:
                         self.fw.append(["mangle", "front",
                                         " -A FIREWALL_%s" % self.ip +
                                         " -s %s " % cidr +
                                         " -p %s " % rule['protocol'] +
                                         " -m %s " % rule['protocol'] +
-                                        "  %s -j %s" % (rnge, self.rule['action'])])
+                                        "  %s -j %s" % (rnge, action)])
 
             sflag = False
             dflag = False

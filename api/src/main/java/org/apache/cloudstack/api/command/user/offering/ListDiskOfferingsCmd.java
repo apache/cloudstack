@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
-    private static final String s_name = "listdiskofferingsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,6 +57,9 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "The ID of the storage pool, tags of the storage pool are used to filter the offerings", since = "4.17")
     private Long storagePoolId;
 
+    @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, description = "listed offerings support disk encryption", since = "4.18")
+    private Boolean encrypt;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -78,18 +80,13 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
         return volumeId;
     }
 
-    public Long getStoragePoolId() {
-        return storagePoolId;
-    }
+    public Long getStoragePoolId() { return storagePoolId; }
+
+    public Boolean getEncrypt() { return encrypt; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

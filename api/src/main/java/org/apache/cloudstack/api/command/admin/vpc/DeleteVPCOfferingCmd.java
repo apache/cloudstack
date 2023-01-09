@@ -35,7 +35,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVPCOfferingCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVPCOfferingCmd.class.getName());
-    private static final String s_name = "deletevpcofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,11 +54,6 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

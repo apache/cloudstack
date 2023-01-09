@@ -20,9 +20,13 @@ import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.List;
+import java.util.Map;
 
 public interface DeploymentPlanningManager extends Manager {
 
@@ -60,4 +64,6 @@ public interface DeploymentPlanningManager extends Manager {
     DeploymentPlanner getDeploymentPlannerByName(String plannerName);
 
     void checkForNonDedicatedResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids);
+
+    void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts);
 }

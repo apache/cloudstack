@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.17.3.0-SNAPSHOT</version>
+        <version>4.18.0.0-SNAPSHOT</version>
     </parent>
     <repositories>
         <repository>
@@ -480,6 +480,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-non-strict-host-anti-affinity</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-non-strict-host-affinity</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-api-solidfire-intg-test</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -768,6 +778,12 @@
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>org.apache.cloudstack</groupId>
+                                    <artifactId>cloud-plugin-storage-volume-linstor</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
                                     <artifactId>bctls-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
@@ -811,6 +827,7 @@
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
                                     <exclude>mysql:mysql-connector-java</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>

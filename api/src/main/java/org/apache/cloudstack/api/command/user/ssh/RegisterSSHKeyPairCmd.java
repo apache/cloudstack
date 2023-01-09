@@ -33,7 +33,6 @@ import com.cloud.user.SSHKeyPair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterSSHKeyPairCmd.class.getName());
-    private static final String s_name = "registersshkeypairresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,9 +104,4 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
         setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

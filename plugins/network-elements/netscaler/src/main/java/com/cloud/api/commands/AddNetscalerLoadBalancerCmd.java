@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AddNetscalerLoadBalancerCmd.class.getName());
-    private static final String s_name = "addnetscalerloadbalancerresponse";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;
 
@@ -172,11 +171,6 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_LB_DEVICE_ADD;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -71,7 +71,7 @@ public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOffer
     @Override
     public List<Long> findOfferingIdsByDomainIds(List<Long> domainIds) {
         Object[] dIds = domainIds.stream().map(s -> String.valueOf(s)).collect(Collectors.toList()).toArray();
-        return findResouceIdsByNameAndValueIn("domainid", dIds);
+        return findResourceIdsByNameAndValueIn("domainid", dIds);
     }
 }
 

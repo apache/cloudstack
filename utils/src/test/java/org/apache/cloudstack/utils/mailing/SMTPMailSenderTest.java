@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -547,7 +548,7 @@ public class SMTPMailSenderTest extends TestCase {
     public void setMailRecipientsTest() throws UnsupportedEncodingException, MessagingException {
         SMTPMessage messageMock = new SMTPMessage(Mockito.mock(MimeMessage.class));
 
-        Set<MailAddress> recipients = new HashSet<>();
+        Set<MailAddress> recipients = new LinkedHashSet<>();
         recipients.add(new MailAddress(null));
         recipients.add(new MailAddress(""));
         recipients.add(new MailAddress("  "));

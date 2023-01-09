@@ -36,7 +36,7 @@
 6. objects
     - repeatly used elements like buttons, inputs
 7. components
-    - complex elements like dropdown, forms, table, search (usualy include this to components/FooterToolbar/ folder)
+    - complex elements like dropdown, forms, table, search (usually include this to components/FooterToolbar/ folder)
 
 
 # The "/deep/" combinator

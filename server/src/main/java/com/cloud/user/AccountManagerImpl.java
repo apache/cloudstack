@@ -301,6 +301,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private RoleService roleService;
 
+    @Inject
+    private PasswordPolicy passwordPolicy;
+
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
     private int _allowedLoginAttempts;
@@ -771,6 +774,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            // delete autoscaling VM groups
+            if (!_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(accountId)) {
+                accountCleanupNeeded = true;
+            }
+
+
             // delete global load balancer rules for the account.
             List<org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
             if (gslbRules != null && !gslbRules.isEmpty()) {
@@ -846,7 +855,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
-                if (!_vmMgr.expunge(vm, callerUserId, caller)) {
+                if (!_vmMgr.expunge(vm)) {
                     s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
@@ -1368,6 +1377,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
         }
+
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
+
         Account callingAccount = getCurrentCallingAccount();
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
@@ -2043,7 +2055,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
         if (newAccount.getDomainId() != domainId) {
             // not in scope
-            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in another domain is not supported!");
         }
     }
 
@@ -2341,6 +2353,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
+
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
 
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {

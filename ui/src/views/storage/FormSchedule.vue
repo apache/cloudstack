@@ -74,8 +74,7 @@
                 name="timeSelect"
                 ref="timeSelect">
                 <a-time-picker
-                  use12Hours
-                  format="h:mm A"
+                  format="HH:mm"
                   v-model:value="form.timeSelect" />
               </a-form-item>
             </a-col>

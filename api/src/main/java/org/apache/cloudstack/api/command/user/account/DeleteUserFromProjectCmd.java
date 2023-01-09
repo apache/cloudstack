@@ -38,11 +38,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = DeleteUserFromProjectCmd.APINAME, description = "Deletes user from the project", responseObject = SuccessResponse.class, since = "4.15.0",
+@APICommand(name = "deleteUserFromProject", description = "Deletes user from the project", responseObject = SuccessResponse.class, since = "4.15.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(DeleteUserFromProjectCmd.class.getName());
-    public static final String APINAME = "deleteUserFromProject";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -84,11 +83,6 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
         return "Removing user " + userId + " from project: " + projectId;
     }
 
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

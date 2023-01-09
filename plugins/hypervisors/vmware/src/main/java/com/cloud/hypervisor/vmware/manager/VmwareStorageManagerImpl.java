@@ -134,7 +134,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         command.add(name + ".ovf");        // OVF file should be the first file in OVA archive
         command.add(name + "-disk0.vmdk");
 
-        s_logger.info("Package OVA with commmand: " + command.toString());
+        s_logger.info("Package OVA with command: " + command.toString());
         command.execute();
     }
 
@@ -1454,7 +1454,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl, String nfsVersion) throws Exception {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
-        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);
+        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStorage(volumeId);
 
         return deleteDir(volumeMountRoot);
     }
@@ -1468,7 +1468,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
+    private static String getVolumeRelativeDirInSecStorage(long volumeId) {
         return "volumes/" + volumeId;
     }
 }

@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RoleResponse;
@@ -43,12 +42,11 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
 
-@APICommand(name = ImportRoleCmd.APINAME, description = "Imports a role based on provided map of rule permissions", responseObject = RoleResponse.class,
+@APICommand(name = "importRole", description = "Imports a role based on provided map of rule permissions", responseObject = RoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.15.0",
         authorized = {RoleType.Admin})
 public class ImportRoleCmd extends RoleCmd {
-    public static final String APINAME = "importRole";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -119,11 +117,6 @@ public class ImportRoleCmd extends RoleCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

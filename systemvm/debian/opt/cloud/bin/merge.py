@@ -155,6 +155,7 @@ class updateDataBag:
         dp['gateway'] = d['router_guest_gateway']
         dp['nic_dev_id'] = d['device'][3:]
         dp['nw_type'] = 'guest'
+        dp['mtu'] = str(d['mtu'])
         qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
         if 'domain_name' not in d.keys() or d['domain_name'] == '':

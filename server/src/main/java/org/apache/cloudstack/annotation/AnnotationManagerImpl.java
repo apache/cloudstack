@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -63,6 +64,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -152,6 +154,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @Inject
     private NetworkOfferingDao networkOfferingDao;
     @Inject
+    private AutoScaleVmGroupDao autoScaleVmGroupDao;
+    @Inject
+    private UserDataDao userDataDao;
+    @Inject
     EntityManager entityManager;
 
     private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
@@ -165,6 +171,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.VM_SNAPSHOT, ApiCommandResourceType.VmSnapshot);
         s_typeMap.put(EntityType.INSTANCE_GROUP, ApiCommandResourceType.None);
         s_typeMap.put(EntityType.SSH_KEYPAIR, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.USER_DATA, ApiCommandResourceType.None);
         s_typeMap.put(EntityType.NETWORK, ApiCommandResourceType.Network);
         s_typeMap.put(EntityType.VPC, ApiCommandResourceType.Vpc);
         s_typeMap.put(EntityType.PUBLIC_IP_ADDRESS, ApiCommandResourceType.IpAddress);
@@ -184,6 +191,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.SECONDARY_STORAGE, ApiCommandResourceType.ImageStore);
         s_typeMap.put(EntityType.VR, ApiCommandResourceType.DomainRouter);
         s_typeMap.put(EntityType.SYSTEM_VM, ApiCommandResourceType.SystemVm);
+        s_typeMap.put(EntityType.AUTOSCALE_VM_GROUP, ApiCommandResourceType.AutoScaleVmGroup);
     }
 
     public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
@@ -507,6 +515,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 return instanceGroupDao.findByUuid(entityUuid);
             case SSH_KEYPAIR:
                 return sshKeyPairDao.findByUuid(entityUuid);
+            case USER_DATA:
+                return userDataDao.findByUuid(entityUuid);
             case NETWORK:
                 return networkDao.findByUuid(entityUuid);
             case VPC:
@@ -520,6 +530,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 return templateDao.findByUuid(entityUuid);
             case KUBERNETES_CLUSTER:
                 return kubernetesClusterHelpers.get(0).findByUuid(entityUuid);
+            case AUTOSCALE_VM_GROUP:
+                return autoScaleVmGroupDao.findByUuid(entityUuid);
             default:
                 throw new CloudRuntimeException("Invalid entity type " + type);
         }

@@ -2303,7 +2303,7 @@ public class HypervisorHostHelper {
         String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
-            s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
+            s_logger.info(String.format("vSphere datastore base folder [%s] does not exist on datastore [%s]. We will create it.", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
             dsMo.makeDirectory(folderPath, mor);
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
             dsMo.makeDirectory(hiddenFolderPath, mor);

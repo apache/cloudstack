@@ -17,20 +17,23 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KVMPhysicalDisk {
     private String path;
     private String name;
     private KVMStoragePool pool;
+    private boolean useAsTemplate;
 
     public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
         String rbdOpts;
 
         rbdOpts = "rbd:" + image;
-        rbdOpts += ":mon_host=" + monHost;
-        if (monPort > 0) {
-            rbdOpts += "\\:" + monPort;
-        }
+        rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
             rbdOpts += ":auth_supported=none";
@@ -46,9 +49,29 @@ public class KVMPhysicalDisk {
         return rbdOpts;
     }
 
+    private static String composeOptionForMonHosts(String monHost, int monPort) {
+        List<String> hosts = new ArrayList<>();
+        for (String host : monHost.split(",")) {
+            if (monPort > 0) {
+                hosts.add(replaceHostAddress(host) + "\\:" + monPort);
+            } else {
+                hosts.add(replaceHostAddress(host));
+            }
+        }
+        return StringUtils.join(hosts, "\\;");
+    }
+
+    private static String replaceHostAddress(String hostIp) {
+        if (hostIp != null && hostIp.startsWith("[") && hostIp.endsWith("]")) {
+            return hostIp.replaceAll("\\:", "\\\\:");
+        }
+        return hostIp;
+    }
+
     private PhysicalDiskFormat format;
     private long size;
     private long virtualSize;
+    private QemuObject.EncryptFormat qemuEncryptFormat;
 
     public KVMPhysicalDisk(String path, String name, KVMStoragePool pool) {
         this.path = path;
@@ -101,4 +124,15 @@ public class KVMPhysicalDisk {
         this.path = path;
     }
 
+    public QemuObject.EncryptFormat getQemuEncryptFormat() {
+        return this.qemuEncryptFormat;
+    }
+
+    public void setQemuEncryptFormat(QemuObject.EncryptFormat format) {
+        this.qemuEncryptFormat = format;
+    }
+
+    public void setUseAsTemplate() { this.useAsTemplate = true; }
+
+    public boolean useAsTemplate() { return this.useAsTemplate; }
 }

@@ -60,6 +60,12 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                description = "the ID of the load balancer rule")
     private long lbRuleId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the autoscale vmgroup",
+            since = "4.18.0")
+    private String name;
+
     @Parameter(name = ApiConstants.MIN_MEMBERS,
                type = CommandType.INTEGER,
                required = true,
@@ -72,7 +78,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private int maxMembers;
 
-    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency at which the conditions have to be evaluated")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency in which the performance counters to be collected")
     private Integer interval;
 
     @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
@@ -104,6 +110,11 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+
+
+    public String getName() {
+        return name;
+    }
 
     public int getMinMembers() {
         return minMembers;
@@ -225,7 +236,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
             s_logger.warn("Failed to create autoscale vm group", ex);
         } finally {
             if (!success || vmGroup == null) {
-                _autoScaleService.deleteAutoScaleVmGroup(getEntityId());
+                _autoScaleService.deleteAutoScaleVmGroup(getEntityId(), true);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
             }
         }

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.17.3.0-SNAPSHOT</version>
+        <version>4.18.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -50,6 +50,8 @@
         <module>affinity-group-processors/explicit-dedication</module>
         <module>affinity-group-processors/host-affinity</module>
         <module>affinity-group-processors/host-anti-affinity</module>
+        <module>affinity-group-processors/non-strict-host-affinity</module>
+        <module>affinity-group-processors/non-strict-host-anti-affinity</module>
 
         <module>alert-handlers/snmp-alerts</module>
         <module>alert-handlers/syslog-alerts</module>

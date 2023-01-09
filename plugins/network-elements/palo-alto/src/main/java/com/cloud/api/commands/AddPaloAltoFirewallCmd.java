@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddPaloAltoFirewallCmd.class.getName());
-    private static final String s_name = "addpaloaltofirewallresponse";
     @Inject
     PaloAltoFirewallElementService _paFwService;
 
@@ -127,11 +126,6 @@ public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_FIREWALL_DEVICE_ADD;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -211,6 +211,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "disk_offering_display_text")
     private String diskOfferingDisplayText;
 
+    @Column(name = "encrypt_root")
+    private boolean encryptRoot;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -443,4 +446,6 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     public String getDiskOfferingDisplayText() {
         return diskOfferingDisplayText;
     }
+
+    public boolean getEncryptRoot() { return encryptRoot; }
 }

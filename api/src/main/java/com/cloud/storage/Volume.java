@@ -247,4 +247,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     String getExternalUuid();
 
     void setExternalUuid(String externalUuid);
+
+    public Long getPassphraseId();
+
+    public void setPassphraseId(Long id);
+
+    public String getEncryptFormat();
+
+    public void setEncryptFormat(String encryptFormat);
 }

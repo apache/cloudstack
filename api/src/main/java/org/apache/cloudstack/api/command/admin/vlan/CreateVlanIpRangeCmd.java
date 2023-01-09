@@ -45,7 +45,6 @@ import com.cloud.user.Account;
 public class CreateVlanIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
-    private static final String s_name = "createvlaniprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -53,13 +52,13 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
+               description = "account who will own the VLAN. If VLAN is Zone wide, this parameter should be omitted")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
                type = CommandType.UUID,
                entityType = ProjectResponse.class,
-               description = "project who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
+               description = "project who will own the VLAN. If VLAN is Zone wide, this parameter should be omitted")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a VLAN")
@@ -208,11 +207,6 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

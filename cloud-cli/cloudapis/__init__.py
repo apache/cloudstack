@@ -40,4 +40,3 @@ def lookup_api(api_name):
     else: api = matchingapi[0]
     if api: api = getattr(api,"implementor")
     return api
-

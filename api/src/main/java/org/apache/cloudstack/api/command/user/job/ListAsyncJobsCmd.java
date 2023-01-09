@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 @APICommand(name = "listAsyncJobs", description = "Lists all pending asynchronous jobs for the account.", responseObject = AsyncJobResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
-    private static final String s_name = "listasyncjobsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,11 +47,6 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public void execute() {
 

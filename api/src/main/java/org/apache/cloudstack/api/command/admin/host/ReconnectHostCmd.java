@@ -38,7 +38,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ReconnectHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
-    private static final String s_name = "reconnecthostresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,11 +57,6 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "host";

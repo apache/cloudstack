@@ -75,12 +75,15 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item name="encryptdisk" ref="encryptdisk">
+          <template #label>
+            <tooltip-label :title="$t('label.encrypt')" :tooltip="apiParams.encrypt.description" />
+          </template>
+          <a-switch v-model:checked="form.encryptdisk" :checked="encryptdisk" @change="val => { encryptdisk = val }" />
+        </a-form-item>
         <a-form-item name="disksizestrictness" ref="disksizestrictness">
           <template #label>
-            {{ $t('label.disksizestrictness') }}
-            <a-tooltip :title="apiParams.disksizestrictness.description">
-              <info-circle-outlined />
-            </a-tooltip>
+            <tooltip-label :title="$t('label.disksizestrictness')" :tooltip="apiParams.disksizestrictness.description" />
           </template>
           <a-switch v-model:checked="form.disksizestrictness" :checked="disksizestrictness" @change="val => { disksizestrictness = val }" />
         </a-form-item>
@@ -313,12 +316,14 @@ export default {
       storagePolicies: null,
       storageTagLoading: false,
       isPublic: true,
+      isEncrypted: false,
       domains: [],
       domainLoading: false,
       zones: [],
       zoneLoading: false,
       loading: false,
-      disksizestrictness: false
+      disksizestrictness: false,
+      encryptdisk: false
     }
   },
   beforeCreate () {
@@ -345,7 +350,8 @@ export default {
         writecachetype: 'none',
         qostype: '',
         ispublic: this.isPublic,
-        disksizestrictness: this.disksizestrictness
+        disksizestrictness: this.disksizestrictness,
+        encryptdisk: this.encryptdisk
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -404,7 +410,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -418,7 +423,6 @@ export default {
     },
     fetchStorageTagData () {
       const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       api('listStorageTags', params).then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
@@ -460,7 +464,8 @@ export default {
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
           customized: values.customdisksize,
-          disksizestrictness: values.disksizestrictness
+          disksizestrictness: values.disksizestrictness,
+          encrypt: values.encryptdisk
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize

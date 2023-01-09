@@ -221,13 +221,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             controlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
-            hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, keypairs,
+            hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
                     requestedIps, addrs, null, null, null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
             controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
-                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
                     requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
         if (LOGGER.isInfoEnabled()) {
@@ -295,13 +295,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             additionalControlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
-                    hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, keypairs,
+                    hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
                     null, addrs, null, null, null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
             additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
-                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
                     null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
 
@@ -393,7 +393,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ips.add(controlVmNic.getIPv4Address());
             vmIdIpMap.put(clusterVMIds.get(i), ips);
         }
-        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap);
+        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, false);
     }
 
     /**
@@ -476,7 +476,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 startKubernetesVM(vm);
             } catch (ManagementServerException ex) {
                 LOGGER.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
-                // dont bail out here. proceed further to stop the reset of the VM's
+                // don't bail out here. proceed further to stop the reset of the VM's
             }
         }
         for (final UserVm userVm : clusterVms) {

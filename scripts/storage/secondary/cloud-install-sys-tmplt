@@ -29,7 +29,7 @@ failed() {
   local returnval=$1
   local returnmsg=$2
   
-  # check for an message, if there is no one dont print anything
+  # check for an message, if there is no one don't print anything
   if [[ -z $returnmsg ]]; then
     :
   else

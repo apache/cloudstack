@@ -141,7 +141,7 @@ class TestSameVMName(cloudstackTestCase):
     def test_vms_with_same_name(self):
         """ Test vm deployment with same name
 
-        # 1. Deploy a VM on with perticular name from account_1
+        # 1. Deploy a VM on with particular name from account_1
         # 2. Try to deploy another vm with same name from account_2
         # 3. Verify that second VM deployment fails
 

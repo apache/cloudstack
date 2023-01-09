@@ -29,6 +29,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "cloud_usage")
@@ -395,5 +396,10 @@ public class UsageVO implements Usage, InternalIdentity {
 
     public void setHidden(boolean hidden) {
         this.isHidden = hidden;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "usageId", "usageType", "startDate", "endDate");
     }
 }

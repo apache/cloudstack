@@ -521,7 +521,7 @@ public class OVFHelperTest {
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.appliance.ntp.servers\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"\">\n" +
             "        <Label>NTP Servers</Label>\n" +
-            "        <Description>A comma-seperated list of hostnames or IP addresses of NTP Servers</Description>\n" +
+            "        <Description>A comma-separated list of hostnames or IP addresses of NTP Servers</Description>\n" +
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.deployment.node.type\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"embedded\">\n" +
             "        <Label>Deployment Type</Label>\n" +

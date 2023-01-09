@@ -183,6 +183,8 @@ import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -255,6 +257,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VmwareTrafficLabel;
+import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage;
@@ -599,6 +602,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((SetupPersistentNetworkCommand) cmd);
             } else if (clz == GetVmVncTicketCommand.class) {
                 answer = execute((GetVmVncTicketCommand) cmd);
+            } else if (clz == GetAutoScaleMetricsCommand.class) {
+                answer = execute((GetAutoScaleMetricsCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1094,7 +1099,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
             return answer;
         }
-        long[] stats = getNetworkStats(cmd.getPrivateIP());
+        long[] stats = getNetworkStats(cmd.getPrivateIP(), null);
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
@@ -1104,13 +1109,18 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String privateIp = cmd.getPrivateIP();
         String option = cmd.getOption();
         String publicIp = cmd.getGatewayIP();
+        String vpcCIDR = cmd.getVpcCIDR();
 
+        final long[] stats = getVPCNetworkStats(privateIp, publicIp, option, vpcCIDR);
+        return new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
+    }
+
+    protected long[] getVPCNetworkStats(String privateIp, String publicIp, String option, String vpcCIDR) {
         String args = "-l " + publicIp + " ";
         if (option.equals("get")) {
             args += "-g";
         } else if (option.equals("create")) {
             args += "-c";
-            String vpcCIDR = cmd.getVpcCIDR();
             args += " -v " + vpcCIDR;
         } else if (option.equals("reset")) {
             args += "-r";
@@ -1119,7 +1129,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } else if (option.equals("remove")) {
             args += "-d";
         } else {
-            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+            return new long[2];
         }
 
         ExecutionResult callResult = executeInVR(privateIp, "vpc_netusage.sh", args);
@@ -1141,10 +1151,66 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     stats[0] += Long.parseLong(splitResult[i++]);
                     stats[1] += Long.parseLong(splitResult[i++]);
                 }
-                return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
+                return stats;
             }
         }
-        return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+        return new long[2];
+    }
+
+    protected long[] getNetworkLbStats(String privateIp, String publicIp, Integer port) {
+        String args = publicIp + " " + port;
+        ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
+
+        String result = callResult.getDetails();
+        if (!Boolean.TRUE.equals(callResult.isSuccess())) {
+            s_logger.error(String.format("Unable to get network loadbalancer stats on DomR (%s), domR may not be ready yet. failure due to %s", privateIp, callResult.getDetails()));
+            result = null;
+        } else if (result == null || result.isEmpty()) {
+            s_logger.error("Get network loadbalancer stats returns empty result");
+        }
+        long[] stats = new long[1];
+        if (result != null) {
+            final String[] splitResult = result.split(",");
+            stats[0] += Long.parseLong(splitResult[0]);
+        }
+        return stats;
+    }
+
+    protected Answer execute(GetAutoScaleMetricsCommand cmd) {
+        Long bytesSent;
+        Long bytesReceived;
+        if (cmd.isForVpc()) {
+            long[] stats = getVPCNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP(), "get", "");
+            bytesSent = stats[0];
+            bytesReceived = stats[1];
+        } else {
+            long [] stats = getNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP());
+            bytesSent = stats[0];
+            bytesReceived = stats[1];
+        }
+
+        long [] lbStats = getNetworkLbStats(cmd.getPrivateIP(), cmd.getPublicIP(), cmd.getPort());
+        long lbConnections = lbStats[0];
+
+        List<VirtualRouterAutoScale.AutoScaleMetricsValue> values = new ArrayList<>();
+
+        for (VirtualRouterAutoScale.AutoScaleMetrics metrics : cmd.getMetrics()) {
+            switch (metrics.getCounter()) {
+                case NETWORK_RECEIVED_AVERAGE_MBPS:
+                    values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP,
+                            Double.valueOf(bytesReceived) / VirtualRouterAutoScale.MBITS_TO_BYTES));
+                    break;
+                case NETWORK_TRANSMIT_AVERAGE_MBPS:
+                    values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP,
+                            Double.valueOf(bytesSent) / VirtualRouterAutoScale.MBITS_TO_BYTES));
+                    break;
+                case LB_AVERAGE_CONNECTIONS:
+                    values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, Double.valueOf(lbConnections)));
+                    break;
+            }
+        }
+
+        return new GetAutoScaleMetricsAnswer(cmd, true, values);
     }
 
     @Override
@@ -3858,7 +3924,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     // BroadcastDomainType recogniizes and handles this.
                     return BroadcastDomainType.getValue(nicTo.getBroadcastUri());
                 else
-                    // for pvlan, the broacast uri will be of the form pvlan://<vlanid>-i<pvlanid>
+                    // for pvlan, the broadcast uri will be of the form pvlan://<vlanid>-i<pvlanid>
                     // TODO consider the spread of functionality between BroadcastDomainType and NetUtils
                     return NetUtils.getPrimaryPvlanFromUri(nicTo.getBroadcastUri());
             } else {
@@ -3917,7 +3983,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return networkInfo;
     }
 
-    // return Ternary <switch name, switch tyep, vlan tagging>
+    // return Ternary <switch name, switch type, vlan tagging>
     private Ternary<String, String, String> getTargetSwitch(NicTO nicTo) throws CloudException {
         TrafficType[] supportedTrafficTypes = new TrafficType[]{TrafficType.Guest, TrafficType.Public, TrafficType.Control, TrafficType.Management, TrafficType.Storage};
 
@@ -6549,9 +6615,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected String networkUsage(final String privateIpAddress, final String option, final String ethName) {
+        return networkUsage(privateIpAddress, option, ethName, null);
+    }
+
+    protected String networkUsage(final String privateIpAddress, final String option, final String ethName, final String publicIp) {
         String args = null;
         if (option.equals("get")) {
             args = "-g";
+            if (StringUtils.isNotEmpty(publicIp)) {
+                args += " -l " + publicIp;
+            }
         } else if (option.equals("create")) {
             args = "-c";
         } else if (option.equals("reset")) {
@@ -6573,8 +6646,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return result.getDetails();
     }
 
-    private long[] getNetworkStats(String privateIP) {
-        String result = networkUsage(privateIP, "get", null);
+    protected long[] getNetworkStats(String privateIP, String publicIp) {
+        String result = networkUsage(privateIP, "get", null, publicIp);
         long[] stats = new long[2];
         if (result != null) {
             try {

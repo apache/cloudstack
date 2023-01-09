@@ -89,6 +89,9 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Mock
     private Project project;
 
+    @Mock
+    PasswordPolicyImpl passwordPolicyMock;
+
 
     @Before
     public void beforeTest() {
@@ -138,6 +141,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
         Mockito.when(_vmSnapshotDao.listByAccountId(Mockito.anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
+        Mockito.when(_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(42l)).thenReturn(true);
 
         List<SSHKeyPairVO> sshkeyList = new ArrayList<SSHKeyPairVO>();
         SSHKeyPairVO sshkey = new SSHKeyPairVO();
@@ -161,7 +165,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountDao.remove(42l)).thenReturn(true);
         Mockito.when(_configMgr.releaseAccountSpecificVirtualRanges(42l)).thenReturn(true);
         Mockito.when(_userVmDao.listByAccountId(42l)).thenReturn(Arrays.asList(Mockito.mock(UserVmVO.class)));
-        Mockito.when(_vmMgr.expunge(Mockito.any(UserVmVO.class), Mockito.anyLong(), Mockito.any(Account.class))).thenReturn(false);
+        Mockito.when(_vmMgr.expunge(Mockito.any(UserVmVO.class))).thenReturn(false);
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
 
@@ -561,6 +565,10 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
         Mockito.lenient().doReturn(true).when(accountManagerImpl).isResourceDomainAdmin(accountMockId);
 
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+
+        Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, "  ");
     }
 
@@ -571,6 +579,10 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
 
         Mockito.lenient().doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
+
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+
+        Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
 
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, null);
     }
@@ -586,6 +598,10 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         String expectedUserPasswordAfterEncoded = configureUserMockAuthenticators(newPassword);
 
         Mockito.lenient().doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
+
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+
+        Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
 
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null);
 
@@ -605,6 +621,10 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.lenient().doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
 
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+
+        Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null);
 
         Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
@@ -623,10 +643,31 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
 
         String currentPassword = "theCurrentPassword";
+
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+
+        Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword);
 
         Mockito.verify(accountManagerImpl, Mockito.times(1)).validateCurrentPassword(userVoMock, currentPassword);
         Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestIfVerifyIfPasswordCompliesWithPasswordPoliciesThrowsException() {
+        String newPassword = "newPassword";
+
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+
+        Mockito.doReturn("user").when(userVoMock).getUsername();
+
+        Mockito.doThrow(new InvalidParameterValueException("")).when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyLong());
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword);
     }
 
     private String configureUserMockAuthenticators(String newPassword) {

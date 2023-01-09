@@ -35,7 +35,6 @@ import org.apache.log4j.Logger;
 public class RemoveRawUsageRecordsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveRawUsageRecordsCmd.class.getName());
 
-    private static final String s_name = "removerawusagerecordsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -46,11 +45,6 @@ public class RemoveRawUsageRecordsCmd extends BaseCmd {
 
     public Integer getInterval() {
         return interval;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

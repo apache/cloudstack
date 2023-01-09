@@ -22,13 +22,31 @@ import java.util.Date;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Displayable {
 
-    String State_New = "new";
-    String State_Revoke = "revoke";
-    String State_Enabled = "enabled";
-    String State_Disabled = "disabled";
+    enum State {
+        NEW, REVOKE, ENABLED, DISABLED, SCALING;
+
+        public static State fromValue(String state) {
+            if (StringUtils.isBlank(state)) {
+                return null;
+            } else if (state.equalsIgnoreCase("new")) {
+                return NEW;
+            } else if (state.equalsIgnoreCase("revoke")) {
+                return REVOKE;
+            } else if (state.equalsIgnoreCase("enabled")) {
+                return ENABLED;
+            } else if (state.equalsIgnoreCase("disabled")) {
+                return DISABLED;
+            } else if (state.equalsIgnoreCase("scaling")) {
+                return SCALING;
+            } else {
+                throw new IllegalArgumentException("Unexpected AutoScale VM group state : " + state);
+            }
+        }
+    }
 
     @Override
     long getId();
@@ -40,6 +58,8 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
 
     long getProfileId();
 
+    String getName();
+
     int getMinMembers();
 
     int getMaxMembers();
@@ -50,11 +70,12 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
 
     Date getLastInterval();
 
-    String getState();
+    State getState();
 
     String getUuid();
 
     @Override
     boolean isDisplay();
 
+    Date getCreated();
 }
