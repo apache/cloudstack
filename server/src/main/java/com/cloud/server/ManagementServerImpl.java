@@ -43,22 +43,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PatchSystemVmAnswer;
-import com.cloud.agent.api.PatchSystemVmCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DomainVlanMapVO;
-import com.cloud.dc.dao.DomainVlanMapDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.network.Networks;
-import com.cloud.utils.db.UUIDManager;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -611,8 +595,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.PatchSystemVmAnswer;
+import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
@@ -633,6 +623,7 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -642,6 +633,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -656,6 +648,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -686,6 +679,7 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -760,13 +754,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
@@ -778,7 +776,9 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -794,6 +794,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
 
+    private static final List<HypervisorType> LIVE_MIGRATION_SUPPORTING_HYPERVISORS = List.of(HypervisorType.Hyperv, HypervisorType.KVM,
+            HypervisorType.LXC, HypervisorType.Ovm, HypervisorType.Ovm3, HypervisorType.Simulator, HypervisorType.VMware, HypervisorType.XenServer);
+
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -807,7 +810,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private ClusterDao _clusterDao;
     @Inject
-    private UserVmDetailsDao _UserVmDetailsDao;
+    protected UserVmDetailsDao _UserVmDetailsDao;
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
@@ -823,7 +826,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostDao _hostDao;
     @Inject
-    private HostDetailsDao _detailsDao;
+    protected HostDetailsDao _detailsDao;
     @Inject
     private UserDao _userDao;
     @Inject
@@ -1277,6 +1280,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
+    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VMInstanceVO vm) {
+        UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
+        if (userVmDetailVO != null &&
+                (ApiConstants.BootMode.LEGACY.toString().equalsIgnoreCase(userVmDetailVO.getValue()) ||
+                        ApiConstants.BootMode.SECURE.toString().equalsIgnoreCase(userVmDetailVO.getValue()))) {
+            s_logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName() + " is not supported");
+            if (CollectionUtils.isEmpty(filteredHosts)) {
+                filteredHosts = new ArrayList<>(allHosts);
+            }
+            List<DetailVO> details = _detailsDao.findByName(Host.HOST_UEFI_ENABLE);
+            List<Long> uefiEnabledHosts = details.stream().filter(x -> Boolean.TRUE.toString().equalsIgnoreCase(x.getValue())).map(DetailVO::getHostId).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(uefiEnabledHosts)) {
+                return new Pair<>(false, null);
+            }
+            filteredHosts.removeIf(host -> !uefiEnabledHosts.contains(host.getId()));
+            return new Pair<>(!filteredHosts.isEmpty(), filteredHosts);
+        }
+        return new Pair<>(true, filteredHosts);
+    }
+
     @Override
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
             final String keyword) {
@@ -1303,33 +1326,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
-        if (userVmDetailVO != null) {
-            s_logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName() + " is not supported");
-            if ("legacy".equalsIgnoreCase(userVmDetailVO.getValue()) || "secure".equalsIgnoreCase(userVmDetailVO.getValue())) {
-                // Return empty list.
-                return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List<? extends Host>,
-                        Integer>(new ArrayList<HostVO>(), new Integer(0)), new ArrayList<Host>(), new HashMap<Host, Boolean>());
-            }
-        }
-
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
             // Return empty list.
-            return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List<? extends Host>, Integer>(new ArrayList<HostVO>(), new Integer(0)),
-                    new ArrayList<Host>(), new HashMap<Host, Boolean>());
+            return new Ternary<>(new Pair<>(new ArrayList<HostVO>(), new Integer(0)),
+                    new ArrayList<>(), new HashMap<>());
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
-                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv) && !vm.getHypervisorType().equals(HypervisorType.LXC)
-                && !vm.getHypervisorType().equals(HypervisorType.Simulator) && !vm.getHypervisorType().equals(HypervisorType.Ovm3)) {
+        if (!LIVE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv/Ovm3, cannot migrate this VM.");
             }
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support " + "XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
-        if (vm.getType().equals(VirtualMachine.Type.User) && vm.getHypervisorType().equals(HypervisorType.LXC)) {
+        if (VirtualMachine.Type.User.equals(vm.getType()) && HypervisorType.LXC.equals(vm.getHypervisorType())) {
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
@@ -1376,21 +1387,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
-        List<HostVO> hostsForMigrationWithStorage = null;
-        final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
+        List<HostVO> filteredHosts = null;
+        final Map<Host, Boolean> requiresStorageMotion = new HashMap<>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
             Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
                 null, null, srcHost.getHypervisorType(), null, srcHost.getId());
             allHosts = allHostsPair.first();
-            hostsForMigrationWithStorage = new ArrayList<>(allHosts);
+            filteredHosts = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
                 StoragePool storagePool = _poolDao.findById(volume.getPoolId());
                 Long volClusterId = storagePool.getClusterId();
 
-                for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
+                for (Iterator<HostVO> iterator = filteredHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
                     String hostVersion = host.getHypervisorVersion();
                     if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostVersion == null) {
@@ -1434,6 +1445,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
+            if (CollectionUtils.isEmpty(filteredHosts)) {
+                return new Ternary<>(new Pair<>(allHosts, allHostsPair.second()), new ArrayList<>(), new HashMap<>());
+            }
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
@@ -1446,8 +1460,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, allHostsPair.second());
-        List<Host> suitableHosts = new ArrayList<Host>();
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHosts, allHostsPair.second());
+        Pair<Boolean, List<HostVO>> uefiFilteredResult = filterUefiHostsForMigration(allHosts, filteredHosts, vm);
+        if (!uefiFilteredResult.first()) {
+            return new Ternary<>(otherHosts, new ArrayList<>(), new HashMap<>());
+        }
+        filteredHosts = uefiFilteredResult.second();
+
+        List<Host> suitableHosts = new ArrayList<>();
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
 
@@ -1470,8 +1490,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (final HostAllocator allocator : hostAllocators) {
-            if (canMigrateWithStorage) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, hostsForMigrationWithStorage, HostAllocator.RETURN_UPTO_ALL, false);
+            if (CollectionUtils.isNotEmpty(filteredHosts)) {
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, filteredHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
@@ -1489,7 +1509,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(otherHosts, suitableHosts, requiresStorageMotion);
+        return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
     /**

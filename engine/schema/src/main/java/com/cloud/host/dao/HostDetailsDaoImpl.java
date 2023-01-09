@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.DetailVO;
@@ -37,6 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
+    protected final SearchBuilder<DetailVO> DetailNameSearch;
 
     public HostDetailsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -47,6 +47,10 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         DetailSearch.and("hostId", DetailSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
+
+        DetailNameSearch = createSearchBuilder();
+        DetailNameSearch.and("name", DetailNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        DetailNameSearch.done();
     }
 
     @Override
@@ -118,5 +122,12 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
             }
         }
         txn.commit();
+    }
+
+    @Override
+    public List<DetailVO> findByName(String name) {
+        SearchCriteria<DetailVO> sc = DetailNameSearch.create();
+        sc.setParameters("name", name);
+        return listBy(sc);
     }
 }
