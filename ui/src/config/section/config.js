@@ -91,7 +91,7 @@ export default {
     {
       name: 'guestos',
       title: 'label.guest.os',
-      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
+      docHelp: 'adminguide/guest_os.html#guest-os',
       icon: 'laptop-outlined',
       permission: ['listOsTypes', 'listOsCategories'],
       columns: ['name', 'oscategoryname', 'isuserdefined'],
@@ -122,6 +122,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
+          popup: true,
           args: ['osdisplayname']
         },
         {
@@ -129,11 +130,11 @@ export default {
           icon: 'link-outlined',
           label: 'label.add.guest.os.hypervisor.mapping',
           dataView: true,
+          popup: true,
           args: ['ostypeid', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced'],
           mapping: {
             ostypeid: {
-              api: 'listOsTypes',
-              params: (record) => { return { ostypeid: record.id } }
+              value: (record) => { return record.id }
             }
           }
         },
@@ -142,7 +143,6 @@ export default {
           icon: 'delete-outlined',
           label: 'label.action.delete.guest.os',
           message: 'message.action.delete.guest.os',
-          docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
           dataView: true,
           popup: true
         }
@@ -151,7 +151,7 @@ export default {
     {
       name: 'guestoshypervisormapping',
       title: 'label.guest.os.hypervisor.mappings',
-      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
+      docHelp: 'adminguide/guest_os.html#guest-os-hypervisor-mapping',
       icon: 'api-outlined',
       permission: ['listGuestOsMapping'],
       columns: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor'],
@@ -172,6 +172,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
+          popup: true,
           args: ['osnameforhypervisor', 'osmappingcheckenabled']
         },
         {
@@ -179,7 +180,6 @@ export default {
           icon: 'delete-outlined',
           label: 'label.action.delete.guest.os.hypervisor.mapping',
           message: 'message.action.delete.guest.os.hypervisor.mapping',
-          docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
           dataView: true,
           popup: true
         }

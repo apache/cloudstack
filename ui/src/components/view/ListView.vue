@@ -160,6 +160,12 @@
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
       <span v-else-if="$route.name === 'guestoshypervisormapping'">
+        <QuickView
+          style="margin-left: 5px"
+          :actions="actions"
+          :resource="record"
+          :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
+          @exec-action="$parent.execAction"/>
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
       <span v-else>{{ text }}</span>
@@ -521,7 +527,7 @@ export default {
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric'].join('|'))
+        '/tungstenfabric', '/guestos', '/guestoshypervisormapping'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
