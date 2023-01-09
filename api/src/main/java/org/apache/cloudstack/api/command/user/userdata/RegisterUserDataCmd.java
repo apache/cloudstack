@@ -50,7 +50,6 @@ import java.util.List;
 public class RegisterUserDataCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(RegisterUserDataCmd.class.getName());
-    private static final String s_name = "registeruserdataresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -141,8 +140,4 @@ public class RegisterUserDataCmd extends BaseCmd {
         setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-}

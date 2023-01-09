@@ -49,7 +49,7 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.systemvm.template.version>4.17.2.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.18.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -1025,6 +1025,7 @@
                             <exclude>debian/rules</exclude>
                             <exclude>debian/source/format</exclude>
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
+                            <exclude>engine/schema/dist/**</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>

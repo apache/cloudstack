@@ -41,7 +41,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
-    private static final String s_name = "updateconfigurationresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -133,11 +132,6 @@ public class UpdateCfgCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

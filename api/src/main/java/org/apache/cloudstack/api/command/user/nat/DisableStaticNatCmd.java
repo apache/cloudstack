@@ -39,7 +39,6 @@ import com.cloud.network.IpAddress;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableStaticNatCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableStaticNatCmd.class.getName());
-    private static final String s_name = "disablestaticnatresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_DISABLE_STATIC_NAT;

@@ -52,7 +52,6 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ReserveIPAddrCmd.class.getName());
-    private static final String s_name = "reserveipaddressresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -144,11 +143,6 @@ public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException {

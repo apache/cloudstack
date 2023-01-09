@@ -35,7 +35,6 @@ import com.cloud.vm.InstanceGroup;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVMGroupCmd extends BaseCmd {
 
-    private static final String s_name = "updateinstancegroupresponse";
     public static final Logger s_logger = Logger.getLogger(UpdateVMGroupCmd.class.getName());
 
     /////////////////////////////////////////////////////
@@ -63,11 +62,6 @@ public class UpdateVMGroupCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

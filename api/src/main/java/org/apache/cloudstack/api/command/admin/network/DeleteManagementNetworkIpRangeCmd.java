@@ -34,7 +34,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = DeleteManagementNetworkIpRangeCmd.APINAME,
+@APICommand(name = "deleteManagementNetworkIpRange",
         description = "Deletes a management network IP range. This action is only allowed when no IPs in this range are allocated.",
         responseObject = SuccessResponse.class,
         since = "4.11.0.0",
@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteManagementNetworkIpRangeCmd.class);
 
-    public static final String APINAME = "deleteManagementNetworkIpRange";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -122,11 +121,6 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             s_logger.warn("Failed to delete management ip range from " + getStartIp() + " to " + getEndIp() + " of Pod: " + getPodId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

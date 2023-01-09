@@ -29,9 +29,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
@@ -171,8 +173,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "host_uuid")
     private String hostUuid;
 
-    @Column(name = "host_name", nullable = false)
+    @Column(name = "host_name")
     private String hostName;
+
+    @Column(name = "host_status")
+    private Status hostStatus;
+
+    @Column(name = "host_resource_state")
+    private ResourceState hostResourceState;
 
     @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
@@ -602,6 +610,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getHostName() {
         return hostName;
+    }
+
+    public Status getHostStatus() {
+        return hostStatus;
+    }
+
+    public ResourceState getHostResourceState() {
+        return hostResourceState;
     }
 
     public long getTemplateId() {

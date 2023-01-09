@@ -37,12 +37,11 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = DeleteBackupOfferingCmd.APINAME,
+@APICommand(name = "deleteBackupOffering",
         description = "Deletes a backup offering",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
 public class DeleteBackupOfferingCmd extends BaseCmd {
-    public static final String APINAME = "deleteBackupOffering";
 
     @Inject
     private BackupManager backupManager;
@@ -78,11 +77,6 @@ public class DeleteBackupOfferingCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to remove backup offering: " + getId());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

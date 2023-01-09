@@ -25,7 +25,6 @@ import com.google.common.base.Preconditions;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -33,11 +32,10 @@ import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.commons.lang3.StringUtils;
 
-@APICommand(name = ListAnnotationsCmd.APINAME, description = "Lists annotations.", responseObject = AnnotationResponse.class,
+@APICommand(name = "listAnnotations", description = "Lists annotations.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
 public class ListAnnotationsCmd extends BaseListCmd {
 
-    public static final String APINAME = "listAnnotations";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "the id of the annotation")
     private String uuid;
@@ -94,9 +92,4 @@ public class ListAnnotationsCmd extends BaseListCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
         response.setObjectName("annotations");
-    }
-
-    @Override public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-}
+    }}

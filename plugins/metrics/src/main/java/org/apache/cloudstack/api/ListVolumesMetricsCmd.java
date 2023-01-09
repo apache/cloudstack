@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VolumeMetricsResponse;
 
-@APICommand(name = ListVolumesMetricsCmd.APINAME,
+@APICommand(name = "listVolumesMetrics",
         description = "Lists volume metrics",
         responseObject = VolumeMetricsResponse.class,
         requestHasSensitiveInfo = false,
@@ -36,15 +36,9 @@ import org.apache.cloudstack.response.VolumeMetricsResponse;
         since = "4.9.3",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVolumesMetricsCmd extends ListVolumesCmd {
-    public static final String APINAME = "listVolumesMetrics";
 
     @Inject
     private MetricsService metricsService;
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

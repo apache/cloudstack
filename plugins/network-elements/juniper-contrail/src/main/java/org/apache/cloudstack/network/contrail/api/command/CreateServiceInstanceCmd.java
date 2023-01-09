@@ -56,7 +56,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
-    private static final String s_name = "createserviceinstanceresponse";
 
     /// API parameters
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -183,11 +182,6 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
         } catch (Exception ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

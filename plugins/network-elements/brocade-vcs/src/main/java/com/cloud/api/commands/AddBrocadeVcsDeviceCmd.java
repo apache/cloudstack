@@ -43,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addBrocadeVcsDevice", responseObject = BrocadeVcsDeviceResponse.class, description = "Adds a Brocade VCS Switch", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBrocadeVcsDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "addbrocadevcsdeviceresponse";
     @Inject
     protected BrocadeVcsElementService brocadeVcsElementService;
 
@@ -104,11 +103,6 @@ public class AddBrocadeVcsDeviceCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

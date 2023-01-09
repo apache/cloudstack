@@ -35,7 +35,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
-    private static final String s_name = "getcloudidentifierresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,11 +58,6 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

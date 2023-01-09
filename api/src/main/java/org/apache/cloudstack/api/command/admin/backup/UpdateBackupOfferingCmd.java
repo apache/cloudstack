@@ -40,7 +40,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateBackupOfferingCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(UpdateBackupOfferingCmd.class.getName());
-    private static final String APINAME = "updateBackupOffering";
 
     @Inject
     private BackupManager backupManager;
@@ -104,11 +103,6 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
             LOGGER.error(String.format("Failed to update Backup Offering [id: %s] due to: [%s].", id, e.getMessage()), e);
             throw new ServerApiException(paramError, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
