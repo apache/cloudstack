@@ -117,8 +117,7 @@
                   <a-input-number
                     style="width: 100%"
                     v-model:value="form.maxsnaps"
-                    :min="1"
-                    :max="8" />
+                    :min="1" />
                 </a-tooltip>
               </a-form-item>
             </a-col>
