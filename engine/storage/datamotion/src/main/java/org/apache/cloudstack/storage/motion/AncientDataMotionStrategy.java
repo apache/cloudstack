@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +71,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -592,7 +591,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
-        options.put(BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(BackupSnapshotAfterTakingSnapshot.value()));
+        options.put(SnapshotManager.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotManager.BackupSnapshotAfterTakingSnapshot.value()));
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
