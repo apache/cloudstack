@@ -32,18 +32,12 @@ public class QuotaEnabledCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaEnabledCmd.class);
 
-    private static final String s_name = "quotaisenabledresponse";
 
     @Inject
     QuotaService _quotaService;
 
     public QuotaEnabledCmd() {
         super();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

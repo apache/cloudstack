@@ -35,7 +35,6 @@ import com.cloud.user.Account;
 public class DeleteClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteClusterCmd.class.getName());
 
-    private static final String s_name = "deleteclusterresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,11 +54,6 @@ public class DeleteClusterCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

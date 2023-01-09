@@ -163,11 +163,11 @@ class TestDisableEnableZone(cloudstackTestCase):
         """disable enable zone
             1. Disable zone and verify following things:
                 For admin user:
-                    1. Should be create to start/stop exsiting vms
+                    1. Should be create to start/stop existing vms
                     2. Should be create to deploy new vm, snapshot,volume,
                        template,iso in the same zone
                 For Non-admin user:
-                    1. Should be create to start/stop exsiting vms
+                    1. Should be create to start/stop existing vms
                     2. Should not be create to deploy new vm, snapshot,volume,
                        template,iso in the same zone
             2. Enable the above disabled zone and verify that:
@@ -1472,11 +1472,11 @@ class TestDisableEnableHost(cloudstackTestCase):
         """disable enable host
             1. Disable host and verify following things:
                 For admin user:
-                    1. Should be able to  stop exsiting vms but can not start.
+                    1. Should be able to  stop existing vms but can not start.
                     2. Should not be able to  deploy new vm,
                        and create snapshot on the same host
                 For Non-admin user:
-                    1. Should not be able to stop exsiting vms but
+                    1. Should not be able to stop existing vms but
                        cant not start
                     2. Should not be create to deploy new vm,
                     snapshot on the same host
@@ -1521,7 +1521,7 @@ class TestDisableEnableHost(cloudstackTestCase):
                          DISABLED,
                          "Check if the host is in disabled state"
                          )
-        # Verify the exsisting vms should be running
+        # Verify the existing vms should be running
         self.assertEqual(vm_user.state.lower(),
                          "running",
                          "Verify that the user vm is running")

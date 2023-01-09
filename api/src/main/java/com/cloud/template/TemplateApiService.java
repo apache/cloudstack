@@ -44,6 +44,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
+import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 
 public interface TemplateApiService {
@@ -59,6 +60,8 @@ public interface TemplateApiService {
     VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
 
     VirtualMachineTemplate prepareTemplate(long templateId, long zoneId, Long storageId);
+
+
 
     boolean detachIso(long vmId, boolean forced);
 
@@ -119,4 +122,6 @@ public interface TemplateApiService {
     VirtualMachineTemplate updateTemplate(UpdateIsoCmd cmd);
 
     VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
+
+    VirtualMachineTemplate linkUserDataToTemplate(LinkUserDataToTemplateCmd cmd);
 }

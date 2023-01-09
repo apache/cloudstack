@@ -19,9 +19,10 @@ package com.cloud.agent;
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.LogUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
@@ -31,6 +32,7 @@ import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -74,6 +76,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private String hostToConnect;
     private String connectedHost;
     private Long preferredHostCheckInterval;
+    protected AgentProperties agentProperties = new AgentProperties();
 
     public AgentShell() {
     }
@@ -265,75 +268,83 @@ public class AgentShell implements IAgentShell, Daemon {
             }
         }
 
-        if (port == null) {
-            port = getProperty(null, "port");
-        }
+        setHost(host);
 
-        _port = NumberUtils.toInt(port, 8250);
+        _guid = getGuid(guid);
+        _properties.setProperty(AgentProperties.GUID.getName(), _guid);
 
-        _proxyPort = NumberUtils.toInt(getProperty(null, "consoleproxy.httpListenPort"), 443);
+        _port = getPortOrWorkers(port, AgentProperties.PORT);
+        _workers = getWorkers(workers);
+        _zone = getZoneOrPod(zone, AgentProperties.ZONE);
+        _pod = getZoneOrPod(pod, AgentProperties.POD);
 
-        if (workers == null) {
-            workers = getProperty(null, "workers");
-        }
+        _proxyPort = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONSOLEPROXY_HTTPLISTENPORT);
+        _pingRetries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PING_RETRIES);
+        preferredHostCheckInterval = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_LB_CHECK_INTERVAL);
 
-        _workers = NumberUtils.toInt(workers, 5);
-        if (_workers <= 0) {
-            _workers = 5;
-        }
+        return true;
+    }
 
+    protected void setHost(String host) throws ConfigurationException {
         if (host == null) {
-            host = getProperty(null, "host");
+            host = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST);
         }
 
-        if (host == null) {
-            host = "localhost";
+        if (isValueStartingAndEndingWithAtSign(host)) {
+            throw new ConfigurationException(String.format("Host [%s] is not configured correctly.", host));
         }
 
         setHosts(host);
+    }
 
-        if (zone != null)
-            _zone = zone;
-        else
-            _zone = getProperty(null, "zone");
-        if (_zone == null || (_zone.startsWith("@") && _zone.endsWith("@"))) {
-            _zone = "default";
+    protected boolean isValueStartingAndEndingWithAtSign(String value) {
+        return value.startsWith("@") && value.endsWith("@");
+    }
+
+    protected String getGuid(String guid) throws ConfigurationException {
+        guid = StringUtils.defaultString(guid, AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUID));
+        if (guid != null) {
+            return guid;
         }
 
-        if (pod != null)
-            _pod = pod;
-        else
-            _pod = getProperty(null, "pod");
-        if (_pod == null || (_pod.startsWith("@") && _pod.endsWith("@"))) {
-            _pod = "default";
+        if (BooleanUtils.isFalse(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER))) {
+            throw new ConfigurationException("Unable to find the guid");
         }
 
-        if (_host == null || (_host.startsWith("@") && _host.endsWith("@"))) {
-            throw new ConfigurationException("Host is not configured correctly: " + _host);
+        return UUID.randomUUID().toString();
+    }
+
+    protected String getZoneOrPod(String zoneOrPod, AgentProperties.Property<String> property) {
+        String value = zoneOrPod;
+
+        if (value == null) {
+            value = AgentPropertiesFileHandler.getPropertyValue(property);
         }
 
-        final String retries = getProperty(null, "ping.retries");
-        _pingRetries = NumbersUtil.parseInt(retries, 5);
-
-        String value = getProperty(null, "developer");
-        boolean developer = Boolean.parseBoolean(value);
-
-        if (guid != null)
-            _guid = guid;
-        else
-            _guid = getProperty(null, "guid");
-        if (_guid == null) {
-            if (!developer) {
-                throw new ConfigurationException("Unable to find the guid");
-            }
-            _guid = UUID.randomUUID().toString();
-            _properties.setProperty("guid", _guid);
+        if (isValueStartingAndEndingWithAtSign(value)) {
+            value = property.getDefaultValue();
         }
 
-        String val = getProperty(null, preferredHostIntervalKey);
-        preferredHostCheckInterval = StringUtils.isEmpty(val) ? null : Long.valueOf(val);
+        return value;
+    }
 
-        return true;
+    protected int getWorkers(String workersString) {
+        AgentProperties.Property<Integer> propertyWorkers = agentProperties.getWorkers();
+        int workers = getPortOrWorkers(workersString, propertyWorkers);
+
+        if (workers <= 0) {
+            workers = propertyWorkers.getDefaultValue();
+        }
+
+        return workers;
+    }
+
+    protected int getPortOrWorkers(String portOrWorkers, AgentProperties.Property<Integer> property) {
+        if (portOrWorkers == null) {
+            return AgentPropertiesFileHandler.getPropertyValue(property);
+        }
+
+        return NumberUtils.toInt(portOrWorkers, property.getDefaultValue());
     }
 
     @Override
@@ -398,7 +409,7 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     private void launchAgent() throws ConfigurationException {
-        String resourceClassNames = getProperty(null, "resource");
+        String resourceClassNames = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RESOURCE);
         s_logger.trace("resource=" + resourceClassNames);
         if (resourceClassNames != null) {
             launchAgentFromClassInfo(resourceClassNames);
@@ -414,25 +425,15 @@ public class AgentShell implements IAgentShell, Daemon {
             Class<?> impl;
             try {
                 impl = Class.forName(name);
-                final Constructor<?> constructor = impl.getDeclaredConstructor();
+                Constructor<?> constructor = impl.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 ServerResource resource = (ServerResource)constructor.newInstance();
                 launchNewAgent(resource);
-            } catch (final ClassNotFoundException e) {
-                throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
-            } catch (final SecurityException e) {
-                throw new ConfigurationException("Security exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final NoSuchMethodException e) {
-                throw new ConfigurationException("Method not found exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final IllegalArgumentException e) {
-                throw new ConfigurationException("Illegal argument exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final InstantiationException e) {
-                throw new ConfigurationException("Instantiation exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final IllegalAccessException e) {
-                throw new ConfigurationException("Illegal access exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final InvocationTargetException e) {
-                throw new ConfigurationException("Invocation target exception when loading resource: " + name + " due to: " + e.toString());
-            }
+            } catch (final ClassNotFoundException | SecurityException | NoSuchMethodException | IllegalArgumentException | InstantiationException |
+                    IllegalAccessException | InvocationTargetException e) {
+                ConfigurationException configurationException = new ConfigurationException(String.format("Error while creating Agent with class [%s].", name));
+                configurationException.setRootCause(e);
+                throw configurationException;            }
         }
     }
 
@@ -492,7 +493,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
             String instance = getProperty(null, "instance");
             if (instance == null) {
-                if (Boolean.parseBoolean(getProperty(null, "developer"))) {
+                if (BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER))) {
                     instance = UUID.randomUUID().toString();
                 } else {
                     instance = "";
@@ -516,13 +517,8 @@ public class AgentShell implements IAgentShell, Daemon {
                 s_logger.debug("[ignored] AgentShell was interrupted.");
             }
 
-        } catch (final ConfigurationException e) {
-            s_logger.error("Unable to start agent: " + e.getMessage());
-            System.out.println("Unable to start agent: " + e.getMessage());
-            System.exit(ExitStatus.Configuration.value());
         } catch (final Exception e) {
             s_logger.error("Unable to start agent: ", e);
-            System.out.println("Unable to start agent: " + e.getMessage());
             System.exit(ExitStatus.Error.value());
         }
     }

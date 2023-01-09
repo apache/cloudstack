@@ -1463,7 +1463,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType()) || EventTypes.EVENT_VOLUME_RESIZE.equals(event.getType())) {
             SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
             if (volumesVOs.size() > 0) {
@@ -1487,7 +1487,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
             SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
             if (volumesVOs.size() > 1) {
@@ -2168,6 +2168,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private class SanityCheck extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
+            s_logger.info("running sanity check");
             UsageSanityChecker usc = new UsageSanityChecker();
             try {
                 String errors = usc.runSanityCheck();

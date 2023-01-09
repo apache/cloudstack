@@ -39,7 +39,6 @@ import com.cloud.user.Account;
 public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MarkDefaultZoneForAccountCmd.class.getName());
 
-    private static final String s_name = "markdefaultzoneforaccountresponse";
 
     /////////////////////////////////////////////////////
     ////////////////API parameters //////////////////////
@@ -85,11 +84,6 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

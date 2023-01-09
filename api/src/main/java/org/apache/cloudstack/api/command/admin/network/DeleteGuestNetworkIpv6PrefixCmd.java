@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = DeleteGuestNetworkIpv6PrefixCmd.APINAME,
+@APICommand(name = "deleteGuestNetworkIpv6Prefix",
         description = "Deletes an existing guest network IPv6 prefix.",
         responseObject = SuccessResponse.class,
         since = "4.17.0.0",
@@ -46,7 +46,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin})
 public class DeleteGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteGuestNetworkIpv6PrefixCmd.class);
-    public static final String APINAME = "deleteGuestNetworkIpv6Prefix";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,11 +86,6 @@ public class DeleteGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
 
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override

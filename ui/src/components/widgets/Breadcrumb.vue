@@ -34,7 +34,7 @@
           </span>
         </label>
         <label v-else>
-          {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
+          {{ resource.displayname || resource.name || resource.displaytext || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
         </label>
       </span>
       <span v-else>

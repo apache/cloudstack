@@ -31,11 +31,10 @@ import org.apache.cloudstack.api.response.ProjectRolePermissionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = DeleteProjectRolePermissionCmd.APINAME, description = "Deletes a project role permission in the project", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteProjectRolePermission", description = "Deletes a project role permission in the project", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class DeleteProjectRolePermissionCmd extends BaseCmd {
-    public static final String APINAME = "deleteProjectRolePermission";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -75,11 +74,6 @@ public class DeleteProjectRolePermissionCmd extends BaseCmd {
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(result);
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override

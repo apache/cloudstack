@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
 public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLListsCmd.class.getName());
 
-    private static final String s_name = "listnetworkacllistsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCm
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

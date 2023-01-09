@@ -48,7 +48,7 @@ verify_cksum() {
         64) digestalgo="sha256sum" ;;
         96) digestalgo="sha384sum" ;;
         128) digestalgo="sha512sum" ;;
-        *) echo "Please provide valid cheksum" ; exit 3 ;;
+        *) echo "Please provide valid checksum" ; exit 3 ;;
   esac
   echo  "$1  $2" | $digestalgo  -c --status
   #printf "$1\t$2" | $digestalgo  -c --status

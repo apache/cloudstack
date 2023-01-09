@@ -1701,7 +1701,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
         except Exception as e:
             self.fail("Deploy VM failed with exception: %s" % e)
 
-        self.debug("Cheking the state of deployed VM")
+        self.debug("Checking the state of deployed VM")
         vms = VirtualMachine.list(
             self.apiclient,
             id=vm.id,

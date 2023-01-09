@@ -35,6 +35,8 @@ import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
@@ -61,10 +63,7 @@ public class BridgeVifDriver extends VifDriverBase {
         // Set the domr scripts directory
         params.put("domr.scripts.dir", "scripts/network/domr/kvm");
 
-        String networkScriptsDir = (String)params.get("network.scripts.dir");
-        if (networkScriptsDir == null) {
-            networkScriptsDir = "scripts/vm/network/vnet";
-        }
+        String networkScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_SCRIPTS_DIR);
 
         String controlCidr = (String)params.get("control.cidr");
         if (StringUtils.isNotBlank(controlCidr)) {

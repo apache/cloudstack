@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = ChangeOfferingForVolumeCmd.APINAME,
+@APICommand(name = "changeOfferingForVolume",
         description = "Change disk offering of the volume and also an option to auto migrate if required to apply the new disk offering",
         responseObject = VolumeResponse.class,
         requestHasSensitiveInfo = false,
@@ -45,7 +45,6 @@ import org.apache.cloudstack.context.CallContext;
         authorized = { RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.17")
 public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd {
-    public static final String APINAME = "changeOfferingForVolume";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -145,11 +144,6 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to change disk offering of volume");
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

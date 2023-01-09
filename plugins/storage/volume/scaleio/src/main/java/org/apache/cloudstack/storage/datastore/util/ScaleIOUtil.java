@@ -131,7 +131,7 @@ public class ScaleIOUtil {
             return null;
         }
 
-        if (!UuidUtils.validateUUID(result)) {
+        if (!UuidUtils.isUuid(result)) {
             LOGGER.warn("Invalid SDC guid: " + result);
             return null;
         }

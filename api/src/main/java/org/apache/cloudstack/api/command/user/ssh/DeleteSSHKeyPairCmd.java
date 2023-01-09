@@ -35,7 +35,6 @@ import com.cloud.user.SSHKeyPair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSSHKeyPairCmd.class.getName());
-    private static final String s_name = "deletesshkeypairresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -83,11 +82,6 @@ public class DeleteSSHKeyPairCmd extends BaseCmd {
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

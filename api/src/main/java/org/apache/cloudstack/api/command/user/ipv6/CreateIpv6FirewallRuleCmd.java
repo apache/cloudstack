@@ -43,11 +43,15 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = CreateIpv6FirewallRuleCmd.APINAME, description = "Creates an Ipv6 firewall rule in the given network (the network has to belong to VPC)", responseObject = FirewallRuleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "createIpv6FirewallRule",
+        description = "Creates an Ipv6 firewall rule in the given network (the network has to belong to VPC)",
+        responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIpv6FirewallRuleCmd.class.getName());
 
-    public static final String APINAME = "createIpv6FirewallRule";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -153,11 +157,6 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
 
     public Integer getSourcePortStart() {
         return publicStartPort;

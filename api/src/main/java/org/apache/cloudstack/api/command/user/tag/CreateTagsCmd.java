@@ -40,7 +40,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 public class CreateTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());
 
-    private static final String s_name = "createtagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         //FIXME - validate the owner here
         return 1;
@@ -106,17 +100,17 @@ public class CreateTagsCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upload resource icon");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create resource tag(s)");
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_RESOURCE_ICON_UPLOAD;
+        return EventTypes.EVENT_TAGS_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Uploading resource icon";
+        return "Creating resource tag(s)";
     }
 }

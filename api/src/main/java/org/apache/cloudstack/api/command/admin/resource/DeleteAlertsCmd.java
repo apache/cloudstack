@@ -39,7 +39,6 @@ public class DeleteAlertsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteAlertsCmd.class.getName());
 
-    private static final String s_name = "deletealertsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -86,11 +85,6 @@ public class DeleteAlertsCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

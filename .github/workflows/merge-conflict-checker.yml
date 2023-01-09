@@ -21,8 +21,17 @@ on:
   pull_request_target:
     types: [synchronize]
 
+permissions:  # added using https://github.com/step-security/secure-workflows
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   triage:
+    permissions:
+      pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
     runs-on: ubuntu-latest
     steps:
     - name: Conflict Check

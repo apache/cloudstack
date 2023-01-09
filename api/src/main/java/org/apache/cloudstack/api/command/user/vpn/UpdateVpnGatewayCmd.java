@@ -33,7 +33,6 @@ import com.cloud.user.Account;
 public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVpnGatewayCmd.class.getName());
 
-    private static final String s_name = "updatevpngatewayresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -53,11 +52,6 @@ public class UpdateVpnGatewayCmd extends BaseAsyncCustomIdCmd {
 
     public Boolean getDisplay() {
         return display;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -14,7 +14,7 @@
  * 60: Connection popups
  * 100: Status bar
  * ...
- * 1000: Javascript crash
+ * 1000: JavaScript crash
  * ...
  * 10000: Max (used for polyfills)
  */
@@ -341,7 +341,7 @@ select:active {
 
   transition: 0.5s ease-in-out;
 
-  /* Edge misrenders animations wihthout this */
+  /* Edge misrenders animations without this */
   transform: translateX(0);
 }
 :root.noVNC_connected #noVNC_control_bar_anchor.noVNC_idle {
