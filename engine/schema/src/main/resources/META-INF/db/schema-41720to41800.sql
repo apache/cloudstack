@@ -999,6 +999,13 @@ BEGIN
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'KVM', 'default', 'AlmaLinux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS 9', 'KVM', 'default', 'CentOS 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'KVM', 'default', 'Oracle Linux 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'KVM', 'default', 'Red Hat Enterprise Linux 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'KVM', 'default', 'Rocky Linux 9');
+
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS 9', 'VMware', '7.0.3.0', 'centos9_64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.3.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
