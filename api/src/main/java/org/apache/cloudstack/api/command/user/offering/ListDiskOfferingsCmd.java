@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.offering;
 
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
@@ -43,6 +44,12 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the disk offering")
     private String diskOfferingName;
+
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project.")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
@@ -83,6 +90,14 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     public Long getStoragePoolId() { return storagePoolId; }
 
     public Boolean getEncrypt() { return encrypt; }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

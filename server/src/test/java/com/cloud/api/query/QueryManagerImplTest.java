@@ -17,25 +17,27 @@
 
 package com.cloud.api.query;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.projects.ProjectManager;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -65,14 +67,25 @@ import com.cloud.vm.VirtualMachine;
 public class QueryManagerImplTest {
     public static final long USER_ID = 1;
     public static final long ACCOUNT_ID = 1;
+    private long projId = 1l;
+    private String accountName = "name";
+    private long domId = 1l;
 
+    @Spy
+    @InjectMocks
+    private QueryManagerImpl queryManagerImplSpy = new QueryManagerImpl();
     @Mock
     EntityManager entityManager;
     @Mock
-    AccountManager accountManager;
+    AccountManager accountManagerMock;
+    @Mock
+    ProjectManager projectManagerMock;
     @Mock
     EventJoinDao eventJoinDao;
-
+    @Mock
+    Account accountMock;
+    @Mock
+    Project projectMock;
     private AccountVO account;
     private UserVO user;
 
@@ -90,12 +103,12 @@ public class QueryManagerImplTest {
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
-        Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
-        Mockito.doNothing().when(accountManager).buildACLSearchParameters(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyList(),
+        Mockito.when(accountManagerMock.isRootAdmin(account.getId())).thenReturn(false);
+        Mockito.doNothing().when(accountManagerMock).buildACLSearchParameters(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyList(),
                 Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
-        Mockito.doNothing().when(accountManager).buildACLSearchBuilder(Mockito.any(SearchBuilder.class), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(),
+        Mockito.doNothing().when(accountManagerMock).buildACLSearchBuilder(Mockito.any(SearchBuilder.class), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(),
                 Mockito.any(Project.ListProjectResourcesCriteria.class));
-        Mockito.doNothing().when(accountManager).buildACLViewSearchCriteria(Mockito.any(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(),
+        Mockito.doNothing().when(accountManagerMock).buildACLViewSearchCriteria(Mockito.any(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(),
                 Mockito.any(Project.ListProjectResourcesCriteria.class));
         final SearchBuilder<EventJoinVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         final SearchCriteria<EventJoinVO> searchCriteria = Mockito.mock(SearchCriteria.class);
@@ -128,7 +141,7 @@ public class QueryManagerImplTest {
         Mockito.when(network.getId()).thenReturn(1L);
         Mockito.when(network.getAccountId()).thenReturn(account.getId());
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
-        Mockito.doNothing().when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, true, network);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(account, SecurityChecker.AccessType.ListEntry, true, network);
         Mockito.when(eventJoinDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class))).thenReturn(pair);
         List<EventResponse> respList = new ArrayList<EventResponse>();
         for (EventJoinVO vt : events) {
@@ -137,7 +150,7 @@ public class QueryManagerImplTest {
         PowerMockito.mockStatic(ViewResponseHelper.class);
         Mockito.when(ViewResponseHelper.createEventResponse(Mockito.any())).thenReturn(respList);
         ListResponse<EventResponse> result = queryManager.searchForEvents(cmd);
-        Assert.assertEquals((int) result.getCount(), events.size());
+        assertEquals((int) result.getCount(), events.size());
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -184,7 +197,118 @@ public class QueryManagerImplTest {
         Mockito.when(network.getId()).thenReturn(1L);
         Mockito.when(network.getAccountId()).thenReturn(2L);
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
-        Mockito.doThrow(new PermissionDeniedException("Denied")).when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, false, network);
+        Mockito.doThrow(new PermissionDeniedException("Denied")).when(accountManagerMock).checkAccess(account, SecurityChecker.AccessType.ListEntry, false, network);
         queryManager.searchForEvents(cmd);
+    }
+
+    @Test
+    public void getCallerAccordingToProjectIdAndAccountNameAndDomainIdTestReturnOriginalCaller() {
+        Account result = queryManagerImplSpy.getCallerAccordingToProjectIdAndAccountNameAndDomainId(accountMock, null, null, null);
+        Mockito.verify(queryManagerImplSpy, Mockito.times(0)).getCallerAccordingToAccountNameAndDomainId(Mockito.any(Account.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(queryManagerImplSpy, Mockito.times(0)).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        assertEquals(result, accountMock);
+    }
+
+    @Test
+    public void getCallerAccordingToProjectIdAndAccountNameAndDomainIdTestProjectIdNull() {
+        Account anotherAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(anotherAccount).when(queryManagerImplSpy).getCallerAccordingToAccountNameAndDomainId(Mockito.any(Account.class), Mockito.anyString(), Mockito.anyLong());
+        Account result = queryManagerImplSpy.getCallerAccordingToProjectIdAndAccountNameAndDomainId(accountMock, null, accountName, domId);
+        Mockito.verify(queryManagerImplSpy, Mockito.times(1)).getCallerAccordingToAccountNameAndDomainId(Mockito.any(Account.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(queryManagerImplSpy, Mockito.times(0)).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        assertEquals(result, anotherAccount);
+    }
+
+    @Test
+    public void getCallerAccordingToProjectIdAndAccountNameAndDomainIdTestAccountNameAndDomainIdNull() {
+        Account projectAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(projectAccount).when(queryManagerImplSpy).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        Account result = queryManagerImplSpy.getCallerAccordingToProjectIdAndAccountNameAndDomainId(accountMock, projId, null, null);
+        Mockito.verify(queryManagerImplSpy, Mockito.times(0)).getCallerAccordingToAccountNameAndDomainId(Mockito.any(Account.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(queryManagerImplSpy, Mockito.times(1)).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        assertEquals(result, projectAccount);
+    }
+
+    @Test
+    public void getCallerAccordingToProjectIdAndAccountNameAndDomainIdTestAccountNameNull() {
+        Account projectAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(projectAccount).when(queryManagerImplSpy).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        Account result = queryManagerImplSpy.getCallerAccordingToProjectIdAndAccountNameAndDomainId(accountMock, projId, null, domId);
+        Mockito.verify(queryManagerImplSpy, Mockito.times(0)).getCallerAccordingToAccountNameAndDomainId(Mockito.any(Account.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(queryManagerImplSpy, Mockito.times(1)).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        assertEquals(result, projectAccount);
+    }
+
+    @Test
+    public void getCallerAccordingToProjectIdAndAccountNameAndDomainIdTestDomainIdNull() {
+        Account projectAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(projectAccount).when(queryManagerImplSpy).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        Account result = queryManagerImplSpy.getCallerAccordingToProjectIdAndAccountNameAndDomainId(accountMock, projId, accountName, null);
+        Mockito.verify(queryManagerImplSpy, Mockito.times(0)).getCallerAccordingToAccountNameAndDomainId(Mockito.any(Account.class), Mockito.anyString(), Mockito.anyLong());
+        Mockito.verify(queryManagerImplSpy, Mockito.times(1)).getCallerAccordingToProjectId(Mockito.any(Account.class), Mockito.anyLong());
+        assertEquals(result, projectAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getCallerAccordingToAccountNameAndDomainIdTestThrowInvalidParameterValueException() {
+        Mockito.doReturn(null).when(accountManagerMock).getActiveAccountByName(Mockito.anyString(), Mockito.anyLong());
+        queryManagerImplSpy.getCallerAccordingToAccountNameAndDomainId(accountMock, accountName, domId);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void getCallerAccordingToAccountNameAndDomainIdTestThrowPermissionDeniedException() {
+        Account anotherAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(anotherAccount).when(accountManagerMock).getActiveAccountByName(Mockito.anyString(), Mockito.anyLong());
+        Mockito.doThrow(PermissionDeniedException.class).when(accountManagerMock).checkAccess(accountMock, null, true, anotherAccount);
+        queryManagerImplSpy.getCallerAccordingToAccountNameAndDomainId(accountMock, accountName, domId);
+    }
+
+    public void getCallerAccordingToAccountNameAndDomainIdTestReturnAccount() {
+        Account anotherAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(anotherAccount).when(accountManagerMock).getActiveAccountByName(Mockito.anyString(), Mockito.anyLong());
+        Account result = queryManagerImplSpy.getCallerAccordingToAccountNameAndDomainId(accountMock, accountName, domId);
+        assertEquals(result, anotherAccount);
+    }
+
+    @Test
+    public void getCallerAccordingToProjectIdTestReturnProjectAccount() {
+        Account anotherAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(projectMock).when(projectManagerMock).getProject(projId);
+        Mockito.doReturn(anotherAccount).when(accountManagerMock).getActiveAccountById(Mockito.anyLong());
+        Mockito.doReturn(true).when(projectManagerMock).canAccessProjectAccount(Mockito.any(Account.class), Mockito.anyLong());
+        Account result = queryManagerImplSpy.getCallerAccordingToProjectId(accountMock, projId);
+        assertEquals(result, anotherAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getCallerAccordingToProjectIdTestProjectNotFound() {
+        Mockito.doReturn(null).when(projectManagerMock).getProject(projId);
+        queryManagerImplSpy.getCallerAccordingToProjectId(accountMock, projId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getCallerAccordingToProjectIdTestAccountNotFound() {
+        Mockito.doReturn(projectMock).when(projectManagerMock).getProject(projId);
+        Mockito.doReturn(null).when(accountManagerMock).getActiveAccountById(Mockito.anyLong());
+        queryManagerImplSpy.getCallerAccordingToProjectId(accountMock, projId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getCallerAccordingToProjectIdTestAccountCanAccessProject() {
+        Account anotherAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(projectMock).when(projectManagerMock).getProject(projId);
+        Mockito.doReturn(anotherAccount).when(accountManagerMock).getActiveAccountById(Mockito.anyLong());
+        Mockito.doReturn(false).when(projectManagerMock).canAccessProjectAccount(Mockito.any(Account.class), Mockito.anyLong());
+        queryManagerImplSpy.getCallerAccordingToProjectId(accountMock, projId);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void getCallerAccordingToProjectIdTestCheckAccess() {
+        Account anotherAccount = Mockito.mock(Account.class);
+        Mockito.doReturn(projectMock).when(projectManagerMock).getProject(projId);
+        Mockito.doReturn(anotherAccount).when(accountManagerMock).getActiveAccountById(Mockito.anyLong());
+        Mockito.doReturn(true).when(projectManagerMock).canAccessProjectAccount(Mockito.any(Account.class), Mockito.anyLong());
+        Mockito.doThrow(PermissionDeniedException.class).when(accountManagerMock).checkAccess(accountMock, null, true, anotherAccount);
+        queryManagerImplSpy.getCallerAccordingToProjectId(accountMock, projId);
     }
 }

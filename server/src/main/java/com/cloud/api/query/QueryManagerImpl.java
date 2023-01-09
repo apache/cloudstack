@@ -2969,6 +2969,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
@@ -2978,7 +2980,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
-        if (domainId != null) {
+        if (domainId != null && accountName == null) {
             if (_accountMgr.isRootAdmin(account.getId()) || isPermissible(account.getDomainId(), domainId)) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
@@ -3055,9 +3057,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        account = getCallerAccordingToProjectIdAndAccountNameAndDomainId(account, projectId, accountName, domainId);
+        if (!Account.Type.ADMIN.equals(account.getType())) {
+            Domain callerDomain = _domainDao.findById(account.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
@@ -3136,6 +3138,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         Account caller = CallContext.current().getCallingAccount();
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -3151,9 +3155,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
 
+        caller = getCallerAccordingToProjectIdAndAccountNameAndDomainId(caller, projectId, accountName, domainId);
+
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
-            throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
+            throw new InvalidParameterValueException("Only ROOT admins can access system offerings.");
         }
 
         // Keeping this logic consistent with domain specific zones
@@ -3236,9 +3242,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         } else {
             // for root users
             if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
-                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering.");
             }
-            if (domainId != null) {
+            if (domainId != null && accountName == null) {
                 sc.addAnd("domainId", Op.FIND_IN_SET, String.valueOf(domainId));
             }
         }
@@ -3376,6 +3382,63 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    /**
+     * Retrieves the API caller. If the projectId or accountName parameters were provided in the API call, consider the account or project as the API caller.
+     * With that, the APIs return will be filtered by the account defined in the API call.
+     * @param originalCaller Account that made the API call
+     * @param projectId projectId provided in API call
+     * @param accountName accountName provided in API call
+     * @param domainId domainId provided in API call
+     * @return Account object
+     */
+    protected Account getCallerAccordingToProjectIdAndAccountNameAndDomainId(Account originalCaller, Long projectId, String accountName, Long domainId) {
+        if (accountName != null && domainId != null) {
+            return getCallerAccordingToAccountNameAndDomainId(originalCaller, accountName, domainId);
+        }
+
+        if (projectId != null ) {
+            return getCallerAccordingToProjectId(originalCaller, projectId);
+        }
+        return originalCaller;
+    }
+
+    /**
+     * Retrieves the API caller. If the projectId parameter were provided in the API call, consider the account as the API caller.
+     * @param originalCaller
+     * @param projectId
+     * @return Account object
+     */
+    protected Account getCallerAccordingToProjectId(Account originalCaller, Long projectId) {
+        Project project = _projectMgr.getProject(projectId);
+        if (project == null ) {
+            throw new InvalidParameterValueException("Unable to find project by specified id");
+        }
+        Account owner = _accountMgr.getActiveAccountById(project.getProjectAccountId());
+        if (owner == null) {
+            throw new InvalidParameterValueException("Unable to find account for the specified project id");
+        }
+        if (!_projectMgr.canAccessProjectAccount(originalCaller, owner.getId())) {
+            throw new InvalidParameterValueException(String.format("Account [%s] cannot access specified project id [%s]", originalCaller.getUuid(), owner.getUuid()));
+        }
+        _accountMgr.checkAccess(originalCaller, null, true, owner);
+        return owner;
+    }
+
+    /**
+     * Retrieves the API caller. If the accountName and domainId parameters were provided in the API call, consider the account as the API caller.
+     * @param originalCaller
+     * @param accountName
+     * @return Account object
+     */
+    protected Account getCallerAccordingToAccountNameAndDomainId(Account originalCaller, String accountName, Long domainId) {
+        Account owner = _accountMgr.getActiveAccountByName(accountName, domainId);
+        if (owner == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find account [%s] in specified domain id [%s]", accountName, domainId));
+        }
+        _accountMgr.checkAccess(originalCaller, null, true, owner);
+        return owner;
     }
 
     @Override
