@@ -98,6 +98,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setPodName(volume.getPodName());
         }
 
+        if (volume.getVmType() != null) {
+            volResponse.setVmType(volume.getVmType().toString());
+        }
+
         if (volume.getVolumeType() != null) {
             volResponse.setVolumeType(volume.getVolumeType().toString());
         }
@@ -230,7 +234,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         volResponse.setAttached(volume.getAttached());
         volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
         boolean isExtractable = true;
-        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont
+        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk don't
             // have any
             // template
             // dependence.

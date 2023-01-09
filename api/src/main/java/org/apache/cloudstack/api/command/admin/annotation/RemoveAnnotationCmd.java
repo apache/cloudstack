@@ -30,11 +30,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = RemoveAnnotationCmd.APINAME, description = "remove an annotation.", responseObject = AnnotationResponse.class,
+@APICommand(name = "removeAnnotation", description = "remove an annotation.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
 public class RemoveAnnotationCmd extends BaseCmd {
 
-    public static final String APINAME = "removeAnnotation";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "the id of the annotation")
     private String uuid;
@@ -50,11 +49,6 @@ public class RemoveAnnotationCmd extends BaseCmd {
         AnnotationResponse annotationResponse = annotationService.removeAnnotation(this);
         annotationResponse.setResponseName(getCommandName());
         this.setResponseObject(annotationResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

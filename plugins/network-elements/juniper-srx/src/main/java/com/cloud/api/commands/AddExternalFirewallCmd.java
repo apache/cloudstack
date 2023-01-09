@@ -39,7 +39,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalFirewallCmd.class.getName());
-    private static final String s_name = "addexternalfirewallresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,11 +86,6 @@ public class AddExternalFirewallCmd extends BaseCmd {
 
     @Inject
     JuniperSRXFirewallElementService _srxElementService;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

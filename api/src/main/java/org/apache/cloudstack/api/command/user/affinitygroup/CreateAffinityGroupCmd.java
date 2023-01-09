@@ -39,7 +39,6 @@ import com.cloud.user.Account;
 public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAffinityGroupCmd.class.getName());
 
-    private static final String s_name = "createaffinitygroupresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -103,11 +102,6 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -129,6 +129,18 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.ALLOW_USER_SPECIFY_VR_MTU)
+    @Param(description = "Allow end users to specify VR MTU", since = "4.18.0")
+    private boolean allowUserSpecifyVRMtu;
+
+    @SerializedName(ApiConstants.ROUTER_PRIVATE_INTERFACE_MAX_MTU)
+    @Param(description = "The maximum value the MTU can have on the VR's private interfaces", since = "4.18.0")
+    private Integer routerPrivateInterfaceMaxMtu;
+
+    @SerializedName(ApiConstants.ROUTER_PUBLIC_INTERFACE_MAX_MTU)
+    @Param(description = "The maximum value the MTU can have on the VR's public interfaces", since = "4.18.0")
+    private Integer routerPublicInterfaceMaxMtu;
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -327,5 +339,17 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public ResourceIconResponse getResourceIconResponse() {
         return resourceIconResponse;
+    }
+
+    public void setAllowUserSpecifyVRMtu(boolean allowUserSpecifyVRMtu) {
+        this.allowUserSpecifyVRMtu = allowUserSpecifyVRMtu;
+    }
+
+    public void setRouterPrivateInterfaceMaxMtu(Integer routerPrivateInterfaceMaxMtu) {
+        this.routerPrivateInterfaceMaxMtu = routerPrivateInterfaceMaxMtu;
+    }
+
+    public void setRouterPublicInterfaceMaxMtu(Integer routerPublicInterfaceMaxMtu) {
+        this.routerPublicInterfaceMaxMtu = routerPublicInterfaceMaxMtu;
     }
 }

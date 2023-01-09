@@ -27,13 +27,12 @@ import org.apache.cloudstack.cloudian.response.CloudianEnabledResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = CloudianIsEnabledCmd.APINAME, description = "Checks if the Cloudian Connector is enabled",
+@APICommand(name = "cloudianIsEnabled", description = "Checks if the Cloudian Connector is enabled",
         responseObject = CloudianEnabledResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CloudianIsEnabledCmd extends BaseCmd {
-    public static final String APINAME = "cloudianIsEnabled";
 
     @Inject
     private CloudianConnector connector;
@@ -41,11 +40,6 @@ public class CloudianIsEnabledCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -58,7 +52,7 @@ public class CloudianIsEnabledCmd extends BaseCmd {
         final CloudianEnabledResponse response = new CloudianEnabledResponse();
         response.setEnabled(connector.isEnabled());
         response.setCmcUrl(connector.getCmcUrl());
-        response.setObjectName(APINAME.toLowerCase());
+        response.setObjectName(getActualCommandName().toLowerCase());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

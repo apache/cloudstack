@@ -48,7 +48,6 @@ import com.cloud.user.Account;
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
-    private static final String s_name = "creatediskofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -163,8 +162,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DISK_SIZE_STRICTNESS, type = CommandType.BOOLEAN, description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.17")
     private Boolean diskSizeStrictness;
 
+    @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, required=false, description = "Volumes using this offering should be encrypted", since = "4.18")
+    private Boolean encrypt;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
     private Map details;
+
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -200,6 +204,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public boolean getEncrypt() {
+        if (encrypt == null) {
+            return false;
+        }
+        return encrypt;
     }
 
     public List<Long> getDomainIds() {
@@ -313,11 +324,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

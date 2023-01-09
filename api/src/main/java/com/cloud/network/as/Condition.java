@@ -27,7 +27,7 @@ public interface Condition extends ControlledEntity, Identity, InternalIdentity 
         EQ, GT, LT, GE, LE
     };
 
-    long getCounterid();
+    long getCounterId();
 
     long getThreshold();
 

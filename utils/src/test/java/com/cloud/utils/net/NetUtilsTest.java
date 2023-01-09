@@ -33,11 +33,17 @@ import static org.junit.Assert.assertTrue;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -45,9 +51,19 @@ import com.cloud.utils.net.NetUtils.SupersetOrSubset;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
-public class NetUtilsTest {
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-    private static final Logger s_logger = Logger.getLogger(NetUtilsTest.class);
+
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"jdk.xml.internal.*", "javax.xml.parsers.*", "org.xml.sax.*", "org.w3c.dom.*"})
+public class NetUtilsTest {
+    private static final String WIDE_SHARED_NET_CIDR_IP = "10.20.0.0";
+    private static final List<String> WIDE_SHARED_NET_USED_IPS = List.of("10.20.0.22", "10.20.1.22", "10.20.2.22");
 
     @Test
     public void testGetRandomIpFromCidrWithSize24() throws Exception {
@@ -135,14 +151,12 @@ public class NetUtilsTest {
         for (int i = 0; i < 5; i++) {
             final String ip = NetUtils.getIp6FromRange("1234:5678::1-1234:5678::2");
             assertThat(ip, anyOf(equalTo("1234:5678::1"), equalTo("1234:5678::2")));
-            s_logger.info("IP is " + ip);
         }
         String ipString = null;
         final IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
         final IPv6Address ipEnd = IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff");
         for (int i = 0; i < 10; i++) {
             ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
-            s_logger.info("IP is " + ipString);
             final IPv6Address ip = IPv6Address.fromString(ipString);
             assertThat(ip, greaterThanOrEqualTo(ipStart));
             assertThat(ip, lessThanOrEqualTo(ipEnd));
@@ -740,5 +754,95 @@ public class NetUtilsTest {
         assertEquals("255.255.255.0", NetUtils.cidr2Netmask("192.168.0.0/24"));
         assertEquals("255.255.0.0", NetUtils.cidr2Netmask("169.254.0.0/16"));
         assertEquals("255.255.240.0", NetUtils.cidr2Netmask("169.254.240.0/20"));
+    }
+
+    private void runTestGetAllIpsFromCidr(int cidrSize, int maxIps, boolean usedIpPresent, int resultSize) {
+        Set<Long> usedIps = new TreeSet<>();
+        if (usedIpPresent) {
+            for (String ip : WIDE_SHARED_NET_USED_IPS) {
+                usedIps.add(NetUtils.ip2Long(ip));
+            }
+        }
+        Set<Long> result = NetUtils.getAllIpsFromCidr(WIDE_SHARED_NET_CIDR_IP, cidrSize, usedIps, maxIps);
+        assertNotNull(result);
+        assertEquals(resultSize, result.size());
+        if (usedIpPresent) {
+            for (String ip : WIDE_SHARED_NET_USED_IPS) {
+                assertFalse(result.contains(NetUtils.ip2Long(ip)));
+            }
+        }
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrNoneUsedNoLimit() {
+        runTestGetAllIpsFromCidr(22, -1, false, 1022);
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrNoneUsedLimit() {
+        runTestGetAllIpsFromCidr(22, 255, false, 255);
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrNoneUsedLessLimit() {
+        runTestGetAllIpsFromCidr(22, 10, false, 10);
+    }
+
+
+    @Test
+    public void testGetAllIpsFromCidrUsedNoLimit() {
+        runTestGetAllIpsFromCidr(22, -1, true, 1022 - WIDE_SHARED_NET_USED_IPS.size());
+    }
+
+    @Test
+    public void testGetAllIpsFromCidrUsedLimit() {
+        runTestGetAllIpsFromCidr(22, 50, true, 50);
+        List<String> usedIpsInRange = new ArrayList<>(WIDE_SHARED_NET_USED_IPS);
+        usedIpsInRange = usedIpsInRange.stream().filter(x -> x.startsWith("10.20.0.")).collect(Collectors.toList());
+        runTestGetAllIpsFromCidr(24, 255, true, 254 - usedIpsInRange.size());
+    }
+
+    @Test
+    public void getNetworkInterfaceTestReturnNullWhenStringIsNull() {
+        NetworkInterface result = NetUtils.getNetworkInterface(null);
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void getNetworkInterfaceTestReturnNullWhenStringIsEmpty() {
+        NetworkInterface result = NetUtils.getNetworkInterface("     ");
+        Assert.assertNull(result);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void getNetworkInterfaceTestReturnNullWhenGetByNameReturnsNull() throws SocketException {
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(null);
+        NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void getNetworkInterfaceTestReturnNullWhenGetByNameThrowsException() throws SocketException {
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenThrow(SocketException.class);
+        NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void getNetworkInterfaceTestReturnInterfaceReturnedByGetByName() throws SocketException {
+        NetworkInterface expected = PowerMockito.mock(NetworkInterface.class);
+        PowerMockito.mockStatic(NetworkInterface.class);
+        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(expected);
+
+        NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
+
+        Assert.assertEquals(expected, result);
     }
 }

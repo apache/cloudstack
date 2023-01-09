@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListKubernetesClustersCmd.APINAME,
+@APICommand(name = "listKubernetesClusters",
         description = "Lists Kubernetes clusters",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseView.Restricted,
@@ -42,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger LOGGER = Logger.getLogger(ListKubernetesClustersCmd.class.getName());
-    public static final String APINAME = "listKubernetesClusters";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -81,11 +80,6 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
-    }
 
     @Override
     public void execute() throws ServerApiException {

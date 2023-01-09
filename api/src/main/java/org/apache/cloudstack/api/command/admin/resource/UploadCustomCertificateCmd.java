@@ -36,7 +36,6 @@ import com.cloud.user.Account;
 public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadCustomCertificateCmd.class.getName());
 
-    private static final String s_name = "uploadcustomcertificateresponse";
 
     @Parameter(name = ApiConstants.CERTIFICATE, type = CommandType.STRING, required = true, description = "The certificate to be uploaded.", length = 65535)
     private String certificate;
@@ -88,11 +87,6 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return ("Uploading custom certificate to the db, and applying it to all the cpvms in the system");
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public static String getResultObjectName() {

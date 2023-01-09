@@ -41,7 +41,6 @@ import com.cloud.network.as.AutoScaleVmGroup;
 public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmGroupsCmd.class.getName());
 
-    private static final String s_name = "listautoscalevmgroupsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -49,6 +48,9 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class, description = "the ID of the autoscale vm group")
     private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale vmgroup", since = "4.18.0")
+    private String name;
 
     @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the loadbalancer")
     private Long loadBalancerId;
@@ -71,6 +73,10 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getLoadBalancerId() {
@@ -100,11 +106,6 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

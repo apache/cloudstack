@@ -32,7 +32,6 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetSolidFireVolumeSizeCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeSizeCmd.class.getName());
-    private static final String NAME = "getsolidfirevolumesizeresponse";
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.STRING, description = "Volume UUID", required = true)
     private String volumeUuid;
@@ -43,11 +42,6 @@ public class GetSolidFireVolumeSizeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return NAME;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -102,7 +102,17 @@ export default {
       editableValueKey: null,
       editableValue: '',
       tabLoading: false,
-      filter: ''
+      filter: '',
+      warningMessages: {
+        'vr.private.interface.max.mtu': {
+          scope: 'zone',
+          warning: this.$t('message.warn.zone.mtu.update')
+        },
+        'vr.public.interface.max.mtu': {
+          scope: 'zone',
+          warning: this.$t('message.warn.zone.mtu.update')
+        }
+      }
     }
   },
   created () {
@@ -142,10 +152,7 @@ export default {
   methods: {
     fetchData (callback) {
       this.tabLoading = true
-      const params = {
-        [this.scopeKey]: this.resource.id,
-        listAll: true
-      }
+      const params = { [this.scopeKey]: this.resource.id }
       if (this.filter) {
         params.keyword = this.filter
       }
@@ -168,7 +175,7 @@ export default {
         value: this.editableValue
       }).then(() => {
         const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.update.to')} ${this.editableValue}`
-        this.$message.success(message)
+        this.handleSuccessMessage(item.name, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
@@ -198,7 +205,7 @@ export default {
         name: item.name
       }).then(() => {
         const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
-        this.$message.success(message)
+        this.handleSuccessMessage(item.name, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.reset.config'))
@@ -212,6 +219,14 @@ export default {
           this.editableValueKey = null
         })
       })
+    },
+    handleSuccessMessage (name, scope, message) {
+      var obj = this.warningMessages[name]
+      if (obj && obj.scope === scope) {
+        this.$warning({ title: message, content: obj.warning })
+      } else {
+        this.$message.success(message)
+      }
     }
   }
 }

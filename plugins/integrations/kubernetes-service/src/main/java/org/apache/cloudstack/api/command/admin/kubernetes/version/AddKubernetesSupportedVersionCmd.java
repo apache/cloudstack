@@ -40,7 +40,7 @@ import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 
-@APICommand(name = AddKubernetesSupportedVersionCmd.APINAME,
+@APICommand(name = "addKubernetesSupportedVersion",
         description = "Add a supported Kubernetes version",
         responseObject = KubernetesSupportedVersionResponse.class,
         responseView = ResponseObject.ResponseView.Full,
@@ -48,7 +48,6 @@ import org.apache.commons.lang3.StringUtils;
         authorized = {RoleType.Admin})
 public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
     public static final Logger LOGGER = Logger.getLogger(AddKubernetesSupportedVersionCmd.class.getName());
-    public static final String APINAME = "addKubernetesSupportedVersion";
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -122,11 +121,6 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
 
     public Integer getMinimumRamSize() {
         return minimumRamSize;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

@@ -40,7 +40,6 @@ import com.cloud.vm.VirtualMachine;
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 
-    private static final String s_name = "recovervirtualmachineresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -61,11 +60,6 @@ public class RecoverVMCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

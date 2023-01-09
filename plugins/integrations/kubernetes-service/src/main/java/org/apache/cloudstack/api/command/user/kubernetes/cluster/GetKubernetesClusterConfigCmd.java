@@ -36,7 +36,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
-@APICommand(name = GetKubernetesClusterConfigCmd.APINAME,
+@APICommand(name = "getKubernetesClusterConfig",
         description = "Get Kubernetes cluster config",
         responseObject = KubernetesClusterConfigResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
@@ -45,7 +45,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class GetKubernetesClusterConfigCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(GetKubernetesClusterConfigCmd.class.getName());
-    public static final String APINAME = "getKubernetesClusterConfig";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -78,11 +77,6 @@ public class GetKubernetesClusterConfigCmd extends BaseCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

@@ -59,7 +59,7 @@ You may get the source code from the repository hosted on Apache:
 
     $ git clone https://gitbox.apache.org/repos/asf/cloudstack.git
 
-Or, you may fork the repository from the official Apache CloudStack mirror on [Github](https://github.com/apache/cloudstack)
+Or, you may fork the repository from the official Apache CloudStack mirror on [GitHub](https://github.com/apache/cloudstack)
 
 To checkout a specific branch, for example 4.11, do:
 

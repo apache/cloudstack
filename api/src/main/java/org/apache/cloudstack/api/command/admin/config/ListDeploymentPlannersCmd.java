@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 public class ListDeploymentPlannersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDeploymentPlannersCmd.class.getName());
 
-    private static final String s_name = "listdeploymentplannersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -44,11 +43,6 @@ public class ListDeploymentPlannersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

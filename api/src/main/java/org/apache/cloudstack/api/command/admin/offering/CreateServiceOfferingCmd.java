@@ -48,7 +48,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
-    private static final String s_name = "createserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -190,7 +189,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.14")
     private String cacheMode;
 
-    // Introduce 4 new optional paramaters to work custom compute offerings
+    // Introduce 4 new optional parameters to work custom compute offerings
     @Parameter(name = ApiConstants.CUSTOMIZED,
             type = CommandType.BOOLEAN,
             since = "4.13",
@@ -241,6 +240,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             description = "True/False to indicate the strictness of the disk offering association with the compute offering. When set to true, override of disk offering is not allowed when VM is deployed and change disk offering is not allowed for the ROOT disk after the VM is deployed",
             since = "4.17")
     private Boolean diskOfferingStrictness;
+
+    @Parameter(name = ApiConstants.ENCRYPT_ROOT, type = CommandType.BOOLEAN, description = "VMs using this offering require root volume encryption", since="4.18")
+    private Boolean encryptRoot;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -472,14 +475,16 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return diskOfferingStrictness == null ? false : diskOfferingStrictness;
     }
 
+    public boolean getEncryptRoot() {
+        if (encryptRoot != null) {
+            return encryptRoot;
+        }
+        return false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

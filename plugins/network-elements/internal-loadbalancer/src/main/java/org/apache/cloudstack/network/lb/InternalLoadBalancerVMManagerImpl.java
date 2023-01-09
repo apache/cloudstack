@@ -467,6 +467,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             final List<LbDestination> destinations = rule.getDestinations();
             final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
             final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
+            lb.setCidrList(rule.getCidrList());
             lbs[i++] = lb;
         }
 

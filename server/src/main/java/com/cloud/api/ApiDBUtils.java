@@ -128,6 +128,7 @@ import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
@@ -329,7 +330,6 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -419,6 +419,7 @@ public class ApiDBUtils {
     static ConditionDao s_asConditionDao;
     static AutoScalePolicyConditionMapDao s_asPolicyConditionMapDao;
     static AutoScaleVmGroupPolicyMapDao s_asVmGroupPolicyMapDao;
+    static AutoScaleVmGroupVmMapDao s_autoScaleVmGroupVmMapDao;
     static AutoScalePolicyDao s_asPolicyDao;
     static AutoScaleVmProfileDao s_asVmProfileDao;
     static AutoScaleVmGroupDao s_asVmGroupDao;
@@ -620,6 +621,8 @@ public class ApiDBUtils {
     @Inject
     private AutoScaleVmGroupPolicyMapDao asVmGroupPolicyMapDao;
     @Inject
+    private AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
+    @Inject
     private AutoScalePolicyDao asPolicyDao;
     @Inject
     private AutoScaleVmProfileDao asVmProfileDao;
@@ -800,6 +803,7 @@ public class ApiDBUtils {
         s_asPolicyConditionMapDao = asPolicyConditionMapDao;
         s_counterDao = counterDao;
         s_asVmGroupPolicyMapDao = asVmGroupPolicyMapDao;
+        s_autoScaleVmGroupVmMapDao = autoScaleVmGroupVmMapDao;
         s_tagJoinDao = tagJoinDao;
         s_vmGroupJoinDao = vmGroupJoinDao;
         s_eventJoinDao = eventJoinDao;
@@ -1553,7 +1557,7 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
-            if (autoScalePolicy.getAction().equals("scaleup")) {
+            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                 scaleUpPolicyIds.add(autoScalePolicy.getId());
             } else {
                 scaleDownPolicyIds.add(autoScalePolicy.getId());
@@ -1578,7 +1582,7 @@ public class ApiDBUtils {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
-            if (autoScalePolicy.getAction().equals("scaleup")) {
+            if (autoScalePolicy.getAction().equals(AutoScalePolicy.Action.SCALEUP)) {
                 scaleUpPolicies.add(autoScalePolicy);
             } else {
                 scaleDownPolicies.add(autoScalePolicy);
@@ -1620,6 +1624,10 @@ public class ApiDBUtils {
 
     public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId) {
         return s_asVmGroupDao.findById(groupId);
+    }
+
+    public static int countAvailableVmsByGroupId(long groupId) {
+        return s_autoScaleVmGroupVmMapDao.countAvailableVmsByGroup(groupId);
     }
 
     public static GuestOSCategoryVO findGuestOsCategoryById(long catId) {
@@ -1795,17 +1803,7 @@ public class ApiDBUtils {
     ///////////////////////////////////////////////////////////////////////
 
     public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
-        DomainRouterResponse response = s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
-        if (StringUtils.isBlank(response.getHypervisor())) {
-            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vr.getId());
-            if (vm.getLastHostId() != null) {
-                HostVO lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
-                if (lastHost != null) {
-                    response.setHypervisor(lastHost.getHypervisorType().toString());
-                }
-            }
-        }
-        return  response;
+        return s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
     }
 
     public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr) {
@@ -1816,12 +1814,13 @@ public class ApiDBUtils {
         return s_domainRouterJoinDao.newDomainRouterView(vr);
     }
 
-    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, null, caller);
     }
 
-    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Boolean accumulateStats,
+            Boolean showUserData, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, showUserData, caller);
     }
 
     public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {

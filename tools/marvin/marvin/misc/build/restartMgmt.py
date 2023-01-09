@@ -50,4 +50,3 @@ if __name__ == '__main__':
             timeout = timeout - 1
     if tn is None:
         raise socket.error("Unable to reach API port")
-

@@ -201,13 +201,13 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             # Set Zones and disk offerings
 
             # Check that we are able to login to the created account
-            respose = User.login(
+            response = User.login(
                 cls.apiclient,
                 username=cls.account.name,
                 password=cls.testdata["account"]["password"]
             )
 
-            assert respose.sessionkey is not None,\
+            assert response.sessionkey is not None,\
                 "Login to the CloudStack should be successful\
                             response shall have non Null key"
 

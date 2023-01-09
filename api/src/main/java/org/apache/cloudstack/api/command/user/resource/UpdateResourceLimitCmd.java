@@ -35,7 +35,6 @@ import com.cloud.configuration.ResourceLimit;
 public class UpdateResourceLimitCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
 
-    private static final String s_name = "updateresourcelimitresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -92,11 +91,6 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

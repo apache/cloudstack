@@ -79,6 +79,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
+            "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
@@ -90,7 +93,7 @@ public interface VirtualMachineManager extends Manager {
      *
      * @param vmInstanceName Instance name of the VM.  This name uniquely
      *        a VM in CloudStack's deploy environment.  The caller gets to
-     *        define this VM but it must be unqiue for all of CloudStack.
+     *        define this VM but it must be unique for all of CloudStack.
      * @param template The template this VM is based on.
      * @param serviceOffering The service offering that specifies the offering this VM should provide.
      * @param defaultNetwork The default network for the VM.

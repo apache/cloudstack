@@ -38,7 +38,6 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaBalanceCmd.class);
 
-    private static final String s_name = "quotabalanceresponse";
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which statement needs to be generated")
     private String accountName;
@@ -101,11 +100,6 @@ public class QuotaBalanceCmd extends BaseCmd {
 
     public void setStartDate(Date startDate) {
         this.startDate = startDate == null ? null : new Date(startDate.getTime());
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

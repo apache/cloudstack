@@ -334,7 +334,7 @@ class TestCreateTemplate(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
 
         template = Template.create_from_snapshot(

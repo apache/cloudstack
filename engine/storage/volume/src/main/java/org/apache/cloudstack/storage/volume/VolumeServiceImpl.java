@@ -28,6 +28,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -197,6 +198,8 @@ public class VolumeServiceImpl implements VolumeService {
     private AnnotationDao annotationDao;
     @Inject
     private SnapshotApiService snapshotApiService;
+    @Inject
+    private PassphraseDao passphraseDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -357,7 +360,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
         if (volumeStore != null) {
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
-                String msg = "Volume: " + volume.getName() + " is currently being uploaded; cant' delete it.";
+                String msg = "Volume: " + volume.getName() + " is currently being uploaded; can't delete it.";
                 s_logger.debug(msg);
                 result.setSuccess(false);
                 result.setResult(msg);
@@ -446,6 +449,11 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             if (result.isSuccess()) {
                 vo.processEvent(Event.OperationSuccessed);
+
+                if (vo.getPassphraseId() != null) {
+                    vo.deletePassphrase();
+                }
+
                 if (canVolumeBeRemoved(vo.getId())) {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());

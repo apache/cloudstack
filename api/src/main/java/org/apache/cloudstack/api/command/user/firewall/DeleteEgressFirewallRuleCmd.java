@@ -42,7 +42,6 @@ import com.cloud.network.rules.FirewallRule;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteEgressFirewallRuleCmd.class.getName());
-    private static final String s_name = "deleteegressfirewallruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,11 +66,6 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_FIREWALL_EGRESS_CLOSE;

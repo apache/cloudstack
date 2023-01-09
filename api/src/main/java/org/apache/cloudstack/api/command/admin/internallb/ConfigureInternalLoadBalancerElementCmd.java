@@ -48,7 +48,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureInternalLoadBalancerElementCmd.class.getName());
-    private static final String s_name = "configureinternalloadbalancerelementresponse";
 
     @Inject
     private List<InternalLoadBalancerElementService> _service;
@@ -82,11 +81,6 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

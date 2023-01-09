@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 public class DedicateGuestVlanRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateGuestVlanRangeCmd.class.getName());
 
-    private static final String s_name = "dedicateguestvlanrangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -93,11 +92,6 @@ public class DedicateGuestVlanRangeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

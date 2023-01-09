@@ -164,7 +164,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         parameters.setUuid(conn.getTemplateName() + ";" + UUID.randomUUID().toString());
         parameters.setZoneId(zoneId);
         parameters.setProviderName(providerName);
-        parameters.setType(StoragePoolType.SharedMountPoint);
+        parameters.setType(StoragePoolType.StorPool);
         parameters.setHypervisorType(HypervisorType.KVM);
         parameters.setManaged(false);
         parameters.setHost("n/a");

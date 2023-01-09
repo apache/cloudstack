@@ -41,14 +41,11 @@ public interface CapacityManager {
     static final String StorageOverprovisioningFactorCK = "storage.overprovisioning.factor";
     static final String StorageAllocatedCapacityDisableThresholdCK = "pool.storage.allocated.capacity.disablethreshold";
 
-    static final String CATEGORY_ADVANCED = "Advanced";
-    static final String CATEGORY_ALERT = "Alert";
-
     static final ConfigKey<Float> CpuOverprovisioningFactor =
             new ConfigKey<>(
                     Float.class,
                     CpuOverprovisioningFactorCK,
-                    CATEGORY_ADVANCED,
+                    ConfigKey.CATEGORY_ADVANCED,
                     "1.0",
                     "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)",
                     true,
@@ -58,7 +55,7 @@ public interface CapacityManager {
             new ConfigKey<>(
                     Float.class,
                     MemOverprovisioningFactorCK,
-                    CATEGORY_ADVANCED,
+                    ConfigKey.CATEGORY_ADVANCED,
                     "1.0",
                     "Used for memory overprovisioning calculation",
                     true,
@@ -66,7 +63,7 @@ public interface CapacityManager {
                     null);
     static final ConfigKey<Double> StorageCapacityDisableThreshold =
             new ConfigKey<>(
-                    CATEGORY_ALERT,
+                    ConfigKey.CATEGORY_ALERT,
                     Double.class,
                     StorageCapacityDisableThresholdCK,
                     "0.85",
@@ -84,7 +81,7 @@ public interface CapacityManager {
                     ConfigKey.Scope.StoragePool);
     static final ConfigKey<Double> StorageAllocatedCapacityDisableThreshold =
             new ConfigKey<>(
-                    CATEGORY_ALERT,
+                    ConfigKey.CATEGORY_ALERT,
                     Double.class,
                     StorageAllocatedCapacityDisableThresholdCK,
                     "0.85",
@@ -95,7 +92,7 @@ public interface CapacityManager {
             new ConfigKey<>(
                     Boolean.class,
                     "cluster.storage.operations.exclude",
-                    CATEGORY_ADVANCED,
+                    ConfigKey.CATEGORY_ADVANCED,
                     "false",
                     "Exclude cluster from storage operations",
                     true,
@@ -105,7 +102,7 @@ public interface CapacityManager {
             new ConfigKey<>(
                     String.class,
                     "secstorage.nfs.version",
-                    CATEGORY_ADVANCED,
+                    ConfigKey.CATEGORY_ADVANCED,
                     null,
                     "Enforces specific NFS version when mounting Secondary Storage. If NULL default selection is performed",
                     true,
@@ -114,7 +111,7 @@ public interface CapacityManager {
 
     static final ConfigKey<Float> SecondaryStorageCapacityThreshold =
             new ConfigKey<>(
-                    CATEGORY_ADVANCED,
+                    ConfigKey.CATEGORY_ADVANCED,
                     Float.class,
                     "secondary.storage.capacity.threshold",
                     "0.90",

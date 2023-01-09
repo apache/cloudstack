@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -107,6 +108,18 @@ public class HAProxyConfiguratorTest {
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
         String result = genConfig(hpg, cmd);
         assertTrue("'send-proxy' should result if protocol is 'tcp-proxy'", result.contains("send-proxy"));
+    }
+
+    @Test
+    public void generateConfigurationTestWithCidrList() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 22, "tcp", "roundrobin", false, false, false, null, null);
+        lb.setCidrList("1.1.1.1 2.2.2.2/24");
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
+        String result = genConfig(hpg, cmd);
+        Assert.assertTrue(result.contains("acl network_allowed src 1.1.1.1 2.2.2.2/24 \n\ttcp-request connection reject if !network_allowed"));
     }
 
     private String genConfig(HAProxyConfigurator hpg, LoadBalancerConfigCommand cmd) {

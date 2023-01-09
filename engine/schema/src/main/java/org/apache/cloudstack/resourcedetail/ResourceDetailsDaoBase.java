@@ -186,7 +186,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
     }
 
     @Override
-    public List<Long> findResouceIdsByNameAndValueIn(String name, Object[] values) {
+    public List<Long> findResourceIdsByNameAndValueIn(String name, Object[] values) {
         GenericSearchBuilder<R, Long> sb = createSearchBuilder(Long.class);
         sb.selectFields(sb.entity().getResourceId());
         sb.and("name", sb.entity().getName(), Op.EQ);

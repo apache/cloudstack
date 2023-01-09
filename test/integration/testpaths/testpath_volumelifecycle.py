@@ -995,7 +995,7 @@ class TestPathVolume(cloudstackTestCase):
                                                  )
             self.fail("Volume got attached to a destroyed vm ")
         except Exception:
-            self.debug("Volume cant not be attached to a destroyed vm ")
+            self.debug("Volume can't not be attached to a destroyed vm ")
 
         # 11.Upload the volume  by providing the URL of the downloaded
         # volume, but specify a wrong format (not supported by the hypervisor)

@@ -39,6 +39,10 @@ setup_dhcpsrvr() {
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
   sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
 
+  log_it "Disable radvd for dhcp server system vm"
+  rm -rf /etc/radvd.conf
+  systemctl stop radvd
+  systemctl disable radvd
 }
 
 dhcpsrvr_svcs

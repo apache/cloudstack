@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
@@ -82,10 +83,13 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     @Override
-    public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif) {
+    public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif, final String publicIp) {
         String args = "";
         if (option.equals("get")) {
             args += "-g";
+            if (StringUtils.isNotEmpty(publicIp)) {
+                args += " -l " + publicIp;
+            }
         } else if (option.equals("create")) {
             args += "-c";
         } else if (option.equals("reset")) {
