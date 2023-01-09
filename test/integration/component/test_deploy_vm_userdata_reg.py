@@ -74,7 +74,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         cls.zone = get_zone(cls.apiClient, cls.testClient.getZoneForTests())
         cls._cleanup = []
         if cls.zone.localstorageenabled:
-            #For devcloud since localstroage is enabled
+            #For devcloud since localstorage is enabled
             cls.services["service_offering"]["storagetype"] = "local"
         cls.service_offering = ServiceOffering.create(
             cls.apiClient,

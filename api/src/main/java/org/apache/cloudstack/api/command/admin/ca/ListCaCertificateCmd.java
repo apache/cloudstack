@@ -32,7 +32,7 @@ import org.apache.cloudstack.ca.CAManager;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListCaCertificateCmd.APINAME,
+@APICommand(name = "listCaCertificate",
         description = "Lists the CA public certificate(s) as support by the configured/provided CA plugin",
         responseObject = CertificateResponse.class,
         requestHasSensitiveInfo = false,
@@ -40,7 +40,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         since = "4.11.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListCaCertificateCmd extends BaseCmd {
-    public static final String APINAME = "listCaCertificate";
 
     @Inject
     private CAManager caManager;
@@ -76,11 +75,6 @@ public class ListCaCertificateCmd extends BaseCmd {
         certificateResponse.setCertificate(caCertificates);
         certificateResponse.setResponseName(getCommandName());
         setResponseObject(certificateResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

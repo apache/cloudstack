@@ -230,6 +230,23 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         this.timeToLive = timeToLive;
     }
 
+    protected int getTimeToLive() {
+        return this.timeToLive;
+    }
+
+    protected int getMaxAllowed() {
+        return this.maxAllowed;
+    }
+
+    protected int getIssued(Long accountId) {
+        int ammount = 0;
+        StoreEntry entry = _store.get(accountId);
+        if (entry != null) {
+            ammount = entry.getCounter();
+        }
+        return ammount;
+    }
+
     @Override
     public void setMaxAllowed(int max) {
         maxAllowed = max;

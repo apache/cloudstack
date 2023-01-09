@@ -48,7 +48,6 @@ import java.util.List;
 public class UploadResourceIconCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(UploadResourceIconCmd.class.getName());
 
-    private static final String s_name = "uploadresourceiconresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -126,11 +125,6 @@ public class UploadResourceIconCmd extends BaseCmd {
         }
         return true;
     }
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();// Let's give the caller here for event logging.

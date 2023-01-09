@@ -78,7 +78,7 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
     private String parentName;
 
     @SerializedName("current")
-    @Param(description = "indiates if this is current snapshot")
+    @Param(description = "indicates if this is current snapshot")
     private Boolean current;
 
     @SerializedName("type")

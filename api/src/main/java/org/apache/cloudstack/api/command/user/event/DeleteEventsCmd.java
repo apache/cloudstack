@@ -41,7 +41,6 @@ public class DeleteEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteEventsCmd.class.getName());
 
-    private static final String s_name = "deleteeventsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class DeleteEventsCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

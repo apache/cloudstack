@@ -37,7 +37,6 @@ import com.cloud.user.Account;
 public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnConnectionCmd.class.getName());
 
-    private static final String s_name = "deletevpnconnectionresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -56,11 +55,6 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

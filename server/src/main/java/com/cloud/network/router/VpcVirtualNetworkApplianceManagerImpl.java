@@ -151,6 +151,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             _routerDao.addRouterToGuestNetwork(router, network);
 
             final NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
+            if (network.getVpcId() != null) {
+                VpcVO vpc = _vpcDao.findById(network.getVpcId());
+                guestNic.setMtu(vpc.getPublicMtu());
+            }
+
             // 2) setup guest network
             if (guestNic != null) {
                 result = setupVpcGuestNetwork(network, router, true, guestNic);
@@ -275,7 +280,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 final StringBuilder buf = profile.getBootArgsBuilder();
                 final Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
                 buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
-
+                buf.append(" publicMtu=").append(vpc.getPublicMtu());
                 buf.append(" dns1=").append(defaultDns1);
                 if (defaultDns2 != null) {
                     buf.append(" dns2=").append(defaultDns2);

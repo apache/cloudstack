@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 
-@APICommand(name = MigrateSecondaryStorageDataCmd.APINAME,
+@APICommand(name = "migrateSecondaryStorageData",
         description = "migrates data objects from one secondary storage to destination image store(s)",
         responseObject = MigrationResponse.class,
         requestHasSensitiveInfo = false,
@@ -43,7 +43,6 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
     public static final Logger LOGGER = Logger.getLogger(MigrateSecondaryStorageDataCmd.class.getName());
 
-    public static final String APINAME = "migrateSecondaryStorageData";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -102,11 +101,6 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
         response.setObjectName("imagestore");
         this.setResponseObject(response);
         CallContext.current().setEventDetails(response.getMessage());
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

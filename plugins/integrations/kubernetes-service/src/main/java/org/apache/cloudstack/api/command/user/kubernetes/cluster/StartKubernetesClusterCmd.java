@@ -36,7 +36,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = StartKubernetesClusterCmd.APINAME, description = "Starts a stopped Kubernetes cluster",
+@APICommand(name = "startKubernetesCluster", description = "Starts a stopped Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -45,7 +45,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class StartKubernetesClusterCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(StartKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "startKubernetesCluster";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -81,11 +80,6 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
             description += String.format(" ID: %d", getId());
         }
         return description;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

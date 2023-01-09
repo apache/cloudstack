@@ -37,7 +37,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddSwiftCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
-    private static final String s_name = "addswiftresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -77,11 +76,6 @@ public class AddSwiftCmd extends BaseCmd {
 
     public String getKey() {
         return key;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

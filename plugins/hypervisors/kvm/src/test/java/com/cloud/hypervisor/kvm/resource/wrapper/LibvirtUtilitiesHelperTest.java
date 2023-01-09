@@ -42,7 +42,7 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
         Mockito.doThrow(LibvirtException.class).when(connectMock).getLibVirVersion();
         Pair<String, Boolean> result = LibvirtUtilitiesHelper.isLibvirtVersionEqualOrHigherThanVersionInParameter(connectMock, 0l);
 
-        Assert.assertEquals("Unknow due to [null]", result.first());
+        Assert.assertEquals("Unknown due to [null]", result.first());
         Assert.assertFalse(result.second());
     }
 

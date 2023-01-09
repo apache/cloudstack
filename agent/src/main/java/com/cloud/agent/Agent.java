@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -179,7 +180,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         _id = value != null ? Long.parseLong(value) : null;
         s_logger.info("id is " + (_id != null ? _id : ""));
 
-        final Map<String, Object> params = PropertiesUtil.toMap(_shell.getProperties());
+        final Map<String, Object> params = new HashMap<>();
 
         // merge with properties from command line to let resource access command line parameters
         for (final Map.Entry<String, Object> cmdLineProp : _shell.getCmdLineProperties().entrySet()) {

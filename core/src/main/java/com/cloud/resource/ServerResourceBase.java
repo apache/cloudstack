@@ -24,14 +24,17 @@ import java.io.StringWriter;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
@@ -67,60 +70,12 @@ public abstract class ServerResourceBase implements ServerResource {
     public boolean configure(final String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        String publicNic = (String)params.get("public.network.device");
-        if (publicNic == null) {
-            publicNic = "xenbr1";
-        }
-        String privateNic = (String)params.get("private.network.device");
-        if (privateNic == null) {
-            privateNic = "xenbr0";
-        }
-        final String storageNic = (String)params.get("storage.network.device");
-        final String storageNic2 = (String)params.get("storage.network.device.2");
-
-        _privateNic = getNetworkInterface(privateNic);
-        _publicNic = getNetworkInterface(publicNic);
-        _storageNic = getNetworkInterface(storageNic);
-        _storageNic2 = getNetworkInterface(storageNic2);
+        defineResourceNetworkInterfaces(params);
 
         if (_privateNic == null) {
-            s_logger.warn("Nics are not specified in properties file/db, will try to autodiscover");
-
-            Enumeration<NetworkInterface> nics = null;
-            try {
-                nics = NetworkInterface.getNetworkInterfaces();
-                if (nics == null || !nics.hasMoreElements()) {
-                    throw new ConfigurationException("Private NIC is not configured");
-                }
-            } catch (final SocketException e) {
-                throw new ConfigurationException("Private NIC is not configured");
-            }
-
-            while (nics.hasMoreElements()) {
-                final NetworkInterface nic = nics.nextElement();
-                final String nicName = nic.getName();
-                //  try {
-                if (//!nic.isLoopback() &&
-                        //nic.isUp() &&
-                        !nic.isVirtual() && !nicName.startsWith("vnif") && !nicName.startsWith("vnbr") && !nicName.startsWith("peth") && !nicName.startsWith("vif") &&
-                        !nicName.startsWith("virbr") && !nicName.contains(":")) {
-                    final String[] info = NetUtils.getNicParams(nicName);
-                    if (info != null && info[0] != null) {
-                        _privateNic = nic;
-                        s_logger.info("Designating private to be nic " + nicName);
-                        break;
-                    }
-                }
-                //      } catch (final SocketException e) {
-                //        s_logger.warn("Error looking at " + nicName, e);
-                //  }
-                s_logger.debug("Skipping nic " + nicName);
-            }
-
-            if (_privateNic == null) {
-                throw new ConfigurationException("Private NIC is not configured");
-            }
+            tryToAutoDiscoverResourcePrivateNetworkInterface();
         }
+
         String infos[] = NetUtils.getNetworkParams(_privateNic);
         if (infos == null) {
             s_logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
@@ -132,31 +87,67 @@ public abstract class ServerResourceBase implements ServerResource {
         return true;
     }
 
-    protected NetworkInterface getNetworkInterface(String nicName) {
-        s_logger.debug("Retrieving network interface: " + nicName);
-        if (nicName == null) {
-            return null;
-        }
+    protected void defineResourceNetworkInterfaces(Map<String, Object> params) {
+        String privateNic = (String) params.get("private.network.device");
+        privateNic = privateNic == null ? "xenbr0" : privateNic;
 
-        if (nicName.trim().length() == 0) {
-            return null;
-        }
+        String publicNic = (String) params.get("public.network.device");
+        publicNic = publicNic == null ? "xenbr1" : publicNic;
 
-        nicName = nicName.trim();
+        String storageNic = (String) params.get("storage.network.device");
+        String storageNic2 = (String) params.get("storage.network.device.2");
 
-        NetworkInterface nic;
+        _privateNic = NetUtils.getNetworkInterface(privateNic);
+        _publicNic = NetUtils.getNetworkInterface(publicNic);
+        _storageNic = NetUtils.getNetworkInterface(storageNic);
+        _storageNic2 = NetUtils.getNetworkInterface(storageNic2);
+    }
+
+    protected void tryToAutoDiscoverResourcePrivateNetworkInterface() throws ConfigurationException {
+        s_logger.info("Trying to autodiscover this resource's private network interface.");
+
+        List<NetworkInterface> nics;
         try {
-            nic = NetworkInterface.getByName(nicName);
-            if (nic == null) {
-                s_logger.debug("Unable to get network interface for " + nicName);
-                return null;
+            nics = Collections.list(NetworkInterface.getNetworkInterfaces());
+            if (CollectionUtils.isEmpty(nics)) {
+                throw new ConfigurationException("This resource has no NICs. Unable to configure it.");
             }
-
-            return nic;
-        } catch (final SocketException e) {
-            s_logger.warn("Unable to get network interface for " + nicName, e);
-            return null;
+        } catch (SocketException e) {
+            throw new ConfigurationException(String.format("Could not retrieve the environment NICs due to [%s].", e.getMessage()));
         }
+
+        s_logger.debug(String.format("Searching the private NIC along the environment NICs [%s].", Arrays.toString(nics.toArray())));
+
+        for (NetworkInterface nic : nics) {
+            if (isValidNicToUseAsPrivateNic(nic))  {
+                s_logger.info(String.format("Using NIC [%s] as private NIC.", nic));
+                _privateNic = nic;
+                return;
+            }
+        }
+
+        throw new ConfigurationException("It was not possible to define a private NIC for this resource.");
+    }
+
+    protected boolean isValidNicToUseAsPrivateNic(NetworkInterface nic) {
+        String nicName = nic.getName();
+
+        s_logger.debug(String.format("Verifying if NIC [%s] can be used as private NIC.", nic));
+
+        String[] nicNameStartsToAvoid = {"vnif", "vnbr", "peth", "vif", "virbr"};
+        if (nic.isVirtual() || StringUtils.startsWithAny(nicName, nicNameStartsToAvoid) || nicName.contains(":")) {
+            s_logger.debug(String.format("Not using NIC [%s] because it is either virtual, starts with %s, or contains \":\"" +
+             " in its name.", Arrays.toString(nicNameStartsToAvoid), nic));
+            return false;
+        }
+
+        String[] info = NetUtils.getNicParams(nicName);
+        if (info == null || info[0] == null) {
+            s_logger.debug(String.format("Not using NIC [%s] because it does not have a valid IP to use as the private IP.", nic));
+            return false;
+        }
+
+        return true;
     }
 
     protected void fillNetworkInformation(final StartupCommand cmd) {

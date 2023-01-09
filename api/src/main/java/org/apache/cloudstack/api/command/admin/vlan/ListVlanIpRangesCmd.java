@@ -42,7 +42,6 @@ import com.cloud.utils.Pair;
 public class ListVlanIpRangesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 
-    private static final String s_name = "listvlaniprangesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -134,11 +133,6 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

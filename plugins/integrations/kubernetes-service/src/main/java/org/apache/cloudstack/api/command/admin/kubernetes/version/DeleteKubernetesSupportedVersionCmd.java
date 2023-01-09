@@ -38,14 +38,13 @@ import com.cloud.kubernetes.version.KubernetesVersionEventTypes;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = DeleteKubernetesSupportedVersionCmd.APINAME,
+@APICommand(name = "deleteKubernetesSupportedVersion",
         description = "Deletes a Kubernetes cluster",
         responseObject = SuccessResponse.class,
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
 public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements AdminCmd {
     public static final Logger LOGGER = Logger.getLogger(DeleteKubernetesSupportedVersionCmd.class.getName());
-    public static final String APINAME = "deleteKubernetesSupportedVersion";
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -64,11 +63,6 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
     /////////////////////////////////////////////////////
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

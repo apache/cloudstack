@@ -115,8 +115,16 @@ def get_device_info():
     list = []
     for i in execute("ip addr show |grep -v secondary"):
         vals = i.strip().lstrip().rstrip().split()
+        if re.search('[0-9]:',vals[0]):
+            to={}
+            to['mtu'] = vals[4]
+            list.append(to)
+
         if vals[0] == "inet":
-            to = {}
+            if len(list) > 0:
+                to = list.pop(len(list)-1)
+            else:
+                to={}
             to['ip'] = vals[1]
             to['dev'] = vals[-1]
             to['network'] = IPNetwork(to['ip'])
