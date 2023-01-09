@@ -3742,7 +3742,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (ServiceOffering.State.Inactive.equals(newServiceOffering.getState())) {
-            throw new InvalidParameterValueException("New service offering is Inactive: " + newServiceOffering.getUuid());
+            throw new InvalidParameterValueException(String.format("New service offering is inactive: [%s].", newServiceOffering.getUuid()));
         }
 
         if (!(vmInstance.getState().equals(State.Stopped) || vmInstance.getState().equals(State.Running))) {
