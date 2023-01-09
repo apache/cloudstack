@@ -5664,7 +5664,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
-            throw new InvalidParameterValueException("service offering is Inactive: " + serviceOffering.getUuid());
+            throw new InvalidParameterValueException(String.format("Service offering is inactive: [%s].", serviceOffering.getUuid()));
         }
 
         if (serviceOffering.getDiskOfferingStrictness() && overrideDiskOfferingId != null) {
