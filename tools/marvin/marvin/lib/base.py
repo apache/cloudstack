@@ -6499,4 +6499,3 @@ class PolicyRule:
         cmd.policyuuid = policyuuid
         cmd.ruleuuid = ruleuuid
         return apiclient.removeTungstenFabricPolicyRule(cmd)
-
