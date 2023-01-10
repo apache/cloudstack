@@ -560,7 +560,7 @@
               </a-form-item>
             </a-form-item>
           </span>
-          <a-form-item>
+          <a-form-item name="diskofferingstrictness" ref="diskofferingstrictness">
             <template #label>
               <tooltip-label :title="$t('label.diskofferingstrictness')" :tooltip="apiParams.diskofferingstrictness.description"/>
             </template>
