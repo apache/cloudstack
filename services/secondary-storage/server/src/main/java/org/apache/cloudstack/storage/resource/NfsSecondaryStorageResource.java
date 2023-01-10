@@ -2225,6 +2225,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
+    /**
+    * allow *only one* setting of an outgoing destination at a time
+    *
+    * @destCidr the destination network that will be allowed for outgoing traffic.
+    * @return any error message that might be helpful or <null> on success or when called anywhere but in the router VM.
+    */
     public synchronized String allowOutgoingOnPrivate(String destCidr) {
         if (!_inSystemVM) {
             return null;
