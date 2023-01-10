@@ -334,9 +334,6 @@ export default {
     this.fetchData()
   },
   computed: {
-    usebrowsertimezone () {
-      return this.$store.getters.usebrowsertimezone
-    },
     statsRetentionTime () {
       if (this.resourceType === 'Volume') {
         return this.$store.getters.features.instancesdisksstatsretentiontime
@@ -371,15 +368,6 @@ export default {
     resource: function (newItem) {
       if (!newItem || !newItem.id) {
         return
-      }
-      this.fetchData()
-    },
-    usebrowsertimezone: function () {
-      if (this.startDate) {
-        this.startDate = this.onToggleUseBrowserTimezone(new Date(this.startDate))
-      }
-      if (this.endDate) {
-        this.endDate = this.onToggleUseBrowserTimezone(new Date(this.endDate))
       }
       this.fetchData()
     }
@@ -447,33 +435,13 @@ export default {
     closeAction () {
       this.showFilterStatsModal = false
     },
-    getCurrentDate () {
-      var now = new Date()
-      if (!this.$store.getters.usebrowsertimezone) {
-        now = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
-      }
-      return now
-    },
     getStartDate () {
-      var now = this.getCurrentDate()
+      var now = new Date()
       now.setHours(now.getHours() - 1)
       return now
     },
     getEndDate () {
-      return this.getCurrentDate()
-    },
-    onToggleUseBrowserTimezone (date) {
-      if (this.$store.getters.usebrowsertimezone) {
-        return this.$toLocalDate(date)
-      }
-      return new Date(date.getTime() + date.getTimezoneOffset() * 60000)
-    },
-    convertAndFormatDateAppropriately (date) {
-      if (this.$store.getters.usebrowsertimezone) {
-        var dateInUTC = new Date(date).toISOString().split('T')
-        return dateInUTC[0] + ' ' + dateInUTC[1].split('-')[0].split('.')[0]
-      }
-      return moment(date).format('YYYY-MM-DD HH:mm:ss')
+      return new Date()
     },
     fetchData () {
       this.loaded = false
@@ -481,10 +449,10 @@ export default {
       this.formatPeriod()
       var params = { id: this.resource.id }
       if (this.startDate) {
-        params.startDate = this.convertAndFormatDateAppropriately(this.startDate)
+        params.startDate = moment(this.startDate).format()
       }
       if (this.endDate) {
-        params.endDate = this.convertAndFormatDateAppropriately(this.endDate)
+        params.endDate = moment(this.endDate).format()
       }
       api(this.resourceStatsApi, params).then(response => {
         this.handleStatsResponse(response)
