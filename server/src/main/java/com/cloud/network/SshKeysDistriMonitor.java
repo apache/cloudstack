@@ -38,7 +38,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class SshKeysDistriMonitor implements Listener {
-    private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
+    protected Logger logger = Logger.getLogger(getClass());
     AgentManager _agentMgr;
     private ConfigurationDao _configDao;
 
@@ -59,8 +59,8 @@ public class SshKeysDistriMonitor implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
+        if (logger.isTraceEnabled())
+            logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
 
         return true;
     }
@@ -92,7 +92,7 @@ public class SshKeysDistriMonitor implements Listener {
                     Commands c = new Commands(cmds);
                     _agentMgr.send(host.getId(), c, this);
                 } catch (AgentUnavailableException e) {
-                    s_logger.debug("Failed to send keys to agent: " + host.getId());
+                    logger.debug("Failed to send keys to agent: " + host.getId());
                 }
             }
         }

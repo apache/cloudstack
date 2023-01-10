@@ -56,7 +56,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 public class HypervisorHelperImpl implements HypervisorHelper {
-    private static final Logger s_logger = Logger.getLogger(HypervisorHelperImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
     @Inject
     EndPointSelector selector;
     @Inject
@@ -79,7 +79,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
             answer = ep.sendMessage(cmd);
@@ -99,7 +99,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
             answer = ep.sendMessage(cmd);
@@ -107,7 +107,7 @@ public class HypervisorHelperImpl implements HypervisorHelper {
         if (answer == null || !answer.getResult()) {
             String errMsg = answer == null ? null : answer.getDetails();
             if (errMsg != null) {
-                s_logger.debug("Failed to forget object: " + errMsg);
+                logger.debug("Failed to forget object: " + errMsg);
             }
             return false;
         }

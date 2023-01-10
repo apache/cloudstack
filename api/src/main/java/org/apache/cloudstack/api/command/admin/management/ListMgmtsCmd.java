@@ -23,12 +23,10 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listManagementServers", description = "Lists management servers.", responseObject = ManagementServerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListMgmtsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListMgmtsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

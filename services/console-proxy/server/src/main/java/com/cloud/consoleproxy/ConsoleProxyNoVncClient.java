@@ -31,7 +31,7 @@ import java.util.List;
 import com.cloud.consoleproxy.vnc.NoVncClient;
 
 public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVncClient.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private static int nextClientId = 0;
 
     private NoVncClient client;
@@ -73,7 +73,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     public boolean isFrontEndAlive() {
         if (!connectionAlive || System.currentTimeMillis()
                 - getClientLastFrontEndActivityTime() > ConsoleProxy.VIEWER_LINGER_SECONDS * 1000) {
-            s_logger.info("Front end has been idle for too long");
+            logger.info("Front end has been idle for too long");
             return false;
         }
         return true;
@@ -158,29 +158,29 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     private void connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl) {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
-                s_logger.info("Connect to VNC over websocket URL: " + websocketUrl);
+                logger.info("Connect to VNC over websocket URL: " + websocketUrl);
                 client.connectToWebSocket(websocketUrl, session);
             } else if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
                     && !tunnelSession.isEmpty()) {
                 URI uri = new URI(tunnelUrl);
-                s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: "
+                logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: "
                         + tunnelSession);
 
                 ConsoleProxy.ensureRoute(uri.getHost());
                 client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(),
                         tunnelSession, "https".equalsIgnoreCase(uri.getScheme()));
             } else {
-                s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: "
+                logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: "
                         + getClientHostPort());
                 ConsoleProxy.ensureRoute(getClientHostAddress());
                 client.connectTo(getClientHostAddress(), getClientHostPort());
             }
         } catch (UnknownHostException e) {
-            s_logger.error("Unexpected exception", e);
+            logger.error("Unexpected exception", e);
         } catch (IOException e) {
-            s_logger.error("Unexpected exception", e);
+            logger.error("Unexpected exception", e);
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception", e);
+            logger.error("Unexpected exception", e);
         }
     }
 

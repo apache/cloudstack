@@ -48,7 +48,7 @@ import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
-    private static final Logger log = Logger.getLogger(DefaultModuleDefinitionSet.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
     public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";
@@ -100,7 +100,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                     ApplicationContext context = getApplicationContext(def.getName());
                     try {
                         Runnable runnable = context.getBean("moduleStartup", Runnable.class);
-                        log.info("Starting module [" + def.getName() + "]");
+                        logger.info("Starting module [" + def.getName() + "]");
                         runnable.run();
                     } catch (BeansException e) {
                         // Ignore
@@ -136,13 +136,13 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         context.setClassLoader(def.getClassLoader());
 
         long start = System.currentTimeMillis();
-        if (log.isInfoEnabled()) {
+        if (logger.isInfoEnabled()) {
             for (Resource resource : resources) {
-                log.info("Loading module context [" + def.getName() + "] from " + resource);
+                logger.info("Loading module context [" + def.getName() + "] from " + resource);
             }
         }
         context.refresh();
-        log.info("Loaded module context [" + def.getName() + "] in " + (System.currentTimeMillis() - start) + " ms");
+        logger.info("Loaded module context [" + def.getName() + "] in " + (System.currentTimeMillis() - start) + " ms");
 
         contexts.put(def.getName(), context);
 
@@ -222,7 +222,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         withModule(new WithModule() {
             @Override
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
-                log.info(String.format("Module Hierarchy:%" + ((parents.size() * 2) + 1) + "s%s", "", def.getName()));
+                logger.info(String.format("Module Hierarchy:%" + ((parents.size() * 2) + 1) + "s%s", "", def.getName()));
             }
         });
     }
@@ -237,7 +237,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             return;
 
         if (!shouldLoad(def)) {
-            log.info("Excluding context [" + def.getName() + "] based on configuration");
+            logger.info("Excluding context [" + def.getName() + "] based on configuration");
             return;
         }
 

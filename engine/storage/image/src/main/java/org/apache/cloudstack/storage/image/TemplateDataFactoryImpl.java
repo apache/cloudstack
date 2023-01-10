@@ -51,7 +51,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
-    private static final Logger s_logger = Logger.getLogger(TemplateDataFactoryImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
     @Inject
     VMTemplateDao imageDataDao;
     @Inject
@@ -71,7 +71,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     public TemplateInfo getTemplateOnPrimaryStorage(long templateId, DataStore store, String configuration) {
         VMTemplateVO templ = imageDataDao.findByIdIncludingRemoved(templateId);
         if (templ == null) {
-            s_logger.error("Could not find a template with id " + templateId);
+            logger.error("Could not find a template with id " + templateId);
             return null;
         }
         if (store.getRole() == DataStoreRole.Primary) {
@@ -115,11 +115,11 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             if (!found) {
-                s_logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
+                logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
             } else {
-                s_logger.debug("template " + templateId + " is already in store:" + store.getId() + ", type:" + store.getRole());
+                logger.debug("template " + templateId + " is already in store:" + store.getId() + ", type:" + store.getRole());
             }
         }
 

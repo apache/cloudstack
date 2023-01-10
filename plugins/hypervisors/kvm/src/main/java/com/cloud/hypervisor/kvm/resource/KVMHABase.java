@@ -29,7 +29,7 @@ import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
 
 public class KVMHABase {
-    private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
     protected long _heartBeatUpdateTimeout = 60000;
@@ -120,14 +120,14 @@ public class KVMHABase {
             }
 
         } catch (LibvirtException e) {
-            s_logger.debug("Ignoring libvirt error.", e);
+            logger.debug("Ignoring libvirt error.", e);
         } finally {
             try {
                 if (pool != null) {
                     pool.free();
                 }
             } catch (LibvirtException e) {
-                s_logger.debug("Ignoring libvirt error.", e);
+                logger.debug("Ignoring libvirt error.", e);
             }
         }
 

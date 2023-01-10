@@ -51,7 +51,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedHostListener implements HypervisorHostListener {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireSharedHostListener.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;
@@ -67,13 +67,13 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error(String.format("Failed to add host by SolidFireSharedHostListener as host was not found with id = %s ", hostId));
+            logger.error(String.format("Failed to add host by SolidFireSharedHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
         if (host.getClusterId() == null) {
-            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host has no associated cluster id");
+            logger.error("Failed to add host by SolidFireSharedHostListener as host has no associated cluster id");
             return false;
         }
 
@@ -228,7 +228,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer not returned from ModifyStoragePoolCommand; Storage pool = " +
             storagePool.getId() + "; Host = " + hostId;
 
-        LOGGER.info("Connection established between storage pool " + storagePool + " and host " + hostId);
+        logger.info("Connection established between storage pool " + storagePool + " and host " + hostId);
 
         return (ModifyStoragePoolAnswer)answer;
     }

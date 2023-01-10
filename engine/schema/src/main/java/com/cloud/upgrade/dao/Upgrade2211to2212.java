@@ -24,12 +24,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade2211to2212 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade2211to2212.class);
+public class Upgrade2211to2212 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -68,7 +66,7 @@ public class Upgrade2211to2212 implements DbUpgrade {
     }
 
     private void createResourceCount(Connection conn) {
-        s_logger.debug("Creating missing resource_count records as a part of 2.2.11-2.2.12 upgrade");
+        logger.debug("Creating missing resource_count records as a part of 2.2.11-2.2.12 upgrade");
         try {
 
             //Get all non removed accounts
@@ -99,7 +97,7 @@ public class Upgrade2211to2212 implements DbUpgrade {
                     pstmt.setLong(2, accountId);
                     rs = pstmt.executeQuery();
                     if (!rs.next()) {
-                        s_logger.debug("Inserting resource_count record of type " + resourceType + " for account id=" + accountId);
+                        logger.debug("Inserting resource_count record of type " + resourceType + " for account id=" + accountId);
                         pstmt = conn.prepareStatement("INSERT INTO resource_count (account_id, domain_id, type, count) VALUES (?, null, ?, 0)");
                         pstmt.setLong(1, accountId);
                         pstmt.setString(2, resourceType);
@@ -117,7 +115,7 @@ public class Upgrade2211to2212 implements DbUpgrade {
                     pstmt.setLong(2, domainId);
                     rs = pstmt.executeQuery();
                     if (!rs.next()) {
-                        s_logger.debug("Inserting resource_count record of type " + resourceType + " for domain id=" + domainId);
+                        logger.debug("Inserting resource_count record of type " + resourceType + " for domain id=" + domainId);
                         pstmt = conn.prepareStatement("INSERT INTO resource_count (account_id, domain_id, type, count) VALUES (null, ?, ?, 0)");
                         pstmt.setLong(1, domainId);
                         pstmt.setString(2, resourceType);

@@ -44,7 +44,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 
 public class EventControlsUnitTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(EventControlsUnitTest.class);
+    private Logger logger = Logger.getLogger(EventControlsUnitTest.class);
 
     @Spy
     ManagementServerImpl _mgmtServer = new ManagementServerImpl();
@@ -71,10 +71,10 @@ public class EventControlsUnitTest extends TestCase {
 
     @Test
     public void testInjected() throws Exception {
-        s_logger.info("Starting test to archive and delete events");
+        logger.info("Starting test to archive and delete events");
         archiveEvents();
         deleteEvents();
-        s_logger.info("archive/delete events: TEST PASSED");
+        logger.info("archive/delete events: TEST PASSED");
     }
 
     protected void archiveEvents() {

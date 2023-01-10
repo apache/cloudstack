@@ -20,6 +20,7 @@ package com.cloud.storage;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
+
 public enum DataStoreRole {
     Primary("primary"), Image("image"), ImageCache("imagecache"), Backup("backup");
 

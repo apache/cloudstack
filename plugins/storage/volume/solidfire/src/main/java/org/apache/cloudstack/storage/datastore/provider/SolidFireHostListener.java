@@ -55,7 +55,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class SolidFireHostListener implements HypervisorHostListener {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireHostListener.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;
@@ -73,13 +73,13 @@ public class SolidFireHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
+            logger.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
         if (host.getClusterId() == null) {
-            LOGGER.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
+            logger.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
             return false;
         }
 
@@ -295,6 +295,6 @@ public class SolidFireHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;
 
-        LOGGER.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
+        logger.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
     }
 }

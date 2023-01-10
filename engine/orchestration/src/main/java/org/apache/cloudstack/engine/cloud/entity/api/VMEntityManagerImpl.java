@@ -68,7 +68,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 public class VMEntityManagerImpl implements VMEntityManager {
 
-    private static final Logger s_logger = Logger.getLogger(VMEntityManagerImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     protected VMInstanceDao _vmDao;
@@ -213,8 +213,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
                 if (reservationId != null) {
                     return reservationId;
                 } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
                     }
                     exclude.addHost(dest.getHost().getId());
                     continue;

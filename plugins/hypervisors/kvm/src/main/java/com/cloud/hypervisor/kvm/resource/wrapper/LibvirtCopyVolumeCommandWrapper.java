@@ -37,11 +37,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  CopyVolumeCommand.class)
 public final class LibvirtCopyVolumeCommandWrapper extends CommandWrapper<CopyVolumeCommand, Answer, LibvirtComputingResource> {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtCopyVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final CopyVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -164,7 +162,7 @@ public final class LibvirtCopyVolumeCommandWrapper extends CommandWrapper<CopyVo
                 }
             }
             catch (Exception e) {
-                LOGGER.warn("Unable to disconnect from the source device.", e);
+                logger.warn("Unable to disconnect from the source device.", e);
             }
 
             if (secondaryStoragePool != null) {

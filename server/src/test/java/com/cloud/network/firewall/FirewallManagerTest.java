@@ -63,7 +63,7 @@ import com.cloud.utils.component.ComponentContext;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FirewallManagerTest {
-    private static final Logger s_logger = Logger.getLogger(FirewallManagerTest.class);
+    private Logger logger = Logger.getLogger(FirewallManagerTest.class);
 
 
     @Ignore("Requires database to be set up")
@@ -92,7 +92,7 @@ public class FirewallManagerTest {
 //        Assert.assertTrue(firewallMgr._staticNatElements.get("VirtualRouter") instanceof StaticNatServiceProvider);
 //        Assert.assertTrue(firewallMgr._networkAclElements.get("VpcVirtualRouter") instanceof NetworkACLServiceProvider);
 
-        s_logger.info("Done testing injection of service elements into firewall manager");
+        logger.info("Done testing injection of service elements into firewall manager");
 
     }
 

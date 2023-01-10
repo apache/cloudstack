@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 public class DatabaseAccessObject {
 
-    private static Logger s_logger = Logger.getLogger(DatabaseAccessObject.class);
+    private static Logger LOGGER = Logger.getLogger(DatabaseAccessObject.class);
 
     public void dropKey(Connection conn, String tableName, String key, boolean isForeignKey)
     {
@@ -37,9 +37,9 @@ public class DatabaseAccessObject {
         try(PreparedStatement pstmt = conn.prepareStatement(alter_sql_str);)
         {
             pstmt.executeUpdate();
-            s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
+            LOGGER.debug("Key " + key + " is dropped successfully from the table " + tableName);
         } catch (SQLException e) {
-            s_logger.debug("Ignored SQL Exception when trying to drop " + (isForeignKey ? "foreign " : "") + "key " + key + " on table "  + tableName + " exception: " + e.getMessage());
+            LOGGER.debug("Ignored SQL Exception when trying to drop " + (isForeignKey ? "foreign " : "") + "key " + key + " on table "  + tableName + " exception: " + e.getMessage());
 
         }
     }
@@ -47,18 +47,18 @@ public class DatabaseAccessObject {
     public void dropPrimaryKey(Connection conn, String tableName) {
         try(PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP PRIMARY KEY ");) {
             pstmt.executeUpdate();
-            s_logger.debug("Primary key is dropped successfully from the table " + tableName);
+            LOGGER.debug("Primary key is dropped successfully from the table " + tableName);
         } catch (SQLException e) {
-            s_logger.debug("Ignored SQL Exception when trying to drop primary key on table " + tableName + " exception: " + e.getMessage());
+            LOGGER.debug("Ignored SQL Exception when trying to drop primary key on table " + tableName + " exception: " + e.getMessage());
         }
     }
 
     public void dropColumn(Connection conn, String tableName, String columnName) {
         try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " DROP COLUMN " + columnName);){
             pstmt.executeUpdate();
-            s_logger.debug("Column " + columnName + " is dropped successfully from the table " + tableName);
+            LOGGER.debug("Column " + columnName + " is dropped successfully from the table " + tableName);
         } catch (SQLException e) {
-            s_logger.warn("Unable to drop column " + columnName + " due to exception", e);
+            LOGGER.warn("Unable to drop column " + columnName + " due to exception", e);
         }
     }
 
@@ -68,7 +68,7 @@ public class DatabaseAccessObject {
             pstmt.executeQuery();
             columnExists = true;
         } catch (SQLException e) {
-            s_logger.debug("Field " + columnName + " doesn't exist in " + tableName + " ignoring exception: " + e.getMessage());
+            LOGGER.debug("Field " + columnName + " doesn't exist in " + tableName + " ignoring exception: " + e.getMessage());
         }
         return columnExists;
     }
@@ -79,7 +79,7 @@ public class DatabaseAccessObject {
                 pstmt.close();
             }
         } catch (SQLException e) {
-            s_logger.warn(errorMessage, e);
+            LOGGER.warn(errorMessage, e);
         }
     }
 

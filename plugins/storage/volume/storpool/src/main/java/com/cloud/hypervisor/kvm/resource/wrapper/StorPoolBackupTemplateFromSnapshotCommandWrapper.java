@@ -35,7 +35,6 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.StorPoolBackupTemplateFromSnapshotCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -58,7 +57,6 @@ import com.cloud.storage.template.TemplateProp;
 @ResourceWrapper(handles = StorPoolBackupTemplateFromSnapshotCommand.class)
 public class StorPoolBackupTemplateFromSnapshotCommandWrapper extends CommandWrapper<StorPoolBackupTemplateFromSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorPoolBackupTemplateFromSnapshotCommandWrapper.class);
 
     @Override
     public CopyCmdAnswer execute(final StorPoolBackupTemplateFromSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -142,7 +140,7 @@ public class StorPoolBackupTemplateFromSnapshotCommandWrapper extends CommandWra
         } catch (final Exception e) {
             final String error = "failed to backup snapshot: " + e.getMessage();
             SP_LOG(error);
-            s_logger.debug(error);
+            logger.debug(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
             if (srcPath != null) {
@@ -153,7 +151,7 @@ public class StorPoolBackupTemplateFromSnapshotCommandWrapper extends CommandWra
                 try {
                     secondaryPool.delete();
                 } catch (final Exception e) {
-                    s_logger.debug("Failed to delete secondary storage", e);
+                    logger.debug("Failed to delete secondary storage", e);
                 }
             }
         }

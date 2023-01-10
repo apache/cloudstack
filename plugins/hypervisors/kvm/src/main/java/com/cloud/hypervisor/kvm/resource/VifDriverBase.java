@@ -23,12 +23,15 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 
 public abstract class VifDriverBase implements VifDriver {
+
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected LibvirtComputingResource _libvirtComputingResource;
     protected Map<String, String> _pifs;

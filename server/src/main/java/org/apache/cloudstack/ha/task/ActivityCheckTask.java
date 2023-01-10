@@ -28,12 +28,10 @@ import org.apache.cloudstack.ha.HAResourceCounter;
 import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HAProvider;
 import org.apache.cloudstack.ha.provider.HAProvider.HAProviderConfig;
-import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 public class ActivityCheckTask extends BaseHATask {
 
-    public static final Logger LOG = Logger.getLogger(ActivityCheckTask.class);
 
     @Inject
     private HAManager haManager;

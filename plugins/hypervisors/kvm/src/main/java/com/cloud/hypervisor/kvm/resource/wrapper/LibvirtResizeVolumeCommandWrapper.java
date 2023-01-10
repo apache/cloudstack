@@ -35,7 +35,6 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -62,7 +61,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  ResizeVolumeCommand.class)
 public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<ResizeVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtResizeVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final ResizeVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -76,7 +74,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
 
         if ( currentSize == newSize) {
             // nothing to do
-            s_logger.info("No need to resize volume: current size " + toHumanReadableSize(currentSize) + " is same as new size " + toHumanReadableSize(newSize));
+            logger.info("No need to resize volume: current size " + toHumanReadableSize(currentSize) + " is same as new size " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", currentSize);
         }
 
@@ -106,15 +104,15 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                     return new ResizeVolumeAnswer(command, false, "Unable to shrink volumes of type " + type);
                 }
             } else {
-                s_logger.debug("Volume " + path + " is on a RBD/Linstor storage pool. No need to query for additional information.");
+                logger.debug("Volume " + path + " is on a RBD/Linstor storage pool. No need to query for additional information.");
             }
 
-            s_logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
+            logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
 
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via qemu-img */
             if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.Linstor && pool.getType() != StoragePoolType.PowerFlex
                     && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
-                s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
+                logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
                     final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
@@ -142,12 +140,12 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                with both encrypted and non-encrypted volumes.
              */
             if (!vmIsRunning && command.getPassphrase() != null && command.getPassphrase().length > 0 ) {
-                s_logger.debug("Invoking qemu-img to resize an offline, encrypted volume");
+                logger.debug("Invoking qemu-img to resize an offline, encrypted volume");
                 QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
                 resizeEncryptedQcowFile(vol, encryptFormat,newSize, command.getPassphrase(), libvirtComputingResource);
             } else {
-                s_logger.debug("Invoking resize script to handle type " + type);
-                final Script resizecmd = new Script(libvirtComputingResource.getResizeVolumePath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
+                logger.debug("Invoking resize script to handle type " + type);
+                final Script resizecmd = new Script(libvirtComputingResource.getResizeVolumePath(), libvirtComputingResource.getCmdsTimeout(), logger);
                 resizecmd.add("-s", String.valueOf(newSize));
                 resizecmd.add("-c", String.valueOf(currentSize));
                 resizecmd.add("-p", path);
@@ -169,11 +167,11 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
             pool.refresh();
             final long finalSize = pool.getPhysicalDisk(volumeId).getVirtualSize();
-            s_logger.debug("after resize, size reports as: " + toHumanReadableSize(finalSize) + ", requested: " + toHumanReadableSize(newSize));
+            logger.debug("after resize, size reports as: " + toHumanReadableSize(finalSize) + ", requested: " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", finalSize);
         } catch (final CloudRuntimeException e) {
             final String error = "Failed to resize volume: " + e.getMessage();
-            s_logger.debug(error);
+            logger.debug(error);
             return new ResizeVolumeAnswer(command, false, error);
         } finally {
             command.clearPassphrase();
@@ -187,7 +185,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             Domain dom = conn.domainLookupByName(vmName);
             return (dom != null && dom.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING);
         } catch (LibvirtException ex) {
-            s_logger.info(String.format("Did not find a running VM '%s'", vmName));
+            logger.info(String.format("Did not find a running VM '%s'", vmName));
         }
         return false;
     }

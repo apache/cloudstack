@@ -25,12 +25,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade224to225 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade224to225.class);
+public class Upgrade224to225 extends DbUpgradeAbstractImpl {
 
     @Override
     public InputStream[] getPrepareScripts() {
@@ -80,7 +78,7 @@ public class Upgrade224to225 implements DbUpgrade {
     }
 
     private void createSecurityGroups(Connection conn) {
-        s_logger.debug("Creating missing default security group as a part of 224-225 upgrade");
+        logger.debug("Creating missing default security group as a part of 224-225 upgrade");
         try {
             List<Long> accounts = new ArrayList<Long>();
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM account WHERE removed IS NULL and id != 1");
@@ -95,7 +93,7 @@ public class Upgrade224to225 implements DbUpgrade {
                 pstmt.setLong(1, accountId);
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
-                    s_logger.debug("Default security group is missing for account id=" + accountId + " so adding it");
+                    logger.debug("Default security group is missing for account id=" + accountId + " so adding it");
 
                     // get accountName/domainId information
 
@@ -208,7 +206,7 @@ public class Upgrade224to225 implements DbUpgrade {
         columns.add("guest_ip_type");
         tablesToModify.put("service_offering", columns);
 
-        s_logger.debug("Dropping columns that don't exist in 2.2.5 version of the DB...");
+        logger.debug("Dropping columns that don't exist in 2.2.5 version of the DB...");
         for (String tableName : tablesToModify.keySet()) {
             DbUpgradeUtils.dropTableColumnsIfExist(conn, tableName, tablesToModify.get(tableName));
         }
@@ -277,7 +275,7 @@ public class Upgrade224to225 implements DbUpgrade {
         indexes.put("remote_access_vpn", keys);
 
         // drop all foreign keys first
-        s_logger.debug("Dropping keys that don't exist in 2.2.5 version of the DB...");
+        logger.debug("Dropping keys that don't exist in 2.2.5 version of the DB...");
         for (String tableName : foreignKeys.keySet()) {
             DbUpgradeUtils.dropKeysIfExist(conn, tableName, foreignKeys.get(tableName), true);
         }
@@ -291,7 +289,7 @@ public class Upgrade224to225 implements DbUpgrade {
     private void addMissingKeys(Connection conn) {
         PreparedStatement pstmt = null;
         try {
-            s_logger.debug("Adding missing foreign keys");
+            logger.debug("Adding missing foreign keys");
 
             HashMap<String, String> keyToTableMap = new HashMap<String, String>();
             keyToTableMap.put("fk_console_proxy__id", "console_proxy");
@@ -325,13 +323,13 @@ public class Upgrade224to225 implements DbUpgrade {
 
                 pstmt = conn.prepareStatement("ALTER TABLE " + tableName + " ADD CONSTRAINT " + key + " FOREIGN KEY " + keyToStatementMap.get(key));
                 pstmt.executeUpdate();
-                s_logger.debug("Added missing key " + key + " to table " + tableName);
+                logger.debug("Added missing key " + key + " to table " + tableName);
                 rs.close();
             }
-            s_logger.debug("Missing keys were added successfully as a part of 224 to 225 upgrade");
+            logger.debug("Missing keys were added successfully as a part of 224 to 225 upgrade");
             pstmt.close();
         } catch (SQLException e) {
-            s_logger.error("Unable to add missing foreign key; following statement was executed:" + pstmt);
+            logger.error("Unable to add missing foreign key; following statement was executed:" + pstmt);
             throw new CloudRuntimeException("Unable to add missign keys due to exception", e);
         }
     }
@@ -341,13 +339,13 @@ public class Upgrade224to225 implements DbUpgrade {
             PreparedStatement pstmt = conn.prepareStatement("SELECT * from ovs_tunnel_account");
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
-                s_logger.debug("Adding missing ovs tunnel account");
+                logger.debug("Adding missing ovs tunnel account");
                 pstmt =
                     conn.prepareStatement("INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS')");
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {
-            s_logger.error("Unable to add missing ovs tunnel account due to ", e);
+            logger.error("Unable to add missing ovs tunnel account due to ", e);
             throw new CloudRuntimeException("Unable to add missign ovs tunnel account due to ", e);
         }
     }

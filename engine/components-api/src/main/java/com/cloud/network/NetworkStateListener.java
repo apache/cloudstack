@@ -44,7 +44,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
 
     private static EventBus s_eventBus = null;
 
-    private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public NetworkStateListener(ConfigurationDao configDao) {
         _configDao = configDao;
@@ -94,7 +94,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish state change event on the the event bus.");
+            logger.warn("Failed to publish state change event on the the event bus.");
         }
     }
 

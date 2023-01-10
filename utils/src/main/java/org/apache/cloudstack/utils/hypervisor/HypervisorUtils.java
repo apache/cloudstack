@@ -29,7 +29,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
 
 public class HypervisorUtils {
-    public static final Logger s_logger = Logger.getLogger(HypervisorUtils.class);
+    protected static Logger LOGGER = Logger.getLogger(HypervisorUtils.class);
 
     public static void checkVolumeFileForActivity(final String filePath, int timeoutSeconds, long inactiveThresholdMilliseconds, long minimumFileSize) throws IOException {
         File file = new File(filePath);
@@ -37,7 +37,7 @@ public class HypervisorUtils {
             throw new CloudRuntimeException("File " + file.getAbsolutePath() + " not found");
         }
         if (file.length() < minimumFileSize) {
-            s_logger.debug("VM disk file too small, fresh clone? skipping modify check");
+            LOGGER.debug("VM disk file too small, fresh clone? skipping modify check");
             return;
         }
         int waitedSeconds = 0;
@@ -47,10 +47,10 @@ public class HypervisorUtils {
             long modifyIdle = System.currentTimeMillis() - attrs.lastModifiedTime().toMillis();
             long accessIdle = System.currentTimeMillis() - attrs.lastAccessTime().toMillis();
             if (modifyIdle > inactiveThresholdMilliseconds && accessIdle > inactiveThresholdMilliseconds) {
-                s_logger.debug("File " + filePath + " has not been accessed or modified for at least " + inactiveThresholdMilliseconds + " ms");
+                LOGGER.debug("File " + filePath + " has not been accessed or modified for at least " + inactiveThresholdMilliseconds + " ms");
                 return;
             } else {
-                s_logger.debug("File was modified " + modifyIdle + "ms ago, accessed " + accessIdle + "ms ago, waiting for inactivity threshold of "
+                LOGGER.debug("File was modified " + modifyIdle + "ms ago, accessed " + accessIdle + "ms ago, waiting for inactivity threshold of "
                         + inactiveThresholdMilliseconds + "ms or timeout of " + timeoutSeconds + "s (waited " + waitedSeconds + "s)");
             }
             try {

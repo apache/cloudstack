@@ -46,7 +46,7 @@ import com.cloud.utils.fsm.StateObject;
 @Entity
 @Table(name = "volume_store_ref")
 public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-    private static final Logger s_logger = Logger.getLogger(VolumeDataStoreVO.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -362,7 +362,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
             refCnt--;
         }
         else {
-            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
+            logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
         }
     }
 

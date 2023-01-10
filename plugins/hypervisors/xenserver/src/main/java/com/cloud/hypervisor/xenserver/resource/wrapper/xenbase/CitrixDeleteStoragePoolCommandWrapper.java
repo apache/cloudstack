@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -35,7 +34,6 @@ import com.xensource.xenapi.SR;
 
 @ResourceWrapper(handles =  DeleteStoragePoolCommand.class)
 public final class CitrixDeleteStoragePoolCommandWrapper extends CommandWrapper<DeleteStoragePoolCommand, Answer, CitrixResourceBase> {
-    private static final Logger s_logger = Logger.getLogger(CitrixDeleteStoragePoolCommandWrapper.class);
 
     @Override
     public Answer execute(final DeleteStoragePoolCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -67,7 +65,7 @@ public final class CitrixDeleteStoragePoolCommandWrapper extends CommandWrapper<
             final String msg = "DeleteStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + citrixResourceBase.getHost().getUuid() +
                     " pool: " + poolTO.getHost() + poolTO.getPath();
 
-            s_logger.error(msg, e);
+            logger.error(msg, e);
 
             return new Answer(command, false, msg);
         }

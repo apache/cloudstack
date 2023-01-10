@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;
 
@@ -41,14 +40,13 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
-    private static final Logger s_logger = Logger.getLogger(BaremetalDhcpdResource.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         com.trilead.ssh2.Connection sshConnection = null;
         try {
             super.configure(name, params);
-            s_logger.debug(String.format("Trying to connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s)", _ip, _username, "******"));
+            logger.debug(String.format("Trying to connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s)", _ip, _username, "******"));
             sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
             if (sshConnection == null) {
                 throw new ConfigurationException(String.format("Cannot connect to DHCP server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
@@ -89,10 +87,10 @@ public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
                 throw new ConfigurationException("prepare Dhcpd at " + _ip + " failed, command:" + cmd);
             }
 
-            s_logger.debug("Dhcpd resource configure successfully");
+            logger.debug("Dhcpd resource configure successfully");
             return true;
         } catch (Exception e) {
-            s_logger.debug("Dhcpd resource configure failed", e);
+            logger.debug("Dhcpd resource configure failed", e);
             throw new ConfigurationException(e.getMessage());
         } finally {
             SSHCmdHelper.releaseSshConnection(sshConnection);

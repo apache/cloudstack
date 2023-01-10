@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
  */
 public class ParamGenericValidationWorker implements DispatchWorker {
 
-    static Logger s_logger = Logger.getLogger(ParamGenericValidationWorker.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected static final List<String> defaultParamNames = new ArrayList<String>();
 
@@ -99,7 +99,7 @@ public class ParamGenericValidationWorker implements DispatchWorker {
         }
 
         if (foundUnknownParam) {
-            s_logger.warn(String.format("Received unknown parameters for command %s. %s", cmd.getActualCommandName(), errorMsg));
+            logger.warn(String.format("Received unknown parameters for command %s. %s", cmd.getActualCommandName(), errorMsg));
         }
     }
 

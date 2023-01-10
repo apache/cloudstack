@@ -33,7 +33,7 @@ import java.io.IOException;
 
 public final class HTTPUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(HTTPUtils.class);
+    protected static Logger LOGGER = Logger.getLogger(HTTPUtils.class);
 
     // The connection manager.
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();

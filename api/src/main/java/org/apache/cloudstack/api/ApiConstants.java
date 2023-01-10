@@ -714,8 +714,8 @@ public class ApiConstants {
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
     public static final String NICIRA_NVP_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
     public static final String NICIRA_NVP_L2_GATEWAYSERVICE_UUID = "l2gatewayserviceuuid";
-    public static final String NSX_LOGICAL_SWITCH = "nsxlogicalswitch";
-    public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
+    public static final String NSX_loggerICAL_SWITCH = "nsxlogicalswitch";
+    public static final String NSX_loggerICAL_SWITCH_PORT = "nsxlogicalswitchport";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
@@ -928,8 +928,8 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
-    public static final String LOGIN = "login";
-    public static final String LOGOUT = "logout";
+    public static final String loggerIN = "login";
+    public static final String loggerOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
 
     public static final String PUBLIC_MTU = "publicmtu";

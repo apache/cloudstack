@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 
 public class FtpTemplateUploader implements TemplateUploader {
 
-    public static final Logger s_logger = Logger.getLogger(FtpTemplateUploader.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
     public TemplateUploader.Status status = TemplateUploader.Status.NOT_STARTED;
     public String errorString = "";
     public long totalBytes = 0;
@@ -110,11 +110,11 @@ public class FtpTemplateUploader implements TemplateUploader {
         } catch (MalformedURLException e) {
             status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
             errorString = e.getMessage();
-            s_logger.error(errorString);
+            logger.error(errorString);
         } catch (IOException e) {
             status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
             errorString = e.getMessage();
-            s_logger.error(errorString);
+            logger.error(errorString);
         } finally {
             try {
                 if (inputStream != null) {
@@ -124,7 +124,7 @@ public class FtpTemplateUploader implements TemplateUploader {
                     outputStream.close();
                 }
             } catch (IOException ioe) {
-                s_logger.error(" Caught exception while closing the resources");
+                logger.error(" Caught exception while closing the resources");
             }
             if (callback != null) {
                 callback.uploadComplete(status);
@@ -139,7 +139,7 @@ public class FtpTemplateUploader implements TemplateUploader {
         try {
             upload(completionCallback);
         } catch (Throwable t) {
-            s_logger.warn("Caught exception during upload " + t.getMessage(), t);
+            logger.warn("Caught exception during upload " + t.getMessage(), t);
             errorString = "Failed to install: " + t.getMessage();
             status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
         }
@@ -207,7 +207,7 @@ public class FtpTemplateUploader implements TemplateUploader {
                         inputStream.close();
                     }
                 } catch (IOException e) {
-                    s_logger.error(" Caught exception while closing the resources");
+                    logger.error(" Caught exception while closing the resources");
                 }
                 status = TemplateUploader.Status.ABORTED;
                 return true;

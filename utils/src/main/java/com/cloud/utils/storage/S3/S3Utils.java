@@ -56,7 +56,7 @@ import static java.util.Collections.unmodifiableList;
 
 public final class S3Utils {
 
-    private static final Logger LOGGER = Logger.getLogger(S3Utils.class);
+    protected static Logger LOGGER = Logger.getLogger(S3Utils.class);
 
     public static final String SEPARATOR = "/";
 

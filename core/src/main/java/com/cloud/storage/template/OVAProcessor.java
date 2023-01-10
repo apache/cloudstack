@@ -34,7 +34,6 @@ import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -52,7 +51,6 @@ import com.cloud.utils.script.Script;
  * processes the content of an OVA for registration of a template
  */
 public class OVAProcessor extends AdapterBase implements Processor {
-    private static final Logger LOGGER = Logger.getLogger(OVAProcessor.class);
     StorageLayer _storage;
 
     @Override
@@ -66,11 +64,11 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return null;
         }
 
-        LOGGER.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
+        logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Unable to find the vmware template file: " + templateFilePath);
+            if (logger.isInfoEnabled()) {
+                logger.info("Unable to find the vmware template file: " + templateFilePath);
             }
             return null;
         }
@@ -114,46 +112,46 @@ public class OVAProcessor extends AdapterBase implements Processor {
 
         List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, doc, null);
         if (CollectionUtils.isNotEmpty(disks)) {
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Found %d disks in template %s", disks.size(), ovfFilePath));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Found %d disks in template %s", disks.size(), ovfFilePath));
             }
             ovfInformationTO.setDisks(disks);
         }
         List<OVFNetworkTO> nets = ovfHelper.getNetPrerequisitesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(nets)) {
-            LOGGER.info("Found " + nets.size() + " prerequisite networks");
+            logger.info("Found " + nets.size() + " prerequisite networks");
             ovfInformationTO.setNetworks(nets);
-        } else if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("no net prerequisites found in template %s", ovfFilePath));
+        } else if (logger.isTraceEnabled()) {
+            logger.trace(String.format("no net prerequisites found in template %s", ovfFilePath));
         }
         List<OVFPropertyTO> ovfProperties = ovfHelper.getConfigurableOVFPropertiesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
-            LOGGER.info("Found " + ovfProperties.size() + " configurable OVF properties");
+            logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
             ovfInformationTO.setProperties(ovfProperties);
-        } else if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("no ovf properties found in template %s", ovfFilePath));
+        } else if (logger.isTraceEnabled()) {
+            logger.trace(String.format("no ovf properties found in template %s", ovfFilePath));
         }
         OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
         List<OVFConfigurationTO> configurations = hardwareSection.getConfigurations();
         if (CollectionUtils.isNotEmpty(configurations)) {
-            LOGGER.info("Found " + configurations.size() + " deployment option configurations");
+            logger.info("Found " + configurations.size() + " deployment option configurations");
         }
         List<OVFVirtualHardwareItemTO> hardwareItems = hardwareSection.getCommonHardwareItems();
         if (CollectionUtils.isNotEmpty(hardwareItems)) {
-            LOGGER.info("Found " + hardwareItems.size() + " virtual hardware items");
+            logger.info("Found " + hardwareItems.size() + " virtual hardware items");
         }
         if (StringUtils.isNotBlank(hardwareSection.getMinimiumHardwareVersion())) {
-            LOGGER.info("Found minimum hardware version " + hardwareSection.getMinimiumHardwareVersion());
+            logger.info("Found minimum hardware version " + hardwareSection.getMinimiumHardwareVersion());
         }
         ovfInformationTO.setHardwareSection(hardwareSection);
         List<OVFEulaSectionTO> eulaSections = ovfHelper.getEulaSectionsFromDocument(doc);
         if (CollectionUtils.isNotEmpty(eulaSections)) {
-            LOGGER.info("Found " + eulaSections.size() + " license agreements");
+            logger.info("Found " + eulaSections.size() + " license agreements");
             ovfInformationTO.setEulaSections(eulaSections);
         }
         Pair<String, String> guestOsPair = ovfHelper.getOperatingSystemInfoFromDocument(doc);
         if (guestOsPair != null) {
-            LOGGER.info("Found guest OS information: " + guestOsPair.first() + " - " + guestOsPair.second());
+            logger.info("Found guest OS information: " + guestOsPair.first() + " - " + guestOsPair.second());
             ovfInformationTO.setGuestOsInfo(guestOsPair);
         }
         return ovfInformationTO;
@@ -163,33 +161,33 @@ public class OVAProcessor extends AdapterBase implements Processor {
         Script command;
         String result;
 
-        command = new Script("chmod", 0, LOGGER);
+        command = new Script("chmod", 0, logger);
         command.add("-R");
         command.add("666", templatePath);
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
+            logger.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
         }
-        command = new Script("chmod", 0, LOGGER);
+        command = new Script("chmod", 0, logger);
         command.add("777", templatePath);
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Unable to set permissions for " + templatePath + " due to " + result);
+            logger.warn("Unable to set permissions for " + templatePath + " due to " + result);
         }
     }
 
     private String unpackOva(String templatePath, String templateName, long processTimeout) throws InternalErrorException {
-        LOGGER.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
+        logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFileFullPath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         File templateFile = new File(templateFileFullPath);
-        Script command = new Script("tar", processTimeout, LOGGER);
+        Script command = new Script("tar", processTimeout, logger);
         command.add("--no-same-owner");
         command.add("--no-same-permissions");
         command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();
         if (result != null) {
-            LOGGER.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
+            logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
             throw new InternalErrorException("failed to untar OVA package");
         }
         return templateFileFullPath;
@@ -197,13 +195,13 @@ public class OVAProcessor extends AdapterBase implements Processor {
 
     private boolean conversionChecks(ImageFormat format) {
         if (format != null) {
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("We currently don't handle conversion from " + format + " to OVA.");
+            if (logger.isInfoEnabled()) {
+                logger.info("We currently don't handle conversion from " + format + " to OVA.");
             }
             return false;
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("We are handling format " + format + ".");
+        if (logger.isTraceEnabled()) {
+            logger.trace("We are handling format " + format + ".");
         }
         return true;
     }
@@ -214,7 +212,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
         } catch (Exception e) {
-            LOGGER.info("[ignored]"
+            logger.info("[ignored]"
                     + "failed to get virtual template size for ova: " + e.getLocalizedMessage());
         }
         return file.length();
@@ -234,7 +232,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         OVFHelper ovfHelper = new OVFHelper();
         if (ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath;
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new InternalErrorException(msg);
         }
         try {
@@ -248,7 +246,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
                     diskSize = Long.parseLong(diskSizeValue);
                 } catch (NumberFormatException e) {
                     // ASSUMEably the diskSize contains a property for replacement
-                    LOGGER.warn(String.format("the disksize for disk %s is not a valid number: %s", disk.getAttribute("diskId"), diskSizeValue));
+                    logger.warn(String.format("the disksize for disk %s is not a valid number: %s", disk.getAttribute("diskId"), diskSizeValue));
                     // TODO parse the property to get any value can not be done at registration time
                     //  and will have to be done at deploytime, so for orchestration purposes
                     //  we now assume, a value of one
@@ -260,7 +258,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return virtualSize;
         } catch (InternalErrorException  | NumberFormatException e) {
             String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new InternalErrorException(msg);
         }
     }

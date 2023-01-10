@@ -24,7 +24,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -63,7 +62,6 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 public class AgentRoutingResource extends AgentStorageResource {
-    private static final Logger s_logger = Logger.getLogger(AgentRoutingResource.class);
     private static final Gson s_gson = GsonHelper.getGson();
 
     private Map<String, Pair<Long, Long>> _runningVms = new HashMap<String, Pair<Long, Long>>();
@@ -136,7 +134,7 @@ public class AgentRoutingResource extends AgentStorageResource {
                         try {
                             clz = Class.forName(objectType);
                         } catch (ClassNotFoundException e) {
-                            s_logger.info("[ignored] ping returned class", e);
+                            logger.info("[ignored] ping returned class", e);
                         }
                         if (clz != null) {
                             StringReader reader = new StringReader(objectData);
@@ -303,7 +301,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (!super.configure(name, params)) {
-            s_logger.warn("Base class was unable to configure");
+            logger.warn("Base class was unable to configure");
             return false;
         }
         return true;

@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 
 
 public class CheckedReservation  implements AutoCloseable, ResourceReservation {
-    private static final Logger LOG = Logger.getLogger(CheckedReservation.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private static final int TRY_TO_GET_LOCK_TIME = 120;
     private GlobalLock quotaLimitLock;
@@ -58,8 +58,8 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
         this.reservation = null;
         setGlobalLock(account, resourceType);
         if (this.amount != null && this.amount <= 0) {
-            if(LOG.isDebugEnabled()){
-                LOG.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s, %s ", account.getAccountName(), account.getDomainId(), resourceType, amount));
+            if(logger.isDebugEnabled()){
+                logger.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s, %s ", account.getAccountName(), account.getDomainId(), resourceType, amount));
             }
             this.amount = null;
         }
@@ -79,8 +79,8 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
                 throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", quotaLimitLock.getName()), resourceType);
             }
         } else {
-            if(LOG.isDebugEnabled()){
-                LOG.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s ", account.getAccountName(), account.getDomainId(), resourceType));
+            if(logger.isDebugEnabled()){
+                logger.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s ", account.getAccountName(), account.getDomainId(), resourceType));
             }
         }
     }

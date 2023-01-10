@@ -32,7 +32,7 @@ import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 public class DefaultManagedContext implements ManagedContext {
 
-    private static final Logger log = Logger.getLogger(DefaultManagedContext.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     List<ManagedContextListener<?>> listeners = new CopyOnWriteArrayList<ManagedContextListener<?>>();
 
@@ -87,7 +87,7 @@ public class DefaultManagedContext implements ManagedContext {
                     if (firstError == null) {
                         firstError = t;
                     }
-                    log.error("Failed onEnterContext for listener: " +  listener, t);
+                    logger.error("Failed onEnterContext for listener: " +  listener, t);
                 }
 
                 /* Stack data structure is used because in between onEnter and onLeave
@@ -113,7 +113,7 @@ public class DefaultManagedContext implements ManagedContext {
                         invocation.listener.onLeaveContext(invocation.data, reentry);
                     } catch (Throwable t) {
                         lastError = t;
-                        log.error("Failed onLeaveContext for listener: [" + invocation.listener + "]", t);
+                        logger.error("Failed onLeaveContext for listener: [" + invocation.listener + "]", t);
                     }
                 }
 

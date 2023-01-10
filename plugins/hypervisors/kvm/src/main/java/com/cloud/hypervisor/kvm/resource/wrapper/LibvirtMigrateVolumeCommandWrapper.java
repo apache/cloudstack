@@ -35,11 +35,9 @@ import java.util.UUID;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtMigrateVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -79,14 +77,14 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
                 storagePoolManager.disconnectPhysicalDisk(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid(), destPath);
             }
             catch (Exception e) {
-                LOGGER.warn("Unable to disconnect from the destination device.", e);
+                logger.warn("Unable to disconnect from the destination device.", e);
             }
 
             try {
                 storagePoolManager.disconnectPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath);
             }
             catch (Exception e) {
-                LOGGER.warn("Unable to disconnect from the source device.", e);
+                logger.warn("Unable to disconnect from the source device.", e);
             }
         }
 

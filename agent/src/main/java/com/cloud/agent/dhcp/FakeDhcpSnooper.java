@@ -32,7 +32,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
 public class FakeDhcpSnooper implements DhcpSnooper {
-    private static final Logger s_logger = Logger.getLogger(FakeDhcpSnooper.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private Queue<String> _ipAddresses = new ConcurrentLinkedQueue<String>();
     private Map<String, String> _macIpMap = new ConcurrentHashMap<String, String>();
     private Map<String, InetAddress> _vmIpMap = new ConcurrentHashMap<String, InetAddress>();
@@ -67,17 +67,17 @@ public class FakeDhcpSnooper implements DhcpSnooper {
     public InetAddress getIPAddr(String macAddr, String vmName) {
         String ipAddr = _ipAddresses.poll();
         if (ipAddr == null) {
-            s_logger.warn("No ip addresses left in queue");
+            logger.warn("No ip addresses left in queue");
             return null;
         }
         try {
             InetAddress inetAddr = InetAddress.getByName(ipAddr);
             _macIpMap.put(macAddr.toLowerCase(), ipAddr);
             _vmIpMap.put(vmName, inetAddr);
-            s_logger.info("Got ip address " + ipAddr + " for vm " + vmName + " mac=" + macAddr.toLowerCase());
+            logger.info("Got ip address " + ipAddr + " for vm " + vmName + " mac=" + macAddr.toLowerCase());
             return inetAddr;
         } catch (UnknownHostException e) {
-            s_logger.warn("Failed to get InetAddress for " + ipAddr);
+            logger.warn("Failed to get InetAddress for " + ipAddr);
             return null;
         }
     }
@@ -98,12 +98,12 @@ public class FakeDhcpSnooper implements DhcpSnooper {
             }
             ipAddr = _macIpMap.remove(macAddr);
 
-            s_logger.info("Cleaning up for mac address: " + macAddr + " ip=" + ipAddr + " inetAddr=" + inetAddr);
+            logger.info("Cleaning up for mac address: " + macAddr + " ip=" + ipAddr + " inetAddr=" + inetAddr);
             if (ipAddr != null) {
                 _ipAddresses.offer(ipAddr);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to cleanup: " + e.toString());
+            logger.debug("Failed to cleanup: " + e.toString());
         }
     }
 

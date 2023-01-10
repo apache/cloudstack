@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 public class LibvirtStoragePoolDef {
     public enum PoolType {
-        ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir"), RBD("rbd"), GLUSTERFS("glusterfs"), POWERFLEX("powerflex");
+        ISCSI("iscsi"), NETFS("netfs"), loggerICAL("logical"), DIR("dir"), RBD("rbd"), GLUSTERFS("glusterfs"), POWERFLEX("powerflex");
         String _poolType;
 
         PoolType(String poolType) {

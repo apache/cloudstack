@@ -22,7 +22,6 @@ import java.util.List;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listDomainChildren", description = "Lists all children domains belonging to a specified domain", responseObject = DomainResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDomainChildrenCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

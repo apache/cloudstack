@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.component.ComponentContext;
 
 public class ScaleIOPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDatastoreProvider.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private DataStoreLifeCycle lifeCycle;
     private PrimaryDataStoreDriver driver;

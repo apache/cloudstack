@@ -36,7 +36,7 @@ import com.cloud.utils.PropertiesUtil;
  *         path to the properties _file | String | db/db.properties || * }
  **/
 public class PropertiesStorage implements StorageComponent {
-    private static final Logger s_logger = Logger.getLogger(PropertiesStorage.class);
+    protected Logger logger = Logger.getLogger(getClass());
     Properties _properties = new Properties();
     File _file;
     String _name;
@@ -49,7 +49,7 @@ public class PropertiesStorage implements StorageComponent {
     @Override
     public synchronized void persist(String key, String value) {
         if (!loadFromFile(_file)) {
-            s_logger.error("Failed to load changes and then write to them");
+            logger.error("Failed to load changes and then write to them");
         }
         _properties.setProperty(key, value);
         FileOutputStream output = null;
@@ -59,7 +59,7 @@ public class PropertiesStorage implements StorageComponent {
             output.flush();
             output.close();
         } catch (IOException e) {
-            s_logger.error("Uh-oh: ", e);
+            logger.error("Uh-oh: ", e);
         } finally {
             IOUtils.closeQuietly(output);
         }
@@ -70,10 +70,10 @@ public class PropertiesStorage implements StorageComponent {
             PropertiesUtil.loadFromFile(_properties, file);
             _file = file;
         } catch (FileNotFoundException e) {
-            s_logger.error("How did we get here? ", e);
+            logger.error("How did we get here? ", e);
             return false;
         } catch (IOException e) {
-            s_logger.error("IOException: ", e);
+            logger.error("IOException: ", e);
             return false;
         }
         return true;
@@ -92,11 +92,11 @@ public class PropertiesStorage implements StorageComponent {
             file = new File(path);
             try {
                 if (!file.createNewFile()) {
-                    s_logger.error("Unable to create _file: " + file.getAbsolutePath());
+                    logger.error("Unable to create _file: " + file.getAbsolutePath());
                     return false;
                 }
             } catch (IOException e) {
-                s_logger.error("Unable to create _file: " + file.getAbsolutePath(), e);
+                logger.error("Unable to create _file: " + file.getAbsolutePath(), e);
                 return false;
             }
         }

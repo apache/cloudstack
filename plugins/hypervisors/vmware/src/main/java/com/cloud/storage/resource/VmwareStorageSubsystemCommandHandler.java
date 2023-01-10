@@ -23,7 +23,6 @@ import java.util.EnumMap;
 
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.utils.NumbersUtil;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -44,7 +43,6 @@ import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorC
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
 
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
     private String _nfsVersion;
@@ -88,7 +86,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 processor.setDiskProvisioningStrictness(diskProvisioningStrictness);
                 break;
             default:
-                s_logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
+                logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
                 return false;
             }
         }
@@ -153,7 +151,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                         DeleteCommand deleteCommand = new DeleteCommand(template);
                         storageResource.defaultAction(deleteCommand);
                     } catch (Exception e) {
-                        s_logger.debug("Failed to clean up staging area:", e);
+                        logger.debug("Failed to clean up staging area:", e);
                     }
                     return result;
                 }
@@ -189,7 +187,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                     DeleteCommand deleteCommand = new DeleteCommand(newSnapshot);
                     storageResource.defaultAction(deleteCommand);
                 } catch (Exception e) {
-                    s_logger.debug("Failed to clean up staging area:", e);
+                    logger.debug("Failed to clean up staging area:", e);
                 }
                 return result;
             }

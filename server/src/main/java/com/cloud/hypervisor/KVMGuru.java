@@ -46,7 +46,6 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -71,7 +70,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
-    public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -136,21 +134,21 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
-            s_logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
+            logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
             double hostMaxSpeed = getHostCPUSpeed(host);
             double maxSpeed = getVmSpeed(to);
             try {
                 BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
                 percent = percent.setScale(2, RoundingMode.HALF_DOWN);
                 if (percent.compareTo(new BigDecimal(1)) == 1) {
-                    s_logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
+                    logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
                     percent = new BigDecimal(1);
                 }
                 to.setCpuQuotaPercentage(percent.doubleValue());
-                s_logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
+                logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
                         "max CPU speed = " + maxSpeed + "MHz. Setting CPU quota percentage as: " + percent.doubleValue());
             } catch (NumberFormatException e) {
-                s_logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
+                logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
             }
         }
     }
@@ -243,15 +241,15 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         Long lastHostId = virtualMachine.getLastHostId();
-        s_logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
+        logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
         HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
-            s_logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost));
+            logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost));
         } else {
-            s_logger.warn(String.format("%s host [%s] and last host [%s] are null. Using 'Long.MAX_VALUE' [%s] and 'Integer.MAX_VALUE' [%s] as max memory and cpu cores.", vmDescription, virtualMachine.getHostId(), lastHostId, maxHostMemory, maxHostCpuCore));
+            logger.warn(String.format("%s host [%s] and last host [%s] are null. Using 'Long.MAX_VALUE' [%s] and 'Integer.MAX_VALUE' [%s] as max memory and cpu cores.", vmDescription, virtualMachine.getHostId(), lastHostId, maxHostMemory, maxHostCpuCore));
         }
 
         return new Pair<>(maxHostMemory, maxHostCpuCore);
@@ -264,18 +262,18 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer customOfferingMaxMemory = NumberUtils.createInteger(serviceOfferingVO.getDetail(ApiConstants.MAX_MEMORY));
         Integer maxMemoryConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
         if (customOfferingMaxMemory != null) {
-            s_logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
+            logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
             maxMemory = ByteScaleUtils.mebibytesToBytes(customOfferingMaxMemory);
         } else {
             String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
 
-            s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
+            logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
                     serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
 
             if (maxMemoryConfig > 0) {
                 maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfig);
             } else {
-                s_logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
+                logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
                 maxMemory = maxHostMemory;
             }
         }
@@ -290,18 +288,18 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxCpuCoresConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
 
         if (customOfferingMaxCpuCores != null) {
-            s_logger.debug(String.format("Using 'Custom unconstrained' %s max cpu cores [%s] as %s cpu cores.", serviceOfferingDescription, customOfferingMaxCpuCores, vmDescription));
+            logger.debug(String.format("Using 'Custom unconstrained' %s max cpu cores [%s] as %s cpu cores.", serviceOfferingDescription, customOfferingMaxCpuCores, vmDescription));
             maxCpuCores = customOfferingMaxCpuCores;
         } else {
             String maxCpuCoreConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.key();
 
-            s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
+            logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
                     serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
 
             if (maxCpuCoresConfig > 0) {
                 maxCpuCores = maxCpuCoresConfig;
             } else {
-                s_logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max cpu cores [%s] as VM cpu cores in the hypervisor.", maxCpuCoreConfigKey, vmDescription, maxHostCpuCore));
+                logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max cpu cores [%s] as VM cpu cores in the hypervisor.", maxCpuCoreConfigKey, vmDescription, maxHostCpuCore));
                 maxCpuCores = maxHostCpuCore;
             }
         }
@@ -344,7 +342,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup)  {
-        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+        logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
 
         VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);

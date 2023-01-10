@@ -18,7 +18,6 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +41,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deletePaloAltoFirewall", responseObject = SuccessResponse.class, description = " delete a Palo Alto firewall device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePaloAltoFirewallCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePaloAltoFirewallCmd.class.getName());
     @Inject
     PaloAltoFirewallElementService _paElementService;
 

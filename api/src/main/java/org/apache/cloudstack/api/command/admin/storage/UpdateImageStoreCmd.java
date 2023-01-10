@@ -25,14 +25,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.ImageStore;
 
 @APICommand(name = UpdateImageStoreCmd.APINAME, description = "Updates image store read-only status", responseObject = ImageStoreResponse.class, entityType = {ImageStore.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0")
 public class UpdateImageStoreCmd extends BaseCmd {
-    private static final Logger LOG = Logger.getLogger(UpdateImageStoreCmd.class.getName());
     public static final String APINAME = "updateImageStore";
 
     /////////////////////////////////////////////////////

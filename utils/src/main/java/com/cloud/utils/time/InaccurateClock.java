@@ -34,7 +34,7 @@ import com.cloud.utils.mgmt.JmxUtil;
  */
 
 public class InaccurateClock extends StandardMBean implements InaccurateClockMBean {
-    private static final Logger s_logger = Logger.getLogger(InaccurateClock.class);
+    protected Logger logger = Logger.getLogger(InaccurateClock.class);
     static ScheduledExecutorService s_executor = null;
     static final InaccurateClock s_timer = new InaccurateClock();
     private static long time;
@@ -46,7 +46,7 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
         try {
             JmxUtil.registerMBean("InaccurateClock", "InaccurateClock", this);
         } catch (Exception e) {
-            s_logger.warn("Unable to initialize inaccurate clock", e);
+            logger.warn("Unable to initialize inaccurate clock", e);
         }
     }
 
@@ -73,7 +73,7 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
             try {
                 s_executor.shutdown();
             } catch (Throwable th) {
-                s_logger.error("Unable to shutdown the Executor", th);
+                logger.error("Unable to shutdown the Executor", th);
                 return "Unable to turn off check logs";
             }
         }
@@ -95,7 +95,7 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
             try {
                 time = System.currentTimeMillis();
             } catch (Throwable th) {
-                s_logger.error("Unable to time", th);
+                logger.error("Unable to time", th);
             }
         }
     }

@@ -38,7 +38,7 @@ import com.cloud.consoleproxy.websocket.WebSocketReverseProxy;
 import org.eclipse.jetty.websocket.api.Session;
 
 public class NoVncClient {
-    private static final Logger s_logger = Logger.getLogger(NoVncClient.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private Socket socket;
     private DataInputStream is;
@@ -64,7 +64,7 @@ public class NoVncClient {
 
     public void connectTo(String host, int port) throws UnknownHostException, IOException {
         // Connect to server
-        s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
+        logger.info("Connecting to VNC server " + host + ":" + port + "...");
         socket = new Socket(host, port);
         setStreams();
     }
@@ -110,7 +110,7 @@ public class NoVncClient {
 
         // Server should use RFB protocol 3.x
         if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR)) {
-            s_logger.error("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
+            logger.error("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
             throw new RuntimeException(
                     "Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
         }
@@ -135,7 +135,7 @@ public class NoVncClient {
                 is.readFully(buf);
                 String reason = new String(buf, RfbConstants.CHARSET);
 
-                s_logger.error("Authentication to VNC server is failed. Reason: " + reason);
+                logger.error("Authentication to VNC server is failed. Reason: " + reason);
                 throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
             }
 
@@ -145,13 +145,13 @@ public class NoVncClient {
             }
 
             case RfbConstants.VNC_AUTH: {
-                s_logger.info("VNC server requires password authentication");
+                logger.info("VNC server requires password authentication");
                 doVncAuth(is, os, password);
                 break;
             }
 
             default:
-                s_logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
+                logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
                 throw new RuntimeException(
                         "Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
         }
@@ -174,7 +174,7 @@ public class NoVncClient {
         try {
             response = encodePassword(challenge, password);
         } catch (Exception e) {
-            s_logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
+            logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
             throw new RuntimeException("Cannot encrypt client password to send to server: " + e.getMessage());
         }
 
@@ -192,15 +192,15 @@ public class NoVncClient {
             }
 
             case RfbConstants.VNC_AUTH_TOO_MANY:
-                s_logger.error("Connection to VNC server failed: too many wrong attempts.");
+                logger.error("Connection to VNC server failed: too many wrong attempts.");
                 throw new RuntimeException("Connection to VNC server failed: too many wrong attempts.");
 
             case RfbConstants.VNC_AUTH_FAILED:
-                s_logger.error("Connection to VNC server failed: wrong password.");
+                logger.error("Connection to VNC server failed: wrong password.");
                 throw new RuntimeException("Connection to VNC server failed: wrong password.");
 
             default:
-                s_logger.error("Connection to VNC server failed, reason code: " + authResult);
+                logger.error("Connection to VNC server failed, reason code: " + authResult);
                 throw new RuntimeException("Connection to VNC server failed, reason code: " + authResult);
         }
     }

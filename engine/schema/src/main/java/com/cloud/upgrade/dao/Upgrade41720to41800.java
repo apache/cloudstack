@@ -22,7 +22,6 @@ import org.apache.cloudstack.api.response.UsageTypeResponse;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -35,9 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade41720to41800 extends DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41720to41800.class);
 
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
@@ -90,7 +88,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void updateSystemVmTemplates(Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        logger.debug("Updating System Vm template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
@@ -100,7 +98,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     protected void convertQuotaTariffsToNewParadigm(Connection conn) {
-        LOG.info("Converting quota tariffs to new paradigm.");
+        logger.info("Converting quota tariffs to new paradigm.");
 
         List<UsageTypeResponse> usageTypeResponses = UsageTypes.listUsageTypes();
 
@@ -109,14 +107,14 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
             String tariffTypeDescription = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(usageTypeResponse, "description", "usageType");
 
-            LOG.info(String.format("Converting quota tariffs of type %s to new paradigm.", tariffTypeDescription));
+            logger.info(String.format("Converting quota tariffs of type %s to new paradigm.", tariffTypeDescription));
 
             for (boolean previousTariff : Arrays.asList(true, false)) {
                 Map<Long, Date> tariffs = selectTariffs(conn, usageType, previousTariff, tariffTypeDescription);
 
                 int tariffsSize = tariffs.size();
                 if (tariffsSize <  2) {
-                    LOG.info(String.format("Quota tariff of type %s has [%s] %s register(s). Tariffs with less than 2 register do not need to be converted to new paradigm.",
+                    logger.info(String.format("Quota tariff of type %s has [%s] %s register(s). Tariffs with less than 2 register do not need to be converted to new paradigm.",
                             tariffTypeDescription, tariffsSize, previousTariff ? "previous of current" : "next to current"));
                     continue;
                 }
@@ -132,7 +130,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         String selectQuotaTariffs = String.format("SELECT id, effective_on FROM cloud_usage.quota_tariff WHERE %s AND usage_type = ? ORDER BY effective_on, updated_on;",
                 previousTariff ? "usage_name = name" : "removed is null");
 
-        LOG.info(String.format("Selecting %s quota tariffs of type [%s] according to SQL [%s].", previousTariff ? "previous of current" : "next to current",
+        logger.info(String.format("Selecting %s quota tariffs of type [%s] according to SQL [%s].", previousTariff ? "previous of current" : "next to current",
                 tariffTypeDescription, selectQuotaTariffs));
 
         try (PreparedStatement pstmt = conn.prepareStatement(selectQuotaTariffs)) {
@@ -147,7 +145,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         } catch (SQLException e) {
             String message = String.format("Unable to retrieve %s quota tariffs of type [%s] due to [%s].", previousTariff ? "previous" : "next", tariffTypeDescription,
                     e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -157,7 +155,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
         Object[] ids = tariffs.keySet().toArray();
 
-        LOG.info(String.format("Updating %s registers of %s quota tariffs of type [%s] with SQL [%s].", tariffs.size() - 1, setRemoved ? "previous of current" :
+        logger.info(String.format("Updating %s registers of %s quota tariffs of type [%s] with SQL [%s].", tariffs.size() - 1, setRemoved ? "previous of current" :
                 "next to current", tariffTypeDescription, updateQuotaTariff));
 
         for (int i = 0; i < tariffs.size() - 1; i++) {
@@ -184,19 +182,19 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     pstmt.setLong(2, id);
                 }
 
-                LOG.info(String.format("Updating \"end_date\" to [%s] %sof quota tariff with ID [%s].", sqlEndDate, updateRemoved, id));
+                logger.info(String.format("Updating \"end_date\" to [%s] %sof quota tariff with ID [%s].", sqlEndDate, updateRemoved, id));
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 String message = String.format("Unable to update \"end_date\" %s of quota tariffs of usage type [%s] due to [%s].", setRemoved ? "and \"removed\"" : "",
                         usageType, e.getMessage());
-                LOG.error(message, e);
+                logger.error(message, e);
                 throw new CloudRuntimeException(message, e);
             }
         }
     }
 
     protected void convertVmResourcesQuotaTypesToRunningVmQuotaType(Connection conn) {
-        LOG.info("Converting quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" to \"RUNNING_VM\".");
+        logger.info("Converting quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" to \"RUNNING_VM\".");
 
         String insertSql = "INSERT INTO cloud_usage.quota_tariff (usage_type, usage_name, usage_unit, usage_discriminator, currency_value, effective_on, updated_on,"
                 + " updated_by, uuid, name, description, removed, end_date, activation_rule)\n"
@@ -214,11 +212,11 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
             pstmt.executeUpdate();
         } catch (SQLException e) {
             String message = String.format("Failed to convert quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" to \"RUNNING_VM\" due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
 
-        LOG.info("Disabling unused quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\".");
+        logger.info("Disabling unused quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\".");
 
         String updateSql = "UPDATE cloud_usage.quota_tariff SET removed = now() WHERE usage_type in (15, 16, 17) and removed is null;";
 
@@ -226,7 +224,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
             pstmt.executeUpdate();
         } catch (SQLException e) {
             String message = String.format("Failed disable quota tariffs of type \"vCPU\", \"CPU_SPEED\" and \"MEMORY\" due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }

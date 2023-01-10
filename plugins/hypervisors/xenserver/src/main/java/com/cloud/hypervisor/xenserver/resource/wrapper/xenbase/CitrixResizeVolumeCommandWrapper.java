@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -40,7 +39,6 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @ResourceWrapper(handles =  ResizeVolumeCommand.class)
 public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<ResizeVolumeCommand, Answer, CitrixResourceBase> {
-    private static final Logger s_logger = Logger.getLogger(CitrixResizeVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final ResizeVolumeCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -52,7 +50,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
         try {
 
             if (command.getCurrentSize() >= newSize) {
-                s_logger.info("No need to resize volume: " + volId +", current size " + toHumanReadableSize(command.getCurrentSize()) + " is same as  new size " + toHumanReadableSize(newSize));
+                logger.info("No need to resize volume: " + volId +", current size " + toHumanReadableSize(command.getCurrentSize()) + " is same as  new size " + toHumanReadableSize(newSize));
                 return new ResizeVolumeAnswer(command, true, "success", newSize);
             }
             if (command.isManaged()) {
@@ -65,7 +63,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
 
             return new ResizeVolumeAnswer(command, true, "success", newSize);
         } catch (Exception ex) {
-            s_logger.warn("Unable to resize volume", ex);
+            logger.warn("Unable to resize volume", ex);
 
             String error = "Failed to resize volume: " + ex;
 
@@ -91,7 +89,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
                 Set<PBD> pbds = sr.getPBDs(conn);
 
                 if (pbds.size() <= 0) {
-                    s_logger.debug("No PBDs found for the following SR: " + sr.getNameLabel(conn));
+                    logger.debug("No PBDs found for the following SR: " + sr.getNameLabel(conn));
                 }
 
                 allPbds.addAll(pbds);

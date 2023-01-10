@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -32,7 +31,6 @@ import com.cloud.user.Account;
 @APICommand(name = "moveNetworkAclItem", description = "Move an ACL rule to a position bettwen two other ACL rules of the same ACL network list", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MoveNetworkAclItemCmd extends BaseAsyncCustomIdCmd {
 
-    public static final Logger s_logger = Logger.getLogger(MoveNetworkAclItemCmd.class.getName());
     private static final String s_name = "moveNetworkAclItemResponse";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "The ID of the network ACL rule that is being moved to a new position.")

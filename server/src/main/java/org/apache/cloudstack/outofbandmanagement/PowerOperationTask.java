@@ -27,7 +27,7 @@ import com.cloud.event.EventVO;
 import com.cloud.host.Host;
 
 public class PowerOperationTask implements Runnable {
-    public static final Logger LOG = Logger.getLogger(PowerOperationTask.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     final private OutOfBandManagementService service;
     final private Host host;
@@ -49,7 +49,7 @@ public class PowerOperationTask implements Runnable {
         try {
             service.executePowerOperation(host, powerOperation, null);
         } catch (Exception e) {
-            LOG.warn(String.format("Out-of-band management background task operation=%s for host %s failed with: %s",
+            logger.warn(String.format("Out-of-band management background task operation=%s for host %s failed with: %s",
                     powerOperation.name(), host.getName(), e.getMessage()));
 
             String eventMessage = String

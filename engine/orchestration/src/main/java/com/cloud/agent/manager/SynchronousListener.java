@@ -29,7 +29,7 @@ import com.cloud.host.Status;
 import com.cloud.utils.Profiler;
 
 public class SynchronousListener implements Listener {
-    private static final Logger s_logger = Logger.getLogger(SynchronousListener.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected Answer[] _answers;
     protected boolean _disconnected;
@@ -70,8 +70,8 @@ public class SynchronousListener implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
+        if (logger.isTraceEnabled())
+            logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
 
         _disconnected = true;
         notifyAll();
@@ -127,8 +127,8 @@ public class SynchronousListener implements Listener {
         }
         profiler.stop();
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Synchronized command - sending completed, time: " + profiler.getDurationInMillis() + ", answer: " +
+        if (logger.isTraceEnabled()) {
+            logger.trace("Synchronized command - sending completed, time: " + profiler.getDurationInMillis() + ", answer: " +
                 (_answers != null ? _answers[0].toString() : "null"));
         }
         return _answers;

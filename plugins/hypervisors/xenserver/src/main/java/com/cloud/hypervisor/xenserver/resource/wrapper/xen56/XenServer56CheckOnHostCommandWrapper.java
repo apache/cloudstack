@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xen56;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
@@ -31,7 +30,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  CheckOnHostCommand.class)
 public final class XenServer56CheckOnHostCommandWrapper extends CommandWrapper<CheckOnHostCommand, Answer, XenServer56Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer56CheckOnHostCommandWrapper.class);
 
     @Override
     public Answer execute(final CheckOnHostCommand command, final XenServer56Resource xenServer56) {
@@ -44,7 +42,7 @@ public final class XenServer56CheckOnHostCommandWrapper extends CommandWrapper<C
         } else {
             msg = "Heart beat is gone so dead.";
         }
-        s_logger.debug(msg);
+        logger.debug(msg);
         return new CheckOnHostAnswer(command, alive, msg);
     }
 }

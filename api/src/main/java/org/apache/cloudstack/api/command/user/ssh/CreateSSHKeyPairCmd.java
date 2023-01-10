@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.ssh;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +31,6 @@ import com.cloud.user.SSHKeyPair;
 @APICommand(name = "createSSHKeyPair", description = "Create a new keypair and returns the private key", responseObject = CreateSSHKeyPairResponse.class, entityType = {SSHKeyPair.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class CreateSSHKeyPairCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

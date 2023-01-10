@@ -24,7 +24,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -70,7 +69,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
 
-    private static final Logger s_logger = Logger.getLogger(ElastistorPrimaryDataStoreDriver.class);
 
     @Inject
     AccountManager _accountMgr;
@@ -154,7 +152,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             try {
                 esvolume = ElastistorUtil.createElastistorVolume(volumeName, dataStoreVO.getUuid(), quotaSize, Iops, protocoltype, volumeName);
             } catch (Throwable e) {
-                s_logger.error(e.toString(), e);
+                logger.error(e.toString(), e);
                 result.setResult(e.toString());
                 callback.complete(result);
                 throw new CloudRuntimeException(e.getMessage());
@@ -191,10 +189,10 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             storagePool.setUsedBytes(usedBytes > capacityBytes ? capacityBytes : usedBytes);
 
             _storagePoolDao.update(storagePoolId, storagePool);
-            s_logger.info("Elastistor volume creation complete.");
+            logger.info("Elastistor volume creation complete.");
         } else {
             errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
         }
 
         result.setResult(errMsg);
@@ -276,7 +274,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
 
-        s_logger.debug("Resize elastistor volume started");
+        logger.debug("Resize elastistor volume started");
         Boolean status = false;
         VolumeObject vol = (VolumeObject) data;
         StoragePool pool = (StoragePool) data.getDataStore();
@@ -297,7 +295,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             status = ElastistorUtil.updateElastistorVolumeSize(vol.getUuid(), resizeParameter.newSize);
 
         } catch (Throwable e) {
-            s_logger.error("Resize elastistor volume failed, please contact elastistor admin.", e);
+            logger.error("Resize elastistor volume failed, please contact elastistor admin.", e);
             result.setResult(e.toString());
             callback.complete(result);
         }
@@ -370,7 +368,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            s_logger.info("taking elastistor volume snapshot");
+            logger.info("taking elastistor volume snapshot");
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
 
             String volumeid = snapshotTO.getVolume().getUuid();
@@ -379,10 +377,10 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             Answer answer = ElastistorUtil.createElastistorVolumeSnapshot(volumeid, snapshotname);
 
             if(answer.getResult() == false){
-                s_logger.info("elastistor volume snapshot failed");
+                logger.info("elastistor volume snapshot failed");
                 throw new CloudRuntimeException("elastistor volume snapshot failed");
             }else{
-                s_logger.info("elastistor volume snapshot succesfull");
+                logger.info("elastistor volume snapshot succesfull");
 
                 snapshotTO.setPath(answer.getDetails());
 
@@ -394,7 +392,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             }
         }
          catch (Throwable e) {
-            s_logger.debug("Failed to take snapshot: " + e.getMessage());
+            logger.debug("Failed to take snapshot: " + e.getMessage());
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }

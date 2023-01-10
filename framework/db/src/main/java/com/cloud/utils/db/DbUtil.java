@@ -46,7 +46,7 @@ import org.apache.log4j.Logger;
 import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
 public class DbUtil {
-    protected final static Logger LOGGER = Logger.getLogger(DbUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(DbUtil.class);
 
     private static Map<String, Connection> s_connectionForGlobalLocks = new HashMap<String, Connection>();
 

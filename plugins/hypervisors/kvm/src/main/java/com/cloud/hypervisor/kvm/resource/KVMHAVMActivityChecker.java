@@ -18,13 +18,11 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
 import java.util.concurrent.Callable;
 
 public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolean> {
-    private static final Logger LOG = Logger.getLogger(KVMHAVMActivityChecker.class);
 
     final private NfsStoragePool nfsStoragePool;
     final private String hostIP;
@@ -43,7 +41,7 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
 
     @Override
     public Boolean checkingHeartBeat() {
-        Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), LOG);
+        Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
         cmd.add("-i", nfsStoragePool._poolIp);
         cmd.add("-p", nfsStoragePool._poolMountSourcePath);
         cmd.add("-m", nfsStoragePool._mountDestPath);
@@ -56,10 +54,10 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
         String result = cmd.execute(parser);
         String parsedLine = parser.getLine();
 
-        LOG.debug(String.format("Checking heart beat with KVMHAVMActivityChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine, nfsStoragePool._poolIp));
+        logger.debug(String.format("Checking heart beat with KVMHAVMActivityChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine, nfsStoragePool._poolIp));
 
         if (result == null && parsedLine.contains("DEAD")) {
-            LOG.warn(String.format("Checking heart beat with KVMHAVMActivityChecker command [%s] returned [%s]. It is [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(), result, parsedLine, hostIP));
+            logger.warn(String.format("Checking heart beat with KVMHAVMActivityChecker command [%s] returned [%s]. It is [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(), result, parsedLine, hostIP));
             return false;
         } else {
             return true;

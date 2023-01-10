@@ -21,12 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 public class Linux extends OvmObject {
-    private static final Logger LOGGER = Logger
-            .getLogger(Linux.class);
     private static final String DEVICE = "Device";
     private static final String REMOTEDIR = "Remote_Dir";
     private static final String MOUNTPOINT = "Mount_Point";
@@ -210,7 +207,7 @@ public class Linux extends OvmObject {
         try {
             initMaps();
         } catch (Ovm3ResourceException e) {
-            LOGGER.info("Unable to discover host: " + e.getMessage(), e);
+            logger.info("Unable to discover host: " + e.getMessage(), e);
             throw e;
         }
         if (ovmGeneric.containsKey(element)) {

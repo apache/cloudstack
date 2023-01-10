@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class ServerProperties {
-    private static final Logger LOG = Logger.getLogger(ServerProperties.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;

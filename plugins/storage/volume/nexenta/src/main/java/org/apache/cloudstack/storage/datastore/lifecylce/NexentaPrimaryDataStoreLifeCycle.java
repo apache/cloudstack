@@ -46,8 +46,7 @@ import com.cloud.storage.StoragePoolAutomation;
 
 public class NexentaPrimaryDataStoreLifeCycle
         implements PrimaryDataStoreLifeCycle {
-    private static final Logger logger =
-            Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private DataCenterDao zoneDao;

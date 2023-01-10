@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +48,6 @@ import java.util.List;
         responseHasSensitiveInfo = false)
 public class RegisterUserDataCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(RegisterUserDataCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

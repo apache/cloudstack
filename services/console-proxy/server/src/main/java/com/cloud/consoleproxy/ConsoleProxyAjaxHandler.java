@@ -35,7 +35,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyAjaxHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxHandler.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public ConsoleProxyAjaxHandler() {
     }
@@ -43,22 +43,22 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange t) throws IOException {
         try {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("AjaxHandler " + t.getRequestURI());
+            if (logger.isTraceEnabled())
+                logger.trace("AjaxHandler " + t.getRequestURI());
 
             long startTick = System.currentTimeMillis();
 
             doHandle(t);
 
-            if (s_logger.isTraceEnabled())
-                s_logger.trace(t.getRequestURI() + " process time " + (System.currentTimeMillis() - startTick) + " ms");
+            if (logger.isTraceEnabled())
+                logger.trace(t.getRequestURI() + " process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IOException e) {
             throw e;
         } catch (IllegalArgumentException e) {
-            s_logger.warn("Exception, ", e);
+            logger.warn("Exception, ", e);
             t.sendResponseHeaders(400, -1);     // bad request
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception, ", e);
+            logger.error("Unexpected exception, ", e);
             t.sendResponseHeaders(500, -1);     // server error
         } finally {
             t.close();
@@ -67,8 +67,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 
     private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
         String queries = t.getRequestURI().getQuery();
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Handle AJAX request: " + queries);
+        if (logger.isTraceEnabled())
+            logger.trace("Handle AJAX request: " + queries);
 
         Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
 
@@ -100,7 +100,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         try {
             port = Integer.parseInt(portStr);
         } catch (NumberFormatException e) {
-            s_logger.warn("Invalid number parameter in query string: " + portStr);
+            logger.warn("Invalid number parameter in query string: " + portStr);
             throw new IllegalArgumentException(e);
         }
 
@@ -108,7 +108,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             try {
                 ajaxSessionId = Long.parseLong(ajaxSessionIdStr);
             } catch (NumberFormatException e) {
-                s_logger.warn("Invalid number parameter in query string: " + ajaxSessionIdStr);
+                logger.warn("Invalid number parameter in query string: " + ajaxSessionIdStr);
                 throw new IllegalArgumentException(e);
             }
         }
@@ -117,7 +117,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             try {
                 event = Integer.parseInt(eventStr);
             } catch (NumberFormatException e) {
-                s_logger.warn("Invalid number parameter in query string: " + eventStr);
+                logger.warn("Invalid number parameter in query string: " + eventStr);
                 throw new IllegalArgumentException(e);
             }
         }
@@ -140,7 +140,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             viewer = ConsoleProxy.getAjaxVncViewer(param, ajaxSessionIdStr);
         } catch (Exception e) {
 
-            s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
+            logger.warn("Failed to create viewer due to " + e.getMessage(), e);
 
             String[] content =
                 new String[] {"<html><head></head><body>", "<div id=\"main_panel\" tabindex=\"1\">",
@@ -165,33 +165,33 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                 }
                 sendResponse(t, "text/html", "OK");
             } else {
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
+                if (logger.isDebugEnabled())
+                    logger.debug("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
 
                 sendResponse(t, "text/html", "Invalid ajax client session id");
             }
         } else {
             if (ajaxSessionId != 0 && ajaxSessionId != viewer.getAjaxSessionId()) {
-                s_logger.info("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
+                logger.info("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
                 handleClientKickoff(t, viewer);
             } else if (ajaxSessionId == 0) {
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Ajax request indicates a fresh client start");
+                if (logger.isDebugEnabled())
+                    logger.debug("Ajax request indicates a fresh client start");
 
                 String title = queryMap.get("t");
                 String guest = queryMap.get("guest");
                 handleClientStart(t, viewer, title != null ? title : "", guest);
             } else {
 
-                if (s_logger.isTraceEnabled())
-                    s_logger.trace("Ajax request indicates client update");
+                if (logger.isTraceEnabled())
+                    logger.trace("Ajax request indicates client update");
 
                 handleClientUpdate(t, viewer);
             }
         }
     }
 
-    private static String convertStreamToString(InputStream is, boolean closeStreamAfterRead) {
+    private String convertStreamToString(InputStream is, boolean closeStreamAfterRead) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
         String line = null;
@@ -200,7 +200,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                 sb.append(line + "\n");
             }
         } catch (IOException e) {
-            s_logger.warn("Exception while reading request body: ", e);
+            logger.warn("Exception while reading request body: ", e);
         } finally {
             if (closeStreamAfterRead) {
                 closeAutoCloseable(is, "error closing stream after read");
@@ -224,8 +224,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 
     @SuppressWarnings("deprecation")
     private void handleClientEventBag(ConsoleProxyClient viewer, String requestData) {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Handle event bag, event bag: " + requestData);
+        if (logger.isTraceEnabled())
+            logger.trace("Handle event bag, event bag: " + requestData);
 
         int start = requestData.indexOf("=");
         if (start < 0)
@@ -271,11 +271,11 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                     }
                 }
             } catch (NumberFormatException e) {
-                s_logger.warn("Exception in handle client event bag: " + data + ", ", e);
+                logger.warn("Exception in handle client event bag: " + data + ", ", e);
             } catch (Exception e) {
-                s_logger.warn("Exception in handle client event bag: " + data + ", ", e);
+                logger.warn("Exception in handle client event bag: " + data + ", ", e);
             } catch (OutOfMemoryError e) {
-                s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+                logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
                 System.exit(1);
             }
         }
@@ -298,7 +298,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                     try {
                         x = Integer.parseInt(str);
                     } catch (NumberFormatException e) {
-                        s_logger.warn("Invalid number parameter in query string: " + str);
+                        logger.warn("Invalid number parameter in query string: " + str);
                         throw new IllegalArgumentException(e);
                     }
                 }
@@ -307,7 +307,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                     try {
                         y = Integer.parseInt(str);
                     } catch (NumberFormatException e) {
-                        s_logger.warn("Invalid number parameter in query string: " + str);
+                        logger.warn("Invalid number parameter in query string: " + str);
                         throw new IllegalArgumentException(e);
                     }
                 }
@@ -317,7 +317,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                     try {
                         code = Integer.parseInt(str);
                     } catch (NumberFormatException e) {
-                        s_logger.warn("Invalid number parameter in query string: " + str);
+                        logger.warn("Invalid number parameter in query string: " + str);
                         throw new IllegalArgumentException(e);
                     }
 
@@ -325,15 +325,15 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                     try {
                         modifiers = Integer.parseInt(str);
                     } catch (NumberFormatException e) {
-                        s_logger.warn("Invalid number parameter in query string: " + str);
+                        logger.warn("Invalid number parameter in query string: " + str);
                         throw new IllegalArgumentException(e);
                     }
 
-                    if (s_logger.isTraceEnabled())
-                        s_logger.trace("Handle client mouse event. event: " + event + ", x: " + x + ", y: " + y + ", button: " + code + ", modifier: " + modifiers);
+                    if (logger.isTraceEnabled())
+                        logger.trace("Handle client mouse event. event: " + event + ", x: " + x + ", y: " + y + ", button: " + code + ", modifier: " + modifiers);
                 } else {
-                    if (s_logger.isTraceEnabled())
-                        s_logger.trace("Handle client mouse move event. x: " + x + ", y: " + y);
+                    if (logger.isTraceEnabled())
+                        logger.trace("Handle client mouse move event. x: " + x + ", y: " + y);
                 }
                 viewer.sendClientMouseEvent(InputEventType.fromEventCode(event), x, y, code, modifiers);
                 break;
@@ -345,7 +345,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                 try {
                     code = Integer.parseInt(str);
                 } catch (NumberFormatException e) {
-                    s_logger.warn("Invalid number parameter in query string: " + str);
+                    logger.warn("Invalid number parameter in query string: " + str);
                     throw new IllegalArgumentException(e);
                 }
 
@@ -353,12 +353,12 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                 try {
                     modifiers = Integer.parseInt(str);
                 } catch (NumberFormatException e) {
-                    s_logger.warn("Invalid number parameter in query string: " + str);
+                    logger.warn("Invalid number parameter in query string: " + str);
                     throw new IllegalArgumentException(e);
                 }
 
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Handle client keyboard event. event: " + event + ", code: " + code + ", modifier: " + modifiers);
+                if (logger.isDebugEnabled())
+                    logger.debug("Handle client keyboard event. event: " + event + ", code: " + code + ", modifier: " + modifiers);
                 viewer.sendClientRawKeyboardEvent(InputEventType.fromEventCode(event), code, modifiers);
                 break;
 

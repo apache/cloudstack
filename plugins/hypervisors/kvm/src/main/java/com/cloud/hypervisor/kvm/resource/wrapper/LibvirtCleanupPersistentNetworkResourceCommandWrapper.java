@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceAnswer;
@@ -31,7 +30,6 @@ import com.cloud.resource.ResourceWrapper;
 
 @ResourceWrapper(handles = CleanupPersistentNetworkResourceCommand.class)
 public class LibvirtCleanupPersistentNetworkResourceCommandWrapper extends CommandWrapper<CleanupPersistentNetworkResourceCommand, Answer, LibvirtComputingResource> {
-    private static final Logger s_logger = Logger.getLogger(LibvirtCleanupPersistentNetworkResourceCommandWrapper.class);
     @Override
     public Answer execute(CleanupPersistentNetworkResourceCommand command, LibvirtComputingResource serverResource) {
         NicTO nic = command.getNicTO();

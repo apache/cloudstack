@@ -23,7 +23,6 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
@@ -40,7 +39,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles = ConfigureStaticNatRulesOnLogicalRouterCommand.class)
 public final class NiciraNvpConfigureStaticNatRulesCommandWrapper extends CommandWrapper<ConfigureStaticNatRulesOnLogicalRouterCommand, Answer, NiciraNvpResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpConfigureStaticNatRulesCommandWrapper.class);
 
     @Override
     public Answer execute(final ConfigureStaticNatRulesOnLogicalRouterCommand command, final NiciraNvpResource niciraNvpResource) {
@@ -63,14 +61,14 @@ public final class NiciraNvpConfigureStaticNatRulesCommandWrapper extends Comman
                     if (storedRule.equalsIgnoreUuid(rulepair[1])) {
                         // The outgoing rule exists
                         outgoing = storedRule;
-                        s_logger.debug("Found matching outgoing rule " + outgoing.getUuid());
+                        logger.debug("Found matching outgoing rule " + outgoing.getUuid());
                         if (incoming != null) {
                             break;
                         }
                     } else if (storedRule.equalsIgnoreUuid(rulepair[0])) {
                         // The incoming rule exists
                         incoming = storedRule;
-                        s_logger.debug("Found matching incoming rule " + incoming.getUuid());
+                        logger.debug("Found matching incoming rule " + incoming.getUuid());
                         if (outgoing != null) {
                             break;
                         }
@@ -78,26 +76,26 @@ public final class NiciraNvpConfigureStaticNatRulesCommandWrapper extends Comman
                 }
                 if (incoming != null && outgoing != null) {
                     if (rule.revoked()) {
-                        s_logger.debug("Deleting incoming rule " + incoming.getUuid());
+                        logger.debug("Deleting incoming rule " + incoming.getUuid());
                         niciraNvpApi.deleteLogicalRouterNatRule(command.getLogicalRouterUuid(), incoming.getUuid());
 
-                        s_logger.debug("Deleting outgoing rule " + outgoing.getUuid());
+                        logger.debug("Deleting outgoing rule " + outgoing.getUuid());
                         niciraNvpApi.deleteLogicalRouterNatRule(command.getLogicalRouterUuid(), outgoing.getUuid());
                     }
                 } else {
                     if (rule.revoked()) {
-                        s_logger.warn("Tried deleting a rule that does not exist, " + rule.getSrcIp() + " -> " + rule.getDstIp());
+                        logger.warn("Tried deleting a rule that does not exist, " + rule.getSrcIp() + " -> " + rule.getDstIp());
                         break;
                     }
 
                     rulepair[0] = niciraNvpApi.createLogicalRouterNatRule(command.getLogicalRouterUuid(), rulepair[0]);
-                    s_logger.debug("Created " + niciraNvpResource.natRuleToString(rulepair[0]));
+                    logger.debug("Created " + niciraNvpResource.natRuleToString(rulepair[0]));
 
                     try {
                         rulepair[1] = niciraNvpApi.createLogicalRouterNatRule(command.getLogicalRouterUuid(), rulepair[1]);
-                        s_logger.debug("Created " + niciraNvpResource.natRuleToString(rulepair[1]));
+                        logger.debug("Created " + niciraNvpResource.natRuleToString(rulepair[1]));
                     } catch (final NiciraNvpApiException ex) {
-                        s_logger.debug("Failed to create SourceNatRule, rolling back DestinationNatRule");
+                        logger.debug("Failed to create SourceNatRule, rolling back DestinationNatRule");
                         niciraNvpApi.deleteLogicalRouterNatRule(command.getLogicalRouterUuid(), rulepair[0].getUuid());
                         throw ex; // Rethrow original exception
                     }

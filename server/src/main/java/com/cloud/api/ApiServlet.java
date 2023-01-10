@@ -65,13 +65,13 @@ import com.cloud.utils.net.NetUtils;
 @Component("apiServlet")
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
-    public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
-    private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServlet.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(ApiServlet.class);
+    protected Logger accessLogger = Logger.getLogger("apiserver." + ApiServlet.class.getName());
     private final static List<String> s_clientAddressHeaders = Collections
             .unmodifiableList(Arrays.asList("X-Forwarded-For",
                     "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
     private static final String REPLACEMENT = "_";
-    private static final String LOG_REPLACEMENTS = "[\n\r\t]";
+    private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
 
     @Inject
     ApiServerService apiServer;
@@ -126,7 +126,7 @@ public class ApiServlet extends HttpServlet {
                     String value = decodeUtf8(paramTokens[1]);
                     params.put(name, new String[] {value});
                 } else {
-                    s_logger.debug("Invalid parameter in URL found. param: " + param);
+                    LOGGER.debug("Invalid parameter in URL found. param: " + param);
                 }
             }
         }
@@ -155,7 +155,7 @@ public class ApiServlet extends HttpServlet {
             if (v.length > 1) {
                 String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
                     "It is advised to pass only a single parameter", k, Arrays.toString(v));
-                s_logger.warn(message);
+                LOGGER.warn(message);
             }
         });
 
@@ -166,7 +166,7 @@ public class ApiServlet extends HttpServlet {
         try {
             remoteAddress = getClientAddress(req);
         } catch (UnknownHostException e) {
-            s_logger.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
+            LOGGER.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
             final String response = apiServer.getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "UnknownHostException when trying to lookup remote IP-Address", null,
                     HttpUtils.RESPONSE_TYPE_XML);
@@ -190,17 +190,17 @@ public class ApiServlet extends HttpServlet {
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         String cleanQueryString = StringUtils.cleanString(req.getQueryString());
-        if (s_logger.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
-            s_logger.debug("===START=== " + reqStr);
+            LOGGER.debug("===START=== " + reqStr);
         }
 
         try {
             resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
 
             HttpSession session = req.getSession(false);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("session found: %s", session));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("session found: %s", session));
             }
             final Object[] responseTypeParam = params.get(ApiConstants.RESPONSE);
             if (responseTypeParam != null) {
@@ -211,10 +211,10 @@ public class ApiServlet extends HttpServlet {
             final String command = commandObj == null ? null : (String) commandObj[0];
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
-            if (s_logger.isTraceEnabled()) {
+            if (LOGGER.isTraceEnabled()) {
                 String logCommand = saveLogString(command);
                 String logName = saveLogString(username);
-                s_logger.trace(String.format("command %s processing for user \"%s\"",
+                LOGGER.trace(String.format("command %s processing for user \"%s\"",
                         logCommand,
                         logName));
             }
@@ -229,7 +229,7 @@ public class ApiServlet extends HttpServlet {
                     int httpResponseCode = HttpServletResponse.SC_OK;
                     String responseString = null;
 
-                    if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGIN_API) {
+                    if (apiAuthenticator.getAPIType() == APIAuthenticationType.loggerIN_API) {
                         if (session != null) {
                             invalidateHttpSession(session, "invalidating session for login call");
                         }
@@ -237,15 +237,15 @@ public class ApiServlet extends HttpServlet {
 
                         if (ApiServer.EnableSecureSessionCookie.value()) {
                             resp.setHeader("SET-COOKIE", String.format("JSESSIONID=%s;Secure;HttpOnly;Path=/client", session.getId()));
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Session cookie is marked secure!");
+                            if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("Session cookie is marked secure!");
                             }
                         }
                     }
 
                     try {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace(String.format("apiAuthenticator.authenticate(%s, params[%d], %s, %s, %s, %s, %s,%s)",
+                        if (LOGGER.isTraceEnabled()) {
+                            LOGGER.trace(String.format("apiAuthenticator.authenticate(%s, params[%d], %s, %s, %s, %s, %s,%s)",
                                     saveLogString(command), params.size(), session.getId(), remoteAddress.getHostAddress(), saveLogString(responseType), "auditTrailSb", "req", "resp"));
                         }
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
@@ -255,10 +255,10 @@ public class ApiServlet extends HttpServlet {
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
-                        s_logger.debug("Authentication failure: " + e.getMessage());
+                        LOGGER.debug("Authentication failure: " + e.getMessage());
                     }
 
-                    if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
+                    if (apiAuthenticator.getAPIType() == APIAuthenticationType.loggerOUT_API) {
                         if (session != null) {
                             final Long userId = (Long) session.getAttribute("userid");
                             final Account account = (Account) session.getAttribute("accountobj");
@@ -285,7 +285,7 @@ public class ApiServlet extends HttpServlet {
                     return;
                 }
             } else {
-                s_logger.trace("no command available");
+                LOGGER.trace("no command available");
             }
             auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
@@ -295,8 +295,8 @@ public class ApiServlet extends HttpServlet {
             // if a API key exists
             Long userId = null;
 
-            if (isNew && s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("new session: %s", session));
+            if (isNew && LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("new session: %s", session));
             }
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
@@ -305,8 +305,8 @@ public class ApiServlet extends HttpServlet {
                 if (account != null) {
                     if (invalidateHttpSesseionIfNeeded(req, resp, auditTrailSb, responseType, params, session, account)) return;
                 } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("no account, this request will be validated through apikey(%s)/signature");
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("no account, this request will be validated through apikey(%s)/signature");
                     }
                 }
 
@@ -316,8 +316,8 @@ public class ApiServlet extends HttpServlet {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
             setProjectContext(params);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("verifying request for user %s from %s with %d parameters",
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("verifying request for user %s from %s with %d parameters",
                         userId, remoteAddress.getHostAddress(), params.size()));
             }
             if (apiServer.verifyRequest(params, userId, remoteAddress)) {
@@ -348,12 +348,12 @@ public class ApiServlet extends HttpServlet {
             HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONcontentType.value());
             auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (final Exception ex) {
-            s_logger.error("unknown exception writing api response", ex);
+            LOGGER.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            s_accessLogger.info(auditTrailSb.toString());
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("===END=== " + reqStr);
+            accessLogger.info(auditTrailSb.toString());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("===END=== " + reqStr);
             }
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
@@ -371,7 +371,7 @@ public class ApiServlet extends HttpServlet {
 
     @Nullable
     private String saveLogString(String stringToLog) {
-        return stringToLog == null ? null : stringToLog.replace(LOG_REPLACEMENTS, REPLACEMENT);
+        return stringToLog == null ? null : stringToLog.replace(LOGGER_REPLACEMENTS, REPLACEMENT);
     }
 
     /**
@@ -380,7 +380,7 @@ public class ApiServlet extends HttpServlet {
     private boolean requestChecksoutAsSane(HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String command, Long userId, String account, Object accountObj) {
         if ((userId != null) && (account != null) && (accountObj != null) && apiServer.verifyUser(userId)) {
             if (command == null) {
-                s_logger.info("missing command, ignoring request...");
+                LOGGER.info("missing command, ignoring request...");
                 auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
                 final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
                 HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
@@ -415,13 +415,13 @@ public class ApiServlet extends HttpServlet {
 
     public static void invalidateHttpSession(HttpSession session, String msg) {
         try {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(msg);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(msg);
             }
             session.invalidate();
         } catch (final IllegalStateException ise) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("failed to invalidate session %s", session.getId()));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("failed to invalidate session %s", session.getId()));
             }
         }
     }
@@ -429,7 +429,7 @@ public class ApiServlet extends HttpServlet {
     private void setProjectContext(Map<String, Object[]> requestParameters) {
         final String[] command = (String[])requestParameters.get(ApiConstants.COMMAND);
         if (command == null) {
-            s_logger.info("missing command, ignoring request...");
+            LOGGER.info("missing command, ignoring request...");
             return;
         }
 

@@ -34,8 +34,7 @@ import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
-    private final Logger logger = Logger
-            .getLogger(Ovm3VirtualRoutingResource.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private String domRCloudPath = "/opt/cloud/bin/";
     private Connection c;
     private String agentName;

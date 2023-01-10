@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
@@ -50,7 +49,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  StopCommand.class)
 public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixStopCommandWrapper.class);
 
     @Override
     public Answer execute(final StopCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -85,23 +83,23 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                 platformstring = StringUtils.mapToString(vmr.platform);
                 if (vmr.isControlDomain) {
                     final String msg = "Tring to Shutdown control domain";
-                    s_logger.warn(msg);
+                    logger.warn(msg);
                     return new StopAnswer(command, msg, false);
                 }
 
                 if (vmr.powerState == VmPowerState.RUNNING && !citrixResourceBase.isRefNull(vmr.residentOn) && !vmr.residentOn.getUuid(conn).equals(citrixResourceBase.getHost().getUuid())) {
                     final String msg = "Stop Vm " + vmName + " failed due to this vm is not running on this host: " + citrixResourceBase.getHost().getUuid() + " but host:" + vmr.residentOn.getUuid(conn);
-                    s_logger.warn(msg);
+                    logger.warn(msg);
                     return new StopAnswer(command, msg, platformstring, false);
                 }
 
                 if (command.checkBeforeCleanup() && vmr.powerState == VmPowerState.RUNNING) {
                     final String msg = "Vm " + vmName + " is running on host and checkBeforeCleanup flag is set, so bailing out";
-                    s_logger.debug(msg);
+                    logger.debug(msg);
                     return new StopAnswer(command, msg, false);
                 }
 
-                s_logger.debug("9. The VM " + vmName + " is in Stopping state");
+                logger.debug("9. The VM " + vmName + " is in Stopping state");
 
                 try {
                     if (vmr.powerState == VmPowerState.RUNNING) {
@@ -111,16 +109,16 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                         if (citrixResourceBase.canBridgeFirewall()) {
                             final String result = citrixResourceBase.callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", command.getVmName());
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                s_logger.warn("Failed to remove  network rules for vm " + command.getVmName());
+                                logger.warn("Failed to remove  network rules for vm " + command.getVmName());
                             } else {
-                                s_logger.info("Removed  network rules for vm " + command.getVmName());
+                                logger.info("Removed  network rules for vm " + command.getVmName());
                             }
                         }
                         citrixResourceBase.shutdownVM(conn, vm, vmName, command.isForceStop());
                     }
                 } catch (final Exception e) {
                     final String msg = "Catch exception " + e.getClass().getName() + " when stop VM:" + command.getVmName() + " due to " + e.toString();
-                    s_logger.debug(msg);
+                    logger.debug(msg);
                     return new StopAnswer(command, msg, platformstring, false);
                 } finally {
 
@@ -131,7 +129,7 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                             try {
                                 vGPUs = vm.getVGPUs(conn);
                             } catch (final XenAPIException e2) {
-                                s_logger.debug("VM " + vmName + " does not have GPU support.");
+                                logger.debug("VM " + vmName + " does not have GPU support.");
                             }
                             if (vGPUs != null && !vGPUs.isEmpty()) {
                                 final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = citrixResourceBase.getGPUGroupDetails(conn);
@@ -162,16 +160,16 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                         }
                     } catch (final Exception e) {
                         final String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.getMessage();
-                        s_logger.warn(msg, e);
+                        logger.warn(msg, e);
                     } finally {
-                        s_logger.debug("10. The VM " + vmName + " is in Stopped state");
+                        logger.debug("10. The VM " + vmName + " is in Stopped state");
                     }
                 }
             }
 
         } catch (final Exception e) {
             final String msg = "Stop Vm " + vmName + " fail due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new StopAnswer(command, msg, platformstring, false);
         }
         return new StopAnswer(command, "Stop VM failed", platformstring, false);

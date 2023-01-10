@@ -32,7 +32,7 @@ import com.mysql.cj.jdbc.ha.BalanceStrategy;
 import com.mysql.cj.jdbc.ha.LoadBalancedConnectionProxy;
 
 public class StaticStrategy implements BalanceStrategy {
-    private static final Logger s_logger = Logger.getLogger(StaticStrategy.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public StaticStrategy() {
     }
@@ -84,7 +84,7 @@ public class StaticStrategy implements BalanceStrategy {
                             try {
                                 Thread.sleep(250);
                             } catch (InterruptedException e) {
-                                s_logger.debug("[ignored] interrupted while fail over in progres.");
+                                logger.debug("[ignored] interrupted while fail over in progres.");
                             }
 
                             // start fresh

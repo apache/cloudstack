@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.offering.NetworkOffering;
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.NetUtils;
 
 public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJoinVO, Long> implements NetworkOfferingJoinDao {
-    public static final Logger s_logger = Logger.getLogger(NetworkOfferingJoinDaoImpl.class);
 
     private final SearchBuilder<NetworkOfferingJoinVO> nofIdSearch;
 

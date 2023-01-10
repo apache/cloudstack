@@ -83,6 +83,6 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
 
     @Test
     public void testGetAPIType() throws Exception {
-        Assert.assertTrue(new SAML2LogoutAPIAuthenticatorCmd().getAPIType() == APIAuthenticationType.LOGOUT_API);
+        Assert.assertTrue(new SAML2LogoutAPIAuthenticatorCmd().getAPIType() == APIAuthenticationType.loggerOUT_API);
     }
 }

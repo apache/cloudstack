@@ -41,8 +41,8 @@ public abstract class UploadActiveState extends UploadState {
 
     @Override
     public String handleAnswer(UploadAnswer answer) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("handleAnswer, answer status=" + answer.getUploadStatus() + ", curr state=" + getName());
+        if (logger.isDebugEnabled()) {
+            logger.debug("handleAnswer, answer status=" + answer.getUploadStatus() + ", curr state=" + getName());
         }
         switch (answer.getUploadStatus()) {
         case UPLOAD_IN_PROGRESS:
@@ -70,7 +70,7 @@ public abstract class UploadActiveState extends UploadState {
 
     @Override
     public String handleTimeout(long updateMs) {
-        if (s_logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             getUploadListener().log("handleTimeout, updateMs=" + updateMs + ", curr state= " + getName(), Level.TRACE);
         }
         String newState = getName();

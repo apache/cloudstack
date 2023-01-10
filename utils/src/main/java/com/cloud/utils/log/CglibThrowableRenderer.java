@@ -39,7 +39,7 @@ import org.apache.log4j.spi.ThrowableRenderer;
  */
 public class CglibThrowableRenderer implements ThrowableRenderer {
 
-    private final static int MAX_NUMBER_OF_STACK_TRACES_ON_LOG_FOR_CAUSE = 3;
+    private final static int MAX_NUMBER_OF_STACK_TRACES_ON_logger_FOR_CAUSE = 3;
     @Override
     public String[] doRender(Throwable th) {
         List<String> lines = new ArrayList<String>();
@@ -49,7 +49,7 @@ public class CglibThrowableRenderer implements ThrowableRenderer {
             th = th.getCause();
             if (th != null) {
                 lines.add("Caused by: " + th.toString());
-                addStackTraceToList(th, lines, MAX_NUMBER_OF_STACK_TRACES_ON_LOG_FOR_CAUSE);
+                addStackTraceToList(th, lines, MAX_NUMBER_OF_STACK_TRACES_ON_logger_FOR_CAUSE);
             }
         } while (th != null);
         return lines.toArray(new String[lines.size()]);

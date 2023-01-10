@@ -20,7 +20,6 @@ package com.cloud.hypervisor.vmware.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 @DB
 public class VmwareDatacenterDaoImpl extends GenericDaoBase<VmwareDatacenterVO, Long> implements VmwareDatacenterDao {
-    protected static final Logger s_logger = Logger.getLogger(VmwareDatacenterDaoImpl.class);
 
     final SearchBuilder<VmwareDatacenterVO> nameSearch;
     final SearchBuilder<VmwareDatacenterVO> guidSearch;

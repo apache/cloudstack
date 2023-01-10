@@ -50,7 +50,7 @@ import com.cloud.utils.db.SearchCriteria;
  *
  */
 public class KeysManagerImpl implements KeysManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(KeysManagerImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     ConfigurationDao _configDao;
@@ -87,7 +87,7 @@ public class KeysManagerImpl implements KeysManager, Configurable {
         return EncryptionIV.value();
     }
 
-    private static String getBase64EncodedRandomKey(int nBits) {
+    private String getBase64EncodedRandomKey(int nBits) {
         SecureRandom random;
         try {
             random = SecureRandom.getInstance("SHA1PRNG");
@@ -95,7 +95,7 @@ public class KeysManagerImpl implements KeysManager, Configurable {
             random.nextBytes(keyBytes);
             return Base64.encodeBase64URLSafeString(keyBytes);
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unhandled exception: ", e);
+            logger.error("Unhandled exception: ", e);
         }
         return null;
     }

@@ -34,7 +34,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -95,7 +94,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
-    private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
 
     static final ConfigKey<String> RemoteAccessVpnClientIpRange = new ConfigKey<String>("Network", String.class, RemoteAccessVpnClientIpRangeCK, "10.1.2.1-10.1.2.8",
         "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", false, ConfigKey.Scope.Account);
@@ -263,7 +261,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
         String ipRange = RemoteAccessVpnClientIpRange.value();
         if (ipRange == null) {
-            s_logger.warn(String.format("Remote access VPN configuration: Global configuration [%s] missing client IP range.", RemoteAccessVpnClientIpRange.key()));
+            logger.warn(String.format("Remote access VPN configuration: Global configuration [%s] missing client IP range.", RemoteAccessVpnClientIpRange.key()));
             return;
         }
 
@@ -304,7 +302,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public boolean destroyRemoteAccessVpnForIp(long ipId, Account caller, final boolean forceCleanup) throws ResourceUnavailableException {
         final RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByPublicIpAddress(ipId);
         if (vpn == null) {
-            s_logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
+            logger.debug("there are no Remote access vpns for public ip address id=" + ipId);
             return true;
         }
 
@@ -325,7 +323,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }catch (ResourceUnavailableException ex) {
             vpn.setState(prevState);
             _remoteAccessVpnDao.update(vpn.getId(), vpn);
-            s_logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
+            logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
                     RemoteAccessVpn.State.Running);
             success = false;
         } finally {
@@ -348,11 +346,11 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                 fwRules.add(_rulesDao.findByRelatedId(vpnFwRule.getId()));
                             }
 
-                            s_logger.debug("Marked " + fwRules.size() + " firewall rules as Revoked as a part of disable remote access vpn");
+                            logger.debug("Marked " + fwRules.size() + " firewall rules as Revoked as a part of disable remote access vpn");
                         }
                     });
 
-                    s_logger.debug("Reapplying firewall rules for ip id=" + ipId + " as a part of disable remote access vpn");
+                    logger.debug("Reapplying firewall rules for ip id=" + ipId + " as a part of disable remote access vpn");
                     success = _firewallMgr.applyIngressFirewallRules(ipId, caller);
                 }
 
@@ -373,14 +371,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                 if (vpnFwRules != null) {
                                     for (FirewallRule vpnFwRule : vpnFwRules) {
                                         _rulesDao.remove(vpnFwRule.getId());
-                                        s_logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " +
+                                        logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " +
                                             vpnFwRule.getSourcePortStart() + " as a part of vpn cleanup");
                                     }
                                 }
                             }
                         });
                     } catch (Exception ex) {
-                        s_logger.warn(String.format("Unable to release the VPN ports from the firewall rules [%s] due to [%s]", fwRules.stream().map(rule ->
+                        logger.warn(String.format("Unable to release the VPN ports from the firewall rules [%s] due to [%s]", fwRules.stream().map(rule ->
                           String.format("{\"ipId\": %s, \"port\": %s}", rule.getSourceIpAddressId(), rule.getSourcePortStart())).collect(Collectors.joining(", ")), ex.getMessage()), ex);
                     }
                 }
@@ -435,7 +433,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
         if (user == null) {
             String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId);
-            s_logger.debug(errorMessage);
+            logger.debug(errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }
         _accountMgr.checkAccess(caller, null, true, user);
@@ -520,11 +518,11 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     private boolean removeVpnUserWithoutRemoteAccessVpn(long vpnOwnerId, String userName) {
         VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, userName);
         if (vpnUser == null) {
-            s_logger.error(String.format("VPN user not found with ownerId: %d and username: %s", vpnOwnerId, userName));
+            logger.error(String.format("VPN user not found with ownerId: %d and username: %s", vpnOwnerId, userName));
             return false;
         }
         if (!State.Revoke.equals(vpnUser.getState())) {
-            s_logger.error(String.format("VPN user with ownerId: %d and username: %s is not in revoked state, current state: %s", vpnOwnerId, userName, vpnUser.getState()));
+            logger.error(String.format("VPN user with ownerId: %d and username: %s is not in revoked state, current state: %s", vpnOwnerId, userName, vpnUser.getState()));
             return false;
         }
         return _vpnUsersDao.remove(vpnUser.getId());
@@ -537,14 +535,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        s_logger.debug(String.format("Applying VPN users for %s.", owner.toString()));
+        logger.debug(String.format("Applying VPN users for %s.", owner.toString()));
         List<RemoteAccessVpnVO> vpns = getValidRemoteAccessVpnForAccount(vpnOwnerId);
 
         if (CollectionUtils.isEmpty(vpns)) {
             if (forRemove) {
                 return removeVpnUserWithoutRemoteAccessVpn(vpnOwnerId, userName);
             }
-            s_logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
+            logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
             return true;
         }
 
@@ -563,7 +561,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         Boolean[] finals = new Boolean[users.size()];
         for (RemoteAccessVPNServiceProvider element : _vpnServiceProviders) {
-            s_logger.debug("Applying vpn access to " + element.getName());
+            logger.debug("Applying vpn access to " + element.getName());
             for (RemoteAccessVpnVO vpn : vpns) {
                 try {
                     String[] results = element.applyVpnUsers(vpn, users);
@@ -574,7 +572,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             if (indexUser == users.size()) {
                                 indexUser = 0;
                             }
-                            s_logger.debug("VPN User " + users.get(indexUser) + (result == null ? " is set on " : (" couldn't be set due to " + result) + " on ") + vpn.getUuid());
+                            logger.debug("VPN User " + users.get(indexUser) + (result == null ? " is set on " : (" couldn't be set due to " + result) + " on ") + vpn.getUuid());
                             if (result == null) {
                                 if (finals[indexUser] == null) {
                                     finals[indexUser] = true;
@@ -587,7 +585,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         }
                     }
                 } catch (ResourceUnavailableException e) {
-                    s_logger.warn(String.format("Unable to apply VPN users [%s] due to [%s].", users.stream().map(user -> user.toString()).collect(Collectors.joining(", ")), e.getMessage()), e);
+                    logger.warn(String.format("Unable to apply VPN users [%s] due to [%s].", users.stream().map(user -> user.toString()).collect(Collectors.joining(", ")), e.getMessage()), e);
                     success = false;
                     vpnTemp = vpn;
 
@@ -619,7 +617,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                     });
                 }
 
-                s_logger.warn(String.format("Failed to apply VPN for %s.", user.toString()));
+                logger.warn(String.format("Failed to apply VPN for %s.", user.toString()));
             }
         }
 

@@ -30,7 +30,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -49,7 +48,6 @@ import org.libvirt.LibvirtException;
 @ResourceWrapper(handles =  StopCommand.class)
 public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtStopCommandWrapper.class);
     private static final String CMDLINE_PATH = "/var/cache/cloud/cmdline";
     private static final String CMDLINE_BACKUP_PATH = "/var/cache/cloud/cmdline.backup";
 
@@ -67,21 +65,21 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                     return new StopAnswer(command, "vm is still running on host", false);
                 }
             } catch (final Exception e) {
-                s_logger.debug("Failed to get vm status in case of checkboforecleanup is true", e);
+                logger.debug("Failed to get vm status in case of checkboforecleanup is true", e);
             }
         }
         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
         try {
             if(vmName.startsWith("s-") || vmName.startsWith("v-")){
                 //move the command line file to backup.
-                s_logger.debug("backing up the cmdline");
+                logger.debug("backing up the cmdline");
                 try{
                     Pair<Boolean, String> ret = SshHelper.sshExecute(command.getControlIp(), 3922, "root", pemFile, null,"cp -f "+CMDLINE_PATH+" "+CMDLINE_BACKUP_PATH);
                     if(!ret.first()){
-                        s_logger.debug("Failed to backup cmdline file due to "+ret.second());
+                        logger.debug("Failed to backup cmdline file due to "+ret.second());
                     }
                 } catch (Exception e){
-                    s_logger.debug("Failed to backup cmdline file due to "+e.getMessage());
+                    logger.debug("Failed to backup cmdline file due to "+e.getMessage());
                 }
             }
 
@@ -123,7 +121,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                         for (DpdkTO to : dpdkInterfaceMapping.values()) {
                             String portToRemove = to.getPort();
                             String cmd = String.format("ovs-vsctl del-port %s", portToRemove);
-                            s_logger.debug("Removing DPDK port: " + portToRemove);
+                            logger.debug("Removing DPDK port: " + portToRemove);
                             Script.runSimpleBashScript(cmd);
                         }
                     }
@@ -141,16 +139,16 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
 
             return new StopAnswer(command, result, true);
         } catch (final LibvirtException e) {
-            s_logger.debug("unable to stop VM:"+vmName+" due to"+e.getMessage());
+            logger.debug("unable to stop VM:"+vmName+" due to"+e.getMessage());
             try{
                 if(vmName.startsWith("s-") || vmName.startsWith("v-"))
-                    s_logger.debug("restoring cmdline file from backup");
+                    logger.debug("restoring cmdline file from backup");
                 Pair<Boolean, String> ret = SshHelper.sshExecute(command.getControlIp(), 3922, "root", pemFile, null, "mv "+CMDLINE_BACKUP_PATH+" "+CMDLINE_PATH);
                 if(!ret.first()){
-                    s_logger.debug("unable to restore cmdline due to "+ret.second());
+                    logger.debug("unable to restore cmdline due to "+ret.second());
                 }
             }catch (final Exception ex){
-                s_logger.debug("unable to restore cmdline due to:"+ex.getMessage());
+                logger.debug("unable to restore cmdline due to:"+ex.getMessage());
             }
             return new StopAnswer(command, e.getMessage(), false);
         }
@@ -161,7 +159,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
             LibvirtKvmAgentHook onStopHook = libvirtComputingResource.getStopHook();
             onStopHook.handle(vmName);
         } catch (Exception e) {
-            s_logger.warn("Exception occurred when handling LibVirt VM onStop hook: {}", e);
+            logger.warn("Exception occurred when handling LibVirt VM onStop hook: {}", e);
         }
     }
 }

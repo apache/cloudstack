@@ -35,7 +35,6 @@ import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -46,7 +45,6 @@ import java.util.Map;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateConsoleEndpointCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(CreateConsoleEndpointCmd.class.getName());
 
     @Inject
     private ConsoleAccessManager consoleManager;

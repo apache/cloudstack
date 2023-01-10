@@ -22,8 +22,11 @@ import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
+import org.apache.log4j.Logger;
 
 public abstract class RuleApplier {
+
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected Network _network;
     protected VirtualRouter _router;

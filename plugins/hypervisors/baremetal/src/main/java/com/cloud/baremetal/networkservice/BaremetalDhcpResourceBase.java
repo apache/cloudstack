@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -44,7 +43,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 
 public class BaremetalDhcpResourceBase extends ManagerBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(BaremetalDhcpResourceBase.class);
     String _name;
     String _guid;
     String _username;
@@ -129,7 +127,7 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
     }
 
     protected ReadyAnswer execute(ReadyCommand cmd) {
-        s_logger.debug("External DHCP resource " + _name + " is ready");
+        logger.debug("External DHCP resource " + _name + " is ready");
         return new ReadyAnswer(cmd);
     }
 

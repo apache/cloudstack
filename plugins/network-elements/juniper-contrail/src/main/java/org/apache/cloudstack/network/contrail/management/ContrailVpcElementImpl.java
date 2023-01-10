@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 import org.apache.cloudstack.network.contrail.model.NetworkPolicyModel;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
@@ -46,8 +45,6 @@ import com.cloud.vm.ReservationContext;
 
 @Component
 public class ContrailVpcElementImpl extends ContrailElementImpl implements NetworkACLServiceProvider, VpcProvider {
-    private static final Logger s_logger =
-            Logger.getLogger(ContrailElement.class);
 
     @Inject
     NetworkACLDao _networkACLDao;
@@ -63,7 +60,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement implementVpc");
+        logger.debug("NetworkElement implementVpc");
         return true;
     }
 
@@ -71,7 +68,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     public boolean shutdownVpc(Vpc vpc, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement shutdownVpc");
+        logger.debug("NetworkElement shutdownVpc");
         return true;
     }
 
@@ -79,7 +76,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     public boolean createPrivateGateway(PrivateGateway gateway)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement createPrivateGateway");
+        logger.debug("NetworkElement createPrivateGateway");
         return false;
     }
 
@@ -87,7 +84,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     public boolean deletePrivateGateway(PrivateGateway privateGateway)
             throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement deletePrivateGateway");
+        logger.debug("NetworkElement deletePrivateGateway");
         return false;
     }
 
@@ -95,7 +92,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes)
             throws ResourceUnavailableException {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement applyStaticRoutes");
+        logger.debug("NetworkElement applyStaticRoutes");
         return true;
     }
 
@@ -103,9 +100,9 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     public boolean applyNetworkACLs(Network net,
             List<? extends NetworkACLItem> rules)
                     throws ResourceUnavailableException {
-        s_logger.debug("NetworkElement applyNetworkACLs");
+        logger.debug("NetworkElement applyNetworkACLs");
         if (rules == null || rules.isEmpty()) {
-            s_logger.debug("no rules to apply");
+            logger.debug("no rules to apply");
             return true;
         }
 
@@ -125,7 +122,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
                     project = _manager.getDefaultVncProject();
                 }
             } catch (IOException ex) {
-                s_logger.warn("read project", ex);
+                logger.warn("read project", ex);
                 return false;
             }
             policyModel.setProject(project);
@@ -143,7 +140,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
         try {
             policyModel.build(_manager.getModelController(), rules);
         } catch (Exception e) {
-            s_logger.error(e);
+            logger.error(e);
             e.printStackTrace();
             return false;
         }
@@ -154,7 +151,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
             }
             _manager.getDatabase().getNetworkPolicys().add(policyModel);
         } catch (Exception ex) {
-            s_logger.error("network-policy update: ", ex);
+            logger.error("network-policy update: ", ex);
             ex.printStackTrace();
             return false;
         }
@@ -190,7 +187,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
             List<? extends NetworkACLItem> rules)
                     throws ResourceUnavailableException {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkElement applyACLItemsToPrivateGw");
+        logger.debug("NetworkElement applyACLItemsToPrivateGw");
         return true;
     }
 

@@ -22,10 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import streamer.debug.FakeSink;
 import streamer.debug.FakeSource;
 
 public class PipelineImpl implements Pipeline {
+
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected String id;
     protected boolean verbose = System.getProperty("streamer.Pipeline.debug", "false").equals("true");

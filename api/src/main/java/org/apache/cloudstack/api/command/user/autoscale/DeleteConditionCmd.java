@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -39,7 +38,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteCondition", description = "Removes a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteConditionCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteConditionCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -59,14 +57,14 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
         try {
             result = _autoScaleService.deleteCondition(getId());
         } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            s_logger.warn("Failed to delete condition " + getId());
+            logger.warn("Failed to delete condition " + getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete condition.");
         }
     }

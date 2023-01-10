@@ -30,7 +30,7 @@ import java.util.Map;
 public class LdapUserManagerFactory implements ApplicationContextAware {
 
 
-    public static final Logger s_logger = Logger.getLogger(LdapUserManagerFactory.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
 
     static Map<LdapUserManager.Provider, LdapUserManager> ldapUserManagerMap = new HashMap<>();
 

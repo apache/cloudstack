@@ -27,7 +27,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -87,7 +86,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ManagementServerMock {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerMock.class);
 
     @Inject
     private AccountManager _accountMgr;
@@ -126,7 +124,6 @@ public class ManagementServerMock {
         try {
             field = cls.getDeclaredField(name);
         } catch (Exception ex) {
-            s_logger.warn("class: " + cls.getName() + "\t" + ex);
             return;
         }
         field.setAccessible(true);
@@ -135,7 +132,6 @@ public class ManagementServerMock {
                 try {
                     field.set(cmd, value);
                 } catch (Exception ex) {
-                    s_logger.warn(ex);
                     return;
                 }
                 break;
@@ -144,7 +140,6 @@ public class ManagementServerMock {
                     try {
                         field.setLong(cmd, -1L);
                     } catch (Exception ex) {
-                        s_logger.warn(ex);
                         return;
                     }
                 }
@@ -153,7 +148,6 @@ public class ManagementServerMock {
                 try {
                     field.set(cmd, value);
                 } catch (Exception ex) {
-                    s_logger.warn(ex);
                     return;
                 }
                 break;
@@ -161,7 +155,6 @@ public class ManagementServerMock {
                 try {
                     field.set(cmd, value);
                 } catch (Exception ex) {
-                    s_logger.warn(ex);
                     return;
                 }
                 break;
@@ -186,8 +179,6 @@ public class ManagementServerMock {
         if (nets != null && !nets.isEmpty()) {
             NetworkVO public_net = nets.get(0);
             public_net_id = public_net.getId();
-        } else {
-            s_logger.debug("no public network found in the zone: " + _zone.getId());
         }
         Account system = _accountMgr.getSystemAccount();
 
@@ -200,11 +191,9 @@ public class ManagementServerMock {
         setParameter(cmd, "networkID", BaseCmd.CommandType.LONG, public_net_id);
         setParameter(cmd, "zoneId", BaseCmd.CommandType.LONG, _zone.getId());
         setParameter(cmd, "vlan", BaseCmd.CommandType.STRING, "untagged");
-        s_logger.debug("createPublicVlanIpRange execute : zone id: " + _zone.getId() + ", public net id: " + public_net_id);
         try {
             _configService.createVlanAndPublicIpRange(cmd);
         } catch (Exception e) {
-            s_logger.debug("createPublicVlanIpRange: " + e);
         }
     }
 
@@ -360,7 +349,6 @@ public class ManagementServerMock {
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =
             _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null, null);
         if (providers.second() == 0) {
-            s_logger.debug("Add " + Provider.JuniperContrailRouter.getName() + " to network " + _znet.getName());
             PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null);
             _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
         } else {
@@ -371,12 +359,10 @@ public class ManagementServerMock {
         }
 
         providers = _networkService.listNetworkServiceProviders(_znet.getId(), null, PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
-        s_logger.debug(_znet.getName() + " has " + providers.second().toString() + " Enabled providers");
         for (PhysicalNetworkServiceProvider provider : providers.first()) {
             if (provider.getProviderName().equals(Provider.JuniperContrailRouter.getName())) {
                 continue;
             }
-            s_logger.debug("Disabling " + provider.getProviderName());
             _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Disabled.toString(), null);
         }
     }

@@ -26,7 +26,7 @@ public class NiciraConstants {
     public static final String SWITCH_URI_PREFIX = "/ws.v1/lswitch";
     public static final String ROUTER_URI_PREFIX = "/ws.v1/lrouter";
     public static final String GATEWAY_SERVICE_PREFIX = "/ws.v1/gateway-service";
-    public static final String LOGIN_URL = "/ws.v1/login";
+    public static final String loggerIN_URL = "/ws.v1/login";
     public static final String CONTROL_CLUSTER_STATUS_URL = "/ws.v1/control-cluster/status";
 
     public static final String ATTACHMENT_PATH_SEGMENT = "/attachment";

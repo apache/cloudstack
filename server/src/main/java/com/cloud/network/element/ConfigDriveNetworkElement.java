@@ -34,7 +34,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
@@ -89,7 +88,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 
 public class ConfigDriveNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider,
         StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine>, NetworkMigrationResponder {
-    private static final Logger LOG = Logger.getLogger(ConfigDriveNetworkElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -167,7 +165,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         try {
             return deleteConfigDriveIso(vm.getVirtualMachine());
         } catch (ResourceUnavailableException e) {
-            LOG.error("Failed to delete config drive due to: ", e);
+            logger.error("Failed to delete config drive due to: ", e);
             return false;
         }
     }
@@ -264,7 +262,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             try {
                 recreateConfigDriveIso(nic, network, vm, dest);
             } catch (ResourceUnavailableException e) {
-                LOG.error("Failed to add config disk drive due to: ", e);
+                logger.error("Failed to add config disk drive due to: ", e);
                 return false;
             }
         }
@@ -321,7 +319,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     try {
                         return deleteConfigDriveIso(vm);
                     } catch (ResourceUnavailableException e) {
-                        LOG.error("Failed to delete config drive due to: ", e);
+                        logger.error("Failed to delete config drive due to: ", e);
                         return false;
                     }
                 }
@@ -333,7 +331,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
         if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
-            LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
+            logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
             try {
                 if (isConfigDriveIsoOnHostCache(vm.getId())) {
                     vm.setConfigDriveLocation(Location.HOST);
@@ -346,7 +344,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     addPasswordAndUserdata(network, nic, vm, dest, context);
                 }
             } catch (InsufficientCapacityException | ResourceUnavailableException e) {
-                LOG.error("Failed to add config disk drive due to: ", e);
+                logger.error("Failed to add config disk drive due to: ", e);
                 return false;
             }
         }
@@ -362,7 +360,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 deleteConfigDriveIsoOnHostCache(vm.getVirtualMachine(), vm.getHostId());
             }
         } catch (ConcurrentOperationException | ResourceUnavailableException e) {
-            LOG.error("rollbackMigration failed.", e);
+            logger.error("rollbackMigration failed.", e);
         }
     }
 
@@ -375,7 +373,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 deleteConfigDriveIsoOnHostCache(vm.getVirtualMachine(), vm.getHostId());
             }
         } catch (ConcurrentOperationException | ResourceUnavailableException e) {
-            LOG.error("commitMigration failed.", e);
+            logger.error("commitMigration failed.", e);
         }
     }
 
@@ -532,7 +530,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName() + " on host: " + hostId);
+        logger.debug("Creating config drive ISO for vm: " + profile.getInstanceName() + " on host: " + hostId);
 
         Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
 
@@ -563,12 +561,12 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        LOG.debug("Deleting config drive ISO for vm: " + vm.getInstanceName() + " on host: " + hostId);
+        logger.debug("Deleting config drive ISO for vm: " + vm.getInstanceName() + " on host: " + hostId);
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, null, false, true, false);
         HostVO hostVO = _hostDao.findById(hostId);
         if (hostVO == null) {
-            LOG.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
+            logger.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
             return false;
         }
 
@@ -578,7 +576,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
 
         if (!answer.getResult()) {
-            LOG.error("Failed to remove config drive for instance: " + vm.getInstanceName());
+            logger.error("Failed to remove config drive for instance: " + vm.getInstanceName());
             return false;
         }
         return true;
@@ -593,7 +591,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
+        logger.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
 
         Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
 
@@ -658,7 +656,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Long hostId  = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         Location location = getConfigDriveLocation(vm.getId());
         if (hostId == null) {
-            LOG.info(String.format("The VM was never booted; no config-drive ISO created for VM %s", vm.getName()));
+            logger.info(String.format("The VM was never booted; no config-drive ISO created for VM %s", vm.getName()));
             return true;
         }
         if (location == Location.HOST) {
@@ -686,14 +684,14 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        LOG.debug("Deleting config drive ISO for vm: " + vm.getInstanceName());
+        logger.debug("Deleting config drive ISO for vm: " + vm.getInstanceName());
 
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, dataStore.getTO(), false, false, false);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(agentId, configDriveIsoCommand);
         if (!answer.getResult()) {
-            LOG.error("Failed to remove config drive for instance: " + vm.getInstanceName());
+            logger.error("Failed to remove config drive for instance: " + vm.getInstanceName());
             return false;
         }
         return true;
@@ -723,7 +721,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
             profile.addDisk(new DiskTO(dataTO, CONFIGDRIVEDISKSEQ.longValue(), isoPath, Volume.Type.ISO));
         } else {
-            LOG.warn("Config drive iso already is in VM profile.");
+            logger.warn("Config drive iso already is in VM profile.");
         }
     }
 

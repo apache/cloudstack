@@ -32,7 +32,7 @@ import com.cloud.vm.dao.NicDao;
 
 public class RouterControlHelper {
 
-    private static final Logger logger = Logger.getLogger(RouterControlHelper.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private DomainRouterDao routerDao;

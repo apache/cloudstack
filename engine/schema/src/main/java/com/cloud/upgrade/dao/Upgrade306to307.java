@@ -23,12 +23,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade306to307 extends Upgrade30xBase {
-    final static Logger s_logger = Logger.getLogger(Upgrade306to307.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -96,7 +94,7 @@ public class Upgrade306to307 extends Upgrade30xBase {
             pstmt = conn.prepareStatement("drop table `cloud`.`network_details`");
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            s_logger.info("[ignored] error during network offering update:" + e.getLocalizedMessage(), e);
+            logger.info("[ignored] error during network offering update:" + e.getLocalizedMessage(), e);
         } finally {
             closeAutoCloseable(rs);
             closeAutoCloseable(rs1);

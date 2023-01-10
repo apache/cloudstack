@@ -33,7 +33,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -61,7 +60,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
-    protected static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);
     @Inject
     protected VMInstanceDao _vmDao = null;
 
@@ -92,25 +90,25 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
 
         if (!url.getScheme().equals("http")) {
             String msg = "urlString is not http so we're not taking care of the discovery for this: " + url;
-            s_logger.debug(msg);
+            logger.debug(msg);
             return null;
         }
         if (clusterId == null) {
             String msg = "must specify cluster Id when add host";
-            s_logger.debug(msg);
+            logger.debug(msg);
             throw new RuntimeException(msg);
         }
 
         if (podId == null) {
             String msg = "must specify pod Id when add host";
-            s_logger.debug(msg);
+            logger.debug(msg);
             throw new RuntimeException(msg);
         }
 
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || (cluster.getHypervisorType() != HypervisorType.BareMetal)) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("invalid cluster id or cluster is not for Bare Metal hosts");
+            if (logger.isInfoEnabled())
+                logger.info("invalid cluster id or cluster is not for Bare Metal hosts");
             return null;
         }
 
@@ -132,14 +130,14 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
                         + injectScript);
             }
 
-            final Script2 command = new Script2(scriptPath, s_logger);
+            final Script2 command = new Script2(scriptPath, logger);
             command.add("ping");
             command.add("hostname="+ipmiIp);
             command.add("usrname="+username);
             command.add("password="+password, ParamType.PASSWORD);
             final String result = command.execute();
             if (result != null) {
-                s_logger.warn(String.format("Can not set up ipmi connection(ip=%1$s, username=%2$s, password=%3$s, args) because %4$s", ipmiIp, username, "******", result));
+                logger.warn(String.format("Can not set up ipmi connection(ip=%1$s, username=%2$s, password=%3$s, args) because %4$s", ipmiIp, username, "******", result));
                 return null;
             }
 
@@ -205,11 +203,11 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             zone.setDhcpProvider(Network.Provider.ExternalDhcpServer.getName());
             _dcDao.update(zone.getId(), zone);
 
-            s_logger.debug(String.format("Discover Bare Metal host successfully(ip=%1$s, username=%2$s, password=%3$s," +
+            logger.debug(String.format("Discover Bare Metal host successfully(ip=%1$s, username=%2$s, password=%3$s," +
                     "cpuNum=%4$s, cpuCapacity-%5$s, memCapacity=%6$s)", ipmiIp, username, "******", cpuNum, cpuCapacity, memCapacity));
             return resources;
         } catch (Exception e) {
-            s_logger.warn("Can not set up bare metal agent", e);
+            logger.warn("Can not set up bare metal agent", e);
         }
 
         return null;

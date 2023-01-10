@@ -45,7 +45,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.utils.UriUtils;
 
 public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(SimulatorImageStoreLifeCycleImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     ImageStoreHelper imageStoreHelper;
@@ -65,7 +65,7 @@ public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         DataStoreRole role = (DataStoreRole)dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        s_logger.info("Trying to add a new data store at " + url + " to data center " + dcId);
+        logger.info("Trying to add a new data store at " + url + " to data center " + dcId);
 
         URI uri;
         try {

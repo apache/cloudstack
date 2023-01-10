@@ -52,10 +52,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ApiResponseSerializer {
-    private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(ApiResponseSerializer.class);
 
     public static String toSerializedString(ResponseObject result, String responseType) {
-        s_logger.trace("===Serializing Response===");
+        LOGGER.trace("===Serializing Response===");
         if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result, new StringBuilder());
         } else {
@@ -64,7 +64,7 @@ public class ApiResponseSerializer {
     }
 
     public static String toSerializedStringWithSecureLogs(ResponseObject result, String responseType, StringBuilder log) {
-        s_logger.trace("===Serializing Response===");
+        LOGGER.trace("===Serializing Response===");
         if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result, log);
         } else {
@@ -253,7 +253,7 @@ public class ApiResponseSerializer {
                         }
                     }
                     if (!permittedParameter) {
-                        s_logger.trace("Ignoring parameter " + param.name() + " as the caller is not authorized to see it");
+                        LOGGER.trace("Ignoring parameter " + param.name() + " as the caller is not authorized to see it");
                         continue;
                     }
                 }
@@ -372,7 +372,7 @@ public class ApiResponseSerializer {
         try {
             return new URLEncoder().encode(value).replaceAll("\\+", "%20");
         } catch (Exception e) {
-            s_logger.warn("Unable to encode: " + value, e);
+            LOGGER.warn("Unable to encode: " + value, e);
         }
         return value;
     }

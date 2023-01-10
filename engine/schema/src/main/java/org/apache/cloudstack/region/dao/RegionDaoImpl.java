@@ -17,7 +17,6 @@
 package org.apache.cloudstack.region.dao;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.region.RegionVO;
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class RegionDaoImpl extends GenericDaoBase<RegionVO, Integer> implements RegionDao {
-    private static final Logger s_logger = Logger.getLogger(RegionDaoImpl.class);
     protected SearchBuilder<RegionVO> NameSearch;
     protected SearchBuilder<RegionVO> AllFieldsSearch;
 

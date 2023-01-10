@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.cloud.network.Network;
@@ -44,8 +43,6 @@ import net.juniper.contrail.api.ApiConnectorMock;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 
 public class VMInterfaceModelTest extends TestCase {
-    private static final Logger s_logger =
-        Logger.getLogger(VMInterfaceModelTest.class);
 
     @Test
     public void testCreateVMInterface() throws IOException {

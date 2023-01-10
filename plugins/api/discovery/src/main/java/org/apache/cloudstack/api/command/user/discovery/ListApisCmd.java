@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.discovery;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +41,6 @@ import com.cloud.user.User;
             responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListApisCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());
 
     @Inject
     ApiDiscoveryService _apiDiscoveryService;

@@ -54,7 +54,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.component.ComponentContext;
 
 public class ImageStoreImpl implements ImageStoreEntity {
-    private static final Logger s_logger = Logger.getLogger(ImageStoreImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
     @Inject
     VMTemplateDao imageDao;
     @Inject
@@ -153,10 +153,10 @@ public class ImageStoreImpl implements ImageStoreEntity {
         try {
             future.get();
         } catch (InterruptedException e) {
-            s_logger.debug("failed delete obj", e);
+            logger.debug("failed delete obj", e);
             return false;
         } catch (ExecutionException e) {
-            s_logger.debug("failed delete obj", e);
+            logger.debug("failed delete obj", e);
             return false;
         }
         objectInStoreMgr.delete(obj);

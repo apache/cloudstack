@@ -27,7 +27,7 @@ import com.trilead.ssh2.Session;
 
 public class SshTest {
 
-    public static final Logger s_logger = Logger.getLogger(SshTest.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
     public static String host = "";
     public static String password = "password";
     public static String url = "http://google.com";
@@ -52,26 +52,26 @@ public class SshTest {
         }
 
         if (host == null || host.equals("")) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            logger.info("Did not receive a host back from test, ignoring ssh test");
             System.exit(2);
         }
 
         if (password == null) {
-            s_logger.info("Did not receive a password back from test, ignoring ssh test");
+            logger.info("Did not receive a password back from test, ignoring ssh test");
             System.exit(2);
         }
 
         try {
-            s_logger.info("Attempting to SSH into host " + host);
+            logger.info("Attempting to SSH into host " + host);
             Connection conn = new Connection(host);
             conn.connect(null, 60000, 60000);
 
-            s_logger.info("User + ssHed successfully into host " + host);
+            logger.info("User + ssHed successfully into host " + host);
 
             boolean isAuthenticated = conn.authenticateWithPassword("root", password);
 
             if (isAuthenticated == false) {
-                s_logger.info("Authentication failed for root with password" + password);
+                logger.info("Authentication failed for root with password" + password);
                 System.exit(2);
             }
 
@@ -82,7 +82,7 @@ public class SshTest {
             conn.close();
 
         } catch (Exception e) {
-            s_logger.error("SSH test fail with error", e);
+            logger.error("SSH test fail with error", e);
             System.exit(2);
         }
     }

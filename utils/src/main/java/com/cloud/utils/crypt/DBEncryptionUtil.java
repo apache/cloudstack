@@ -30,7 +30,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
 
-    public static final Logger s_logger = Logger.getLogger(DBEncryptionUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(DBEncryptionUtil.class);
     private static StandardPBEStringEncryptor s_encryptor = null;
 
     public static String encrypt(String plain) {
@@ -44,7 +44,7 @@ public class DBEncryptionUtil {
         try {
             encryptedString = s_encryptor.encrypt(plain);
         } catch (EncryptionOperationNotPossibleException e) {
-            s_logger.debug("Error while encrypting: " + plain);
+            LOGGER.debug("Error while encrypting: " + plain);
             throw e;
         }
         return encryptedString;
@@ -62,7 +62,7 @@ public class DBEncryptionUtil {
         try {
             plain = s_encryptor.decrypt(encrypted);
         } catch (EncryptionOperationNotPossibleException e) {
-            s_logger.debug("Error while decrypting: " + encrypted);
+            LOGGER.debug("Error while decrypting: " + encrypted);
             throw e;
         }
         return plain;

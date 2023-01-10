@@ -46,7 +46,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
 public class KVMStoragePoolManager {
-    private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private class StoragePoolInformation {
         String name;
@@ -110,7 +110,7 @@ public class KVMStoragePoolManager {
             StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
             if (info != null && info.storagePoolType() != null) {
                 if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
-                    s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
+                    logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
                 } else {
                     try {
                         this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.newInstance());
@@ -122,7 +122,7 @@ public class KVMStoragePoolManager {
         }
 
         for (Map.Entry<String, StorageAdaptor> adaptors : this._storageMapper.entrySet()) {
-            s_logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
+            logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
         }
     }
 
@@ -159,7 +159,7 @@ public class KVMStoragePoolManager {
             result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails());
 
             if (!result) {
-                s_logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
                 return result;
             }
         }
@@ -168,7 +168,7 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        s_logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
+        logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
         if (MapUtils.isEmpty(volumeToDisconnect)) {
             return false;
         }
@@ -177,18 +177,18 @@ public class KVMStoragePoolManager {
             String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
             StorageAdaptor adaptor = _storageMapper.get(poolType);
             if (adaptor != null) {
-                s_logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
+                logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
                 return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
             }
 
-            s_logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
+            logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
         }
 
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
-                s_logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
+                logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
                 return true;
             }
         }
@@ -197,12 +197,12 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDiskByPath(String path) {
-        s_logger.debug(String.format("Disconnect physical disk by path: %s", path));
+        logger.debug(String.format("Disconnect physical disk by path: %s", path));
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDiskByPath(path)) {
-                s_logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
+                logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
                 return true;
             }
         }
@@ -217,7 +217,7 @@ public class KVMStoragePoolManager {
                We may not know about these yet. This might mean that we can't use the vmspec map, because
                when we restart the agent we lose all of the info about running VMs. */
 
-            s_logger.debug("disconnectPhysicalDiskViaVmSpec: Attempted to stop a VM that is not yet in our hash map");
+            logger.debug("disconnectPhysicalDiskViaVmSpec: Attempted to stop a VM that is not yet in our hash map");
 
             return true;
         }
@@ -230,7 +230,7 @@ public class KVMStoragePoolManager {
 
         for (DiskTO disk : disks) {
             if (disk.getType() != Volume.Type.ISO) {
-                s_logger.debug("Disconnecting disk " + disk.getPath());
+                logger.debug("Disconnecting disk " + disk.getPath());
 
                 VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
                 PrimaryDataStoreTO store = (PrimaryDataStoreTO)vol.getDataStore();
@@ -238,7 +238,7 @@ public class KVMStoragePoolManager {
                 KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
 
                 if (pool == null) {
-                    s_logger.error("Pool " + store.getUuid() + " of type " + store.getPoolType() + " was not found, skipping disconnect logic");
+                    logger.error("Pool " + store.getUuid() + " of type " + store.getPoolType() + " was not found, skipping disconnect logic");
                     continue;
                 }
 
@@ -249,7 +249,7 @@ public class KVMStoragePoolManager {
                 boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
 
                 if (!subResult) {
-                    s_logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
 
                     result = false;
                 }
@@ -320,14 +320,14 @@ public class KVMStoragePoolManager {
                     return vol;
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to find volume:" + volName + " due to " + e.toString() + ", retry:" + cnt);
+                logger.debug("Failed to find volume:" + volName + " due to " + e.toString() + ", retry:" + cnt);
                 errMsg = e.toString();
             }
 
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interrupted while trying to get storage pool.");
+                logger.debug("[ignored] interrupted while trying to get storage pool.");
             }
             cnt++;
         }

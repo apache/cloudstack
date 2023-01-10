@@ -16,7 +16,6 @@
 // under the License.
 package streamer.apr;
 
-import org.apache.log4j.Logger;
 import org.apache.tomcat.jni.Socket;
 
 import streamer.BaseElement;
@@ -30,7 +29,6 @@ import streamer.Link;
  * Source element, which reads data from InputStream.
  */
 public class AprSocketSource extends BaseElement {
-    private static final Logger s_logger = Logger.getLogger(AprSocketSource.class);
 
     protected AprSocketWrapperImpl socketWrapper;
     protected Long socket;
@@ -164,7 +162,7 @@ public class AprSocketSource extends BaseElement {
         try {
             sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
         } catch (Exception e) {
-            s_logger.info("[ignored]"
+            logger.info("[ignored]"
                     + "failing sending source event to all pads: " + e.getLocalizedMessage());
         }
         socketWrapper.shutdown();

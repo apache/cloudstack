@@ -30,7 +30,7 @@ public abstract class RollingMaintenanceExecutorBase implements RollingMaintenan
 
     static final int exitValueAvoidMaintenance = 70;
     static final int exitValueTerminatedSignal = 143;
-    private static final Logger s_logger = Logger.getLogger(RollingMaintenanceExecutor.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     void setTimeout(int timeout) {
         this.timeout = timeout;
@@ -66,7 +66,7 @@ public abstract class RollingMaintenanceExecutorBase implements RollingMaintenan
             return new File(scriptPath + ".py");
         } else {
             String msg = "Unable to locate script for stage: " + stage + " in directory: " + hooksDir;
-            s_logger.warn(msg);
+            logger.warn(msg);
             return null;
         }
     }

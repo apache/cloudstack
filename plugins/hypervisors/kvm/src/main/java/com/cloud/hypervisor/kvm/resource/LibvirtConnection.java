@@ -27,7 +27,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class LibvirtConnection {
-    private static final Logger s_logger = Logger.getLogger(LibvirtConnection.class);
+    protected static Logger LOGGER = Logger.getLogger(LibvirtConnection.class);
     static private Map<String, Connect> s_connections = new HashMap<String, Connect>();
 
     static private Connect s_connection;
@@ -38,20 +38,20 @@ public class LibvirtConnection {
     }
 
     static public Connect getConnection(String hypervisorURI) throws LibvirtException {
-        s_logger.debug("Looking for libvirtd connection at: " + hypervisorURI);
+        LOGGER.debug("Looking for libvirtd connection at: " + hypervisorURI);
         Connect conn = s_connections.get(hypervisorURI);
 
         if (conn == null) {
-            s_logger.info("No existing libvirtd connection found. Opening a new one");
+            LOGGER.info("No existing libvirtd connection found. Opening a new one");
             conn = new Connect(hypervisorURI, false);
-            s_logger.debug("Successfully connected to libvirt at: " + hypervisorURI);
+            LOGGER.debug("Successfully connected to libvirt at: " + hypervisorURI);
             s_connections.put(hypervisorURI, conn);
         } else {
             try {
                 conn.getVersion();
             } catch (LibvirtException e) {
-                s_logger.error("Connection with libvirtd is broken: " + e.getMessage());
-                s_logger.debug("Opening a new libvirtd connection to: " + hypervisorURI);
+                LOGGER.error("Connection with libvirtd is broken: " + e.getMessage());
+                LOGGER.debug("Opening a new libvirtd connection to: " + hypervisorURI);
                 conn = new Connect(hypervisorURI, false);
                 s_connections.put(hypervisorURI, conn);
             }
@@ -70,11 +70,11 @@ public class LibvirtConnection {
                     return conn;
                 }
             } catch (Exception e) {
-                s_logger.debug("Can not find " + hypervisor.toString() + " connection for Instance: " + vmName + ", continuing.");
+                LOGGER.debug("Can not find " + hypervisor.toString() + " connection for Instance: " + vmName + ", continuing.");
             }
         }
 
-        s_logger.warn("Can not find a connection for Instance " + vmName + ". Assuming the default connection.");
+        LOGGER.warn("Can not find a connection for Instance " + vmName + ". Assuming the default connection.");
         // return the default connection
         return getConnection();
     }

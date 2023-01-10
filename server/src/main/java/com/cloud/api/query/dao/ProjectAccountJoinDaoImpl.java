@@ -19,7 +19,6 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -32,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoinVO, Long> implements ProjectAccountJoinDao {
-    public static final Logger s_logger = Logger.getLogger(ProjectAccountJoinDaoImpl.class);
 
     private SearchBuilder<ProjectAccountJoinVO> paIdSearch;
 

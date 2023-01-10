@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
  * copied fnd addpeted rom the public domain utility from John Burkard.
  **/
 public class MacAddress {
-    private static final Logger s_logger = Logger.getLogger(MacAddress.class);
+    protected static Logger LOGGER = Logger.getLogger(MacAddress.class);
     private long _addr = 0;
 
     protected MacAddress() {
@@ -114,9 +114,9 @@ public class MacAddress {
             }
 
         } catch (SecurityException ex) {
-            s_logger.info("[ignored] security exception in static initializer of MacAddress", ex);
+            LOGGER.info("[ignored] security exception in static initializer of MacAddress", ex);
         } catch (IOException ex) {
-            s_logger.info("[ignored] io exception in static initializer of MacAddress");
+            LOGGER.info("[ignored] io exception in static initializer of MacAddress");
         } finally {
             if (p != null) {
                 closeAutoCloseable(in, "closing init process input stream");

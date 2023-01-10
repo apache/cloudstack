@@ -23,7 +23,6 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -51,7 +50,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
-    public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
     // TODO: we should remove these direct sqls
     private static final String GET_LAST_SNAPSHOT =
         "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
@@ -197,7 +195,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
                 return rs.getLong(1);
             }
         } catch (Exception ex) {
-            s_logger.error("error getting last snapshot", ex);
+            logger.error("error getting last snapshot", ex);
         }
         return 0;
     }

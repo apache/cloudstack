@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -40,7 +39,6 @@ import java.util.Map;
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(UpdateGuestOsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +50,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
-    private static final Logger s_logger = Logger.getLogger(CapacityDaoImpl.class);
 
     private static final String ADD_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ? WHERE host_id = ? AND capacity_type = ?";
     private static final String SUBTRACT_ALLOCATED_SQL =
@@ -612,7 +610,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Exception updating capacity for host: " + hostId, e);
+            logger.warn("Exception updating capacity for host: " + hostId, e);
         }
     }
 
@@ -1126,7 +1124,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
             pstmt.executeUpdate();
         } catch (Exception e) {
-            s_logger.warn("Error updating CapacityVO", e);
+            logger.warn("Error updating CapacityVO", e);
         }
     }
 
@@ -1146,7 +1144,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 return rs.getFloat(1);
             }
         } catch (Exception e) {
-            s_logger.warn("Error checking cluster threshold", e);
+            logger.warn("Error checking cluster threshold", e);
         }
         return 0;
     }

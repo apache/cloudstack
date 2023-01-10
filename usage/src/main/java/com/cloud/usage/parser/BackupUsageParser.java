@@ -36,7 +36,7 @@ import com.cloud.user.AccountVO;
 
 @Component
 public class BackupUsageParser {
-    public static final Logger LOGGER = Logger.getLogger(BackupUsageParser.class);
+    protected static Logger LOGGER = Logger.getLogger(BackupUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageBackupDao s_usageBackupDao;

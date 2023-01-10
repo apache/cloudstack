@@ -60,14 +60,12 @@ import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyNetwork
 import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyPortAnswer;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerMappingDao;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerVO;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 
 public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(OpendaylightGuestNetworkGuru.class);
 
     @Inject
     protected NetworkOfferingServiceMapDao ntwkOfferingSrvcDao;
@@ -93,7 +91,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
                 && ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Provider.Opendaylight)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -103,17 +101,17 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
-            s_logger.debug("Refusing to design this network");
+            logger.debug("Refusing to design this network");
             return null;
         }
 
         List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(physnet.getId());
         if (devices.isEmpty()) {
-            s_logger.error("No Controller on physical network " + physnet.getName());
+            logger.error("No Controller on physical network " + physnet.getName());
             return null;
         }
-        s_logger.debug("Controller " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
-        s_logger.debug("Physical isolation type is ODL, asking GuestNetworkGuru to design this network");
+        logger.debug("Controller " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
+        logger.debug("Physical isolation type is ODL, asking GuestNetworkGuru to design this network");
 
         NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (networkObject == null) {
@@ -158,7 +156,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
 
         List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(physicalNetworkId);
         if (devices.isEmpty()) {
-            s_logger.error("No Controller on physical network " + physicalNetworkId);
+            logger.error("No Controller on physical network " + physicalNetworkId);
             return null;
         }
         OpenDaylightControllerVO controller = devices.get(0);
@@ -167,13 +165,13 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         ConfigureNetworkAnswer answer = (ConfigureNetworkAnswer)agentManager.easySend(controller.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("ConfigureNetworkCommand failed");
+            logger.error("ConfigureNetworkCommand failed");
             return null;
         }
 
         implemented.setBroadcastUri(BroadcastDomainType.OpenDaylight.toUri(answer.getNetworkUuid()));
         implemented.setBroadcastDomainType(BroadcastDomainType.OpenDaylight);
-        s_logger.info("Implemented OK, network linked to  = " + implemented.getBroadcastUri().toString());
+        logger.info("Implemented OK, network linked to  = " + implemented.getBroadcastUri().toString());
 
         return implemented;
     }
@@ -188,7 +186,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
 
         List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(physicalNetworkId);
         if (devices.isEmpty()) {
-            s_logger.error("No Controller on physical network " + physicalNetworkId);
+            logger.error("No Controller on physical network " + physicalNetworkId);
             throw new InsufficientVirtualNetworkCapacityException("No OpenDaylight Controller configured for this network", dest.getPod().getId());
         }
         OpenDaylightControllerVO controller = devices.get(0);
@@ -196,7 +194,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         AddHypervisorCommand addCmd = new AddHypervisorCommand(dest.getHost().getUuid(), dest.getHost().getPrivateIpAddress());
         AddHypervisorAnswer addAnswer = (AddHypervisorAnswer)agentManager.easySend(controller.getHostId(), addCmd);
         if (addAnswer == null || !addAnswer.getResult()) {
-            s_logger.error("Failed to add " + dest.getHost().getName() + " as a node to the controller");
+            logger.error("Failed to add " + dest.getHost().getName() + " as a node to the controller");
             throw new InsufficientVirtualNetworkCapacityException("Failed to add destination hypervisor to the OpenDaylight Controller", dest.getPod().getId());
         }
 
@@ -205,7 +203,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         ConfigurePortAnswer answer = (ConfigurePortAnswer)agentManager.easySend(controller.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("ConfigureNetworkCommand failed");
+            logger.error("ConfigureNetworkCommand failed");
             throw new InsufficientVirtualNetworkCapacityException("Failed to configure the port on the OpenDaylight Controller", dest.getPod().getId());
         }
 
@@ -222,7 +220,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
 
             List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(physicalNetworkId);
             if (devices.isEmpty()) {
-                s_logger.error("No Controller on physical network " + physicalNetworkId);
+                logger.error("No Controller on physical network " + physicalNetworkId);
                 throw new CloudRuntimeException("No OpenDaylight controller on this physical network");
             }
             OpenDaylightControllerVO controller = devices.get(0);
@@ -231,7 +229,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
             DestroyPortAnswer answer = (DestroyPortAnswer)agentManager.easySend(controller.getHostId(), cmd);
 
             if (answer == null || !answer.getResult()) {
-                s_logger.error("DestroyPortCommand failed");
+                logger.error("DestroyPortCommand failed");
                 success = false;
             }
         }
@@ -243,13 +241,13 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         NetworkVO networkObject = networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.OpenDaylight || networkObject.getBroadcastUri() == null) {
-            s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
             return;
         }
 
         List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(networkObject.getPhysicalNetworkId());
         if (devices.isEmpty()) {
-            s_logger.error("No Controller on physical network " + networkObject.getPhysicalNetworkId());
+            logger.error("No Controller on physical network " + networkObject.getPhysicalNetworkId());
             return;
         }
         OpenDaylightControllerVO controller = devices.get(0);
@@ -258,7 +256,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         DestroyNetworkAnswer answer = (DestroyNetworkAnswer)agentManager.easySend(controller.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("DestroyNetworkCommand failed");
+            logger.error("DestroyNetworkCommand failed");
         }
 
         super.shutdown(profile, offering);

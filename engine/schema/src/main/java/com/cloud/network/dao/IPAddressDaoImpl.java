@@ -25,7 +25,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Vlan.VlanType;
@@ -48,7 +47,6 @@ import com.cloud.utils.net.Ip;
 @Component
 @DB
 public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implements IPAddressDao {
-    private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
     protected SearchBuilder<IPAddressVO> AllFieldsSearch;
     protected SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
@@ -352,7 +350,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
                 ipCount = rs.getInt(1);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception counting IP addresses", e);
+            logger.warn("Exception counting IP addresses", e);
         }
 
         return ipCount;

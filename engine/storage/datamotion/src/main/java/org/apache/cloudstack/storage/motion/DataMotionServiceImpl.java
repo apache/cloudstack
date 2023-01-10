@@ -48,7 +48,7 @@ import com.cloud.storage.dao.VolumeDao;
 
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
-    private static final Logger LOGGER = Logger.getLogger(DataMotionServiceImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     StorageStrategyFactory storageStrategyFactory;

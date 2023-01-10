@@ -21,10 +21,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import streamer.debug.FakeSink;
 import streamer.debug.FakeSource;
 
 public class BaseElement implements Element {
+
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected String id;
 

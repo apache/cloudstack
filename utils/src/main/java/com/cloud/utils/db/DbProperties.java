@@ -35,7 +35,7 @@ import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 
 public class DbProperties {
 
-    private static final Logger log = Logger.getLogger(DbProperties.class);
+    protected static Logger LOGGER = Logger.getLogger(DbProperties.class);
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;
@@ -70,7 +70,7 @@ public class DbProperties {
 
                 if (is == null) {
                     System.err.println("Failed to find db.properties");
-                    log.error("Failed to find db.properties");
+                    LOGGER.error("Failed to find db.properties");
                 }
 
                 if (is != null) {

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +31,6 @@ import com.cloud.network.Network;
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkCmdByAdmin.class.getName());
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;

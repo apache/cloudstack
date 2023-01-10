@@ -78,7 +78,7 @@ import com.cloud.utils.db.Filter;
 
 @Component
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
-    private static final Logger s_logger = Logger.getLogger(QuotaResponseBuilderImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private QuotaTariffDao _quotaTariffDao;
@@ -229,8 +229,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             // Iterate in reverse.
             while (li.hasPrevious()) {
                 QuotaBalanceVO entry = li.previous();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("createQuotaBalanceResponse: Entry=" + entry);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("createQuotaBalanceResponse: Entry=" + entry);
                 }
                 if (entry.getCreditsId() > 0) {
                     li.remove();
@@ -246,8 +246,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         boolean consecutive = true;
         for (Iterator<QuotaBalanceVO> it = quotaBalance.iterator(); it.hasNext();) {
             QuotaBalanceVO entry = it.next();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("createQuotaBalanceResponse: All Credit Entry=" + entry);
+            if (logger.isDebugEnabled()) {
+                logger.debug("createQuotaBalanceResponse: All Credit Entry=" + entry);
             }
             if (entry.getCreditsId() > 0) {
                 if (consecutive) {
@@ -267,9 +267,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             resp.setStartDate(startDate);
             resp.setStartQuota(startItem.getCreditBalance());
             resp.setEndDate(endDate);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("createQuotaBalanceResponse: Start Entry=" + startItem);
-                s_logger.debug("createQuotaBalanceResponse: End Entry=" + endItem);
+            if (logger.isDebugEnabled()) {
+                logger.debug("createQuotaBalanceResponse: Start Entry=" + startItem);
+                logger.debug("createQuotaBalanceResponse: End Entry=" + endItem);
             }
             resp.setEndQuota(endItem.getCreditBalance().add(lastCredits));
         } else if (quota_activity > 0) {
@@ -309,8 +309,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             quotaUsage.add(dummy);
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(
+        if (logger.isDebugEnabled()) {
+            logger.debug(
                     "createQuotaStatementResponse Type=" + quotaUsage.get(0).getUsageType() + " usage=" + quotaUsage.get(0).getQuotaUsed().setScale(2, RoundingMode.HALF_EVEN)
                     + " rec.id=" + quotaUsage.get(0).getUsageItemId() + " SD=" + quotaUsage.get(0).getStartDate() + " ED=" + quotaUsage.get(0).getEndDate());
         }
@@ -332,8 +332,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         BigDecimal totalUsage = new BigDecimal(0);
         quotaUsage.add(new QuotaUsageVO());// boundary
         QuotaUsageVO prev = quotaUsage.get(0);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("createQuotaStatementResponse record count=" + quotaUsage.size());
+        if (logger.isDebugEnabled()) {
+            logger.debug("createQuotaStatementResponse record count=" + quotaUsage.size());
         }
         for (final QuotaUsageVO quotaRecord : quotaUsage) {
             if (type != quotaRecord.getUsageType()) {
@@ -372,7 +372,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
 
-        s_logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+        logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
                 "endDate", "listAll", "name", "page", "pageSize", "usageType")));
 
         return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
@@ -409,11 +409,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         String warnMessage = "The parameter 's%s' for API 'quotaTariffUpdate' is no longer needed and it will be removed in future releases.";
 
         if (cmd.getStartDate() != null) {
-            s_logger.warn(String.format(warnMessage,"startdate"));
+            logger.warn(String.format(warnMessage,"startdate"));
         }
 
         if (cmd.getUsageType() != null) {
-            s_logger.warn(String.format(warnMessage,"usagetype"));
+            logger.warn(String.format(warnMessage,"usagetype"));
         }
     }
 
@@ -498,20 +498,20 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn + ", current balance " + currentAccountBalance);
+        if (logger.isDebugEnabled()) {
+            logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn + ", current balance " + currentAccountBalance);
         }
         // update quota account with the balance
         _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
         if (lockAccountEnforcement) {
             if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
                 if (account.getState() == Account.State.LOCKED) {
-                    s_logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
+                    logger.info("UnLocking account " + account.getAccountName() + " , due to positive balance " + currentAccountBalance);
                     _accountMgr.enableAccount(account.getAccountName(), domainId, accountId);
                 }
             } else { // currentAccountBalance < 0 then lock the account
                 if (_quotaManager.isLockable(account) && account.getState() == Account.State.ENABLED && enforce) {
-                    s_logger.info("Locking account " + account.getAccountName() + " , due to negative balance " + currentAccountBalance);
+                    logger.info("Locking account " + account.getAccountName() + " , due to negative balance " + currentAccountBalance);
                     _accountMgr.lockAccount(account.getAccountName(), domainId, accountId);
                 }
             }
@@ -579,8 +579,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
         for (QuotaBalanceVO entry : quotaBalance) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
+            if (logger.isDebugEnabled()) {
+                logger.debug("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
             }
             lastCredits = lastCredits.add(entry.getCreditBalance());
         }

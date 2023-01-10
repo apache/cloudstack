@@ -46,7 +46,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
 
 public class ApiDispatcher {
-    private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
 
     Long _createSnapshotQueueSizeLimit;
     Long migrateQueueSizeLimit;
@@ -148,7 +148,7 @@ public class ApiDispatcher {
                         return;
                     }
                 } else {
-                    s_logger.trace("The queue size is unlimited, skipping the synchronizing");
+                    logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
             }
         }

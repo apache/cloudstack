@@ -35,7 +35,7 @@ import com.cloud.utils.component.Registry;
 
 public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, ApplicationContextAware {
 
-    private static final Logger log = Logger.getLogger(RegistryLifecycle.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public static final String EXTENSION_EXCLUDE = "extensions.exclude";
     public static final String EXTENSION_INCLUDE_PREFIX = "extensions.include.";
@@ -70,7 +70,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
 
         boolean result = excludes.contains(name);
         if (result) {
-            log.info("Excluding extension [" + name + "] based on configuration");
+            logger.info("Excluding extension [" + name + "] based on configuration");
         }
 
         return result;
@@ -109,7 +109,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
         while (iter.hasNext()) {
             Object next = iter.next();
             if (registry.register(next)) {
-                log.debug("Registered " + next);
+                logger.debug("Registered " + next);
             } else {
                 iter.remove();
             }

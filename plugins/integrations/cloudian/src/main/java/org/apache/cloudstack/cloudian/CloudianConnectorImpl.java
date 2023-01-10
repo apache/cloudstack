@@ -41,7 +41,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -56,7 +55,6 @@ import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudianConnectorImpl extends ComponentLifecycleBase implements CloudianConnector, Configurable {
-    private static final Logger LOG = Logger.getLogger(CloudianConnectorImpl.class);
 
     @Inject
     private UserDao userDao;
@@ -80,7 +78,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                     CloudianAdminUser.value(), CloudianAdminPassword.value(),
                     CloudianValidateSSLSecurity.value(), CloudianAdminApiRequestTimeout.value());
         } catch (final KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
-            LOG.error("Failed to create Cloudian API client due to: ", e);
+            logger.error("Failed to create Cloudian API client due to: ", e);
         }
         throw new CloudRuntimeException("Failed to create and return Cloudian API client instance");
     }
@@ -104,17 +102,17 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         final CloudianClient client = getClient();
         for (final CloudianUser user: client.listUsers(domain.getUuid())) {
             if (client.removeUser(user.getUserId(), domain.getUuid())) {
-                LOG.error(String.format("Failed to remove Cloudian user id=%s, while removing Cloudian group id=%s", user.getUserId(), domain.getUuid()));
+                logger.error(String.format("Failed to remove Cloudian user id=%s, while removing Cloudian group id=%s", user.getUserId(), domain.getUuid()));
             }
         }
         for (int retry = 0; retry < 3; retry++) {
             if (client.removeGroup(domain.getUuid())) {
                 return true;
             } else {
-                LOG.warn("Failed to remove Cloudian group id=" + domain.getUuid() + ", retrying count=" + retry+1);
+                logger.warn("Failed to remove Cloudian group id=" + domain.getUuid() + ", retrying count=" + retry+1);
             }
         }
-        LOG.warn("Failed to remove Cloudian group id=" + domain.getUuid() + ", please remove manually");
+        logger.warn("Failed to remove Cloudian group id=" + domain.getUuid() + ", please remove manually");
         return false;
     }
 
@@ -164,10 +162,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             if (client.removeUser(account.getUuid(), domain.getUuid())) {
                 return true;
             } else {
-                LOG.warn("Failed to remove Cloudian user id=" + account.getUuid() + " in group id=" + domain.getUuid() + ", retrying count=" + retry+1);
+                logger.warn("Failed to remove Cloudian user id=" + account.getUuid() + " in group id=" + domain.getUuid() + ", retrying count=" + retry+1);
             }
         }
-        LOG.warn("Failed to remove Cloudian user id=" + account.getUuid() + " in group id=" + domain.getUuid() + ", please remove manually");
+        logger.warn("Failed to remove Cloudian user id=" + account.getUuid() + " in group id=" + domain.getUuid() + ", please remove manually");
         return false;
     }
 
@@ -199,21 +197,21 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             group = "0";
         }
 
-        LOG.debug(String.format("Attempting Cloudian SSO with user id=%s, group id=%s", user, group));
+        logger.debug(String.format("Attempting Cloudian SSO with user id=%s, group id=%s", user, group));
 
         final CloudianUser ssoUser = getClient().listUser(user, group);
         if (ssoUser == null || !ssoUser.getActive()) {
-            LOG.debug(String.format("Failed to find existing Cloudian user id=%s in group id=%s", user, group));
+            logger.debug(String.format("Failed to find existing Cloudian user id=%s in group id=%s", user, group));
             final CloudianGroup ssoGroup = getClient().listGroup(group);
             if (ssoGroup == null) {
-                LOG.debug(String.format("Failed to find existing Cloudian group id=%s, trying to add it", group));
+                logger.debug(String.format("Failed to find existing Cloudian group id=%s, trying to add it", group));
                 if (!addGroup(domain)) {
-                    LOG.error("Failed to add missing Cloudian group id=" + group);
+                    logger.error("Failed to add missing Cloudian group id=" + group);
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Aborting Cloudian SSO, failed to add group to Cloudian.");
                 }
             }
             if (!addUserAccount(caller, domain)) {
-                LOG.error("Failed to add missing Cloudian group id=" + group);
+                logger.error("Failed to add missing Cloudian group id=" + group);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Aborting Cloudian SSO, failed to add user to Cloudian.");
             }
             final CloudianUser addedSsoUser = getClient().listUser(user, group);
@@ -224,7 +222,7 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
             updateUserAccount(caller, domain, ssoUser);
         }
 
-        LOG.debug(String.format("Validated Cloudian SSO for Cloudian user id=%s, group id=%s", user, group));
+        logger.debug(String.format("Validated Cloudian SSO for Cloudian user id=%s, group id=%s", user, group));
         return CloudianUtils.generateSSOUrl(getCmcUrl(), user, group, CloudianSsoKey.value());
     }
 
@@ -237,11 +235,11 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
         super.configure(name, params);
 
         if (!isEnabled()) {
-            LOG.debug("Cloudian connector is disabled, skipping configuration");
+            logger.debug("Cloudian connector is disabled, skipping configuration");
             return true;
         }
 
-        LOG.debug(String.format("Cloudian connector is enabled, completed configuration, integration is ready. " +
+        logger.debug(String.format("Cloudian connector is enabled, completed configuration, integration is ready. " +
                         "Cloudian admin host:%s, port:%s, user:%s",
                 CloudianAdminHost.value(), CloudianAdminPort.value(), CloudianAdminUser.value()));
 
@@ -255,10 +253,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                     final Domain domain = domainDao.findById(account.getDomainId());
 
                     if (!addUserAccount(account, domain)) {
-                        LOG.warn(String.format("Failed to add account in Cloudian while adding CloudStack account=%s in domain=%s", account.getAccountName(), domain.getPath()));
+                        logger.warn(String.format("Failed to add account in Cloudian while adding CloudStack account=%s in domain=%s", account.getAccountName(), domain.getPath()));
                     }
                 } catch (final Exception e) {
-                    LOG.error("Caught exception while adding account in Cloudian: ", e);
+                    logger.error("Caught exception while adding account in Cloudian: ", e);
                 }
             }
         });
@@ -269,10 +267,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                 try {
                     final Account account = accountDao.findByIdIncludingRemoved((Long) args);
                     if(!removeUserAccount(account))    {
-                        LOG.warn(String.format("Failed to remove account to Cloudian while removing CloudStack account=%s, id=%s", account.getAccountName(), account.getId()));
+                        logger.warn(String.format("Failed to remove account to Cloudian while removing CloudStack account=%s, id=%s", account.getAccountName(), account.getId()));
                     }
                 } catch (final Exception e) {
-                    LOG.error("Caught exception while removing account in Cloudian: ", e);
+                    logger.error("Caught exception while removing account in Cloudian: ", e);
                 }
             }
         });
@@ -283,10 +281,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                 try {
                     final Domain domain = domainDao.findById((Long) args);
                     if (!addGroup(domain)) {
-                        LOG.warn(String.format("Failed to add group in Cloudian while adding CloudStack domain=%s id=%s", domain.getPath(), domain.getId()));
+                        logger.warn(String.format("Failed to add group in Cloudian while adding CloudStack domain=%s id=%s", domain.getPath(), domain.getId()));
                     }
                 } catch (final Exception e) {
-                    LOG.error("Caught exception adding domain/group in Cloudian: ", e);
+                    logger.error("Caught exception adding domain/group in Cloudian: ", e);
                 }
             }
         });
@@ -297,10 +295,10 @@ public class CloudianConnectorImpl extends ComponentLifecycleBase implements Clo
                 try {
                     final DomainVO domain = (DomainVO) args;
                     if (!removeGroup(domain)) {
-                        LOG.warn(String.format("Failed to remove group in Cloudian while removing CloudStack domain=%s id=%s", domain.getPath(), domain.getId()));
+                        logger.warn(String.format("Failed to remove group in Cloudian while removing CloudStack domain=%s id=%s", domain.getPath(), domain.getId()));
                     }
                 } catch (final Exception e) {
-                    LOG.error("Caught exception while removing domain/group in Cloudian: ", e);
+                    logger.error("Caught exception while removing domain/group in Cloudian: ", e);
                 }
             }
         });

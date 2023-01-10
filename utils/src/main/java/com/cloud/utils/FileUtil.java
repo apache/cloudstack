@@ -31,7 +31,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 public class FileUtil {
-    private static final Logger s_logger = Logger.getLogger(FileUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(FileUtil.class);
 
     public static void copyfile(File source, File destination) throws IOException {
         FileUtils.copyFile(source, destination);
@@ -52,7 +52,7 @@ public class FileUtil {
             } catch (Exception e) {
                 finalErrMsg = String.format("Failed to scp files to system VM due to, %s",
                         e.getCause() != null ? e.getCause().getLocalizedMessage() : e.getLocalizedMessage());
-                s_logger.error(finalErrMsg);
+                LOGGER.error(finalErrMsg);
             }
         }
         throw new CloudRuntimeException(finalErrMsg);

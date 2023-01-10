@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 public class LogUtils {
-    public static final Logger LOGGER = Logger.getLogger(LogUtils.class);
+    protected static Logger LOGGER = Logger.getLogger(LogUtils.class);
 
     private static String configFileLocation = null;
 

@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
@@ -32,17 +31,16 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  SecurityGroupRulesCmd.class)
 public final class CitrixSecurityGroupRulesCommandWrapper extends CommandWrapper<SecurityGroupRulesCmd, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixSecurityGroupRulesCommandWrapper.class);
 
     @Override
     public Answer execute(final SecurityGroupRulesCmd command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Sending network rules command to " + citrixResourceBase.getHost().getIp());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Sending network rules command to " + citrixResourceBase.getHost().getIp());
         }
 
         if (!citrixResourceBase.canBridgeFirewall()) {
-            s_logger.warn("Host " + citrixResourceBase.getHost().getIp() + " cannot do bridge firewalling");
+            logger.warn("Host " + citrixResourceBase.getHost().getIp() + " cannot do bridge firewalling");
             return new SecurityGroupRuleAnswer(command, false, "Host " + citrixResourceBase.getHost().getIp() + " cannot do bridge firewalling",
                     SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
@@ -52,10 +50,10 @@ public final class CitrixSecurityGroupRulesCommandWrapper extends CommandWrapper
                 "true", "rules", command.compressStringifiedRules(), "secIps", command.getSecIpsString());
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-            s_logger.warn("Failed to program network rules for vm " + command.getVmName());
+            logger.warn("Failed to program network rules for vm " + command.getVmName());
             return new SecurityGroupRuleAnswer(command, false, "programming network rules failed");
         } else {
-            s_logger.info("Programmed network rules for vm " + command.getVmName() + " guestIp=" + command.getGuestIp() + ", ingress numrules="
+            logger.info("Programmed network rules for vm " + command.getVmName() + " guestIp=" + command.getGuestIp() + ", ingress numrules="
                     + command.getIngressRuleSet().size() + ", egress numrules=" + command.getEgressRuleSet().size());
             return new SecurityGroupRuleAnswer(command);
         }

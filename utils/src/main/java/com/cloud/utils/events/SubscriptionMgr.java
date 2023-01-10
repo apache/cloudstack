@@ -29,7 +29,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 public class SubscriptionMgr {
-    protected final static Logger s_logger = Logger.getLogger(SubscriptionMgr.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private static SubscriptionMgr s_instance = new SubscriptionMgr();
 
@@ -78,11 +78,11 @@ public class SubscriptionMgr {
                 try {
                     info.execute(sender, args);
                 } catch (IllegalArgumentException e) {
-                    s_logger.warn("Exception on notifying event subscribers: ", e);
+                    logger.warn("Exception on notifying event subscribers: ", e);
                 } catch (IllegalAccessException e) {
-                    s_logger.warn("Exception on notifying event subscribers: ", e);
+                    logger.warn("Exception on notifying event subscribers: ", e);
                 } catch (InvocationTargetException e) {
-                    s_logger.warn("Exception on notifying event subscribers: ", e);
+                    logger.warn("Exception on notifying event subscribers: ", e);
                 }
             }
         }

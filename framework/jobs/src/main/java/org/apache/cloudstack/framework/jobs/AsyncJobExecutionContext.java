@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 
 public class AsyncJobExecutionContext  {
-    private static final Logger s_logger = Logger.getLogger(AsyncJobExecutionContext.class);
+    protected static Logger LOGGER = Logger.getLogger(AsyncJobExecutionContext.class);
 
     private AsyncJob _job;
 
@@ -132,24 +132,24 @@ public class AsyncJobExecutionContext  {
                 Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
                 if (exception != null && exception instanceof Exception) {
                     if (exception instanceof InsufficientCapacityException) {
-                        s_logger.error("Job " + joinedJobId + " failed with InsufficientCapacityException");
+                        LOGGER.error("Job " + joinedJobId + " failed with InsufficientCapacityException");
                         throw (InsufficientCapacityException)exception;
                     }
                     else if (exception instanceof ConcurrentOperationException) {
-                        s_logger.error("Job " + joinedJobId + " failed with ConcurrentOperationException");
+                        LOGGER.error("Job " + joinedJobId + " failed with ConcurrentOperationException");
                         throw (ConcurrentOperationException)exception;
                     }
                     else if (exception instanceof ResourceUnavailableException) {
-                        s_logger.error("Job " + joinedJobId + " failed with ResourceUnavailableException");
+                        LOGGER.error("Job " + joinedJobId + " failed with ResourceUnavailableException");
                         throw (ResourceUnavailableException)exception;
                     }
                     else {
-                        s_logger.error("Job " + joinedJobId + " failed with exception");
+                        LOGGER.error("Job " + joinedJobId + " failed with exception");
                         throw new RuntimeException((Exception)exception);
                     }
                 }
             } else {
-                s_logger.error("Job " + joinedJobId + " failed without providing an error object");
+                LOGGER.error("Job " + joinedJobId + " failed without providing an error object");
                 throw new RuntimeException("Job " + joinedJobId + " failed without providing an error object");
             }
         }
@@ -172,7 +172,7 @@ public class AsyncJobExecutionContext  {
             // TODO, this has security implications, operations carried from API layer should always
             // set its context, otherwise, the fall-back here will use system security context
             //
-            s_logger.warn("Job is executed without a context, setup psudo job for the executing thread");
+            LOGGER.warn("Job is executed without a context, setup psudo job for the executing thread");
             if (CallContext.current() != null)
                 context = registerPseudoExecutionContext(CallContext.current().getCallingAccountId(),
                         CallContext.current().getCallingUserId());

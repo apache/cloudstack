@@ -38,7 +38,7 @@ import com.cloud.utils.component.Registry;
 
 public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNameAware {
 
-    private static final Logger log = Logger.getLogger(ExtensionRegistry.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     String name;
     String beanName;
@@ -111,7 +111,7 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
             registered.add(item);
         }
 
-        log.debug("Registering extension [" + name + "] in [" + this.name + "]");
+        logger.debug("Registering extension [" + name + "] in [" + this.name + "]");
 
         return true;
     }

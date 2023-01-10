@@ -29,7 +29,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -47,7 +46,6 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolVO, Long> implements VMTemplatePoolDao {
-    public static final Logger s_logger = Logger.getLogger(VMTemplatePoolDaoImpl.class.getName());
 
     @Inject
     DataStoreManager dataStoreManager;
@@ -191,7 +189,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
                 result.add(toEntityBean(rs, false));
             }
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
         }
         return result;
 
@@ -215,10 +213,10 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
                     result.add(findById(id));
                 }
             }catch (Exception e) {
-                s_logger.warn("Exception: ", e);
+                logger.warn("Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
         }
         return result;
 
@@ -243,10 +241,10 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
                     result.add(findById(id));
                 }
             }catch (Exception e) {
-                s_logger.warn("Exception: ", e);
+                logger.warn("Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
         }
         return result;
 
@@ -311,7 +309,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         builder.set(vo, "updated", new Date());
 
         int rows = update((VMTemplateStoragePoolVO)vo, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             VMTemplateStoragePoolVO dbVol = findByIdIncludingRemoved(templatePool.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -344,7 +342,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + templatePool.getId() + ", as there is no such object exists in the database anymore");
+                logger.debug("Unable to update objectIndatastore: id=" + templatePool.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

@@ -394,7 +394,7 @@ import sun.security.x509.X509CertImpl;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
-    private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
+    protected Logger logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
     @Inject
@@ -622,7 +622,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (snapshotInfo == null) {
-            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
             snapshotResponse.setRevertable(false);
         } else {
         snapshotResponse.setRevertable(snapshotInfo.isRevertable());
@@ -2003,7 +2003,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
             if (account == null) {
-                s_logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
+                logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
                 continue;
             }
 
@@ -2752,7 +2752,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void populateAccount(ControlledEntityResponse response, long accountId) {
         Account account = ApiDBUtils.findAccountById(accountId);
         if (account == null) {
-            s_logger.debug("Unable to find account with id: " + accountId);
+            logger.debug("Unable to find account with id: " + accountId);
         } else if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
@@ -2761,7 +2761,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setProjectName(project.getName());
                 response.setAccountName(account.getAccountName());
             } else {
-                s_logger.debug("Unable to find project with id: " + account.getId());
+                logger.debug("Unable to find project with id: " + account.getId());
             }
         } else {
             response.setAccountName(account.getAccountName());
@@ -3643,7 +3643,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         try {
             return _resourceTagDao.listTags();
         } catch(Exception ex) {
-            s_logger.warn("Failed to get resource details for Usage data due to exception : ", ex);
+            logger.warn("Failed to get resource details for Usage data due to exception : ", ex);
         }
         return null;
     }
@@ -4808,7 +4808,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
             }
         } catch (CertificateException e) {
-            s_logger.error("Error parsing direct download certificate: " + certStr, e);
+            logger.error("Error parsing direct download certificate: " + certStr, e);
         }
     }
 

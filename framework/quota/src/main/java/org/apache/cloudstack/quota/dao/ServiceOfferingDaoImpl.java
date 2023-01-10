@@ -21,7 +21,6 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.UsageEventVO;
@@ -36,7 +35,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
-    protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
     @Inject
     UserVmDetailsDao userVmDetailsDao;

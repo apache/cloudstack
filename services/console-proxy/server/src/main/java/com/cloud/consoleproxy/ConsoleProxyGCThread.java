@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
  * management software
  */
 public class ConsoleProxyGCThread extends Thread {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyGCThread.class);
+    private Logger logger = Logger.getLogger(ConsoleProxyGCThread.class);
 
     private final static int MAX_SESSION_IDLE_SECONDS = 180;
 
@@ -56,7 +56,7 @@ public class ConsoleProxyGCThread extends Thread {
                     try {
                         file.delete();
                     } catch (Throwable e) {
-                        s_logger.info("[ignored]"
+                        logger.info("[ignored]"
                                 + "failed to delete file: " + e.getLocalizedMessage());
                     }
                 }
@@ -76,8 +76,8 @@ public class ConsoleProxyGCThread extends Thread {
             bReportLoad = false;
             removedSessions.clear();
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("connMap=" + connMap);
+            if (logger.isDebugEnabled())
+                logger.debug("connMap=" + connMap);
             Enumeration<String> e = connMap.keys();
             while (e.hasMoreElements()) {
                 String key;
@@ -100,7 +100,7 @@ public class ConsoleProxyGCThread extends Thread {
                 }
 
                 // close the server connection
-                s_logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
+                logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
                 client.closeClient();
             }
 
@@ -112,14 +112,14 @@ public class ConsoleProxyGCThread extends Thread {
                 ConsoleProxy.reportLoadInfo(loadInfo);
                 lastReportTick = System.currentTimeMillis();
 
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Report load change : " + loadInfo);
+                if (logger.isDebugEnabled())
+                    logger.debug("Report load change : " + loadInfo);
             }
 
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ex) {
-                s_logger.debug("[ignored] Console proxy was interrupted during GC.");
+                logger.debug("[ignored] Console proxy was interrupted during GC.");
             }
         }
     }

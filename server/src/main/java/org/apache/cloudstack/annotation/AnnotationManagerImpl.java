@@ -48,7 +48,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -99,7 +98,6 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
  * @since 4.11
  */
 public final class AnnotationManagerImpl extends ManagerBase implements AnnotationService, Configurable, PluggableService {
-    public static final Logger LOGGER = Logger.getLogger(AnnotationManagerImpl.class);
 
     @Inject
     private AnnotationDao annotationDao;
@@ -275,8 +273,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             throw new CloudRuntimeException(String.format("Only administrators or entity owner users can delete annotations, " +
                     "cannot remove annotation with uuid: %s - type: %s ", uuid, annotation.getEntityType().name()));
         }
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Removing annotation uuid: %s - type: %s", uuid, annotation.getEntityType().name()));
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format("Removing annotation uuid: %s - type: %s", uuid, annotation.getEntityType().name()));
         }
         updateResourceDetailsInContext(annotation.getEntityUuid(), annotation.getEntityType());
         annotationDao.remove(annotation.getId());
@@ -295,8 +293,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             throw new CloudRuntimeException(String.format("Only admins can update annotations' visibility. " +
                     "Cannot update visibility for annotation with id: %s - %s", uuid, errDesc));
         }
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Updating annotation with uuid: %s visibility to %B: ", uuid, adminsOnly));
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format("Updating annotation with uuid: %s visibility to %B: ", uuid, adminsOnly));
         }
         annotation.setAdminsOnly(adminsOnly);
         annotationDao.update(annotation.getId(), annotation);
@@ -374,8 +372,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
 
     private List<AnnotationVO> getAllAnnotations(String annotationFilter, String userUuid, String callingUserUuid,
                                                  boolean isCallerAdmin, String keyword) {
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("getting all annotations");
+        if(logger.isDebugEnabled()) {
+            logger.debug("getting all annotations");
         }
         if ("self".equalsIgnoreCase(annotationFilter) && StringUtils.isBlank(userUuid)) {
             userUuid = callingUserUuid;
@@ -410,8 +408,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private List<AnnotationVO> getAnnotationsForSpecificEntityType(String entityType, String entityUuid, String userUuid,
                                                                    boolean isCallerAdmin, String annotationFilter,
                                                                    String callingUserUuid, String keyword, UserVO callingUser) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("getting annotations for type: " + entityType);
+        if (logger.isDebugEnabled()) {
+            logger.debug("getting annotations for type: " + entityType);
         }
         if ("self".equalsIgnoreCase(annotationFilter) && StringUtils.isBlank(userUuid)) {
             userUuid = callingUserUuid;
@@ -432,8 +430,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private List<AnnotationVO> getSingleAnnotationListByUuid(String uuid, String userUuid, String annotationFilter,
                                                              String callingUserUuid, boolean isCallerAdmin) {
         List<AnnotationVO> annotations = new ArrayList<>();
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("getting single annotation by uuid: " + uuid);
+        if(logger.isDebugEnabled()) {
+            logger.debug("getting single annotation by uuid: " + uuid);
         }
 
         AnnotationVO annotationVO = annotationDao.findByUuid(uuid);
@@ -450,8 +448,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                                                                boolean isCallerAdmin, String annotationFilter,
                                                                String callingUserUuid, String keyword, UserVO callingUser) {
         isEntityOwnedByTheUser(entityType, entityUuid, callingUser);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("getting annotations for entity: " + entityUuid);
+        if (logger.isDebugEnabled()) {
+            logger.debug("getting annotations for entity: " + entityUuid);
         }
         return annotationDao.listByEntity(entityType, entityUuid, userUuid, isCallerAdmin,
                 annotationFilter, callingUserUuid, keyword);
@@ -478,7 +476,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 ControlledEntity entity = getEntityFromUuidAndType(entityUuid, type);
                 if (entity == null) {
                     String errMsg = String.format("Could not find an entity with type: %s and ID: %s", entityType, entityUuid);
-                    LOGGER.error(errMsg);
+                    logger.error(errMsg);
                     throw new CloudRuntimeException(errMsg);
                 }
                 if (type == EntityType.NETWORK && entity instanceof NetworkVO &&
@@ -492,10 +490,10 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 }
             }
         } catch (IllegalArgumentException e) {
-            LOGGER.error("Could not parse entity type " + entityType, e);
+            logger.error("Could not parse entity type " + entityType, e);
             return false;
         } catch (PermissionDeniedException e) {
-            LOGGER.debug(e.getMessage(), e);
+            logger.debug(e.getMessage(), e);
             return false;
         }
         return true;
@@ -617,7 +615,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if (entityType.isUserAllowed()) {
             ControlledEntity entity = getEntityFromUuidAndType(entityUuid, entityType);
             if (entity != null) {
-                LOGGER.debug(String.format("Could not find an entity with type: %s and ID: %s", entityType.name(), entityUuid));
+                logger.debug(String.format("Could not find an entity with type: %s and ID: %s", entityType.name(), entityUuid));
                 entityName = entity.getName();
             }
         } else {

@@ -63,7 +63,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 
 public class CloudianClient {
-    private static final Logger LOG = Logger.getLogger(CloudianClient.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private final HttpClient httpClient;
     private final HttpClientContext httpContext;
@@ -107,14 +107,14 @@ public class CloudianClient {
     private void checkAuthFailure(final HttpResponse response) {
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
             final Credentials credentials = httpContext.getCredentialsProvider().getCredentials(AuthScope.ANY);
-            LOG.error("Cloudian admin API authentication failed, please check Cloudian configuration. Admin auth principal=" + credentials.getUserPrincipal() + ", password=" + credentials.getPassword() + ", API url=" + adminApiUrl);
+            logger.error("Cloudian admin API authentication failed, please check Cloudian configuration. Admin auth principal=" + credentials.getUserPrincipal() + ", password=" + credentials.getPassword() + ", API url=" + adminApiUrl);
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, "Cloudian backend API call unauthorized, please ask your administrator to fix integration issues.");
         }
     }
 
     private void checkResponseOK(final HttpResponse response) {
         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
-            LOG.debug("Requested Cloudian resource does not exist");
+            logger.debug("Requested Cloudian resource does not exist");
             return;
         }
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK && response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
@@ -178,12 +178,12 @@ public class CloudianClient {
         if (user == null) {
             return false;
         }
-        LOG.debug("Adding Cloudian user: " + user);
+        logger.debug("Adding Cloudian user: " + user);
         try {
             final HttpResponse response = put("/user", user);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to add Cloudian user due to:", e);
+            logger.error("Failed to add Cloudian user due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
@@ -193,7 +193,7 @@ public class CloudianClient {
         if (StringUtils.isAnyEmpty(userId, groupId)) {
             return null;
         }
-        LOG.debug("Trying to find Cloudian user with id=" + userId + " and group id=" + groupId);
+        logger.debug("Trying to find Cloudian user with id=" + userId + " and group id=" + groupId);
         try {
             final HttpResponse response = get(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             checkResponseOK(response);
@@ -203,7 +203,7 @@ public class CloudianClient {
             final ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(response.getEntity().getContent(), CloudianUser.class);
         } catch (final IOException e) {
-            LOG.error("Failed to list Cloudian user due to:", e);
+            logger.error("Failed to list Cloudian user due to:", e);
             checkResponseTimeOut(e);
         }
         return null;
@@ -213,7 +213,7 @@ public class CloudianClient {
         if (StringUtils.isEmpty(groupId)) {
             return new ArrayList<>();
         }
-        LOG.debug("Trying to list Cloudian users in group id=" + groupId);
+        logger.debug("Trying to list Cloudian users in group id=" + groupId);
         try {
             final HttpResponse response = get(String.format("/user/list?groupId=%s&userType=all&userStatus=active", groupId));
             checkResponseOK(response);
@@ -223,7 +223,7 @@ public class CloudianClient {
             final ObjectMapper mapper = new ObjectMapper();
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianUser[].class));
         } catch (final IOException e) {
-            LOG.error("Failed to list Cloudian users due to:", e);
+            logger.error("Failed to list Cloudian users due to:", e);
             checkResponseTimeOut(e);
         }
         return new ArrayList<>();
@@ -233,12 +233,12 @@ public class CloudianClient {
         if (user == null) {
             return false;
         }
-        LOG.debug("Updating Cloudian user: " + user);
+        logger.debug("Updating Cloudian user: " + user);
         try {
             final HttpResponse response = post("/user", user);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to update Cloudian user due to:", e);
+            logger.error("Failed to update Cloudian user due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
@@ -248,12 +248,12 @@ public class CloudianClient {
         if (StringUtils.isAnyEmpty(userId, groupId)) {
             return false;
         }
-        LOG.debug("Removing Cloudian user with user id=" + userId + " in group id=" + groupId);
+        logger.debug("Removing Cloudian user with user id=" + userId + " in group id=" + groupId);
         try {
             final HttpResponse response = delete(String.format("/user?userId=%s&groupId=%s", userId, groupId));
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to remove Cloudian user due to:", e);
+            logger.error("Failed to remove Cloudian user due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
@@ -267,12 +267,12 @@ public class CloudianClient {
         if (group == null) {
             return false;
         }
-        LOG.debug("Adding Cloudian group: " + group);
+        logger.debug("Adding Cloudian group: " + group);
         try {
             final HttpResponse response = put("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to add Cloudian group due to:", e);
+            logger.error("Failed to add Cloudian group due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
@@ -282,7 +282,7 @@ public class CloudianClient {
         if (StringUtils.isEmpty(groupId)) {
             return null;
         }
-        LOG.debug("Trying to find Cloudian group with id=" + groupId);
+        logger.debug("Trying to find Cloudian group with id=" + groupId);
         try {
             final HttpResponse response = get(String.format("/group?groupId=%s", groupId));
             checkResponseOK(response);
@@ -292,14 +292,14 @@ public class CloudianClient {
             final ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(response.getEntity().getContent(), CloudianGroup.class);
         } catch (final IOException e) {
-            LOG.error("Failed to list Cloudian group due to:", e);
+            logger.error("Failed to list Cloudian group due to:", e);
             checkResponseTimeOut(e);
         }
         return null;
     }
 
     public List<CloudianGroup> listGroups() {
-        LOG.debug("Trying to list Cloudian groups");
+        logger.debug("Trying to list Cloudian groups");
         try {
             final HttpResponse response = get("/group/list");
             checkResponseOK(response);
@@ -309,7 +309,7 @@ public class CloudianClient {
             final ObjectMapper mapper = new ObjectMapper();
             return Arrays.asList(mapper.readValue(response.getEntity().getContent(), CloudianGroup[].class));
         } catch (final IOException e) {
-            LOG.error("Failed to list Cloudian groups due to:", e);
+            logger.error("Failed to list Cloudian groups due to:", e);
             checkResponseTimeOut(e);
         }
         return new ArrayList<>();
@@ -319,12 +319,12 @@ public class CloudianClient {
         if (group == null) {
             return false;
         }
-        LOG.debug("Updating Cloudian group: " + group);
+        logger.debug("Updating Cloudian group: " + group);
         try {
             final HttpResponse response = post("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to update group due to:", e);
+            logger.error("Failed to update group due to:", e);
             checkResponseTimeOut(e);
         }
         return false;
@@ -334,12 +334,12 @@ public class CloudianClient {
         if (StringUtils.isEmpty(groupId)) {
             return false;
         }
-        LOG.debug("Removing Cloudian group id=" + groupId);
+        logger.debug("Removing Cloudian group id=" + groupId);
         try {
             final HttpResponse response = delete(String.format("/group?groupId=%s", groupId));
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to remove group due to:", e);
+            logger.error("Failed to remove group due to:", e);
             checkResponseTimeOut(e);
         }
         return false;

@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
         responseObject = VmwareDatacenterResponse.class, responseHasSensitiveInfo = false,
         since = "4.12.0", authorized = {RoleType.Admin})
 public class UpdateVmwareDcCmd extends BaseCmd {
-    public static final Logger LOG = Logger.getLogger(UpdateVmwareDcCmd.class);
 
 
     @Inject

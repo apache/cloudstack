@@ -27,7 +27,6 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -50,7 +49,6 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
     private String _topic = null;
     private Producer<String,String> _producer;
-    private static final Logger s_logger = Logger.getLogger(KafkaEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

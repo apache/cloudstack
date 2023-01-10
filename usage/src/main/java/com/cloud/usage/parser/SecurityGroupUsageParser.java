@@ -39,7 +39,7 @@ import com.cloud.utils.Pair;
 
 @Component
 public class SecurityGroupUsageParser {
-    public static final Logger s_logger = Logger.getLogger(SecurityGroupUsageParser.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(SecurityGroupUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageSecurityGroupDao s_usageSecurityGroupDao;
@@ -56,8 +56,8 @@ public class SecurityGroupUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all SecurityGroup usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all SecurityGroup usage events for account: " + account.getId());
         }
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
@@ -71,7 +71,7 @@ public class SecurityGroupUsageParser {
         List<UsageSecurityGroupVO> usageSGs = s_usageSecurityGroupDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageSGs.isEmpty()) {
-            s_logger.debug("No SecurityGroup usage events for this period");
+            LOGGER.debug("No SecurityGroup usage events for this period");
             return true;
         }
 
@@ -137,8 +137,8 @@ public class SecurityGroupUsageParser {
 
     private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long sgId, long zoneId) {
         // Our smallest increment is hourly for now
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Total running time " + runningTime + "ms");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Total running time " + runningTime + "ms");
         }
 
         float usage = runningTime / 1000f / 60f / 60f;
@@ -146,8 +146,8 @@ public class SecurityGroupUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating security group:" + sgId + " usage record for Vm : " + vmId + ", usage: " + usageDisplay + ", startDate: " + startDate +
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Creating security group:" + sgId + " usage record for Vm : " + vmId + ", usage: " + usageDisplay + ", startDate: " + startDate +
                 ", endDate: " + endDate + ", for account: " + account.getId());
         }
 

@@ -38,7 +38,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.alert.AlertManager;
@@ -70,7 +69,6 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshotStrategy {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOVMSnapshotStrategy.class);
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
     @Inject
@@ -213,7 +211,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
                 finalizeCreate(vmSnapshotVO, volumeTOs);
                 result = true;
-                LOGGER.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
+                logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
 
                 long new_chain_size=0;
                 for (VolumeObjectTO volumeTo : volumeTOs) {
@@ -224,7 +222,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 return vmSnapshot;
             } catch (Exception e) {
                 String errMsg = "Unable to take vm snapshot due to: " + e.getMessage();
-                LOGGER.warn(errMsg, e);
+                logger.warn(errMsg, e);
                 throw new CloudRuntimeException(errMsg);
             }
         } finally {
@@ -236,7 +234,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                     String message = "Snapshot operation failed for VM: " + userVm.getDisplayName() + ", Please check and delete if any stale volumes created with VM snapshot id: " + vmSnapshot.getVmId();
                     alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT, userVm.getDataCenterId(), userVm.getPodIdToDeployIn(), subject, message);
                 } catch (NoTransitionException e1) {
-                    LOGGER.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -274,7 +272,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             });
         } catch (Exception e) {
             String errMsg = "Error while finalize create vm snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
-            LOGGER.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
     }
@@ -317,14 +315,14 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             result = true;
         } catch (Exception e) {
             String errMsg = "Revert VM: " + userVm.getInstanceName() + " to snapshot: " + vmSnapshotVO.getName() + " failed due to " + e.getMessage();
-            LOGGER.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         } finally {
             if (!result) {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    LOGGER.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -361,7 +359,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             });
         } catch (Exception e) {
             String errMsg = "Error while finalize revert vm snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
-            LOGGER.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
     }
@@ -374,7 +372,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            LOGGER.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
         }
 
@@ -397,7 +395,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             if (volumesDeleted <= 0) {
                 throw new CloudRuntimeException("Failed to delete VM snapshot: " + vmSnapshot.getName());
             } else if (volumesDeleted != volumeTOs.size()) {
-                LOGGER.warn("Unable to delete all volumes of the VM snapshot: " + vmSnapshot.getName());
+                logger.warn("Unable to delete all volumes of the VM snapshot: " + vmSnapshot.getName());
             }
 
             finalizeDelete(vmSnapshotVO, volumeTOs);
@@ -410,7 +408,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             return true;
         } catch (Exception e) {
             String errMsg = "Unable to delete vm snapshot: " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " due to " + e.getMessage();
-            LOGGER.warn(errMsg, e);
+            logger.warn(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
     }
@@ -453,7 +451,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             });
         } catch (Exception e) {
             String errMsg = "Error while finalize delete vm snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
-            LOGGER.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
     }
@@ -463,7 +461,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            LOGGER.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
         }
         UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
@@ -507,7 +505,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L, vmSnapSize, virtualSize,
                     VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
         } catch (Exception e) {
-            LOGGER.error("Failed to publish usage event " + type, e);
+            logger.error("Failed to publish usage event " + type, e);
         }
     }
 

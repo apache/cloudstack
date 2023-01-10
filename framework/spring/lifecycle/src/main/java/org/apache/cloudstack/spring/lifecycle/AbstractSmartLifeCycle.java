@@ -18,10 +18,12 @@
  */
 package org.apache.cloudstack.spring.lifecycle;
 
+import org.apache.log4j.Logger;
 import org.springframework.context.SmartLifecycle;
 
 public abstract class AbstractSmartLifeCycle implements SmartLifecycle {
 
+    protected Logger logger = Logger.getLogger(getClass());
     boolean running = false;
 
     @Override

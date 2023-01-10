@@ -48,7 +48,7 @@ import com.cloud.storage.Volume;
 import com.google.gson.Gson;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
-    private static final Logger s_logger = Logger.getLogger(StorageSubsystemCommandHandlerBase.class);
+    protected Logger logger = Logger.getLogger(getClass());
     protected static final Gson s_gogger = GsonHelper.getGsonLogger();
     protected StorageProcessor processor;
 
@@ -138,7 +138,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             }
             return new CreateObjectAnswer("not supported type");
         } catch (Exception e) {
-            s_logger.debug("Failed to create object: " + data.getObjectType() + ": " + e.toString());
+            logger.debug("Failed to create object: " + data.getObjectType() + ": " + e.toString());
             return new CreateObjectAnswer(e.toString());
         }
     }
@@ -177,9 +177,9 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
 
     private void logCommand(Command cmd) {
         try {
-            s_logger.debug(String.format("Executing command %s: [%s].", cmd.getClass().getSimpleName(), s_gogger.toJson(cmd)));
+            logger.debug(String.format("Executing command %s: [%s].", cmd.getClass().getSimpleName(), s_gogger.toJson(cmd)));
         } catch (Exception e) {
-            s_logger.debug(String.format("Executing command %s.", cmd.getClass().getSimpleName()));
+            logger.debug(String.format("Executing command %s.", cmd.getClass().getSimpleName()));
         }
     }
 }

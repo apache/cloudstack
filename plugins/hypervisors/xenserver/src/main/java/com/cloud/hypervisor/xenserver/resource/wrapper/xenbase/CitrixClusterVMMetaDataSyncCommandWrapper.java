@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
@@ -36,7 +35,6 @@ import com.xensource.xenapi.Pool;
 @ResourceWrapper(handles =  ClusterVMMetaDataSyncCommand.class)
 public final class CitrixClusterVMMetaDataSyncCommandWrapper extends CommandWrapper<ClusterVMMetaDataSyncCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixClusterVMMetaDataSyncCommandWrapper.class);
 
     @Override
     public Answer execute(final ClusterVMMetaDataSyncCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -50,7 +48,7 @@ public final class CitrixClusterVMMetaDataSyncCommandWrapper extends CommandWrap
                 return new ClusterVMMetaDataSyncAnswer(command.getClusterId(), null);
             }
         } catch (final Throwable e) {
-            s_logger.warn("Check for master failed, failing the Cluster sync VMMetaData command");
+            logger.warn("Check for master failed, failing the Cluster sync VMMetaData command");
             return new ClusterVMMetaDataSyncAnswer(command.getClusterId(), null);
         }
         final HashMap<String, String> vmMetadatum = citrixResourceBase.clusterVMMetaDataSync(conn);

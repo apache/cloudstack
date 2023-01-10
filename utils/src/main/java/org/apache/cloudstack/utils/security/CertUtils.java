@@ -77,7 +77,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class CertUtils {
 
-    private static final Logger LOG = Logger.getLogger(CertUtils.class);
+    protected static Logger LOGGER = Logger.getLogger(CertUtils.class);
 
     public static KeyPair generateRandomKeyPair(final int keySize) throws NoSuchProviderException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
@@ -92,7 +92,7 @@ public class CertUtils {
             Security.addProvider(new BouncyCastleProvider());
             keyFactory = KeyFactory.getInstance("RSA", "BC");
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            LOG.error("Unable to create KeyFactory:" + e.getMessage());
+            LOGGER.error("Unable to create KeyFactory:" + e.getMessage());
         }
         return keyFactory;
     }

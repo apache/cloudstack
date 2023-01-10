@@ -73,7 +73,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import com.cloud.api.ApiDBUtils;
@@ -190,7 +189,6 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
-    public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -405,12 +403,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             apiNameList = new ArrayList<String>();
             Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
             for (PluggableService service : services) {
-                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
+                logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
             }
             apiNameList = createApiNameList(cmdClasses);
             long endTime = System.nanoTime();
-            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+            logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
         _executor.scheduleAtFixedRate(new AccountCleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
         return true;
@@ -429,8 +427,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             String apiName = apiCmdAnnotation.name();
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Found api: " + apiName);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Found api: " + apiName);
             }
 
             apiNameList.add(apiName);
@@ -480,8 +478,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "SystemCapability")) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Root Access granted to " + acct + " by " + checker.getName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Root Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -503,8 +501,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainCapability")) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("DomainAdmin Access granted to " + acct + " by " + checker.getName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("DomainAdmin Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -534,8 +532,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainResourceCapability")) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("ResourceDomainAdmin Access granted to " + acct + " by " + checker.getName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("ResourceDomainAdmin Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -562,8 +560,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(caller, domain)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
                 }
                 return;
             }
@@ -595,8 +593,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getId())) {
             // no need to make permission checks if the system/root admin makes the call
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
+            if (logger.isTraceEnabled()) {
+                logger.trace("No need to make permission check for System/RootAdmin account, returning true");
             }
 
             return;
@@ -625,8 +623,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity, accessType, apiName)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
                     }
                     granted = true;
                     break;
@@ -702,7 +700,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             });
         } catch (Exception e) {
-            s_logger.error("Failed to update login attempts for user with id " + id);
+            logger.error("Failed to update login attempts for user with id " + id);
         }
     }
 
@@ -733,12 +731,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 acctForUpdate.setState(State.LOCKED);
                 success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
             } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+                if (logger.isInfoEnabled()) {
+                    logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
                 }
             }
         } else {
-            s_logger.warn("Failed to lock account " + accountId + ", account not found.");
+            logger.warn("Failed to lock account " + accountId + ", account not found.");
         }
         return success;
     }
@@ -749,12 +747,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // delete the account record
         if (!_accountDao.remove(accountId)) {
-            s_logger.error("Unable to delete account " + accountId);
+            logger.error("Unable to delete account " + accountId);
             return false;
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Removed account " + accountId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Removed account " + accountId);
         }
 
         return cleanupAccount(account, callerUserId, caller);
@@ -769,7 +767,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<UserVO> users = _userDao.listByAccount(accountId);
             for (UserVO user : users) {
                 if (!_userDao.remove(user.getId())) {
-                    s_logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
+                    logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
                     accountCleanupNeeded = true;
                 }
             }
@@ -798,7 +796,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
                 if (!_vmMgr.deleteVmGroup(group.getId())) {
-                    s_logger.error("Unable to delete group: " + group.getId());
+                    logger.error("Unable to delete group: " + group.getId());
                     accountCleanupNeeded = true;
                 }
             }
@@ -806,7 +804,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete the snapshots dir for the account. Have to do this before destroying the VMs.
             boolean success = _snapMgr.deleteSnapshotDirsForAccount(accountId);
             if (success) {
-                s_logger.debug("Successfully deleted snapshots directories for all volumes under account " + accountId + " across all zones");
+                logger.debug("Successfully deleted snapshots directories for all volumes under account " + accountId + " across all zones");
             }
 
             // clean up templates
@@ -817,14 +815,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     try {
                         allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
                     } catch (Exception e) {
-                        s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
+                        logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
                         allTemplatesDeleted = false;
                     }
                 }
             }
 
             if (!allTemplatesDeleted) {
-                s_logger.warn("Failed to delete templates while removing account id=" + accountId);
+                logger.warn("Failed to delete templates while removing account id=" + accountId);
                 accountCleanupNeeded = true;
             }
 
@@ -834,14 +832,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
                 } catch (Exception e) {
-                    s_logger.debug("Failed to cleanup vm snapshot " + vmSnapshot.getId() + " due to " + e.toString());
+                    logger.debug("Failed to cleanup vm snapshot " + vmSnapshot.getId() + " due to " + e.toString());
                 }
             }
 
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Expunging # of vms (accountId=" + accountId + "): " + vms.size());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Expunging # of vms (accountId=" + accountId + "): " + vms.size());
             }
 
             for (UserVmVO vm : vms) {
@@ -850,13 +848,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         _vmMgr.destroyVm(vm.getId(), false);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        s_logger.warn("Failed destroying instance " + vm.getUuid() + " as part of account deletion.");
+                        logger.warn("Failed destroying instance " + vm.getUuid() + " as part of account deletion.");
                     }
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
                 if (!_vmMgr.expunge(vm)) {
-                    s_logger.error("Unable to expunge vm: " + vm.getId());
+                    logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
             }
@@ -867,7 +865,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     volumeService.deleteVolume(volume.getId(), caller);
                 } catch (Exception ex) {
-                    s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                    logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                     accountCleanupNeeded = true;
                 }
             }
@@ -885,21 +883,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     _remoteAccessVpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller, false);
                 }
             } catch (ResourceUnavailableException ex) {
-                s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
             }
 
             // Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
-            s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
+            logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
 
             // Cleanup affinity groups
             int numAGRemoved = _affinityGroupDao.removeByAccountId(accountId);
-            s_logger.info("deleteAccount: Deleted " + numAGRemoved + " affinity groups for account " + accountId);
+            logger.info("deleteAccount: Deleted " + numAGRemoved + " affinity groups for account " + accountId);
 
             // Delete all the networks
             boolean networksDeleted = true;
-            s_logger.debug("Deleting networks for account " + account.getId());
+            logger.debug("Deleting networks for account " + account.getId());
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
                 Collections.sort(networks, new Comparator<NetworkVO>() {
@@ -919,27 +917,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
                     if (!_networkMgr.destroyNetwork(network.getId(), context, false)) {
-                        s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId + " cleanup.");
+                        logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId + " cleanup.");
                         accountCleanupNeeded = true;
                         networksDeleted = false;
                     } else {
-                        s_logger.debug("Network " + network.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                        logger.debug("Network " + network.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
                     }
                 }
             }
 
             // Delete all VPCs
             boolean vpcsDeleted = true;
-            s_logger.debug("Deleting vpcs for account " + account.getId());
+            logger.debug("Deleting vpcs for account " + account.getId());
             List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
             for (Vpc vpc : vpcs) {
 
                 if (!_vpcMgr.destroyVpc(vpc, caller, callerUserId)) {
-                    s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
+                    logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
                     accountCleanupNeeded = true;
                     vpcsDeleted = false;
                 } else {
-                    s_logger.debug("VPC " + vpc.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                    logger.debug("VPC " + vpc.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
                 }
             }
 
@@ -947,25 +945,25 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 // release ip addresses belonging to the account
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
-                    s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                    logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     if (!_ipAddrMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                        logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
                         accountCleanupNeeded = true;
                     }
                 }
             }
 
             // Delete Site 2 Site VPN customer gateway
-            s_logger.debug("Deleting site-to-site VPN customer gateways for account " + accountId);
+            logger.debug("Deleting site-to-site VPN customer gateways for account " + accountId);
             if (!_vpnMgr.deleteCustomerGatewayByAccount(accountId)) {
-                s_logger.warn("Fail to delete site-to-site VPN customer gateways for account " + accountId);
+                logger.warn("Fail to delete site-to-site VPN customer gateways for account " + accountId);
             }
 
             // Delete autoscale resources if any
             try {
                 _autoscaleMgr.cleanUpAutoScaleResources(accountId);
             } catch (CloudRuntimeException ex) {
-                s_logger.warn("Failed to cleanup AutoScale resources as a part of account id=" + accountId + " cleanup due to exception:", ex);
+                logger.warn("Failed to cleanup AutoScale resources as a part of account id=" + accountId + " cleanup due to exception:", ex);
                 accountCleanupNeeded = true;
             }
 
@@ -975,7 +973,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (!_configMgr.releaseAccountSpecificVirtualRanges(accountId)) {
                     accountCleanupNeeded = true;
                 } else {
-                    s_logger.debug("Account specific Virtual IP ranges " + " are successfully released as a part of account id=" + accountId + " cleanup.");
+                    logger.debug("Account specific Virtual IP ranges " + " are successfully released as a part of account id=" + accountId + " cleanup.");
                 }
             }
 
@@ -985,14 +983,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _dataCenterVnetDao.releaseDedicatedGuestVlans(map.getId());
             }
             int vlansReleased = _accountGuestVlanMapDao.removeByAccountId(accountId);
-            s_logger.info("deleteAccount: Released " + vlansReleased + " dedicated guest vlan ranges from account " + accountId);
+            logger.info("deleteAccount: Released " + vlansReleased + " dedicated guest vlan ranges from account " + accountId);
 
             // release account specific acquired portable IP's. Since all the portable IP's must have been already
             // disassociated with VPC/guest network (due to deletion), so just mark portable IP as free.
             List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
             for (IpAddress ip : ipsToRelease) {
                 if (ip.isPortable()) {
-                    s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                    logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     _ipAddrMgr.releasePortableIpAddress(ip.getId());
                 }
             }
@@ -1000,10 +998,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // release dedication if any
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByAccountId(accountId);
             if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
-                s_logger.debug("Releasing dedicated resources for account " + accountId);
+                logger.debug("Releasing dedicated resources for account " + accountId);
                 for (DedicatedResourceVO dr : dedicatedResources) {
                     if (!_dedicatedDao.remove(dr.getId())) {
-                        s_logger.warn("Fail to release dedicated resources for account " + accountId);
+                        logger.warn("Fail to release dedicated resources for account " + accountId);
                     }
                 }
             }
@@ -1027,11 +1025,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             return true;
         } catch (Exception ex) {
-            s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
+            logger.warn("Failed to cleanup account " + account + " due to ", ex);
             accountCleanupNeeded = true;
             return true;
         } finally {
-            s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
+            logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
             if (accountCleanupNeeded) {
                 _accountDao.markForCleanup(accountId);
             } else {
@@ -1045,8 +1043,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean success = false;
         if (accountId <= 2) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("disableAccount -- invalid account id: " + accountId);
+            if (logger.isInfoEnabled()) {
+                logger.info("disableAccount -- invalid account id: " + accountId);
             }
             return false;
         }
@@ -1065,7 +1063,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     disableAccountResult = doDisableAccount(accountId);
                 } finally {
                     if (!disableAccountResult) {
-                        s_logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
+                        logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
                         _accountDao.markForCleanup(accountId);
                     } else {
                         acctForUpdate = _accountDao.createForUpdate();
@@ -1086,11 +1084,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _itMgr.advanceStop(vm.getUuid(), false);
                 } catch (OperationTimedoutException ote) {
-                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
+                    logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                     success = false;
                 }
             } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName(), aue);
+                logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName(), aue);
                 success = false;
             }
         }
@@ -1226,8 +1224,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * if there is any permission under the requested role that is not permitted for the caller, refuse
      */
     private void checkRoleEscalation(Account caller, Account requested) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1240,8 +1238,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             try {
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
                             pde.getAccount().getAccountName(),
                             pde.getAccount().getUuid(),
@@ -1252,8 +1250,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             // so requested can, now make sure caller can as well
             try {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("permission to \"%s\" is requested",
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("permission to \"%s\" is requested",
                             command));
                 }
                 checkApiAccess(apiCheckers, caller, command);
@@ -1262,7 +1260,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         caller.getAccountName(),
                         caller.getDomainId(),
                         caller.getUuid());
-                s_logger.warn(msg);
+                logger.warn(msg);
                 throw new PermissionDeniedException(msg,pde);
             }
         }
@@ -1281,8 +1279,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (APIChecker apiChecker : apiAccessCheckers) {
             if (apiChecker.isEnabled()) {
                 usableApiCheckers.add(apiChecker);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("using api checker \"%s\"",
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("using api checker \"%s\"",
                             apiChecker.getName()));
                 }
             }
@@ -1336,7 +1334,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "Updating User")
     public UserAccount updateUser(UpdateUserCmd updateUserCmd) {
         UserVO user = retrieveAndValidateUser(updateUserCmd);
-        s_logger.debug("Updating user with Id: " + user.getUuid());
+        logger.debug("Updating user with Id: " + user.getUuid());
 
         validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
         Account account = retrieveAndValidateAccount(user);
@@ -1371,7 +1369,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
         if (newPassword == null) {
-            s_logger.trace("No new password to update for user: " + user.getUuid());
+            logger.trace("No new password to update for user: " + user.getUuid());
             return;
         }
         if (StringUtils.isBlank(newPassword)) {
@@ -1385,7 +1383,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
         boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
         if (isAdmin) {
-            s_logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
+            logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
         if (!isAdmin && StringUtils.isBlank(currentPassword)) {
             throw new InvalidParameterValueException("To set a new password the current password must be provided.");
@@ -1411,11 +1409,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (UserAuthenticator userAuthenticator : _userPasswordEncoders) {
             Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), currentPassword, userAccount.getDomainId(), null);
             if (authenticationResult == null) {
-                s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
+                logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
                 continue;
             }
             if (BooleanUtils.toBoolean(authenticationResult.first())) {
-                s_logger.debug(String.format("User [id=%s] re-authenticated [authenticator=%s] during password update.", user.getUuid(), userAuthenticator.getName()));
+                logger.debug(String.format("User [id=%s] re-authenticated [authenticator=%s] during password update.", user.getUuid(), userAuthenticator.getName()));
                 currentPasswordMatchesDataBasePassword = true;
                 break;
             }
@@ -1710,8 +1708,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 success = (success && lockAccount(user.getAccountId()));
             }
         } else {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
+            if (logger.isInfoEnabled()) {
+                logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
             }
             success = false;
         }
@@ -1739,7 +1737,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (account == null || account.getRemoved() != null) {
             if (account != null) {
-                s_logger.info("The account:" + account.getAccountName() + " is already removed");
+                logger.info("The account:" + account.getAccountName() + " is already removed");
             }
             return true;
         }
@@ -1891,7 +1889,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Check if account exists
         if (account == null || account.getType() == Account.Type.PROJECT) {
-            s_logger.error("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            logger.error("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
             throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
         }
 
@@ -2036,8 +2034,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private long getNewAccountId(long domainId, String accountName, Long accountId) {
         Account newAccount = null;
         if (StringUtils.isNotBlank(accountName)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
             }
             newAccount = _accountDao.findEnabledAccount(accountName, domainId);
         }
@@ -2090,39 +2088,39 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             try {
                 GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
                 if (lock == null) {
-                    s_logger.debug("Couldn't get the global lock");
+                    logger.debug("Couldn't get the global lock");
                     return;
                 }
 
                 if (!lock.lock(30)) {
-                    s_logger.debug("Couldn't lock the db");
+                    logger.debug("Couldn't lock the db");
                     return;
                 }
 
                 try {
                     // Cleanup removed accounts
                     List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts(null);
-                    s_logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
+                    logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
                     for (AccountVO account : removedAccounts) {
-                        s_logger.debug("Cleaning up " + account.getId());
+                        logger.debug("Cleaning up " + account.getId());
                         cleanupAccount(account, getSystemUser().getId(), getSystemAccount());
                     }
 
                     // cleanup disabled accounts
                     List<AccountVO> disabledAccounts = _accountDao.findCleanupsForDisabledAccounts();
-                    s_logger.info("Found " + disabledAccounts.size() + " disabled accounts to cleanup");
+                    logger.info("Found " + disabledAccounts.size() + " disabled accounts to cleanup");
                     for (AccountVO account : disabledAccounts) {
-                        s_logger.debug("Disabling account " + account.getId());
+                        logger.debug("Disabling account " + account.getId());
                         try {
                             disableAccount(account.getId());
                         } catch (Exception e) {
-                            s_logger.error("Skipping due to error on account " + account.getId(), e);
+                            logger.error("Skipping due to error on account " + account.getId(), e);
                         }
                     }
 
                     // cleanup inactive domains
                     List<? extends Domain> inactiveDomains = _domainMgr.findInactiveDomains();
-                    s_logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
+                    logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
                     for (Domain inactiveDomain : inactiveDomains) {
                         long domainId = inactiveDomain.getId();
                         try {
@@ -2131,47 +2129,47 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                                 // release dedication if any, before deleting the domain
                                 List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domainId);
                                 if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
-                                    s_logger.debug("Releasing dedicated resources for domain" + domainId);
+                                    logger.debug("Releasing dedicated resources for domain" + domainId);
                                     for (DedicatedResourceVO dr : dedicatedResources) {
                                         if (!_dedicatedDao.remove(dr.getId())) {
-                                            s_logger.warn("Fail to release dedicated resources for domain " + domainId);
+                                            logger.warn("Fail to release dedicated resources for domain " + domainId);
                                         }
                                     }
                                 }
-                                s_logger.debug("Removing inactive domain id=" + domainId);
+                                logger.debug("Removing inactive domain id=" + domainId);
                                 _domainMgr.removeDomain(domainId);
                             } else {
-                                s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need cleanup");
+                                logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need cleanup");
                             }
                         } catch (Exception e) {
-                            s_logger.error("Skipping due to error on domain " + domainId, e);
+                            logger.error("Skipping due to error on domain " + domainId, e);
                         }
                     }
 
                     // cleanup inactive projects
                     List<ProjectVO> inactiveProjects = _projectDao.listByState(Project.State.Disabled);
-                    s_logger.info("Found " + inactiveProjects.size() + " disabled projects to cleanup");
+                    logger.info("Found " + inactiveProjects.size() + " disabled projects to cleanup");
                     for (ProjectVO project : inactiveProjects) {
                         try {
                             Account projectAccount = getAccount(project.getProjectAccountId());
                             if (projectAccount == null) {
-                                s_logger.debug("Removing inactive project id=" + project.getId());
+                                logger.debug("Removing inactive project id=" + project.getId());
                                 _projectMgr.deleteProject(CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), project);
                             } else {
-                                s_logger.debug("Can't remove disabled project " + project + " as it has non removed account id=" + project.getId());
+                                logger.debug("Can't remove disabled project " + project + " as it has non removed account id=" + project.getId());
                             }
                         } catch (Exception e) {
-                            s_logger.error("Skipping due to error on project " + project, e);
+                            logger.error("Skipping due to error on project " + project, e);
                         }
                     }
 
                 } catch (Exception e) {
-                    s_logger.error("Exception ", e);
+                    logger.error("Exception ", e);
                 } finally {
                     lock.unlock();
                 }
             } catch (Exception e) {
-                s_logger.error("Exception ", e);
+                logger.error("Exception ", e);
             }
         }
     }
@@ -2350,8 +2348,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID, User.Source source) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
 
         passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
@@ -2379,7 +2377,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void logoutUser(long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
         if (userAcct != null) {
-            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out", userId, ApiCommandResourceType.User.toString());
+            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_loggerOUT, "user has logged out", userId, ApiCommandResourceType.User.toString());
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
     }
 
@@ -2435,14 +2433,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                                 timestamp = Long.parseLong(timestampStr);
                                 long currentTime = System.currentTimeMillis();
                                 if (Math.abs(currentTime - timestamp) > tolerance) {
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Expired timestamp passed in to login, current time = " + currentTime + ", timestamp = " + timestamp);
+                                    if (logger.isDebugEnabled()) {
+                                        logger.debug("Expired timestamp passed in to login, current time = " + currentTime + ", timestamp = " + timestamp);
                                     }
                                     return null;
                                 }
                             } catch (NumberFormatException nfe) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Invalid timestamp passed in to login: " + timestampStr);
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Invalid timestamp passed in to login: " + timestampStr);
                                 }
                                 return null;
                             }
@@ -2456,8 +2454,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
 
                 if ((signature == null) || (timestamp == 0L)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
                     }
                     return null;
                 }
@@ -2472,12 +2470,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
                 boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
                 if (!equalSig) {
-                    s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                    logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
                 } else {
                     user = _userAccountDao.getUserAccount(username, domainId);
                 }
             } catch (Exception ex) {
-                s_logger.error("Exception authenticating user", ex);
+                logger.error("Exception authenticating user", ex);
                 return null;
             }
         }
@@ -2485,12 +2483,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (user != null) {
             // don't allow to authenticate system user
             if (user.getId() == User.UID_SYSTEM) {
-                s_logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
+                logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
                 return null;
             }
             // don't allow baremetal system user
             if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername())) {
-                s_logger.error("Won't authenticate user: " + username + " in domain " + domainId);
+                logger.error("Won't authenticate user: " + username + " in domain " + domainId);
                 return null;
             }
 
@@ -2503,35 +2501,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
             if (ApiSourceCidrChecksEnabled) {
-                s_logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+                logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replace("/", "") + " does not match " + accessAllowedCidrs);
+                    logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replace("/", "") + " does not match " + accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
                             + loginIpAddress.toString().replace("/", "") + "; please provide valid credentials");
                 }
             }
 
             // Here all is fine!
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
+            if (logger.isDebugEnabled()) {
+                logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
 
-            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_loggerIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
 
             return user;
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("User: " + username + " in domain " + domainId + " has failed to log in");
+            if (logger.isDebugEnabled()) {
+                logger.debug("User: " + username + " in domain " + domainId + " has failed to log in");
             }
             return null;
         }
     }
 
     private UserAccount getUserAccount(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
         UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
 
@@ -2553,7 +2551,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+        boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
 
         if (authenticated) {
 
@@ -2565,8 +2563,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             userAccount = _userAccountDao.getUserAccount(username, domainId);
 
             if (!userAccount.getState().equalsIgnoreCase(Account.State.ENABLED.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.ENABLED.toString())) {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
+                if (logger.isInfoEnabled()) {
+                    logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
                 }
                 throw new CloudAuthenticationException("User " + username + " (or their account) in domain " + domainName + " is disabled/locked. Please contact the administrator.");
             }
@@ -2577,12 +2575,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             return userAccount;
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
             }
 
             if (userAccount == null) {
-                s_logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
+                logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
                 return null;
             }
 
@@ -2592,7 +2590,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccount, updateIncorrectLoginCount, _allowedLoginAttempts);
                 }
             } else {
-                s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
+                logger.info("User " + userAccount.getUsername() + " is disabled/locked");
             }
             return null;
         }
@@ -2606,11 +2604,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         if (attemptsMade < allowedLoginAttempts) {
             updateLoginAttempts(account.getId(), attemptsMade, false);
-            s_logger.warn("Login attempt failed. You have " +
+            logger.warn("Login attempt failed. You have " +
                     (allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
         } else {
             updateLoginAttempts(account.getId(), allowedLoginAttempts, true);
-            s_logger.warn("User " + account.getUsername() +
+            logger.warn("User " + account.getUsername() +
                     " has been disabled due to multiple failed login attempts." + " Please contact admin.");
         }
     }
@@ -2724,7 +2722,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _userDao.update(userId, updatedUser);
             return encodedKey;
         } catch (NoSuchAlgorithmException ex) {
-            s_logger.error("error generating secret key for user id=" + userId, ex);
+            logger.error("error generating secret key for user id=" + userId, ex);
         }
         return null;
     }
@@ -2751,7 +2749,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _userDao.update(userId, updatedUser);
             return encodedKey;
         } catch (NoSuchAlgorithmException ex) {
-            s_logger.error("error generating secret key for user id=" + userId, ex);
+            logger.error("error generating secret key for user id=" + userId, ex);
         }
         return null;
     }
@@ -3030,8 +3028,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, so, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
                 }
                 return;
             }
@@ -3045,8 +3043,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, dof, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
                 }
                 return;
             }
@@ -3060,8 +3058,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, nof, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
                 }
                 return;
             }
@@ -3075,8 +3073,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, vof, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + vof + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + vof + " by " + checker.getName());
                 }
                 return;
             }
@@ -3090,8 +3088,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(User user, ControlledEntity entity) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(user, entity)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + user + "to " + entity + "by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + user + "to " + entity + "by " + checker.getName());
                 }
                 return;
             }

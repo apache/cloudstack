@@ -82,7 +82,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
-    private static final Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
+    protected static Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
     private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";

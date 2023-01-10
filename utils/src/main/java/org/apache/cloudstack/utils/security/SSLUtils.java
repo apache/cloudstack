@@ -29,7 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SSLUtils {
-    public static final Logger s_logger = Logger.getLogger(SSLUtils.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public static String[] getSupportedProtocols(String[] protocols) {
         Set<String> set = new HashSet<String>();

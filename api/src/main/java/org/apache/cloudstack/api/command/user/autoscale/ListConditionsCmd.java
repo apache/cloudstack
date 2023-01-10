@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +35,6 @@ import com.cloud.network.as.Condition;
 @APICommand(name = "listConditions", description = "List Conditions for VM auto scaling", responseObject = ConditionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListConditionsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListConditionsCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

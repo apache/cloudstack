@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 public class CSExceptionErrorCode {
 
-    public static final Logger s_logger = Logger.getLogger(CSExceptionErrorCode.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(CSExceptionErrorCode.class);
 
     // Declare a hashmap of CloudStack Error Codes for Exceptions.
     protected static final HashMap<String, Integer> ExceptionErrorCodeMap;
@@ -91,7 +91,7 @@ public class CSExceptionErrorCode {
         if (ExceptionErrorCodeMap.containsKey(exceptionName)) {
             return ExceptionErrorCodeMap.get(exceptionName);
         } else {
-            s_logger.info("Could not find exception: " + exceptionName + " in error code list for exceptions");
+            LOGGER.info("Could not find exception: " + exceptionName + " in error code list for exceptions");
             return -1;
         }
     }

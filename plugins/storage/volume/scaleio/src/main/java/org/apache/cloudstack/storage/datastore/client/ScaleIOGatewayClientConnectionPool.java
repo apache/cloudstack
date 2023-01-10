@@ -30,7 +30,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.common.base.Preconditions;
 
 public class ScaleIOGatewayClientConnectionPool {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOGatewayClientConnectionPool.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private ConcurrentHashMap<Long, ScaleIOGatewayClient> gatewayClients;
 
@@ -66,7 +66,7 @@ public class ScaleIOGatewayClientConnectionPool {
 
                 client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout, clientMaxConnections);
                 gatewayClients.put(storagePoolId, client);
-                LOGGER.debug("Added gateway client for the storage pool: " + storagePoolId);
+                logger.debug("Added gateway client for the storage pool: " + storagePoolId);
             }
         }
 
@@ -82,7 +82,7 @@ public class ScaleIOGatewayClientConnectionPool {
         }
 
         if (client != null) {
-            LOGGER.debug("Removed gateway client for the storage pool: " + storagePoolId);
+            logger.debug("Removed gateway client for the storage pool: " + storagePoolId);
             return true;
         }
 

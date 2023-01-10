@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
 
-import java.util.logging.Logger;
 
 @APICommand(name = "syncStoragePool",
         description = "Sync storage pool with management server (currently supported for Datastore Cluster in VMware and syncs the datastores in it)",
@@ -45,7 +44,6 @@ import java.util.logging.Logger;
         )
 public class SyncStoragePoolCmd extends BaseAsyncCmd {
 
-    public static final Logger LOGGER = Logger.getLogger(SyncStoragePoolCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

@@ -33,14 +33,12 @@ import org.apache.cloudstack.ha.provider.HARecoveryException;
 import org.apache.cloudstack.ha.provider.host.HAAbstractHostProvider;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerOperation;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
-import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
-    private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
 
     @Inject
     protected KVMHostActivityChecker hostActivityChecker;
@@ -75,11 +73,11 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
                 return resp.getSuccess();
             } else {
-                LOG.warn("OOBM recover operation failed for the host " + r.getName());
+                logger.warn("OOBM recover operation failed for the host " + r.getName());
                 return false;
             }
         } catch (Exception e){
-            LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
+            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName(), e);
         }
     }
@@ -91,11 +89,11 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
                 return resp.getSuccess();
             } else {
-                LOG.warn("OOBM fence operation failed for this host " + r.getName());
+                logger.warn("OOBM fence operation failed for this host " + r.getName());
                 return false;
             }
         } catch (Exception e){
-            LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
+            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HAFenceException("OOBM service is not configured or enabled for this host " + r.getName() , e);
         }
     }

@@ -39,7 +39,7 @@ public abstract class RequestWrapper {
         }
     }
 
-    private static final Logger s_logger = Logger.getLogger(RequestWrapper.class);
+    protected Logger logger = Logger.getLogger(RequestWrapper.class);
 
     @SuppressWarnings("rawtypes")
     protected Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>> resources = new Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>>();
@@ -141,9 +141,9 @@ public abstract class RequestWrapper {
             try {
                 commands.put(annotation.handles(), wrapper.newInstance());
             } catch (final InstantiationException e) {
-                s_logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
+                logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
             } catch (final IllegalAccessException e) {
-                s_logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
+                logger.warn(MessageFormat.format(errorMessage, e.getLocalizedMessage(), wrapper.toString()));
             }
         }
 

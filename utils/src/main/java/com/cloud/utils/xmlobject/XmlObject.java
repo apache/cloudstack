@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XmlObject {
-    private final Logger logger = Logger.getLogger(XmlObject.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
     private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;

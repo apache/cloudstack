@@ -36,7 +36,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class OVFParser {
-    private static final Logger s_logger = Logger.getLogger(OVFParser.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private static final String DEFAULT_OVF_SCHEMA = "http://schemas.dmtf.org/ovf/envelope/1";
     private static final String VMW_SCHEMA = "http://www.vmware.com/schema/ovf";
@@ -53,7 +53,7 @@ public class OVFParser {
             documentBuilderFactory.setNamespaceAware(true);
             documentBuilder = documentBuilderFactory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            s_logger.error("Cannot start the OVF parser: " + e.getMessage(), e);
+            logger.error("Cannot start the OVF parser: " + e.getMessage(), e);
         }
     }
 
@@ -69,7 +69,7 @@ public class OVFParser {
         try {
             return documentBuilder.parse(new File(ovfFilePath));
         } catch (SAXException | IOException e) {
-            s_logger.error("Error parsing " + ovfFilePath + " " + e.getMessage(), e);
+            logger.error("Error parsing " + ovfFilePath + " " + e.getMessage(), e);
             return null;
         }
     }

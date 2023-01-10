@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -38,7 +37,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "destroyRouter", description = "Destroys a router.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DestroyRouterCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

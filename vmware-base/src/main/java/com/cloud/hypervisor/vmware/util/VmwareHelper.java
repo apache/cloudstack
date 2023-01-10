@@ -88,7 +88,7 @@ import com.vmware.vim25.VirtualVmxnet3;
 
 public class VmwareHelper {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
+    protected static Logger LOGGER = Logger.getLogger(VmwareHelper.class);
 
     public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
     public static final int MAX_IDE_CONTROLLER_COUNT = 2;
@@ -561,7 +561,7 @@ public class VmwareHelper {
     }
 
     public static VirtualDevice prepareUSBControllerDevice() {
-        s_logger.debug("Preparing USB controller(EHCI+UHCI) device");
+        LOGGER.debug("Preparing USB controller(EHCI+UHCI) device");
         VirtualUSBController usbController = new VirtualUSBController(); //EHCI+UHCI
         usbController.setEhciEnabled(true);
         usbController.setAutoConnectDevices(true);
@@ -643,7 +643,7 @@ public class VmwareHelper {
                 }
             }
         } catch (Exception ex) {
-            s_logger.info("[ignored]"
+            LOGGER.info("[ignored]"
                     + "failed to get message for exception: " + e.getLocalizedMessage());
         }
 

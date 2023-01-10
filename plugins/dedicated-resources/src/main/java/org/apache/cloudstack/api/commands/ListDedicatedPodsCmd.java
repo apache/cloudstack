@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -43,7 +42,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listDedicatedPods", description = "Lists dedicated pods.", responseObject = DedicatePodResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedPodsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDedicatedPodsCmd.class.getName());
 
     @Inject
     DedicatedService dedicatedService;

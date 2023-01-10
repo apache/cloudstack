@@ -52,7 +52,7 @@ import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 
 public class NiciraNvpResource implements ServerResource {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpResource.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public static final int NAME_MAX_LEN = 40;
     public static final int NUM_RETRIES = 2;
@@ -176,11 +176,11 @@ public class NiciraNvpResource implements ServerResource {
             final ControlClusterStatus ccs = niciraNvpApi.getControlClusterStatus();
             getApiProviderMajorityVersion(ccs);
             if (!"stable".equals(ccs.getClusterStatus())) {
-                s_logger.error("ControlCluster state is not stable: " + ccs.getClusterStatus());
+                logger.error("ControlCluster state is not stable: " + ccs.getClusterStatus());
                 return null;
             }
         } catch (final NiciraNvpApiException e) {
-            s_logger.error("getControlClusterStatus failed", e);
+            logger.error("getControlClusterStatus failed", e);
             return null;
         }
         return new PingCommand(Host.Type.L2Networking, id);
@@ -210,7 +210,7 @@ public class NiciraNvpResource implements ServerResource {
         try {
             return wrapper.execute(cmd, this);
         } catch (final Exception e) {
-            s_logger.debug("Received unsupported command " + cmd.toString());
+            logger.debug("Received unsupported command " + cmd.toString());
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }

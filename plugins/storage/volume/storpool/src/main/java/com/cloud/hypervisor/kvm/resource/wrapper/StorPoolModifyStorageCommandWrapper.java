@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.StorPoolModifyStoragePoolAnswer;
@@ -43,13 +42,12 @@ import com.google.gson.JsonParser;
 
 @ResourceWrapper(handles =  StorPoolModifyStoragePoolCommand.class)
 public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<StorPoolModifyStoragePoolCommand, Answer, LibvirtComputingResource> {
-    private static final Logger log = Logger.getLogger(StorPoolModifyStorageCommandWrapper.class);
 
     @Override
     public Answer execute(final StorPoolModifyStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String clusterId = getSpClusterId();
         if (clusterId == null) {
-            log.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
+            logger.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
             return new Answer(command, false, "spNotFound");
         }
         try {
@@ -62,7 +60,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                     storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
                             .getUserInfo(), command.getPool().getType());
             if (storagepool == null) {
-                log.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
+                logger.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
                 return new Answer(command, false, String.format("Failed to create storage pool [%s]", command.getPool().getId()));
             }
 
@@ -71,13 +69,13 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
 
             return answer;
         } catch (Exception e) {
-            log.debug(String.format("Could not modify storage due to %s", e.getMessage()));
+            logger.debug(String.format("Could not modify storage due to %s", e.getMessage()));
             return new Answer(command, e);
         }
     }
 
     private String getSpClusterId() {
-        Script sc = new Script("storpool_confget", 0, log);
+        Script sc = new Script("storpool_confget", 0, logger);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
         String SP_CLUSTER_ID = null;
@@ -107,7 +105,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
         }
 
         String err = null;
-        Script sc = new Script("storpool", 300000, log);
+        Script sc = new Script("storpool", 300000, logger);
         sc.add("-M");
         sc.add("-j");
         sc.add(command);
@@ -137,7 +135,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
         }
 
         if (err != null) {
-            log.warn(err);
+            logger.warn(err);
         }
         return res;
     }

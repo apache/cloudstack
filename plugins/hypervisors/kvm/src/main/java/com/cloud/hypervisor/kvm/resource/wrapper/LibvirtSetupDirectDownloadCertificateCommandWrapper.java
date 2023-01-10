@@ -28,7 +28,6 @@ import com.cloud.utils.script.Script;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,7 +38,6 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
 
     private static final String temporaryCertFilePrefix = "CSCERTIFICATE";
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtSetupDirectDownloadCertificateCommandWrapper.class);
 
     /**
      * Retrieve agent.properties file
@@ -61,7 +59,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
             try {
                 pass = PropertiesUtil.loadFromFile(agentFile).getProperty(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
             } catch (IOException e) {
-                s_logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
+                logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
             }
         }
         return pass;
@@ -78,12 +76,12 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
      * Import certificate from temporary file into keystore
      */
     private void importCertificate(String tempCerFilePath, String keyStoreFile, String certificateName, String privatePassword) {
-        s_logger.debug("Importing certificate from temporary file to keystore");
+        logger.debug("Importing certificate from temporary file to keystore");
         String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
         String importCmd = String.format(importCommandFormat, tempCerFilePath, keyStoreFile, certificateName, privatePassword);
         int result = Script.runSimpleBashScriptForExitValue(importCmd);
         if (result != 0) {
-            s_logger.debug("Certificate " + certificateName + " not imported as it already exist on keystore");
+            logger.debug("Certificate " + certificateName + " not imported as it already exist on keystore");
         }
     }
 
@@ -93,7 +91,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
     private String createTemporaryFile(File agentFile, String certificateName, String certificate) {
         String tempCerFilePath = String.format("%s/%s-%s",
                 agentFile.getParent(), temporaryCertFilePrefix, certificateName);
-        s_logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
+        logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
         int result = Script.runSimpleBashScriptForExitValue(String.format("echo '%s' > %s", certificate, tempCerFilePath));
         if (result != 0) {
             throw new CloudRuntimeException("Could not create the certificate file on path: " + tempCerFilePath);
@@ -105,7 +103,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
      * Remove temporary file
      */
     private void cleanupTemporaryFile(String temporaryFile) {
-        s_logger.debug("Cleaning up temporary certificate file");
+        logger.debug("Cleaning up temporary certificate file");
         Script.runSimpleBashScript("rm -f " + temporaryFile);
     }
 
@@ -126,7 +124,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
             importCertificate(temporaryFile, keyStoreFile, certificateName, privatePassword);
             cleanupTemporaryFile(temporaryFile);
         } catch (FileNotFoundException | CloudRuntimeException e) {
-            s_logger.error("Error while setting up certificate " + certificateName, e);
+            logger.error("Error while setting up certificate " + certificateName, e);
             return new Answer(cmd, false, e.getMessage());
         }
 

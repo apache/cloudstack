@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.UserAccount;
 @APICommand(name = "enableUser", description = "Enables a user account", responseObject = UserResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class EnableUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(EnableUserCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

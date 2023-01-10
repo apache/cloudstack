@@ -78,7 +78,7 @@ import com.cloud.vm.VirtualMachineManager;
 
 @Component
 public class AncientDataMotionStrategy implements DataMotionStrategy {
-    private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private static final String NO_REMOTE_ENDPOINT_SSVM = "No remote endpoint to send command, check if host or ssvm is down?";
     private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
 
@@ -121,8 +121,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (destStoreTO instanceof NfsTO || destStoreTO.getRole() == DataStoreRole.ImageCache) {
             return false;
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("needCacheStorage true, dest at " + destTO.getPath() + " dest role " + destStoreTO.getRole().toString() + srcTO.getPath() + " src role " +
+        if (logger.isDebugEnabled()) {
+            logger.debug("needCacheStorage true, dest at " + destTO.getPath() + " dest role " + destStoreTO.getRole().toString() + srcTO.getPath() + " src role " +
                 srcStoreTO.getRole().toString());
         }
         return true;
@@ -152,7 +152,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         } else if (destScope.getScopeId() != null) {
             selectedScope = getZoneScope(destScope);
         } else {
-            s_logger.warn("Cannot find a zone-wide scope for movement that needs a cache storage");
+            logger.warn("Cannot find a zone-wide scope for movement that needs a cache storage");
         }
         return selectedScope;
     }
@@ -172,7 +172,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
-                s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                logger.error(NO_REMOTE_ENDPOINT_SSVM);
                 answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
             } else {
                 answer = ep.sendMessage(cmd);
@@ -188,19 +188,19 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                      destData.getType() == DataObjectType.TEMPLATE)) {
                     // volume transfer from primary to secondary. Volume transfer between primary pools are already handled by copyVolumeBetweenPools
                     // Delete cache in order to certainly transfer a latest image.
-                    s_logger.debug("Delete " + cacheType + " cache(id: " + cacheId +
+                    logger.debug("Delete " + cacheType + " cache(id: " + cacheId +
                                    ", uuid: " + cacheUuid + ")");
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
                     // for template, we want to leave it on cache for performance reason
                     if ((answer == null || !answer.getResult()) && srcForCopy.getRefCount() < 2) {
                         // cache object created by this copy, not already there
-                        s_logger.warn("Copy may not be handled correctly by agent(id: " + (ep != null ? ep.getId() : "\"unspecified\"") + ")." +
+                        logger.warn("Copy may not be handled correctly by agent(id: " + (ep != null ? ep.getId() : "\"unspecified\"") + ")." +
                                       " Delete " + cacheType + " cache(id: " + cacheId +
                                       ", uuid: " + cacheUuid + ")");
                         cacheMgr.deleteCacheObject(srcForCopy);
                     } else {
-                        s_logger.debug("Decrease reference count of " + cacheType +
+                        logger.debug("Decrease reference count of " + cacheType +
                                        " cache(id: " + cacheId + ", uuid: " + cacheUuid + ")");
                         cacheMgr.releaseCacheObject(srcForCopy);
                     }
@@ -208,7 +208,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy object failed: ", e);
+            logger.debug("copy object failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
@@ -295,7 +295,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
             Answer answer = null;
             if (ep == null) {
-                s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                logger.error(NO_REMOTE_ENDPOINT_SSVM);
                 answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
             } else {
                 answer = ep.sendMessage(cmd);
@@ -303,7 +303,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
             return answer;
         } catch (Exception e) {
-            s_logger.error(basicErrMsg, e);
+            logger.error(basicErrMsg, e);
             throw new CloudRuntimeException(basicErrMsg);
         } finally {
             if (!(storTO instanceof NfsTO)) {
@@ -319,14 +319,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             EndPoint ep = selector.select(volume, anyVolumeRequiresEncryption(volume));
             Answer answer = null;
             if (ep == null) {
-                s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                logger.error(NO_REMOTE_ENDPOINT_SSVM);
                 answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
             } else {
                 answer = ep.sendMessage(cmd);
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("Failed to send to storage pool", e);
+            logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
         }
     }
@@ -359,7 +359,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 Answer answer = null;
                 if (ep == null) {
                     String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
-                    s_logger.error(errMsg);
+                    logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
                     answer = ep.sendMessage(cmd);
@@ -383,7 +383,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 if (answer == null || !answer.getResult()) {
                     if (answer != null) {
-                        s_logger.debug("copy to image store failed: " + answer.getDetails());
+                        logger.debug("copy to image store failed: " + answer.getDetails());
                     }
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
@@ -398,7 +398,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 EndPoint ep = selector.select(objOnImageStore, destData, encryptionRequired);
                 if (ep == null) {
                     String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
-                    s_logger.error(errMsg);
+                    logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
                     answer = ep.sendMessage(cmd);
@@ -406,7 +406,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 if (answer == null || !answer.getResult()) {
                     if (answer != null) {
-                        s_logger.debug("copy to primary store failed: " + answer.getDetails());
+                        logger.debug("copy to primary store failed: " + answer.getDetails());
                     }
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
@@ -417,7 +417,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                 }
-                s_logger.error("Failed to perform operation: "+ e.getLocalizedMessage());
+                logger.error("Failed to perform operation: "+ e.getLocalizedMessage());
                 throw e;
             }
 
@@ -431,7 +431,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             Answer answer = null;
             if (ep == null) {
                 String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else {
                 answer = ep.sendMessage(cmd);
@@ -463,7 +463,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         if (ep == null) {
             String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             answer = new Answer(command, false, errMsg);
         } else {
             answer = ep.sendMessage(command);
@@ -502,7 +502,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         String errMsg = null;
         try {
-            s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
+            logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
             if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 answer = copyVolumeFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.TEMPLATE) {
@@ -527,7 +527,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 errMsg = answer.getDetails();
             }
         } catch (Exception e) {
-            s_logger.debug("copy failed", e);
+            logger.debug("copy failed", e);
             errMsg = e.toString();
         }
         CopyCommandResult result = new CopyCommandResult(null, answer);
@@ -558,7 +558,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
         Answer answer = null;
         if (ep == null) {
-            s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+            logger.error(NO_REMOTE_ENDPOINT_SSVM);
             answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
         } else {
             answer = ep.sendMessage(cmd);
@@ -598,7 +598,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData, encryptionRequired);
                 if (ep == null) {
-                    s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                    logger.error(NO_REMOTE_ENDPOINT_SSVM);
                     answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
                 } else {
                     answer = ep.sendMessage(cmd);
@@ -609,7 +609,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT, encryptionRequired);
                 if (ep == null) {
-                    s_logger.error(NO_REMOTE_ENDPOINT_SSVM);
+                    logger.error(NO_REMOTE_ENDPOINT_SSVM);
                     answer = new Answer(cmd, false, NO_REMOTE_ENDPOINT_SSVM);
                 } else {
                     answer = ep.sendMessage(cmd);
@@ -622,7 +622,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy snasphot failed: ", e);
+            logger.debug("copy snasphot failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }

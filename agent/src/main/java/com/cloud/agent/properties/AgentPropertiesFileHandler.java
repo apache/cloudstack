@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 public class AgentPropertiesFileHandler {
 
-    private static final Logger logger = Logger.getLogger(AgentPropertiesFileHandler.class);
+    protected static Logger LOGGER = Logger.getLogger(AgentPropertiesFileHandler.class);
 
     /**
      * This method reads the property in the agent.properties file.
@@ -47,7 +47,7 @@ public class AgentPropertiesFileHandler {
         File agentPropertiesFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
 
         if (agentPropertiesFile == null) {
-            logger.debug(String.format("File [%s] was not found, we will use default defined values. Property [%s]: [%s].", KeyStoreUtils.AGENT_PROPSFILE, name, defaultValue));
+            LOGGER.debug(String.format("File [%s] was not found, we will use default defined values. Property [%s]: [%s].", KeyStoreUtils.AGENT_PROPSFILE, name, defaultValue));
 
             return defaultValue;
         }
@@ -55,7 +55,7 @@ public class AgentPropertiesFileHandler {
         try {
             String configValue = PropertiesUtil.loadFromFile(agentPropertiesFile).getProperty(name);
             if (StringUtils.isBlank(configValue)) {
-                logger.debug(String.format("Property [%s] has empty or null value. Using default value [%s].", name, defaultValue));
+                LOGGER.debug(String.format("Property [%s] has empty or null value. Using default value [%s].", name, defaultValue));
                 return defaultValue;
             }
 
@@ -67,11 +67,11 @@ public class AgentPropertiesFileHandler {
                 ConvertUtils.register(new LongConverter(defaultValue), Long.class);
             }
 
-            logger.debug(String.format("Property [%s] was altered. Now using the value [%s].", name, configValue));
+            LOGGER.debug(String.format("Property [%s] was altered. Now using the value [%s].", name, configValue));
             return (T)ConvertUtils.convert(configValue, property.getTypeClass());
 
         } catch (IOException ex) {
-            logger.debug(String.format("Failed to get property [%s]. Using default value [%s].", name, defaultValue), ex);
+            LOGGER.debug(String.format("Failed to get property [%s]. Using default value [%s].", name, defaultValue), ex);
         }
 
         return defaultValue;

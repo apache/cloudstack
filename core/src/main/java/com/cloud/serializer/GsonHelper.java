@@ -40,7 +40,7 @@ import com.cloud.agent.transport.Request.PortConfigListTypeAdaptor;
 import com.cloud.utils.Pair;
 
 public class GsonHelper {
-    private static final Logger s_logger = Logger.getLogger(GsonHelper.class);
+    protected static Logger LOGGER = Logger.getLogger(GsonHelper.class);
 
     protected static final Gson s_gson;
     protected static final Gson s_gogger;
@@ -48,11 +48,11 @@ public class GsonHelper {
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
         s_gson = setDefaultGsonConfig(gsonBuilder);
-        GsonBuilder loggerBuilder = new GsonBuilder();
-        loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
-        s_gogger = setDefaultGsonConfig(loggerBuilder);
-        s_logger.info("Default Builder inited.");
+        GsonBuilder LOGGERBuilder = new GsonBuilder();
+        LOGGERBuilder.disableHtmlEscaping();
+        LOGGERBuilder.setExclusionStrategies(new LoggingExclusionStrategy(LOGGER));
+        s_gogger = setDefaultGsonConfig(LOGGERBuilder);
+        LOGGER.info("Default Builder inited.");
     }
 
     static Gson setDefaultGsonConfig(GsonBuilder builder) {
@@ -86,6 +86,6 @@ public class GsonHelper {
     }
 
     public final static Logger getLogger() {
-        return s_logger;
+        return LOGGER;
     }
 }

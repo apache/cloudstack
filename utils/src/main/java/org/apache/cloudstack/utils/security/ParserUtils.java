@@ -29,7 +29,7 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
 public class ParserUtils {
-    private static final Logger LOGGER = Logger.getLogger(ParserUtils.class);
+    protected static Logger LOGGER = Logger.getLogger(ParserUtils.class);
 
     public static DocumentBuilderFactory getSaferDocumentBuilderFactory() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

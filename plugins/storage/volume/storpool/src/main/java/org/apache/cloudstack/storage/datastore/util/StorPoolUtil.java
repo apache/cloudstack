@@ -65,30 +65,30 @@ import java.util.Map;
 import java.util.UUID;
 
 public class StorPoolUtil {
-    private static final Logger log = Logger.getLogger(StorPoolUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(StorPoolUtil.class);
 
     private static final File spLogFile = new File("/var/log/cloudstack/management/storpool-plugin.log");
     private static PrintWriter spLogPrinterWriter = spLogFileInitialize();
 
     private static PrintWriter spLogFileInitialize() {
         try {
-            log.info("INITIALIZE SP-LOG_FILE");
+            LOGGER.info("INITIALIZE SP-LOGGER_FILE");
             if (spLogFile.exists()) {
                 final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
                 final Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 final File spLogFileRename = new File(spLogFile + "-" + sdf.format(timestamp));
                 final boolean ret = spLogFile.renameTo(spLogFileRename);
                 if (!ret) {
-                    log.warn("Unable to rename" + spLogFile + " to " + spLogFileRename);
+                    LOGGER.warn("Unable to rename" + spLogFile + " to " + spLogFileRename);
                 } else {
-                    log.debug("Renamed " + spLogFile + " to " + spLogFileRename);
+                    LOGGER.debug("Renamed " + spLogFile + " to " + spLogFileRename);
                 }
             } else {
                 spLogFile.getParentFile().mkdirs();
             }
             return new PrintWriter(spLogFile);
         } catch (Exception e) {
-            log.info("INITIALIZE SP-LOG_FILE: " + e.getMessage());
+            LOGGER.info("INITIALIZE SP-LOGGER_FILE: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -171,13 +171,13 @@ public class StorPoolUtil {
             if (urlSplit.length == 1 && !urlSplit[0].contains("=")) {
                 this.templateName = url;
 
-                Script sc = new Script("storpool_confget", 0, log);
+                Script sc = new Script("storpool_confget", 0, LOGGER);
                 OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
                 final String err = sc.execute(parser);
                 if (err != null) {
                     final String errMsg = String.format("Could not execute storpool_confget. Error: %s", err);
-                    log.warn(errMsg);
+                    LOGGER.warn(errMsg);
                     throw new CloudRuntimeException(errMsg);
                 }
 
@@ -375,7 +375,7 @@ public class StorPoolUtil {
             Gson gson = new Gson();
             String js = gson.toJson(json);
             StringEntity input = new StringEntity(js, ContentType.APPLICATION_JSON);
-            log.info("Request:" + js);
+            LOGGER.info("Request:" + js);
             req.setEntity(input);
         }
 
@@ -553,7 +553,7 @@ public class StorPoolUtil {
         }
         json.put("tags", tags);
         json.put("volumes", volumes);
-        log.info("json:" + json);
+        LOGGER.info("json:" + json);
         return POST("MultiCluster/VolumesGroupSnapshot", json, conn);
     }
 

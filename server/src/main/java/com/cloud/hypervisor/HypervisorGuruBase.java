@@ -31,7 +31,6 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
@@ -68,7 +67,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
-    public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
     protected
@@ -105,7 +103,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
         if (network == null) {
-            s_logger.debug("Unable to get NIC details as the network is null");
+            logger.debug("Unable to get NIC details as the network is null");
             return null;
         }
         Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
@@ -164,7 +162,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             }
             to.setNicSecIps(secIps);
         } else {
-            s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
             //Workaround for dynamically created nics
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
@@ -295,13 +293,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             return host.getClusterId();
         }
 
-        s_logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         host = hostDao.findById(vm.getLastHostId());
         if (host != null) {
             return host.getClusterId();
         }
 
-        s_logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         return null;
     }
 

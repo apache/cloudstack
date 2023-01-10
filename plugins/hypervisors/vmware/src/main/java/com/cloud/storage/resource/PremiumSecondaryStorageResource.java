@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
@@ -32,7 +31,6 @@ import com.cloud.hypervisor.Hypervisor;
 
 public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource {
 
-    private static final Logger s_logger = Logger.getLogger(PremiumSecondaryStorageResource.class);
 
     private Map<Hypervisor.HypervisorType, SecondaryStorageResourceHandler> _handlers = new HashMap<Hypervisor.HypervisorType, SecondaryStorageResourceHandler>();
 
@@ -44,13 +42,13 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
         if (hypervisor != null) {
             Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
             if (hypervisorType == null) {
-                s_logger.error("Unsupported hypervisor type in command context, hypervisor: " + hypervisor);
+                logger.error("Unsupported hypervisor type in command context, hypervisor: " + hypervisor);
                 return defaultAction(cmd);
             }
 
             SecondaryStorageResourceHandler handler = getHandler(hypervisorType);
             if (handler == null) {
-                s_logger.error("No handler can be found for hypervisor type in command context, hypervisor: " + hypervisor);
+                logger.error("No handler can be found for hypervisor type in command context, hypervisor: " + hypervisor);
                 return defaultAction(cmd);
             }
 
@@ -66,8 +64,8 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
 
     public void ensureOutgoingRuleForAddress(String address) {
         if (address == null || address.isEmpty() || address.startsWith("0.0.0.0")) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Drop invalid dynamic route/firewall entry " + address);
+            if (logger.isInfoEnabled())
+                logger.info("Drop invalid dynamic route/firewall entry " + address);
             return;
         }
 
@@ -80,8 +78,8 @@ public class PremiumSecondaryStorageResource extends NfsSecondaryStorageResource
         }
 
         if (needToSetRule) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Add dynamic route/firewall entry for " + address);
+            if (logger.isInfoEnabled())
+                logger.info("Add dynamic route/firewall entry for " + address);
             allowOutgoingOnPrivate(address);
         }
     }

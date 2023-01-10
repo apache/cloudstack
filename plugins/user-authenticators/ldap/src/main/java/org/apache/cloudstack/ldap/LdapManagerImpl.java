@@ -51,7 +51,6 @@ import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.lang.Validate;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.DomainVO;
@@ -64,7 +63,6 @@ import com.cloud.utils.Pair;
 
 @Component
 public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManager, LdapValidator {
-    private static final Logger LOGGER = Logger.getLogger(LdapManagerImpl.class.getName());
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;
@@ -105,7 +103,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        LOGGER.debug("Configuring LDAP Manager");
+        logger.debug("Configuring LDAP Manager");
 
         messageBus.subscribe(AccountManager.MESSAGE_REMOVE_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
@@ -117,11 +115,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                     if (ldapTrustMapVO != null) {
                         String msg = String.format("Removing link between LDAP: %s - type: %s and account: %s on domain: %s",
                                 ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), account.getAccountId(), domainId);
-                        LOGGER.debug(msg);
+                        logger.debug(msg);
                         _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
                     }
                 } catch (final Exception e) {
-                    LOGGER.error("Caught exception while removing account linked to LDAP", e);
+                    logger.error("Caught exception while removing account linked to LDAP", e);
                 }
             }
         });
@@ -154,10 +152,10 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 context = _ldapContextFactory.createBindContext(providerUrl,domainId);
                 configuration = new LdapConfigurationVO(hostname, port, domainId);
                 _ldapConfigurationDao.persist(configuration);
-                LOGGER.info("Added new ldap server with url: " + providerUrl + (domainId == null ? "": " for domain " + domainId));
+                logger.info("Added new ldap server with url: " + providerUrl + (domainId == null ? "": " for domain " + domainId));
                 return createLdapConfigurationResponse(configuration);
             } catch (NamingException | IOException e) {
-                LOGGER.debug("NamingException while doing an LDAP bind", e);
+                logger.debug("NamingException while doing an LDAP bind", e);
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
             } finally {
                 closeContext(context);
@@ -180,13 +178,13 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             // TODO return the right account for this user
             final LdapContext context = _ldapContextFactory.createUserContext(principal, password, domainId);
             closeContext(context);
-            if(LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("User(%s) authenticated for domain(%s)", principal, domainId));
+            if(logger.isTraceEnabled()) {
+                logger.trace(String.format("User(%s) authenticated for domain(%s)", principal, domainId));
             }
             return true;
         } catch (NamingException | IOException e) {/* AuthenticationException is caught as NamingException */
-            LOGGER.debug("Exception while doing an LDAP bind for user "+" "+principal, e);
-            LOGGER.info("Failed to authenticate user: " + principal + ". incorrect password.");
+            logger.debug("Exception while doing an LDAP bind for user "+" "+principal, e);
+            logger.info("Failed to authenticate user: " + principal + ". incorrect password.");
             return false;
         }
     }
@@ -197,7 +195,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 context.close();
             }
         } catch (final NamingException e) {
-            LOGGER.warn(e.getMessage(), e);
+            logger.warn(e.getMessage(), e);
         }
     }
 
@@ -241,7 +239,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             throw new InvalidParameterValueException("Cannot find configuration with hostname " + hostname);
         } else {
             _ldapConfigurationDao.remove(configuration.getId());
-            LOGGER.info("Removed ldap server with url: " + hostname + ':' + port + (domainId == null ? "" : " for domain id " + domainId));
+            logger.info("Removed ldap server with url: " + hostname + ':' + port + (domainId == null ? "" : " for domain id " + domainId));
             return createLdapConfigurationResponse(configuration);
         }
     }
@@ -273,7 +271,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUser(escapedUsername, context, domainId);
 
         } catch (NamingException | IOException e) {
-            LOGGER.debug("ldap Exception: ",e);
+            logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username);
         } finally {
             closeContext(context);
@@ -294,7 +292,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             LdapUserManager userManagerFactory = _ldapUserManagerFactory.getInstance(ldapProvider);
             return userManagerFactory.getUser(escapedUsername, type, name, context, domainId);
         } catch (NamingException | IOException e) {
-            LOGGER.debug("ldap Exception: ",e);
+            logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username + " in group: " + name + " of type: " + type);
         } finally {
             closeContext(context);
@@ -308,7 +306,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             context = _ldapContextFactory.createBindContext(domainId);
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(domainId)).getUsers(context, domainId);
         } catch (NamingException | IOException e) {
-            LOGGER.debug("ldap Exception: ",e);
+            logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException("*");
         } finally {
             closeContext(context);
@@ -322,7 +320,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             context = _ldapContextFactory.createBindContext(domainId);
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(domainId)).getUsersInGroup(groupName, context, domainId);
         } catch (NamingException | IOException e) {
-            LOGGER.debug("ldap NamingException: ",e);
+            logger.debug("ldap NamingException: ",e);
             throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
         } finally {
             closeContext(context);
@@ -360,7 +358,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUsers("*" + escapedUsername + "*", context, null);
         } catch (NamingException | IOException e) {
-            LOGGER.debug("ldap Exception: ",e);
+            logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException(username);
         } finally {
             closeContext(context);
@@ -389,7 +387,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         DomainVO domain = domainDao.findById(vo.getDomainId());
         String domainUuid = "<unknown>";
         if (domain == null) {
-            LOGGER.error("no domain in database for id " + vo.getDomainId());
+            logger.error("no domain in database for id " + vo.getDomainId());
         } else {
             domainUuid = domain.getUuid();
         }
@@ -438,7 +436,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         DomainVO domain = domainDao.findById(vo.getDomainId());
         String domainUuid = "<unknown>";
         if (domain == null) {
-            LOGGER.error("no domain in database for id " + vo.getDomainId());
+            logger.error("no domain in database for id " + vo.getDomainId());
         } else {
             domainUuid = domain.getUuid();
         }
@@ -457,16 +455,16 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 String msg = String.format("group %s is mapped to account %d in the current domain (%s)", cmd.getLdapDomain(), oldVo.getAccountId(), cmd.getDomainId());
                 if (null == oldAcount.getRemoved()) {
                     msg += ", delete the old map before mapping a new account to the same group.";
-                    LOGGER.error(msg);
+                    logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 } else {
                     msg += ", the old map is deleted.";
-                    LOGGER.warn(msg);
+                    logger.warn(msg);
                     _ldapTrustMapDao.expunge(oldVo.getId());
                 }
             } else {
                 String msg = String.format("group %s is mapped to the current domain (%s) for autoimport and can not be used for autosync", cmd.getLdapDomain(), cmd.getDomainId());
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         }

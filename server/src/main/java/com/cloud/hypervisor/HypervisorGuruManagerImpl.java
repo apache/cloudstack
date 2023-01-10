@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -34,7 +33,6 @@ import com.cloud.utils.component.ManagerBase;
 
 @Component
 public class HypervisorGuruManagerImpl extends ManagerBase implements HypervisorGuruManager {
-    public static final Logger s_logger = Logger.getLogger(HypervisorGuruManagerImpl.class.getName());
 
     @Inject
     HostDao _hostDao;

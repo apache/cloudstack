@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -44,7 +43,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
-    private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
 
     protected VpcDao vpcDao;
     protected VpcOfferingDao vpcOffDao;

@@ -84,7 +84,7 @@ import java.util.function.Function;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class VolumeObject implements VolumeInfo {
-    private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
+    protected Logger logger = Logger.getLogger(getClass());
     protected VolumeVO volumeVO;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected DataStore dataStore;
@@ -231,7 +231,7 @@ public class VolumeObject implements VolumeInfo {
             }
         } catch (NoTransitionException e) {
             String errorMessage = String.format("Failed to transit volume %s to [%s] due to [%s].", volumeVO.getVolumeDescription(), event, e.getMessage());
-            s_logger.warn(errorMessage, e);
+            logger.warn(errorMessage, e);
             throw new CloudRuntimeException(errorMessage, e);
         }
         return result;
@@ -442,7 +442,7 @@ public class VolumeObject implements VolumeInfo {
         } catch (ConcurrentOperationException | NoTransitionException e) {
             String message = String.format("Failed to update %sto state [%s] due to [%s].", volumeVO == null ? "" : String.format("volume %s ", volumeVO.getVolumeDescription()),
               getMapOfEvents().get(event), e.getMessage());
-            s_logger.warn(message, e);
+            logger.warn(message, e);
             throw new CloudRuntimeException(message, e);
         } finally {
             expungeEntryOnOperationFailed(event, callExpungeEntry);
@@ -688,7 +688,7 @@ public class VolumeObject implements VolumeInfo {
         volumeDao.update(volumeVo.getId(), volumeVo);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "encryptFormat", "poolId");
-        s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
+        logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
     protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO oldVolume) {
@@ -722,7 +722,7 @@ public class VolumeObject implements VolumeInfo {
         volumeStoreDao.update(volStore.getId(), volStore);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
+        logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
           previousValues, newValues));
     }
 
@@ -754,7 +754,7 @@ public class VolumeObject implements VolumeInfo {
         volumeStoreDao.update(volumeDataStoreVo.getId(), volumeDataStoreVo);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
+        logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
           reflectOnlySelectedFields(volumeDataStoreVo, "id", "volumeId"), previousValues, newValues));
     }
     @Override
@@ -896,15 +896,15 @@ public class VolumeObject implements VolumeInfo {
                     volumeVO.setPassphraseId(null);
                     volumeDao.persist(volumeVO);
 
-                    s_logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
+                    logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
                     List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
 
                     if (volumes != null && !volumes.isEmpty()) {
-                        s_logger.debug("Other volumes use this passphrase, skipping deletion");
+                        logger.debug("Other volumes use this passphrase, skipping deletion");
                         return;
                     }
 
-                    s_logger.debug(String.format("Deleting passphrase %s", passphraseId));
+                    logger.debug(String.format("Deleting passphrase %s", passphraseId));
                     passphraseDao.remove(passphraseId);
                 }
             }

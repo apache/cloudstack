@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -44,7 +43,6 @@ import com.cloud.utils.net.NetUtils;
 @APICommand(name = "createLoadBalancer", description = "Creates an internal load balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateApplicationLoadBalancerCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -202,7 +200,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
             setResponseObject(lbResponse);
             lbResponse.setResponseName(getCommandName());
         } catch (Exception ex) {
-            s_logger.warn("Failed to create load balancer due to exception ", ex);
+            logger.warn("Failed to create load balancer due to exception ", ex);
         } finally {
             if (rule == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create load balancer");
@@ -220,13 +218,13 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         } catch (InsufficientAddressCapacityException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         } catch (InsufficientVirtualNetworkCapacityException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }
     }

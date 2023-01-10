@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
@@ -59,7 +58,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesVersionManagerImpl extends ManagerBase implements KubernetesVersionService {
-    public static final Logger LOGGER = Logger.getLogger(KubernetesVersionManagerImpl.class.getName());
 
     @Inject
     private KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
@@ -139,7 +137,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                         versions.remove(i);
                     }
                 } catch (IllegalArgumentException e) {
-                    LOGGER.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumSemanticVersion));
+                    logger.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumSemanticVersion));
                     versions.remove(i);
                 }
             }
@@ -315,7 +313,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(zoneId, name, isoUrl, isoChecksum);
             template = templateDao.findById(vmTemplate.getId());
         } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
-            LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl), ex);
+            logger.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl), ex);
             throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl));
         }
 
@@ -343,13 +341,13 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
         VMTemplateVO template = templateDao.findByIdIncludingRemoved(version.getIsoId());
         if (template == null) {
-            LOGGER.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
+            logger.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
         }
         if (template != null && template.getRemoved() == null) { // Delete ISO
             try {
                 deleteKubernetesVersionIso(template.getId());
             } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException ex) {
-                LOGGER.error(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()), ex);
+                logger.error(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()), ex);
                 throw new CloudRuntimeException(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()));
             }
         }

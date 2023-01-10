@@ -33,7 +33,7 @@ import com.cloud.utils.db.TransactionStatus;
 @Component
 public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
 
-    private static final Logger s_logger = Logger.getLogger(VpcPrivateGatewayTransactionCallable.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private VpcGatewayDao _vpcGatewayDao;
@@ -53,18 +53,18 @@ public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
 
                 final List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
                 if (privateIps.size() > 1 || !privateIps.get(0).getIpAddress().equalsIgnoreCase(gateway.getIp4Address())) {
-                    s_logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
+                    logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
                     deleteNetwork = false;
                 }
 
                 final PrivateIpVO ip = _privateIpDao.findByIpAndVpcId(gateway.getVpcId(), gateway.getIp4Address());
                 if (ip != null) {
                     _privateIpDao.remove(ip.getId());
-                    s_logger.debug("Deleted private ip " + ip);
+                    logger.debug("Deleted private ip " + ip);
                 }
 
                 _vpcGatewayDao.remove(gateway.getId());
-                s_logger.debug("Deleted private gateway " + gateway);
+                logger.debug("Deleted private gateway " + gateway);
             }
         });
 

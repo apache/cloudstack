@@ -41,7 +41,7 @@ import com.google.gson.GsonBuilder;
  *
  */
 public class ConsoleProxyPasswordBasedEncryptor {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyPasswordBasedEncryptor.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private Gson gson;
 
@@ -66,22 +66,22 @@ public class ConsoleProxyPasswordBasedEncryptor {
             byte[] encryptedBytes = cipher.doFinal(text.getBytes());
             return Base64.encodeBase64URLSafeString(encryptedBytes);
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (NoSuchPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (IllegalBlockSizeException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (BadPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (InvalidKeyException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (InvalidAlgorithmParameterException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         }
     }
@@ -98,22 +98,22 @@ public class ConsoleProxyPasswordBasedEncryptor {
             byte[] encryptedBytes = Base64.decodeBase64(encryptedText);
             return new String(cipher.doFinal(encryptedBytes));
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (NoSuchPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (IllegalBlockSizeException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (BadPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (InvalidKeyException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         } catch (InvalidAlgorithmParameterException e) {
-            s_logger.error("Unexpected exception ", e);
+            logger.error("Unexpected exception ", e);
             return null;
         }
     }

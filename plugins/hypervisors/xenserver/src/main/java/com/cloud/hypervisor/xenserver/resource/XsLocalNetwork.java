@@ -29,7 +29,7 @@ import com.xensource.xenapi.Types.XenAPIException;
  */
 public class XsLocalNetwork {
 
-    private static final Logger s_logger = Logger.getLogger(XsLocalNetwork.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private final CitrixResourceBase _citrixResourceBase;
     private final Network _n;
@@ -67,8 +67,8 @@ public class XsLocalNetwork {
             for (final PIF pif : nr.PIFs) {
                 final PIF.Record pr = pif.getRecord(conn);
                 if (_citrixResourceBase.getHost().getUuid().equals(pr.host.getUuid(conn))) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found a network called " + nr.nameLabel + " on host=" + _citrixResourceBase.getHost().getIp() + ";  Network=" + nr.uuid + "; pif=" + pr.uuid);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Found a network called " + nr.nameLabel + " on host=" + _citrixResourceBase.getHost().getIp() + ";  Network=" + nr.uuid + "; pif=" + pr.uuid);
                     }
                     _p = pif;
                     _pr = pr;

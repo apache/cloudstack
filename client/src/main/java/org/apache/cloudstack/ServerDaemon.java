@@ -60,7 +60,7 @@ import org.apache.commons.lang3.StringUtils;
  * Configuration parameters are read from server.properties file available on the classpath.
  */
 public class ServerDaemon implements Daemon {
-    private static final Logger LOG = Logger.getLogger(ServerDaemon.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private static final String WEB_XML = "META-INF/webapp/WEB-INF/web.xml";
 
     /////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class ServerDaemon implements Daemon {
     private static final String KEYSTORE_FILE = "https.keystore";
     private static final String KEYSTORE_PASSWORD = "https.keystore.password";
     private static final String WEBAPP_DIR = "webapp.dir";
-    private static final String ACCESS_LOG = "access.log";
+    private static final String ACCESS_logger = "access.log";
 
     ////////////////////////////////////////////////////////
     /////////////// Server Configuration ///////////////////
@@ -111,12 +111,12 @@ public class ServerDaemon implements Daemon {
     public void init(final DaemonContext context) {
         final File confFile = PropertiesUtil.findConfigFile("server.properties");
         if (confFile == null) {
-            LOG.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+            logger.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                     bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
             return;
         }
 
-        LOG.info("Server configuration file found: " + confFile.getAbsolutePath());
+        logger.info("Server configuration file found: " + confFile.getAbsolutePath());
 
         try {
             InputStream is = new FileInputStream(confFile);
@@ -133,18 +133,18 @@ public class ServerDaemon implements Daemon {
             setKeystoreFile(properties.getProperty(KEYSTORE_FILE));
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
-            setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
+            setAccessLogFile(properties.getProperty(ACCESS_logger, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
         } catch (final IOException e) {
-            LOG.warn("Failed to read configuration from server.properties file", e);
+            logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
             // make sure that at least HTTP is enabled if both of them are set to false (misconfiguration)
             if (!httpEnable && !httpsEnable) {
                 setHttpEnable(true);
-                LOG.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
+                logger.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
             }
         }
-        LOG.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+        logger.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                 bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
     }
 

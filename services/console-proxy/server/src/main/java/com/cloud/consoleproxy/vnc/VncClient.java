@@ -39,7 +39,7 @@ import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
 import com.cloud.consoleproxy.vnc.packet.client.MouseEventPacket;
 
 public class VncClient {
-    private static final Logger s_logger = Logger.getLogger(VncClient.class);
+    protected static Logger LOGGER = Logger.getLogger(VncClient.class);
 
     private Socket socket;
     private DataInputStream is;
@@ -66,23 +66,23 @@ public class VncClient {
         try {
             new VncClient(host, Integer.parseInt(port), password, false, null);
         } catch (NumberFormatException e) {
-            s_logger.error("Incorrect VNC server port number: " + port + ".");
+            LOGGER.error("Incorrect VNC server port number: " + port + ".");
             System.exit(1);
         } catch (UnknownHostException e) {
-            s_logger.error("Incorrect VNC server host name: " + host + ".");
+            LOGGER.error("Incorrect VNC server host name: " + host + ".");
             System.exit(1);
         } catch (IOException e) {
-            s_logger.error("Cannot communicate with VNC server: " + e.getMessage());
+            LOGGER.error("Cannot communicate with VNC server: " + e.getMessage());
             System.exit(1);
         } catch (Throwable e) {
-            s_logger.error("An error happened: " + e.getMessage());
+            LOGGER.error("An error happened: " + e.getMessage());
             System.exit(1);
         }
         System.exit(0);
     }
 
     private static void printHelpMessage() {
-        /* LOG */s_logger.info("Usage: HOST PORT PASSWORD.");
+        /* LOGGER */LOGGER.info("Usage: HOST PORT PASSWORD.");
     }
 
     public VncClient(ConsoleProxyClientListener clientListener) {
@@ -108,7 +108,7 @@ public class VncClient {
             try {
                 is.close();
             } catch (Throwable e) {
-                s_logger.info("[ignored]"
+                LOGGER.info("[ignored]"
                         + "failed to close resource for input: " + e.getLocalizedMessage());
             }
         }
@@ -117,7 +117,7 @@ public class VncClient {
             try {
                 os.close();
             } catch (Throwable e) {
-                s_logger.info("[ignored]"
+                LOGGER.info("[ignored]"
                         + "failed to get close resource for output: " + e.getLocalizedMessage());
             }
         }
@@ -126,7 +126,7 @@ public class VncClient {
             try {
                 socket.close();
             } catch (Throwable e) {
-                s_logger.info("[ignored]"
+                LOGGER.info("[ignored]"
                         + "failed to get close resource for socket: " + e.getLocalizedMessage());
             }
         }
@@ -151,7 +151,7 @@ public class VncClient {
 
     public void connectTo(String host, int port, String password) throws UnknownHostException, IOException {
         // Connect to server
-        s_logger.info("Connecting to VNC server " + host + ":" + port + "...");
+        LOGGER.info("Connecting to VNC server " + host + ":" + port + "...");
         socket = new Socket(host, port);
         doConnect(password);
     }
@@ -165,7 +165,7 @@ public class VncClient {
         authenticate(password);
         initialize();
 
-        s_logger.info("Connecting to VNC server succeeded, start session");
+        LOGGER.info("Connecting to VNC server succeeded, start session");
 
         // Run client-to-server packet sender
         sender = new VncClientPacketSender(os, screen, this);
@@ -233,7 +233,7 @@ public class VncClient {
 
         // Server should use RFB protocol 3.x
         if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR)) {
-            s_logger.error("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
+            LOGGER.error("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
             throw new RuntimeException("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
         }
 
@@ -259,7 +259,7 @@ public class VncClient {
                 is.readFully(buf);
                 String reason = new String(buf, RfbConstants.CHARSET);
 
-                s_logger.error("Authentication to VNC server is failed. Reason: " + reason);
+                LOGGER.error("Authentication to VNC server is failed. Reason: " + reason);
                 throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
             }
 
@@ -269,13 +269,13 @@ public class VncClient {
             }
 
             case RfbConstants.VNC_AUTH: {
-                s_logger.info("VNC server requires password authentication");
+                LOGGER.info("VNC server requires password authentication");
                 doVncAuth(password);
                 break;
             }
 
             default:
-                s_logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
+                LOGGER.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
                 throw new RuntimeException("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
         }
     }
@@ -294,7 +294,7 @@ public class VncClient {
         try {
             response = encodePassword(challenge, password);
         } catch (Exception e) {
-            s_logger.error("Cannot encrypt client password to send to server: " + e.getMessage());
+            LOGGER.error("Cannot encrypt client password to send to server: " + e.getMessage());
             throw new RuntimeException("Cannot encrypt client password to send to server: " + e.getMessage());
         }
 
@@ -312,15 +312,15 @@ public class VncClient {
             }
 
             case RfbConstants.VNC_AUTH_TOO_MANY:
-                s_logger.error("Connection to VNC server failed: too many wrong attempts.");
+                LOGGER.error("Connection to VNC server failed: too many wrong attempts.");
                 throw new RuntimeException("Connection to VNC server failed: too many wrong attempts.");
 
             case RfbConstants.VNC_AUTH_FAILED:
-                s_logger.error("Connection to VNC server failed: wrong password.");
+                LOGGER.error("Connection to VNC server failed: wrong password.");
                 throw new RuntimeException("Connection to VNC server failed: wrong password.");
 
             default:
-                s_logger.error("Connection to VNC server failed, reason code: " + authResult);
+                LOGGER.error("Connection to VNC server failed, reason code: " + authResult);
                 throw new RuntimeException("Connection to VNC server failed, reason code: " + authResult);
         }
     }

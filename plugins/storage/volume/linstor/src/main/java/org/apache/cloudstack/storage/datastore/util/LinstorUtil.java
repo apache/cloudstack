@@ -31,7 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 public class LinstorUtil {
-    private static final Logger s_logger = Logger.getLogger(LinstorUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(LinstorUtil.class);
 
     public static final String RSC_PREFIX = "cs-";
     public static final String RSC_GROUP = "resourceGroup";
@@ -58,7 +58,7 @@ public class LinstorUtil {
 
             if (rscGrps.isEmpty()) {
                 final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
+                LOGGER.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
 
@@ -74,7 +74,7 @@ public class LinstorUtil {
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
                 .mapToLong(StoragePool::getTotalCapacity).sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
+            LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
     }

@@ -26,7 +26,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -42,7 +41,6 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
     @Inject
     private VolumeDao volumeDao;
 
-    private static final Logger LOG = Logger.getLogger(ScaleIOSnapshotStrategy.class);
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
@@ -73,7 +71,7 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
         Storage.ImageFormat imageFormat = volumeInfo.getFormat();
         if (!Storage.ImageFormat.RAW.equals(imageFormat)) {
-            LOG.error(String.format("Does not support revert snapshot of the image format [%s] on PowerFlex. Can only rollback snapshots of format RAW", imageFormat));
+            logger.error(String.format("Does not support revert snapshot of the image format [%s] on PowerFlex. Can only rollback snapshots of format RAW", imageFormat));
             return false;
         }
 

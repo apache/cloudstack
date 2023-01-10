@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.NumbersUtil;
 
 public final class QCOW2Utils {
-    public static final Logger LOGGER = Logger.getLogger(QCOW2Utils.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(QCOW2Utils.class);
 
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
     private static final int VIRTUALSIZE_HEADER_LENGTH = 8;

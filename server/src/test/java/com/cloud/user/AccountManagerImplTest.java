@@ -178,7 +178,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void testAuthenticateUser() throws UnknownHostException {
         Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> successAuthenticationPair = new Pair<>(true, null);
         Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> failureAuthenticationPair = new Pair<>(false,
-                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
 
         UserAccountVO userAccountVO = new UserAccountVO();
         userAccountVO.setSource(User.Source.UNKNOWN);
@@ -711,7 +711,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl._userPasswordEncoders.add(authenticatorMock2);
 
         Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
-                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
 
         String currentPassword = "currentPassword";
         Mockito.doReturn(authenticationResult).when(authenticatorMock1).authenticate(username, currentPassword, domainId, null);
@@ -740,7 +740,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl._userPasswordEncoders.add(authenticatorMock2);
 
         Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
-                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
 
         String currentPassword = "currentPassword";
         Mockito.doReturn(authenticationResult).when(authenticatorMock2).authenticate(username, currentPassword, domainId, null);

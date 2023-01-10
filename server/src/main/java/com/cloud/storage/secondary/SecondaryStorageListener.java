@@ -31,7 +31,7 @@ import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 
 public class SecondaryStorageListener implements Listener {
-    private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     SecondaryStorageVmManager _ssVmMgr = null;
 
@@ -78,8 +78,8 @@ public class SecondaryStorageListener implements Listener {
                 return;
             }
         } else if (cmd instanceof StartupSecondaryStorageCommand) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Received a host startup notification " + cmd);
+            if (logger.isInfoEnabled()) {
+                logger.info("Received a host startup notification " + cmd);
             }
             _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
             _ssVmMgr.generateSetupCommand(agent.getId());

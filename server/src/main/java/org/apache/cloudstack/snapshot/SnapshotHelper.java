@@ -58,7 +58,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
 public class SnapshotHelper {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     protected SnapshotDataStoreDao snapshotDataStoreDao;

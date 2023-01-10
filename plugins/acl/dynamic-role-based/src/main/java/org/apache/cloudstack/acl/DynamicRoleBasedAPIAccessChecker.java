@@ -27,7 +27,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 import com.cloud.exception.PermissionDeniedException;
@@ -49,7 +48,6 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private List<PluggableService> services;
     private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
 
-    private static final Logger LOGGER = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
 
     protected DynamicRoleBasedAPIAccessChecker() {
         super();
@@ -92,8 +90,8 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
                 return false;
             }
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName, role, permission.getRule().toString()));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName, role, permission.getRule().toString()));
             }
             return true;
         }
@@ -122,7 +120,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
-            LOGGER.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", account));
+            logger.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", account));
             return true;
         }
 
@@ -142,7 +140,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     @Override
     public boolean isEnabled() {
         if (!roleService.isEnabled()) {
-            LOGGER.trace("RoleService is disabled. We will not use DynamicRoleBasedAPIAccessChecker.");
+            logger.trace("RoleService is disabled. We will not use DynamicRoleBasedAPIAccessChecker.");
         }
         return roleService.isEnabled();
     }

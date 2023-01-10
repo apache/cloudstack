@@ -23,11 +23,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import java.io.InputStream;
 import java.sql.Connection;
 
-import org.apache.log4j.Logger;
 
-public class Upgrade41510to41520 implements DbUpgrade {
+public class Upgrade41510to41520 extends DbUpgradeAbstractImpl {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41510to41520.class);
     private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     @Override
@@ -62,7 +60,7 @@ public class Upgrade41510to41520 implements DbUpgrade {
     }
 
     private void correctGuestOsIdsInHypervisorMapping(final Connection conn) {
-        LOG.debug("Correcting guest OS ids in hypervisor mappings");
+        logger.debug("Correcting guest OS ids in hypervisor mappings");
         guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
     }
 

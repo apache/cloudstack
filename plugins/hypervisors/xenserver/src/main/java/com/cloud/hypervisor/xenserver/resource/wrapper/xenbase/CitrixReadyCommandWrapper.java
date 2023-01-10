@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
@@ -43,7 +42,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  ReadyCommand.class)
 public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixReadyCommandWrapper.class);
 
     @Override
     public Answer execute(final ReadyCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -74,10 +72,10 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
                 return new ReadyAnswer(command, "Unable to cleanup halted vms");
             }
         } catch (final XenAPIException e) {
-            s_logger.warn("Unable to cleanup halted vms", e);
+            logger.warn("Unable to cleanup halted vms", e);
             return new ReadyAnswer(command, "Unable to cleanup halted vms");
         } catch (final XmlRpcException e) {
-            s_logger.warn("Unable to cleanup halted vms", e);
+            logger.warn("Unable to cleanup halted vms", e);
             return new ReadyAnswer(command, "Unable to cleanup halted vms");
         }
 

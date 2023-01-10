@@ -18,7 +18,6 @@
 package com.cloud.network.rules;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -36,7 +35,6 @@ import com.cloud.vm.VirtualMachineManager;
 
 public class PrivateGatewayRules extends RuleApplier {
 
-    private static final Logger s_logger = Logger.getLogger(PrivateGatewayRules.class);
 
     private final PrivateGateway _privateGateway;
 
@@ -62,7 +60,7 @@ public class PrivateGatewayRules extends RuleApplier {
 
             final NetworkHelper networkHelper = visitor.getVirtualNetworkApplianceFactory().getNetworkHelper();
             if (!networkHelper.checkRouterVersion(_router)) {
-                s_logger.warn("Router requires upgrade. Unable to send command to router: " + _router.getId());
+                logger.warn("Router requires upgrade. Unable to send command to router: " + _router.getId());
                 return false;
             }
             final VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
@@ -75,17 +73,17 @@ public class PrivateGatewayRules extends RuleApplier {
                 result = visitor.visit(this);
             }
         } catch (final Exception ex) {
-            s_logger.warn("Failed to create private gateway " + _privateGateway + " on router " + _router + " due to ", ex);
+            logger.warn("Failed to create private gateway " + _privateGateway + " on router " + _router + " due to ", ex);
         } finally {
             if (!result) {
-                s_logger.debug("Failed to setup gateway " + _privateGateway + " on router " + _router + " with the source nat. Will now remove the gateway.");
+                logger.debug("Failed to setup gateway " + _privateGateway + " on router " + _router + " with the source nat. Will now remove the gateway.");
                 _isAddOperation = false;
                 final boolean isRemoved = destroyPrivateGateway(visitor);
 
                 if (isRemoved) {
-                    s_logger.debug("Removed the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
+                    logger.debug("Removed the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
                 } else {
-                    s_logger.warn("Failed to remove the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
+                    logger.warn("Failed to remove the gateway " + _privateGateway + " from router " + _router + " as a part of cleanup");
                 }
             }
         }
@@ -119,32 +117,32 @@ public class PrivateGatewayRules extends RuleApplier {
 
         final NetworkModel networkModel = visitor.getVirtualNetworkApplianceFactory().getNetworkModel();
         if (!networkModel.isVmPartOfNetwork(_router.getId(), _privateGateway.getNetworkId())) {
-            s_logger.debug("Router doesn't have nic for gateway " + _privateGateway + " so no need to removed it");
+            logger.debug("Router doesn't have nic for gateway " + _privateGateway + " so no need to removed it");
             return true;
         }
 
         final Network privateNetwork = networkModel.getNetwork(_privateGateway.getNetworkId());
 
-        s_logger.debug("Releasing private ip for gateway " + _privateGateway + " from " + _router);
+        logger.debug("Releasing private ip for gateway " + _privateGateway + " from " + _router);
 
         _nicProfile = networkModel.getNicProfile(_router, privateNetwork.getId(), null);
         boolean result = visitor.visit(this);
         if (!result) {
-            s_logger.warn("Failed to release private ip for gateway " + _privateGateway + " on router " + _router);
+            logger.warn("Failed to release private ip for gateway " + _privateGateway + " on router " + _router);
             return false;
         }
 
         // revoke network acl on the private gateway.
         final NetworkACLManager networkACLMgr = visitor.getVirtualNetworkApplianceFactory().getNetworkACLMgr();
         if (!networkACLMgr.revokeACLItemsForPrivateGw(_privateGateway)) {
-            s_logger.debug("Failed to delete network acl items on " + _privateGateway + " from router " + _router);
+            logger.debug("Failed to delete network acl items on " + _privateGateway + " from router " + _router);
             return false;
         }
 
-        s_logger.debug("Removing router " + _router + " from private network " + privateNetwork + " as a part of delete private gateway");
+        logger.debug("Removing router " + _router + " from private network " + privateNetwork + " as a part of delete private gateway");
         final VirtualMachineManager itMgr = visitor.getVirtualNetworkApplianceFactory().getItMgr();
         result = result && itMgr.removeVmFromNetwork(_router, privateNetwork, null);
-        s_logger.debug("Private gateawy " + _privateGateway + " is removed from router " + _router);
+        logger.debug("Private gateawy " + _privateGateway + " is removed from router " + _router);
         return result;
     }
 }

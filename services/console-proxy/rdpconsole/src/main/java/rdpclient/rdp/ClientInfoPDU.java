@@ -35,7 +35,7 @@ public class ClientInfoPDU extends OneTimeSwitch {
     public static final int INFO_UNICODE = 0x10;
 
     public static final int INFO_MAXIMIZESHELL = 0x20;
-    public static final int INFO_LOGONNOTIFY = 0x40;
+    public static final int INFO_loggerONNOTIFY = 0x40;
     public static final int INFO_ENABLEWINDOWSKEY = 0x100;
     public static final int INFO_MOUSE_HAS_WHEEL = 0x00020000;
     public static final int INFO_NOAUDIOPLAYBACK = 0x00080000;
@@ -104,7 +104,7 @@ public class ClientInfoPDU extends OneTimeSwitch {
 
         // Flags
         buf.writeIntLE(INFO_MOUSE | INFO_DISABLECTRLALTDEL | INFO_UNICODE |
-                INFO_MAXIMIZESHELL | INFO_LOGONNOTIFY | INFO_ENABLEWINDOWSKEY |
+                INFO_MAXIMIZESHELL | INFO_loggerONNOTIFY | INFO_ENABLEWINDOWSKEY |
                 INFO_MOUSE_HAS_WHEEL | INFO_NOAUDIOPLAYBACK);
 
         //
@@ -293,7 +293,7 @@ public class ClientInfoPDU extends OneTimeSwitch {
                 (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
 
                 // Flags: 0xa0173 (LE), INFO_MOUSE (0x1), INFO_DISABLECTRLALTDEL (0x2), INFO_UNICODE (0x10),
-                // INFO_MAXIMIZESHELL (0x20), INFO_LOGONNOTIFY (0x40), INFO_ENABLEWINDOWSKEY (0x100),
+                // INFO_MAXIMIZESHELL (0x20), INFO_loggerONNOTIFY (0x40), INFO_ENABLEWINDOWSKEY (0x100),
                 // INFO_MOUSE_HAS_WHEEL (0x00020000), INFO_NOAUDIOPLAYBACK (0x00080000),
                 (byte) 0x73, (byte) 0x01, (byte) 0x0a, (byte) 0x00,
 

@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 /**
  */
 public abstract class OutputInterpreter {
+
+    protected Logger logger = Logger.getLogger(getClass());
     public boolean drain() {
         return false;
     }
@@ -50,7 +52,6 @@ public abstract class OutputInterpreter {
     };
 
     public static class TimedOutLogger extends OutputInterpreter {
-        private static final Logger s_logger = Logger.getLogger(TimedOutLogger.class);
         Process _process;
 
         public TimedOutLogger(Process process) {
@@ -77,7 +78,7 @@ public abstract class OutputInterpreter {
                     buff.append(reader.readLine());
                 }
             } catch (IOException e) {
-                s_logger.info("[ignored] can not append line to buffer",e);
+                logger.info("[ignored] can not append line to buffer",e);
             }
 
             return buff.toString();

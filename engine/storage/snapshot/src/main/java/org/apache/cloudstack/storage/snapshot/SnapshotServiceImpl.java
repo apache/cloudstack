@@ -65,7 +65,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class SnapshotServiceImpl implements SnapshotService {
-    private static final Logger s_logger = Logger.getLogger(SnapshotServiceImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -138,12 +138,12 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotResult snapResult = new SnapshotResult(snapshot, result.getAnswer());
         if (result.isFailed()) {
-            s_logger.debug("create snapshot " + context.snapshot.getName() + " failed: " + result.getResult());
+            logger.debug("create snapshot " + context.snapshot.getName() + " failed: " + result.getResult());
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
                 snapshot.processEvent(Event.OperationFailed);
             } catch (Exception e) {
-                s_logger.debug("Failed to update snapshot state due to " + e.getMessage());
+                logger.debug("Failed to update snapshot state due to " + e.getMessage());
             }
 
             snapResult.setResult(result.getResult());
@@ -155,12 +155,12 @@ public class SnapshotServiceImpl implements SnapshotService {
             snapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
             snapshot.processEvent(Snapshot.Event.OperationSucceeded);
         } catch (Exception e) {
-            s_logger.debug("Failed to create snapshot: ", e);
+            logger.debug("Failed to create snapshot: ", e);
             snapResult.setResult(e.toString());
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e1) {
-                s_logger.debug("Failed to change snapshot state: " + e1.toString());
+                logger.debug("Failed to change snapshot state: " + e1.toString());
             }
         }
 
@@ -176,25 +176,25 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             snapshotOnPrimary = (SnapshotObject)snap.getDataStore().create(snapshot);
         } catch (Exception e) {
-            s_logger.debug("Failed to create snapshot state on data store due to " + e.getMessage());
+            logger.debug("Failed to create snapshot state on data store due to " + e.getMessage());
             throw new CloudRuntimeException(e);
         }
 
         try {
             snapshotOnPrimary.processEvent(Snapshot.Event.CreateRequested);
         } catch (NoTransitionException e) {
-            s_logger.debug("Failed to change snapshot state: " + e.toString());
+            logger.debug("Failed to change snapshot state: " + e.toString());
             throw new CloudRuntimeException(e);
         }
 
         try {
             snapshotOnPrimary.processEvent(Event.CreateOnlyRequested);
         } catch (Exception e) {
-            s_logger.debug("Failed to change snapshot state: " + e.toString());
+            logger.debug("Failed to change snapshot state: " + e.toString());
             try {
                 snapshotOnPrimary.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e1) {
-                s_logger.debug("Failed to change snapshot state: " + e1.toString());
+                logger.debug("Failed to change snapshot state: " + e1.toString());
             }
             throw new CloudRuntimeException(e);
         }
@@ -207,12 +207,12 @@ public class SnapshotServiceImpl implements SnapshotService {
             PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnPrimary.getDataStore().getDriver();
             primaryStore.takeSnapshot(snapshot, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+            logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
                 snapshot.processEvent(Event.OperationFailed);
             } catch (NoTransitionException e1) {
-                s_logger.debug("Failed to change state for event: OperationFailed", e);
+                logger.debug("Failed to change state for event: OperationFailed", e);
             }
             throw new CloudRuntimeException("Failed to take snapshot" + snapshot.getId());
         }
@@ -225,10 +225,10 @@ public class SnapshotServiceImpl implements SnapshotService {
                     snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
             return result;
         } catch (InterruptedException e) {
-            s_logger.debug("Failed to create snapshot", e);
+            logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
         } catch (ExecutionException e) {
-            s_logger.debug("Failed to create snapshot", e);
+            logger.debug("Failed to create snapshot", e);
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
     }
@@ -282,7 +282,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             caller.setCallback(caller.getTarget().copySnapshotAsyncCallback(null, null)).setContext(context);
             motionSrv.copyAsync(snapshot, snapshotOnImageStore, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to copy snapshot", e);
+            logger.debug("Failed to copy snapshot", e);
             result.setResult("Failed to copy snapshot:" + e.toString());
             try {
                 // When error archiving an already existing snapshot, emit OperationNotPerformed.
@@ -293,7 +293,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                     snapObj.processEvent(Snapshot.Event.OperationFailed);
                 }
             } catch (NoTransitionException e1) {
-                s_logger.debug("Failed to change state: " + e1.toString());
+                logger.debug("Failed to change state: " + e1.toString());
             }
             future.complete(result);
         }
@@ -306,10 +306,10 @@ public class SnapshotServiceImpl implements SnapshotService {
             SnapshotInfo destSnapshot = res.getSnapshot();
             return destSnapshot;
         } catch (InterruptedException e) {
-            s_logger.debug("failed copy snapshot", e);
+            logger.debug("failed copy snapshot", e);
             throw new CloudRuntimeException("Failed to copy snapshot", e);
         } catch (ExecutionException e) {
-            s_logger.debug("Failed to copy snapshot", e);
+            logger.debug("Failed to copy snapshot", e);
             throw new CloudRuntimeException("Failed to copy snapshot", e);
         }
 
@@ -335,7 +335,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                     cleanupOnSnapshotBackupFailure(context.srcSnapshot);
                 }
             } catch (SnapshotBackupException e) {
-                s_logger.debug("Failed to create backup: " + e.toString());
+                logger.debug("Failed to create backup: " + e.toString());
             }
             snapResult.setResult(result.getResult());
             future.complete(snapResult);
@@ -349,7 +349,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), copyCmdAnswer);
             future.complete(snapResult);
         } catch (Exception e) {
-            s_logger.debug("Failed to update snapshot state", e);
+            logger.debug("Failed to update snapshot state", e);
             snapResult.setResult(e.toString());
             future.complete(snapResult);
         }
@@ -364,7 +364,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotResult res = null;
         try {
             if (result.isFailed()) {
-                s_logger.debug("delete snapshot failed" + result.getResult());
+                logger.debug("delete snapshot failed" + result.getResult());
                 snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 res = new SnapshotResult(context.snapshot, null);
                 res.setResult(result.getResult());
@@ -373,7 +373,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to in deleteSnapshotCallback", e);
+            logger.debug("Failed to in deleteSnapshotCallback", e);
             res.setResult(e.toString());
         }
         future.complete(res);
@@ -387,14 +387,14 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotResult res = null;
         try {
             if (result.isFailed()) {
-                s_logger.debug("revert snapshot failed" + result.getResult());
+                logger.debug("revert snapshot failed" + result.getResult());
                 res = new SnapshotResult(context.snapshot, null);
                 res.setResult(result.getResult());
             } else {
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to in revertSnapshotCallback", e);
+            logger.debug("Failed to in revertSnapshotCallback", e);
             res.setResult(e.toString());
         }
         future.complete(res);
@@ -420,9 +420,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             }
             return true;
         } catch (InterruptedException e) {
-            s_logger.debug("delete snapshot is failed: " + e.toString());
+            logger.debug("delete snapshot is failed: " + e.toString());
         } catch (ExecutionException e) {
-            s_logger.debug("delete snapshot is failed: " + e.toString());
+            logger.debug("delete snapshot is failed: " + e.toString());
         }
 
         return false;
@@ -434,7 +434,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         PrimaryDataStore store = null;
         SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
         if (snapshotOnPrimaryStore == null) {
-            s_logger.warn("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools, searching with volume's primary storage pool");
+            logger.warn("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools, searching with volume's primary storage pool");
             VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
             store = (PrimaryDataStore)volumeInfo.getDataStore();
         } else {
@@ -456,9 +456,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             }
             return true;
         } catch (InterruptedException e) {
-            s_logger.debug("revert snapshot is failed: " + e.toString());
+            logger.debug("revert snapshot is failed: " + e.toString());
         } catch (ExecutionException e) {
-            s_logger.debug("revert snapshot is failed: " + e.toString());
+            logger.debug("revert snapshot is failed: " + e.toString());
         }
 
         return false;
@@ -487,13 +487,13 @@ public class SnapshotServiceImpl implements SnapshotService {
             if (snaphsot.getState() != Snapshot.State.BackedUp) {
                 List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshotId);
                 for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotDataStoreVOs) {
-                    s_logger.debug("Remove snapshot " + snapshotId + ", status " + snapshotDataStoreVO.getState() +
+                    logger.debug("Remove snapshot " + snapshotId + ", status " + snapshotDataStoreVO.getState() +
                             " on snapshot_store_ref table with id: " + snapshotDataStoreVO.getId());
 
                     _snapshotStoreDao.remove(snapshotDataStoreVO.getId());
                 }
 
-                s_logger.debug("Remove snapshot " + snapshotId + " status " + snaphsot.getState() + " from snapshot table");
+                logger.debug("Remove snapshot " + snapshotId + " status " + snaphsot.getState() + " from snapshot table");
                 _snapshotDao.remove(snapshotId);
             }
         }
@@ -510,8 +510,8 @@ public class SnapshotServiceImpl implements SnapshotService {
             throw new CloudRuntimeException("Cannot find an entry in snapshot_store_ref for snapshot " + snapshotId + " on region store: " + store.getName());
         }
         if (snapOnStore.getPath() == null || snapOnStore.getPath().length() == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("sync snapshot " + snapshotId + " from cache to object store...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("sync snapshot " + snapshotId + " from cache to object store...");
             }
             // snapshot is not on region store yet, sync to region store
             SnapshotInfo srcSnapshot = _snapshotFactory.getReadySnapshotOnCache(snapshotId);
@@ -567,7 +567,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             }
             future.complete(res);
         } catch (Exception e) {
-            s_logger.debug("Failed to process sync snapshot callback", e);
+            logger.debug("Failed to process sync snapshot callback", e);
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -581,7 +581,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             object.processEvent(event);
         } catch (NoTransitionException e) {
-            s_logger.debug("Unable to update the state " + e.toString());
+            logger.debug("Unable to update the state " + e.toString());
         }
     }
 
@@ -600,7 +600,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                     _snapshotDetailsDao.removeDetail(srcSnapshot.getId(), AsyncJob.Constants.MS_ID);
                     _snapshotDao.remove(srcSnapshot.getId());
                 } catch (NoTransitionException ex) {
-                    s_logger.debug("Failed to create backup " + ex.toString());
+                    logger.debug("Failed to create backup " + ex.toString());
                     throw new CloudRuntimeException("Failed to backup snapshot" + snapshot.getId());
                 }
             }

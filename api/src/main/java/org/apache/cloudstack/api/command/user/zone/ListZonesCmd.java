@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.zone;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +33,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 @APICommand(name = "listZones", description = "Lists zones", responseObject = ZoneResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListZonesCmd extends BaseListCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListZonesCmd.class.getName());
 
     private static final String s_name = "listzonesresponse";
 

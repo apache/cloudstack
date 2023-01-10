@@ -28,7 +28,7 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.api.ResponseObject;
 
 public class ApiSerializerHelper {
-    public static final Logger s_logger = Logger.getLogger(ApiSerializerHelper.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(ApiSerializerHelper.class);
     private static String token = "/";
 
     public static String toSerializedString(Object result) {
@@ -80,7 +80,7 @@ public class ApiSerializerHelper {
             }
             return null;
         } catch (RuntimeException e) {
-            s_logger.error("Caught runtime exception when doing GSON deserialization on: " + result);
+            LOGGER.error("Caught runtime exception when doing GSON deserialization on: " + result);
             throw e;
         }
     }
@@ -101,7 +101,7 @@ public class ApiSerializerHelper {
                 }
             }
         } catch (RuntimeException | JsonProcessingException e) {
-            s_logger.error("Caught runtime exception when doing GSON deserialization to map on: " + result, e);
+            LOGGER.error("Caught runtime exception when doing GSON deserialization to map on: " + result, e);
         }
 
         return objParams;

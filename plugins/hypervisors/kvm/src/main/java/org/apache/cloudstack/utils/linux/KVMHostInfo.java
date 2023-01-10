@@ -46,7 +46,7 @@ import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
 
-    private static final Logger LOGGER = Logger.getLogger(KVMHostInfo.class);
+    protected static Logger LOGGER = Logger.getLogger(KVMHostInfo.class);
 
     private int cpus;
     private int cpusockets;

@@ -25,7 +25,6 @@ import javax.inject.Inject;
 
 import com.cloud.vm.VMInstanceVO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -40,7 +39,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class HostAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private static final Logger s_logger = Logger.getLogger(HostAffinityProcessor.class);
 
     @Inject
     protected VMInstanceDao _vmInstanceDao;
@@ -65,7 +63,7 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
      */
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
         AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
-        s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
 
         List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
         groupVMIds.remove(vm.getId());

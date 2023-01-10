@@ -29,11 +29,11 @@ public enum DiskControllerType {
         if (diskController == null || diskController.equalsIgnoreCase("osdefault")) {
             return DiskControllerType.osdefault;
         } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualLsiLogicSASController") || diskController.equalsIgnoreCase("VirtualLsiLogicSASController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSILOGIC_SAS_1068)
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSILOGIC_SAS)) {
+                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSIloggerIC_SAS_1068)
+                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSIloggerIC_SAS)) {
             return DiskControllerType.lsisas1068;
         } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualLsiLogicController") || diskController.equalsIgnoreCase("VirtualLsiLogicController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSILOGIC_PARALLEL) || diskController.equalsIgnoreCase("scsi")) {
+                || diskController.equalsIgnoreCase(ScsiDiskControllerType.LSIloggerIC_PARALLEL) || diskController.equalsIgnoreCase("scsi")) {
             return DiskControllerType.lsilogic;
         } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualIDEController") || diskController.equalsIgnoreCase("VirtualIDEController")
                 || diskController.equalsIgnoreCase("ide")) {
@@ -43,7 +43,7 @@ public enum DiskControllerType {
                 || diskController.equalsIgnoreCase(ScsiDiskControllerType.VIRTUAL_SCSI)) {
             return DiskControllerType.pvscsi;
         } else if (diskController.equalsIgnoreCase("vim.vm.device.VirtualBusLogicController") || diskController.equalsIgnoreCase("VirtualBusLogicController")
-                || diskController.equalsIgnoreCase(ScsiDiskControllerType.BUSLOGIC)) {
+                || diskController.equalsIgnoreCase(ScsiDiskControllerType.BUSloggerIC)) {
             return DiskControllerType.buslogic;
         } else {
             return DiskControllerType.none;

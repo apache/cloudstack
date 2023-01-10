@@ -37,7 +37,7 @@ public enum RoleType {
     private Account.Type accountType;
     private int mask;
 
-    private static Logger logger = Logger.getLogger(RoleType.class.getName());
+    private static Logger LOGGER = Logger.getLogger(RoleType.class.getName());
     private static Map<Account.Type, RoleType> ACCOUNT_TYPE_MAP = new HashMap<>();
 
     static {
@@ -104,10 +104,10 @@ public enum RoleType {
      * */
     public static Account.Type getAccountTypeByRole(final Role role, final Account.Type defautAccountType) {
         if (role != null) {
-            logger.debug(String.format("Role [%s] is not null; therefore, we use its account type [%s].", role, defautAccountType));
+            LOGGER.debug(String.format("Role [%s] is not null; therefore, we use its account type [%s].", role, defautAccountType));
             return role.getRoleType().getAccountType();
         }
-        logger.debug(String.format("Role is null; therefore, we use the default account type [%s] value.", defautAccountType));
+        LOGGER.debug(String.format("Role is null; therefore, we use the default account type [%s] value.", defautAccountType));
         return defautAccountType;
     }
 }

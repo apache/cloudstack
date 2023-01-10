@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
@@ -82,7 +81,6 @@ import com.cloud.vm.VirtualMachineProfile;
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements NetworkGuruAdditionalFunctions{
     private static final int MAX_NAME_LENGTH = 40;
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
 
     @Inject
     protected NetworkModel networkModel;
@@ -143,18 +141,18 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         final PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         final DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
-            s_logger.debug("Refusing to design this network");
+            logger.debug("Refusing to design this network");
             return null;
         }
 
         final List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(physnet.getId());
         if (devices.isEmpty()) {
-            s_logger.error("No NiciraNvp Controller on physical network " + physnet.getName());
+            logger.error("No NiciraNvp Controller on physical network " + physnet.getName());
             return null;
         }
-        s_logger.debug("Nicira Nvp " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
+        logger.debug("Nicira Nvp " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
 
-        s_logger.debug("Physical isolation type is supported, asking GuestNetworkGuru to design this network");
+        logger.debug("Physical isolation type is supported, asking GuestNetworkGuru to design this network");
         final NetworkVO networkObject = (NetworkVO) super.design(offering, plan, userSpecified, owner);
         if (networkObject == null) {
             return null;
@@ -203,7 +201,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
 
         final List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(physicalNetworkId);
         if (devices.isEmpty()) {
-            s_logger.error("No NiciraNvp Controller on physical network " + physicalNetworkId);
+            logger.error("No NiciraNvp Controller on physical network " + physicalNetworkId);
             return null;
         }
         final NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
@@ -217,7 +215,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
                 checkL2GatewayServiceSharedNetwork(niciraNvpHost);
             }
             catch (Exception e){
-                s_logger.error("L2 Gateway Service Issue: " + e.getMessage());
+                logger.error("L2 Gateway Service Issue: " + e.getMessage());
                 return null;
             }
         }
@@ -227,16 +225,16 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         final CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("CreateLogicalSwitchCommand failed");
+            logger.error("CreateLogicalSwitchCommand failed");
             return null;
         }
 
         try {
             implemented.setBroadcastUri(new URI("lswitch", answer.getLogicalSwitchUuid(), null));
             implemented.setBroadcastDomainType(BroadcastDomainType.Lswitch);
-            s_logger.info("Implemented OK, network linked to  = " + implemented.getBroadcastUri().toString());
+            logger.info("Implemented OK, network linked to  = " + implemented.getBroadcastUri().toString());
         } catch (final URISyntaxException e) {
-            s_logger.error("Unable to store logical switch id in broadcast uri, uuid = " + implemented.getUuid(), e);
+            logger.error("Unable to store logical switch id in broadcast uri, uuid = " + implemented.getUuid(), e);
             return null;
         }
 
@@ -278,13 +276,13 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
     public void shutdown(final NetworkProfile profile, final NetworkOffering offering) {
         final NetworkVO networkObject = networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Lswitch || networkObject.getBroadcastUri() == null) {
-            s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
             return;
         }
 
         final List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(networkObject.getPhysicalNetworkId());
         if (devices.isEmpty()) {
-            s_logger.error("No NiciraNvp Controller on physical network " + networkObject.getPhysicalNetworkId());
+            logger.error("No NiciraNvp Controller on physical network " + networkObject.getPhysicalNetworkId());
             return;
         }
         final NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
@@ -300,7 +298,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         final DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("DeleteLogicalSwitchCommand failed");
+            logger.error("DeleteLogicalSwitchCommand failed");
         }
 
         super.shutdown(profile, offering);
@@ -310,30 +308,30 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(networkObject.getId());
         if (routermapping == null) {
             // Case 1: Numerical Vlan Provided -> No lrouter used.
-            s_logger.info("Shared Network " + networkObject.getDisplayText() + " didn't use Logical Router");
+            logger.info("Shared Network " + networkObject.getDisplayText() + " didn't use Logical Router");
         }
         else {
             //Case 2: Logical Router's UUID provided as Vlan id -> Remove lrouter port but not lrouter.
             String lRouterUuid = routermapping.getLogicalRouterUuid();
-            s_logger.debug("Finding Logical Router Port on Logical Router " + lRouterUuid + " with attachment_lswitch_uuid=" + logicalSwitchUuid + " to delete it");
+            logger.debug("Finding Logical Router Port on Logical Router " + lRouterUuid + " with attachment_lswitch_uuid=" + logicalSwitchUuid + " to delete it");
             final FindLogicalRouterPortCommand cmd = new FindLogicalRouterPortCommand(lRouterUuid, logicalSwitchUuid);
             final FindLogicalRouterPortAnswer answer = (FindLogicalRouterPortAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
             if (answer != null && answer.getResult()) {
                 String logicalRouterPortUuid = answer.getLogicalRouterPortUuid();
-                s_logger.debug("Found Logical Router Port " + logicalRouterPortUuid + ", deleting it");
+                logger.debug("Found Logical Router Port " + logicalRouterPortUuid + ", deleting it");
                 final DeleteLogicalRouterPortCommand cmdDeletePort = new DeleteLogicalRouterPortCommand(lRouterUuid, logicalRouterPortUuid);
                 final DeleteLogicalRouterPortAnswer answerDelete = (DeleteLogicalRouterPortAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmdDeletePort);
 
                 if (answerDelete != null && answerDelete.getResult()){
-                    s_logger.info("Successfully deleted Logical Router Port " + logicalRouterPortUuid);
+                    logger.info("Successfully deleted Logical Router Port " + logicalRouterPortUuid);
                 }
                 else {
-                    s_logger.error("Could not delete Logical Router Port " + logicalRouterPortUuid);
+                    logger.error("Could not delete Logical Router Port " + logicalRouterPortUuid);
                 }
             }
             else {
-                s_logger.error("Find Logical Router Port failed");
+                logger.error("Find Logical Router Port failed");
             }
         }
     }

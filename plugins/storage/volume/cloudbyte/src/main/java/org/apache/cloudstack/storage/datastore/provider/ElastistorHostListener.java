@@ -60,7 +60,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ElastistorHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+    protected Logger logger = Logger.getLogger(getClass());
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -117,7 +117,7 @@ public class ElastistorHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=" + pool.getId() + "Host=" + hostId;
 
-        s_logger.info("Connection established between " + pool + " host + " + hostId);
+        logger.info("Connection established between " + pool + " host + " + hostId);
         return true;
     }
 

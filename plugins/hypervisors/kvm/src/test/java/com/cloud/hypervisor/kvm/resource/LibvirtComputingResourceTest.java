@@ -278,7 +278,7 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy.parser = parserMock;
         Scanner scanner = new Scanner(memInfo);
         PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
-        LibvirtComputingResource.s_logger = loggerMock;
+        LibvirtComputingResource.LOGGER = loggerMock;
     }
 
     /**

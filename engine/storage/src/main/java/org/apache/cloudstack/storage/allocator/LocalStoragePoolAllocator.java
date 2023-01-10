@@ -26,7 +26,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.dao.CapacityDao;
@@ -44,7 +43,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(LocalStoragePoolAllocator.class);
 
     @Inject
     StoragePoolHostDao _poolHostDao;
@@ -64,11 +62,11 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && !dskCh.useLocalStorage()) {
-            s_logger.debug("LocalStoragePoolAllocator is returning null since the disk profile does not use local storage and bypassStorageTypeCheck is false.");
+            logger.debug("LocalStoragePoolAllocator is returning null since the disk profile does not use local storage and bypassStorageTypeCheck is false.");
             return null;
         }
 
-        if (s_logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
             logDisabledStoragePools(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
         }
@@ -82,7 +80,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
-                        s_logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
+                        logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
                         suitablePools.add(storagePool);
                     } else {
                         avoid.addPool(pool.getId());
@@ -96,7 +94,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
         } else {
             if (plan.getPodId() == null) {
                 // zone wide primary storage deployment
-                s_logger.debug("LocalStoragePoolAllocator is returning null since both the host ID and pod ID are null. That means this should be a zone wide primary storage deployment.");
+                logger.debug("LocalStoragePoolAllocator is returning null since both the host ID and pod ID are null. That means this should be a zone wide primary storage deployment.");
                 return null;
             }
             List<StoragePoolVO> availablePools =

@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -59,10 +58,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractConfigItemFacade {
 
-    private static final Logger s_logger = Logger.getLogger(AbstractConfigItemFacade.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private final static Gson gson;
 
@@ -123,8 +123,8 @@ public abstract class AbstractConfigItemFacade {
         final List<ConfigItem> cfg = new LinkedList<>();
 
         final String remoteFilename = appendUuidToJsonFiles(destinationFile);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Transformed filename: " + destinationFile + " to: " + remoteFilename);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Transformed filename: " + destinationFile + " to: " + remoteFilename);
         }
 
         final ConfigItem configFile = new FileConfigItem(VRScripts.CONFIG_PERSIST_LOCATION, remoteFilename, gson.toJson(configuration));

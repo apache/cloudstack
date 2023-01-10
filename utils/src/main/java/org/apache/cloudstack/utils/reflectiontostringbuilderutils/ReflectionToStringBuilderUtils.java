@@ -37,7 +37,7 @@ import org.reflections.ReflectionUtils;
  * - Reflect only selected fields (ReflectionToStringBuilder just has methods to exclude fields).
  */
 public class ReflectionToStringBuilderUtils {
-    protected static final Logger LOGGER = Logger.getLogger(ReflectionToStringBuilderUtils.class);
+    protected static Logger LOGGER = Logger.getLogger(ReflectionToStringBuilderUtils.class);
     private static final ToStringStyle DEFAULT_STYLE = ToStringStyle.JSON_STYLE;
 
     /**

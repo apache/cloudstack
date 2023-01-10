@@ -21,7 +21,6 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
@@ -66,7 +65,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.googlecode.ipv6.IPv6Address;
 
 public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGuru.class);
 
     @Inject
     DataCenterDao _dcDao;
@@ -89,7 +87,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         if (dc.getNetworkType() == NetworkType.Basic && isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest Direct Pod based networks");
+            logger.trace("We only take care of Guest Direct Pod based networks");
             return false;
         }
     }
@@ -185,7 +183,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                             if (placeholderNic != null) {
                                 IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIPv4Address());
                                 ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                                s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
+                                logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network +
                                     " and gateway " + podRangeGateway);
                             }
                         }
@@ -210,7 +208,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                         if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                             Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, pod.getId());
                             if (placeholderNic == null) {
-                                s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
+                                logger.debug("Saving placeholder nic with ip4 address " + nic.getIPv4Address() + " for the network " + network);
                                 _networkMgr.savePlaceholderNic(network, nic.getIPv4Address(), null, VirtualMachine.Type.DomainRouter);
                             }
                         }
@@ -228,16 +226,16 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                  */
                 if (vlan.getIp6Cidr() != null) {
                     if (nic.getIPv6Address() == null) {
-                        s_logger.debug("Found IPv6 CIDR " + vlan.getIp6Cidr() + " for VLAN " + vlan.getId());
+                        logger.debug("Found IPv6 CIDR " + vlan.getIp6Cidr() + " for VLAN " + vlan.getId());
                         nic.setIPv6Cidr(vlan.getIp6Cidr());
                         nic.setIPv6Gateway(vlan.getIp6Gateway());
 
                         IPv6Address ipv6addr = NetUtils.EUI64Address(vlan.getIp6Cidr(), nic.getMacAddress());
-                        s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
+                        logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
                         nic.setIPv6Address(ipv6addr.toString());
                     }
                 } else {
-                    s_logger.debug("No IPv6 CIDR configured for VLAN " + vlan.getId());
+                    logger.debug("No IPv6 CIDR configured for VLAN " + vlan.getId());
                 }
             }
         });

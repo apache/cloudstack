@@ -26,7 +26,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class ConstantTimeBackoffTest {
-    private static final Logger LOG = Logger.getLogger(ConstantTimeBackoffTest.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Test
     public void waitBeforeRetryWithInterrupt() throws InterruptedException {
@@ -98,15 +98,15 @@ public class ConstantTimeBackoffTest {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                LOG.debug("before");
+                logger.debug("before");
                 backoff.waitBeforeRetry();
-                LOG.debug("after");
+                logger.debug("after");
             }
         });
         thread.start();
-        LOG.debug("thread started");
+        logger.debug("thread started");
         Thread.sleep(100);
-        LOG.debug("testing wakeup");
+        logger.debug("testing wakeup");
         Assert.assertTrue(backoff.wakeup(thread.getName()));
     }
 }

@@ -55,7 +55,7 @@ import java.util.List;
 
 public class ElastistorUtil {
 
-    private static final Logger s_logger = Logger.getLogger(ElastistorUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(ElastistorUtil.class);
 
     private static ConfigurationDao configurationDao;
 
@@ -542,7 +542,7 @@ public class ElastistorUtil {
             UpdateControllerResponse controllerResponse = (UpdateControllerResponse) getElastistorRestClient().executeCommand(controllerCmd);
 
             if (controllerResponse.getController().getUuid() != null) {
-                s_logger.info("updated nfs service to ALL");
+                LOGGER.info("updated nfs service to ALL");
                 return nfsServiceResponse.getNfsService().getDatasetid();
             } else {
                 throw new CloudRuntimeException("Updating Nfs Volume Failed");
@@ -617,7 +617,7 @@ public class ElastistorUtil {
 
         if (!managed) {
 
-            s_logger.info("elastistor pool is NOT a managed storage , hence deleting the volume then tsm");
+            LOGGER.info("elastistor pool is NOT a managed storage , hence deleting the volume then tsm");
 
             String esvolumeid = null;
             ListTsmsResponse listTsmsResponse = listTsm(tsmid);
@@ -633,9 +633,9 @@ public class ElastistorUtil {
                         int jobstatus = queryAsyncJobResult(jobid);
 
                         if (jobstatus == 1) {
-                            s_logger.info("elastistor volume successfully deleted");
+                            LOGGER.info("elastistor volume successfully deleted");
                         } else {
-                            s_logger.info("now farce deleting the volume");
+                            LOGGER.info("now farce deleting the volume");
 
                             while (jobstatus != 1) {
                                 DeleteVolumeResponse deleteVolumeResponse1 = deleteVolume(esvolumeid, "true");
@@ -645,17 +645,17 @@ public class ElastistorUtil {
                                     jobstatus = queryAsyncJobResult(jobid1);
                                 }
                             }
-                            s_logger.info("elastistor volume successfully deleted");
+                            LOGGER.info("elastistor volume successfully deleted");
                         }
                     }
                 } else {
-                    s_logger.info("no volume present in on the given tsm");
+                    LOGGER.info("no volume present in on the given tsm");
                 }
 
             }
         }
 
-        s_logger.info("now trying to delete elastistor tsm");
+        LOGGER.info("now trying to delete elastistor tsm");
 
         if (tsmid != null) {
             DeleteTsmCmd deleteTsmCmd = new DeleteTsmCmd();
@@ -666,22 +666,22 @@ public class ElastistorUtil {
                 String jobstatus = deleteTsmResponse.getJobStatus();
 
                 if (jobstatus.equalsIgnoreCase("true")) {
-                    s_logger.info("deletion of elastistor tsm successful");
+                    LOGGER.info("deletion of elastistor tsm successful");
                     return true;
                 } else {
-                    s_logger.info("failed to delete elastistor tsm");
+                    LOGGER.info("failed to delete elastistor tsm");
                     return false;
                 }
             } else {
-                s_logger.info("elastistor tsm id not present");
+                LOGGER.info("elastistor tsm id not present");
             }
         }
-        s_logger.info("tsm id is null");
+        LOGGER.info("tsm id is null");
         return false;
 
         /*
-         * else { s_logger.error("no volume is present in the tsm"); } } else {
-         * s_logger.error(
+         * else { LOGGER.error("no volume is present in the tsm"); } } else {
+         * LOGGER.error(
          * "List tsm failed, no tsm present in the eastistor for the given IP "
          * ); return false; } return false;
          */
@@ -700,10 +700,10 @@ public class ElastistorUtil {
                 int jobstatus = queryAsyncJobResult(jobid);
 
                 if (jobstatus == 1) {
-                    s_logger.info("elastistor volume successfully deleted");
+                    LOGGER.info("elastistor volume successfully deleted");
                     return true;
                 } else {
-                    s_logger.info("now force deleting the volume");
+                    LOGGER.info("now force deleting the volume");
 
                     while (jobstatus != 1) {
                         DeleteVolumeResponse deleteVolumeResponse1 = deleteVolume(esvolumeid, "true");
@@ -713,15 +713,15 @@ public class ElastistorUtil {
                             jobstatus = queryAsyncJobResult(jobid1);
                         }
                     }
-                    s_logger.info("elastistor volume successfully deleted");
+                    LOGGER.info("elastistor volume successfully deleted");
                     return true;
                 }
             } else {
-                s_logger.info("the given volume is not present on elastistor, datasetrespone is NULL");
+                LOGGER.info("the given volume is not present on elastistor, datasetrespone is NULL");
                 return false;
             }
         } else {
-            s_logger.info("the given volume is not present on elastistor");
+            LOGGER.info("the given volume is not present on elastistor");
             return false;
         }
 
@@ -2498,7 +2498,7 @@ public class ElastistorUtil {
          }else{
             quotasize = String.valueOf(quotasize) + "G";
          }
-         s_logger.info("elastistor tsm storage is updating to " + quotasize);
+         LOGGER.info("elastistor tsm storage is updating to " + quotasize);
          UpdateTsmStorageCmd updateTsmStorageCmd = new UpdateTsmStorageCmd();
 
          updateTsmStorageCmd.putCommandParameter("id", uuid);
@@ -2565,7 +2565,7 @@ public class ElastistorUtil {
   // update the TSM IOPS
      public static UpdateTsmCmdResponse updateElastistorTsmIOPS(String capacityIOPs,String uuid) throws Throwable{
 
-         s_logger.info("elastistor tsm IOPS is updating to " + capacityIOPs);
+         LOGGER.info("elastistor tsm IOPS is updating to " + capacityIOPs);
          UpdateTsmCmd updateTsmCmd = new UpdateTsmCmd();
          String throughput = String.valueOf(Long.parseLong(capacityIOPs)*4);
 

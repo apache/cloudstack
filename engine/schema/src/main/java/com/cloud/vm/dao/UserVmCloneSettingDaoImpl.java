@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.DB;
@@ -33,7 +32,6 @@ import com.cloud.vm.UserVmCloneSettingVO;
 @Component
 @DB()
 public class UserVmCloneSettingDaoImpl extends GenericDaoBase<UserVmCloneSettingVO, Long> implements UserVmCloneSettingDao {
-    public static final Logger s_logger = Logger.getLogger(UserVmCloneSettingDaoImpl.class);
 
     protected SearchBuilder<UserVmCloneSettingVO> vmIdSearch;
     protected SearchBuilder<UserVmCloneSettingVO> cloneTypeSearch;

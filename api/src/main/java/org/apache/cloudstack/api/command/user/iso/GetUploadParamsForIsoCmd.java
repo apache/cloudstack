@@ -134,7 +134,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            s_logger.error("Exception while registering template", e);
+            logger.error("Exception while registering template", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Exception while registering ISO: " + e.getMessage());
         }
     }

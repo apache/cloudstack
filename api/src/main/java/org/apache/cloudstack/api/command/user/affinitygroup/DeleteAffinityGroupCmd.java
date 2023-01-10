@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.affinitygroup;
 
 
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -40,7 +39,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteAffinityGroup", description = "Deletes affinity group", responseObject = SuccessResponse.class, entityType = {AffinityGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteAffinityGroupCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

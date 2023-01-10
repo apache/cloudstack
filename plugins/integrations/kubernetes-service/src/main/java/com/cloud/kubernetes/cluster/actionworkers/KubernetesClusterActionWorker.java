@@ -97,7 +97,7 @@ public class KubernetesClusterActionWorker {
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
 
-    protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterActionWorker.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
@@ -195,7 +195,7 @@ public class KubernetesClusterActionWorker {
             }
             Set<String> vm = new HashSet<>();
             vm.add(userVM.getName());
-            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
+            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_loggerIN_USER);
             if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
                 return vmDetail.getValue();
             } else {
@@ -208,32 +208,32 @@ public class KubernetesClusterActionWorker {
 
     protected void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.INFO) {
-            if (LOGGER.isInfoEnabled()) {
+            if (logger.isInfoEnabled()) {
                 if (e != null) {
-                    LOGGER.info(message, e);
+                    logger.info(message, e);
                 } else {
-                    LOGGER.info(message);
+                    logger.info(message);
                 }
             }
         } else if (logLevel == Level.DEBUG) {
-            if (LOGGER.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 if (e != null) {
-                    LOGGER.debug(message, e);
+                    logger.debug(message, e);
                 } else {
-                    LOGGER.debug(message);
+                    logger.debug(message);
                 }
             }
         } else if (logLevel == Level.WARN) {
             if (e != null) {
-                LOGGER.warn(message, e);
+                logger.warn(message, e);
             } else {
-                LOGGER.warn(message);
+                logger.warn(message);
             }
         } else {
             if (e != null) {
-                LOGGER.error(message, e);
+                logger.error(message, e);
             } else {
-                LOGGER.error(message);
+                logger.error(message);
             }
         }
     }
@@ -251,7 +251,7 @@ public class KubernetesClusterActionWorker {
 
     protected void deleteTemplateLaunchPermission() {
         if (clusterTemplate != null && owner != null) {
-            LOGGER.info("Revoking launch permission for systemVM template");
+            logger.info("Revoking launch permission for systemVM template");
             launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
         }
     }
@@ -306,7 +306,7 @@ public class KubernetesClusterActionWorker {
         }
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (CollectionUtils.isEmpty(clusterVMs)) {
-            LOGGER.warn(String.format("Unable to retrieve VMs for Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.warn(String.format("Unable to retrieve VMs for Kubernetes cluster : %s", kubernetesCluster.getName()));
             return null;
         }
         List<Long> vmIds = new ArrayList<>();
@@ -334,13 +334,13 @@ public class KubernetesClusterActionWorker {
         }
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         if (network == null) {
-            LOGGER.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
+            logger.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
             List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), true);
             if (CollectionUtils.isEmpty(addresses)) {
-                LOGGER.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+                logger.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
             for (IpAddress address : addresses) {
@@ -348,18 +348,18 @@ public class KubernetesClusterActionWorker {
                     return new Pair<>(address.getAddress().addr(), port);
                 }
             }
-            LOGGER.warn(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+            logger.warn(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             return new Pair<>(null, port);
         } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
             port = 22;
             controlVm = fetchControlVmIfMissing(controlVm);
             if (controlVm == null) {
-                LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
+                logger.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
                 return new Pair<>(null, port);
             }
             return new Pair<>(controlVm.getPrivateIpAddress(), port);
         }
-        LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
+        logger.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
     }
 
@@ -390,8 +390,8 @@ public class KubernetesClusterActionWorker {
         for (UserVm vm : clusterVMs) {
             try {
                 templateService.attachIso(iso.getId(), vm.getId(), true);
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
             } catch (CloudRuntimeException ex) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM : %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
@@ -409,15 +409,15 @@ public class KubernetesClusterActionWorker {
             try {
                 result = templateService.detachIso(vm.getId(), true);
             } catch (CloudRuntimeException ex) {
-                LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
+                logger.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }
             if (result) {
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Detached Kubernetes binaries from VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("Detached Kubernetes binaries from VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
                 }
                 continue;
             }
-            LOGGER.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()));
+            logger.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()));
         }
     }
 
@@ -449,7 +449,7 @@ public class KubernetesClusterActionWorker {
             for (Long vmId : clusterVMs) {
                 UserVm controlNode = userVmDao.findById(vmId);
                 if (controlNode != null) {
-                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
+                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_loggerIN_USER, CLUSTER_NODE_VM_USER, true);
                 }
             }
         }
@@ -460,7 +460,7 @@ public class KubernetesClusterActionWorker {
         try {
             return _stateMachine.transitTo(kubernetesCluster, e, null, kubernetesClusterDao);
         } catch (NoTransitionException nte) {
-            LOGGER.warn(String.format("Failed to transition state of the Kubernetes cluster : %s in state %s on event %s",
+            logger.warn(String.format("Failed to transition state of the Kubernetes cluster : %s in state %s on event %s",
                 kubernetesCluster.getName(), kubernetesCluster.getState().toString(), e.toString()), nte);
             return false;
         }
@@ -481,7 +481,7 @@ public class KubernetesClusterActionWorker {
             return result.first();
         } catch (Exception e) {
             String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
-            LOGGER.warn(msg, e);
+            logger.warn(msg, e);
         }
         return false;
     }

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addGuestOsMapping", description = "Adds a guest OS name to hypervisor OS name mapping", responseObject = GuestOsMappingResponse.class,
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddGuestOsMappingCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

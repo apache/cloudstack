@@ -57,7 +57,7 @@ import java.util.UUID;
 
 public class DateraUtil {
 
-    private static final Logger s_logger = Logger.getLogger(DateraUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(DateraUtil.class);
     private static final String API_VERSION = "v2";
 
     public static final String PROVIDER_NAME = "Datera";
@@ -296,7 +296,7 @@ public class DateraUtil {
 
     public static DateraObject.AppInstance cloneAppInstanceFromVolume(DateraObject.DateraConnection conn, String name,
             String srcCloneName, String ipPool) throws UnsupportedEncodingException, DateraObject.DateraError {
-        s_logger.debug("cloneAppInstanceFromVolume() called");
+        LOGGER.debug("cloneAppInstanceFromVolume() called");
         DateraObject.AppInstance srcAppInstance = getAppInstance(conn, srcCloneName);
 
         if (srcAppInstance == null) {
@@ -1002,7 +1002,7 @@ public class DateraUtil {
         final String tokens[] = iqnPath.split("/");
         if (tokens.length != 3) {
             final String msg = "Wrong iscsi path " + iqnPath + " it should be /targetIQN/LUN";
-            s_logger.warn(msg);
+            LOGGER.warn(msg);
             return null;
         }
 

@@ -41,7 +41,7 @@ import com.cloud.storage.ScopeType;
 
 public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    private static final Logger s_logger = Logger.getLogger(SwiftImageStoreLifeCycleImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
@@ -66,7 +66,7 @@ public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        s_logger.info("Trying to add a swift store at " + url + " in data center " + dcId);
+        logger.info("Trying to add a swift store at " + url + " in data center " + dcId);
 
         // just need to insert an entry in DB
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();

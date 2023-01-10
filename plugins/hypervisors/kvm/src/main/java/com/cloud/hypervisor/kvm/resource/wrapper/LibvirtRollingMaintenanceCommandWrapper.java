@@ -28,14 +28,12 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.resource.RollingMaintenanceManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 
 @ResourceWrapper(handles =  RollingMaintenanceCommand.class)
 public class LibvirtRollingMaintenanceCommandWrapper extends CommandWrapper<RollingMaintenanceCommand, RollingMaintenanceAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRollingMaintenanceCommandWrapper.class);
 
     @Override
     public RollingMaintenanceAnswer execute(RollingMaintenanceCommand command, LibvirtComputingResource resource) {
@@ -49,16 +47,16 @@ public class LibvirtRollingMaintenanceCommandWrapper extends CommandWrapper<Roll
             if (command.isCheckMaintenanceScript()) {
                 return new RollingMaintenanceAnswer(command, scriptFile != null);
             } else if (scriptFile == null) {
-                s_logger.info("No script file defined for stage " + stage + ". Skipping stage...");
+                logger.info("No script file defined for stage " + stage + ". Skipping stage...");
                 return new RollingMaintenanceAnswer(command, true, "Skipped stage " + stage, true);
             }
 
             if (command.isStarted() && executor instanceof RollingMaintenanceAgentExecutor) {
                 String msg = "Stage has been started previously and the agent restarted, setting stage as finished";
-                s_logger.info(msg);
+                logger.info(msg);
                 return new RollingMaintenanceAnswer(command, true, msg, true);
             }
-            s_logger.info("Processing stage " + stage);
+            logger.info("Processing stage " + stage);
             if (!command.isStarted()) {
                 executor.startStageExecution(stage, scriptFile, timeout, payload);
             }
@@ -69,10 +67,10 @@ public class LibvirtRollingMaintenanceCommandWrapper extends CommandWrapper<Roll
             String output = executor.getStageExecutionOutput(stage, scriptFile);
             RollingMaintenanceAnswer answer = new RollingMaintenanceAnswer(command, success, output, true);
             if (executor.getStageAvoidMaintenance(stage, scriptFile)) {
-                s_logger.info("Avoid maintenance flag added to the answer for the stage " + stage);
+                logger.info("Avoid maintenance flag added to the answer for the stage " + stage);
                 answer.setAvoidMaintenance(true);
             }
-            s_logger.info("Finished processing stage " + stage);
+            logger.info("Finished processing stage " + stage);
             return answer;
         } catch (CloudRuntimeException e) {
             return new RollingMaintenanceAnswer(command, false, e.getMessage(), false);

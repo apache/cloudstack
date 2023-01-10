@@ -46,10 +46,10 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     private final String _password;
     private String _cookie;
 
-    private static final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
+    protected static Logger LOGGER = Logger.getLogger(CiscoVnmcConnectionImpl.class);
 
     private enum VnmcXml {
-        LOGIN("login.xml", "mgmt-controller"),
+        LOGGERIN("login.xml", "mgmt-controller"),
 
         CREATE_TENANT("create-tenant.xml", "service-reg"),
         DELETE_TENANT("delete-tenant.xml", "service-reg"),
@@ -141,7 +141,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
                 return xml;
             } catch (Exception e) {
-                s_logger.debug(e);
+                LOGGER.debug(e);
                 return null;
             }
         }
@@ -159,8 +159,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     public boolean login() throws ExecutionException {
-        String xml = VnmcXml.LOGIN.getXml();
-        String service = VnmcXml.LOGIN.getService();
+        String xml = VnmcXml.LOGGERIN.getXml();
+        String service = VnmcXml.LOGGERIN.getService();
         xml = replaceXmlValue(xml, "username", _username);
         xml = replaceXmlValue(xml, "password", _password);
         String response = sendRequest(service, xml);
@@ -1291,7 +1291,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
             doc = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder().parse(xmlSource);
 
         } catch (Exception e) {
-            s_logger.error(e);
+            LOGGER.error(e);
             throw new ExecutionException(e.getMessage());
         }
 

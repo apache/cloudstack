@@ -17,10 +17,10 @@
 package com.cloud.hypervisor.vmware.mo;
 
 public interface ScsiDiskControllerType {
-    String LSILOGIC_PARALLEL = "lsilogic";
-    String LSILOGIC_SAS = "lsilogicsas";
-    String LSILOGIC_SAS_1068 = "lsisas1068";
-    String BUSLOGIC = "buslogic";
+    String LSIloggerIC_PARALLEL = "lsilogic";
+    String LSIloggerIC_SAS = "lsilogicsas";
+    String LSIloggerIC_SAS_1068 = "lsisas1068";
+    String BUSloggerIC = "buslogic";
     String VMWARE_PARAVIRTUAL = "pvscsi";
     String VIRTUAL_SCSI = "VirtualSCSI";
 }

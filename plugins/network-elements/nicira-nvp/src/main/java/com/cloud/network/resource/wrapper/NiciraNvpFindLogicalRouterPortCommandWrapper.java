@@ -23,7 +23,6 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.FindLogicalRouterPortAnswer;
@@ -39,7 +38,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  FindLogicalRouterPortCommand.class)
 public class NiciraNvpFindLogicalRouterPortCommandWrapper extends CommandWrapper<FindLogicalRouterPortCommand, Answer, NiciraNvpResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpFindLogicalRouterPortCommandWrapper.class);
 
     @Override
     public Answer execute(FindLogicalRouterPortCommand command, NiciraNvpResource niciraNvpResource) {
@@ -47,7 +45,7 @@ public class NiciraNvpFindLogicalRouterPortCommandWrapper extends CommandWrapper
         final String attachmentLswitchUuid = command.getAttachmentLswitchUuid();
         final NiciraNvpApi niciraNvpApi = niciraNvpResource.getNiciraNvpApi();
 
-        s_logger.debug("Finding Logical Router Port in Logical Router " + logicalRouterUuid + " and attachmentLSwitchUuid " + attachmentLswitchUuid);
+        logger.debug("Finding Logical Router Port in Logical Router " + logicalRouterUuid + " and attachmentLSwitchUuid " + attachmentLswitchUuid);
 
         try{
             List<LogicalRouterPort> lRouterPorts = niciraNvpApi.findLogicalRouterPortByAttachmentLSwitchUuid(logicalRouterUuid, attachmentLswitchUuid);
@@ -58,7 +56,7 @@ public class NiciraNvpFindLogicalRouterPortCommandWrapper extends CommandWrapper
             }
         }
         catch (NiciraNvpApiException e){
-            s_logger.error("Error finding Logical Router Port due to: " + e.getMessage());
+            logger.error("Error finding Logical Router Port due to: " + e.getMessage());
             final CommandRetryUtility retryUtility = niciraNvpResource.getRetryUtility();
             retryUtility.addRetry(command, NUM_RETRIES);
             return retryUtility.retry(command, FindLogicalRouterPortAnswer.class, e);

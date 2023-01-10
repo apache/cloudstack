@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api;
 
 
-import org.apache.log4j.Logger;
 
 /**
  * queryAsyncJobResult API command.
@@ -30,7 +29,6 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String migrationSyncObject = "migration";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalancer";
-    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class.getName());
 
     private Object job;
 

@@ -30,7 +30,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.StorageProviderResponse;
@@ -48,7 +47,6 @@ import com.cloud.utils.component.Registry;
 
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager, Registry<DataStoreProvider> {
-    private static final Logger s_logger = Logger.getLogger(DataStoreProviderManagerImpl.class);
 
     List<DataStoreProvider> providers;
     protected Map<String, DataStoreProvider> providerMap = new ConcurrentHashMap<String, DataStoreProvider>();
@@ -123,18 +121,18 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
 
         String providerName = provider.getName();
         if (providerMap.get(providerName) != null) {
-            s_logger.debug("Did not register data store provider, provider name: " + providerName + " is not unique");
+            logger.debug("Did not register data store provider, provider name: " + providerName + " is not unique");
             return false;
         }
 
-        s_logger.debug("registering data store provider:" + provider.getName());
+        logger.debug("registering data store provider:" + provider.getName());
 
         providerMap.put(providerName, provider);
         try {
             boolean registrationResult = provider.configure(copyParams);
             if (!registrationResult) {
                 providerMap.remove(providerName);
-                s_logger.debug("Failed to register data store provider: " + providerName);
+                logger.debug("Failed to register data store provider: " + providerName);
                 return false;
             }
 
@@ -146,7 +144,7 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                 imageStoreProviderMgr.registerDriver(provider.getName(), (ImageStoreDriver)provider.getDataStoreDriver());
             }
         } catch (Exception e) {
-            s_logger.debug("configure provider failed", e);
+            logger.debug("configure provider failed", e);
             providerMap.remove(providerName);
             return false;
         }

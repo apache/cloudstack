@@ -33,7 +33,6 @@ import net.juniper.contrail.api.ApiObjectBase;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -60,7 +59,6 @@ import com.cloud.utils.mgmt.JmxUtil;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/publicNetworkContext.xml")
 public class PublicNetworkTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(PublicNetworkTest.class);
 
     @Inject
     public ContrailManager _contrailMgr;
@@ -77,9 +75,7 @@ public class PublicNetworkTest extends TestCase {
     @BeforeClass
     public static void globalSetUp() throws Exception {
         ApiConnectorFactory.setImplementation(ApiConnectorMockito.class);
-        s_logger.info("mysql server is getting launched ");
         s_mysqlServerPort = TestDbSetup.init(null);
-        s_logger.info("mysql server launched on port " + s_mysqlServerPort);
         s_msId = ManagementServerNode.getManagementServerId();
         s_lockController = Merovingian2.createLockController(s_msId);
     }
@@ -97,7 +93,6 @@ public class PublicNetworkTest extends TestCase {
         }
         ctx.close();
 
-        s_logger.info("destroying mysql server instance running at port <" + s_mysqlServerPort + ">");
         TestDbSetup.destroy(s_mysqlServerPort, null);
     }
 
@@ -108,7 +103,6 @@ public class PublicNetworkTest extends TestCase {
             ComponentContext.initComponentsLifeCycle();
         } catch (Exception ex) {
             ex.printStackTrace();
-            s_logger.error(ex.getMessage());
         }
         _server = ComponentContext.inject(new ManagementServerMock());
 

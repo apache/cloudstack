@@ -23,7 +23,6 @@ import java.util.Random;
 import javax.inject.Inject;
 
 import com.cloud.network.NetworkModel;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
@@ -50,7 +49,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -141,7 +139,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.setIsolationUri(null);
 
-        s_logger.debug("Allocated a nic " + nic + " for " + vm);
+        logger.debug("Allocated a nic " + nic + " for " + vm);
     }
 
     @Override
@@ -158,8 +156,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
 
         nic.deallocate();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Released nic: " + nic);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Released nic: " + nic);
         }
 
         return true;

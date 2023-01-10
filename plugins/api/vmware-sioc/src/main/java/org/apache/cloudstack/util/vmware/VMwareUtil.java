@@ -71,7 +71,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualSCSIController;
 
 public class VMwareUtil {
-    private static final Logger s_logger = Logger.getLogger(VMwareUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(VMwareUtil.class);
 
     private VMwareUtil() {}
 
@@ -315,7 +315,7 @@ public class VMwareUtil {
                 throw new Exception(((LocalizedMethodFault)result[1]).getLocalizedMessage());
             }
         } catch (WebServiceException we) {
-            s_logger.debug("Cancelling vCenter task because the task failed with the following error: " + we.getLocalizedMessage());
+            LOGGER.debug("Cancelling vCenter task because the task failed with the following error: " + we.getLocalizedMessage());
 
             connection.getVimPortType().cancelTask(task);
 

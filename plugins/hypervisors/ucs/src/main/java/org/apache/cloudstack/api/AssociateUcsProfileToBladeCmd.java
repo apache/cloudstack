@@ -19,7 +19,6 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.UcsBladeResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
@@ -36,7 +35,6 @@ import com.cloud.user.Account;
 @APICommand(name = "associateUcsProfileToBlade", description = "associate a profile to a blade", responseObject = UcsBladeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AssociateUcsProfileToBladeCmd.class);
 
     @Inject
     private UcsManager mgr;
@@ -56,7 +54,7 @@ public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
             rsp.setResponseName(getCommandName());
             this.setResponseObject(rsp);
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

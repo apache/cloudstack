@@ -25,7 +25,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,7 +52,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AssignToGlobalLoadBalancerRuleCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

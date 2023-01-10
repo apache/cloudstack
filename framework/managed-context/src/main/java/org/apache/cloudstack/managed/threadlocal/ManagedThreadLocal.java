@@ -35,7 +35,7 @@ public class ManagedThreadLocal<T> extends ThreadLocal<T> {
     };
 
     private static boolean s_validateContext = false;
-    private static final Logger log = Logger.getLogger(ManagedThreadLocal.class);
+    protected static Logger LOGGER = Logger.getLogger(ManagedThreadLocal.class);
 
     @SuppressWarnings("unchecked")
     @Override
@@ -71,7 +71,7 @@ public class ManagedThreadLocal<T> extends ThreadLocal<T> {
     private static void validateInContext(Object tl) {
         if (s_validateContext && !ManagedContextUtils.isInContext()) {
             String msg = "Using a managed thread local in a non managed context this WILL cause errors at runtime. TL [" + tl + "]";
-            log.error(msg, new IllegalStateException(msg));
+            LOGGER.error(msg, new IllegalStateException(msg));
         }
     }
 

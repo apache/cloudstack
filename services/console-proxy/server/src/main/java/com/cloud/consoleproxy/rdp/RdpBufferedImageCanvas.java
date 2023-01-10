@@ -36,7 +36,7 @@ public class RdpBufferedImageCanvas extends BufferedImageCanvas implements Frame
      *
      */
     private static final long serialVersionUID = 1L;
-    private static final Logger s_logger = Logger.getLogger(RdpBufferedImageCanvas.class);
+    protected Logger logger = Logger.getLogger(RdpBufferedImageCanvas.class);
 
     private final ConsoleProxyRdpClient _rdpClient;
 
@@ -68,7 +68,7 @@ public class RdpBufferedImageCanvas extends BufferedImageCanvas implements Frame
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image", e);
+            logger.info("[ignored] read error on image", e);
         }
 
         return imgBits;
@@ -94,7 +94,7 @@ public class RdpBufferedImageCanvas extends BufferedImageCanvas implements Frame
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image tiles", e);
+            logger.info("[ignored] read error on image tiles", e);
         }
         return imgBits;
     }

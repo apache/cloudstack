@@ -27,7 +27,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DriverLoader {
 
-    private static final Logger LOGGER = Logger.getLogger(DriverLoader.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(DriverLoader.class);
     private static final List<String> LOADED_DRIVERS;
     private static final Map<String, String> DRIVERS;
 

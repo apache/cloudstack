@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
 import com.cloud.agent.api.Answer;
@@ -32,7 +31,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = PvlanSetupCommand.class)
 public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanSetupCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtPvlanSetupCommandWrapper.class);
 
     @Override
     public Answer execute(final PvlanSetupCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -56,30 +54,30 @@ public final class LibvirtPvlanSetupCommandWrapper extends CommandWrapper<PvlanS
 
         if (command.getType() == PvlanSetupCommand.Type.DHCP) {
             final String ovsPvlanDhcpHostPath = libvirtComputingResource.getOvsPvlanDhcpHostPath();
-            final Script script = new Script(ovsPvlanDhcpHostPath, timeout, s_logger);
+            final Script script = new Script(ovsPvlanDhcpHostPath, timeout, logger);
 
             script.add(opr, pvlanType, "-b", guestBridgeName, "-p", primaryPvlan, "-s", isolatedPvlan, "-m", dhcpMac,
                     "-d", dhcpIp);
             result = script.execute();
 
             if (result != null) {
-                s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+                logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
             } else {
-                s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
+                logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
             }
         }
 
         // We run this even for DHCP servers since they're all vms after all
         final String ovsPvlanVmPath = libvirtComputingResource.getOvsPvlanVmPath();
-        final Script script = new Script(ovsPvlanVmPath, timeout, s_logger);
+        final Script script = new Script(ovsPvlanVmPath, timeout, logger);
         script.add(opr, pvlanType, "-b", guestBridgeName, "-p", primaryPvlan, "-s", isolatedPvlan, "-m", vmMac);
         result = script.execute();
 
         if (result != null) {
-            s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+            logger.warn("Failed to program pvlan for vm with mac " + vmMac);
             return new Answer(command, false, result);
         } else {
-            s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+            logger.info("Programmed pvlan for vm with mac " + vmMac);
         }
 
         return new Answer(command, true, result);

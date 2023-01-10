@@ -53,7 +53,7 @@ import com.google.gson.annotations.SerializedName;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NexentaNmsClient {
-    private static final Logger logger = Logger.getLogger(NexentaNmsClient.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected NexentaNmsUrl nmsUrl = null;
     protected DefaultHttpClient httpClient = null;

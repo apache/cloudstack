@@ -23,7 +23,6 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.List;
@@ -36,7 +35,6 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
     private List<String> metalinkUrls;
     private List<String> metalinkChecksums;
     private Random random = new Random();
-    private static final Logger s_logger = Logger.getLogger(MetalinkDirectTemplateDownloader.class.getName());
 
     public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum,
                                             Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath) {
@@ -48,7 +46,7 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
             throw new CloudRuntimeException("No urls found on metalink file: " + metalinkUrl + ". Not possible to download template " + templateId);
         }
         setUrl(metalinkUrls.get(0));
-        s_logger.info("Metalink downloader created, metalink url: " + metalinkUrl + " parsed - " +
+        logger.info("Metalink downloader created, metalink url: " + metalinkUrl + " parsed - " +
                 metalinkUrls.size() + " urls and " +
                 (CollectionUtils.isNotEmpty(metalinkChecksums) ? metalinkChecksums.size() : "0") + " checksums found");
     }
@@ -65,7 +63,7 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
             if (!isRedownload()) {
                 setUrl(metalinkUrls.get(i));
             }
-            s_logger.info("Trying to download template from url: " + getUrl());
+            logger.info("Trying to download template from url: " + getUrl());
             try {
                 setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
                 File f = new File(getDownloadedFilePath());
@@ -77,11 +75,11 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
                 Pair<Boolean, String> downloadResult = super.downloadTemplate();
                 downloaded = downloadResult.first();
                 if (downloaded) {
-                    s_logger.info("Successfully downloaded template from url: " + getUrl());
+                    logger.info("Successfully downloaded template from url: " + getUrl());
                 }
 
             } catch (Exception e) {
-                s_logger.error("Error downloading template: " + getTemplateId() + " from " + getUrl() + ": " + e.getMessage());
+                logger.error("Error downloading template: " + getTemplateId() + " from " + getUrl() + ": " + e.getMessage());
             }
             i++;
         }
@@ -94,7 +92,7 @@ public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownload
         if (StringUtils.isBlank(getChecksum()) && CollectionUtils.isNotEmpty(metalinkChecksums)) {
             String chk = metalinkChecksums.get(random.nextInt(metalinkChecksums.size()));
             setChecksum(chk);
-            s_logger.info("Checksum not provided but " + metalinkChecksums.size() + " found on metalink file, performing checksum using one of them: " + chk);
+            logger.info("Checksum not provided but " + metalinkChecksums.size() + " found on metalink file, performing checksum using one of them: " + chk);
         }
         return super.validateChecksum();
     }

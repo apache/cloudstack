@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class ImageStoreUtil {
-    public static final Logger s_logger = Logger.getLogger(ImageStoreUtil.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(ImageStoreUtil.class);
 
     public static String generatePostUploadUrl(String ssvmUrlDomain, String ipAddress, String uuid, String protocol) {
         String hostname = ipAddress;
@@ -54,38 +54,38 @@ public class ImageStoreUtil {
 
         // vmdk
         if ((output.contains("VMware") || output.contains("data")) && isCorrectExtension(uripath, "vmdk")) {
-            s_logger.debug("File at path " + path + " looks like a vmware image :" + output);
+            LOGGER.debug("File at path " + path + " looks like a vmware image :" + output);
             return "";
         }
         // raw
         if ((output.contains("x86 boot") || output.contains("DOS/MBR boot sector") || output.contains("data")) && isCorrectExtension(uripath, "raw")) {
-            s_logger.debug("File at path " + path + " looks like a raw image :" + output);
+            LOGGER.debug("File at path " + path + " looks like a raw image :" + output);
             return "";
         }
         // qcow2
         if (output.contains("QEMU QCOW") && isCorrectExtension(uripath, "qcow2")) {
-            s_logger.debug("File at path " + path + " looks like QCOW2 : " + output);
+            LOGGER.debug("File at path " + path + " looks like QCOW2 : " + output);
             return "";
         }
         // vhd
         if (output.contains("Microsoft Disk Image") && (isCorrectExtension(uripath, "vhd") || isCorrectExtension(uripath, "vhdx"))) {
-            s_logger.debug("File at path " + path + " looks like vhd : " + output);
+            LOGGER.debug("File at path " + path + " looks like vhd : " + output);
             return "";
         }
         // ova
         if (output.contains("POSIX tar") && isCorrectExtension(uripath, "ova")) {
-            s_logger.debug("File at path " + path + " looks like ova : " + output);
+            LOGGER.debug("File at path " + path + " looks like ova : " + output);
             return "";
         }
 
         //lxc
         if (output.contains("POSIX tar") && isCorrectExtension(uripath, "tar")) {
-            s_logger.debug("File at path " + path + " looks like just tar : " + output);
+            LOGGER.debug("File at path " + path + " looks like just tar : " + output);
             return "";
         }
 
         if ((output.startsWith("ISO 9660") || output.startsWith("DOS/MBR")) && isCorrectExtension(uripath, "iso")) {
-            s_logger.debug("File at path " + path + " looks like an iso : " + output);
+            LOGGER.debug("File at path " + path + " looks like an iso : " + output);
             return "";
         }
         return output;

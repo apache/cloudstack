@@ -58,7 +58,7 @@ public class ParamGenericValidationWorkerTest {
         final ParamGenericValidationWorker genValidationWorker = new ParamGenericValidationWorker();
 
         // We create a mock logger to verify the result
-        ParamGenericValidationWorker.s_logger = new Logger("") {
+        genValidationWorker.logger = new Logger("") {
             @Override
             public void warn(final Object msg) {
                 loggerOutput = msg.toString();

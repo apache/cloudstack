@@ -21,7 +21,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -55,8 +54,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class OvsGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger
-        .getLogger(OvsGuestNetworkGuru.class);
 
     @Inject
     OvsTunnelManager _ovsTunnelMgr;
@@ -89,7 +86,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             && physicalNetwork.getIsolationMethods().contains("GRE")) {
             return true;
         } else {
-            s_logger.trace(String.format("We only take care of Guest networks of type %s with Service %s or type with %s provider %s in %s zone",
+            logger.trace(String.format("We only take care of Guest networks of type %s with Service %s or type with %s provider %s in %s zone",
                     GuestType.Isolated, Service.Connectivity, GuestType.Shared, Network.Provider.Ovs, NetworkType.Advanced));
             return false;
         }
@@ -103,7 +100,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             .getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
-            s_logger.debug("Refusing to design this network");
+            logger.debug("Refusing to design this network");
             return null;
         }
         NetworkVO config = (NetworkVO)super.design(offering, plan,
@@ -141,7 +138,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             .findById(physicalNetworkId);
 
         if (!canHandle(offering, nwType, physnet)) {
-            s_logger.debug("Refusing to implement this network");
+            logger.debug("Refusing to implement this network");
             return null;
         }
         NetworkVO implemented = (NetworkVO)super.implement(network, offering,
@@ -190,13 +187,13 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         NetworkVO networkObject = _networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Vswitch
             || networkObject.getBroadcastUri() == null) {
-            s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork "
+            logger.warn("BroadcastUri is empty or incorrect for guestnetwork "
                 + networkObject.getDisplayText());
             return;
         }
 
         if (profile.getBroadcastDomainType() == BroadcastDomainType.Vswitch ) {
-            s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+            logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(),
                     profile.getAccountId(), profile.getReservationId());
         }

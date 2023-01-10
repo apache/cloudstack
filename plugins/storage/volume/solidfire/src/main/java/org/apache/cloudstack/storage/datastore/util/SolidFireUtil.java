@@ -80,7 +80,7 @@ import com.solidfire.jsvcgen.javautil.Optional;
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 
 public class SolidFireUtil {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(SolidFireUtil.class);
 
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";
@@ -88,7 +88,7 @@ public class SolidFireUtil {
     private static final Random RANDOM = new Random(System.nanoTime());
     public static final int LOCK_TIME_IN_SECONDS = 300;
 
-    public static final String LOG_PREFIX = "SolidFire: ";
+    public static final String LOGGER_PREFIX = "SolidFire: ";
 
     public static final String MANAGEMENT_VIP = "mVip";
     public static final String STORAGE_VIP = "sVip";

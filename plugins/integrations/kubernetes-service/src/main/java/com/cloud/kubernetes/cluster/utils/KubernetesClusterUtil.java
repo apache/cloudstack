@@ -43,7 +43,7 @@ import com.cloud.utils.ssh.SshHelper;
 
 public class KubernetesClusterUtil {
 
-    protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterUtil.class);
+    protected static Logger LOGGER = Logger.getLogger(KubernetesClusterUtil.class);
 
     public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl version --short";
 

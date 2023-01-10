@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ServerTransportProvider implements TransportProvider {
-    private static final Logger s_logger = Logger.getLogger(ServerTransportProvider.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public static final int DEFAULT_WORKER_POOL_SIZE = 5;
 
@@ -150,7 +150,7 @@ public class ServerTransportProvider implements TransportProvider {
                     site.processOutput();
                     site.ackOutputProcessSignal();
                 } catch (Throwable e) {
-                    s_logger.error("Unhandled exception", e);
+                    logger.error("Unhandled exception", e);
                 }
             }
         });

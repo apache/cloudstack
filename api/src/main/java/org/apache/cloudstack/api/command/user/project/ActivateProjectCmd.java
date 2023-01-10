@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.project;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +35,6 @@ import com.cloud.projects.Project;
 @APICommand(name = "activateProject", description = "Activates a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ActivateProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ActivateProjectCmd.class.getName());
 
     private static final String s_name = "activaterojectresponse";
 

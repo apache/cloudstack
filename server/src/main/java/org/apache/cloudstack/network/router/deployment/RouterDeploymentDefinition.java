@@ -79,7 +79,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class RouterDeploymentDefinition {
-    private static final Logger logger = Logger.getLogger(RouterDeploymentDefinition.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected static final int LIMIT_NUMBER_OF_ROUTERS = 5;
     protected static final int MAX_NUMBER_OF_ROUTERS = 2;

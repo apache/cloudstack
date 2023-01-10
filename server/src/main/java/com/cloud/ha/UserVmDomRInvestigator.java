@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -39,7 +38,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
 public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
-    private static final Logger s_logger = Logger.getLogger(UserVmDomRInvestigator.class);
 
     @Inject
     private final UserVmDao _userVmDao = null;
@@ -53,14 +51,14 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     @Override
     public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         if (vm.getType() != VirtualMachine.Type.User) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Not a User Vm, unable to determine state of " + vm + " returning null");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Not a User Vm, unable to determine state of " + vm + " returning null");
             }
             throw new UnknownVM();
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("testing if " + vm + " is alive");
+        if (logger.isDebugEnabled()) {
+            logger.debug("testing if " + vm + " is alive");
         }
         // to verify that the VM is alive, we ask the domR (router) to ping the VM (private IP)
         UserVmVO userVm = _userVmDao.findById(vm.getId());
@@ -74,8 +72,8 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
 
             List<VirtualRouter> routers = _vnaMgr.getRoutersForNetwork(nic.getNetworkId());
             if (routers == null || routers.isEmpty()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);
                 }
                 continue;
             }
@@ -95,16 +93,16 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
             return result;
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Returning null since we're unable to determine state of " + vm);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Returning null since we're unable to determine state of " + vm);
         }
         throw new UnknownVM();
     }
 
     @Override
     public Status isAgentAlive(Host agent) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("checking if agent (" + agent.getId() + ") is alive");
+        if (logger.isDebugEnabled()) {
+            logger.debug("checking if agent (" + agent.getId() + ") is alive");
         }
 
         if (agent.getPodId() == null) {
@@ -114,29 +112,29 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         List<Long> otherHosts = findHostByPod(agent.getPodId(), agent.getId());
 
         for (Long hostId : otherHosts) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("sending ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ")");
+            if (logger.isDebugEnabled()) {
+                logger.debug("sending ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ")");
             }
             Status hostState = testIpAddress(hostId, agent.getPrivateIpAddress());
             assert hostState != null;
             // In case of Status.Unknown, next host will be tried
             if (hostState == Status.Up) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() +
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() +
                         ") successful, returning that agent is disconnected");
                 }
                 return Status.Disconnected; // the computing host ip is ping-able, but the computing agent is down, report that the agent is disconnected
             } else if (hostState == Status.Down) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("returning host state: " + hostState);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("returning host state: " + hostState);
                 }
                 return Status.Down;
             }
         }
 
         // could not reach agent, could not reach agent's host, unclear what the problem is but it'll require more investigation...
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("could not reach agent, could not reach agent's host, returning that we don't have enough information");
+        if (logger.isDebugEnabled()) {
+            logger.debug("could not reach agent, could not reach agent's host, returning that we don't have enough information");
         }
         return null;
     }
@@ -165,21 +163,21 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
             try {
                 Answer pingTestAnswer = _agentMgr.easySend(hostId, new PingTestCommand(routerPrivateIp, privateIp));
                 if (pingTestAnswer != null && pingTestAnswer.getResult()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("user vm's " + vm.getHostName() + " ip address " + privateIp + "  has been successfully pinged from the Virtual Router " +
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("user vm's " + vm.getHostName() + " ip address " + privateIp + "  has been successfully pinged from the Virtual Router " +
                             router.getHostName() + ", returning that vm is alive");
                     }
                     return Boolean.TRUE;
                 }
             } catch (Exception e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Couldn't reach due to", e);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Couldn't reach due to", e);
                 }
                 continue;
             }
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(vm + " could not be pinged, returning that it is unknown");
+        if (logger.isDebugEnabled()) {
+            logger.debug(vm + " could not be pinged, returning that it is unknown");
         }
         return null;
 

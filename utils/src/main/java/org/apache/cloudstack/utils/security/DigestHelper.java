@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DigestHelper {
-    public static final Logger LOGGER = Logger.getLogger(DigestHelper.class.getName());
+    protected static Logger LOGGER = Logger.getLogger(DigestHelper.class);
     public static ChecksumValue digest(String algorithm, InputStream is) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         ChecksumValue checksum = null;

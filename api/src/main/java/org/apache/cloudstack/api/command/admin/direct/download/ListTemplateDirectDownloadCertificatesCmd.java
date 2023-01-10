@@ -35,7 +35,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -63,7 +62,6 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
             description = "if set to true: include the hosts where the certificate is uploaded to")
     private Boolean listHosts;
 
-    private static final Logger LOG = Logger.getLogger(ListTemplateDirectDownloadCertificatesCmd.class);
 
     public boolean isListHosts() {
         return listHosts != null && listHosts;

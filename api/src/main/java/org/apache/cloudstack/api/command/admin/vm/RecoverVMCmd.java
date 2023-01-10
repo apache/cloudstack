@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.vm;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -38,7 +37,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "recoverVirtualMachine", description = "Recovers a virtual machine.", responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RecoverVMCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class SecurityGroupHttpClient {
-    private static final Logger logger = Logger.getLogger(SecurityGroupHttpClient.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private static final String ARG_NAME = "args";
     private static final String COMMAND = "command";
     private JAXBContext context;

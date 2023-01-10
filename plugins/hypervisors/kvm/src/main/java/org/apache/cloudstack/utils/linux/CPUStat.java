@@ -24,7 +24,7 @@ import java.util.Scanner;
 import org.apache.log4j.Logger;
 
 public class CPUStat {
-    private static final Logger s_logger = Logger.getLogger(CPUStat.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private Integer _cores;
     private UptimeStats _lastStats;
@@ -58,7 +58,7 @@ public class CPUStat {
             String[] stats = scanner.useDelimiter("\\Z").next().split("\\s+");
             uptime = new UptimeStats(Double.parseDouble(stats[0]), Double.parseDouble(stats[1]));
         } catch (FileNotFoundException ex) {
-            s_logger.warn("File " + _uptimeFile + " not found:" + ex.toString());
+            logger.warn("File " + _uptimeFile + " not found:" + ex.toString());
         }
         return uptime;
     }
@@ -87,7 +87,7 @@ public class CPUStat {
         try (Scanner scanner = new Scanner(f,"UTF-8");) {
             load = scanner.useDelimiter("\\Z").next().split("\\s+");
         } catch (FileNotFoundException ex) {
-            s_logger.warn("File " + _uptimeFile + " not found:" + ex.toString());
+            logger.warn("File " + _uptimeFile + " not found:" + ex.toString());
         }
         return Double.parseDouble(load[0]);
     }

@@ -63,7 +63,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 
 @Component
 public class SiocManagerImpl implements SiocManager {
-    private static final Logger LOGGER = Logger.getLogger(SiocManagerImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private static final int LOCK_TIME_IN_SECONDS = 3;
     private static final int ONE_GB_IN_BYTES = 1000000000;
     private static final int LOWEST_SHARES_PER_VIRTUAL_DISK = 2000; // We want this to be greater than 1,000, which is the VMware default value.
@@ -82,7 +82,7 @@ public class SiocManagerImpl implements SiocManager {
 
     @Override
     public void updateSiocInfo(long zoneId, long storagePoolId, int sharesPerGB, int limitIopsPerGB, int iopsNotifyThreshold) throws Exception {
-        LOGGER.info("'SiocManagerImpl.updateSiocInfo(long, long, int, int, int)' method invoked");
+        logger.info("'SiocManagerImpl.updateSiocInfo(long, long, int, int, int)' method invoked");
 
         DataCenterVO zone = zoneDao.findById(zoneId);
 
@@ -250,7 +250,7 @@ public class SiocManagerImpl implements SiocManager {
 
                             tasks.add(task);
 
-                            LOGGER.info(getInfoMsg(volumeVO, newShares, newLimitIops));
+                            logger.info(getInfoMsg(volumeVO, newShares, newLimitIops));
                         } catch (Exception ex) {
                             throw new Exception("Error: " + ex.getMessage());
                         }
@@ -321,7 +321,7 @@ public class SiocManagerImpl implements SiocManager {
 
                                 tasks.add(task);
 
-                                LOGGER.info(getInfoMsgForWorkerVm(newLimitIops));
+                                logger.info(getInfoMsgForWorkerVm(newLimitIops));
                             } catch (Exception ex) {
                                 throw new Exception("Error: " + ex.getMessage());
                             }

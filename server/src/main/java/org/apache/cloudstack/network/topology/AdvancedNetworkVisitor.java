@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -56,7 +55,6 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
-    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkVisitor.class);
 
     @Override
     public boolean visit(final UserdataPwdRules userdata) throws ResourceUnavailableException {
@@ -150,20 +148,20 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
             try {
                 if (_networkGeneralHelper.sendCommandsToRouter(router, cmds)) {
-                    s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
+                    logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
                     return true;
                 } else {
-                    s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+                    logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
                     return false;
                 }
             } catch (final Exception ex) {
-                s_logger.warn("Failed to send  " + (isAddOperation ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
+                logger.warn("Failed to send  " + (isAddOperation ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup private network command to the backend");
+            logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup private network command to the backend");
         } else {
-            s_logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
+            logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
 
             throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," + " virtual router " + router + " is not in the right state",
                     DataCenter.class, router.getDataCenterId());
@@ -184,7 +182,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         try {
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
         } catch (final ResourceUnavailableException e) {
-            s_logger.warn("Timed Out", e);
+            logger.warn("Timed Out", e);
             return false;
         }
     }

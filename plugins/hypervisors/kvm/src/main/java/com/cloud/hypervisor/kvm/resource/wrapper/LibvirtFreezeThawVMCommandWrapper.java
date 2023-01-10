@@ -20,7 +20,6 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import org.apache.cloudstack.utils.qemu.QemuCommand;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -37,7 +36,6 @@ import com.google.gson.JsonParser;
 @ResourceWrapper(handles = FreezeThawVMCommand.class)
 public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThawVMCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtFreezeThawVMCommandWrapper.class);
 
     @Override
     public Answer execute(FreezeThawVMCommand command, LibvirtComputingResource serverResource) {
@@ -60,13 +58,13 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
             }
 
             String result = getResultOfQemuCommand(command.getOption(), domain);
-            s_logger.debug(String.format("Result of %s command is %s", command.getOption(), result));
+            logger.debug(String.format("Result of %s command is %s", command.getOption(), result));
             if (result == null || (result.startsWith("error"))) {
                 return new FreezeThawVMAnswer(command, false, String.format("Failed to %s vm %s due to result status is: %s",
                         command.getOption(), vmName, result));
             }
             String status = getResultOfQemuCommand(FreezeThawVMCommand.STATUS, domain);
-            s_logger.debug(String.format("Status of %s command is %s", command.getOption(), status));
+            logger.debug(String.format("Status of %s command is %s", command.getOption(), status));
             if (status != null && new JsonParser().parse(status).isJsonObject()) {
                 String statusResult = new JsonParser().parse(status).getAsJsonObject().get("return").getAsString();
                 if (statusResult.equals(command.getOption())) {
@@ -83,7 +81,7 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
                 try {
                     domain.free();
                 } catch (LibvirtException e) {
-                    s_logger.trace("Ingore error ", e);
+                    logger.trace("Ingore error ", e);
                 }
             }
         }

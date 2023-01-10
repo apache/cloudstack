@@ -27,15 +27,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.GuestOSHypervisorMapping;
 import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41400to41500 implements DbUpgrade {
+public class Upgrade41400to41500 extends DbUpgradeAbstractImpl {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41400to41500.class);
     private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     @Override
@@ -78,7 +76,7 @@ public class Upgrade41400to41500 implements DbUpgrade {
     }
 
     private void addRolePermissionsForReadOnlyAdmin(final Connection conn) {
-        LOG.debug("Adding role permissions for new read-only admin role");
+        logger.debug("Adding role permissions for new read-only admin role");
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default' AND is_default = 1");
             ResultSet rs = pstmt.executeQuery();
@@ -112,15 +110,15 @@ public class Upgrade41400to41500 implements DbUpgrade {
             if (pstmt != null && !pstmt.isClosed())  {
                 pstmt.close();
             }
-            LOG.debug("Successfully added role permissions for new read-only admin role");
+            logger.debug("Successfully added role permissions for new read-only admin role");
         } catch (final SQLException e) {
-            LOG.error("Exception while adding role permissions for read-only admin role: " + e.getMessage());
+            logger.error("Exception while adding role permissions for read-only admin role: " + e.getMessage());
             throw new CloudRuntimeException("Exception while adding role permissions for read-only admin role: " + e.getMessage(), e);
         }
     }
 
     private void addRolePermissionsForReadOnlyUser(final Connection conn) {
-        LOG.debug("Adding role permissions for new read-only user role");
+        logger.debug("Adding role permissions for new read-only user role");
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default' AND is_default = 1");
             ResultSet rs = pstmt.executeQuery();
@@ -183,15 +181,15 @@ public class Upgrade41400to41500 implements DbUpgrade {
             if (pstmt != null && !pstmt.isClosed())  {
                 pstmt.close();
             }
-            LOG.debug("Successfully added role permissions for new read-only user role");
+            logger.debug("Successfully added role permissions for new read-only user role");
         } catch (final SQLException e) {
-            LOG.error("Exception while adding role permissions for read-only user role: " + e.getMessage());
+            logger.error("Exception while adding role permissions for read-only user role: " + e.getMessage());
             throw new CloudRuntimeException("Exception while adding role permissions for read-only user role: " + e.getMessage(), e);
         }
     }
 
     private void addRolePermissionsForSupportAdmin(final Connection conn) {
-        LOG.debug("Adding role permissions for new support admin role");
+        logger.debug("Adding role permissions for new support admin role");
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`roles` WHERE name = 'Support Admin - Default' AND is_default = 1");
             ResultSet rs = pstmt.executeQuery();
@@ -268,15 +266,15 @@ public class Upgrade41400to41500 implements DbUpgrade {
             if (pstmt != null && !pstmt.isClosed())  {
                 pstmt.close();
             }
-            LOG.debug("Successfully added role permissions for new support admin role");
+            logger.debug("Successfully added role permissions for new support admin role");
         } catch (final SQLException e) {
-            LOG.error("Exception while adding role permissions for support admin role: " + e.getMessage());
+            logger.error("Exception while adding role permissions for support admin role: " + e.getMessage());
             throw new CloudRuntimeException("Exception while adding role permissions for support admin role: " + e.getMessage(), e);
         }
     }
 
     private void addRolePermissionsForSupportUser(final Connection conn) {
-        LOG.debug("Adding role permissions for new support user role");
+        logger.debug("Adding role permissions for new support user role");
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`roles` WHERE name = 'Support User - Default' AND is_default = 1");
             ResultSet rs = pstmt.executeQuery();
@@ -345,15 +343,15 @@ public class Upgrade41400to41500 implements DbUpgrade {
             if (pstmt != null && !pstmt.isClosed())  {
                 pstmt.close();
             }
-            LOG.debug("Successfully added role permissions for new support user role");
+            logger.debug("Successfully added role permissions for new support user role");
         } catch (final SQLException e) {
-            LOG.error("Exception while adding role permissions for support user role: " + e.getMessage());
+            logger.error("Exception while adding role permissions for support user role: " + e.getMessage());
             throw new CloudRuntimeException("Exception while adding role permissions for support user role: " + e.getMessage(), e);
         }
     }
 
     private void updateGuestOsMappings(final Connection conn) {
-        LOG.debug("Updating guest OS mappings");
+        logger.debug("Updating guest OS mappings");
 
         // The below existing Guest OS Ids must be used for updating the guest OS hypervisor mappings
         // CentOS - 1, Debian - 2, Oracle - 3, RedHat - 4, SUSE - 5, Windows - 6, Other - 7, Novel - 8, Unix - 9, Ubuntu - 10, None - 11

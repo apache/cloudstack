@@ -71,7 +71,7 @@ import junit.framework.Assert;
 //@Ignore("Requires database to be set up")
 public class CreatePrivateNetworkTest {
 
-    private static final Logger s_logger = Logger.getLogger(CreatePrivateNetworkTest.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     NetworkServiceImpl networkService = new NetworkServiceImpl();
 
@@ -168,13 +168,13 @@ public class CreatePrivateNetworkTest {
             Assert.assertEquals("'bla' should not be accepted as scheme", true, invalid);
             Assert.assertEquals("'mido' should not yet be supported as scheme", true, unsupported);
         } catch (ResourceAllocationException e) {
-            s_logger.error("no resources", e);
+            logger.error("no resources", e);
             fail("no resources");
         } catch (ConcurrentOperationException e) {
-            s_logger.error("another one is in the way", e);
+            logger.error("another one is in the way", e);
             fail("another one is in the way");
         } catch (InsufficientCapacityException e) {
-            s_logger.error("no capacity", e);
+            logger.error("no capacity", e);
             fail("no capacity");
         } finally {
             __txn.close("createInvalidlyHostedPrivateNetworkTest");

@@ -106,11 +106,11 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Id of the vm to which the nic belongs")
     private String vmId;
 
-    @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH)
+    @SerializedName(ApiConstants.NSX_loggerICAL_SWITCH)
     @Param(description = "Id of the NSX Logical Switch (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitch;
 
-    @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH_PORT)
+    @SerializedName(ApiConstants.NSX_loggerICAL_SWITCH_PORT)
     @Param(description = "Id of the NSX Logical Switch Port (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitchPort;
 

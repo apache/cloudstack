@@ -39,7 +39,7 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     private ConsoleProxyNoVncClient viewer = null;
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVNCHandler.class);
+    private  Logger logger = Logger.getLogger(ConsoleProxyNoVNCHandler.class);
 
     public ConsoleProxyNoVNCHandler() {
         super();
@@ -102,7 +102,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         try {
             port = Integer.parseInt(portStr);
         } catch (NumberFormatException e) {
-            s_logger.warn("Invalid number parameter in query string: " + portStr);
+            logger.warn("Invalid number parameter in query string: " + portStr);
             throw new IllegalArgumentException(e);
         }
 
@@ -110,7 +110,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             try {
                 ajaxSessionId = Long.parseLong(ajaxSessionIdStr);
             } catch (NumberFormatException e) {
-                s_logger.warn("Invalid number parameter in query string: " + ajaxSessionIdStr);
+                logger.warn("Invalid number parameter in query string: " + ajaxSessionIdStr);
                 throw new IllegalArgumentException(e);
             }
         }
@@ -142,7 +142,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             }
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
         } catch (Exception e) {
-            s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
+            logger.warn("Failed to create viewer due to " + e.getMessage(), e);
             return;
         } finally {
             if (viewer == null) {
@@ -154,9 +154,9 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
     private boolean checkSessionSourceIp(final Session session, final String sourceIP) throws IOException {
         // Verify source IP
         String sessionSourceIP = session.getRemoteAddress().getAddress().getHostAddress();
-        s_logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
+        logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
         if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || ! sessionSourceIP.equals(sourceIP))) {
-            s_logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
+            logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
             session.disconnect();
             return false;
         }

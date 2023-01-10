@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -36,7 +35,6 @@ import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 
 public class DistributedVirtualSwitchMO extends BaseMO {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(DistributedVirtualSwitchMO.class);
     private static ConcurrentHashMap<String, List<String>> s_dvPortGroupCacheMap = null;
 
     public DistributedVirtualSwitchMO(VmwareContext context, ManagedObjectReference morDvs) {
@@ -82,11 +80,11 @@ public class DistributedVirtualSwitchMO extends BaseMO {
                         s_dvPortGroupCacheMap.put(dvSwitchInstance, dvPortGroupList);
                     }
                 }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Created dvPortGroup. dvPortGroup cache is :" + s_dvPortGroupCacheMap);
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Created dvPortGroup. dvPortGroup cache is :" + s_dvPortGroupCacheMap);
                 }
-            } else if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Detected dvPortGroup [" + dvPortGroupName + "] already present. Not attempting to create again.");
+            } else if (logger.isDebugEnabled()) {
+                logger.debug("Detected dvPortGroup [" + dvPortGroupName + "] already present. Not attempting to create again.");
             }
         }
     }

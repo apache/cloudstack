@@ -109,7 +109,7 @@ public class PaloAltoResource implements ServerResource {
     private String _threatProfile;
     private String _logProfile;
     private String _pingManagementProfile;
-    private static final Logger s_logger = Logger.getLogger(PaloAltoResource.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private static String s_apiUri = "/api";
     private static HttpClient s_httpclient;
@@ -377,7 +377,7 @@ public class PaloAltoResource implements ServerResource {
         try {
             return login(_username, _password);
         } catch (ExecutionException e) {
-            s_logger.error("Failed to login due to " + e.getMessage());
+            logger.error("Failed to login due to " + e.getMessage());
             return false;
         }
     }
@@ -487,11 +487,11 @@ public class PaloAltoResource implements ServerResource {
 
             results[i++] = ip.getPublicIp() + " - success";
         } catch (ExecutionException e) {
-            s_logger.error(e);
+            logger.error(e);
 
             if (numRetries > 0 && refreshPaloAltoConnection()) {
                 int numRetriesRemaining = numRetries - 1;
-                s_logger.debug("Retrying IPAssocCommand. Number of retries remaining: " + numRetriesRemaining);
+                logger.debug("Retrying IPAssocCommand. Number of retries remaining: " + numRetriesRemaining);
                 return execute(cmd, numRetriesRemaining);
             } else {
                 results[i++] = IpAssocAnswer.errorResult;
@@ -516,7 +516,7 @@ public class PaloAltoResource implements ServerResource {
         String msg =
             "Implemented guest network with type " + type + ". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway + "/" + privateCidrNumber;
         msg += type.equals(GuestNetworkType.SOURCE_NAT) ? ", source NAT IP: " + publicIp : "";
-        s_logger.debug(msg);
+        logger.debug(msg);
     }
 
     private void shutdownGuestNetwork(ArrayList<IPaloAltoCommand> cmdList, GuestNetworkType type, Long publicVlanTag, String sourceNatIpAddress, long privateVlanTag,
@@ -536,7 +536,7 @@ public class PaloAltoResource implements ServerResource {
 
         String msg = "Shut down guest network with type " + type + ". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway + "/" + privateCidrSize;
         msg += type.equals(GuestNetworkType.SOURCE_NAT) ? ", source NAT IP: " + sourceNatIpAddress : "";
-        s_logger.debug(msg);
+        logger.debug(msg);
     }
 
     /*
@@ -564,11 +564,11 @@ public class PaloAltoResource implements ServerResource {
 
             return new Answer(cmd);
         } catch (ExecutionException e) {
-            s_logger.error(e);
+            logger.error(e);
 
             if (numRetries > 0 && refreshPaloAltoConnection()) {
                 int numRetriesRemaining = numRetries - 1;
-                s_logger.debug("Retrying SetFirewallRulesCommand. Number of retries remaining: " + numRetriesRemaining);
+                logger.debug("Retrying SetFirewallRulesCommand. Number of retries remaining: " + numRetriesRemaining);
                 return execute(cmd, numRetriesRemaining);
             } else {
                 return new Answer(cmd, e);
@@ -603,11 +603,11 @@ public class PaloAltoResource implements ServerResource {
 
             return new Answer(cmd);
         } catch (ExecutionException e) {
-            s_logger.error(e);
+            logger.error(e);
 
             if (numRetries > 0 && refreshPaloAltoConnection()) {
                 int numRetriesRemaining = numRetries - 1;
-                s_logger.debug("Retrying SetStaticNatRulesCommand. Number of retries remaining: " + numRetriesRemaining);
+                logger.debug("Retrying SetStaticNatRulesCommand. Number of retries remaining: " + numRetriesRemaining);
                 return execute(cmd, numRetriesRemaining);
             } else {
                 return new Answer(cmd, e);
@@ -641,11 +641,11 @@ public class PaloAltoResource implements ServerResource {
 
             return new Answer(cmd);
         } catch (ExecutionException e) {
-            s_logger.error(e);
+            logger.error(e);
 
             if (numRetries > 0 && refreshPaloAltoConnection()) {
                 int numRetriesRemaining = numRetries - 1;
-                s_logger.debug("Retrying SetPortForwardingRulesCommand. Number of retries remaining: " + numRetriesRemaining);
+                logger.debug("Retrying SetPortForwardingRulesCommand. Number of retries remaining: " + numRetriesRemaining);
                 return execute(cmd, numRetriesRemaining);
             } else {
                 return new Answer(cmd, e);
@@ -678,7 +678,7 @@ public class PaloAltoResource implements ServerResource {
                     "']/layer3/units/entry[@name='" + interfaceName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Private sub-interface exists: " + interfaceName + ", " + result);
+                logger.debug("Private sub-interface exists: " + interfaceName + ", " + result);
                 return result;
 
             case ADD:
@@ -763,7 +763,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -796,7 +796,7 @@ public class PaloAltoResource implements ServerResource {
                     "']/layer3/units/entry[@name='" + interfaceName + "']/ip/entry[@name='" + publicIp + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Public sub-interface & IP exists: " + interfaceName + " : " + publicIp + ", " + result);
+                logger.debug("Public sub-interface & IP exists: " + interfaceName + " : " + publicIp + ", " + result);
                 return result;
 
             case ADD:
@@ -855,7 +855,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -888,7 +888,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/nat/rules/entry[@name='" + srcNatName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Source NAT exists: " + srcNatName + ", " + result);
+                logger.debug("Source NAT exists: " + srcNatName + ", " + result);
                 return result;
 
             case ADD:
@@ -932,7 +932,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -971,7 +971,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/nat/rules/entry[@name='" + dstNatName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Destination NAT exists: " + dstNatName + ", " + result);
+                logger.debug("Destination NAT exists: " + dstNatName + ", " + result);
                 return result;
 
             case ADD:
@@ -1079,7 +1079,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -1118,7 +1118,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/nat/rules/entry[@name='" + stcNatName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Static NAT exists: " + stcNatName + ", " + result);
+                logger.debug("Static NAT exists: " + stcNatName + ", " + result);
                 return result;
 
             case ADD:
@@ -1178,7 +1178,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -1212,7 +1212,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='" + ruleName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Firewall policy exists: " + ruleName + ", " + result);
+                logger.debug("Firewall policy exists: " + ruleName + ", " + result);
                 return result;
 
             case ADD:
@@ -1333,7 +1333,7 @@ public class PaloAltoResource implements ServerResource {
 
                     // there is an existing default rule, so we need to remove it and add it back after the new rule is added.
                     if (has_default) {
-                        s_logger.debug("Moving the default egress rule after the new rule: " + ruleName);
+                        logger.debug("Moving the default egress rule after the new rule: " + ruleName);
                         NodeList response_body;
                         Document doc = getDocument(e_response);
                         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -1372,7 +1372,7 @@ public class PaloAltoResource implements ServerResource {
                     da_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_" + rule.getSrcVlanTag() + "']");
                     da_params.put("element", defaultEgressRule);
                     cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, da_params));
-                    s_logger.debug("Completed move of the default egress rule after rule: " + ruleName);
+                    logger.debug("Completed move of the default egress rule after rule: " + ruleName);
                 }
 
                 return true;
@@ -1391,7 +1391,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -1444,7 +1444,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='" + ruleName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Firewall policy exists: " + ruleName + ", " + result);
+                logger.debug("Firewall policy exists: " + ruleName + ", " + result);
                 return result;
 
             case ADD:
@@ -1486,7 +1486,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -1503,7 +1503,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/network/profiles/interface-management-profile/entry[@name='" + _pingManagementProfile + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Management profile exists: " + _pingManagementProfile + ", " + result);
+                logger.debug("Management profile exists: " + _pingManagementProfile + ", " + result);
                 return result;
 
             case ADD:
@@ -1536,7 +1536,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -1565,7 +1565,7 @@ public class PaloAltoResource implements ServerResource {
                 params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/service/entry[@name='" + serviceName + "']");
                 String response = request(PaloAltoMethod.GET, params);
                 boolean result = (validResponse(response) && responseNotEmpty(response));
-                s_logger.debug("Service exists: " + serviceName + ", " + result);
+                logger.debug("Service exists: " + serviceName + ", " + result);
                 return result;
 
             case ADD:
@@ -1604,7 +1604,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
 
             default:
-                s_logger.debug("Unrecognized command.");
+                logger.debug("Unrecognized command.");
                 return false;
         }
     }
@@ -1711,7 +1711,7 @@ public class PaloAltoResource implements ServerResource {
 
         debug_msg = debug_msg + prettyFormat(responseBody);
         debug_msg = debug_msg + "\n" + responseBody.replace("\"", "\\\"") + "\n\n"; // test cases
-        //s_logger.debug(debug_msg); // this can be commented if we don't want to show each request in the log.
+        //logger.debug(debug_msg); // this can be commented if we don't want to show each request in the log.
 
         return responseBody;
     }
@@ -2064,7 +2064,7 @@ public class PaloAltoResource implements ServerResource {
         try {
             doc = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder().parse(xmlSource);
         } catch (Exception e) {
-            s_logger.error(e);
+            logger.error(e);
             throw new ExecutionException(e.getMessage());
         }
 

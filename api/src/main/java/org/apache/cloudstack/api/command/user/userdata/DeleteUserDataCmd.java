@@ -21,7 +21,6 @@ import com.cloud.user.UserData;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import org.apache.cloudstack.context.CallContext;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18")
 public class DeleteUserDataCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteUserDataCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

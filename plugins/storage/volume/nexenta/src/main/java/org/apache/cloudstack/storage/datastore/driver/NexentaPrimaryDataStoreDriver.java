@@ -56,7 +56,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
 public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger logger = Logger.getLogger(NexentaPrimaryDataStoreDriver.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Override
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {

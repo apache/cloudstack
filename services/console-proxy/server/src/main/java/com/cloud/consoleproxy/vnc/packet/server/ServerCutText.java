@@ -23,7 +23,7 @@ import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 
 public class ServerCutText {
-    private static final Logger s_logger = Logger.getLogger(ServerCutText.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private String content;
 
@@ -43,7 +43,7 @@ public class ServerCutText {
 
         content = new String(buf, RfbConstants.CHARSET);
 
-        /* LOG */s_logger.info("Clippboard content: " + content);
+        /* logger */logger.info("Clippboard content: " + content);
     }
 
 }

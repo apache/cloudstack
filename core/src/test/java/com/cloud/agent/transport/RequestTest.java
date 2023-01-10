@@ -58,16 +58,16 @@ import com.cloud.template.VirtualMachineTemplate;
  */
 
 public class RequestTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(RequestTest.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public void testSerDeser() {
-        s_logger.info("Testing serializing and deserializing works as expected");
+        logger.info("Testing serializing and deserializing works as expected");
 
-        s_logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
+        logger.info("UpdateHostPasswordCommand should have two parameters that doesn't show in logging");
         UpdateHostPasswordCommand cmd1 = new UpdateHostPasswordCommand("abc", "def");
-        s_logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
+        logger.info("SecStorageFirewallCfgCommand has a context map that shouldn't show up in debug level");
         SecStorageFirewallCfgCommand cmd2 = new SecStorageFirewallCfgCommand();
-        s_logger.info("GetHostStatsCommand should not show up at all in debug level");
+        logger.info("GetHostStatsCommand should not show up at all in debug level");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         cmd2.addPortConfig("abc", "24", true, "eth0");
         cmd2.addPortConfig("127.0.0.1", "44", false, "eth1");
@@ -109,9 +109,9 @@ public class RequestTest extends TestCase {
         try {
             creq = Request.parse(bytes);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         } catch (UnsupportedVersionException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         }
 
         assert creq != null : "Couldn't get the request back";
@@ -127,9 +127,9 @@ public class RequestTest extends TestCase {
         try {
             sresp = Response.parse(bytes);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         } catch (UnsupportedVersionException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         }
 
         assert sresp != null : "Couldn't get the response back";
@@ -138,7 +138,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testSerDeserTO() {
-        s_logger.info("Testing serializing and deserializing interface TO works as expected");
+        logger.info("Testing serializing and deserializing interface TO works as expected");
 
         NfsTO nfs = new NfsTO("nfs://192.168.56.10/opt/storage/secondary", DataStoreRole.Image);
         // SecStorageSetupCommand cmd = new SecStorageSetupCommand(nfs, "nfs://192.168.56.10/opt/storage/secondary", null);
@@ -156,9 +156,9 @@ public class RequestTest extends TestCase {
         try {
             creq = Request.parse(bytes);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         } catch (UnsupportedVersionException e) {
-            s_logger.error("Unable to parse bytes: ", e);
+            logger.error("Unable to parse bytes: ", e);
         }
 
         assert creq != null : "Couldn't get the request back";
@@ -168,7 +168,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testDownload() {
-        s_logger.info("Testing Download answer");
+        logger.info("Testing Download answer");
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getId()).thenReturn(1L);
         Mockito.when(template.getFormat()).thenReturn(ImageFormat.QCOW2);
@@ -193,7 +193,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testCompress() {
-        s_logger.info("testCompress");
+        logger.info("testCompress");
         int len = 800000;
         ByteBuffer inputBuffer = ByteBuffer.allocate(len);
         for (int i = 0; i < len; i++) {
@@ -202,7 +202,7 @@ public class RequestTest extends TestCase {
         inputBuffer.limit(len);
         ByteBuffer compressedBuffer = ByteBuffer.allocate(len);
         compressedBuffer = Request.doCompress(inputBuffer, len);
-        s_logger.info("compressed length: " + compressedBuffer.limit());
+        logger.info("compressed length: " + compressedBuffer.limit());
         ByteBuffer decompressedBuffer = ByteBuffer.allocate(len);
         decompressedBuffer = Request.doDecompress(compressedBuffer, len);
         for (int i = 0; i < len; i++) {
@@ -213,7 +213,7 @@ public class RequestTest extends TestCase {
     }
 
     public void testLogging() {
-        s_logger.info("Testing Logging");
+        logger.info("Testing Logging");
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         Request sreq = new Request(2, 3, new Command[] {cmd3}, true, true);
         sreq.setSequence(1);
@@ -230,7 +230,7 @@ public class RequestTest extends TestCase {
         logger.setLevel(Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
-        s_logger.debug(log);
+        logger.debug(log);
 
         logger.setLevel(level);
     }
@@ -253,24 +253,24 @@ public class RequestTest extends TestCase {
     }
 
     public void testGoodCommand() {
-        s_logger.info("Testing good Command");
+        logger.info("Testing good Command");
         String content = "[{\"com.cloud.agent.api.GetVolumeStatsCommand\":{\"volumeUuids\":[\"dcc860ac-4a20-498f-9cb3-bab4d57aa676\"],"
                 + "\"poolType\":\"NetworkFilesystem\",\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
         Request sreq = new Request(Version.v2, 1L, 2L, 3L, 1L, (short)1, content);
         sreq.setSequence(1);
         Command cmds[] = sreq.getCommands();
-        s_logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
+        logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
         assert cmds[0].getClass().equals(GetVolumeStatsCommand.class);
     }
 
     public void testBadCommand() {
-        s_logger.info("Testing Bad Command");
+        logger.info("Testing Bad Command");
         String content = "[{\"com.cloud.agent.api.SomeJunkCommand\":{\"volumeUuids\":[\"dcc860ac-4a20-498f-9cb3-bab4d57aa676\"],"
                 + "\"poolType\":\"NetworkFilesystem\",\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
         Request sreq = new Request(Version.v2, 1L, 2L, 3L, 1L, (short)1, content);
         sreq.setSequence(1);
         Command cmds[] = sreq.getCommands();
-        s_logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
+        logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
         assert cmds[0].getClass().equals(BadCommand.class);
     }
 

@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.vm;
 
+import org.apache.log4j.Logger;
+
 import java.io.Serializable;
 
 public class VmWork implements Serializable {
+    protected transient Logger logger = Logger.getLogger(getClass());
     private static final long serialVersionUID = -6946320465729853589L;
 
     long userId;

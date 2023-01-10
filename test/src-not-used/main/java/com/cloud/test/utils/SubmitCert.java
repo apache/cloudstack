@@ -47,7 +47,7 @@ public class SubmitCert {
     public static String fileName = "tool.properties";
     public static String certFileName;
     public static String cert;
-    public static final Logger s_logger = Logger.getLogger(SubmitCert.class.getName());
+    protected Logger logger = Logger.getLogger(getClass());
 
     public static void main(String[] args) {
         // Parameters
@@ -77,7 +77,7 @@ public class SubmitCert {
         try {
             prop.load(new FileInputStream("conf/tool.properties"));
         } catch (IOException ex) {
-            s_logger.error("Error reading from conf/tool.properties", ex);
+            logger.error("Error reading from conf/tool.properties", ex);
             System.exit(2);
         }
 
@@ -85,27 +85,27 @@ public class SubmitCert {
         port = prop.getProperty("port");
 
         if (url.equals("Action=SetCertificate") && certFileName == null) {
-            s_logger.error("Please set path to certificate (including file name) with -c option");
+            logger.error("Please set path to certificate (including file name) with -c option");
             System.exit(1);
         }
 
         if (secretKey == null) {
-            s_logger.error("Please set secretkey  with -s option");
+            logger.error("Please set secretkey  with -s option");
             System.exit(1);
         }
 
         if (apiKey == null) {
-            s_logger.error("Please set apikey with -a option");
+            logger.error("Please set apikey with -a option");
             System.exit(1);
         }
 
         if (host == null) {
-            s_logger.error("Please set host in tool.properties file");
+            logger.error("Please set host in tool.properties file");
             System.exit(1);
         }
 
         if (port == null) {
-            s_logger.error("Please set port in tool.properties file");
+            logger.error("Please set port in tool.properties file");
             System.exit(1);
         }
 
@@ -144,7 +144,7 @@ public class SubmitCert {
             try {
                 temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
             } catch (Exception ex) {
-                s_logger.error("Unable to set parameter " + value + " for the command " + param.get("command"), ex);
+                logger.error("Unable to set parameter " + value + " for the command " + param.get("command"), ex);
             }
 
         }
@@ -159,7 +159,7 @@ public class SubmitCert {
         }
 
         String url = "http://" + host + ":" + prop.getProperty("port") + "/" + prop.getProperty("accesspoint") + "?" + temp + "&Signature=" + encodedSignature;
-        s_logger.info("Sending request with url:  " + url + "\n");
+        logger.info("Sending request with url:  " + url + "\n");
         sendRequest(url);
     }
 
@@ -177,7 +177,7 @@ public class SubmitCert {
             reader.close();
             return fileData.toString();
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
             return null;
         }
     }
@@ -188,7 +188,7 @@ public class SubmitCert {
             HttpMethod method = new GetMethod(url);
             int responseCode = client.executeMethod(method);
             String is = method.getResponseBodyAsString();
-            s_logger.info("Response code " + responseCode + ": " + is);
+            logger.info("Response code " + responseCode + ": " + is);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

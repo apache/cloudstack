@@ -77,7 +77,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *
  */
 public class Request {
-    private static final Logger s_logger = Logger.getLogger(Request.class);
+    protected static Logger LOGGER = Logger.getLogger(Request.class);
 
     protected static final Gson s_gson = GsonHelper.getGson();
     protected static final Gson s_gogger = GsonHelper.getGsonLogger();
@@ -255,7 +255,7 @@ public class Request {
             } catch (JsonParseException e) {
                 _cmds = new Command[] { new BadCommand() };
             } catch (RuntimeException e) {
-                s_logger.error("Caught problem with " + _content, e);
+                LOGGER.error("Caught problem with " + _content, e);
                 throw e;
             }
         }
@@ -301,7 +301,7 @@ public class Request {
             }
             in.close();
         } catch (IOException e) {
-            s_logger.error("Fail to decompress the request!", e);
+            LOGGER.error("Fail to decompress the request!", e);
         }
         retBuff.flip();
         return retBuff;
@@ -322,7 +322,7 @@ public class Request {
             out.finish();
             out.close();
         } catch (IOException e) {
-            s_logger.error("Fail to compress the request!", e);
+            LOGGER.error("Fail to compress the request!", e);
         }
         return ByteBuffer.wrap(byteOut.toByteArray());
     }
@@ -370,24 +370,24 @@ public class Request {
     }
 
     public void logD(String msg, boolean logContent) {
-        if (s_logger.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             String log = log(msg, logContent, Level.DEBUG);
             if (log != null) {
-                s_logger.debug(log);
+                LOGGER.debug(log);
             }
         }
     }
 
     public void logT(String msg, boolean logD) {
-        if (s_logger.isTraceEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
             String log = log(msg, true, Level.TRACE);
             if (log != null) {
-                s_logger.trace(log);
+                LOGGER.trace(log);
             }
-        } else if (logD && s_logger.isDebugEnabled()) {
+        } else if (logD && LOGGER.isDebugEnabled()) {
             String log = log(msg, false, Level.DEBUG);
             if (log != null) {
-                s_logger.debug(log);
+                LOGGER.debug(log);
             }
         }
     }
@@ -404,7 +404,7 @@ public class Request {
                 try {
                     _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
                 } catch (RuntimeException e) {
-                    s_logger.error("Unable to deserialize from json: " + _content);
+                    LOGGER.error("Unable to deserialize from json: " + _content);
                     throw e;
                 }
             }
@@ -415,7 +415,7 @@ public class Request {
                 for (Command cmd : _cmds) {
                     buff.append(cmd.getClass().getSimpleName()).append("/");
                 }
-                s_logger.error("Gson serialization error " + buff.toString(), e);
+                LOGGER.error("Gson serialization error " + buff.toString(), e);
                 assert false : "More gson errors on " + buff.toString();
                 return "";
             }

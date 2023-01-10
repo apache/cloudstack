@@ -42,7 +42,6 @@ import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
 import com.cloud.domain.Domain;
@@ -61,7 +60,6 @@ import com.cloud.user.UserAccount;
 @APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapImportUsersCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(LdapImportUsersCmd.class.getName());
 
     private static final String s_name = "ldapuserresponse";
 
@@ -108,18 +106,18 @@ public class LdapImportUsersCmd extends BaseListCmd {
     private void createCloudstackUserAccount(LdapUser user, String accountName, Domain domain) {
         Account account = _accountService.getActiveAccountByName(accountName, domain.getId());
         if (account == null) {
-            s_logger.debug("No account exists with name: " + accountName + " creating the account and an user with name: " + user.getUsername() + " in the account");
+            logger.debug("No account exists with name: " + accountName + " creating the account and an user with name: " + user.getUsername() + " in the account");
             _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, getAccountType(), getRoleId(),
                     domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
         } else {
 //            check if the user exists. if yes, call update
             UserAccount csuser = _accountService.getActiveUserAccount(user.getUsername(), domain.getId());
             if (csuser == null) {
-                s_logger.debug("No user exists with name: " + user.getUsername() + " creating a user in the account: " + accountName);
+                logger.debug("No user exists with name: " + user.getUsername() + " creating a user in the account: " + accountName);
                 _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
                         UUID.randomUUID().toString(), User.Source.LDAP);
             } else {
-                s_logger.debug("Account [name=%s] and user [name=%s] already exist in CloudStack. Executing the user update.");
+                logger.debug("Account [name=%s] and user [name=%s] already exist in CloudStack. Executing the user update.");
 
                 UpdateUserCmd updateUserCmd = new UpdateUserCmd();
                 updateUserCmd.setId(csuser.getId());
@@ -148,7 +146,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
             }
         } catch (NoLdapUserMatchingQueryException ex) {
             users = new ArrayList<LdapUser>();
-            s_logger.info("No Ldap user matching query. " + " ::: " + ex.getMessage());
+            logger.info("No Ldap user matching query. " + " ::: " + ex.getMessage());
         }
 
         List<LdapUser> addedUsers = new ArrayList<LdapUser>();
@@ -158,7 +156,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
                 createCloudstackUserAccount(user, getAccountName(user), domain);
                 addedUsers.add(user);
             } catch (InvalidParameterValueException ex) {
-                s_logger.error("Failed to create user with username: " + user.getUsername() + " ::: " + ex.getMessage());
+                logger.error("Failed to create user with username: " + user.getUsername() + " ::: " + ex.getMessage());
             }
         }
         ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();

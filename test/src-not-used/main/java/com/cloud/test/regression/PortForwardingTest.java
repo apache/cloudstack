@@ -18,7 +18,6 @@ package com.cloud.test.regression;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -26,7 +25,6 @@ import org.w3c.dom.NodeList;
 import com.cloud.test.regression.ApiCommand.ResponseType;
 
 public class PortForwardingTest extends TestCase {
-    public static final Logger s_logger = Logger.getLogger(PortForwardingTest.class.getName());
 
     public PortForwardingTest() {
         setClient();
@@ -54,40 +52,40 @@ public class PortForwardingTest extends TestCase {
 
             //verify the response of the command
             if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() == 200)) {
-                s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Command that was supposed to fail, passed. The command was sent with the following url " +
+                logger.error("Test case " + api.getTestCaseInfo() + " failed. Command that was supposed to fail, passed. The command was sent with the following url " +
                     api.getUrl());
                 error++;
             } else if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() == 200)) {
                 //verify if response is suppposed to be empty
                 if (api.getResponseType() == ResponseType.EMPTY) {
                     if (api.isEmpty() == true) {
-                        s_logger.info("Test case " + api.getTestCaseInfo() + " passed");
+                        logger.info("Test case " + api.getTestCaseInfo() + " passed");
                     } else {
-                        s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Empty response was expected. Command was sent with url " + api.getUrl());
+                        logger.error("Test case " + api.getTestCaseInfo() + " failed. Empty response was expected. Command was sent with url " + api.getUrl());
                     }
                 } else {
                     if (api.isEmpty() != false)
-                        s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Non-empty response was expected. Command was sent with url " + api.getUrl());
+                        logger.error("Test case " + api.getTestCaseInfo() + " failed. Non-empty response was expected. Command was sent with url " + api.getUrl());
                     else {
                         //set parameters for the future use
                         if (api.setParam(getParam()) == false) {
-                            s_logger.error("Exiting the test...Command " + api.getName() +
+                            logger.error("Exiting the test...Command " + api.getName() +
                                 " didn't return parameters needed for the future use. The command was sent with url " + api.getUrl());
                             return false;
                         } else if (api.getTestCaseInfo() != null) {
-                            s_logger.info("Test case " + api.getTestCaseInfo() + " passed");
+                            logger.info("Test case " + api.getTestCaseInfo() + " passed");
                         }
                     }
                 }
             } else if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() != 200)) {
-                s_logger.error("Test case " + api.getTestCaseInfo() + " failed . Command was sent with url  " + api.getUrl());
+                logger.error("Test case " + api.getTestCaseInfo() + " failed . Command was sent with url  " + api.getUrl());
                 if (api.getRequired() == true) {
-                    s_logger.info("The command is required for the future use, so exiging");
+                    logger.info("The command is required for the future use, so exiging");
                     return false;
                 }
                 error++;
             } else if (api.getTestCaseInfo() != null) {
-                s_logger.info("Test case " + api.getTestCaseInfo() + " passed");
+                logger.info("Test case " + api.getTestCaseInfo() + " passed");
 
             }
         }
@@ -101,7 +99,7 @@ public class PortForwardingTest extends TestCase {
 //        //try all public ports
 //        for (String portValue : port) {
 //            try {
-//                s_logger.info("public port is " + portValue);
+//                logger.info("public port is " + portValue);
 //                String url = this.getHost() + ":8096/?command=createOrUpdateIpForwardingRule&account=" + this.getParam().get("accountname") + "&publicip=" + this.getParam().get("boundaryip") +
 //                "&privateip=" + this.getParam().get("vmipaddress") + "&privateport=22&protocol=tcp&publicport=" + portValue;
 //                HttpClient client = new HttpClient();
@@ -109,10 +107,10 @@ public class PortForwardingTest extends TestCase {
 //                int responseCode = client.executeMethod(method);
 //                if (responseCode != 200 ) {
 //                    error++;
-//                    s_logger.error("Can't create portForwarding rule for the public port " + portValue + ". Request was sent with url " + url);
+//                    logger.error("Can't create portForwarding rule for the public port " + portValue + ". Request was sent with url " + url);
 //                }
 //            }catch (Exception ex) {
-//                s_logger.error(ex);
+//                logger.error(ex);
 //            }
 //        }
 //
@@ -127,10 +125,10 @@ public class PortForwardingTest extends TestCase {
 //                int responseCode = client.executeMethod(method);
 //                if (responseCode != 200 ) {
 //                    error++;
-//                    s_logger.error("Can't create portForwarding rule for the private port " + portValue + ". Request was sent with url " + url);
+//                    logger.error("Can't create portForwarding rule for the private port " + portValue + ". Request was sent with url " + url);
 //                }
 //            }catch (Exception ex) {
-//                s_logger.error(ex);
+//                logger.error(ex);
 //            }
 //        }
 

@@ -47,7 +47,7 @@ public class DpdkHelperImpl implements DpdkHelper {
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
 
-    public static final Logger s_logger = Logger.getLogger(DpdkHelperImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private ServiceOffering getServiceOfferingFromVMProfile(VirtualMachineProfile virtualMachineProfile) {
         ServiceOffering offering = virtualMachineProfile.getServiceOffering();
@@ -74,7 +74,7 @@ public class DpdkHelperImpl implements DpdkHelper {
                 VHostUserMode dpdKvHostUserMode = VHostUserMode.fromValue(mode);
                 to.addExtraConfig(DPDK_VHOST_USER_MODE, dpdKvHostUserMode.toString());
             } catch (IllegalArgumentException e) {
-                s_logger.error(String.format("DPDK vHost User mode found as a detail for service offering: %s " +
+                logger.error(String.format("DPDK vHost User mode found as a detail for service offering: %s " +
                                 "but value: %s is not supported. Supported values: %s, %s",
                         offering.getId(), mode,
                         VHostUserMode.CLIENT.toString(), VHostUserMode.SERVER.toString()));

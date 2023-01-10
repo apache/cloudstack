@@ -92,7 +92,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class CertServiceImpl implements CertService {
 
-    private static final Logger s_logger = Logger.getLogger(CertServiceImpl.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     AccountManager _accountMgr;
@@ -126,7 +126,7 @@ public class CertServiceImpl implements CertService {
         final String name = certCmd.getName();
 
         validate(cert, key, password, chain, certCmd.getEnabledRevocationCheck());
-        s_logger.debug("Certificate Validation succeeded");
+        logger.debug("Certificate Validation succeeded");
 
         final String fingerPrint = CertificateHelper.generateFingerPrint(parseCertificate(cert));
 
@@ -232,7 +232,7 @@ public class CertServiceImpl implements CertService {
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                s_logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
                 return certResponseList;
             }
 

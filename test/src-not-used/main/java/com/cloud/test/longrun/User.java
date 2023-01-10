@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.test.stress.TestClientWithAPI;
 
 public class User {
-    public static final Logger s_logger = Logger.getLogger(User.class.getClass());
+    protected Logger logger = Logger.getLogger(getClass());
 
     private ArrayList<VirtualMachine> virtualMachines;
     private ArrayList<String> publicIp;
@@ -165,13 +165,13 @@ public class User {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> values = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"ipaddress"});
             this.getPublicIp().add(values.get("ipaddress"));
-            s_logger.info("Ip address is " + values.get("ipaddress"));
+            logger.info("Ip address is " + values.get("ipaddress"));
         } else if (responseCode == 500) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"errorcode", "description"});
-            s_logger.error("associate ip test failed with errorCode: " + errorInfo.get("errorCode") + " and description: " + errorInfo.get("description"));
+            logger.error("associate ip test failed with errorCode: " + errorInfo.get("errorCode") + " and description: " + errorInfo.get("description"));
         } else {
-            s_logger.error("internal error processing request: " + method.getStatusText());
+            logger.error("internal error processing request: " + method.getStatusText());
         }
 
     }
@@ -181,7 +181,7 @@ public class User {
         String encodedUsername = URLEncoder.encode(this.userName, "UTF-8");
         String encodedPassword = URLEncoder.encode(this.password, "UTF-8");
         String url = server + "?command=register&username=" + encodedUsername + "&domainid=1";
-        s_logger.info("registering: " + this.userName + " with url " + url);
+        logger.info("registering: " + this.userName + " with url " + url);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
@@ -193,9 +193,9 @@ public class User {
         } else if (responseCode == 500) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"errorcode", "description"});
-            s_logger.error("registration failed with errorCode: " + errorInfo.get("errorCode") + " and description: " + errorInfo.get("description"));
+            logger.error("registration failed with errorCode: " + errorInfo.get("errorCode") + " and description: " + errorInfo.get("description"));
         } else {
-            s_logger.error("internal error processing request: " + method.getStatusText());
+            logger.error("internal error processing request: " + method.getStatusText());
         }
     }
 

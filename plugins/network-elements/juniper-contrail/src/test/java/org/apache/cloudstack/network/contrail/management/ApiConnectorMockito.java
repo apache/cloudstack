@@ -30,12 +30,10 @@ import net.juniper.contrail.api.ApiPropertyBase;
 import net.juniper.contrail.api.ObjectReference;
 import net.juniper.contrail.api.types.NetworkIpam;
 
-import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
 
 public class ApiConnectorMockito implements ApiConnector {
-    private static final Logger s_logger = Logger.getLogger(ApiConnectorMockito.class);
 
     static final Map<String, ApiObjectBase> object_map = new ImmutableMap.Builder<String, ApiObjectBase>().put("network-ipam:default-network-ipam", new NetworkIpam())
         .build();
@@ -53,19 +51,16 @@ public class ApiConnectorMockito implements ApiConnector {
 
     @Override
     public boolean create(ApiObjectBase arg0) throws IOException {
-        s_logger.debug("create " + arg0.getClass().getName() + " id: " + arg0.getUuid());
         return _spy.create(arg0);
     }
 
     @Override
     public void delete(ApiObjectBase arg0) throws IOException {
-        s_logger.debug("delete " + arg0.getClass().getName() + " id: " + arg0.getUuid());
         _spy.delete(arg0);
     }
 
     @Override
     public void delete(Class<? extends ApiObjectBase> arg0, String arg1) throws IOException {
-        s_logger.debug("create " + arg0.getName() + " id: " + arg1);
         _spy.delete(arg0, arg1);
     }
 
@@ -83,19 +78,16 @@ public class ApiConnectorMockito implements ApiConnector {
 
     @Override
     public ApiObjectBase findByFQN(Class<? extends ApiObjectBase> arg0, String arg1) throws IOException {
-        s_logger.debug("find " + arg0.getName() + " name: " + arg1);
         return _mock.findByFQN(arg0, arg1);
     }
 
     @Override
     public ApiObjectBase findById(Class<? extends ApiObjectBase> arg0, String arg1) throws IOException {
-        s_logger.debug("find " + arg0.getName() + " id: " + arg1);
         return _mock.findById(arg0, arg1);
     }
 
     @Override
     public String findByName(Class<? extends ApiObjectBase> arg0, List<String> arg1) throws IOException {
-        s_logger.debug("find " + arg0.getName() + " name: " + arg1);
         return _mock.findByName(arg0, arg1);
     }
 
@@ -107,31 +99,26 @@ public class ApiConnectorMockito implements ApiConnector {
             msg.append(" parent: " + arg1.getName());
         }
         msg.append(" name: " + arg2);
-        s_logger.debug(msg.toString());
         return _mock.findByName(arg0, arg1, arg2);
     }
 
     @Override
     public <T extends ApiPropertyBase> List<? extends ApiObjectBase> getObjects(Class<? extends ApiObjectBase> arg0, List<ObjectReference<T>> arg1) throws IOException {
-        s_logger.debug("getObjects" + arg0.getName());
         return _mock.getObjects(arg0, arg1);
     }
 
     @Override
     public List<? extends ApiObjectBase> list(Class<? extends ApiObjectBase> arg0, List<String> arg1) throws IOException {
-        s_logger.debug("list" + arg0.getName());
         return _mock.list(arg0, arg1);
     }
 
     @Override
     public boolean read(ApiObjectBase arg0) throws IOException {
-        s_logger.debug("read " + arg0.getClass().getName() + " id: " + arg0.getUuid());
         return _mock.read(arg0);
     }
 
     @Override
     public boolean update(ApiObjectBase arg0) throws IOException {
-        s_logger.debug("update " + arg0.getClass().getName() + " id: " + arg0.getUuid());
         return _spy.update(arg0);
     }
 

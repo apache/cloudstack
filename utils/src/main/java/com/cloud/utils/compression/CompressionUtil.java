@@ -31,7 +31,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class CompressionUtil {
 
-    private static final Logger s_logger = Logger.getLogger(CompressionUtil.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public byte[] compressString(String inputStr) throws IOException {
         ByteArrayOutputStream obj = new ByteArrayOutputStream();

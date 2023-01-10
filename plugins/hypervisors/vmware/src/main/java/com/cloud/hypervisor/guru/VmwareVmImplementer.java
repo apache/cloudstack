@@ -59,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 
 class VmwareVmImplementer {
-    private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     DomainRouterDao domainRouterDao;
@@ -123,7 +123,7 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -135,7 +135,7 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -193,9 +193,9 @@ class VmwareVmImplementer {
     }
 
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
-        if (LOGGER.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             for (String key : details.keySet()) {
-                LOGGER.trace(String.format("Detail for VM %s: %s => %s", to.getName(), key, details.get(key)));
+                logger.trace(String.format("Detail for VM %s: %s => %s", to.getName(), key, details.get(key)));
             }
         }
         to.setDetails(details);
@@ -345,8 +345,8 @@ class VmwareVmImplementer {
         Boolean globalNestedVPerVMEnabled = getGlobalNestedVPerVMEnabled();
 
         Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedVirtualisationEnabled, globalNestedVPerVMEnabled, localNestedV);
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format(
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format(
                     "Due to '%B'(globalNestedVirtualisationEnabled) and '%B'(globalNestedVPerVMEnabled) I'm adding a flag with value %B to the vm configuration for Nested Virtualisation.",
                     globalNestedVirtualisationEnabled,
                     globalNestedVPerVMEnabled,
