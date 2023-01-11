@@ -1124,3 +1124,8 @@ BEGIN
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
+-- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
+
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
+SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
+FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
