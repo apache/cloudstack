@@ -225,10 +225,10 @@ public class NegoFlags {
 
     @Override
     public String toString() {
-        return String.format("NegoFlags [value=0x%04x (%s)]", value, flagsToSting());
+        return String.format("NegoFlags [value=0x%04x (%s)]", value, flagsToString());
     }
 
-    public String flagsToSting() {
+    public String flagsToString() {
 
         String str = "";
 

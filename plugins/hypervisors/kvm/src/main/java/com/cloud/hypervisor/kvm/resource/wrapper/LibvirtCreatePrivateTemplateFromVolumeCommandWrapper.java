@@ -118,8 +118,8 @@ public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends 
                 final QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + command.getUniqueName() + ".qcow2");
                 destFile.setFormat(PhysicalDiskFormat.QCOW2);
 
-                final QemuImg q = new QemuImg(0);
                 try {
+                    final QemuImg q = new QemuImg(0);
                     q.convert(srcFile, destFile);
                 } catch (final QemuImgException | LibvirtException e) {
                     s_logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +

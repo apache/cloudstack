@@ -31,7 +31,7 @@ export default {
     return columns
   },
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
-  details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created', 'hostcontrolstate'],
   resourceType: 'VirtualRouter',
   tabs: [{
     name: 'details',
@@ -43,6 +43,9 @@ export default {
     name: 'router.health.checks',
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
     component: shallowRef(defineAsyncComponent(() => import('@views/infra/routers/RouterHealthCheck.vue')))
+  }, {
+    name: 'volume',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/VolumesTab.vue')))
   }, {
     name: 'events',
     resourceType: 'DomainRouter',
@@ -185,6 +188,7 @@ export default {
       message: 'message.migrate.router.confirm',
       dataView: true,
       show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      disabled: (record) => { return record.hostcontrolstate === 'Offline' },
       component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
       popup: true
     },
@@ -193,7 +197,8 @@ export default {
       icon: 'drag-outlined',
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
-      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware', 'KVM'].includes(record.hypervisor) },
+      disabled: (record) => { return record.hostcontrolstate === 'Offline' },
       component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
       popup: true
     },

@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
@@ -64,4 +65,8 @@ public interface QuotaResponseBuilder {
     Date startOfNextDay(Date dt);
 
     Date startOfNextDay();
+
+    QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd);
+
+    boolean deleteQuotaTariff(String quotaTariffUuid);
 }

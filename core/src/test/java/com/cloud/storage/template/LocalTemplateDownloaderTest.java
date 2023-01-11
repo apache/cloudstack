@@ -19,7 +19,7 @@
 
 package com.cloud.storage.template;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -33,9 +33,7 @@ public class LocalTemplateDownloaderTest {
         String url = new File("pom.xml").toURI().toURL().toString();
         TemplateDownloader td = new LocalTemplateDownloader(null, url, System.getProperty("java.io.tmpdir"), TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
         long bytes = td.download(true, null);
-        if (!(bytes > 0)) {
-            fail("Failed download");
-        }
+        assertTrue("Failed download", bytes > 0);
     }
 
 }

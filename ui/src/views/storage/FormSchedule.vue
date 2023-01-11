@@ -74,8 +74,7 @@
                 name="timeSelect"
                 ref="timeSelect">
                 <a-time-picker
-                  use12Hours
-                  format="h:mm A"
+                  format="HH:mm"
                   v-model:value="form.timeSelect" />
               </a-form-item>
             </a-col>
@@ -117,8 +116,7 @@
                   <a-input-number
                     style="width: 100%"
                     v-model:value="form.maxsnaps"
-                    :min="1"
-                    :max="8" />
+                    :min="1" />
                 </a-tooltip>
               </a-form-item>
             </a-col>

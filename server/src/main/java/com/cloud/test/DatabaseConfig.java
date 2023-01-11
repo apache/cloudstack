@@ -198,7 +198,7 @@ public class DatabaseConfig {
             "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity");
         s_configurationDescriptions.put("consoleproxy.capacity.standby",
             "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)");
-        s_configurationDescriptions.put("alert.email.addresses", "comma seperated list of email addresses used for sending alerts");
+        s_configurationDescriptions.put("alert.email.addresses", "comma separated list of email addresses used for sending alerts");
         s_configurationDescriptions.put("alert.smtp.host", "SMTP hostname used for sending out email alerts");
         s_configurationDescriptions.put("alert.smtp.port", "port the SMTP server is listening on (default is 25)");
         s_configurationDescriptions.put("alert.smtp.useAuth",

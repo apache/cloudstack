@@ -32,6 +32,8 @@ import com.cloud.upgrade.dao.Upgrade41100to41110;
 import com.cloud.upgrade.dao.Upgrade41110to41120;
 import com.cloud.upgrade.dao.Upgrade41120to41130;
 import com.cloud.upgrade.dao.Upgrade41120to41200;
+import com.cloud.upgrade.dao.Upgrade41510to41520;
+import com.cloud.upgrade.dao.Upgrade41610to41700;
 import com.cloud.upgrade.dao.Upgrade452to453;
 import com.cloud.upgrade.dao.Upgrade453to460;
 import com.cloud.upgrade.dao.Upgrade460to461;
@@ -165,9 +167,41 @@ public class DatabaseUpgradeCheckerTest {
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
         assertNotNull(upgrades);
-        assertTrue(upgrades.length == 1);
-        assertTrue(upgrades[0] instanceof NoopDbUpgrade);
+        assertEquals("We should have 2 upgrade steps", 2, upgrades.length);
+        assertTrue(upgrades[1] instanceof NoopDbUpgrade);
 
+    }
+
+    @Test
+    public void testCalculateUpgradePathFromKownDbVersion() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.0.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.99.1.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+        assertNotNull(upgrades);
+        assertTrue(upgrades.length > 2);
+        assertTrue(upgrades[upgrades.length - 1] instanceof NoopDbUpgrade);
+
+    }
+
+     @Test
+    public void testCalculateUpgradePathFromUnregisteredSecVersion() {
+         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.15.1.3");
+         assertNotNull(dbVersion);
+
+         final CloudStackVersion currentVersion = CloudStackVersion.parse("4.17.0.0");
+         assertNotNull(currentVersion);
+
+         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+         assertNotNull("there should be upgrade paths", upgrades);
+         assertTrue(upgrades.length > 1);
+         assertTrue(upgrades[0] instanceof Upgrade41510to41520);
+         assertTrue(upgrades[upgrades.length - 1] instanceof Upgrade41610to41700);
      }
-
 }

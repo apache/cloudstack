@@ -36,7 +36,6 @@ import com.cloud.user.Account;
 public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
 
-    private static final String s_name = "updatephysicalnetworkresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -83,11 +82,6 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

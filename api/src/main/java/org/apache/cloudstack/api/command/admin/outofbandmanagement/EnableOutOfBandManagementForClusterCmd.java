@@ -40,11 +40,10 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 
 import javax.inject.Inject;
 
-@APICommand(name = EnableOutOfBandManagementForClusterCmd.APINAME, description = "Enables out-of-band management for a cluster",
+@APICommand(name = "enableOutOfBandManagementForCluster", description = "Enables out-of-band management for a cluster",
         responseObject = OutOfBandManagementResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0", authorized = {RoleType.Admin})
 public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
-    public static final String APINAME = "enableOutOfBandManagementForCluster";
 
     @Inject
     private OutOfBandManagementService outOfBandManagementService;
@@ -75,11 +74,6 @@ public class EnableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
 
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     final public Long getClusterId() {

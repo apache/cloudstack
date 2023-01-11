@@ -44,7 +44,6 @@ public class RemoveVmwareDcCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(RemoveVmwareDcCmd.class.getName());
 
-    private static final String s_name = "removevmwaredcresponse";
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
@@ -81,11 +80,6 @@ public class RemoveVmwareDcCmd extends BaseCmd {
         } catch (CloudRuntimeException runtimeEx) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeEx.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

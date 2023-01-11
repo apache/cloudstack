@@ -34,7 +34,6 @@ import com.cloud.user.Account;
 public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecondaryStagingStoreCmd.class.getName());
 
-    private static final String s_name = "deletesecondarystagingstoreresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -54,11 +53,6 @@ public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

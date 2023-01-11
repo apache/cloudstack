@@ -27,19 +27,13 @@ import org.apache.cloudstack.response.ZoneMetricsResponse;
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = ListZonesMetricsCmd.APINAME, description = "Lists zone metrics", responseObject = ZoneMetricsResponse.class,
+@APICommand(name = "listZonesMetrics", description = "Lists zone metrics", responseObject = ZoneMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin})
 public class ListZonesMetricsCmd extends ListZonesCmd {
-    public static final String APINAME = "listZonesMetrics";
 
     @Inject
     private MetricsService metricsService;
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

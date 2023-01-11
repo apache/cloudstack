@@ -15,13 +15,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 username=$1
 new_passwd=$2
-expected="successfully."
-result=`echo -e "$new_passwd\n$new_passwd" | passwd --stdin $username | grep successfully | awk '{ print $6 }'`
 
-if [ $result = $expected ]; then
+passwd ${username} << EOD
+${new_passwd}
+${new_passwd}
+EOD
+
+if [[ $(echo $?) -eq 0 ]]; then
    exit 0
 else
    exit 1

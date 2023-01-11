@@ -53,7 +53,6 @@
     <a-pagination
       class="row-element pagination"
       size="small"
-      style="overflow-y: auto"
       :current="page"
       :pageSize="pageSize"
       :total="total"

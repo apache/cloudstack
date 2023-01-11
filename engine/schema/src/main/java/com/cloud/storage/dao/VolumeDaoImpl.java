@@ -61,6 +61,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
+    protected final SearchBuilder<VolumeVO> diskOfferingSearch;
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
@@ -263,6 +264,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> findByDiskOfferingId(long diskOfferingId) {
+        SearchCriteria<VolumeVO> sc = diskOfferingSearch.create();
+        sc.setParameters("diskOfferingId", diskOfferingId);
+
+        return listBy(sc);
+    }
+
+    @Override
     public boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId) {
         SearchCriteria<Long> sc = ActiveTemplateSearch.create();
         sc.setParameters("template", templateId);
@@ -373,6 +382,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("updateTime", AllFieldsSearch.entity().getUpdated(), SearchCriteria.Op.LT);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
+        AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -391,6 +401,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         TemplateZoneSearch.and("template", TemplateZoneSearch.entity().getTemplateId(), Op.EQ);
         TemplateZoneSearch.and("zone", TemplateZoneSearch.entity().getDataCenterId(), Op.EQ);
         TemplateZoneSearch.done();
+
+        diskOfferingSearch = createSearchBuilder();
+        diskOfferingSearch.and("diskOfferingId", diskOfferingSearch.entity().getDiskOfferingId(), Op.EQ);
+        diskOfferingSearch.done();
 
         TotalSizeByPoolSearch = createSearchBuilder(SumCount.class);
         TotalSizeByPoolSearch.select("sum", Func.SUM, TotalSizeByPoolSearch.entity().getSize());
@@ -657,15 +671,24 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public List<VolumeVO> listVolumesByPassphraseId(long passphraseId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("passphraseId", passphraseId);
+        return listBy(sc);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
+        s_logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
             _tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
+
         txn.commit();
         return result;
     }
@@ -735,5 +758,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         } catch (SQLException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+    @Override
+    public VolumeVO getInstanceRootVolume(long instanceId) {
+        SearchCriteria<VolumeVO> sc = RootDiskStateSearch.create();
+        sc.setParameters("instanceId", instanceId);
+        sc.setParameters("vType", Volume.Type.ROOT);
+        return findOneBy(sc);
     }
 }

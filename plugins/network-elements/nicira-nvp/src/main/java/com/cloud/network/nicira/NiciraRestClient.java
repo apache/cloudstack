@@ -138,7 +138,7 @@ public class NiciraRestClient extends BasicRestClient {
                 final String respobnseBody = EntityUtils.toString(entity);
                 errorMessage = respobnseBody.subSequence(0, maxResponseErrorMesageLength).toString();
             } catch (final IOException e) {
-                s_logger.debug("Could not read repsonse body. Response: " + response, e);
+                s_logger.debug("Could not read response body. Response: " + response, e);
             }
         }
 

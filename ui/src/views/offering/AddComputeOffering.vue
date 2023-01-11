@@ -153,7 +153,7 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
-            <a-form-item v-if="isAdmin()" name="hosttags" ref="hosttags">
+            <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="hosttags" ref="hosttags">
               <template #label>
                 <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
               </template>
@@ -508,7 +508,7 @@
                 </a-form-item>
               </a-col>
               <a-col :md="12" :lg="12">
-                <a-form-item v-if="isAdmin()" name="storagetags" ref="storagetags">
+                <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="storagetags" ref="storagetags">
                   <template #label>
                     <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
                   </template>
@@ -522,7 +522,7 @@
                     }"
                     :loading="storageTagLoading"
                     :placeholder="apiParams.tags.description"
-                    v-if="isAdmin()">
+                    v-if="isAdmin() || isDomainAdminAllowedToInformTags">
                     <a-select-option v-for="opt in storageTags" :key="opt">
                       {{ opt }}
                     </a-select-option>
@@ -530,6 +530,12 @@
                 </a-form-item>
               </a-col>
             </a-row>
+            <a-form-item name="encryptdisk" ref="encryptdisk">
+              <template #label>
+                <tooltip-label :title="$t('label.encrypt')" :tooltip="apiParams.encryptroot.description" />
+              </template>
+              <a-switch v-model:checked="form.encryptdisk" :checked="encryptdisk" @change="val => { encryptdisk = val }" />
+            </a-form-item>
           </span>
           <span v-if="!computeonly">
             <a-form-item>
@@ -584,6 +590,7 @@ import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import store from '@/store'
 
 export default {
   name: 'AddServiceOffering',
@@ -651,11 +658,13 @@ export default {
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
+      encryptdisk: false,
       computeonly: true,
       diskOfferingLoading: false,
       diskOfferings: [],
       selectedDiskOfferingId: '',
-      qosType: ''
+      qosType: '',
+      isDomainAdminAllowedToInformTags: false
     }
   },
   beforeCreate () {
@@ -692,7 +701,8 @@ export default {
         qostype: this.qosType,
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
-        diskofferingstrictness: this.diskofferingstrictness
+        diskofferingstrictness: this.diskofferingstrictness,
+        encryptdisk: this.encryptdisk
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -753,6 +763,11 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
+      } else if (this.isDomainAdmin()) {
+        this.checkIfDomainAdminIsAllowedToInformTag()
+        if (this.isDomainAdminAllowedToInformTags) {
+          this.fetchStorageTagData()
+        }
       }
       this.fetchDiskOfferings()
     },
@@ -784,6 +799,15 @@ export default {
     isAdmin () {
       return isAdmin()
     },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    checkIfDomainAdminIsAllowedToInformTag () {
+      const params = { id: store.getters.userInfo.accountid }
+      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+        this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
+      })
+    },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
@@ -802,7 +826,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -815,11 +838,9 @@ export default {
       })
     },
     fetchStorageTagData () {
-      const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags', params).then(json => {
+      api('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -831,10 +852,8 @@ export default {
       })
     },
     fetchDeploymentPlannerData () {
-      const params = {}
-      params.listAll = true
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners', params).then(json => {
+      api('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })
@@ -885,9 +904,9 @@ export default {
     },
     handleGpuChange (val) {
       this.vGpuTypes = []
-      for (var i in this.gpuTypes) {
-        if (this.gpuTypes[i].value === val) {
-          this.vGpuTypes = this.gpuTypes[i].vgpu
+      for (var gpuType of this.gpuTypes) {
+        if (gpuType.value === val) {
+          this.vGpuTypes = gpuType.vgpu
           break
         }
       }
@@ -913,7 +932,8 @@ export default {
           offerha: values.offerha === true,
           limitcpuuse: values.limitcpuuse === true,
           dynamicscalingenabled: values.dynamicscalingenabled,
-          diskofferingstrictness: values.diskofferingstrictness
+          diskofferingstrictness: values.diskofferingstrictness,
+          encryptroot: values.encryptdisk
         }
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
@@ -999,9 +1019,7 @@ export default {
           params['serviceofferingdetails[1].key'] = 'pciDevice'
           params['serviceofferingdetails[1].value'] = values.pcidevice
         }
-        if ('vgputype' in values &&
-          this.vGpuTypes !== null && this.vGpuTypes !== undefined &&
-          values.vgputype > this.vGpuTypes.length) {
+        if ('vgputype' in values && this.arrayHasItems(this.vGpuTypes)) {
           params['serviceofferingdetails[2].key'] = 'vgpuType'
           params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
         }

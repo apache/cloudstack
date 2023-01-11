@@ -18,46 +18,96 @@ package com.cloud.network.as.dao;
 
 import java.util.List;
 
-
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+
+import javax.annotation.PostConstruct;
 
 @Component
 public class AutoScaleVmGroupDaoImpl extends GenericDaoBase<AutoScaleVmGroupVO, Long> implements AutoScaleVmGroupDao {
 
+    SearchBuilder<AutoScaleVmGroupVO> AllFieldsSearch;
+
+    @PostConstruct
+    public void init() {
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("loadBalancerId", AllFieldsSearch.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("profileId", AllFieldsSearch.entity().getProfileId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
+    }
+
     @Override
     public List<AutoScaleVmGroupVO> listByAll(Long loadBalancerId, Long profileId) {
-        SearchCriteria<AutoScaleVmGroupVO> sc = createSearchCriteria();
+        SearchCriteria<AutoScaleVmGroupVO> sc = AllFieldsSearch.create();
 
         if (loadBalancerId != null)
-            sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+            sc.setParameters("loadBalancerId", loadBalancerId);
 
         if (profileId != null)
-            sc.addAnd("profileId", SearchCriteria.Op.EQ, profileId);
+            sc.setParameters("profileId", profileId);
 
         return listBy(sc);
     }
 
     @Override
     public boolean isProfileInUse(long profileId) {
-        SearchCriteria<AutoScaleVmGroupVO> sc = createSearchCriteria();
-        sc.addAnd("profileId", SearchCriteria.Op.EQ, profileId);
+        SearchCriteria<AutoScaleVmGroupVO> sc = AllFieldsSearch.create();
+        sc.setParameters("profileId", profileId);
         return findOneBy(sc) != null;
     }
 
     @Override
     public boolean isAutoScaleLoadBalancer(Long loadBalancerId) {
-        GenericSearchBuilder<AutoScaleVmGroupVO, Long> CountByAccount = createSearchBuilder(Long.class);
-        CountByAccount.select(null, Func.COUNT, null);
-        CountByAccount.and("loadBalancerId", CountByAccount.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
+        GenericSearchBuilder<AutoScaleVmGroupVO, Long> countByLoadBalancer = createSearchBuilder(Long.class);
+        countByLoadBalancer.select(null, Func.COUNT, null);
+        countByLoadBalancer.and("loadBalancerId", countByLoadBalancer.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
 
-        SearchCriteria<Long> sc = CountByAccount.create();
+        SearchCriteria<Long> sc = countByLoadBalancer.create();
         sc.setParameters("loadBalancerId", loadBalancerId);
         return customSearch(sc, null).get(0) > 0;
+    }
+
+    @Override
+    public boolean updateState(long groupId, AutoScaleVmGroup.State oldState, AutoScaleVmGroup.State newState) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = AllFieldsSearch.create();
+        sc.setParameters("id", groupId);
+        sc.setParameters("state", oldState);
+        AutoScaleVmGroupVO group = findOneBy(sc);
+        if (group == null) {
+            return false;
+        }
+        group.setState(newState);
+        return update(groupId, group);
+    }
+
+    @Override
+    public List<AutoScaleVmGroupVO> listByLoadBalancer(Long loadBalancerId) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = AllFieldsSearch.create();
+        sc.setParameters("loadBalancerId", loadBalancerId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AutoScaleVmGroupVO> listByProfile(Long profileId) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = AllFieldsSearch.create();
+        sc.setParameters("profileId", profileId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AutoScaleVmGroupVO> listByAccount(Long accountId) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listBy(sc);
     }
 }

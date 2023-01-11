@@ -82,7 +82,7 @@ class sysConfig(object):
             return False
 
         for service in self.services:
-            if not service.configration():
+            if not service.configuration():
                 raise CloudInternalException("Configuration failed for service %s" % service.serviceName)
 
     def restore(self):

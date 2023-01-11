@@ -37,7 +37,7 @@ public class LibvirtScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand,
         String vmName = vmSpec.getName();
         Connect conn = null;
 
-        long newMemory = ByteScaleUtils.bytesToKib(vmSpec.getMaxRam());
+        long newMemory = ByteScaleUtils.bytesToKibibytes(vmSpec.getMaxRam());
         int newVcpus = vmSpec.getCpus();
         int newCpuSpeed = vmSpec.getMinSpeed() != null ? vmSpec.getMinSpeed() : vmSpec.getSpeed();
         int newCpuShares = newVcpus * newCpuSpeed;

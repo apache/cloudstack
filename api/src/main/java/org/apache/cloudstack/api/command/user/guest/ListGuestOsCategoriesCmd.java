@@ -36,7 +36,6 @@ import com.cloud.utils.Pair;
 public class ListGuestOsCategoriesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListGuestOsCategoriesCmd.class.getName());
 
-    private static final String s_name = "listoscategoriesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

@@ -29,7 +29,6 @@ import com.cloud.server.ResourceTag;
 @APICommand(name = "listTags", description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "4.0.0", entityType = {ResourceTag.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd {
-    private static final String s_name = "listtagsresponse";
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "list by resource type")
     private String resourceType;
@@ -72,11 +71,6 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public String getValue() {
         return value;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public String getCustomer() {

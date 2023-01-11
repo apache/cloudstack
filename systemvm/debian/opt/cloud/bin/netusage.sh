@@ -21,6 +21,7 @@
 # netusage.sh -- create iptable rules to gather network stats, running within DomR
 
 source /root/func.sh
+source /opt/cloud/bin/vpc_func.sh
 
 lock="biglock"
 locked=$(getLockFile $lock)
@@ -30,7 +31,7 @@ then
 fi
 
 usage() {
-  printf "Usage: %s -[c|g|r] [-[a|d] <public interface>]\n" $(basename $0)  >&2
+  printf "Usage: %s -[c|g|r] [-[a|d] <public interface>] [-l] <public IP>\n" $(basename $0)  >&2
 }
 
 create_usage_rules () {
@@ -71,7 +72,13 @@ delete_public_interface () {
 }
 
 get_usage () {
-  iptables -L NETWORK_STATS -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  if [ $1 ];then
+    chain=NETWORK_STATS_$1
+  else
+    chain=NETWORK_STATS
+  fi
+  iptables -L $chain -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  # The following code are NOT in use any more
   if [ -f /root/removedVifs ] ; then iptables -Z NETWORK_STATS ; fi; > /dev/null
   /root/clearUsageRules.sh > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
@@ -94,11 +101,12 @@ reset_usage () {
 cflag=
 gflag=
 rflag=
+lflag=
 iflag=
 aflag=
 dflag=
 
-while getopts 'cgria:d:' OPTION
+while getopts 'cgria:d:l:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -107,6 +115,9 @@ do
 		;;
   r)	rflag=1
 		;;
+  l)    lflag=1
+        publicIp="$OPTARG"
+        ;;
   a)    aflag=1
         publicIf="$OPTARG"
         ;;
@@ -129,7 +140,14 @@ fi
 
 if [ "$gflag" == "1" ]
 then
-  get_usage
+  if [ "$lflag" == "1" ]
+  then
+    #get usage of a specific public interface
+    ethDev=$(getEthByIp $publicIp)
+    get_usage $ethDev
+  else
+    get_usage
+  fi
   unlock_exit $? $lock $locked
 fi
 

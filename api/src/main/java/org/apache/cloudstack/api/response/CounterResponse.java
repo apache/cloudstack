@@ -49,6 +49,10 @@ public class CounterResponse extends BaseResponse {
     @Param(description = "zone id of counter")
     private String zoneId;
 
+    @SerializedName(value = ApiConstants.PROVIDER)
+    @Param(description = "Provider of the counter.")
+    private String provider;
+
     @Override
     public String getObjectId() {
         return this.id;
@@ -68,5 +72,9 @@ public class CounterResponse extends BaseResponse {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 }

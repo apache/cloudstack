@@ -19,8 +19,6 @@ package com.cloud.network;
 
 import static org.mockito.Mockito.mock;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.vm.NicProfile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress.State;
@@ -36,7 +35,9 @@ import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.UserIpv6AddressDaoImpl;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 
@@ -239,8 +240,7 @@ public class Ipv6AddressManagerTest {
         Mockito.when(network.getIp6Cidr()).thenReturn("2001:db8:100::/64");
         Mockito.when(network.getIp6Gateway()).thenReturn("2001:db8:100::1");
 
-        Mockito.when(dc.getIp6Dns1()).thenReturn("2001:db8::53:1");
-        Mockito.when(dc.getIp6Dns1()).thenReturn("2001:db8::53:2");
+        Mockito.when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>("2001:db8::53:1", "2001:db8::53:2"));
 
         String expected = "2001:db8:100:0:1c00:b1ff:fe00:af6";
 

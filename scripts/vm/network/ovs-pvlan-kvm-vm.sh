@@ -139,7 +139,7 @@ add_to_ports() {
 }
 
 del_from_ports() {
-  # Delete when only, begining, middle and end of string
+  # Delete when only, beginning, middle and end of string
   echo "$1" | sed -e "s/^$2$//g" -e "s/^$2,//g" -e "s/,$2$//g" -e "s/,$2,/,/g"
 }
 
@@ -231,7 +231,7 @@ then
   ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan
   # From a promiscuous device, so send it to all community and isolated devices on this switch. Passed to all promiscuous devices in the prior step ^^
   ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan_header
-  # Since it's from a community, gotta braodcast it to all community devices
+  # Since it's from a community, gotta broadcast it to all community devices
   if [ "$type" == "C" ]
   then
     ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$sec_vlan

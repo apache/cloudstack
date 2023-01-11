@@ -1736,15 +1736,15 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
         VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
         boolean updateBackingFileReference = ref == null;
-        String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
-        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference);
+        String backingFile = !updateBackingFileReference ? ref.getInstallPath() : srcVolumeBackingFile;
+        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference, srcVolumeInfo.getDataStore().getScope().getScopeType());
     }
 
     /**
      * Return expected MigrationOptions for a full clone volume live storage migration
      */
     protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath());
+        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath(), srcVolumeInfo.getDataStore().getScope().getScopeType());
     }
 
     /**
@@ -1874,6 +1874,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath);
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
+                    prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
                 }
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
@@ -2123,6 +2124,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         newVol.setPoolId(storagePoolVO.getId());
         newVol.setLastPoolId(lastPoolId);
 
+        if (volume.getPassphraseId() != null) {
+            newVol.setPassphraseId(volume.getPassphraseId());
+            newVol.setEncryptFormat(volume.getEncryptFormat());
+        }
+
         return _volumeDao.persist(newVol);
     }
 
@@ -2203,6 +2209,22 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone && migrationOptions.isCopySrcTemplate()) {
                 updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
             }
+        }
+    }
+
+    /**
+     * Include some destination volume info in vmTO, required for some PrepareForMigrationCommand processing
+     *
+     */
+    protected void prepareDiskWithSecretConsumerDetail(VirtualMachineTO vmTO, VolumeInfo srcVolume, String destPath) {
+        if (vmTO.getDisks() != null) {
+            LOGGER.debug(String.format("Preparing VM TO '%s' disks with migration data", vmTO));
+            Arrays.stream(vmTO.getDisks()).filter(diskTO -> diskTO.getData().getId() == srcVolume.getId()).forEach( diskTO -> {
+                if (diskTO.getDetails() == null) {
+                    diskTO.setDetails(new HashMap<>());
+                }
+                diskTO.getDetails().put(DiskTO.SECRET_CONSUMER_DETAIL, destPath);
+            });
         }
     }
 

@@ -43,6 +43,7 @@ import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.VirtualMachineTicket;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -675,7 +676,7 @@ public class VirtualMachineMO extends BaseMO {
         byte[] content = getContext().getResourceContent(url);
 
         if (content == null || content.length < 1) {
-            s_logger.warn("Snapshot descriptor file (vsd) does not exist anymore?");
+            s_logger.warn("Snapshot descriptor file (vsd) was not found.");
         }
 
         SnapshotDescriptor descriptor = new SnapshotDescriptor();
@@ -1250,11 +1251,8 @@ public class VirtualMachineMO extends BaseMO {
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, long sizeInMb,
                            ManagedObjectReference morDs, int controllerKey, String vSphereStoragePolicyId) throws Exception {
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - createDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath + ", sizeInMb: " + sizeInMb +
-                    ", diskType: " + diskType + ", diskMode: " + diskMode + ", rdmDeviceName: " + rdmDeviceName + ", datastore: " + morDs.getValue() + ", controllerKey: " +
-                    controllerKey);
+        s_logger.trace(String.format("Creating disk in target MOR [%s] with values: vmdkDatastorePath [%s], sizeInMb [%s], diskType [%s], diskMode [%s], rdmDeviceName [%s]"
+                    + ", datastore [%s], controllerKey [%s].", _mor.getValue(), vmdkDatastorePath, sizeInMb, diskType, diskMode, rdmDeviceName, morDs.getValue(), controllerKey));
 
         assert (vmdkDatastorePath != null);
         assert (morDs != null);
@@ -1283,6 +1281,8 @@ public class VirtualMachineMO extends BaseMO {
 
             backingInfo.setDatastore(morDs);
             backingInfo.setFileName(vmdkDatastorePath);
+            s_logger.trace(String.format("Created backing info with values [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields("diskMode", "thinProvisioned",
+                    "eagerlyScrub", "datastore", "filename")));
             newDisk.setBacking(backingInfo);
         } else if (diskType == VirtualDiskType.RDM || diskType == VirtualDiskType.RDMP) {
             VirtualDiskRawDiskMappingVer1BackingInfo backingInfo = new VirtualDiskRawDiskMappingVer1BackingInfo();
@@ -1298,6 +1298,8 @@ public class VirtualMachineMO extends BaseMO {
 
             backingInfo.setDatastore(morDs);
             backingInfo.setFileName(vmdkDatastorePath);
+            s_logger.trace(String.format("Created backing info with values [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields("compatibilityMode", "deviceName",
+                    "diskMode", "datastore", "filename")));
             newDisk.setBacking(backingInfo);
         }
 
@@ -1318,9 +1320,7 @@ public class VirtualMachineMO extends BaseMO {
             PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
             VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
             deviceConfigSpec.getProfile().add(diskProfileSpec);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Adding vSphere storage profile: %s to volume [%s]", vSphereStoragePolicyId, vmdkDatastorePath));
-            }
+            s_logger.debug(String.format("Adding vSphere storage profile [%s] to volume [%s].", vSphereStoragePolicyId, vmdkDatastorePath));
         }
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
@@ -1328,15 +1328,10 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
 
         if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - createDisk() done(failed)");
-            throw new Exception("Unable to create disk " + vmdkDatastorePath + " due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            throw new CloudRuntimeException(String.format("Unable to create disk [%s] due to [%s].", vmdkDatastorePath, TaskMO.getTaskFailureInfo(_context, morTask)));
         }
 
         _context.waitForTaskProgressDone(morTask);
-
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - createDisk() done(successfully)");
     }
 
     public void updateVmdkAdapter(String vmdkFileName, String diskController) throws Exception {
@@ -1484,22 +1479,19 @@ public class VirtualMachineMO extends BaseMO {
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public List<Pair<String, ManagedObjectReference>> detachDisk(String vmdkDatastorePath, boolean deleteBackingFile) throws Exception {
 
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - detachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath + ", deleteBacking: " +
-                    deleteBackingFile);
+        s_logger.trace(String.format("Detaching disk in target MOR [%s], with vmdkDatastorePath [%s] and deleteBacking [%s].", _mor.getValue(), vmdkDatastorePath, deleteBackingFile));
 
         // Note: if VM has been taken snapshot, original backing file will be renamed, therefore, when we try to find the matching
         // VirtualDisk, we only perform prefix matching
         Pair<VirtualDisk, String> deviceInfo = getDiskDevice(vmdkDatastorePath);
         if (deviceInfo == null) {
-            s_logger.warn("vCenter API trace - detachDisk() done (failed)");
-            throw new Exception("No such disk device: " + vmdkDatastorePath);
+            throw new CloudRuntimeException(String.format("No such disk device [%s].", vmdkDatastorePath));
         }
 
         // IDE virtual disk cannot be detached if VM is running
         if (deviceInfo.second() != null && deviceInfo.second().contains("ide")) {
             if (getPowerState() == VirtualMachinePowerState.POWERED_ON) {
-                throw new Exception("Removing a virtual disk over IDE controller is not supported while VM is running in VMware hypervisor. " +
+                throw new CloudRuntimeException("Removing a virtual disk over IDE controller is not supported while the VM is running in VMware hypervisor. " +
                         "Please re-try when VM is not running.");
             }
         }
@@ -1521,10 +1513,7 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
 
         if (!result) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - detachDisk() done (failed)");
-
-            throw new Exception("Failed to detach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            throw new CloudRuntimeException(String.format("Failed to detach disk from VM [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
         }
         _context.waitForTaskProgressDone(morTask);
 
@@ -1533,7 +1522,7 @@ public class VirtualMachineMO extends BaseMO {
         try {
             snapshotDescriptor = getSnapshotDescriptor();
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve snapshot descriptor, will skip updating snapshot reference");
+            s_logger.warn(String.format("Unable to retrieve snapshot descriptor due to [%s], we will not update the snapshot reference.", e.getMessage()), e);
         }
 
         if (snapshotDescriptor != null) {
@@ -1549,8 +1538,6 @@ public class VirtualMachineMO extends BaseMO {
             getContext().uploadResourceContent(url, snapshotDescriptor.getVmsdContent());
         }
 
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - detachDisk() done (successfully)");
         return chain;
     }
 
@@ -2602,12 +2589,13 @@ public class VirtualMachineMO extends BaseMO {
         String trimmedSrcBaseName = VmwareHelper.trimSnapshotDeltaPostfix(srcBaseName);
         String srcDatastoreName = dsSrcFile.getDatastoreName() != null ? dsSrcFile.getDatastoreName() : zeroLengthString;
 
-        s_logger.info("Look for disk device info for volume : " + vmdkDatastorePath + " with base name: " + srcBaseName);
+        s_logger.info(String.format("Looking for disk device info for volume [%s] with base name [%s].", vmdkDatastorePath, srcBaseName));
 
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device instanceof VirtualDisk) {
-                    s_logger.info("Test against disk device, controller key: " + device.getControllerKey() + ", unit number: " + device.getUnitNumber());
+                    s_logger.info(String.format("Testing if disk device with controller key [%s] and unit number [%s] has backing of type VirtualDiskFlatVer2BackingInfo.",
+                            device.getControllerKey(), device.getUnitNumber()));
 
                     VirtualDeviceBackingInfo backingInfo = device.getBacking();
 
@@ -2615,11 +2603,11 @@ public class VirtualMachineMO extends BaseMO {
                         VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
 
                         do {
-                            s_logger.info("Test against disk backing : " + diskBackingInfo.getFileName());
-
                             DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
 
                             String backingDatastoreName = dsBackingFile.getDatastoreName() != null ? dsBackingFile.getDatastoreName() : zeroLengthString;
+
+                            s_logger.info(String.format("Testing if backing datastore name [%s] from backing [%s] matches source datastore name [%s].", backingDatastoreName, diskBackingInfo.getFileName(), srcDatastoreName));
 
                             if (srcDatastoreName.equals(zeroLengthString)) {
                                 backingDatastoreName = zeroLengthString;
@@ -2631,7 +2619,7 @@ public class VirtualMachineMO extends BaseMO {
                                 if (backingBaseName.equalsIgnoreCase(srcBaseName)) {
                                     String deviceNumbering = getDeviceBusName(devices, device);
 
-                                    s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
+                                    s_logger.info(String.format("Disk backing [%s] matches device bus name [%s].", diskBackingInfo.getFileName(), deviceNumbering));
                                     return new Pair<>((VirtualDisk)device, deviceNumbering);
                                 }
 
@@ -2650,24 +2638,25 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         // No disk device was found with an exact match for the volume path, hence look for disk device that matches the trimmed name.
-        s_logger.info("No disk device with an exact match found for volume : " + vmdkDatastorePath + ". Look for disk device info against trimmed base name: " + srcBaseName);
+        s_logger.info(String.format("No disk device exactly matching [%s] was found for volume [%s]. Looking for disk device info against trimmed base name [%s].", srcBaseName,
+                vmdkDatastorePath, srcBaseName));
 
         if (partialMatchingDiskDevices != null) {
             if (partialMatchingDiskDevices.size() == 1) {
                 VirtualDiskFlatVer2BackingInfo matchingDiskBackingInfo = (VirtualDiskFlatVer2BackingInfo)partialMatchingDiskDevices.get(0).first().getBacking();
 
-                s_logger.info("Disk backing : " + matchingDiskBackingInfo.getFileName() + " matches ==> " + partialMatchingDiskDevices.get(0).second());
+                s_logger.info(String.format("Disk backing [%s] matches [%s].", matchingDiskBackingInfo.getFileName(), partialMatchingDiskDevices.get(0).second()));
 
                 return partialMatchingDiskDevices.get(0);
             } else if (partialMatchingDiskDevices.size() > 1) {
-                s_logger.warn("Disk device info lookup for volume: " + vmdkDatastorePath + " failed as multiple disk devices were found to match" +
-                        " volume's trimmed base name: " + trimmedSrcBaseName);
+                s_logger.warn(String.format("Disk device info lookup for volume [%s] failed as multiple disk devices were found to match volume's trimmed base name [%s].",
+                        vmdkDatastorePath, trimmedSrcBaseName));
 
                 return null;
             }
         }
 
-        s_logger.warn("Disk device info lookup for volume: " + vmdkDatastorePath + " failed as no matching disk device found");
+        s_logger.warn(String.format("Disk device info lookup for volume [%s] failed as no matching disk device was found.", vmdkDatastorePath));
 
         return null;
     }

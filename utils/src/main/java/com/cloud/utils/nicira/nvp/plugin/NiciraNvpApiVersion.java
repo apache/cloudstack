@@ -40,8 +40,10 @@ public class NiciraNvpApiVersion {
         return (compare < 0);
     }
 
-    public static synchronized void logNiciraApiVersion(){
-        s_logger.info("NSX API VERSION: " + ((niciraApiVersion != null) ? niciraApiVersion : " NOT PRESENT"));
+    public static synchronized void logNiciraApiVersion() {
+        if (niciraApiVersion != null) {
+            s_logger.info(String.format("NSX API VERSION: %s", niciraApiVersion));
+        }
     }
 
 }

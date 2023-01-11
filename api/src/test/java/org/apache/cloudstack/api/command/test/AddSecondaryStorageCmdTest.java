@@ -49,8 +49,7 @@ public class AddSecondaryStorageCmdTest extends TestCase {
     @Override
     @Before
     public void setUp() {
-        addImageStoreCmd = new AddImageStoreCmd() {
-        };
+        addImageStoreCmd = new AddImageStoreCmd();
 
     }
 

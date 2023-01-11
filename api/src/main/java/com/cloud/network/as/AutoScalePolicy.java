@@ -21,8 +21,25 @@ import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
+
+    enum Action {
+        SCALEUP, SCALEDOWN;
+
+        public static Action fromValue(String action) {
+            if (StringUtils.isBlank(action)) {
+                return null;
+            } else if (action.equalsIgnoreCase("ScaleUp")) {
+                return SCALEUP;
+            } else if (action.equalsIgnoreCase("ScaleDown")) {
+                return SCALEDOWN;
+            } else {
+                throw new IllegalArgumentException("Unexpected AutoScale action : " + action);
+            }
+        }
+    }
 
     @Override
     long getId();
@@ -33,8 +50,8 @@ public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
 
     public int getQuietTime();
 
-    public Date getLastQuiteTime();
+    public Date getLastQuietTime();
 
-    public String getAction();
+    public Action getAction();
 
 }

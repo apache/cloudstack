@@ -53,7 +53,7 @@ public enum Config {
             String.class,
             "alert.email.addresses",
             null,
-            "Comma separated list of email addresses used for sending alerts.",
+            "Comma separated list of email addresses which are going to receive alert emails.",
             null),
     AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
     AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
@@ -228,7 +228,7 @@ public enum Config {
             String.class,
             "network.loadbalancer.haproxy.stats.visibility",
             "global",
-            "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
+            "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
             null),
     NetworkLBHaproxyStatsUri(
             "Network",
@@ -244,7 +244,7 @@ public enum Config {
             String.class,
             "network.loadbalancer.haproxy.stats.auth",
             "admin1:AdMiN123",
-            "Load Balancer(haproxy) authetication string in the format username:password",
+            "Load Balancer(haproxy) authentication string in the format username:password",
             null),
     NetworkLBHaproxyStatsPort(
             "Network",
@@ -426,7 +426,7 @@ public enum Config {
             "Console proxy command port that is used to communicate with management server",
             null),
     ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName"),
+    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName", "privateip"),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,
@@ -689,7 +689,7 @@ public enum Config {
             Boolean.class,
             "secstorage.encrypt.copy",
             "false",
-            "Use SSL method used to encrypt copy traffic between zones",
+            "Use SSL method used to encrypt copy traffic between zones. Also ensures that the certificate assigned to the zone is used when generating links for external access.",
             "true,false"),
     SecStorageSecureCopyCert(
             "Advanced",
@@ -1263,15 +1263,6 @@ public enum Config {
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
-    TaskCleanupRetryInterval(
-            "Advanced",
-            ManagementServer.class,
-            Integer.class,
-            "task.cleanup.retry.interval",
-            "600",
-            "Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.",
-            "Seconds"),
-
     // Account Default Limits
     DefaultMaxAccountUserVms(
             "Account Defaults",
@@ -1696,7 +1687,7 @@ public enum Config {
             String.class,
             "baremetal.ipmi.lan.interface",
             "default",
-            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default valule 'default' means using default option of ipmitool",
+            "option specified in -I option of impitool. candidates are: open/bmc/lipmi/lan/lanplus/free/imb, see ipmitool man page for details. default value 'default' means using default option of ipmitool",
             null),
 
     BaremetalIpmiRetryTimes("Advanced",
@@ -1792,7 +1783,7 @@ public enum Config {
     private final String _name;
     private final String _defaultValue;
     private final String _description;
-    private final String _range;
+    private final String[] _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
 
     private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
@@ -1842,7 +1833,7 @@ public enum Config {
         }
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
+    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String... range) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1905,7 +1896,7 @@ public enum Config {
         }
     }
 
-    public String getRange() {
+    public String[] getRange() {
         return _range;
     }
 
