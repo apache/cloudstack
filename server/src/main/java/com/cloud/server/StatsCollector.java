@@ -1901,7 +1901,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         volumeStatsVmDiskEntry.setPath(statsForCurrentIteration.getPath());
         volumeStatsVmDiskEntry.setBytesRead(Math.max(0, statsForCurrentIteration.getBytesRead() - previousStats.getCurrentBytesRead()));
         volumeStatsVmDiskEntry.setBytesWrite(Math.max(0, statsForCurrentIteration.getBytesWrite() - previousStats.getCurrentBytesWrite()));
-        volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
+        volumeStatsVmDiskEntry.setIOWrite(Math.max(0, statsForCurrentIteration.getIOWrite() - previousStats.getCurrentIOWrite()));
         volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
         VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, gson.toJson(volumeStatsVmDiskEntry));
         if (LOGGER.isDebugEnabled()) {
