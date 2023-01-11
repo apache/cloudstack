@@ -169,17 +169,6 @@
     </dependencies>
     <profiles>
         <profile>
-            <id>srx</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>network-elements/juniper-srx</module>
-            </modules>
-        </profile>
-        <profile>
             <id>vmware</id>
             <activation>
                 <property>
