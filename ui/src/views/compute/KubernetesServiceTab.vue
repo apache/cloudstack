@@ -199,7 +199,7 @@ export default {
       vmColumns: [],
       networkLoading: false,
       network: {},
-      publicIpAddress: {},
+      publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
       annotations: []
