@@ -1450,7 +1450,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     }
 
                                     if (persistVolumeStats) {
-                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, previousVmDiskStats, timestamp);
+                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, vm.getHypervisorType(), previousVmDiskStats, timestamp);
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStatEntry.getBytesRead()) {
@@ -1895,15 +1895,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * @param statsForCurrentIteration the metrics stats data to persist.
      * @param timestamp the time that will be stamped.
      */
-    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, VmDiskStatisticsVO previousStats, Date timestamp) {
-        VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry();
-        volumeStatsVmDiskEntry.setVmName(statsForCurrentIteration.getVmName());
-        volumeStatsVmDiskEntry.setPath(statsForCurrentIteration.getPath());
-        volumeStatsVmDiskEntry.setBytesRead(Math.max(0, statsForCurrentIteration.getBytesRead() - previousStats.getCurrentBytesRead()));
-        volumeStatsVmDiskEntry.setBytesWrite(Math.max(0, statsForCurrentIteration.getBytesWrite() - previousStats.getCurrentBytesWrite()));
-        volumeStatsVmDiskEntry.setIOWrite(Math.max(0, statsForCurrentIteration.getIOWrite() - previousStats.getCurrentIOWrite()));
-        volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
-        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, gson.toJson(volumeStatsVmDiskEntry));
+    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, HypervisorType hypervisorType, VmDiskStatisticsVO previousStats, Date timestamp) {
+        String stats;
+        if (!HypervisorType.VMware.equals(hypervisorType)) {
+            VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry();
+            volumeStatsVmDiskEntry.setVmName(statsForCurrentIteration.getVmName());
+            volumeStatsVmDiskEntry.setPath(statsForCurrentIteration.getPath());
+            volumeStatsVmDiskEntry.setBytesRead(Math.max(0, statsForCurrentIteration.getBytesRead() - previousStats.getCurrentBytesRead()));
+            volumeStatsVmDiskEntry.setBytesWrite(Math.max(0, statsForCurrentIteration.getBytesWrite() - previousStats.getCurrentBytesWrite()));
+            volumeStatsVmDiskEntry.setIOWrite(Math.max(0, statsForCurrentIteration.getIOWrite() - previousStats.getCurrentIOWrite()));
+            volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
+            stats = gson.toJson(volumeStatsVmDiskEntry);
+        } else {
+            stats = gson.toJson(statsForCurrentIteration);
+        }
+        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, stats);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("Recording volume stats: [%s].", volumeStatsVO));
         }

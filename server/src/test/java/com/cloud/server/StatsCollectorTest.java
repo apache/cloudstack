@@ -54,6 +54,7 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.storage.VolumeStatsVO;
 import com.cloud.storage.dao.VolumeStatsDao;
@@ -432,8 +433,7 @@ public class StatsCollectorTest {
         Assert.assertFalse(statsCollector.isDbLocal());
     }
 
-    @Test
-    public void testPersistVolumeStats() {
+    private void performPersistVolumeStatsTest(Hypervisor.HypervisorType hypervisorType) {
         Date timestamp = new Date();
         String vmName= "vm";
         String path = "path";
@@ -458,7 +458,7 @@ public class StatsCollectorTest {
             persistedStats.add(statsVO);
             return statsVO;
         });
-        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, vmDiskStatisticsVO, timestamp);
+        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, hypervisorType, vmDiskStatisticsVO, timestamp);
         Assert.assertTrue(CollectionUtils.isNotEmpty(persistedStats));
         Assert.assertNotNull(persistedStats.get(0));
         VolumeStatsVO stat = persistedStats.get(0);
@@ -466,9 +466,26 @@ public class StatsCollectorTest {
         VmDiskStatsEntry entry = gson.fromJson(stat.getVolumeStatsData(), VmDiskStatsEntry.class);
         Assert.assertEquals(vmName, entry.getVmName());
         Assert.assertEquals(path, entry.getPath());
-        Assert.assertEquals(ioReadDiff, entry.getIORead());
-        Assert.assertEquals(ioWriteDiff, entry.getIOWrite());
-        Assert.assertEquals(readDiff, entry.getBytesRead());
-        Assert.assertEquals(writeDiff, entry.getBytesWrite());
+        if (Hypervisor.HypervisorType.VMware.equals(hypervisorType)) {
+            Assert.assertEquals(statsForCurrentIteration.getIORead(), entry.getIORead());
+            Assert.assertEquals(statsForCurrentIteration.getIOWrite(), entry.getIOWrite());
+            Assert.assertEquals(statsForCurrentIteration.getBytesRead(), entry.getBytesRead());
+            Assert.assertEquals(statsForCurrentIteration.getBytesWrite(), entry.getBytesWrite());
+        } else {
+            Assert.assertEquals(ioReadDiff, entry.getIORead());
+            Assert.assertEquals(ioWriteDiff, entry.getIOWrite());
+            Assert.assertEquals(readDiff, entry.getBytesRead());
+            Assert.assertEquals(writeDiff, entry.getBytesWrite());
+        }
+    }
+
+    @Test
+    public void testPersistVolumeStatsKVM() {
+        performPersistVolumeStatsTest(Hypervisor.HypervisorType.KVM);
+    }
+
+    @Test
+    public void testPersistVolumeStatsVmware() {
+        performPersistVolumeStatsTest(Hypervisor.HypervisorType.VMware);
     }
 }
