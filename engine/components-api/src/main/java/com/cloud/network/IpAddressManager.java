@@ -227,4 +227,3 @@ public interface IpAddressManager {
                                              final boolean lockOneRow)
             throws InsufficientAddressCapacityException;
 }
-
