@@ -1069,19 +1069,7 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create  a tag on ISO using createTags API
         # 2. Delete above created tag using deleteTags API
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.debug("ISO created with ID: %s" % iso.id)
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-
-        if not isinstance(list_iso_response, list):
-            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+        iso = self.create_iso()
 
         self.debug("Creating a tag for the ISO")
         tag = Tag.create(
@@ -1840,19 +1828,7 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.cleanup.append(other_user_account)
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=user_account.name,
-            domainid=user_account.domainid
-        )
-        self.debug("ISO created with ID: %s" % iso.id)
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-
-        if not isinstance(list_iso_response, list):
-            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+        iso = self.create_iso()
 
         self.debug("Creating a tag for the ISO")
         tag = Tag.create(
@@ -1932,18 +1908,7 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.cleanup.append(user_account)
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=user_account.name,
-            domainid=user_account.domainid
-        )
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-
-        if not isinstance(list_iso_response, list):
-            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+        iso = self.create_iso()
 
         Tag.create(self.apiclient,
                    resourceIds=iso.id,
@@ -3070,3 +3035,24 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should return empty response"
         )
         return
+
+    def create_iso(self):
+        try:
+            iso = Iso.create(
+                self.apiclient,
+                self.services["iso"],
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        except:
+            raise unittest.SkipTest("Cannot register ISO for tagging")
+        self.cleanup.append(iso)
+        self.debug("ISO created with ID: %s" % iso.id)
+
+        list_iso_response = Iso.list(self.apiclient,
+                                     id=iso.id)
+
+        if not isinstance(list_iso_response, list):
+            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+
+        return iso
