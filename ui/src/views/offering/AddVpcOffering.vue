@@ -94,6 +94,29 @@
         <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
           <a-switch v-model:checked="form.redundantrouter" />
         </a-form-item>
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
+          <a-alert v-if="!isVpcVirtualRouterForAtLeastOneService" type="warning" style="margin-bottom: 10px">
+            <template #message>
+              <span v-html="$t('message.vr.alert.upon.network.offering.creation.others')" />
+            </template>
+          </a-alert>
+          <template #label>
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            v-model:value="form.serviceofferingid"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="apiParams.serviceofferingid.description">
+            <a-select-option v-for="(opt) in serviceOfferings" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -189,6 +212,9 @@ export default {
       loading: false,
       supportedServices: [],
       supportedServiceLoading: false,
+      serviceOfferings: [],
+      serviceOfferingLoading: false,
+      isVpcVirtualRouterForAtLeastOneService: false,
       connectivityServiceChecked: false,
       sourceNatServiceChecked: false,
       selectedServiceProviderMap: {},
@@ -366,6 +392,29 @@ export default {
       } else {
         delete this.selectedServiceProviderMap[service]
       }
+      this.isVpcVirtualRouterForAtLeastOneService = false
+      const providers = Object.values(this.selectedServiceProviderMap)
+      const self = this
+      providers.forEach(function (prvdr, idx) {
+        if (prvdr === 'VpcVirtualRouter') {
+          self.isVpcVirtualRouterForAtLeastOneService = true
+        }
+      })
+      if (this.isVpcVirtualRouterForAtLeastOneService && this.serviceOfferings.length === 0) {
+        this.fetchServiceOfferingData()
+      }
+    },
+    fetchServiceOfferingData () {
+      const params = {}
+      params.issystem = true
+      params.systemvmtype = 'domainrouter'
+      this.serviceOfferingLoading = true
+      api('listServiceOfferings', params).then(json => {
+        const listServiceOfferings = json.listserviceofferingsresponse.serviceoffering
+        this.serviceOfferings = this.serviceOfferings.concat(listServiceOfferings)
+      }).finally(() => {
+        this.serviceOfferingLoading = false
+      })
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -432,6 +481,9 @@ export default {
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++
+          }
+          if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
+            params.serviceofferingid = values.serviceofferingid
           }
         } else {
           params.supportedservices = ''
