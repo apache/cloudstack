@@ -109,6 +109,9 @@ export default {
             highestValue = currentValue
             while (highestValue > maxYAxis) {
               maxYAxis += incrementValue
+              if (maxYAxis % incrementValue !== 0) {
+                maxYAxis = Math.round(maxYAxis / incrementValue) * incrementValue
+              }
             }
           }
         }
