@@ -73,7 +73,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
         }
 
-        s_logger.debug(String.format("RandomStoragePoolAllocator is returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
+        logEndOfSearch(suitablePools);
 
         return suitablePools;
     }

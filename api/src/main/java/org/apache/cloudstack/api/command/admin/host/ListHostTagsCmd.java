@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.HostTagResponse;
 public class ListHostTagsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHostTagsCmd.class.getName());
 
-    private static final String s_name = "listhosttagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -42,11 +41,6 @@ public class ListHostTagsCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

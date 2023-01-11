@@ -268,4 +268,3 @@ class TestRoleBasedUsersInProjects(cloudstackTestCase):
             )
         except Exception as e:
             pass
-

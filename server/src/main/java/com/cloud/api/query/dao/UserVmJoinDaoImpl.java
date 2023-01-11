@@ -52,6 +52,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
+import com.cloud.host.ControlState;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
@@ -171,6 +172,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
             userVmResponse.setHostName(userVm.getHostName());
+        }
+        if (userVm.getHostStatus() != null) {
+            userVmResponse.setHostControlState(ControlState.getControlState(userVm.getHostStatus(), userVm.getHostResourceState()).toString());
         }
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.tmpl)) {
@@ -398,6 +402,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
 
+        if (userVm.getAutoScaleVmGroupName() != null) {
+            userVmResponse.setAutoScaleVmGroupName(userVm.getAutoScaleVmGroupName());
+        }
+        if (userVm.getAutoScaleVmGroupUuid() != null) {
+            userVmResponse.setAutoScaleVmGroupId(userVm.getAutoScaleVmGroupUuid());
+        }
+
+        if (userVm.getUserDataId() != null) {
+            userVmResponse.setUserDataId(userVm.getUserDataUUid());
+            userVmResponse.setUserDataName(userVm.getUserDataName());
+            userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
+            userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
+        }
+
         addVmRxTxDataToResponse(userVm, userVmResponse);
 
         return userVmResponse;
@@ -449,7 +467,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             nicResponse.setId(uvo.getNicUuid());
             /*2: networkUuid*/
             nicResponse.setNetworkid(uvo.getNetworkUuid());
-            /*3: vmId makes no sense on a nested nic object so it is ommited here */
+            /*3: vmId makes no sense on a nested nic object so it is omitted here */
 
             if (uvo.getTrafficType() != null) {
             /*4: trafficType*/

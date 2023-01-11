@@ -235,7 +235,7 @@ public class OpenDaylightControllerResource implements ServerResource {
         newNetwork.setName(cmd.getName());
         newNetwork.setTenantId(cmd.getTenantId());
 
-        // Static configuation
+        // Static configuration
         newNetwork.setNetworkType("gre");
         newNetwork.setShared(false);
         newNetwork.setSegmentationId(gre_key);

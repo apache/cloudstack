@@ -47,7 +47,6 @@ import com.cloud.user.Account;
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
-    private static final String s_name = "createipforwardingruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -104,11 +103,6 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws ResourceUnavailableException {

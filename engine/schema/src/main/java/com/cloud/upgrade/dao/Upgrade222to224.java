@@ -89,7 +89,7 @@ public class Upgrade222to224 implements DbUpgrade {
             upgradeGuestOs(conn);
             fixRecreatableVolumesProblem(conn);
             updateFkeysAndIndexes(conn);
-            fixIPResouceCount(conn);
+            fixIPResourceCount(conn);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to perform data migration", e);
         }
@@ -521,7 +521,7 @@ public class Upgrade222to224 implements DbUpgrade {
 
     // In 2.2.x there was a bug when resource_count was incremented when Direct ip was allocated. Have to fix it during the
     // upgrade
-    private void fixIPResouceCount(Connection conn) throws SQLException {
+    private void fixIPResourceCount(Connection conn) throws SQLException {
         // First set all public_ip fields to be 0
         PreparedStatement pstmt = conn.prepareStatement("UPDATE resource_count set count=0 where type='public_ip'");
         pstmt.executeUpdate();

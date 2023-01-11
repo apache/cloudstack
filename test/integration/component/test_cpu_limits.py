@@ -300,7 +300,7 @@ class TestCPULimits(cloudstackTestCase):
 
         expected_resource_count = int(self.service_offering.cpunumber) * 4 #Total 4 Vms
         self.assertTrue(resource_count == expected_resource_count,
-                         "Resource count does not match the expected vavlue")
+                         "Resource count does not match the expected value")
         return
 
 class TestDomainCPULimitsConfiguration(cloudstackTestCase):

@@ -27,6 +27,9 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
 
@@ -236,6 +239,7 @@ public class LibvirtVMDef {
         private int vcpu = -1;
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
+        private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
 
         public void setMemorySize(long mem) {
             this.memory = mem;
@@ -276,7 +280,14 @@ public class LibvirtVMDef {
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
-            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this.memoryBalloning ? "virtio" : "none"));
+            MemBalloonDef memBalloonDef = new MemBalloonDef();
+            if (this.memoryBalloning) {
+                memBalloonDef.defVirtioMemBalloon(String.valueOf(memoryBalloonStatsPeriod));
+            } else {
+                memBalloonDef.defNoneMemBalloon();
+            }
+            response.append(String.format("<devices>%n%s%n</devices>%n", memBalloonDef.toString()));
+
             response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
         }
@@ -849,17 +860,31 @@ public class LibvirtVMDef {
         }
 
         public void defISODisk(String volPath, Integer devId) {
-            if (devId == null) {
+            defISODisk(volPath, devId, null);
+        }
+
+        public void defISODisk(String volPath, Integer devId, String diskLabel) {
+            if (devId == null && StringUtils.isBlank(diskLabel)) {
+                s_logger.debug(String.format("No ID or label informed for volume [%s].", volPath));
                 defISODisk(volPath);
-            } else {
-                _diskType = DiskType.FILE;
-                _deviceType = DeviceType.CDROM;
-                _sourcePath = volPath;
-                _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
-                _diskFmtType = DiskFmtType.RAW;
-                _diskCacheMode = DiskCacheMode.NONE;
-                _bus = DiskBus.IDE;
+                return;
             }
+
+            _diskType = DiskType.FILE;
+            _deviceType = DeviceType.CDROM;
+            _sourcePath = volPath;
+
+            if (StringUtils.isNotBlank(diskLabel)) {
+                s_logger.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
+                _diskLabel = diskLabel;
+            } else {
+                _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
+                s_logger.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
+            }
+
+            _diskFmtType = DiskFmtType.RAW;
+            _diskCacheMode = DiskCacheMode.NONE;
+            _bus = DiskBus.IDE;
         }
 
         public void defISODisk(String volPath, Integer devId,boolean isSecure) {
@@ -1093,13 +1118,15 @@ public class LibvirtVMDef {
                 diskBuilder.append(" protocol='" + _diskProtocol + "'");
                 diskBuilder.append(" name='" + _sourcePath + "'");
                 diskBuilder.append(">\n");
-                diskBuilder.append("<host name='");
-                diskBuilder.append(_sourceHost);
-                if (_sourcePort != 0) {
-                    diskBuilder.append("' port='");
-                    diskBuilder.append(_sourcePort);
+                for (String sourceHost : _sourceHost.split(",")) {
+                    diskBuilder.append("<host name='");
+                    diskBuilder.append(sourceHost.replace("[", "").replace("]", ""));
+                    if (_sourcePort != 0) {
+                        diskBuilder.append("' port='");
+                        diskBuilder.append(_sourcePort);
+                    }
+                    diskBuilder.append("'/>\n");
                 }
-                diskBuilder.append("'/>\n");
                 diskBuilder.append("</source>\n");
                 if (_authUserName != null) {
                     diskBuilder.append("<auth username='" + _authUserName + "'>\n");
@@ -1167,6 +1194,53 @@ public class LibvirtVMDef {
 
             diskBuilder.append("</disk>\n");
             return diskBuilder.toString();
+        }
+    }
+
+    public static class MemBalloonDef {
+        private MemBalloonModel memBalloonModel;
+        private String memBalloonStatsPeriod;
+
+        public enum MemBalloonModel {
+            NONE("none"), VIRTIO("virtio");
+            String model;
+
+            MemBalloonModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        public void defNoneMemBalloon() {
+            memBalloonModel = MemBalloonModel.NONE;
+        }
+
+        public void defVirtioMemBalloon(String period) {
+            memBalloonModel = MemBalloonModel.VIRTIO;
+            memBalloonStatsPeriod = period;
+        }
+
+        public MemBalloonModel getMemBalloonModel() {
+            return memBalloonModel;
+        }
+
+        public String getMemBalloonStatsPeriod() {
+            return memBalloonStatsPeriod;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder memBalloonBuilder = new StringBuilder();
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
+                memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
+            }
+            memBalloonBuilder.append("</memballoon>");
+            return memBalloonBuilder.toString();
         }
     }
 

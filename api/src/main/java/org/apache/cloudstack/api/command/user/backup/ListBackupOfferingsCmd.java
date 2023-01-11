@@ -39,12 +39,11 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListBackupOfferingsCmd.APINAME,
+@APICommand(name = "listBackupOfferings",
         description = "Lists backup offerings",
         responseObject = BackupOfferingResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupOfferingsCmd extends BaseBackupListCmd {
-    public static final String APINAME = "listBackupOfferings";
 
     @Inject
     private BackupManager backupManager;
@@ -89,8 +88,4 @@ public class ListBackupOfferingsCmd extends BaseBackupListCmd {
         }
     }
 
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
-}

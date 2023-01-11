@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
@@ -42,7 +41,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = ListUnmanagedInstancesCmd.API_NAME,
+@APICommand(name = "listUnmanagedInstances",
         description = "Lists unmanaged virtual machines for a given cluster.",
         responseObject = UnmanagedInstanceResponse.class,
         responseView = ResponseObject.ResponseView.Full,
@@ -53,7 +52,6 @@ import com.cloud.user.Account;
         since = "4.14.0")
 public class ListUnmanagedInstancesCmd extends BaseListCmd {
     public static final Logger LOGGER = Logger.getLogger(ListUnmanagedInstancesCmd.class.getName());
-    public static final String API_NAME = "listUnmanagedInstances";
 
     @Inject
     public VmImportService vmImportService;
@@ -95,11 +93,6 @@ public class ListUnmanagedInstancesCmd extends BaseListCmd {
         ListResponse<UnmanagedInstanceResponse> response = vmImportService.listUnmanagedInstances(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return API_NAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

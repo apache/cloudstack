@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import com.cloud.network.NetworkService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -156,6 +157,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.17.0",
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
+
+    @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer publicMtu;
+
+    @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's private interface(s)", since = "4.18.0")
+    private Integer privateMtu;
 
     @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network", since = "4.18.0")
     private String ip4Dns1;
@@ -338,6 +347,13 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         return aclId;
     }
 
+    public Integer getPublicMtu() {
+        return publicMtu != null ? publicMtu : NetworkService.DEFAULT_MTU;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu != null ? privateMtu : NetworkService.DEFAULT_MTU;
+    }
     public String getIp4Dns1() {
         return ip4Dns1;
     }

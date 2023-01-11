@@ -30,13 +30,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = UpdateAnnotationVisibilityCmd.APINAME, description = "update an annotation visibility.",
+@APICommand(name = "updateAnnotationVisibility", description = "update an annotation visibility.",
         responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.16", authorized = {RoleType.Admin})
 public class UpdateAnnotationVisibilityCmd extends BaseCmd {
 
-    public static final String APINAME = "updateAnnotationVisibility";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true,
             description = "the id of the annotation")
@@ -60,11 +59,6 @@ public class UpdateAnnotationVisibilityCmd extends BaseCmd {
         AnnotationResponse annotationResponse = annotationService.updateAnnotationVisibility(this);
         annotationResponse.setResponseName(getCommandName());
         this.setResponseObject(annotationResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return String.format("%s%s", APINAME.toLowerCase(), BaseCmd.RESPONSE_SUFFIX);
     }
 
     @Override

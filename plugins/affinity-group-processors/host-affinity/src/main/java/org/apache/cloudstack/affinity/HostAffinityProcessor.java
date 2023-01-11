@@ -81,7 +81,9 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         Set<Long> hostIds = new HashSet<>();
         for (Long groupVMId : vmIds) {
             VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-            hostIds.add(groupVM.getHostId());
+            if (groupVM != null && groupVM.getHostId() != null) {
+                hostIds.add(groupVM.getHostId());
+            }
         }
         return hostIds;
     }

@@ -21,7 +21,7 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
-@LogLevel(Log4jLevel.Trace)
+@LogLevel(Log4jLevel.Debug)
 public class NetworkUsageCommand extends Command {
     private String privateIP;
     private String domRName;

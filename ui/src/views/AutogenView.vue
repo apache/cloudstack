@@ -752,7 +752,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -845,6 +845,10 @@ export default {
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
+      }
+
+      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
+        params.listsystemvms = true
       }
 
       this.loading = true
@@ -1157,6 +1161,11 @@ export default {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
+            if (possibleApi === 'listBackupOfferings' && json[obj].backupoffering) {
+              json[obj].backupoffering.sort((a, b) => {
+                return a.name > b.name
+              })
+            }
             for (const res in json[obj]) {
               if (res === 'count') {
                 continue
@@ -1401,6 +1410,17 @@ export default {
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
+              if (['createAffinityGroup'].includes(action.api) && key === 'type') {
+                if (params[key] === 'host anti-affinity (Strict)') {
+                  params[key] = 'host anti-affinity'
+                } else if (params[key] === 'host affinity (Strict)') {
+                  params[key] = 'host affinity'
+                } else if (params[key] === 'host anti-affinity (Non-Strict)') {
+                  params[key] = 'non-strict host anti-affinity'
+                } else if (params[key] === 'host affinity (Non-Strict)') {
+                  params[key] = 'non-strict host affinity'
+                }
+              }
             } else if (param.type === 'list') {
               params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
             } else if (param.name === 'account' || param.name === 'keypair') {
@@ -1672,6 +1692,7 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
+          console.log('op: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
@@ -1682,17 +1703,20 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (field.type === 'uuid'):
+          console.log('uuid: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'list'):
+          console.log('list: ' + field)
           rule.type = 'array'
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'long'):
+          console.log(field)
           rule.type = 'number'
           rule.required = field.required
           rule.message = this.$t('message.validate.number')
@@ -1713,6 +1737,7 @@ export default {
           this.rules[field.name].push(rule)
           break
         default:
+          console.log('hererere')
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)

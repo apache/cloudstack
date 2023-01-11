@@ -39,7 +39,6 @@ import com.cloud.projects.Project;
 public class DeleteProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
 
-    private static final String s_name = "deleteprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -61,11 +60,6 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
 
     public Boolean isCleanup() {
         return cleanup;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     /////////////////////////////////////////////////////

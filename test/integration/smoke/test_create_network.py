@@ -289,4 +289,3 @@ class TestNetworkManagement(cloudstackTestCase):
         )
 
         self.cleanup.append(self.network_offering)
-

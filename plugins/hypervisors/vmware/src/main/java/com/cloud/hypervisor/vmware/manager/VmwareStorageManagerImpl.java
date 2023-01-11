@@ -31,6 +31,7 @@ import java.util.UUID;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -133,7 +134,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         command.add(name + ".ovf");        // OVF file should be the first file in OVA archive
         command.add(name + "-disk0.vmdk");
 
-        s_logger.info("Package OVA with commmand: " + command.toString());
+        s_logger.info("Package OVA with command: " + command.toString());
         command.execute();
     }
 
@@ -1270,7 +1271,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return mapNewDisk;
     }
 
-    private void setVolumeToPathAndSize(List<VolumeObjectTO> volumeTOs, VirtualMachineMO vmMo, VmwareHostService hostService, VmwareContext context, VmwareHypervisorHost hyperHost)
+    protected void setVolumeToPathAndSize(List<VolumeObjectTO> volumeTOs, VirtualMachineMO vmMo, VmwareHostService hostService, VmwareContext context, VmwareHypervisorHost hyperHost)
             throws Exception {
         String vmName = vmMo.getVmName();
         for (VolumeObjectTO volumeTO : volumeTOs) {
@@ -1282,7 +1283,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
                 path = volumeTO.getPath();
                 baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
-                datastoreUuid = volumeTO.getDataStoreUuid();
+                if (StringUtils.isNotEmpty(volumeTO.getDataStoreUuid())) {
+                    datastoreUuid = volumeTO.getDataStoreUuid();
+                }
             } else {
                 Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
                 // if this is managed storage
@@ -1451,7 +1454,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     private String deleteVolumeDirOnSecondaryStorage(long volumeId, String secStorageUrl, String nfsVersion) throws Exception {
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl, nfsVersion);
-        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStroage(volumeId);
+        String volumeMountRoot = secondaryMountPoint + "/" + getVolumeRelativeDirInSecStorage(volumeId);
 
         return deleteDir(volumeMountRoot);
     }
@@ -1465,7 +1468,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private static String getVolumeRelativeDirInSecStroage(long volumeId) {
+    private static String getVolumeRelativeDirInSecStorage(long volumeId) {
         return "volumes/" + volumeId;
     }
 }

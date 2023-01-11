@@ -40,12 +40,11 @@ import org.apache.cloudstack.ha.HAConfigManager;
 
 import javax.inject.Inject;
 
-@APICommand(name = EnableHAForClusterCmd.APINAME, description = "Enables HA cluster-wide",
+@APICommand(name = "enableHAForCluster", description = "Enables HA cluster-wide",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11", authorized = {RoleType.Admin})
 public final class EnableHAForClusterCmd extends BaseAsyncCmd {
-    public static final String APINAME = "enableHAForCluster";
 
     @Inject
     private HAConfigManager haConfigManager;
@@ -69,11 +68,6 @@ public final class EnableHAForClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -40,7 +39,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = MigrateNetworkCmd.APINAME, description = "moves a network to another physical network",
+@APICommand(name = "migrateNetwork", description = "moves a network to another physical network",
             responseObject = NetworkResponse.class,
             responseView = ResponseView.Restricted,
             entityType = {Network.class},
@@ -51,7 +50,6 @@ import com.cloud.user.User;
 public class MigrateNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateNetworkCmd.class.getName());
 
-    public static final String APINAME = "migrateNetwork";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,11 +83,6 @@ public class MigrateNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

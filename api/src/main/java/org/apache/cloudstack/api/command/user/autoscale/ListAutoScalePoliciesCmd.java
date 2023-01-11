@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -34,10 +34,9 @@ import com.cloud.network.as.AutoScalePolicy;
 
 @APICommand(name = "listAutoScalePolicies", description = "Lists autoscale policies.", responseObject = AutoScalePolicyResponse.class, entityType = {AutoScalePolicy.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
+public class ListAutoScalePoliciesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScalePoliciesCmd.class.getName());
 
-    private static final String s_name = "listautoscalepoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -45,6 +44,9 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class, description = "the ID of the autoscale policy")
     private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the autoscale policy", since = "4.18.0")
+    private String name;
 
     @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.UUID, entityType = ConditionResponse.class, description = "the ID of the condition of the policy")
     private Long conditionId;
@@ -65,6 +67,10 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public Long getConditionId() {
         return conditionId;
     }
@@ -80,11 +86,6 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

@@ -52,7 +52,7 @@ public class QuotaTariffListCmdTest extends TestCase {
         QuotaTariffVO tariff = new QuotaTariffVO();
         tariff.setEffectiveOn(new Date());
         tariff.setCurrencyValue(new BigDecimal(100));
-        tariff.setUsageType(QuotaTypes.MEMORY);
+        tariff.setUsageType(QuotaTypes.VOLUME);
 
         quotaTariffVOList.add(new QuotaTariffVO());
         Mockito.when(responseBuilder.listQuotaTariffPlans(Mockito.eq(cmd))).thenReturn(new Pair<>(quotaTariffVOList, quotaTariffVOList.size()));

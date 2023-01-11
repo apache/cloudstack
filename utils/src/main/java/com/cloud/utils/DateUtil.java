@@ -33,6 +33,8 @@ import java.time.OffsetDateTime;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DateUtil {
+    public static final int HOURS_IN_A_MONTH = 30 * 24;
+
     public static final TimeZone GMT_TIMEZONE = TimeZone.getTimeZone("GMT");
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
     private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
