@@ -1428,10 +1428,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         break;
 
                                     VolumeVO volume = volumes.get(0);
-
-                                    if (persistVolumeStats) {
-                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, timestamp);
-                                    }
                                     VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
 
@@ -1451,6 +1447,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                                 + " . VM: " + vmDiskStatEntry.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStatEntry.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStatEntry.getBytesWrite())
                                                 + " Read(IO): " + toHumanReadableSize(vmDiskStatEntry.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStatEntry.getIOWrite()));
                                         continue;
+                                    }
+
+                                    if (persistVolumeStats) {
+                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, previousVmDiskStats, timestamp);
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStatEntry.getBytesRead()) {
@@ -1895,8 +1895,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * @param statsForCurrentIteration the metrics stats data to persist.
      * @param timestamp the time that will be stamped.
      */
-    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, Date timestamp) {
-        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, gson.toJson(statsForCurrentIteration));
+    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, VmDiskStatisticsVO previousStats, Date timestamp) {
+        VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry();
+        volumeStatsVmDiskEntry.setVmName(statsForCurrentIteration.getVmName());
+        volumeStatsVmDiskEntry.setPath(statsForCurrentIteration.getPath());
+        volumeStatsVmDiskEntry.setBytesRead(Math.max(0, statsForCurrentIteration.getBytesRead() - previousStats.getCurrentBytesRead()));
+        volumeStatsVmDiskEntry.setBytesWrite(Math.max(0, statsForCurrentIteration.getBytesWrite() - previousStats.getCurrentBytesWrite()));
+        volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
+        volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
+        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, gson.toJson(volumeStatsVmDiskEntry));
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("Recording volume stats: [%s].", volumeStatsVO));
         }
