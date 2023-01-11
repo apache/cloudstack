@@ -327,7 +327,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public boolean isCustomCpuSpeedSupported() {
-        return isCustomized() && getDetail("minCPU") != null;
+        return isCustomized() && getDetail("minCPU") == null;
     }
 
     @Override
