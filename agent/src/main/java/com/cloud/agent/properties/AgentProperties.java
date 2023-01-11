@@ -724,7 +724,7 @@ public class AgentProperties{
     /**
      * The number of iothreads
      * Data type: Integer.<br>
-     * Default value: <code>0</code>
+     * Default value: <code>1</code>
      */
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 

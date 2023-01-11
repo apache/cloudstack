@@ -1064,8 +1064,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
-        Boolean enableIoUringConfig = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
-        enableIoUring = isIoUringEnabled(enableIoUringConfig);
+        enableIoUring = isIoUringEnabled();
         s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
         final String cpuArchOverride = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_ARCH);
@@ -2922,9 +2921,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
 
                 boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
-                disk.setIothreads(iothreadsEnabled);
+                disk.isIothreadsEnabled(iothreadsEnabled);
 
-                String ioDriver = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IO_POLICY) ? details.get(VmDetailConstants.IO_POLICY) : null;
+                String ioDriver =  null;
+
+                if (MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IO_POLICY)) {
+                    ioDriver = details.get(VmDetailConstants.IO_POLICY);
+                } else if (MapUtils.isNotEmpty(volume.getDetails()) && volume.getDetails().containsKey(VmDetailConstants.IO_POLICY)) {
+                    ioDriver = volume.getDetails().get(VmDetailConstants.IO_POLICY);
+                }
 
                 ioDriver = iothreadsEnabled && ioDriver == null ? IoDriver.THREADS.ioDriver : ioDriver;
 
@@ -3071,10 +3076,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (ii) Libvirt >= 6.3.0
      */
     public void setDiskIoDriver(DiskDef disk, IoDriver ioDriver) {
-        if (ioDriver != null && (!enableIoUring && IoDriver.IOURING != ioDriver)) {
-            disk.setIoDriver(ioDriver);
-        } else if (enableIoUring) {
-            disk.setIoDriver(DiskDef.IoDriver.IOURING);
+        s_logger.debug(String.format("Disk IO driver policy %s. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
+        if (ioDriver != null) {
+            if (IoDriver.IOURING != ioDriver) {
+                disk.setIoDriver(ioDriver);
+            } else if (enableIoUring) {
+                disk.setIoDriver(DiskDef.IoDriver.IOURING);
+            }
         }
     }
 
@@ -3095,15 +3103,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
      */
-    private boolean isIoUringEnabled(Boolean enableIoUringConfig) {
+    private boolean isIoUringEnabled() {
         boolean meetRequirements = getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
                 && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING;
         if (!meetRequirements) {
             return false;
         }
-        return enableIoUringConfig != null ?
-                enableIoUringConfig:
-                (isUbuntuHost() || isIoUringSupportedByQemu());
+        return isUbuntuHost() || isIoUringSupportedByQemu();
     }
 
     public boolean isUbuntuHost() {

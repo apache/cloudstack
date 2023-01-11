@@ -750,7 +750,7 @@ public class LibvirtVMDef {
         private DiscardType _discard = DiscardType.IGNORE;
         private IoDriver ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
-        private boolean iothreads;
+        private boolean isIothreadsEnabled;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -772,8 +772,8 @@ public class LibvirtVMDef {
             _deviceType = deviceType;
         }
 
-        public void setIothreads(boolean iothreads) {
-            this.iothreads = iothreads;
+        public void isIothreadsEnabled(boolean isIothreadsEnabled) {
+            this.isIothreadsEnabled = isIothreadsEnabled;
         }
 
         public void defFileBasedDisk(String filePath, String diskLabel, DiskBus bus, DiskFmtType diskFmtType) {
@@ -1115,7 +1115,7 @@ public class LibvirtVMDef {
                     diskBuilder.append(String.format("io='%s' ", ioDriver));
                 }
 
-                if (iothreads && _bus == DiskBus.VIRTIO) {
+                if (isIothreadsEnabled && _bus == DiskBus.VIRTIO) {
                     diskBuilder.append(String.format("iothread='%s' ", ioThreadsNum));
                 }
                 diskBuilder.append("/>\n");
@@ -1919,7 +1919,6 @@ public class LibvirtVMDef {
     }
 
     public static class SCSIDef {
-
         private short index = 0;
         private int domain = 0;
         private int bus = 0;

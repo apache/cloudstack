@@ -4141,10 +4141,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private String getIoPolicy(UserVmVO vm, long poolId) {
         String ioPolicy = null;
-        if (vm.getHypervisorType() == HypervisorType.KVM) {
-            if (vm.getDetails() != null && vm.getDetail(VmDetailConstants.IO_POLICY) != null) {
+        if (vm.getHypervisorType() == HypervisorType.KVM && vm.getDetails() != null) {
+            if (vm.getDetail(VmDetailConstants.IO_POLICY) != null) {
                 ioPolicy = vm.getDetail(VmDetailConstants.IO_POLICY);
-            } else if (StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId) != null) {
+            } else if (vm.getDetail(VmDetailConstants.IOTHREADS) != null
+                    && StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId) != null) {
                 ioPolicy = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId);
             }
         }

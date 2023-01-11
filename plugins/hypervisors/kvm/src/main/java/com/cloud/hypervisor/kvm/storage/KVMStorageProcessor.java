@@ -1452,7 +1452,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
 
-                diskdef.setIothreads(details != null && details.containsKey(VmDetailConstants.IOTHREADS));
+                diskdef.isIothreadsEnabled(details != null && details.containsKey(VmDetailConstants.IOTHREADS));
 
                 String ioDriver = (details != null && details.containsKey(VmDetailConstants.IO_POLICY)) ? details.get(VmDetailConstants.IO_POLICY) : null;
                 if (ioDriver != null) {
