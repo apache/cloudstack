@@ -1030,6 +1030,8 @@ SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
 FROM    `cloud`.`role_permissions` RP
 WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
 
+-- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
+
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
 FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
