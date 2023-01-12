@@ -42,7 +42,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
@@ -379,18 +378,10 @@ public class ApiServlet extends HttpServlet {
     protected boolean skip2FAcheckForAPIs(String command, Map<String, Object[]> params) {
         boolean skip2FAcheck = false;
 
-        boolean containsIssuerFor2FaParamInListCfgCmd = false;
-        if (command.equalsIgnoreCase(ListCfgsByCmd.APINAME)) {
-            final String[] name = (String[])params.get(ApiConstants.NAME);
-            if (name != null && name[0].equals(AccountManagerImpl.userTwoFactorAuthenticationIssuer.key())) {
-                containsIssuerFor2FaParamInListCfgCmd = true;
-            }
-        }
         if (command.equalsIgnoreCase(ApiConstants.LIST_IDPS)
                 || command.equalsIgnoreCase(ApiConstants.LIST_APIS)
                 || command.equalsIgnoreCase(ListUserTwoFactorAuthenticatorProvidersCmd.APINAME)
-                || command.equalsIgnoreCase(SetupUserTwoFactorAuthenticationCmd.APINAME)
-                || containsIssuerFor2FaParamInListCfgCmd) {
+                || command.equalsIgnoreCase(SetupUserTwoFactorAuthenticationCmd.APINAME)) {
             skip2FAcheck = true;
         }
         return skip2FAcheck;
