@@ -160,10 +160,11 @@ export default {
           if (this.selectedProvider === 'google') {
             this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
 
-            api('listConfigurations', { name: 'user.two.factor.authentication.issuer' }).then(json => {
-              var issuer = json.listconfigurationsresponse.configuration[0].value
-              this.googleUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
-            })
+            var issuer = 'CloudStack'
+            if (store.getters.twoFaIssuer !== '' && store.getters.twoFaIssuer !== undefined) {
+              issuer = store.getters.twoFaIssuer
+            }
+            this.googleUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
 
             this.showPin = false
           }
