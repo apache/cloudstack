@@ -42,7 +42,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     public Answer execute(final ReadyCommand command, final LibvirtComputingResource libvirtComputingResource) {
         Map<String, String> hostDetails = new HashMap<String, String>();
 
-        if (hostSupportsUefi(libvirtComputingResource.isBaseOsUbuntu()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
+        if (hostSupportsUefi(libvirtComputingResource.isUbuntuHost()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
             hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
         }
 
