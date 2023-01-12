@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,7 +40,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = MigrateVPCCmd.APINAME,
+@APICommand(name = "migrateVPC",
             description = "moves a vpc to another physical network",
             responseObject = VpcResponse.class,
             responseView = ResponseObject.ResponseView.Restricted,
@@ -53,7 +52,6 @@ import com.cloud.user.User;
 public class MigrateVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVPCCmd.class.getName());
 
-    public static final String APINAME = "migrateVPC";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,11 +103,6 @@ public class MigrateVPCCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

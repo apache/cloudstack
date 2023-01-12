@@ -44,7 +44,6 @@ import com.cloud.network.Network;
             responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
-    private static final String s_name = "restartnetworkresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -90,11 +89,6 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "addressinfo";

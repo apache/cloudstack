@@ -30,12 +30,11 @@ import org.apache.cloudstack.cloudian.response.CloudianSsoLoginResponse;
 import com.cloud.user.Account;
 import org.apache.commons.lang3.StringUtils;
 
-@APICommand(name = CloudianSsoLoginCmd.APINAME, description = "Generates single-sign-on login url for logged-in CloudStack user to access the Cloudian Management Console",
+@APICommand(name = "cloudianSsoLogin", description = "Generates single-sign-on login url for logged-in CloudStack user to access the Cloudian Management Console",
         responseObject = CloudianSsoLoginResponse.class,
         since = "4.11.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CloudianSsoLoginCmd extends BaseCmd {
-    public static final String APINAME = "cloudianSsoLogin";
 
     @Inject
     private CloudianConnector connector;
@@ -43,11 +42,6 @@ public class CloudianSsoLoginCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -64,7 +58,7 @@ public class CloudianSsoLoginCmd extends BaseCmd {
         final CloudianSsoLoginResponse response = new CloudianSsoLoginResponse();
         response.setSsoRedirectUrl(ssoUrl);
         response.setResponseName(getCommandName());
-        response.setObjectName(APINAME.toLowerCase());
+        response.setObjectName(this.getActualCommandName().toLowerCase());
         setResponseObject(response);
     }
 }

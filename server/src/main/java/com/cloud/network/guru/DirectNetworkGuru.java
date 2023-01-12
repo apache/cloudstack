@@ -220,6 +220,14 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 config.setRouterIpv6(userSpecified.getRouterIpv6());
             }
 
+            if (userSpecified.getPublicMtu() != null) {
+                config.setPublicMtu(userSpecified.getPublicMtu());
+            }
+
+            if (userSpecified.getPrivateMtu() != null) {
+                config.setPrivateMtu(userSpecified.getPrivateMtu());
+            }
+
             if (StringUtils.isNotBlank(userSpecified.getDns1())) {
                 config.setDns1(userSpecified.getDns1());
             }

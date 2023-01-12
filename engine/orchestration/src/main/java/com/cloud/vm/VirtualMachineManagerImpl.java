@@ -3510,6 +3510,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return nicId1.compareTo(nicId2);
             }
         });
+
         for (final NicVO nic : nics) {
             final Network network = _networkModel.getNetwork(nic.getNetworkId());
             final NicProfile nicProfile =
@@ -4573,11 +4574,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new CloudRuntimeException("Unable to scale vm due to " + (reconfigureAnswer == null ? "" : reconfigureAnswer.getDetails()));
             }
 
+            upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
+
             if (vm.getType().equals(VirtualMachine.Type.User)) {
                 _userVmMgr.generateUsageEvent(vm, vm.isDisplayVm(), EventTypes.EVENT_VM_DYNAMIC_SCALE);
             }
-
-            upgradeVmDb(vm.getId(), newServiceOffering, oldServiceOffering);
 
             if (reconfiguringOnExistingHost) {
                 vm.setServiceOfferingId(oldServiceOffering.getId());
