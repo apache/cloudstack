@@ -36,14 +36,13 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = DeleteKubernetesClusterCmd.APINAME,
+@APICommand(name = "deleteKubernetesCluster",
         description = "Deletes a Kubernetes cluster",
         responseObject = SuccessResponse.class,
         entityType = {KubernetesCluster.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(DeleteKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "deleteKubernetesCluster";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -82,11 +81,6 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

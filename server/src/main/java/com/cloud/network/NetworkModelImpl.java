@@ -1189,26 +1189,31 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         if (pNtwks.size() > 1) {
-            if (tag == null) {
-                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId +
-                    " and no tags are specified in order to make a choice");
-            }
-
-            Long pNtwkId = null;
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                if (pNtwk.getTags().contains(tag)) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
-                    pNtwkId = pNtwk.getId();
-                    break;
-                }
-            }
-            if (pNtwkId == null) {
-                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
-            }
-            return pNtwkId;
+            return getPhysicalNetworkId(zoneId, pNtwks, tag);
         } else {
             return pNtwks.get(0).getId();
         }
+    }
+
+    private Long getPhysicalNetworkId(long zoneId, List<PhysicalNetworkVO> pNtwks, String tag) {
+        Long pNtwkId = null;
+        for (PhysicalNetwork pNtwk : pNtwks) {
+            if (tag == null && pNtwk.getTags().isEmpty()) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
+                if (pNtwkId != null) {
+                    throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
+                }
+                pNtwkId = pNtwk.getId();
+            } else if (tag != null && pNtwk.getTags().contains(tag)) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
+                pNtwkId = pNtwk.getId();
+                break;
+            }
+        }
+        if (pNtwkId == null) {
+            throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
+        }
+        return pNtwkId;
     }
 
     @Override
@@ -2016,7 +2021,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             usedIps.add(NetUtils.ip2Long(ip));
         }
 
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps, -1);
 
         String gateway = network.getGateway();
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
@@ -2177,6 +2182,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
+        if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
+            profile.setMtu(network.getPublicMtu());
+        }
+        if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
+            profile.setMtu(network.getPrivateMtu());
+        }
 //        guru.updateNicProfile(profile, network);
         return profile;
     }

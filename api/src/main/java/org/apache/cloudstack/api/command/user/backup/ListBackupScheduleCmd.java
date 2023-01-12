@@ -39,12 +39,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListBackupScheduleCmd.APINAME,
+@APICommand(name = "listBackupSchedule",
         description = "List backup schedule of a VM",
         responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupScheduleCmd extends BaseCmd {
-    public static final String APINAME = "listBackupSchedule";
 
     @Inject
     private BackupManager backupManager;
@@ -86,11 +85,6 @@ public class ListBackupScheduleCmd extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

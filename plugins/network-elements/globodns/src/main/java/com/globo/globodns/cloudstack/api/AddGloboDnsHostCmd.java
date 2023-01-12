@@ -40,7 +40,6 @@ import com.globo.globodns.cloudstack.element.GloboDnsElementService;
 @APICommand(name = "addGloboDnsHost", responseObject = SuccessResponse.class, description = "Adds the GloboDNS external host", since="4.5.0")
 public class AddGloboDnsHostCmd extends BaseAsyncCmd {
 
-    private static final String s_name = "addglobodnshostresponse";
     @Inject
     GloboDnsElementService _globoDnsElementService;
 
@@ -98,11 +97,6 @@ public class AddGloboDnsHostCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

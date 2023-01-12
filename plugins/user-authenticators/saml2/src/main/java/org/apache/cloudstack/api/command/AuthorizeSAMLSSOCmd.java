@@ -39,7 +39,6 @@ import javax.inject.Inject;
 public class AuthorizeSAMLSSOCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSAMLSSOCmd.class.getName());
 
-    private static final String s_name = "authorizesamlssoresponse";
 
     @Inject
     SAML2AuthManager _samlAuthManager;
@@ -67,11 +66,6 @@ public class AuthorizeSAMLSSOCmd extends BaseCmd {
 
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

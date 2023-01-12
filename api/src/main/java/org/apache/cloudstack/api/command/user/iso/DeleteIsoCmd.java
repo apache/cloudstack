@@ -38,7 +38,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
-    private static final String s_name = "deleteisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,15 +71,6 @@ public class DeleteIsoCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    public static String getStaticName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

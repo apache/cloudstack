@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
-    private static final String s_name = "listserviceofferingsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -134,11 +133,6 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

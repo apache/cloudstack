@@ -39,7 +39,6 @@ import java.util.List;
 public class DeleteResourceIconCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteResourceIconCmd.class.getName());
 
-    private static final String s_name = "deleteresourceiconresponse";
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -85,11 +84,6 @@ public class DeleteResourceIconCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getLocalizedMessage());
         }
 
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

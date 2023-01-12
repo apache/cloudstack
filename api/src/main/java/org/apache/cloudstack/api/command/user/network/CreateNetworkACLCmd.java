@@ -45,7 +45,6 @@ import com.cloud.utils.net.NetUtils;
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 
-    private static final String s_name = "createnetworkaclresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -142,11 +141,6 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public String getAction() {
         return action;

@@ -33,7 +33,6 @@ import com.cloud.event.Event;
 public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());
 
-    private static final String s_name = "listeventsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -120,11 +119,6 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

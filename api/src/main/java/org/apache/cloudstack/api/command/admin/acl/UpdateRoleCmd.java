@@ -32,12 +32,11 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 
-@APICommand(name = UpdateRoleCmd.APINAME, description = "Updates a role", responseObject = RoleResponse.class,
+@APICommand(name = "updateRole", description = "Updates a role", responseObject = RoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
 public class UpdateRoleCmd extends RoleCmd {
-    public static final String APINAME = "updateRole";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,11 +67,6 @@ public class UpdateRoleCmd extends RoleCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

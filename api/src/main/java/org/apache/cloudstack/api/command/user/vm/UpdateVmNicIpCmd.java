@@ -50,7 +50,6 @@ import com.cloud.vm.Nic;
 @APICommand(name = "updateVmNicIp", description = "Update the default Ip of a VM Nic", responseObject = UserVmResponse.class)
 public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVmNicIpCmd.class.getName());
-    private static final String s_name = "updatevmnicipresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -133,11 +132,6 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "addressinfo";

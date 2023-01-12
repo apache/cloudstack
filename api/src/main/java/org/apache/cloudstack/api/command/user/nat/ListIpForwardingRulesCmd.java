@@ -40,7 +40,6 @@ import com.cloud.utils.Pair;
 public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIpForwardingRulesCmd.class.getName());
 
-    private static final String s_name = "listipforwardingrulesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,11 +67,6 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public Long getPublicIpAddressId() {
         return publicIpAddressId;
     }

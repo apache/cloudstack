@@ -40,7 +40,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevertSnapshotCmd.class.getName());
-    private static final String s_name = "revertsnapshotresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,11 +59,6 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         Snapshot snapshot = _entityMgr.findById(Snapshot.class, getId());

@@ -39,7 +39,6 @@ import com.cloud.utils.Pair;
 public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRemoteAccessVpnsCmd.class.getName());
 
-    private static final String s_name = "listremoteaccessvpnsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -91,11 +90,6 @@ public class ListRemoteAccessVpnsCmd extends BaseListProjectAndAccountResourcesC
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

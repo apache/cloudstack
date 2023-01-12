@@ -33,12 +33,11 @@ import org.apache.cloudstack.backup.BackupProvider;
 
 import com.cloud.user.Account;
 
-@APICommand(name = ListBackupProvidersCmd.APINAME,
+@APICommand(name = "listBackupProviders",
         description = "Lists Backup and Recovery providers",
         responseObject = BackupProviderResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
 public class ListBackupProvidersCmd extends BaseCmd {
-    public static final String APINAME = "listBackupProviders";
 
     @Inject
     private BackupManager backupManager;
@@ -56,11 +55,6 @@ public class ListBackupProvidersCmd extends BaseCmd {
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

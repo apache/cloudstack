@@ -35,7 +35,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
-    private static final String s_name = "listvmsnapshotresponse";
 
     @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, description = "The ID of the VM snapshot")
     private Long id;
@@ -81,11 +80,6 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
         response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public List<Long> getIds() {

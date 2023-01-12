@@ -41,7 +41,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteBrocadeVcsDevice", responseObject = SuccessResponse.class, description = " delete a Brocade VCS Switch", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteBrocadeVcsDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "deletebrocadevcsdeviceresponse";
     @Inject
     protected BrocadeVcsElementService brocadeVcsElementService;
 
@@ -80,11 +79,6 @@ public class DeleteBrocadeVcsDeviceCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class PrepareTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareTemplateCmd.class.getName());
 
-    private static final String s_name = "preparetemplateresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -89,11 +88,6 @@ public class PrepareTemplateCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

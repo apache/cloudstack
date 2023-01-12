@@ -18,11 +18,12 @@
 //
 package com.cloud.utils;
 
-import org.junit.Test;
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Locale;
-import static org.junit.Assert.assertEquals;
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+
+import org.junit.Test;
 
 public class HumanReadableJsonTest {
 
@@ -62,5 +63,10 @@ public class HumanReadableJsonTest {
         assertEquals("[{\"size\":\"(100.05 KB) 102456\"}]", getHumanReadableBytesJson("[{\"size\": \"102456\"}]"));
         Locale.setDefault(Locale.forLanguageTag("en-ZA")); // Other region test
         assertEquals("[{\"size\":\"(100,05 KB) 102456\"}]", getHumanReadableBytesJson("[{\"size\": \"102456\"}]"));
+    }
+
+    @Test
+    public void testNonNumberFieldParsing() {
+        assertEquals("{\"size\":\"SMALL\",\"newSize\":\"LARGE\"}", getHumanReadableBytesJson("{\"size\": \"SMALL\",\"newSize\": \"LARGE\"}"));
     }
 }

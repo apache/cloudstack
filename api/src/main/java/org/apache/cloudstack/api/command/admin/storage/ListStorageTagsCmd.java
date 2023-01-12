@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.StorageTagResponse;
 public class ListStorageTagsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStorageTagsCmd.class.getName());
 
-    private static final String s_name = "liststoragetagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -42,11 +41,6 @@ public class ListStorageTagsCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
