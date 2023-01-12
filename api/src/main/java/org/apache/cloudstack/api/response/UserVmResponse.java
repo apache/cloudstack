@@ -118,6 +118,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the host for the virtual machine")
     private String hostName;
 
+    @SerializedName(ApiConstants.HOST_CONTROL_STATE)
+    @Param(description = "the control state of the host for the virtual machine")
+    private String hostControlState;
+
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private String templateId;
@@ -461,6 +465,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return hostName;
     }
 
+    public String getHostControlState() {
+        return hostControlState;
+    }
+
     public String getTemplateId() {
         return templateId;
     }
@@ -701,6 +709,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public void setHostControlState(String hostControlState) {
+        this.hostControlState = hostControlState;
     }
 
     public void setTemplateId(String templateId) {

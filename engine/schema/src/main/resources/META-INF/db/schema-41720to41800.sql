@@ -65,6 +65,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         host.name host_name,
         host.hypervisor_type,
         host.cluster_id cluster_id,
+        host.status host_status,
+        host.resource_state host_resource_state,
         vm_template.id template_id,
         vm_template.uuid template_uuid,
         service_offering.id service_offering_id,
@@ -744,6 +746,8 @@ SELECT
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
     `host`.`cluster_id` AS `cluster_id`,
+    `host`.`status` AS `host_status`,
+    `host`.`resource_state` AS `host_resource_state`,
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
@@ -993,6 +997,15 @@ BEGIN
     DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
+
+
+-- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
+
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
+SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
+FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
+
+
 --
 -- Update Configuration Groups and Subgroups
 --

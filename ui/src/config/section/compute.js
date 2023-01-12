@@ -79,7 +79,7 @@ export default {
       details: () => {
         var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
-          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy']
+          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -142,6 +142,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           args: (record, store) => {
             var fields = []
             fields.push('forced')
@@ -169,6 +170,7 @@ export default {
               value: (record) => { return record.id }
             }
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           successMethod: (obj, result) => {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
@@ -193,6 +195,7 @@ export default {
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
               (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -210,6 +213,7 @@ export default {
             return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
         },
         {
@@ -283,6 +287,7 @@ export default {
           dataView: true,
           popup: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
         {
@@ -299,6 +304,7 @@ export default {
             return args
           },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -334,6 +340,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard.vue')))
         },
@@ -345,6 +352,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
           popup: true
         },
