@@ -350,7 +350,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "CloudStack",
             "Name of the issuer of two factor authentication",
             true,
-            ConfigKey.Scope.Global);
+            ConfigKey.Scope.Domain);
 
     ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
             "user.two.factor.authentication.default.provider",
@@ -3223,7 +3223,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!userAccount.isUser2faEnabled()) {
             throw new CloudRuntimeException(String.format("Two factor authentication is not enabled on the user: %s", userAccount.getUsername()));
         }
-        if (StringUtils.isBlank(userAccount.getUser2faProvider()) || StringUtils.isBlank(userAccount.getSecretKey())) {
+        if (StringUtils.isBlank(userAccount.getUser2faProvider()) || StringUtils.isBlank(userAccount.getKeyFor2fa())) {
             throw new CloudRuntimeException(String.format("Two factor authentication is not setup for the user: %s, please setup 2FA before verifying", userAccount.getUsername()));
         }
 

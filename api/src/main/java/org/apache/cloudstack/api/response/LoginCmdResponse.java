@@ -82,6 +82,10 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "Two factor authentication provider")
     private String providerFor2FA;
 
+    @SerializedName(value = ApiConstants.ISSUER_FOR_2FA)
+    @Param(description = "Two factor authentication issuer")
+    private String issuerFor2FA;
+
     public String getUsername() {
         return username;
     }
@@ -198,5 +202,13 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void setProviderFor2FA(String providerFor2FA) {
         this.providerFor2FA = providerFor2FA;
+    }
+
+    public String getIssuerFor2FA() {
+        return issuerFor2FA;
+    }
+
+    public void setIssuerFor2FA(String issuerFor2FA) {
+        this.issuerFor2FA = issuerFor2FA;
     }
 }

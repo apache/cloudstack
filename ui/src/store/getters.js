@@ -46,6 +46,7 @@ const getters = {
   logoutFlag: state => state.user.logoutFlag,
   twoFaEnabled: state => state.user.twoFaEnabled,
   twoFaProvider: state => state.user.twoFaProvider,
+  twoFaIssuer: state => state.user.twoFaIssuer,
   loginFlag: state => state.user.loginFlag
 }
 

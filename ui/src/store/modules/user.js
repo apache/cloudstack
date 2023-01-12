@@ -62,7 +62,8 @@ const user = {
     logoutFlag: false,
     customColumns: {},
     twoFaEnabled: false,
-    twoFaProvider: ''
+    twoFaProvider: '',
+    twoFaIssuer: ''
   },
 
   mutations: {
@@ -141,6 +142,9 @@ const user = {
     SET_2FA_PROVIDER: (state, flag) => {
       state.twoFaProvider = flag
     },
+    SET_2FA_ISSUER: (state, flag) => {
+      state.twoFaIssuer = flag
+    },
     SET_LOGIN_FLAG: (state, flag) => {
       state.loginFlag = flag
     }
@@ -186,6 +190,7 @@ const user = {
           commit('SET_LOGOUT_FLAG', false)
           commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
+          commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
           notification.destroy()
 
@@ -316,6 +321,7 @@ const user = {
         commit('SET_LOGOUT_FLAG', true)
         commit('SET_2FA_ENABLED', false)
         commit('SET_2FA_PROVIDER', '')
+        commit('SET_2FA_ISSUER', '')
         commit('SET_LOGIN_FLAG', false)
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)

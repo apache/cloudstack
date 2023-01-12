@@ -1079,6 +1079,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.PROVIDER_FOR_2FA.equalsIgnoreCase(attrName)) {
                     response.setProviderFor2FA(attrObj.toString());
                 }
+                if (ApiConstants.ISSUER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setIssuerFor2FA(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1146,9 +1149,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (userAcct.isUser2faEnabled() || AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId()) || AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) {
                 is2faEnabled = true;
             }
+            String issuerFor2FA = AccountManagerImpl.userTwoFactorAuthenticationIssuer.valueIn(userAcct.getDomainId());
             session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(is2faEnabled));
             session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
             session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
+            session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back
