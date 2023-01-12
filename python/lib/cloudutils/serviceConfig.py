@@ -587,6 +587,18 @@ class securityPolicyConfigRedhat(serviceCfgBase):
 class securityPolicyConfigSUSE(securityPolicyConfigRedhat):
     pass
 
+
+def configure_libvirt_tls(tls_enabled=True, cfg=None):
+    cfo = configFileOps("/etc/libvirt/qemu.conf", cfg)
+    if tls_enabled:
+        cfo.addEntry("vnc_tls", "1")
+        cfo.addEntry("vnc_tls_x509_verify", "1")
+        cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
+    else:
+        cfo.addEntry("vnc_tls", "0")
+    cfo.save()
+
+
 def configureLibvirtConfig(tls_enabled = True, cfg = None):
     cfo = configFileOps("/etc/libvirt/libvirtd.conf", cfg)
     if tls_enabled:
@@ -604,14 +616,7 @@ def configureLibvirtConfig(tls_enabled = True, cfg = None):
     cfo.addEntry("auth_tls", "\"none\"")
     cfo.save()
 
-    cfo = configFileOps("/etc/libvirt/qemu.conf", cfg)
-    if tls_enabled:
-        cfo.addEntry("vnc_tls", "1")
-        cfo.addEntry("vnc_tls_x509_verify", "1")
-        cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
-    else:
-        cfo.addEntry("vnc_tls", "0")
-    cfo.save()
+    configure_libvirt_tls(tls_enabled, cfg)
 
 class libvirtConfigRedhat(serviceCfgBase):
     def __init__(self, syscfg):
@@ -639,12 +644,6 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
-            if self.syscfg.env.secure:
-                cfo.addEntry("vnc_tls", "1")
-                cfo.addEntry("vnc_tls_x509_verify", "1")
-                cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
-            else:
-                cfo.addEntry("vnc_tls", "0")
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
@@ -681,12 +680,6 @@ class libvirtConfigSUSE(serviceCfgBase):
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
-            if self.syscfg.env.secure:
-                cfo.addEntry("vnc_tls", "1")
-                cfo.addEntry("vnc_tls_x509_verify", "1")
-                cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
-            else:
-                cfo.addEntry("vnc_tls", "0")
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
@@ -731,12 +724,6 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
-            if self.syscfg.env.secure:
-                cfo.addEntry("vnc_tls", "1")
-                cfo.addEntry("vnc_tls_x509_verify", "1")
-                cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
-            else:
-                cfo.addEntry("vnc_tls", "0")
             cfo.save()
 
             if os.path.exists("/lib/systemd/system/libvirtd.service"):

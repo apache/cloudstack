@@ -29,13 +29,15 @@ public interface VncSecurity {
 
     static List<VncSecurity> getSecurityStack(int securityType, String vmPassword, String host, int port) {
         switch (securityType) {
-            case RfbConstants.NO_AUTH: return Collections.singletonList(new NoneVncSecurity());
-            case RfbConstants.VNC_AUTH: return Collections.singletonList(new VncAuthSecurity(vmPassword));
-
+            case RfbConstants.NO_AUTH:
+                return Collections.singletonList(new NoneVncSecurity());
+            case RfbConstants.VNC_AUTH:
+                return Collections.singletonList(new VncAuthSecurity(vmPassword));
             // Do not add VEncrypt type = 19 but its supported subtypes
             case RfbConstants.V_ENCRYPT_X509_VNC:
                 return Arrays.asList(new VncTLSSecurity(host, port), new VncAuthSecurity(vmPassword));
-            default: throw new CloudRuntimeException("Unsupported security type " + securityType);
+            default:
+                throw new CloudRuntimeException("Unsupported security type " + securityType);
         }
     }
 

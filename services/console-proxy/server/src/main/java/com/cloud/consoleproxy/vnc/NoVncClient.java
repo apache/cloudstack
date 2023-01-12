@@ -273,7 +273,7 @@ public class NoVncClient {
             s_logger.debug("VEncrypt version offered by the server: " + vEncryptVersion);
         }
         nioSocketConnection.writeUnsignedInteger(8, majorVEncryptVersion);
-        if (vEncryptVersion >= 0x0002) {
+        if (vEncryptVersion >= 2) {
             nioSocketConnection.writeUnsignedInteger(8, 2);
             nioSocketConnection.flushWriteBuffer();
         } else {
@@ -297,7 +297,7 @@ public class NoVncClient {
             int subtype = nioSocketConnection.readUnsignedInteger(32);
             if (subtype == RfbConstants.V_ENCRYPT_X509_VNC) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.info("Selected VEncrypt subtype " + subtype);
+                    s_logger.debug("Selected VEncrypt subtype " + subtype);
                 }
                 return subtype;
             }
