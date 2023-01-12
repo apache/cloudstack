@@ -1977,6 +1977,7 @@
 "label.rootdisk": "ROOT disk",
 "label.rootdiskcontrollertype": "Root disk controller",
 "label.rootdiskcontrollertypekvm": "Root disk controller",
+"label.rootdisksize": "Root disk size (GB)",
 "label.router.health.check.last.updated": "Last updated",
 "label.router.health.check.name": "Check name",
 "label.router.health.check.success": "Success",
