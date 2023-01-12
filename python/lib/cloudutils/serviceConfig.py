@@ -604,6 +604,15 @@ def configureLibvirtConfig(tls_enabled = True, cfg = None):
     cfo.addEntry("auth_tls", "\"none\"")
     cfo.save()
 
+    cfo = configFileOps("/etc/libvirt/qemu.conf", cfg)
+    if tls_enabled:
+        cfo.addEntry("vnc_tls", "1")
+        cfo.addEntry("vnc_tls_x509_verify", "1")
+        cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
+    else:
+        cfo.addEntry("vnc_tls", "0")
+    cfo.save()
+
 class libvirtConfigRedhat(serviceCfgBase):
     def __init__(self, syscfg):
         super(libvirtConfigRedhat, self).__init__(syscfg)
