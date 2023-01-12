@@ -288,17 +288,27 @@ public class EncryptionSecretKeyChanger {
         }
         if (newMSKey == null) {
             newMSKey = oldMSKey;
-            System.out.println("New Management Secret Key is not provided. Skipping migrating db.properties");
-        } else {
-            if (newEncryptorVersion == null) {
-                if (StringUtils.isNotEmpty(oldEncryptorVersion)) {
-                    newEncryptorVersion = oldEncryptorVersion;
-                } else {
-                    newEncryptorVersion = CloudStackEncryptor.EncryptorVersion.defaultVersion().name();
-                }
+        }
+        if (newDBKey == null) {
+            newDBKey = oldDBKey;
+        }
+        boolean isMSKeyChanged = !newMSKey.equals(oldMSKey);
+        boolean isDBKeyChanged = !newDBKey.equals(oldDBKey);
+        if (newEncryptorVersion == null && (isDBKeyChanged || forced) && !skipped) {
+            if (StringUtils.isNotEmpty(oldEncryptorVersion)) {
+                newEncryptorVersion = oldEncryptorVersion;
+            } else {
+                newEncryptorVersion = CloudStackEncryptor.EncryptorVersion.defaultVersion().name();
             }
-            System.out.println("INFO: Migrate using encryptor version: " + newEncryptorVersion);
-            if (!keyChanger.migrateProperties(dbPropsFile, dbProps, newMSKey, (newDBKey != null ? newDBKey : oldDBKey), newEncryptorVersion)) {
+        }
+        boolean isEncryptorVersionChanged = false;
+        if (newEncryptorVersion != null) {
+            isEncryptorVersionChanged = !newEncryptorVersion.equalsIgnoreCase(oldEncryptorVersion);
+        }
+
+        if (isMSKeyChanged || isDBKeyChanged || isEncryptorVersionChanged) {
+            System.out.println("INFO: Migrate properties with DB encryptor version: " + newEncryptorVersion);
+            if (!keyChanger.migrateProperties(dbPropsFile, dbProps, newMSKey, newDBKey, newEncryptorVersion)) {
                 System.out.println("Failed to update db.properties");
                 return false;
             }
@@ -318,24 +328,26 @@ public class EncryptionSecretKeyChanger {
                     return false;
                 }
             }
+        } else {
+            System.out.println("No changes with Management Secret Key, DB Secret Key and DB encryptor version. Skipping migrating db.properties");
         }
 
         boolean success = false;
-        if ((newDBKey == null || newDBKey.equals(oldDBKey)) && !forced) {
-            System.out.println("No change in DB Secret Key. Skipping Data Migration");
-            return true;
-        } else if (skipped) {
-            System.out.println("Skipping Data Migration as '-s' or '--skip-database-migration' is passed");
-            return true;
-        } else {
+        if (isDBKeyChanged || isEncryptorVersionChanged || forced) {
+            if (skipped) {
+                System.out.println("Skipping Data Migration as '-s' or '--skip-database-migration' is passed");
+                return true;
+            }
             EncryptionSecretKeyChecker.initEncryptor(newMSKey);
             try {
-                success = keyChanger.migrateData(oldDBKey, newDBKey != null ? newDBKey : oldDBKey, oldEncryptorVersion,
-                        newEncryptorVersion);
+                success = keyChanger.migrateData(oldDBKey, newDBKey, oldEncryptorVersion, newEncryptorVersion);
             } catch (Exception e) {
                 System.out.println("Error during data migration");
                 e.printStackTrace();
             }
+        } else {
+            System.out.println("No changes with DB Secret Key and DB encryptor version. Skipping Data Migration");
+            return true;
         }
 
         if (success) {
