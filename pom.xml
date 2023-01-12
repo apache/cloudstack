@@ -817,6 +817,32 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${cs.compiler-plugin.version}</version>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <arg>-Xplugin:ErrorProne</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>2.18.0</version>
+                        </path>
+                        <!-- Other annotation processors go here.
+
+                        If 'annotationProcessorPaths' is set, processors will no longer be
+                        discovered on the regular -classpath; see also 'Using Error Prone
+                        together with other annotation processors' below. -->
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -1074,15 +1100,26 @@
                     <configuration>
                         <source>${cs.jdk.version}</source>
                         <target>${cs.jdk.version}</target>
-                        <fork>true</fork>
-                        <meminitial>128m</meminitial>
-                        <maxmem>512m</maxmem>
+                        <encoding>UTF-8</encoding>
                         <compilerArgs>
                             <arg>-XDignore.symbol.file=true</arg>
                             <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
                             <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
                             <arg>--add-exports=java.base/sun.security.provider=ALL-UNNAMED</arg>
+                            <arg>-XDcompilePolicy=simple</arg>
+                            <arg>-Xplugin:ErrorProne</arg>
+                            <arg>--illegal-access=warn</arg>
                         </compilerArgs>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>com.google.errorprone</groupId>
+                                <artifactId>error_prone_core</artifactId>
+                                <version>2.18.0</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <fork>true</fork>
+                        <meminitial>128m</meminitial>
+                        <maxmem>512m</maxmem>
                     </configuration>
                 </plugin>
                 <plugin>
