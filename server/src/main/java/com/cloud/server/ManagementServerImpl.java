@@ -722,7 +722,6 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.ResourceObjectType;
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
