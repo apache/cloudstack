@@ -1146,7 +1146,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             boolean is2faEnabled = false;
-            if (userAcct.isUser2faEnabled() || AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId()) || AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) {
+            if (userAcct.isUser2faEnabled() || AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) {
                 is2faEnabled = true;
             }
             String issuerFor2FA = AccountManagerImpl.userTwoFactorAuthenticationIssuer.valueIn(userAcct.getDomainId());

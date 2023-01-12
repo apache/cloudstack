@@ -110,6 +110,7 @@
 <script>
 
 import { api } from '@/api'
+import store from '@/store'
 import VueQrious from 'vue-qrious'
 import eventBus from '@/config/eventBus'
 export default {
