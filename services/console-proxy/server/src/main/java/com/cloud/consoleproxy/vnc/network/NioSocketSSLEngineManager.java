@@ -91,6 +91,7 @@ public class NioSocketSSLEngineManager {
                                        ByteBuffer peerAppData, ByteBuffer myAppData) throws SSLException {
         switch (handshakeStatus) {
             case NEED_UNWRAP:
+            case NEED_UNWRAP_AGAIN:
                 handshakeNeedUnwrap(peerAppData);
                 break;
 
@@ -100,6 +101,10 @@ public class NioSocketSSLEngineManager {
 
             case NEED_TASK:
                 executeTasks();
+                break;
+
+            case FINISHED:
+            case NOT_HANDSHAKING:
                 break;
         }
     }
