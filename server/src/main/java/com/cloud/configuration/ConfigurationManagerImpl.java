@@ -7146,7 +7146,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(dataCenterId);
         }
 
-        // networkRate is unsigned int in netowrkOfferings table, and can't be
+        // networkRate is unsigned int in networkOfferings table, and can't be
         // set to -1
         // so 0 means unlimited; we convert it to -1, so we are consistent with
         // all our other resources where -1 means unlimited

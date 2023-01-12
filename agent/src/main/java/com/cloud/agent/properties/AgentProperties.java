@@ -508,7 +508,7 @@ public class AgentProperties{
     public static final Property<String> VM_WATCHDOG_MODEL = new Property<>("vm.watchdog.model", "i6300esb");
 
     /**
-     * Action to take when the Guest/Instance is no longer notifiying the Watchdog timer.<br>
+     * Action to take when the Guest/Instance is no longer notifying the Watchdog timer.<br>
      * Possible values: none | reset | poweroff <br>
      * Data type: String.<br>
      * Default value: <code>none</code>
