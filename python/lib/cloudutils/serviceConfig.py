@@ -589,6 +589,11 @@ class securityPolicyConfigSUSE(securityPolicyConfigRedhat):
 
 
 def configure_libvirt_tls(tls_enabled=False, cfo=None):
+    save = False
+    if not cfo:
+        cfo = configFileOps("/etc/libvirt/qemu.conf")
+        save = True
+
     if tls_enabled:
         cfo.addEntry("vnc_tls", "1")
         cfo.addEntry("vnc_tls_x509_verify", "1")
@@ -596,6 +601,8 @@ def configure_libvirt_tls(tls_enabled=False, cfo=None):
     else:
         cfo.addEntry("vnc_tls", "0")
 
+    if save:
+        cfo.save()
 
 def configureLibvirtConfig(tls_enabled = True, cfg = None):
     cfo = configFileOps("/etc/libvirt/libvirtd.conf", cfg)
