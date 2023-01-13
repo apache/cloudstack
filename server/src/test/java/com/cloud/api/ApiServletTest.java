@@ -311,12 +311,6 @@ public class ApiServletTest {
             boolean result = servlet.skip2FAcheckForAPIs(cmd, params);
             Assert.assertEquals(true, result);
         }
-
-        String command = ListCfgsByCmd.APINAME;
-        params.put(ApiConstants.NAME, new String[] { AccountManagerImpl.userTwoFactorAuthenticationIssuer.key() });
-        boolean result = servlet.skip2FAcheckForAPIs(command, params);
-
-        Assert.assertEquals(true, result);
     }
 
     @Test

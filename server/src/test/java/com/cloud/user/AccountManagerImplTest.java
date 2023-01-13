@@ -925,7 +925,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountService.getUserAccountById(1L)).thenReturn(userAccountVO);
         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(true);
         Mockito.when(userAccountVO.getUser2faProvider()).thenReturn("staticpin");
-        Mockito.when(userAccountVO.getSecretKey()).thenReturn("352352");
+        Mockito.when(userAccountVO.getKeyFor2fa()).thenReturn("352352");
 
         UserTwoFactorAuthenticator staticpinProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
         Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
