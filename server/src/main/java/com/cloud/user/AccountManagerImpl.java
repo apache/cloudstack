@@ -330,7 +330,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
             Boolean.class,
-            "enable.user.two.factor.authentication",
+            "enable.user.2fa",
             "false",
             "Determines whether two factor authentication is enabled or not. This can also be configured at domain level.",
             true,
@@ -338,7 +338,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public static ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
             Boolean.class,
-            "mandate.user.two.factor.authentication",
+            "mandate.user.2fa",
             "false",
             "Determines whether to make the two factor authentication mandatory or not. This can also be configured at domain level.",
             true,
@@ -346,14 +346,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public static ConfigKey<String> userTwoFactorAuthenticationIssuer = new ConfigKey<String>("Advanced",
             String.class,
-            "user.two.factor.authentication.issuer",
+            "user.2fa.issuer",
             "CloudStack",
             "Name of the issuer of two factor authentication",
             true,
             ConfigKey.Scope.Domain);
 
     ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
-            "user.two.factor.authentication.default.provider",
+            "user.2fa.default.provider",
             "google",
             "The default user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
 
