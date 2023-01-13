@@ -214,6 +214,7 @@ export default {
         this.twoFAverified = true
         this.$emit('refresh-data')
       }).catch(error => {
+        this.$router.push({ path: '/user/login' }).catch(() => {})
         this.$notification.error({
           message: this.$t('message.request.failed'),
           description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message

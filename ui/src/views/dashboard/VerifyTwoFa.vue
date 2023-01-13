@@ -88,12 +88,13 @@ export default {
             this.$router.push({ path: '/dashboard' }).catch(() => {})
 
             this.$message.success({
-              content: `${this.$t('label.action.enable.two.factor.authentication')}`,
+              content: `${this.$t('label.action.verify.two.factor.authentication')}`,
               duration: 2
             })
             this.$emit('refresh-data')
           }
         }).catch(error => {
+          this.$router.push({ path: '/user/login' }).catch(() => {})
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
