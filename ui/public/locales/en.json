@@ -2265,7 +2265,7 @@
 "message.desc.register.user.data": "Please fill in the following data to register a user data.",
 "message.desc.registered.user.data": "Registered a User Data.",
 "message.desc.zone": "A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.",
-"message.desc.zone.edge": "A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. An edge zone consists of one or more hosts (each of which provides local storage as primary storage servers). Only shared and L2 networks can be deployed in such zones and functionalities that require secondary storages are not supported. Currently edge zones are supported only on KVM hypervisor.",
+"message.desc.zone.edge": "A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. An edge zone consists of one or more hosts (each of which provides local storage as primary storage servers). Only shared and L2 networks can be deployed in such zones and functionalities that require secondary storages are not supported.",
 "message.zone.edge.local.storage": "Local storage will be used by default for user VMs and virtual routers",
 "message.detach.disk": "Are you sure you want to detach this disk?",
 "message.detach.iso.confirm": "Please confirm that you want to detach the ISO from this virtual instance.",
