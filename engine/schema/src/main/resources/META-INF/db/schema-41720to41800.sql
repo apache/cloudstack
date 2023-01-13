@@ -1035,3 +1035,10 @@ WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User -
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
 FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
+
+--- Create table for handling allowed console session temporally
+
+CREATE TABLE `cloud`.`allowed_console_session` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `session_uuid` VARCHAR(40) NOT NULL
+);
