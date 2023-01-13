@@ -110,6 +110,9 @@ public abstract class AgentHookBase implements AgentHook {
                 return new ConsoleAccessAuthenticationAnswer(cmd, false);
             }
 
+            s_logger.debug(String.format("Removing session [%s] from database because it is for an one time usage and we just validated it.", sessionUuid));
+            consoleAccessManager.removeSession(sessionUuid);
+
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();
                 // considering of minute round-up

@@ -38,10 +38,12 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.AllowedConsoleSessionVo;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.AllowedConsoleSessionDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -49,6 +51,7 @@ import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -84,6 +87,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private AgentManager agentManager;
     @Inject
     private ConsoleProxyManager consoleProxyManager;
+    @Inject
+    private AllowedConsoleSessionDao allowedConsoleSessionDao;
 
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
@@ -151,9 +156,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public void removeSessions(String[] sessionUuids) {
-        for (String r : sessionUuids) {
-            allowedSessions.remove(r);
+        if (ArrayUtils.isNotEmpty(sessionUuids)) {
+            allowedConsoleSessionDao.expungeBySessionUuids(sessionUuids);
         }
+    }
+
+    @Override
+    public void removeSession(String sessionUuid) {
+        removeSessions(new String[] {sessionUuid});
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
@@ -289,7 +299,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm);
 
         s_logger.debug("Adding allowed session: " + sessionUuid);
-        allowedSessions.add(sessionUuid);
+        allowedConsoleSessionDao.persist(new AllowedConsoleSessionVo(sessionUuid));
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
