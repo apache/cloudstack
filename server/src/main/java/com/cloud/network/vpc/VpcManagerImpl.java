@@ -773,25 +773,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<VpcOfferingJoinVO> offerings = vpcOfferingJoinDao.search(sc, searchFilter);
 
         // Remove offerings that are not associated with caller's domain or domainId passed
-        if ((caller.getType() != Account.Type.ADMIN || domainId != null) && CollectionUtils.isNotEmpty(offerings)) {
+        if ((!Account.Type.ADMIN.equals(caller.getType()) || domainId != null) && CollectionUtils.isNotEmpty(offerings)) {
             ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 VpcOfferingJoinVO offering = it.next();
                 if (org.apache.commons.lang3.StringUtils.isEmpty(offering.getDomainId())) {
                     continue;
                 }
-                String[] domainIdsArray = offering.getDomainId().split(",");
-                for (String domainIdString : domainIdsArray) {
-                    Long dId = Long.valueOf(domainIdString.trim());
-                    if (caller.getType() != Account.Type.ADMIN &&
-                            !domainDao.isChildDomain(dId, caller.getDomainId())) {
-                        it.remove();
-                        break;
-                    }
-                    if (domainId != null && !domainDao.isChildDomain(dId, domainId)) {
-                        it.remove();
-                        break;
-                    }
+                if (!domainDao.domainIdListContainsAccessibleDomain(offering.getDomainId(), caller, domainId)) {
+                    it.remove();
                 }
             }
         }
