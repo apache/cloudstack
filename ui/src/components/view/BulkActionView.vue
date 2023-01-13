@@ -83,7 +83,7 @@
             {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
           </template>
           <template #cidrlist="{record}">
-            <span style="white-space: pre-line"> {{ record.cidrlist.replaceAll(" ", "\n") }}</span>
+            <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
           </template>
         </a-table>
         <a-divider />

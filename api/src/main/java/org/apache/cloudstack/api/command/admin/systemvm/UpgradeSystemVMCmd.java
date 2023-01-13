@@ -42,7 +42,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpgradeSystemVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeSystemVMCmd.class.getName());
-    private static final String s_name = "changeserviceforsystemvmresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -77,11 +76,6 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

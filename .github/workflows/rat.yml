@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: RAT License Check
+name: License Check
 
 on: [push, pull_request]
 

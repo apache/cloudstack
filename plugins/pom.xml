@@ -61,6 +61,7 @@
         <module>api/solidfire-intg-test</module>
 
         <module>backup/dummy</module>
+        <module>backup/networker</module>
 
         <module>ca/root-ca</module>
 
@@ -167,17 +168,6 @@
         </dependency>
     </dependencies>
     <profiles>
-        <profile>
-            <id>srx</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>network-elements/juniper-srx</module>
-            </modules>
-        </profile>
         <profile>
             <id>vmware</id>
             <activation>

@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import java.util.Map;
 import org.apache.log4j.Logger;
 
-@APICommand(name = GetUserKeysCmd.APINAME,
+@APICommand(name = "getUserKeys",
             description = "This command allows the user to query the seceret and API keys for the account",
             responseObject = RegisterResponse.class,
             requestHasSensitiveInfo = false,
@@ -45,17 +45,10 @@ public class GetUserKeysCmd extends BaseCmd{
     private Long id;
 
     public static final Logger s_logger = Logger.getLogger(GetUserKeysCmd.class.getName());
-    public static final String APINAME = "getUserKeys";
 
     public Long getID(){
         return id;
-    }
-
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
-    public long getEntityOwnerId(){
+    }public long getEntityOwnerId(){
         User user = _entityMgr.findById(User.class, getID());
         if(user != null){
             return user.getAccountId();

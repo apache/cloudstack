@@ -40,7 +40,6 @@ import com.cloud.user.Account;
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class EnableAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
-    private static final String s_name = "enableaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -77,11 +76,6 @@ public class EnableAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

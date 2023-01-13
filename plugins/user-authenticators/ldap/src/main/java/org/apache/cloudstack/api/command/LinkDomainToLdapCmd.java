@@ -45,7 +45,6 @@ import java.util.UUID;
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkDomainToLdapCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LinkDomainToLdapCmd.class.getName());
-    private static final String s_name = "linkdomaintoldapresponse";
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain which has to be "
             + "linked to LDAP.")
@@ -127,11 +126,6 @@ public class LinkDomainToLdapCmd extends BaseCmd {
         } catch (final InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

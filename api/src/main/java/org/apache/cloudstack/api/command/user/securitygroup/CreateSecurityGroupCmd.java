@@ -37,7 +37,6 @@ import com.cloud.user.Account;
 public class CreateSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 
-    private static final String s_name = "createsecuritygroupresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

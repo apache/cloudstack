@@ -43,7 +43,6 @@ import com.cloud.network.RemoteAccessVpn;
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateRemoteAccessVpnCmd.class.getName());
 
-    private static final String s_name = "createremoteaccessvpnresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -116,11 +115,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

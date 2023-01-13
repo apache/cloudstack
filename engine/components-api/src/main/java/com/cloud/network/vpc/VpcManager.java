@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -109,7 +110,7 @@ public interface VpcManager {
     Network
         createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
             Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2)
+            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**

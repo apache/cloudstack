@@ -45,7 +45,6 @@ import com.cloud.user.UserAccount;
 public class CreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
-    private static final String s_name = "createaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -171,11 +170,6 @@ public class CreateAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

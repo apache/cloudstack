@@ -34,7 +34,7 @@ import org.apache.cloudstack.framework.ca.CAProvider;
 
 import com.cloud.user.Account;
 
-@APICommand(name = ListCAProvidersCmd.APINAME,
+@APICommand(name = "listCAProviders",
         description = "Lists available certificate authority providers in CloudStack",
         responseObject = CAProviderResponse.class,
         requestHasSensitiveInfo = false,
@@ -42,7 +42,6 @@ import com.cloud.user.Account;
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class ListCAProvidersCmd extends BaseCmd {
-    public static final String APINAME = "listCAProviders";
 
     @Inject
     private CAManager caManager;
@@ -65,11 +64,6 @@ public class ListCAProvidersCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -38,7 +38,6 @@ import org.apache.cloudstack.context.CallContext;
 public class DeleteUserDataCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteUserDataCmd.class.getName());
-    private static final String s_name = "deleteuserdataresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -94,11 +93,6 @@ public class DeleteUserDataCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete userdata");
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

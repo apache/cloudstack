@@ -42,7 +42,6 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(UpdateGuestOsCmd.class.getName());
 
-    private static final String s_name = "updateguestosresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

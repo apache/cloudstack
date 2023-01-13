@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 
-    private static final String s_name = "listsnapshotpoliciesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -75,11 +74,6 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

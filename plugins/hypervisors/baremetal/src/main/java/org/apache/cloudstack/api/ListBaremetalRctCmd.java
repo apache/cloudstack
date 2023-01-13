@@ -37,7 +37,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class ListBaremetalRctCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalRctCmd.class);
-    private static final String s_name = "listbaremetalrctresponse";
     @Inject
     BaremetalVlanManager vlanMgr;
 
@@ -61,9 +60,4 @@ public class ListBaremetalRctCmd extends BaseListCmd {
         }
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

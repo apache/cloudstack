@@ -34,11 +34,10 @@ import javax.inject.Inject;
 
 import java.util.Date;
 
-@APICommand(name = QuotaTariffCreateCmd.API_NAME, responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.17.0.0",
+@APICommand(name = "quotaTariffCreate", responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.17.0.0",
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffCreateCmd extends BaseCmd {
     protected Logger logger = Logger.getLogger(getClass());
-    public static final String API_NAME = "quotaTariffCreate";
 
     @Inject
     QuotaResponseBuilder responseBuilder;
@@ -69,11 +68,6 @@ public class QuotaTariffCreateCmd extends BaseCmd {
 
     public QuotaTariffCreateCmd() {
         super();
-    }
-
-    @Override
-    public String getCommandName() {
-        return QuotaTariffCreateCmd.API_NAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override
