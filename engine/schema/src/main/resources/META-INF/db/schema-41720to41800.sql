@@ -998,6 +998,38 @@ BEGIN
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
 -- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
 
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
