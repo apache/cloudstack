@@ -41,7 +41,7 @@ public class LibvirtVMDef {
     private String _desc;
     private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
-    private static final int ioThreadsNum = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
+    private static final int NUMBER_OF_IOTHREADS = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
 
     public static class GuestDef {
         enum GuestType {
@@ -226,7 +226,7 @@ public class LibvirtVMDef {
                 }
                 guestDef.append("</os>\n");
                 if (iothreads) {
-                    guestDef.append(String.format("<iothreads>%s</iothreads>", ioThreadsNum));
+                    guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
                 }
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {
@@ -1116,7 +1116,7 @@ public class LibvirtVMDef {
                 }
 
                 if (isIothreadsEnabled && _bus == DiskBus.VIRTIO) {
-                    diskBuilder.append(String.format("iothread='%s' ", ioThreadsNum));
+                    diskBuilder.append(String.format("iothread='%s' ", NUMBER_OF_IOTHREADS));
                 }
                 diskBuilder.append("/>\n");
             }
@@ -1963,7 +1963,7 @@ public class LibvirtVMDef {
                     scsiBuilder.append(String.format(" queues='%s'", queues));
                 }
                 if (isIoThreadsEnabled) {
-                    scsiBuilder.append(String.format(" iothread='%s'", ioThreadsNum));
+                    scsiBuilder.append(String.format(" iothread='%s'", NUMBER_OF_IOTHREADS));
                 }
                 scsiBuilder.append("/>\n");
             }
