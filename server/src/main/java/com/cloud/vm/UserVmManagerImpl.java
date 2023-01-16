@@ -3225,6 +3225,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (uefiDetail != null) {
             addVmUefiBootOptionsToParams(additonalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
+        if (cmd.getConsiderLastHost() != null) {
+            additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
+        }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
     }
@@ -3301,7 +3304,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        if ((vm.getState() == State.Destroyed && !expunge) || vm.getState() == State.Expunging) {
+        if (Arrays.asList(State.Destroyed, State.Expunging).contains(vm.getState()) && !expunge) {
             s_logger.debug("Vm id=" + vmId + " is already destroyed");
             return vm;
         }
@@ -3856,7 +3859,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
         Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                 null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null, null,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         if (newNetwork != null) {
             defaultNetwork = _networkDao.findById(newNetwork.getId());
         }
@@ -6543,8 +6546,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
             return _planningMgr.planDeployment(profile, plan, excludes, null);
         } catch (final AffinityConflictException e2) {
-            s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
-            throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
+            s_logger.warn("Unable to create deployment, affinity rules associated to the VM conflict", e2);
+            throw new CloudRuntimeException("Unable to create deployment, affinity rules associated to the VM conflict");
         } catch (final InsufficientServerCapacityException e3) {
             throw new CloudRuntimeException("Unable to find a server to migrate the vm to");
         }
@@ -7495,7 +7498,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network",
                                     newAccount.getAccountName() + "-network", null, null, null, false, null, newAccount,
                                     null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
-                                    null, null, true, null, null, null, null, null, null, null, null, null);
+                                    null, null, true, null, null, null, null, null, null, null, null, null, null);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).isPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);

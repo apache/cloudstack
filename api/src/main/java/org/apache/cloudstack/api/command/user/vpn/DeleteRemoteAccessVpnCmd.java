@@ -40,7 +40,6 @@ import com.cloud.network.RemoteAccessVpn;
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteRemoteAccessVpnCmd.class.getName());
 
-    private static final String s_name = "deleteremoteaccessvpnresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,11 +63,6 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

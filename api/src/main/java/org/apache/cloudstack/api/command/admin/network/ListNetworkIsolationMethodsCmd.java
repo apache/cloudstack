@@ -34,7 +34,6 @@ import com.cloud.network.Networks;
             responseHasSensitiveInfo = false)
 public class ListNetworkIsolationMethodsCmd extends BaseListCmd {
 
-    private static final String s_name = "listnetworkisolationmethodsresponse";
 
     @Override
     public void execute() {
@@ -54,9 +53,4 @@ public class ListNetworkIsolationMethodsCmd extends BaseListCmd {
 
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

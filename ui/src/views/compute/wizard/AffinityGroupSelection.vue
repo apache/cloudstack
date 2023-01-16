@@ -92,12 +92,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.affinity.groups'),
-          width: '40%'
+          width: '30%'
+        },
+        {
+          dataIndex: 'type',
+          title: this.$t('label.type'),
+          width: '30%'
         },
         {
           dataIndex: 'description',
           title: this.$t('label.description'),
-          width: '60%'
+          width: '40%'
         }
       ],
       selectedRowKeys: [],

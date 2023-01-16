@@ -42,7 +42,6 @@ import com.cloud.user.Account;
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 
-    private static final String s_name = "addhostresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -125,11 +124,6 @@ public class AddHostCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -39,7 +39,6 @@ import com.cloud.vm.VirtualMachine;
 public class RebootSystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
-    private static final String s_name = "rebootsystemvmresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,11 +65,6 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

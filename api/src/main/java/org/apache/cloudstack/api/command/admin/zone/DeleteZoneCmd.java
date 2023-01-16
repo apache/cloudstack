@@ -35,7 +35,6 @@ import com.cloud.user.Account;
 public class DeleteZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 
-    private static final String s_name = "deletezoneresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,11 +54,6 @@ public class DeleteZoneCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

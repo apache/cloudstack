@@ -41,7 +41,6 @@ public class ArchiveEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ArchiveEventsCmd.class.getName());
 
-    private static final String s_name = "archiveeventsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -88,11 +87,6 @@ public class ArchiveEventsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

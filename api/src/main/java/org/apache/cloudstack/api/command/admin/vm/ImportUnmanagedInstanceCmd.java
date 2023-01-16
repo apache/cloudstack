@@ -56,7 +56,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 
-@APICommand(name = ImportUnmanagedInstanceCmd.API_NAME,
+@APICommand(name = "importUnmanagedInstance",
         description = "Import unmanaged virtual machine from a given cluster.",
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Full,
@@ -66,7 +66,6 @@ import com.cloud.vm.VmDetailConstants;
         since = "4.14.0")
 public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(ImportUnmanagedInstanceCmd.class);
-    public static final String API_NAME = "importUnmanagedInstance";
 
     @Inject
     public VmImportService vmImportService;
@@ -296,11 +295,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         UserVmResponse response = vmImportService.importUnmanagedInstance(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return API_NAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

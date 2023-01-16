@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
@@ -105,6 +106,10 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
 
             final QemuImg qemu = new QemuImg(cmd.getWaitInMillSeconds());
             StorPoolStorageAdaptor.resize( Long.toString(srcDisk.getVirtualSize()), dst.getPath());
+
+            if (dst instanceof TemplateObjectTO) {
+                ((TemplateObjectTO) dst).setSize(srcDisk.getVirtualSize());
+            }
 
             dstPath = dst.getPath();
             StorPoolStorageAdaptor.attachOrDetachVolume("attach", cmd.getObjectType(), dstPath);

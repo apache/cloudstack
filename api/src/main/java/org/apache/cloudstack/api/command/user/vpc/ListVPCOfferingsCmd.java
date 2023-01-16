@@ -35,7 +35,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVPCOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVPCOfferingsCmd.class.getName());
-    private static final String s_name = "listvpcofferingsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -119,9 +118,4 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
         this.setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

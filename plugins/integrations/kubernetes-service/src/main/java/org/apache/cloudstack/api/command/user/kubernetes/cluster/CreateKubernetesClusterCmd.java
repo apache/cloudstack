@@ -46,7 +46,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = CreateKubernetesClusterCmd.APINAME,
+@APICommand(name = "createKubernetesCluster",
         description = "Creates a Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseView.Restricted,
@@ -56,7 +56,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public static final Logger LOGGER = Logger.getLogger(CreateKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "createKubernetesCluster";
     private static final Long DEFAULT_NODE_ROOT_DISK_SIZE = 8L;
 
     @Inject
@@ -236,11 +235,6 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
-    }
 
     public static String getResultObjectName() {
         return "kubernetescluster";

@@ -40,7 +40,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEgressFirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEgressFirewallRulesCmd.class.getName());
-    private static final String s_name = "listegressfirewallrulesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -94,11 +93,6 @@ public class ListEgressFirewallRulesCmd extends BaseListTaggedResourcesCmd imple
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

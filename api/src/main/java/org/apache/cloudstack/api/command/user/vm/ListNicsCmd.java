@@ -46,7 +46,6 @@ import com.cloud.vm.Nic;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNicsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNicsCmd.class.getName());
-    private static final String s_name = "listnicsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -109,11 +108,6 @@ public class ListNicsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "addressinfo";

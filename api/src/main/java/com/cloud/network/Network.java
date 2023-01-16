@@ -493,4 +493,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getIp6Dns2();
 
     Date getCreated();
+
+    Integer getPublicMtu();
+
+    Integer getPrivateMtu();
 }

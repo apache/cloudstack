@@ -50,7 +50,6 @@ import com.cloud.utils.net.NetUtils;
 public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateEgressFirewallRuleCmd.class.getName());
 
-    private static final String s_name = "createegressfirewallruleresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -135,11 +134,6 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public void setSourceCidrList(List<String> cidrs) {
         cidrlist = cidrs;

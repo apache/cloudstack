@@ -24,6 +24,118 @@ UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
 
+ALTER TABLE `cloud`.`networks` ADD COLUMN `public_mtu` bigint unsigned comment "MTU for VR public interface" ;
+ALTER TABLE `cloud`.`networks` ADD COLUMN `private_mtu` bigint unsigned comment "MTU for VR private interfaces" ;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN `public_mtu` bigint unsigned comment "MTU for VPC VR public interface" ;
+ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;
+
+DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
+CREATE VIEW `cloud`.`domain_router_view` AS
+    select
+        vm_instance.id id,
+        vm_instance.name name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        vm_instance.uuid uuid,
+        vm_instance.created created,
+        vm_instance.state state,
+        vm_instance.removed removed,
+        vm_instance.pod_id pod_id,
+        vm_instance.instance_name instance_name,
+        host_pod_ref.uuid pod_uuid,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        data_center.dns1 dns1,
+        data_center.dns2 dns2,
+        data_center.ip6_dns1 ip6_dns1,
+        data_center.ip6_dns2 ip6_dns2,
+        host.id host_id,
+        host.uuid host_uuid,
+        host.name host_name,
+        host.hypervisor_type,
+        host.cluster_id cluster_id,
+        host.status host_status,
+        host.resource_state host_resource_state,
+        vm_template.id template_id,
+        vm_template.uuid template_uuid,
+        service_offering.id service_offering_id,
+        service_offering.uuid service_offering_uuid,
+        service_offering.name service_offering_name,
+        nics.id nic_id,
+        nics.uuid nic_uuid,
+        nics.network_id network_id,
+        nics.ip4_address ip_address,
+        nics.ip6_address ip6_address,
+        nics.ip6_gateway ip6_gateway,
+        nics.ip6_cidr ip6_cidr,
+        nics.default_nic is_default_nic,
+        nics.gateway gateway,
+        nics.netmask netmask,
+        nics.mac_address mac_address,
+        nics.broadcast_uri broadcast_uri,
+        nics.isolation_uri isolation_uri,
+        nics.mtu mtu,
+        vpc.id vpc_id,
+        vpc.uuid vpc_uuid,
+        vpc.name vpc_name,
+        networks.uuid network_uuid,
+        networks.name network_name,
+        networks.network_domain network_domain,
+        networks.traffic_type traffic_type,
+        networks.guest_type guest_type,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id,
+        domain_router.template_version template_version,
+        domain_router.scripts_version scripts_version,
+        domain_router.is_redundant_router is_redundant_router,
+        domain_router.redundant_state redundant_state,
+        domain_router.stop_pending stop_pending,
+        domain_router.role role,
+        domain_router.software_version software_version
+    from
+        `cloud`.`domain_router`
+            inner join
+        `cloud`.`vm_instance` ON vm_instance.id = domain_router.id
+            inner join
+        `cloud`.`account` ON vm_instance.account_id = account.id
+            inner join
+        `cloud`.`domain` ON vm_instance.domain_id = domain.id
+            left join
+        `cloud`.`host_pod_ref` ON vm_instance.pod_id = host_pod_ref.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`data_center` ON vm_instance.data_center_id = data_center.id
+            left join
+        `cloud`.`host` ON vm_instance.host_id = host.id
+            left join
+        `cloud`.`vm_template` ON vm_instance.vm_template_id = vm_template.id
+            left join
+        `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
+            left join
+        `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
+            left join
+        `cloud`.`networks` ON nics.network_id = networks.id
+            left join
+        `cloud`.`vpc` ON domain_router.vpc_id = vpc.id and vpc.removed is null
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
+            and async_job.instance_type = 'DomainRouter'
+            and async_job.job_status = 0;
+
 -- Idempotent ADD COLUMN
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
 CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
@@ -298,15 +410,6 @@ BEGIN
 -- Add column 'supports_vm_autoscaling' to 'network_offerings' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
 
--- Update column 'supports_vm_autoscaling' to 1 if network offerings support Lb
-UPDATE `cloud`.`network_offerings`
-JOIN `cloud`.`ntwk_offering_service_map`
-ON network_offerings.id = ntwk_offering_service_map.network_offering_id
-SET network_offerings.supports_vm_autoscaling = 1
-WHERE ntwk_offering_service_map.service = 'Lb'
-    AND ntwk_offering_service_map.provider IN ('VirtualRouter', 'VpcVirtualRouter', 'Netscaler')
-    AND network_offerings.removed IS NULL;
-
 -- Add column 'name' to 'autoscale_vmgroups' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
 UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
@@ -445,6 +548,16 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
     GROUP BY
         `network_offerings`.`id`;
+
+-- Update column 'supports_vm_autoscaling' to 1 if network offerings support Lb
+UPDATE `cloud`.`network_offerings`
+JOIN `cloud`.`ntwk_offering_service_map`
+ON network_offerings.id = ntwk_offering_service_map.network_offering_id
+SET network_offerings.supports_vm_autoscaling = 1
+WHERE ntwk_offering_service_map.service = 'Lb'
+    AND ntwk_offering_service_map.provider IN ('VirtualRouter', 'VpcVirtualRouter', 'Netscaler')
+    AND network_offerings.removed IS NULL
+    AND (SELECT COUNT(id) AS count FROM `network_offering_view` WHERE supports_vm_autoscaling = 1) = 0;
 
 -- UserData as first class resource (PR #6202)
 CREATE TABLE `cloud`.`user_data` (
@@ -633,6 +746,8 @@ SELECT
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
     `host`.`cluster_id` AS `cluster_id`,
+    `host`.`status` AS `host_status`,
+    `host`.`resource_state` AS `host_resource_state`,
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
@@ -869,6 +984,57 @@ WHERE   usage_unit = 'Policy-Month';
 -- delete configuration task.cleanup.retry.interval #6910
 DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
 
--- create_public_parameter_on_roles.
-ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
+--- #6888 add index to speed up querying IPs in the network-tab
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_KEY`;
 
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_KEY` (
+		IN in_index_name VARCHAR(200)
+    , IN in_table_name VARCHAR(200)
+    , IN in_key_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+-- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
+
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
+SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
+FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
+
+-- create_public_parameter_on_roles. #6960
+ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';

@@ -48,7 +48,6 @@ import com.cloud.vm.VirtualMachine;
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
-    private static final String s_name = "assignvirtualmachineresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -119,11 +118,6 @@ public class AssignVMCmd extends BaseCmd  {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

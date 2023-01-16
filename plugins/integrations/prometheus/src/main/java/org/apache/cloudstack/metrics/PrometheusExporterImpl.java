@@ -43,6 +43,7 @@ import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.configuration.Resource;
@@ -151,12 +152,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 accountName = (account != null) ? account.getAccountName() : "";
 
                 DomainJoinVO domain = domainDao.findById(dr.getDomainId());
-                metricsList.add(new ItemHostDedicatedToAccount(zoneName, host.getName(), accountName, domain.getName(), isDedicated));
+                metricsList.add(new ItemHostDedicatedToAccount(zoneName, host.getName(), accountName, domain.getPath(), isDedicated));
             }
 
             final String cpuFactor = String.valueOf(CapacityManager.CpuOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO cpuCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
-            if (cpuCapacity != null) {
+            if (cpuCapacity != null && cpuCapacity.getCapacityState() == CapacityState.Enabled) {
                 metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity(), isDedicated, hostTags));
                 metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
@@ -166,7 +167,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
             final String memoryFactor = String.valueOf(CapacityManager.MemOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO memCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
-            if (memCapacity != null) {
+            if (memCapacity != null && memCapacity.getCapacityState() == CapacityState.Enabled) {
                 metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, memCapacity.getUsedCapacity(), isDedicated, hostTags));
                 metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, memCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
@@ -177,7 +178,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             metricsList.add(new ItemHostVM(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), vmDao.listByHostId(host.getId()).size()));
 
             final CapacityVO coreCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU_CORE);
-            if (coreCapacity != null) {
+            if (coreCapacity != null && coreCapacity.getCapacityState() == CapacityState.Enabled) {
                 metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, coreCapacity.getUsedCapacity(), isDedicated, hostTags));
                 metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, coreCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
@@ -368,10 +369,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     Resource.ResourceType.secondary_storage, domain.getId());
 
             // Add per domain cpu, memory and storage count
-            metricsList.add(new ItemPerDomainResourceLimit(cpuLimit, domain.getName(), Resource.ResourceType.cpu.getName()));
-            metricsList.add(new ItemPerDomainResourceLimit(memoryLimit, domain.getName(), Resource.ResourceType.memory.getName()));
-            metricsList.add(new ItemPerDomainResourceLimit(primaryStorageLimit, domain.getName(), Resource.ResourceType.primary_storage.getName()));
-            metricsList.add(new ItemPerDomainResourceLimit(secondaryStorageLimit, domain.getName(), Resource.ResourceType.secondary_storage.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(cpuLimit, domain.getPath(), Resource.ResourceType.cpu.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(memoryLimit, domain.getPath(), Resource.ResourceType.memory.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(primaryStorageLimit, domain.getPath(), Resource.ResourceType.primary_storage.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(secondaryStorageLimit, domain.getPath(), Resource.ResourceType.secondary_storage.getName()));
         }
         metricsList.add(new ItemDomainLimitCpu(totalCpuLimit));
         metricsList.add(new ItemDomainLimitMemory(totalMemoryLimit));
@@ -398,11 +399,11 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             long secondaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
                     Resource.ResourceType.secondary_storage);
 
-            metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getName(), Resource.ResourceType.memory.getName()));
-            metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getName(), Resource.ResourceType.cpu.getName()));
-            metricsList.add(new ItemPerDomainResourceCount(primaryStorageUsed, domain.getName(),
+            metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getPath(), Resource.ResourceType.memory.getName()));
+            metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getPath(), Resource.ResourceType.cpu.getName()));
+            metricsList.add(new ItemPerDomainResourceCount(primaryStorageUsed, domain.getPath(),
                     Resource.ResourceType.primary_storage.getName()));
-            metricsList.add(new ItemPerDomainResourceCount(secondaryStorageUsed, domain.getName(),
+            metricsList.add(new ItemPerDomainResourceCount(secondaryStorageUsed, domain.getPath(),
                     Resource.ResourceType.secondary_storage.getName()));
         }
     }

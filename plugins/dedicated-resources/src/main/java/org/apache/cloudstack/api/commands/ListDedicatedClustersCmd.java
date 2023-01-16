@@ -45,7 +45,6 @@ import com.cloud.utils.Pair;
 public class ListDedicatedClustersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedClustersCmd.class.getName());
 
-    private static final String s_name = "listdedicatedclustersresponse";
     @Inject
     DedicatedService dedicatedService;
 
@@ -93,11 +92,6 @@ public class ListDedicatedClustersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

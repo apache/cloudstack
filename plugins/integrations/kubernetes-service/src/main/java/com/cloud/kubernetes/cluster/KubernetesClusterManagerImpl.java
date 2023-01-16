@@ -765,7 +765,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 network = networkMgr.createGuestNetwork(networkOffering.getId(), clusterName + "-network", owner.getAccountName() + "-network",
                         null, null, null, false, null, owner, null, physicalNetwork, zone.getId(),
                         ControlledEntity.ACLType.Account, null, null, null, null, true, null,
-                        null, null, null, null, null, null, null, null);
+                        null, null, null, null, null, null, null, null, null);
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));
             }

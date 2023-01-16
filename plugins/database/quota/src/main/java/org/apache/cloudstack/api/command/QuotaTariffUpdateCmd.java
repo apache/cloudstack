@@ -38,7 +38,6 @@ import java.util.Date;
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffUpdateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaTariffUpdateCmd.class);
-    private static final String s_name = "quotatariffupdateresponse";
 
     @Inject
     QuotaResponseBuilder _responseBuilder;
@@ -108,11 +107,6 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
 
     public QuotaTariffUpdateCmd() {
         super();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

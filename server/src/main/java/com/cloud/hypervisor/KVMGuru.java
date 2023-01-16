@@ -23,26 +23,35 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
-
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -55,7 +64,12 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     DpdkHelper dpdkHelper;
-
+    @Inject
+    VMInstanceDao _instanceDao;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -69,6 +83,37 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     /**
+     * Get next free DeviceId for a KVM Guest
+     */
+
+    protected Long getNextAvailableDeviceId(List<VolumeVO> vmVolumes) {
+
+        int maxDataVolumesSupported;
+        int maxDeviceId;
+        List<String> devIds = new ArrayList<>();
+
+        try {
+            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
+            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
+            maxDeviceId = maxDevices - 1;
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
+        }
+        for (int i = 1; i <= maxDeviceId; i++) {
+            devIds.add(String.valueOf(i));
+        }
+        devIds.remove("3");
+        for (VolumeVO vmVolume : vmVolumes) {
+            devIds.remove(vmVolume.getDeviceId().toString().trim());
+        }
+        if (devIds.isEmpty()) {
+            throw new RuntimeException("All device Ids are in use.");
+        }
+        return Long.parseLong(devIds.iterator().next());
+    }
+
+
+    /**
      * Retrieve host max CPU speed
      */
     protected double getHostCPUSpeed(HostVO host) {
@@ -80,10 +125,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     /**
-    * Set VM CPU quota percentage with respect to host CPU on 'to' if CPU limit option is set
-    * @param to vm to
-    * @param vmProfile vm profile
-    */
+     * Set VM CPU quota percentage with respect to host CPU on 'to' if CPU limit option is set
+     * @param to vm to
+     * @param vmProfile vm profile
+     */
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
         if (to.getLimitCpuUse()) {
             VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -152,7 +197,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         if (virtualMachineTo.getType() == VirtualMachine.Type.User && MapUtils.isNotEmpty(virtualMachineTo.getExtraConfig()) &&
-          virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
+                virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
             for (final NicTO nic : virtualMachineTo.getNics()) {
                 nic.setDpdkEnabled(true);
             }
@@ -167,9 +212,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Long maxHostMemory = max.first();
         Integer maxHostCpuCore = max.second();
 
-        Long minMemory = virtualMachineTo.getMinRam();
+        long minMemory = virtualMachineTo.getMinRam();
         Long maxMemory = minMemory;
-        Integer minCpuCores = virtualMachineTo.getCpus();
+        int minCpuCores = virtualMachineTo.getCpus();
         Integer maxCpuCores = minCpuCores;
 
         ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findById(virtualMachineProfile.getId(), virtualMachineProfile.getServiceOfferingId());
@@ -204,7 +249,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
-            s_logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost.toString()));
+            s_logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost));
         } else {
             s_logger.warn(String.format("%s host [%s] and last host [%s] are null. Using 'Long.MAX_VALUE' [%s] and 'Integer.MAX_VALUE' [%s] as max memory and cpu cores.", vmDescription, virtualMachine.getHostId(), lastHostId, maxHostMemory, maxHostCpuCore));
         }
@@ -225,7 +270,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
 
             s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
-              serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
+                    serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
 
             if (maxMemoryConfig > 0) {
                 maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfig);
@@ -251,7 +296,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             String maxCpuCoreConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.key();
 
             s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
-              serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
+                    serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
 
             if (maxCpuCoresConfig > 0) {
                 maxCpuCores = maxCpuCoresConfig;
@@ -297,4 +342,60 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         return null;
     }
 
+    @Override
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup)  {
+        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
+
+        VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
+        if (vm == null) {
+            throw new CloudRuntimeException("Cannot find VM: " + vmInternalName);
+        }
+        try {
+            if (vm.getRemoved() == null) {
+                vm.setState(VirtualMachine.State.Stopped);
+                vm.setPowerState(VirtualMachine.PowerState.PowerOff);
+                _instanceDao.update(vm.getId(), vm);
+            }
+           for ( Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
+               VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(VMVolToRestore.getUuid());
+               volume.setState(Volume.State.Ready);
+               _volumeDao.update(volume.getId(), volume);
+               if (VMVolToRestore.getType() == Volume.Type.ROOT) {
+                   _volumeDao.update(volume.getId(), volume);
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), 0L);
+               }
+               else if ( VMVolToRestore.getType() == Volume.Type.DATADISK) {
+                   List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
+                   _volumeDao.update(volume.getId(), volume);
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+               }
+           }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not restore VM " + vm.getName() + " due to : " + e.getMessage());
+        }
+    return vm;
+    }
+
+    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup) {
+
+        VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
+        List<VolumeVO> vmVolumes = _volumeDao.findByInstance(targetVM.getId());
+        VolumeVO restoredVolume = _volumeDao.findByUuid(location);
+        if (restoredVolume != null) {
+            try {
+                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+                restoredVolume.setState(Volume.State.Ready);
+                _volumeDao.update(restoredVolume.getId(), restoredVolume);
+                return true;
+            } catch (Exception e) {
+                restoredVolume.setDisplay(false);
+                restoredVolume.setDisplayVolume(false);
+                restoredVolume.setState(Volume.State.Destroy);
+                _volumeDao.update(restoredVolume.getId(), restoredVolume);
+                throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e.getMessage());
+            }
+        }
+    return false;
+    }
 }
