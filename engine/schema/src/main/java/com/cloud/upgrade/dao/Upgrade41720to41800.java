@@ -79,6 +79,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         correctGuestOsNames(conn);
         updateGuestOsMappings(conn);
         updateGuestOsMappings(conn);
+        correctGuestOsIdsInHypervisorMapping(conn);
     }
 
     @Override
@@ -598,5 +599,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "vmwarePhoton64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "vmwarePhoton64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "VMware Photon (64 bit)", mappings);
+    }
+
+    private void correctGuestOsIdsInHypervisorMapping(final Connection conn) {
+        LOG.debug("Correcting guest OS ids in hypervisor mappings");
+        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
     }
 }
