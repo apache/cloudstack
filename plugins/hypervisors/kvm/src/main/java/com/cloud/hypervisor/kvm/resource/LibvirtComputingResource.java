@@ -4016,15 +4016,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     break;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                final String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
-                String diskPath = null;
-                if (path != null) {
-                    final String[] token = path.split("/");
-                    if (token.length > 3) {
-                        diskPath = token[3];
-                        final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
-                        stats.add(stat);
-                    }
+                String diskPath = getDiskPathFromDiskDef(disk);
+                if (diskPath != null) {
+                    final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                    stats.add(stat);
                 }
             }
 
@@ -4034,6 +4029,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 dm.free();
             }
         }
+    }
+
+    protected String getDiskPathFromDiskDef(DiskDef disk) {
+        final String path = disk.getDiskPath();
+        if (path != null) {
+            final String[] token = path.split("/");
+            if (DiskProtocol.RBD.equals(disk.getDiskProtocol())) {
+                // for example, path = <RBD pool>/<disk path>
+                if (token.length > 1) {
+                    return token[1];
+                }
+            } else if (token.length > 3) {
+                // for example, path = /mnt/pool_uuid/disk_path/
+                return token[3];
+            }
+        }
+        return null;
     }
 
     private class VmStats {
