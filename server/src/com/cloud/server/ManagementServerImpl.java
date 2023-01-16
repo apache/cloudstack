@@ -1033,6 +1033,33 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public boolean softDeleteEvents(final DeleteEventsCmd cmd) {
+        final Account caller = getCaller();
+        final List<Long> ids = cmd.getIds();
+        boolean result = true;
+        List<Long> permittedAccountIds = new ArrayList<Long>();
+
+        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            permittedAccountIds.add(caller.getId());
+        } else {
+            final DomainVO domain = _domainDao.findById(caller.getDomainId());
+            final List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
+            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+        }
+
+        final List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
+        final ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
+
+        if (ids != null && events.size() < ids.size()) {
+            result = false;
+            return result;
+        }
+        _eventDao.archiveEvents(events);
+        return result;
+    }
+
+    @Override
     public List<? extends Cluster> searchForClusters(long zoneId, final Long startIndex, final Long pageSizeVal, final String hypervisorType) {
         final Filter searchFilter = new Filter(ClusterVO.class, "id", true, startIndex, pageSizeVal);
         final SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();

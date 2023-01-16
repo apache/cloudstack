@@ -69,102 +69,6 @@
                     },
 
                     actions: {
-                        // Remove multiple events
-                        removeMulti: {
-                            label: 'label.delete.events',
-                            isHeader: true,
-                            addRow: false,
-                            isMultiSelectAction: true,
-                            messages: {
-                                confirm: function(args) {
-                                    return 'message.confirm.remove.selected.events';
-                                },
-                                notification: function(args) {
-                                    return 'label.delete.events';
-                                }
-                            },
-                            action: function(args) {
-                                var events = args.context.events;
-
-                                $.ajax({
-                                    url: createURL("deleteEvents"),
-                                    data: {
-                                        ids: $(events).map(function(index, event) {
-                                            return event.id;
-                                        }).toArray().join(',')
-                                    },
-                                    success: function(data) {
-                                        args.response.success();
-                                        $(window).trigger('cloudStack.fullRefresh');
-                                    },
-                                    error:function(data) {
-                                        args.response.error(parseXMLHttpResponse(data));
-                                    }
-                                });
-                            }
-                        },
-
-                        remove: {
-                            label: 'label.delete.events',
-                            isHeader: true,
-                            addRow: false,
-                            messages: {
-                                notification: function(args) {
-                                    return 'label.delete.events';
-                                }
-                            },
-                            createForm: {
-                                title: 'label.delete.events',
-                                desc: '',
-                                fields: {
-                                    type: {
-                                        label: 'label.by.event.type',
-                                        docID: 'helpEventsDeleteType'
-                                    },
-                                    startdate: {
-                                        label: 'label.by.date.start',
-                                        docID: 'helpEventsDeleteDate',
-                                        isDatepicker: true
-                                    },
-                                    enddate: {
-                                        label: 'label.by.date.end',
-                                        docID: 'helpEventsDeleteDate',
-                                        isDatepicker: true
-                                    }
-                                }
-                            },
-                            action: function(args) {
-
-                                var data = {};
-
-                                if (args.data.type != "")
-                                    $.extend(data, {
-                                        type: args.data.type
-                                    });
-
-                                if (args.data.startdate != "")
-                                    $.extend(data, {
-                                        startdate: args.data.startdate
-                                    });
-
-                                if (args.data.enddate != "")
-                                    $.extend(data, {
-                                        enddate: args.data.enddate
-                                    });
-
-                                $.ajax({
-                                    url: createURL("deleteEvents"),
-                                    data: data,
-                                    success: function(data) {
-                                        args.response.success();
-                                    },
-                                    error:function(data) {
-                                        args.response.error(parseXMLHttpResponse(data));
-                                    }
-                                });
-                            }
-                        },
-
                         archive: {
                             label: 'label.archive.events',
                             isHeader: true,
@@ -419,30 +323,6 @@
                         },
 
                         actions: {
-                            // Remove single event
-                            remove: {
-                                label: 'label.delete',
-                                messages: {
-                                    notification: function(args) {
-                                        return 'label.event.deleted';
-                                    },
-                                    confirm: function() {
-                                        return 'message.confirm.remove.event';
-                                    }
-                                },
-                                action: function(args) {
-
-                                    $.ajax({
-                                        url: createURL("deleteEvents&ids=" + args.context.events[0].id),
-                                        success: function(json) {
-                                            args.response.success();
-                                            $(window).trigger('cloudStack.fullRefresh');
-                                        }
-
-                                    });
-                                }
-                            },
-
                             // Archive single event
                             archive: {
                                 label: 'label.archive',

@@ -104,6 +104,8 @@ public interface ManagementService {
      */
     Pair<List<? extends Cluster>, Integer> searchForClusters(ListClustersCmd c);
 
+    boolean softDeleteEvents(DeleteEventsCmd cmd);
+
     /**
      * Searches for Clusters by the specified zone Id.
      * @param zoneId

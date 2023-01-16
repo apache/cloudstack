@@ -110,7 +110,7 @@ public class DeleteEventsCmd extends BaseCmd {
         } else if (startDate != null && endDate == null) {
             throw new InvalidParameterValueException("enddate must be specified with startdate parameter");
         }
-        boolean result = _mgr.deleteEvents(this);
+        boolean result = _mgr.softDeleteEvents(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
