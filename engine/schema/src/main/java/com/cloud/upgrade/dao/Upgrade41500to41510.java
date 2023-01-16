@@ -69,7 +69,6 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
-        correctGuestOsNames(conn);
     }
 
     @Override
@@ -239,14 +238,6 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
             }
         }
         LOG.debug("Updating System Vm Template IDs Complete");
-    }
-
-    private void correctGuestOsNames(final Connection conn) {
-        guestOsMapper.updateGuestOsName(7, "Fedora Linux", "Fedora Linux (32 bit)");
-        guestOsMapper.updateGuestOsName(7, "Mandriva Linux", "Mandriva Linux (32 bit)");
-
-        GuestOSHypervisorMapping mapping = new GuestOSHypervisorMapping("VMware", "6.7.3", "opensuseGuest");
-        guestOsMapper.updateGuestOsNameFromMapping("OpenSUSE Linux (32 bit)", mapping);
     }
 
     @Override
