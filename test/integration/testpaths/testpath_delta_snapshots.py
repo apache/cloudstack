@@ -537,4 +537,3 @@ class TestDeltaSnapshots(cloudstackTestCase):
             "Check: Snapshot 1 is still on Secondary Storage. Not Deleted.")
 
         return
-

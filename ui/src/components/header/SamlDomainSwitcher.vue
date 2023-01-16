@@ -36,7 +36,7 @@
             <span>{{ $t('label.domain') }}</span>
           </template>
           <span class="custom-suffix-icon">
-            <BlockOutlined v-if="!loading" />
+            <BlockOutlined v-if="!loading" class="ant-select-suffix" />
             <LoadingOutlined v-else />
           </span>
         </a-tooltip>
@@ -73,7 +73,7 @@ export default {
       const samlAccounts = []
       const getNextPage = () => {
         this.loading = true
-        api('listAndSwitchSamlAccount', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
+        api('listAndSwitchSamlAccount', { details: 'min', page: page, pageSize: 500 }).then(json => {
           if (json && json.listandswitchsamlaccountresponse && json.listandswitchsamlaccountresponse.samluseraccount) {
             samlAccounts.push(...json.listandswitchsamlaccountresponse.samluseraccount)
           }

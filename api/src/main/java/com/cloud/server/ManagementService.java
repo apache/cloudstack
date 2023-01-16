@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.user.UserData;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
@@ -56,6 +57,9 @@ import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
@@ -334,6 +338,33 @@ public interface ManagementService {
     String generateRandomPassword();
 
     /**
+     * Search registered userdatas for the logged in user.
+     *
+     * @param cmd
+     *            The api command class.
+     * @return The list of userdatas found.
+     */
+    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd);
+
+    /**
+     * Registers a userdata.
+     *
+     * @param cmd
+     *            The api command class.
+     * @return A VO with the registered userdata.
+     */
+    UserData registerUserData(RegisterUserDataCmd cmd);
+
+    /**
+     * Deletes a userdata.
+     *
+     * @param cmd
+     *            The api command class.
+     * @return True on success. False otherwise.
+     */
+    boolean deleteUserData(DeleteUserDataCmd cmd);
+
+    /**
      * Search registered key pairs for the logged in user.
      *
      * @param cmd
@@ -405,7 +436,7 @@ public interface ManagementService {
      */
     Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
 
-    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck);
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForSystemMigrationOfVolume(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck);
 
     String[] listEventTypes();
 

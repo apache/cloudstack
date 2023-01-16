@@ -29,11 +29,10 @@ import org.apache.cloudstack.response.UsageServerMetricsResponse;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListUsageServerMetricsCmd.APINAME, description = "Lists Usage Server metrics", responseObject = UsageServerMetricsResponse.class,
+@APICommand(name = "listUsageServerMetrics", description = "Lists Usage Server metrics", responseObject = UsageServerMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.17.0", authorized = {RoleType.Admin})
 public class ListUsageServerMetricsCmd  extends BaseCmd {
-    public static final String APINAME = "listUsageServerMetrics";
 
     @Inject
     private MetricsService metricsService;
@@ -43,11 +42,6 @@ public class ListUsageServerMetricsCmd  extends BaseCmd {
         UsageServerMetricsResponse usageServerMetrics = metricsService.listUsageServerMetrics();
         usageServerMetrics.setResponseName(getCommandName());
         setResponseObject(usageServerMetrics);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

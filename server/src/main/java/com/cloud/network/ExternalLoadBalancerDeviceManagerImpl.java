@@ -97,6 +97,7 @@ import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
@@ -213,6 +214,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject
     VirtualRouterProviderDao _vrProviderDao;
+    @Inject
+    private LoadBalancingRulesManager lbRulesManager;
 
     private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
@@ -254,7 +257,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             ExternalLoadBalancerDeviceVO zoneGslbProvider =
                 _externalLoadBalancerDeviceDao.findGslbServiceProvider(physicalNetworkId, ntwkDevice.getNetworkServiceProvder());
             if (zoneGslbProvider != null) {
-                throw new CloudRuntimeException("There is a GSLB service provider configured in the zone alredy.");
+                throw new CloudRuntimeException("There is a GSLB service provider configured in the zone already.");
             }
         }
 
@@ -981,7 +984,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 loadBalancer.setSrcIpNetmask(srcIpNetmask);
                 loadBalancer.setSrcIpGateway(srcIpGateway);
                 if (rule.isAutoScaleConfig()) {
-                    loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
+                    loadBalancer.setAutoScaleVmGroupTO(lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
                 }
                 loadBalancersToApply.add(loadBalancer);
             }

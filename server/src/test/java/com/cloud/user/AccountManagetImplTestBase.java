@@ -185,9 +185,7 @@ public class AccountManagetImplTestBase {
     @Mock
     UserAuthenticator userAuthenticator;
     @Mock
-    ServiceOfferingDao _serviceOfferingDao;
-    @Mock
-    ServiceOfferingDao _offeringDao;
+    ServiceOfferingDao serviceOfferingDao;
     @Mock
     OrchestrationService _orchSrvc;
     @Mock

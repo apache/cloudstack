@@ -44,7 +44,7 @@ from marvin.lib.base import (Account,
 
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_suitable_test_template)
 
 NETWORK_FILTER_ACCOUNT = 'account'
 NETWORK_FILTER_DOMAIN = 'domain'
@@ -66,7 +66,12 @@ class TestNetworkPermissions(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor)
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestNetworkPermissions")

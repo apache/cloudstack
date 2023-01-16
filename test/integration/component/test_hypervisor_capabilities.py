@@ -286,4 +286,3 @@ class TestHypervisorCapabilities(cloudstackTestCase):
         cmd = listHypervisorCapabilities.listHypervisorCapabilitiesCmd()
         cmd.id = id
         return self.apiclient.listHypervisorCapabilities(cmd)
-

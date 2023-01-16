@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListLBStickinessPoliciesCmd.class.getName());
 
-    private static final String s_name = "listlbstickinesspoliciesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -82,11 +81,6 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

@@ -75,12 +75,15 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item name="encryptdisk" ref="encryptdisk">
+          <template #label>
+            <tooltip-label :title="$t('label.encrypt')" :tooltip="apiParams.encrypt.description" />
+          </template>
+          <a-switch v-model:checked="form.encryptdisk" :checked="encryptdisk" @change="val => { encryptdisk = val }" />
+        </a-form-item>
         <a-form-item name="disksizestrictness" ref="disksizestrictness">
           <template #label>
-            {{ $t('label.disksizestrictness') }}
-            <a-tooltip :title="apiParams.disksizestrictness.description">
-              <info-circle-outlined />
-            </a-tooltip>
+            <tooltip-label :title="$t('label.disksizestrictness')" :tooltip="apiParams.disksizestrictness.description" />
           </template>
           <a-switch v-model:checked="form.disksizestrictness" :checked="disksizestrictness" @change="val => { disksizestrictness = val }" />
         </a-form-item>
@@ -194,7 +197,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="isAdmin()" name="tags" ref="tags">
+        <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="tags" ref="tags">
           <template #label>
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
@@ -208,7 +211,7 @@
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
-            v-if="isAdmin()">
+            v-if="isAdmin() || isDomainAdminAllowedToInformTags">
             <a-select-option v-for="(opt) in storageTags" :key="opt">
               {{ opt }}
             </a-select-option>
@@ -298,6 +301,7 @@ import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import store from '@/store'
 
 export default {
   name: 'AddDiskOffering',
@@ -313,12 +317,15 @@ export default {
       storagePolicies: null,
       storageTagLoading: false,
       isPublic: true,
+      isEncrypted: false,
       domains: [],
       domainLoading: false,
       zones: [],
       zoneLoading: false,
       loading: false,
-      disksizestrictness: false
+      disksizestrictness: false,
+      encryptdisk: false,
+      isDomainAdminAllowedToInformTags: false
     }
   },
   beforeCreate () {
@@ -345,7 +352,8 @@ export default {
         writecachetype: 'none',
         qostype: '',
         ispublic: this.isPublic,
-        disksizestrictness: this.disksizestrictness
+        disksizestrictness: this.disksizestrictness,
+        encryptdisk: this.encryptdisk
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -382,9 +390,24 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
       }
+      if (this.isDomainAdmin()) {
+        this.checkIfDomainAdminIsAllowedToInformTag()
+        if (this.isDomainAdminAllowedToInformTags) {
+          this.fetchStorageTagData()
+        }
+      }
+    },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     isAdmin () {
       return isAdmin()
+    },
+    checkIfDomainAdminIsAllowedToInformTag () {
+      const params = { id: store.getters.userInfo.accountid }
+      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+        this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
+      })
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
@@ -404,7 +427,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -418,7 +440,6 @@ export default {
     },
     fetchStorageTagData () {
       const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       api('listStorageTags', params).then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
@@ -460,7 +481,8 @@ export default {
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
           customized: values.customdisksize,
-          disksizestrictness: values.disksizestrictness
+          disksizestrictness: values.disksizestrictness,
+          encrypt: values.encryptdisk
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize

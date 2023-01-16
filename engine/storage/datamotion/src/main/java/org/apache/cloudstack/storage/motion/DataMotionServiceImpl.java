@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -53,6 +54,8 @@ public class DataMotionServiceImpl implements DataMotionService {
     StorageStrategyFactory storageStrategyFactory;
     @Inject
     VolumeDao volDao;
+    @Inject
+    PassphraseDao passphraseDao;
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
@@ -98,7 +101,14 @@ public class DataMotionServiceImpl implements DataMotionService {
         volDao.update(sourceVO.getId(), sourceVO);
         destinationVO.setState(Volume.State.Expunged);
         destinationVO.setRemoved(new Date());
+        Long passphraseId = destinationVO.getPassphraseId();
+        destinationVO.setPassphraseId(null);
         volDao.update(destinationVO.getId(), destinationVO);
+
+        if (passphraseId != null) {
+            passphraseDao.remove(passphraseId);
+        }
+
     }
 
     @Override

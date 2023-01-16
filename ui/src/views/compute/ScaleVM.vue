@@ -217,6 +217,7 @@ export default {
       delete this.params[this.cpuNumberKey]
       delete this.params[this.cpuSpeedKey]
       delete this.params[this.memoryKey]
+      delete this.params[this.rootDiskSizeKey]
 
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]

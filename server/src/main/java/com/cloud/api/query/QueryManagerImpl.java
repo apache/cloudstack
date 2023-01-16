@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,7 +67,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -965,10 +966,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (_accountMgr.isRootAdmin(caller.getId())) {
             respView = ResponseView.Full;
         }
-        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), cmd.getAccumulate(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
+        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), cmd.getAccumulate(), cmd.getShowUserData(),
+                result.first().toArray(new UserVmJoinVO[result.first().size()]));
 
         response.setResponses(vmResponses, result.second());
         return response;
+    }
+
+    private Object getObjectPossibleMethodValue(Object obj, String methodName) {
+        Object result = null;
+
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            result = m.invoke(obj);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
+
+        return result;
     }
 
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
@@ -1034,17 +1047,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object securityGroupId = cmd.getSecurityGroupId();
         Object backupOfferingId = cmd.getBackupOfferingId();
         Object isHaEnabled = cmd.getHaEnabled();
+        Object autoScaleVmGroupId = cmd.getAutoScaleVmGroupId();
         Object pod = null;
-        Long clusterId = null;
+        Object clusterId = null;
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
-            if (cmd instanceof ListVMsCmdByAdmin) {
-                pod = ((ListVMsCmdByAdmin) cmd).getPodId();
-                clusterId = ((ListVMsCmdByAdmin) cmd).getClusterId();
-                hostId = ((ListVMsCmdByAdmin) cmd).getHostId();
-                storageId = ((ListVMsCmdByAdmin) cmd).getStorageId();
-            }
+            pod = getObjectPossibleMethodValue(cmd, "getPodId");
+            clusterId = getObjectPossibleMethodValue(cmd, "getClusterId");
+            hostId = getObjectPossibleMethodValue(cmd, "getHostId");
+            storageId = getObjectPossibleMethodValue(cmd, "getStorageId");
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
@@ -1077,7 +1089,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (isHaEnabled != null) {
             sb.and("haEnabled", sb.entity().isHaEnabled(), SearchCriteria.Op.EQ);
         }
-
 
         if (groupId != null && (Long)groupId != -1) {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
@@ -1118,6 +1129,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (securityGroupId != null) {
             sb.and("securityGroupId", sb.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
+        }
+
+        if (autoScaleVmGroupId != null) {
+            sb.and("autoScaleVmGroupId", sb.entity().getAutoScaleVmGroupId(), SearchCriteria.Op.EQ);
         }
 
         // populate the search criteria with the values passed in
@@ -1162,6 +1177,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (securityGroupId != null) {
             sc.setParameters("securityGroupId", securityGroupId);
+        }
+
+        if (autoScaleVmGroupId != null) {
+            sc.setParameters("autoScaleVmGroupId", autoScaleVmGroupId);
         }
 
         if (display != null) {
@@ -2081,6 +2100,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
+        boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -2125,14 +2145,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-        sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
-        sb.cp();
 
-        // display UserVM volumes only
-        sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
-        sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
-        sb.cp();
+        if (!shouldListSystemVms) {
+            sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+            sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
+            sb.cp();
+
+            sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
+            sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
+            sb.cp();
+        }
 
         // now set the SC criteria...
         SearchCriteria<VolumeJoinVO> sc = sb.create();
@@ -2157,7 +2179,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         setIdsListToSearchCriteria(sc, ids);
 
-        sc.setParameters("systemUse", 1);
+        if (!shouldListSystemVms) {
+            sc.setParameters("systemUse", 1);
+            sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+        }
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
@@ -2205,8 +2230,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
         }
-        // Don't return DomR and ConsoleProxy volumes
-        sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
 
         if (state != null) {
             sc.setParameters("state", state);
@@ -2229,6 +2252,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
         return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+    }
+
+    private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
+        return Boolean.TRUE.equals(cmd.getListSystemVms()) && _accountMgr.isRootAdmin(callerId);
     }
 
     @Override
@@ -2947,6 +2974,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long zoneId = cmd.getZoneId();
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
+        Boolean encrypt = cmd.getEncrypt();
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -2992,6 +3020,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+
+        if (encrypt != null) {
+            sc.addAnd("encrypt", SearchCriteria.Op.EQ, encrypt);
         }
 
         if (zoneId != null) {
@@ -3117,6 +3149,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuNumber = cmd.getCpuNumber();
         Integer memory = cmd.getMemory();
         Integer cpuSpeed = cmd.getCpuSpeed();
+        Boolean encryptRoot = cmd.getEncryptRoot();
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -3226,6 +3259,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // note that for non-root users, isSystem is always false when
             // control comes to here
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+        }
+
+        if (encryptRoot != null) {
+            sc.addAnd("encryptRoot", SearchCriteria.Op.EQ, encryptRoot);
         }
 
         if (name != null) {
@@ -4294,7 +4331,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String value = cmd.getValue();
         Long resourceId = null;
 
-        //Validation - 1.1 - resourceId and value cant be null.
+        //Validation - 1.1 - resourceId and value can't be null.
         if (resourceIdStr == null && value == null) {
             throw new InvalidParameterValueException("Insufficient parameters passed for listing by resourceId OR key,value pair. Please check your params and try again.");
         }

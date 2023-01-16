@@ -35,7 +35,6 @@ import com.cloud.user.Account;
 public class ListProjectAccountsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListProjectAccountsCmd.class.getName());
 
-    private static final String s_name = "listprojectaccountsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,11 +75,6 @@ public class ListProjectAccountsCmd extends BaseListCmd {
 
     public Long getProjectRoleId() {
         return projectRoleId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

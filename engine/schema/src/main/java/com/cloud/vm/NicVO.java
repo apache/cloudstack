@@ -127,6 +127,9 @@ public class NicVO implements Nic {
     @Column(name = "secondary_ip")
     boolean secondaryIp;
 
+    @Column(name = "mtu")
+    Integer mtu;
+
     @Transient
     transient String nsxLogicalSwitchUuid;
 
@@ -406,5 +409,13 @@ public class NicVO implements Nic {
     @Override
     public boolean equals(Object obj) {
         return EqualsBuilder.reflectionEquals(this, obj);
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
     }
 }

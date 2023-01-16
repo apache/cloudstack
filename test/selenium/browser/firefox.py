@@ -53,4 +53,3 @@ if __name__ == "__main__":
     browser.set_url("http://10.88.90.84:8080/client/")
     time.sleep(3)
     browser.quit_browser()
-

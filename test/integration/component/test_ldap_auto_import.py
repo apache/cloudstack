@@ -594,5 +594,3 @@ class TestLdap(cloudstackTestCase):
             "", "", self.parent_domain.name, method="POST")
         self.debug(loginRes)
         self.assertEqual(loginRes, None, self.reason)
-
-

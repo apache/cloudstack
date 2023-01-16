@@ -41,6 +41,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -501,7 +502,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Override
     public String toString() {
-        return String.format("VM instance {id: \"%s\", name: \"%s\", uuid: \"%s\", type=\"%s\"}", id, getInstanceName(), uuid, type);
+        return String.format("VM instance %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "instanceName", "uuid", "type"));
     }
 
     @Override

@@ -17,6 +17,7 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd">
 
+	<bean id="presetVariableHelper" class="org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper" />
 	<bean id="QuotaTariffDao" class="org.apache.cloudstack.quota.dao.QuotaTariffDaoImpl" />
     <bean id="QuotaAccountDao" class="org.apache.cloudstack.quota.dao.QuotaAccountDaoImpl" />
 	<bean id="QuotaBalanceDao" class="org.apache.cloudstack.quota.dao.QuotaBalanceDaoImpl" />

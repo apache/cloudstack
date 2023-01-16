@@ -173,7 +173,7 @@ def restart_ms(self):
     #1-ssh into m/c running MS
     #2-restart ms
     #3-verify the response
-    #4-loop unitl you get list_zone api answer """
+    #4-loop until you get list_zone api answer """
     sshClient = SshClient(
         self.mgtSvrDetails["mgtSvrIp"],
         22,
@@ -209,7 +209,7 @@ def restart_ms(self):
             self.debug("list zone response is not available due to  %s" % e)
 
         if timeout == 0:
-            raise Exception("Ms is not comming up !")
+            raise Exception("Ms is not coming up !")
         timeout = timeout - 1
 
 
@@ -320,7 +320,7 @@ class TestSystemVmLocalStorage(cloudstackTestCase):
                         e)
 
                 if timeout == 0:
-                    raise Exception("Ms is not comming up !")
+                    raise Exception("Ms is not coming up !")
 
                 time.sleep(cls.testdata["sleep"])
                 timeout = timeout - 1

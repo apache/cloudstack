@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -119,6 +121,7 @@ public class ConfigDriveNetworkElementTest {
     private final String VMUSERDATA = "H4sIABCvw1oAAystTi1KSSxJ5AIAUPllwQkAAAA=";
     private final long SOID = 31L;
     private final long HOSTID = NETWORK_ID;
+    private final long DOMAINID = 1L;
 
     @Mock private DataCenter dataCenter;
     @Mock private ConfigurationDao _configDao;
@@ -134,6 +137,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private NetworkDao _networkDao;
     @Mock private NetworkServiceMapDao _ntwkSrvcDao;
     @Mock private IPAddressDao _ipAddressDao;
+    @Mock private DomainDao _domainDao;
 
     @Mock private DataCenterVO dataCenterVO;
     @Mock private DataStore dataStore;
@@ -151,6 +155,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private IPAddressVO publicIp;
     @Mock private AgentManager agentManager;
     @Mock private CallContext callContextMock;
+    @Mock private DomainVO domainVO;
 
     @InjectMocks private final ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
     @InjectMocks @Spy private NetworkModelImpl _networkModel = new NetworkModelImpl();
@@ -164,8 +169,10 @@ public class ConfigDriveNetworkElementTest {
         when(_dataStoreMgr.getImageStoreWithFreeCapacity(DATACENTERID)).thenReturn(dataStore);
         when(_ep.select(dataStore)).thenReturn(endpoint);
         when(_vmDao.findById(VMID)).thenReturn(virtualMachine);
+        when(_vmInstanceDao.findById(VMID)).thenReturn(virtualMachine);
         when(_dcDao.findById(DATACENTERID)).thenReturn(dataCenterVO);
         when(_hostDao.findById(HOSTID)).thenReturn(hostVO);
+        when(_domainDao.findById(DOMAINID)).thenReturn(domainVO);
         doReturn(nic).when(_networkModel).getDefaultNic(VMID);
         when(_serviceOfferingDao.findByIdIncludingRemoved(VMID, SOID)).thenReturn(serviceOfferingVO);
         when(_guestOSDao.findById(anyLong())).thenReturn(guestOSVO);
@@ -185,6 +192,7 @@ public class ConfigDriveNetworkElementTest {
         when(virtualMachine.getInstanceName()).thenReturn(VMINSTANCENAME);
         when(virtualMachine.getUserData()).thenReturn(VMUSERDATA);
         when(virtualMachine.getHostName()).thenReturn(VMHOSTNAME);
+        when(virtualMachine.getDomainId()).thenReturn(DOMAINID);
         when(dataCenter.getId()).thenReturn(DATACENTERID);
         when(deployDestination.getHost()).thenReturn(hostVO);
         when(deployDestination.getDataCenter()).thenReturn(dataCenter);
@@ -266,7 +274,7 @@ public class ConfigDriveNetworkElementTest {
         PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
         Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("buildConfigDrive")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString()).thenReturn("content");
+        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap()).thenReturn("content");
 
         final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
         final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);

@@ -305,6 +305,18 @@ export const toLocaleDatePlugin = {
       dateWithOffset = dateWithOffset.substring(0, dateWithOffset.length - 4)
       return dateWithOffset
     }
+
+    app.config.globalProperties.$toLocalDate = function (date) {
+      var timezoneOffset = this.$store.getters.timezoneoffset
+      if (this.$store.getters.usebrowsertimezone) {
+        // Since GMT+530 is returned as -330 (mins to GMT)
+        timezoneOffset = new Date().getTimezoneOffset() / -60
+      }
+      var milliseconds = Date.parse(date)
+      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
+      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000))
+      return dateWithOffset.toISOString()
+    }
   }
 }
 
@@ -401,6 +413,7 @@ export const resourceTypePlugin = {
         case 'Role':
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
+        case 'AutoScaleVmGroup':
           return resourceType.toLowerCase()
       }
       return ''
@@ -463,4 +476,30 @@ export const fileSizeUtilPlugin = {
       }
     }
   }
+}
+
+export const genericUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isValidUuid = function (uuid) {
+      const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi
+      return regexExp.test(uuid)
+    }
+  }
+}
+
+export function createPathBasedOnVmType (vmtype, virtualmachineid) {
+  let path = ''
+  switch (vmtype) {
+    case 'ConsoleProxy':
+    case 'SecondaryStorageVm':
+      path = '/systemvm/'
+      break
+    case 'DomainRouter':
+      path = '/router/'
+      break
+    default:
+      path = '/vm/'
+  }
+
+  return path + virtualmachineid
 }

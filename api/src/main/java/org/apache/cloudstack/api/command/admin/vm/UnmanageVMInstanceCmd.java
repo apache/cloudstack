@@ -44,7 +44,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = UnmanageVMInstanceCmd.API_NAME,
+@APICommand(name = "unmanageVirtualMachine",
         description = "Unmanage a guest virtual machine.",
         entityType = {VirtualMachine.class},
         responseObject = UnmanageVMInstanceResponse.class,
@@ -54,7 +54,6 @@ import javax.inject.Inject;
 public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
 
     public static final Logger LOGGER = Logger.getLogger(UnmanageVMInstanceCmd.class);
-    public static final String API_NAME = "unmanageVirtualMachine";
 
     @Inject
     private UnmanagedVMsManager unmanagedVMsManager;
@@ -107,11 +106,6 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return API_NAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

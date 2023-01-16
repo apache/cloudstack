@@ -135,9 +135,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Deletes a backup
+     * @param backupId The Id of Backup to exclude
+     * @param forced Indicates if backup will be force removed or not
      * @return returns operation success
      */
-    boolean deleteBackup(final Long backupId);
+    boolean deleteBackup(final Long backupId, final Boolean forced);
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 }

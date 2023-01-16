@@ -37,7 +37,6 @@ import com.cloud.user.Account;
 public class AddRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddRegionCmd.class.getName());
 
-    private static final String s_name = "addregionresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -73,11 +72,6 @@ public class AddRegionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

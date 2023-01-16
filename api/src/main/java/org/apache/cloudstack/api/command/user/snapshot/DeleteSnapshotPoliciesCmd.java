@@ -36,7 +36,6 @@ import com.cloud.user.Account;
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
-    private static final String s_name = "deletesnapshotpoliciesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,11 +66,6 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

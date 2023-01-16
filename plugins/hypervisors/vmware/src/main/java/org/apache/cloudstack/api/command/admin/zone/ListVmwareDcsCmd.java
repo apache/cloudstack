@@ -52,7 +52,6 @@ public class ListVmwareDcsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListVmwareDcsCmd.class.getName());
 
-    private static final String s_name = "listvmwaredcsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,11 +104,6 @@ public class ListVmwareDcsCmd extends BaseListCmd {
         response.setResponses(vmwareDcResponses);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

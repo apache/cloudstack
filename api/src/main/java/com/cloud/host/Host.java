@@ -53,6 +53,7 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
         }
     }
     public static final String HOST_UEFI_ENABLE = "host.uefi.enable";
+    public static final String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
 
     /**
      * @return name of the machine.

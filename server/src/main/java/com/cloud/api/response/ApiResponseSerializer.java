@@ -294,7 +294,7 @@ public class ApiResponseSerializer {
                             }
                             serializeResponseObjXML(sb, log, subObj);
                         } else if (value instanceof ExceptionProxyObject) {
-                            // Only exception reponses carry a list of
+                            // Only exception responses carry a list of
                             // ExceptionProxyObject objects.
                             ExceptionProxyObject idProxy = (ExceptionProxyObject)value;
                             // If this is the first IdentityProxy field

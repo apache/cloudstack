@@ -1475,7 +1475,7 @@ class TestVMList(cloudstackTestCase):
     def test_listVM_as_rootadmin_domainid_listall_false_rec_true(self):
         """
         # Test listing of Vms by passing domainid, listall="false" and isrecusrive="true" parameter as admin
-        # Validate that it returns all the Vms in the subdoamin and domain passed
+        # Validate that it returns all the Vms in the subdomain and domain passed
         """
 
         self.apiclient.connection.apiKey = self.user_a_apikey

@@ -248,7 +248,7 @@ export default {
             if (trafficLabel.length > 0) {
               trafficLabel += ','
             }
-            trafficLabel += trafficConfig.vlanId
+            trafficLabel += trafficConfig.vlanId || ''
           }
           if ('vSwitchType' in trafficConfig) {
             if (trafficLabel.length > 0) {

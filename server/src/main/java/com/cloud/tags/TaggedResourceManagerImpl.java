@@ -165,6 +165,22 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return new Pair<>(accountId, domainId);
     }
 
+    protected void checkTagsDeletePermission(List<ResourceTag> tagsToDelete, Account caller) {
+        for (ResourceTag resourceTag : tagsToDelete) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
+                s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
+            }
+            if (caller.getAccountId() != resourceTag.getAccountId()) {
+                Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Resource Owner: " + owner);
+                }
+                _accountMgr.checkAccess(caller, null, false, owner);
+            }
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
@@ -241,17 +257,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
         // Finalize which tags should be removed
         for (ResourceTag resourceTag : resourceTags) {
-            //1) validate the permissions
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
-                s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
-            }
-            Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Owner: " + owner);
-            }
-            _accountMgr.checkAccess(caller, null, false, owner);
-            //2) Only remove tag if it matches key value pairs
             if (MapUtils.isEmpty(tags)) {
                 tagsToDelete.add(resourceTag);
             } else {
@@ -278,6 +283,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         if (tagsToDelete.isEmpty()) {
             return false;
         }
+        checkTagsDeletePermission(tagsToDelete, caller);
 
         //Remove the tags
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -312,8 +318,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     private void informStoragePoolForVmTags(long vmId, String key, String value) {
         List<VolumeVO> volumeVos = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumeVos) {
-            DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+            Long poolId = volume.getPoolId();
+            DataStore dataStore = retrieveDatastore(poolId);
             if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+                s_logger.info(String.format("No data store found for VM %d with pool ID %d.", vmId, poolId));
                 continue;
             }
             PrimaryDataStoreDriver dataStoreDriver = (PrimaryDataStoreDriver) dataStore.getDriver();
@@ -321,5 +329,12 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                 dataStoreDriver.provideVmTags(vmId, volume.getId(), value);
             }
         }
+    }
+
+    protected DataStore retrieveDatastore(Long poolId) {
+        if (poolId == null) {
+            return null;
+        }
+        return dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
     }
 }

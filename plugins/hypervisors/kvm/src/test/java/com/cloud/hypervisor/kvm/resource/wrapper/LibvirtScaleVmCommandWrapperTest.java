@@ -76,7 +76,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
 
         vmTo = new VirtualMachineTO(1, "Test 1", VirtualMachine.Type.User, 2, 1000, 67108864, 67108864, VirtualMachineTemplate.BootloaderType.External, "Other Linux (64x)", true, true, "test123");
 
-        long memory = ByteScaleUtils.bytesToKib(vmTo.getMaxRam());
+        long memory = ByteScaleUtils.bytesToKibibytes(vmTo.getMaxRam());
         int vcpus = vmTo.getCpus();
         int cpuShares = vcpus * vmTo.getSpeed();
         scalingDetails = String.format("%s memory to [%s KiB], CPU cores to [%s] and cpu_shares to [%s]", vmTo.toString(), memory, vcpus, cpuShares);

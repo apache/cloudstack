@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -30,7 +30,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
-    UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller);
+    UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
+            Account caller);
 
     UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo);
 

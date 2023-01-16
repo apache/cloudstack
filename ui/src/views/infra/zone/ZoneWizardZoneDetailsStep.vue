@@ -422,7 +422,7 @@ export default {
       })
     },
     fetchData () {
-      api('listHypervisors', { listAll: true }).then(json => {
+      api('listHypervisors').then(json => {
         this.hypervisors = json.listhypervisorsresponse.hypervisor
         if ('listSimulatorHAStateTransitions' in this.$store.getters.apis) {
           this.hypervisors.push({ name: 'Simulator' })

@@ -797,7 +797,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
     def GetDestinationHostLocal(self, hostsToavoid, vm, scope):
         """
         This method gives us the destination host to which VM will be migrated
-        It takes the souce host i.e. hostsToavoid as input
+        It takes the source host i.e. hostsToavoid as input
         """
         destinationHost = None
         destinationCluster = None

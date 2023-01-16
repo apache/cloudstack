@@ -179,12 +179,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.format = self.uploadvolumeformat
         cmd.name = self.volname + self.account.name + (random.choice(string.ascii_uppercase))
         cmd.projectid = projectid
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
 
         url = self.uploadurl
 
@@ -206,14 +206,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
         list_volume_response = Volume.list(
             self.apiclient,
             projectid=projectid
         )
-        if list_volume_response[0].id == getuploadparamsresponce.id:
-            return (getuploadparamsresponce)
+        if list_volume_response[0].id == getuploadparamsresponse.id:
+            return (getuploadparamsresponse)
         else:
             self.fail("Volume is not listed with projectid")
 
@@ -260,13 +260,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.name = self.volname + self.account.name + (random.choice(string.ascii_uppercase))
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
-        self.globalurl = getuploadparamsresponce.postURL
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
+        self.globalurl = getuploadparamsresponse.postURL
         # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url = self.uploadurl
 
@@ -288,9 +288,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
-        return (getuploadparamsresponce)
+        return (getuploadparamsresponse)
 
     def onlyupload(self):
         cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
@@ -299,8 +299,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.name = self.volname + self.account.name + (random.choice(string.ascii_uppercase))
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
-        return (getuploadparamsresponce)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
+        return (getuploadparamsresponse)
 
     def invalidupload(self):
 
@@ -334,12 +334,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cmd.name = self.volname + self.account.name + (random.choice(string.ascii_uppercase))
             cmd.account = self.account.name
             cmd.domainid = self.domain.id
-            getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+            getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-            signt = getuploadparamsresponce.signature
+            signt = getuploadparamsresponse.signature
             posturl = "http://invalidposturl/2999834." + self.uploadvolumeformat
-            metadata = getuploadparamsresponce.metadata
-            expiredata = getuploadparamsresponce.expires
+            metadata = getuploadparamsresponse.metadata
+            expiredata = getuploadparamsresponse.expires
             # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
             url = self.uploadurl
 
@@ -361,7 +361,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             if results.status_code != 200:
                 self.fail("Upload is not fine")
 
-            self.validate_uploaded_volume(getuploadparamsresponce.id, 'UploadedAbandoned')
+            self.validate_uploaded_volume(getuploadparamsresponse.id, 'UploadedAbandoned')
 
         except Exception as ex:
             if "Max retries exceeded with url" in str(ex):
@@ -372,7 +372,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             True,
             "Verify - Tampered Post URL is handled")
 
-        return (getuploadparamsresponce)
+        return (getuploadparamsresponse)
 
     def reuse_url(self):
         cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
@@ -381,12 +381,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.name = self.volname + self.account.name + (random.choice(string.ascii_uppercase))
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
+        signt = getuploadparamsresponse.signature
         posturl = self.globalurl
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
         url = self.uploadurl
         time.sleep(300)
 
@@ -415,7 +415,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         uploadtimeout = int(config[0].value)
         time.sleep(uploadtimeout * 60)
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'UploadAbandoned')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'UploadAbandoned')
         return
 
     def validate_storage_cleanup(self, invalidpostvolume, cleanup_interval):
@@ -493,12 +493,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
         cmd.checksum = self.md5sum
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
         # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url = self.uploadurl
 
@@ -526,9 +526,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
-        return (getuploadparamsresponce)
+        return (getuploadparamsresponse)
 
     def browse_upload_volume_with_invalid_md5(self):
         cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
@@ -538,12 +538,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
         cmd.checksum = "xxxxxxxx"
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
         # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url = self.uploadurl
 
@@ -572,9 +572,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
-        return (getuploadparamsresponce)
+        return (getuploadparamsresponse)
 
     def validate_vm(self, vmdetails, vmstate):
 
@@ -1603,12 +1603,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
-    def uploadvol(self, getuploadparamsresponce):
+    def uploadvol(self, getuploadparamsresponse):
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
         success = False
         url = self.uploadurl
 
@@ -1627,7 +1627,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl, files=files, headers=headers, verify=False)
         list_volume_response = Volume.list(
             self.apiclient,
-            id=getuploadparamsresponce.id
+            id=getuploadparamsresponse.id
         )
         self.debug("======================Before SSVM Reboot==================")
 
@@ -1642,21 +1642,21 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         uploadtimeout = int(config[0].value)
         time.sleep(uploadtimeout * 60)
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'UploadAbandoned')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'UploadAbandoned')
 
         return ()
 
-    def uploadvolwithssvmreboot(self, getuploadparamsresponce):
+    def uploadvolwithssvmreboot(self, getuploadparamsresponse):
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
 
         self.debug("======================Before SSVM Reboot==================")
         list_volume_response = Volume.list(
             self.apiclient,
-            id=getuploadparamsresponce.id
+            id=getuploadparamsresponse.id
         )
 
         self.debug(list_volume_response[0])
@@ -1680,13 +1680,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         results = requests.post(posturl, files=files, headers=headers, verify=False)
         list_volume_response = Volume.list(
             self.apiclient,
-            id=getuploadparamsresponce.id
+            id=getuploadparamsresponse.id
         )
 
         self.debug("======================Upload After SSVM Reboot==================")
         self.debug(list_volume_response[0])
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
         return ()
 
@@ -1699,13 +1699,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
         cmd.diskofferingid = self.disk_offering.id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
-        self.globalurl = getuploadparamsresponce.postURL
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
+        self.globalurl = getuploadparamsresponse.postURL
         # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url = self.uploadurl
 
@@ -1727,7 +1727,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
     def uploadwithimagestoreid(self):
 
@@ -1742,13 +1742,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
         cmd.imagestoreuuid = sscmdresponse[0].id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
-        self.globalurl = getuploadparamsresponce.postURL
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
+        self.globalurl = getuploadparamsresponse.postURL
         # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url = self.uploadurl
 
@@ -1770,7 +1770,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
     def uploadwithsamedisplaytext(self, voldetails):
 
@@ -1786,10 +1786,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.name = list_volume_response[0].name
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
         list_volume_response1 = Volume.list(
             self.apiclient,
-            id=getuploadparamsresponce.id
+            id=getuploadparamsresponse.id
         )
         if list_volume_response1[0].name == voldetails.name:
             success = False
@@ -1849,12 +1849,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.account = self.account.name
         cmd.domainid = self.domain.id
         cmd.diskofferingid = self.disk_offering.id
-        getuploadparamsresponce = self.apiclient.getUploadParamsForVolume(cmd)
+        getuploadparamsresponse = self.apiclient.getUploadParamsForVolume(cmd)
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
 
         # url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url = self.extuploadurl
@@ -1877,18 +1877,18 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code != 200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'Uploaded')
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'Uploaded')
 
-    def posturlwithdeletedvolume(self, getuploadparamsresponce):
+    def posturlwithdeletedvolume(self, getuploadparamsresponse):
 
-        signt = getuploadparamsresponce.signature
-        posturl = getuploadparamsresponce.postURL
-        metadata = getuploadparamsresponce.metadata
-        expiredata = getuploadparamsresponce.expires
-        self.validate_uploaded_volume(getuploadparamsresponce.id, 'UploadAbandoned')
+        signt = getuploadparamsresponse.signature
+        posturl = getuploadparamsresponse.postURL
+        metadata = getuploadparamsresponse.metadata
+        expiredata = getuploadparamsresponse.expires
+        self.validate_uploaded_volume(getuploadparamsresponse.id, 'UploadAbandoned')
 
         cmd = deleteVolume.deleteVolumeCmd()
-        cmd.id = getuploadparamsresponce.id
+        cmd.id = getuploadparamsresponse.id
 
         self.apiclient.delete_volume(cmd)
 
@@ -1954,11 +1954,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def getvolumelimts(self):
 
-        totalresoucelist = Account.list(
+        totalresourcelist = Account.list(
             self.apiclient,
             id=self.account.id
         )
-        totalvolumes = totalresoucelist[0].volumetotal
+        totalvolumes = totalresourcelist[0].volumetotal
 
         return (totalvolumes)
 
@@ -1969,9 +1969,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.domainid = self.domain.id
         cmd.resourcetype = rtype
 
-        responce = self.apiclient.updateResourceCount(cmd)
+        response = self.apiclient.updateResourceCount(cmd)
 
-        totalstorage = responce[0].resourcecount
+        totalstorage = response[0].resourcecount
 
         return (totalstorage)
 
@@ -2315,13 +2315,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def test_06_Browser_Upload_Volume_with_extended_file_extenstions(self):
+    def test_06_Browser_Upload_Volume_with_extended_file_extensions(self):
         """
-        Test Browser_Upload_Volume_with_extended_file_extenstions
+        Test Browser_Upload_Volume_with_extended_file_extensions
         """
 
         try:
-            self.debug("========================= Test 35 Upload volume with extended file extenstions=========================")
+            self.debug("========================= Test 35 Upload volume with extended file extensions=========================")
             if self.uploadvolumeformat == "OVA":
                 raise unittest.SkipTest("This test is need not be executed on VMWARE")
             self.uploadwithextendedfileextentions()
@@ -2484,7 +2484,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             afteruploadvolumelimit = self.getvolumelimts()
 
             if int(afteruploadvolumelimit) != (int(initialvolumelimit) + 1):
-                self.fail("Volume Resouce Count is not updated")
+                self.fail("Volume Resource Count is not updated")
 
             cmd = deleteVolume.deleteVolumeCmd()
             cmd.id = deleted_browse_up_vol1.id
@@ -2512,7 +2512,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             afteruploadsecondarystoragelimit = self.getstoragelimts(11)
 
             if afteruploadsecondarystoragelimit != (initialsecondarystoragelimit + volumedetails[0].size):
-                self.fail("Secondary Storage Resouce Count is not updated")
+                self.fail("Secondary Storage Resource Count is not updated")
 
             cmd = deleteVolume.deleteVolumeCmd()
             cmd.id = deleted_browse_up_vol1.id
@@ -2592,7 +2592,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             afteruploadsecondarystoragelimit = self.getstoragelimts(11)
 
             if afteruploadsecondarystoragelimit != (initialuploadsecondarystoragelimit - volumedetails[0].size):
-                self.fail("Secondary Storage Resouce Count is not updated after deletion")
+                self.fail("Secondary Storage Resource Count is not updated after deletion")
 
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)

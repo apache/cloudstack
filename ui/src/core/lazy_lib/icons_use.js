@@ -115,6 +115,7 @@ import {
   MoreOutlined,
   NotificationOutlined,
   NumberOutlined,
+  OrderedListOutlined,
   PaperClipOutlined,
   PauseCircleOutlined,
   PictureOutlined,
@@ -156,7 +157,8 @@ import {
   UsergroupDeleteOutlined,
   UserOutlined,
   UploadOutlined,
-  WifiOutlined
+  WifiOutlined,
+  SolutionOutlined
 } from '@ant-design/icons-vue'
 import renderIcon from '@/utils/renderIcon'
 
@@ -261,6 +263,7 @@ export default {
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
+    app.component('OrderedListOutlined', OrderedListOutlined)
     app.component('PaperClipOutlined', PaperClipOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
     app.component('PictureOutlined', PictureOutlined)
@@ -304,5 +307,6 @@ export default {
     app.component('UploadOutlined', UploadOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)
+    app.component('SolutionOutlined', SolutionOutlined)
   }
 }

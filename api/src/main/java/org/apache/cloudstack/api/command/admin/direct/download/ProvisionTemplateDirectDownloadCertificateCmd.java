@@ -38,14 +38,13 @@ import org.apache.cloudstack.direct.download.DirectDownloadManager;
 
 import javax.inject.Inject;
 
-@APICommand(name = ProvisionTemplateDirectDownloadCertificateCmd.APINAME,
+@APICommand(name = "provisionTemplateDirectDownloadCertificate",
         description = "Provisions a host with a direct download certificate",
         responseObject = DirectDownloadCertificateHostStatusResponse.class,
         since = "4.17.0",
         authorized = {RoleType.Admin})
 public class ProvisionTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
-    public static final String APINAME = "provisionTemplateDirectDownloadCertificate";
 
     @Inject
     DirectDownloadManager directDownloadManager;
@@ -64,11 +63,6 @@ public class ProvisionTemplateDirectDownloadCertificateCmd extends BaseCmd {
         DirectDownloadCertificateHostStatusResponse response = _responseGenerator.createDirectDownloadCertificateProvisionResponse(id, hostId, result);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

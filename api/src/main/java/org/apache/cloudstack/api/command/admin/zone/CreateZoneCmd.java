@@ -37,7 +37,6 @@ import com.cloud.user.Account;
 public class CreateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 
-    private static final String s_name = "createzoneresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -156,11 +155,6 @@ public class CreateZoneCmd extends BaseCmd {
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

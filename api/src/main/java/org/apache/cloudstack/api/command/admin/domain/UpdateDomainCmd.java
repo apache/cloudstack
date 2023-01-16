@@ -38,7 +38,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDomainCmd.class.getName());
-    private static final String s_name = "updatedomainresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -77,11 +76,6 @@ public class UpdateDomainCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

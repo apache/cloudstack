@@ -130,32 +130,35 @@ public class Storage {
     }
 
     public static enum StoragePoolType {
-        Filesystem(false, true), // local directory
-        NetworkFilesystem(true, true), // NFS
-        IscsiLUN(true, false), // shared LUN, with a clusterfs overlay
-        Iscsi(true, false), // for e.g., ZFS Comstar
-        ISO(false, false), // for iso image
-        LVM(false, false), // XenServer local LVM SR
-        CLVM(true, false),
-        RBD(true, true), // http://libvirt.org/storage.html#StorageBackendRBD
-        SharedMountPoint(true, false),
-        VMFS(true, true), // VMware VMFS storage
-        PreSetup(true, true), // for XenServer, Storage Pool is set up by customers.
-        EXT(false, true), // XenServer local EXT SR
-        OCFS2(true, false),
-        SMB(true, false),
-        Gluster(true, false),
-        PowerFlex(true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
-        ManagedNFS(true, false),
-        Linstor(true, true),
-        DatastoreCluster(true, true); // for VMware, to abstract pool of clusters
+        Filesystem(false, true, true), // local directory
+        NetworkFilesystem(true, true, true), // NFS
+        IscsiLUN(true, false, false), // shared LUN, with a clusterfs overlay
+        Iscsi(true, false, false), // for e.g., ZFS Comstar
+        ISO(false, false, false), // for iso image
+        LVM(false, false, false), // XenServer local LVM SR
+        CLVM(true, false, false),
+        RBD(true, true, false), // http://libvirt.org/storage.html#StorageBackendRBD
+        SharedMountPoint(true, false, true),
+        VMFS(true, true, false), // VMware VMFS storage
+        PreSetup(true, true, false), // for XenServer, Storage Pool is set up by customers.
+        EXT(false, true, false), // XenServer local EXT SR
+        OCFS2(true, false, false),
+        SMB(true, false, false),
+        Gluster(true, false, false),
+        PowerFlex(true, true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
+        ManagedNFS(true, false, false),
+        Linstor(true, true, false),
+        DatastoreCluster(true, true, false), // for VMware, to abstract pool of clusters
+        StorPool(true, true, false);
 
         private final boolean shared;
         private final boolean overprovisioning;
+        private final boolean encryption;
 
-        StoragePoolType(boolean shared, boolean overprovisioning) {
+        StoragePoolType(boolean shared, boolean overprovisioning, boolean encryption) {
             this.shared = shared;
             this.overprovisioning = overprovisioning;
+            this.encryption = encryption;
         }
 
         public boolean isShared() {
@@ -165,6 +168,8 @@ public class Storage {
         public boolean supportsOverProvisioning() {
             return overprovisioning;
         }
+
+        public boolean supportsEncryption() { return encryption; }
     }
 
     public static List<StoragePoolType> getNonSharedStoragePoolTypes() {

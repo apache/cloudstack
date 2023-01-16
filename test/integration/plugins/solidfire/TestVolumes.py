@@ -2710,4 +2710,3 @@ class TestVolumes(cloudstackTestCase):
             xen_server = cls.testdata[TestData.xenServer]
 
             cls.xen_session.xenapi.login_with_password(xen_server[TestData.username], xen_server[TestData.password])
-
