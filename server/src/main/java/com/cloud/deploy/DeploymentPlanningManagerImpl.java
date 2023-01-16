@@ -17,6 +17,7 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -382,6 +383,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
+            s_logger.debug("Deploy hosts with priorities " + plan.getHostPriorities() + " , hosts have NORMAL priority by default");
         }
 
         // call planners
@@ -406,7 +408,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             planner = getDeploymentPlannerByName(plannerName);
         }
 
-        if (vm.getLastHostId() != null && haVmTag == null) {
+        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
+        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
+                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
+        if (considerLastHost) {
             s_logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
 
             HostVO host = _hostDao.findById(vm.getLastHostId());
@@ -1222,6 +1227,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             // cluster.
             DataCenterDeployment potentialPlan =
                     new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
+            potentialPlan.setHostPriorities(plan.getHostPriorities());
 
             Pod pod = _podDao.findById(clusterVO.getPodId());
             if (CollectionUtils.isNotEmpty(avoid.getPodsToAvoid()) && avoid.getPodsToAvoid().contains(pod.getId())) {
@@ -1588,7 +1594,33 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (suitableHosts.isEmpty()) {
             s_logger.debug("No suitable hosts found");
         }
+
+        // re-order hosts by priority
+        reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
+
         return suitableHosts;
+    }
+
+    @Override
+    public void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts) {
+        s_logger.info("Re-ordering hosts " + hosts + " by priorities " + priorities);
+
+        hosts.removeIf(host -> DataCenterDeployment.PROHIBITED_HOST_PRIORITY.equals(getHostPriority(priorities, host.getId())));
+
+        Collections.sort(hosts, new Comparator<>() {
+                    @Override
+                    public int compare(Host host1, Host host2) {
+                        int res = getHostPriority(priorities, host1.getId()).compareTo(getHostPriority(priorities, host2.getId()));
+                        return -res;
+                    }
+                }
+        );
+
+        s_logger.info("Hosts after re-ordering are: " + hosts);
+    }
+
+    private Integer getHostPriority(Map<Long, Integer> priorities, Long hostId) {
+        return priorities.get(hostId) != null ? priorities.get(hostId) : DeploymentPlan.DEFAULT_HOST_PRIORITY;
     }
 
     protected Pair<Map<Volume, List<StoragePool>>, List<Volume>> findSuitablePoolsForVolumes(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,

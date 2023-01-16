@@ -49,7 +49,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
     public Answer execute(final StorPoolModifyStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String clusterId = getSpClusterId();
         if (clusterId == null) {
-            log.debug(String.format("Could not get StorPool cluster id for a command $s", command.getClass()));
+            log.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
             return new Answer(command, false, "spNotFound");
         }
         try {
@@ -83,8 +83,6 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
         String SP_CLUSTER_ID = null;
         final String err = sc.execute(parser);
         if (err != null) {
-            final String errMsg = String.format("Could not execute storpool_confget. Error: %s", err);
-            log.warn(errMsg);
             StorPoolStorageAdaptor.SP_LOG("Could not execute storpool_confget. Error: %s", err);
             return SP_CLUSTER_ID;
         }

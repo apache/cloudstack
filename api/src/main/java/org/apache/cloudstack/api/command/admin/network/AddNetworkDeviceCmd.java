@@ -45,7 +45,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
-    private static final String s_name = "addnetworkdeviceresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -84,11 +83,6 @@ public class AddNetworkDeviceCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, cre.getMessage());
         }
 
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

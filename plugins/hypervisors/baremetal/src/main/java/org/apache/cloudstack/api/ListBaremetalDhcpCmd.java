@@ -36,7 +36,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalDhcpCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalDhcpCmd.class);
-    private static final String s_name = "listbaremetaldhcpresponse";
     @Inject
     BaremetalDhcpManager _dhcpMgr;
 
@@ -97,9 +96,4 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
 
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

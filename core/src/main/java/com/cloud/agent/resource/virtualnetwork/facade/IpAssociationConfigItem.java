@@ -43,6 +43,7 @@ public class IpAssociationConfigItem extends AbstractConfigItemFacade {
             final IpAddress ipAddress = new IpAddress(ip.getPublicIp(), ip.isSourceNat(), ip.isAdd(), ip.isOneToOneNat(), ip.isFirstIP(), ip.getVlanGateway(), ip.getVlanNetmask(),
                     ip.getVifMacAddress(), ip.getNicDevId(), ip.isNewNic(), ip.getTrafficType().toString());
             ipAddress.setPrivateGateway(ip.isPrivateGateway());
+            ipAddress.setMtu(ip.getMtu());
             ips.add(ipAddress);
         }
 

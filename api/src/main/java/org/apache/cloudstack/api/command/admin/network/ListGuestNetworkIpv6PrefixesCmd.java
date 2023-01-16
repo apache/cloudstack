@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
 
-@APICommand(name = ListGuestNetworkIpv6PrefixesCmd.APINAME,
+@APICommand(name = "listGuestNetworkIpv6Prefixes",
         description = "Lists guest network IPv6 prefixes",
         responseObject = DataCenterGuestIpv6PrefixResponse.class,
         since = "4.17.0",
@@ -38,7 +38,6 @@ import com.cloud.dc.DataCenterGuestIpv6Prefix;
 
 public class ListGuestNetworkIpv6PrefixesCmd extends BaseListCmd {
 
-    public static final String APINAME = "listGuestNetworkIpv6Prefixes";
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
@@ -80,9 +79,4 @@ public class ListGuestNetworkIpv6PrefixesCmd extends BaseListCmd {
         this.setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
-
-}

@@ -3983,7 +3983,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return networkInfo;
     }
 
-    // return Ternary <switch name, switch tyep, vlan tagging>
+    // return Ternary <switch name, switch type, vlan tagging>
     private Ternary<String, String, String> getTargetSwitch(NicTO nicTo) throws CloudException {
         TrafficType[] supportedTrafficTypes = new TrafficType[]{TrafficType.Guest, TrafficType.Public, TrafficType.Control, TrafficType.Management, TrafficType.Storage};
 

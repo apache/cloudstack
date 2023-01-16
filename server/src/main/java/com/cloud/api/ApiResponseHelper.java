@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.host.ControlState;
 import com.cloud.utils.security.CertificateHelper;
 import com.cloud.user.UserData;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -1549,6 +1550,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (host != null) {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
+                    vmResponse.setHostControlState(ControlState.getControlState(host.getStatus(), host.getResourceState()).toString());
                 }
             }
 
@@ -2380,7 +2382,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setRelated(nw.getUuid());
         }
         response.setNetworkDomain(network.getNetworkDomain());
-
+        response.setPublicMtu(network.getPublicMtu());
+        response.setPrivateMtu(network.getPrivateMtu());
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         response.setIpv6Dns1(profile.getIp6Dns1());
@@ -2891,7 +2894,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Network.Provider serviceProvider : serviceProviders) {
             // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
             if (service == Service.Firewall
-                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf)) {
+                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf)) {
                 continue;
             }
 
@@ -3234,6 +3237,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
+        response.setPublicMtu(vpc.getPublicMtu());
         populateOwner(response, vpc);
 
         // set tag information

@@ -36,7 +36,6 @@ import com.cloud.user.Account;
 public class UpdateGuestOsMappingCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateGuestOsMappingCmd.class.getName());
 
-    private static final String s_name = "updateguestosmappingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,11 +71,6 @@ public class UpdateGuestOsMappingCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update guest OS mapping");
         }
 
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

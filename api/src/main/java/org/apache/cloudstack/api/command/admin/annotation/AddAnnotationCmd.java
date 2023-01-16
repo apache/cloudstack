@@ -33,11 +33,10 @@ import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.BooleanUtils;
 
-@APICommand(name = AddAnnotationCmd.APINAME, description = "add an annotation.", responseObject = AnnotationResponse.class,
+@APICommand(name = "addAnnotation", description = "add an annotation.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
 public class AddAnnotationCmd extends BaseCmd {
 
-    public static final String APINAME = "addAnnotation";
 
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "the annotation text")
     private String annotation;
@@ -79,15 +78,10 @@ public class AddAnnotationCmd extends BaseCmd {
             throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
         Preconditions.checkNotNull(getEntityUuid(),"I have to have an entity to set an annotation on!");
-        Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is ot a valid EntityType to put annotations on", entityType);
+        Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is not a valid EntityType to put annotations on", entityType);
         AnnotationResponse annotationResponse = annotationService.addAnnotation(this);
         annotationResponse.setResponseName(getCommandName());
         this.setResponseObject(annotationResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -48,7 +48,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
-    private static final String s_name = "listnetscalerloadbalancernetworksresponse";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;
 
@@ -100,8 +99,4 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
         }
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-}

@@ -71,7 +71,7 @@ public class ListUcsManagerCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return "listucsmanagerreponse";
+        return "listucsmanagerresponse";
     }
 
     @Override

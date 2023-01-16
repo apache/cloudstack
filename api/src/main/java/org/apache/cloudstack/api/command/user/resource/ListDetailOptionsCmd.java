@@ -27,7 +27,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.server.ResourceTag;
 import org.apache.commons.lang3.StringUtils;
 
-@APICommand(name = ListDetailOptionsCmd.APINAME,
+@APICommand(name = "listDetailOptions",
         description = "Lists all possible details and their options for a resource type such as a VM or a template",
         responseObject = DetailOptionsResponse.class,
         since = "4.13",
@@ -35,7 +35,6 @@ import org.apache.commons.lang3.StringUtils;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDetailOptionsCmd extends BaseCmd {
-    public final static String APINAME = "listDetailOptions";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,11 +66,6 @@ public class ListDetailOptionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////////// Implementation //////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

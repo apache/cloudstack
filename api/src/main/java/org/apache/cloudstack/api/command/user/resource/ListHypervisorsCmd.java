@@ -35,12 +35,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListHypervisorsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListHypervisorsCmd.class.getName());
-    private static final String s_name = "listhypervisorsresponse";
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

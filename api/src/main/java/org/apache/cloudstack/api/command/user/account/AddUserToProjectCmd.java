@@ -38,10 +38,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.ProjectAccount;
 
-@APICommand(name = AddUserToProjectCmd.APINAME, description = "Adds user to a project", responseObject = SuccessResponse.class, since = "4.14",
+@APICommand(name = "addUserToProject", description = "Adds user to a project", responseObject = SuccessResponse.class, since = "4.14",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class AddUserToProjectCmd extends BaseAsyncCmd {
-    public static final String APINAME = "addUserToProject";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -137,11 +136,6 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
         if (projectRoleId != null && projectRoleId < 1L) {
             throw new InvalidParameterValueException("Invalid Project role ID provided");
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override
