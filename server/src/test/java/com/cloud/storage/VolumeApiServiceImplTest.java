@@ -1167,7 +1167,7 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void validateIfVMHaveBackupsTestExceptionWhenTryToDetachVolumeFromVMWhichBackupOffering() {
+    public void validateIfVmHaveBackupsTestExceptionWhenTryToDetachVolumeFromVMWhichBackupOffering() {
         try {
             UserVmVO vm = Mockito.mock(UserVmVO.class);
             when(vm.getBackupOfferingId()).thenReturn(1l);
@@ -1178,7 +1178,7 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void validateIfVMHaveBackupsTestExceptionWhenTryToAttachVolumeFromVMWhichBackupOffering() {
+    public void validateIfVmHaveBackupsTestExceptionWhenTryToAttachVolumeFromVMWhichBackupOffering() {
         try {
             UserVmVO vm = Mockito.mock(UserVmVO.class);
             when(vm.getBackupOfferingId()).thenReturn(1l);
@@ -1189,7 +1189,7 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    public void validateIfVMHaveBackupsTestSucessWhenVMDontHaveBackupOffering() {
+    public void validateIfVmHaveBackupsTestSuccessWhenVMDontHaveBackupOffering() {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         when(vm.getBackupOfferingId()).thenReturn(null);
         volumeApiServiceImpl.validateIfVmHasBackups(vm, true);

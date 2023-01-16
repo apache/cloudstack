@@ -746,8 +746,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volume.setAttached(new Date());
         _volumeDao.update(volume.getId(), volume);
         if (volume.getRemoved() != null) {
-            s_logger.debug(String.format("Marking volume [uuid: %s] of restored VM [id: %s, name: %s] as non removed.", volume.getUuid(),
-                    vm.getUuid(), vm.getInstanceName()));
+            s_logger.debug(String.format("Marking volume [uuid: %s] of restored VM [%s] as non removed.", volume.getUuid(),
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
             _volumeDao.unremove(volume.getId());
             if (vm.getType() == Type.User) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize(),
@@ -950,7 +950,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         for (Backup.VolumeInfo backedUpVol : backedUpVolumes) {
             VolumeVO volumeExtra = _volumeDao.findByUuid(backedUpVol.getUuid());
             if (volumeExtra != null) {
-                s_logger.debug(String.format("Marking volume [id: %s] of vm [id: %s, name: %s] as removed for the backup process.", backedUpVol.getUuid(), vm.getUuid(), vm.getInstanceName()));
+                s_logger.debug(String.format("Marking volume [id: %s] of VM [%s] as removed for the backup process.", backedUpVol.getUuid(), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
                 _volumeDao.remove(volumeExtra.getId());
 
                 if (vm.getType() == Type.User) {

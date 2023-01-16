@@ -2471,11 +2471,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((vm.getBackupOfferingId() == null || CollectionUtils.isEmpty(vm.getBackupVolumeList())) || BooleanUtils.isTrue(BackupManager.BackupEnableAttachDetachVolumes.value())) {
             return;
         }
-        String errorMsg = "Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
-                + "set the global configuration 'backup.enable.attach.detach.of.volumes' to true.";
-        if (attach)
-            errorMsg = "Unable to attach volume, please specify a VM that does not have any backups or set the global configuration "
-                    + "'backup.enable.attach.detach.of.volumes' to true.";
+        String errorMsg = String.format("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
+                + "set the global configuration '%s' to true.", BackupManager.BackupEnableAttachDetachVolumes.key());
+        if (attach) {
+            errorMsg = String.format("Unable to attach volume, please specify a VM that does not have any backups or set the global configuration "
+                    + "'%s' to true.", BackupManager.BackupEnableAttachDetachVolumes.key());
+        }
         throw new InvalidParameterValueException(errorMsg);
     }
 
