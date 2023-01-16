@@ -46,6 +46,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -141,7 +142,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.IoDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FilesystemDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GraphicDef;
@@ -2925,13 +2925,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 String ioDriver =  null;
 
-                if (MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IO_POLICY)) {
-                    ioDriver = details.get(VmDetailConstants.IO_POLICY);
-                } else if (MapUtils.isNotEmpty(volume.getDetails()) && volume.getDetails().containsKey(VmDetailConstants.IO_POLICY)) {
-                    ioDriver = volume.getDetails().get(VmDetailConstants.IO_POLICY);
+                if (MapUtils.isNotEmpty(volume.getDetails()) && volume.getDetails().containsKey(VmDetailConstants.IO_POLICY)) {
+                    ioDriver = volume.getDetails().get(VmDetailConstants.IO_POLICY).toUpperCase();
+                } else if (iothreadsEnabled) {
+                    ioDriver = IoDriverPolicy.THREADS.name();
                 }
-
-                ioDriver = iothreadsEnabled && ioDriver == null ? IoDriver.THREADS.ioDriver : ioDriver;
 
                 setDiskIoDriver(disk, getIoDriverForTheStorage(ioDriver));
 
@@ -3075,29 +3073,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
-    public void setDiskIoDriver(DiskDef disk, IoDriver ioDriver) {
-        s_logger.debug(String.format("Disk IO driver policy %s. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
+    public void setDiskIoDriver(DiskDef disk, IoDriverPolicy ioDriver) {
+        s_logger.debug(String.format("Disk IO driver policy [%s]. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
         if (ioDriver != null) {
-            if (IoDriver.IOURING != ioDriver) {
+            if (IoDriverPolicy.IOURING != ioDriver) {
                 disk.setIoDriver(ioDriver);
             } else if (enableIoUring) {
-                disk.setIoDriver(DiskDef.IoDriver.IOURING);
+                disk.setIoDriver(IoDriverPolicy.IOURING);
             }
         }
     }
 
-    public IoDriver getIoDriverForTheStorage(String ioDriver) {
+    public IoDriverPolicy getIoDriverForTheStorage(String ioDriver) {
         if (ioDriver == null) {
             return null;
         }
-        if ("native".equals(ioDriver)) {
-            return IoDriver.NATIVE;
-        } else if ("threads".equals(ioDriver)) {
-            return IoDriver.THREADS;
-        } else if ("io_uring".equals(ioDriver)) {
-            return IoDriver.IOURING;
-        }
-        return null;
+        return IoDriverPolicy.valueOf(ioDriver);
     }
 
     /**

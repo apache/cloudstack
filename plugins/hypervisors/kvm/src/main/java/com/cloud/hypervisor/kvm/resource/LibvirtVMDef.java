@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -698,26 +699,6 @@ public class LibvirtVMDef {
 
         }
 
-        /**
-         * This enum specifies IO Drivers, each option controls specific policies on I/O.
-         * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
-         */
-        public enum IoDriver {
-            NATIVE("native"),
-            THREADS("threads"),
-            IOURING("io_uring");
-            String ioDriver;
-
-            IoDriver(String driver) {
-                ioDriver = driver;
-            }
-
-            @Override
-            public String toString() {
-                return ioDriver;
-            }
-        }
-
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -748,7 +729,7 @@ public class LibvirtVMDef {
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
-        private IoDriver ioDriver;
+        private IoDriverPolicy ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
         private boolean isIothreadsEnabled;
 
@@ -760,11 +741,11 @@ public class LibvirtVMDef {
             this._discard = discard;
         }
 
-        public DiskDef.IoDriver getIoDriver() {
+        public IoDriverPolicy getIoDriver() {
             return ioDriver;
         }
 
-        public void setIoDriver(IoDriver ioDriver) {
+        public void setIoDriver(IoDriverPolicy ioDriver) {
             this.ioDriver = ioDriver;
         }
 

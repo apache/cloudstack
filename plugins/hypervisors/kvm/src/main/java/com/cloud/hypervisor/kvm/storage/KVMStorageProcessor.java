@@ -1456,7 +1456,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 String ioDriver = (details != null && details.containsKey(VmDetailConstants.IO_POLICY)) ? details.get(VmDetailConstants.IO_POLICY) : null;
                 if (ioDriver != null) {
-                    resource.setDiskIoDriver(diskdef, resource.getIoDriverForTheStorage(ioDriver));
+                    resource.setDiskIoDriver(diskdef, resource.getIoDriverForTheStorage(ioDriver.toUpperCase()));
                 }
             }
 

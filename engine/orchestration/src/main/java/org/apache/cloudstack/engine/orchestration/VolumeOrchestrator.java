@@ -41,6 +41,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.storage.StorageUtil;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
@@ -1538,11 +1539,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             UserVmDetailVO ioDriverPolicy = userVmDetailsDao.findDetail(volume.getInstanceId(),
                     VmDetailConstants.IO_POLICY);
             if (ioDriverPolicy != null) {
-                details.put(VmDetailConstants.IO_POLICY, ioDriverPolicy.getValue());
-            } else if (userVmDetailsDao.findDetail(volume.getInstanceId(), VmDetailConstants.IOTHREADS) != null) {
-                String storageIoPolicy = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId());
-                if (storageIoPolicy != null) {
-                    details.put(VmDetailConstants.IO_POLICY, storageIoPolicy);
+                if (IoDriverPolicy.STORAGE_SPECIFIC.toString().equals(ioDriverPolicy.getValue())) {
+                    String storageIoPolicyDriver = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId());
+                    if (storageIoPolicyDriver != null) {
+                        details.put(VmDetailConstants.IO_POLICY, storageIoPolicyDriver);
+                    }
+                } else {
+                    details.put(VmDetailConstants.IO_POLICY, ioDriverPolicy.getValue());
                 }
             }
         }

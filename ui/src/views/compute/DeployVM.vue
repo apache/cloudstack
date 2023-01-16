@@ -1719,7 +1719,8 @@ export default {
       this.options.ioPolicyTypes = [
         { id: 'native', description: 'native' },
         { id: 'threads', description: 'threads' },
-        { id: 'io_uring', description: 'io_uring' }
+        { id: 'io_uring', description: 'io_uring' },
+        { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
     fetchInstaceGroups () {

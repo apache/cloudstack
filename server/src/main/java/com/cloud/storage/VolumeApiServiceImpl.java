@@ -35,6 +35,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -4141,12 +4142,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private String getIoPolicy(UserVmVO vm, long poolId) {
         String ioPolicy = null;
-        if (vm.getHypervisorType() == HypervisorType.KVM && vm.getDetails() != null) {
-            if (vm.getDetail(VmDetailConstants.IO_POLICY) != null) {
-                ioPolicy = vm.getDetail(VmDetailConstants.IO_POLICY);
-            } else if (vm.getDetail(VmDetailConstants.IOTHREADS) != null
-                    && StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId) != null) {
-                ioPolicy = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId);
+        if (vm.getHypervisorType() == HypervisorType.KVM && vm.getDetails() != null && vm.getDetail(VmDetailConstants.IO_POLICY) != null) {
+            ioPolicy = vm.getDetail(VmDetailConstants.IO_POLICY);
+            if (IoDriverPolicy.STORAGE_SPECIFIC.toString().equals(ioPolicy)) {
+                String storageIoPolicyDriver = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId);
+                ioPolicy = storageIoPolicyDriver != null ? storageIoPolicyDriver : null;
             }
         }
         return ioPolicy;
