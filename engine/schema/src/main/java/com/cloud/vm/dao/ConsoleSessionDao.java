@@ -19,10 +19,10 @@
 
 package com.cloud.vm.dao;
 
-import com.cloud.vm.AllowedConsoleSessionVo;
+import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface AllowedConsoleSessionDao extends GenericDao<AllowedConsoleSessionVo, Long> {
+public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
     void expungeBySessionUuids(Object[] sessionUuid);
 

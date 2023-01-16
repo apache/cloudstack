@@ -28,8 +28,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "allowed_console_session")
-public class AllowedConsoleSessionVo {
+@Table(name = "console_session")
+public class ConsoleSessionVO {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,10 +39,10 @@ public class AllowedConsoleSessionVo {
     @Column(name = "session_uuid")
     private String sessionUuid;
 
-    public AllowedConsoleSessionVo() {
+    public ConsoleSessionVO() {
     }
 
-    public AllowedConsoleSessionVo(String sessionUuid) {
+    public ConsoleSessionVO(String sessionUuid) {
         this.sessionUuid = sessionUuid;
     }
 

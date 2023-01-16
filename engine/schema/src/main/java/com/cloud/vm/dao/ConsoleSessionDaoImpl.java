@@ -19,16 +19,16 @@
 
 package com.cloud.vm.dao;
 
-import com.cloud.vm.AllowedConsoleSessionVo;
+import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-public class AllowedConsoleSessionDaoImpl extends GenericDaoBase<AllowedConsoleSessionVo, Long> implements AllowedConsoleSessionDao {
+public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
 
-    private final SearchBuilder<AllowedConsoleSessionVo> searchBySessionUuids;
+    private final SearchBuilder<ConsoleSessionVO> searchBySessionUuids;
 
-    protected AllowedConsoleSessionDaoImpl() {
+    protected ConsoleSessionDaoImpl() {
         searchBySessionUuids = createSearchBuilder();
         searchBySessionUuids.and("sessions", searchBySessionUuids.entity().getSessionUuid(), SearchCriteria.Op.IN);
         searchBySessionUuids.done();
@@ -44,8 +44,8 @@ public class AllowedConsoleSessionDaoImpl extends GenericDaoBase<AllowedConsoleS
         return findOneBy(getSearchCriteriaBySessionUuids(new String[]{sessionUuid})) != null;
     }
 
-    private SearchCriteria<AllowedConsoleSessionVo> getSearchCriteriaBySessionUuids(Object[] sessionsUuids) {
-        SearchCriteria<AllowedConsoleSessionVo> sc = searchBySessionUuids.create();
+    private SearchCriteria<ConsoleSessionVO> getSearchCriteriaBySessionUuids(Object[] sessionsUuids) {
+        SearchCriteria<ConsoleSessionVO> sc = searchBySessionUuids.create();
         sc.setParameters("sessions", sessionsUuids);
         return sc;
     }

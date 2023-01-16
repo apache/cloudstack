@@ -38,12 +38,12 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.AllowedConsoleSessionVo;
+import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.AllowedConsoleSessionDao;
+import com.cloud.vm.dao.ConsoleSessionDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -86,7 +86,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private ConsoleProxyManager consoleProxyManager;
     @Inject
-    private AllowedConsoleSessionDao allowedConsoleSessionDao;
+    private ConsoleSessionDao consoleSessionDao;
 
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
@@ -146,13 +146,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public boolean isSessionAllowed(String sessionUuid) {
-        return allowedConsoleSessionDao.isSessionUuidAllowed(sessionUuid);
+        return consoleSessionDao.isSessionUuidAllowed(sessionUuid);
     }
 
     @Override
     public void removeSessions(String[] sessionUuids) {
         if (ArrayUtils.isNotEmpty(sessionUuids)) {
-            allowedConsoleSessionDao.expungeBySessionUuids(sessionUuids);
+            consoleSessionDao.expungeBySessionUuids(sessionUuids);
         }
     }
 
@@ -294,7 +294,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm);
 
         s_logger.debug("Adding allowed session: " + sessionUuid);
-        allowedConsoleSessionDao.persist(new AllowedConsoleSessionVo(sessionUuid));
+        consoleSessionDao.persist(new ConsoleSessionVO(sessionUuid));
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);

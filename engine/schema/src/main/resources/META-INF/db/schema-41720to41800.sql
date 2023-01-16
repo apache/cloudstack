@@ -1036,9 +1036,9 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
 FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
 
---- Create table for handling allowed console session temporally
+--- Create table for handling allowed console session temporally #7094
 
-CREATE TABLE `cloud`.`allowed_console_session` (
+CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `session_uuid` VARCHAR(40) NOT NULL
 );
