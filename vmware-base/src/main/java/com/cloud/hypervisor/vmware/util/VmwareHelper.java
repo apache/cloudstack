@@ -246,7 +246,7 @@ public class VmwareHelper {
             disk.setUnitNumber(deviceNumber);
 
             if (maxIops != null && maxIops > 0) {
-                s_logger.debug(LogUtils.logGsonWithoutException("Adding [%s] as the max IOPS of disk [%s].", maxIops, disk));
+                s_logger.debug(LogUtils.logGsonWithoutException("Defining [%s] as the max IOPS of disk [%s].", maxIops, disk));
                 StorageIOAllocationInfo storageIOAllocationInfo = new StorageIOAllocationInfo();
                 storageIOAllocationInfo.setLimit(maxIops);
                 disk.setStorageIOAllocation(storageIOAllocationInfo);
