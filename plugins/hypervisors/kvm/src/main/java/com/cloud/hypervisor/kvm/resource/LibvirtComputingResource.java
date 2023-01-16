@@ -3072,10 +3072,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         return enableIoUringConfig != null ?
                 enableIoUringConfig:
-                (isBaseOsUbuntu() || isIoUringSupportedByQemu());
+                (isUbuntuHost() || isIoUringSupportedByQemu());
     }
 
-    private boolean isBaseOsUbuntu() {
+    public boolean isUbuntuHost() {
         Map<String, String> versionString = getVersionStrings();
         String hostKey = "Host.OS";
         if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
