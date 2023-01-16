@@ -78,7 +78,7 @@ public class AddAnnotationCmd extends BaseCmd {
             throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
         Preconditions.checkNotNull(getEntityUuid(),"I have to have an entity to set an annotation on!");
-        Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is ot a valid EntityType to put annotations on", entityType);
+        Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is not a valid EntityType to put annotations on", entityType);
         AnnotationResponse annotationResponse = annotationService.addAnnotation(this);
         annotationResponse.setResponseName(getCommandName());
         this.setResponseObject(annotationResponse);
