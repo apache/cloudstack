@@ -63,10 +63,8 @@ import javax.naming.ConfigurationException;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
@@ -99,12 +97,9 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
 
-    private static Set<String> allowedSessions;
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         ConsoleAccessManagerImpl.secretKeysManager = keysManager;
-        ConsoleAccessManagerImpl.allowedSessions = new HashSet<>();
         return super.configure(name, params);
     }
 
@@ -151,7 +146,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public boolean isSessionAllowed(String sessionUuid) {
-        return allowedSessions.contains(sessionUuid);
+        return allowedConsoleSessionDao.isSessionUuidAllowed(sessionUuid);
     }
 
     @Override
