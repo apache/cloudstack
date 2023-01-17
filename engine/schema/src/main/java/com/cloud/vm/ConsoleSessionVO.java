@@ -57,9 +57,6 @@ public class ConsoleSessionVO {
     @Column(name = "removed")
     private Date removed;
 
-    public ConsoleSessionVO() {
-    }
-
     public long getId() {
         return id;
     }
