@@ -337,7 +337,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
 
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
-            "Check the url for a volume before downloading it from the management server. Set to false when you managment has no internet access.", true);
+            "Check the url for a volume before downloading it from the management server. Set to false when your management has no internet access.", true);
 
     public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
             "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
@@ -2935,7 +2935,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume must be in ready state");
         }
 
-        if (vol.getPoolId() == storagePoolId) {
+        if (vol.getPoolId() == storagePoolId.longValue()) {
             throw new InvalidParameterValueException("Volume " + vol + " is already on the destination storage pool");
         }
 
@@ -2984,9 +2984,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
                 if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType())) {
-                    throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
-                            "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
-                            "Use 'migrateVirtualMachineWithVolumes' instead.");
+                    StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
+
+                    if (isSourceOrDestNotOnStorPool(storagePoolVO, destinationStoragePoolVo)) {
+                        throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
+                                "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
+                                "Use 'migrateVirtualMachineWithVolumes' instead.");
+                    }
                 }
             }
 
@@ -3131,6 +3135,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateMigrateVolume(vol, destPool, liveMigrateVolume, newDiskOffering);
+    }
+
+    private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
+        return storagePoolVO.getPoolType() != Storage.StoragePoolType.StorPool
+                || destinationStoragePoolVo.getPoolType() != Storage.StoragePoolType.StorPool;
     }
 
     /**

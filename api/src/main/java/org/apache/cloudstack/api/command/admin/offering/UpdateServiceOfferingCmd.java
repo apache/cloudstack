@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -76,14 +75,12 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_TAGS,
             type = CommandType.STRING,
             description = "comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
-            authorized = {RoleType.Admin},
             since = "4.16")
     private String storageTags;
 
     @Parameter(name = ApiConstants.HOST_TAGS,
             type = CommandType.STRING,
             description = "the host tag for this service offering.",
-            authorized = {RoleType.Admin},
             since = "4.16")
     private String hostTags;
 
