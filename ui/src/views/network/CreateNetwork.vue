@@ -74,31 +74,42 @@ export default {
       actionZoneLoading: false
     }
   },
-  created () {
-    const promises = []
-    promises.push(this.fetchActionZoneData())
-    Promise.all(promises).then(() => {
-      this.isAdvancedZoneWithoutSGAvailable = false
-      this.defaultNetworkTypeTabKey = '2'
-
-      for (const i in this.actionZones) {
-        const zone = this.actionZones[i]
-        if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
-          this.isAdvancedZoneWithoutSGAvailable = true
-          this.defaultNetworkTypeTabKey = '1'
-          return
-        }
+  watch: {
+    resource: {
+      deep: true,
+      handler () {
+        this.fetchData()
       }
-    })
+    }
+  },
+  created () {
+    this.fetchData()
   },
   methods: {
+    fetchData () {
+      const promises = []
+      promises.push(this.fetchActionZoneData())
+      Promise.all(promises).then(() => {
+        this.isAdvancedZoneWithoutSGAvailable = false
+        this.defaultNetworkTypeTabKey = '2'
+
+        for (const i in this.actionZones) {
+          const zone = this.actionZones[i]
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+            this.isAdvancedZoneWithoutSGAvailable = true
+            this.defaultNetworkTypeTabKey = '1'
+            return
+          }
+        }
+      })
+    },
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      if (this.resource && this.resource.zoneid) {
+      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
         params.id = this.resource.zoneid
       }
-      this.actionZonesLoading = true
+      this.actionZoneLoading = true
       return api('listZones', params).then(json => {
         this.actionZones = json.listzonesresponse.zone
       }).finally(() => {
