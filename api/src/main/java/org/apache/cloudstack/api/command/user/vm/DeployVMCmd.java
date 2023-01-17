@@ -330,7 +330,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             customparameterMap.put(VmDetailConstants.IO_POLICY, getIoDriverPolicy().toString());
         }
 
-        if (iothreadsEnabled != null) {
+        if (iothreadsEnabled != null && iothreadsEnabled) {
             customparameterMap.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
         }
 
