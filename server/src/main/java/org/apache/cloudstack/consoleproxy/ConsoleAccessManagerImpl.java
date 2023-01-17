@@ -146,19 +146,21 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public boolean isSessionAllowed(String sessionUuid) {
-        return consoleSessionDao.isSessionUuidAllowed(sessionUuid);
+        return consoleSessionDao.isSessionAllowed(sessionUuid);
     }
 
     @Override
     public void removeSessions(String[] sessionUuids) {
         if (ArrayUtils.isNotEmpty(sessionUuids)) {
-            consoleSessionDao.expungeBySessionUuids(sessionUuids);
+            for (String sessionUuid : sessionUuids) {
+                removeSession(sessionUuid);
+            }
         }
     }
 
     @Override
     public void removeSession(String sessionUuid) {
-        removeSessions(new String[] {sessionUuid});
+        consoleSessionDao.removeSession(sessionUuid);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
@@ -294,7 +296,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm);
 
         s_logger.debug("Adding allowed session: " + sessionUuid);
-        consoleSessionDao.persist(new ConsoleSessionVO(sessionUuid));
+        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId());
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
@@ -306,6 +308,16 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
         }
         return consoleEndpoint;
+    }
+
+    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId) {
+        ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
+        consoleSessionVo.setUuid(sessionUuid);
+        consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
+        consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
+        consoleSessionVo.setInstanceId(instanceId);
+        consoleSessionVo.setHostId(hostId);
+        consoleSessionDao.persist(consoleSessionVo);
     }
 
     private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,

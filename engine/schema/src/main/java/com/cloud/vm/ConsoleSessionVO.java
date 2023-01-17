@@ -17,7 +17,6 @@
 // under the License.
 //
 
-
 package com.cloud.vm;
 
 import javax.persistence.Column;
@@ -26,6 +25,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Date;
 
 @Entity
 @Table(name = "console_session")
@@ -36,14 +36,28 @@ public class ConsoleSessionVO {
     @Column(name = "id")
     private long id;
 
-    @Column(name = "session_uuid")
-    private String sessionUuid;
+    @Column(name = "uuid")
+    private String uuid;
+
+    @Column(name = "created")
+    private Date created;
+
+    @Column(name = "account_id")
+    private long accountId;
+
+    @Column(name = "user_id")
+    private long userId;
+
+    @Column(name = "instance_id")
+    private long instanceId;
+
+    @Column(name = "host_id")
+    private long hostId;
+
+    @Column(name = "removed")
+    private Date removed;
 
     public ConsoleSessionVO() {
-    }
-
-    public ConsoleSessionVO(String sessionUuid) {
-        this.sessionUuid = sessionUuid;
     }
 
     public long getId() {
@@ -54,11 +68,59 @@ public class ConsoleSessionVO {
         this.id = id;
     }
 
-    public String getSessionUuid() {
-        return sessionUuid;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setSessionUuid(String sessionUuid) {
-        this.sessionUuid = sessionUuid;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
+
+    public long getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(long instanceId) {
+        this.instanceId = instanceId;
+    }
+
+    public long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(long hostId) {
+        this.hostId = hostId;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 }

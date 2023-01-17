@@ -24,8 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
-    void expungeBySessionUuids(Object[] sessionUuid);
+    void removeSession(String sessionUuid);
 
-    boolean isSessionUuidAllowed(String sessionUuid);
+    boolean isSessionAllowed(String sessionUuid);
 
 }

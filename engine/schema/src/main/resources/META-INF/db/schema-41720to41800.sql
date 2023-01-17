@@ -1040,5 +1040,11 @@ FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
 
 CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `session_uuid` VARCHAR(40) NOT NULL
+    `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
+    `created` datetime NOT NULL COMMENT 'When the session was created',
+    `account_id` bigint(20) unsigned NOT NULL COMMENT 'Account who generated the session' references cloud.account(id),
+    `user_id` bigint(20) unsigned NOT NULL COMMENT 'User who generated the session' references `cloud`.`user`(`id`),
+    `instance_id` bigint(20) unsigned NOT NULL COMMENT 'VM for which the session was generated' references `cloud`.`vm_instance`(`id`) ,
+    `host_id` bigint(20) unsigned NOT NULL COMMENT 'Host where the VM was when the session was generated' references `cloud`.`host`(`id`) ,
+    `removed` datetime COMMENT 'When the session was removed/used'
 );
