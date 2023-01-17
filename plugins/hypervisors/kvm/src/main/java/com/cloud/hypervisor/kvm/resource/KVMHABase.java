@@ -18,8 +18,6 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
@@ -30,6 +28,8 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);

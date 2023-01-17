@@ -746,7 +746,7 @@ public class AgentProperties{
      * Data type: Long.<br>
      * Default value: <code>60000l</code>
      */
-    public static final Property<Long> KVM_HEARTBEAT_UPDATE_FREQUENCY = new Property<Long>("kvm.heartbeat.update.frequency", 60000l);
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_FREQUENCY = new Property<>("kvm.heartbeat.update.frequency", 60000l);
 
     public static class Property <T>{
         private String name;
