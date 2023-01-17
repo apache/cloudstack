@@ -576,7 +576,7 @@ export default {
         return fields
       },
       resourceType: 'SSHKeyPair',
-      details: ['id', 'name', 'fingerprint', 'account', 'domain'],
+      details: ['id', 'name', 'fingerprint', 'account', 'domain', 'project'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -608,10 +608,13 @@ export default {
           label: 'label.remove.ssh.key.pair',
           message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
-          args: ['name', 'account', 'domainid'],
+          args: ['name', 'account', 'domainid', 'projectid'],
           mapping: {
             name: {
               value: (record, params) => { return record.name }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -626,7 +629,10 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                name: data[0].name, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }
