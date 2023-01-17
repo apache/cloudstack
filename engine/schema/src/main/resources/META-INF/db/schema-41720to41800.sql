@@ -984,6 +984,7 @@ WHERE   usage_unit = 'Policy-Month';
 -- delete configuration task.cleanup.retry.interval #6910
 DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
 
+--- #6888 add index to speed up querying IPs in the network-tab
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_KEY`;
 
 CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_KEY` (
