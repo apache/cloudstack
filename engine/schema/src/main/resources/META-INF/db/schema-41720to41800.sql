@@ -998,6 +998,44 @@ BEGIN
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+-- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
+
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
+SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
+FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
+
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'KVM', 'default', 'AlmaLinux 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS 9', 'KVM', 'default', 'CentOS 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'KVM', 'default', 'Oracle Linux 9');

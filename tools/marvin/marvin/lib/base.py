@@ -518,7 +518,7 @@ class VirtualMachine:
                serviceofferingid=None, securitygroupids=None,
                projectid=None, startvm=None, diskofferingid=None,
                affinitygroupnames=None, affinitygroupids=None, group=None,
-               hostid=None, keypair=None, ipaddress=None, mode='default',
+               hostid=None, clusterid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
@@ -608,6 +608,9 @@ class VirtualMachine:
 
         if hostid:
             cmd.hostid = hostid
+
+        if clusterid:
+            cmd.clusterid = clusterid
 
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
@@ -4175,7 +4178,7 @@ class PhysicalNetwork:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, zoneid, domainid=None):
+    def create(cls, apiclient, services, zoneid, domainid=None, isolationmethods=None):
         """Create physical network"""
         cmd = createPhysicalNetwork.createPhysicalNetworkCmd()
 
@@ -4183,6 +4186,8 @@ class PhysicalNetwork:
         cmd.zoneid = zoneid
         if domainid:
             cmd.domainid = domainid
+        if isolationmethods:
+            cmd.isolationmethods = isolationmethods
         return PhysicalNetwork(apiclient.createPhysicalNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -5818,6 +5823,12 @@ class TrafficType:
 
     def __init__(self, items):
         self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, **kwargs):
+        cmd = addTrafficType.addTrafficTypeCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.addTrafficType(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
