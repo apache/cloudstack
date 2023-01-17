@@ -76,9 +76,8 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
         convertQuotaTariffsToNewParadigm(conn);
         convertVmResourcesQuotaTypesToRunningVmQuotaType(conn);
-        correctGuestOsNames(conn);
-        updateGuestOsMappings(conn);
-        updateGuestOsMappings(conn);
+        correctGuestOsNames();
+        updateGuestOsMappings();
         correctGuestOsIdsInHypervisorMapping(conn);
     }
 
@@ -240,7 +239,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    private void correctGuestOsNames(final Connection conn) {
+    private void correctGuestOsNames() {
         guestOsMapper.updateGuestOsName(7, "Fedora Linux", "Fedora Linux (32 bit)");
         guestOsMapper.updateGuestOsName(7, "Mandriva Linux", "Mandriva Linux (32 bit)");
 
@@ -248,7 +247,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         guestOsMapper.updateGuestOsNameFromMapping("OpenSUSE Linux (32 bit)", mapping);
     }
 
-    private void updateGuestOsMappings(final Connection conn) {
+    private void updateGuestOsMappings() {
         LOG.debug("Updating guest OS mappings");
 
         // Add support for SUSE Linux Enterprise Desktop 12 SP3 (64-bit) for Xenserver 8.1.0
