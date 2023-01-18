@@ -41,45 +41,47 @@
         </a-col>
       </a-card>
     </a-col>
-    <a-spin :spinning="configLoading" style="background-color: #fff;">
+    <a-col :span="24">
       <a-card style="margin-left: 10px;">
-        <a-tabs
-          tabPosition="left"
-          :animated="false"
-          :activeKey="this.group || ''"
-          @change="changeGroupTab" >
-          <a-tab-pane
-            key=''
-            tab='All Settings' >
-              <ConfigurationTable
-                :columns="columns"
-                :config="config"
-                :count="count"
-                :page="page"
-                :pagesize="pagesize"
-                @change-page="changePage" />
-          </a-tab-pane>
-          <a-tab-pane
-            v-for="(group) in groups"
-            :key="group.name"
-            :tab="group.name" >
-            <a-tabs
-              :activeKey="this.subgroup || ''"
-              :animated="false"
-              @change="changeSubgroupTab" >
-              <a-tab-pane
-                v-for="(subgroup) in group.subgroup"
-                :key="subgroup.name"
-                :tab="subgroup.name" >
-                <ConfigurationHierarchy
+        <a-spin :spinning="configLoading">
+          <a-tabs
+            tabPosition="left"
+            :animated="false"
+            :activeKey="this.group || ''"
+            @change="changeGroupTab" >
+            <a-tab-pane
+              key=''
+              tab='All Settings' >
+                <ConfigurationTable
                   :columns="columns"
-                  :config="config" />
-              </a-tab-pane>
-            </a-tabs>
-          </a-tab-pane>
-        </a-tabs>
+                  :config="config"
+                  :count="count"
+                  :page="page"
+                  :pagesize="pagesize"
+                  @change-page="changePage" />
+            </a-tab-pane>
+            <a-tab-pane
+              v-for="(group) in groups"
+              :key="group.name"
+              :tab="group.name" >
+              <a-tabs
+                :activeKey="this.subgroup || ''"
+                :animated="false"
+                @change="changeSubgroupTab" >
+                <a-tab-pane
+                  v-for="(subgroup) in group.subgroup"
+                  :key="subgroup.name"
+                  :tab="subgroup.name" >
+                  <ConfigurationHierarchy
+                    :columns="columns"
+                    :config="config" />
+                </a-tab-pane>
+              </a-tabs>
+            </a-tab-pane>
+          </a-tabs>
+        </a-spin>
       </a-card>
-    </a-spin>
+    </a-col>
   </a-row>
 </template>
 
@@ -126,7 +128,7 @@ export default {
     return {
       groups: [],
       config: [],
-      configLoading: this.loading,
+      configLoading: true,
       page: 1,
       pagesize: this.$store.getters.defaultListViewPageSize,
       group: '',
@@ -178,7 +180,6 @@ export default {
         this.group = this.$route.query.group || ''
         this.subgroup = this.$route.query.subgroup || ''
         this.fetchConfigurationData()
-        this.configLoading = false
       })
     },
     fetchConfigurationData () {

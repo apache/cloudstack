@@ -82,6 +82,7 @@
                 :min="0"
                 :max="100"
                 :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+                :formatter="(value) => `${value}%`"
                 v-model:value="editableValue"
                 @keydown.esc="editableValueKey = null"
                 @pressEnter="updateConfigurationValue(configrecord)"
@@ -111,7 +112,7 @@
       </span>
       <span v-else-if="configrecord.type === 'Order'">
         <a-tooltip :title="editableValue.join(', ')">
-          <b>{{ $t('message.order') }}</b>
+          <b>{{ $t('message.select.deselect.to.sort') }}</b>
           <br />
           <a-select
             style="width: 20vw"
@@ -132,7 +133,7 @@
       </span>
       <span v-else-if="configrecord.type === 'CSV'">
         <a-tooltip :title="editableValue.join(', ')">
-          <b>{{ $t('message.csv') }}</b>
+          <b>{{ $t('message.type.values.to.add') }}</b>
           <br />
           <a-select
             style="width: 20vw"
