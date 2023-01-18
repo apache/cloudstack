@@ -162,6 +162,8 @@ public interface VolumeApiService {
 
     Volume recoverVolume(long volumeId);
 
+    void validateCustomDiskOfferingSizeRange(Long sizeInGB);
+
     boolean validateVolumeSizeInBytes(long size);
 
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
