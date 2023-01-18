@@ -77,12 +77,11 @@ const err = (error) => {
       }
       countNotify++
       store.commit('SET_COUNT_NOTIFY', countNotify)
-      console.log(originalPath)
       if (originalPath === '/verify2FA' || originalPath === '/setup2FA') {
         notification.error({
           top: '65px',
           message: i18n.global.t('label.2FA'),
-          description: i18n.global.t('message.two.factor.authorization.failed'),
+          description: i18n.global.t('message.error.verifying.2fa'),
           key: 'http-401',
           duration: 0,
           onClose: () => {

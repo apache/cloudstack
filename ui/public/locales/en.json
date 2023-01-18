@@ -2533,7 +2533,7 @@
 "message.error.delete.tungsten.tag": "Removing Tag failed",
 "message.error.description": "Please enter description.",
 "message.error.discovering.feature": "Exception caught while discovering features.",
-"message.error.verifying.2fa": "Unable to verify 2FA.",
+"message.error.verifying.2fa": "Unable to verify 2FA, please retry",
 "message.error.display.text": "Please enter display text.",
 "message.error.duration.less.than.interval": "The duration in Autoscale policy cannot be less than interval",
 "message.error.enable.saml": "Unable to find users IDs to enable SAML single sign on, kindly enable it manually.",

@@ -93,11 +93,13 @@ export default {
             })
             this.$emit('refresh-data')
           }
-        }).catch(error => {
-          this.$router.push({ path: '/user/login' }).catch(() => {})
+        }).catch(() => {
+          this.$store.dispatch('Logout').then(() => {
+            this.$router.replace({ path: '/user/login' })
+          })
           this.$notification.error({
             message: this.$t('message.request.failed'),
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+            description: this.$t('message.two.factor.authorization.failed')
           })
         })
       })

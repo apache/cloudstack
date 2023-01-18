@@ -231,7 +231,7 @@ const user = {
           }).catch(error => {
             reject(error)
           })
-        } else {
+        } else if (store.getters.loginFlag) {
           const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
           api('listZones').then(json => {
             const zones = json.listzonesresponse.zone || []
