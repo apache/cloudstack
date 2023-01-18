@@ -253,26 +253,28 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         // Add support for SUSE Linux Enterprise Desktop 12 SP3 (64-bit) for Xenserver 8.1.0
         List<GuestOSHypervisorMapping> mappings = new ArrayList<GuestOSHypervisorMapping>();
         mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "SUSE Linux Enterprise Desktop 12 SP3 (64-bit)"));
-        guestOsMapper.addGuestOsAndHypervisorMappings (5, "SUSE Linux Enterprise Desktop 12 SP3 (64-bit)", mappings);
+        guestOsMapper.addGuestOsAndHypervisorMappings(5, "SUSE Linux Enterprise Desktop 12 SP3 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for SUSE Linux Enterprise Desktop 12 SP4 (64-bit) for Xenserver 8.1.0
         mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "SUSE Linux Enterprise Desktop 12 SP4 (64-bit)"));
-        guestOsMapper.addGuestOsAndHypervisorMappings (5, "SUSE Linux Enterprise Desktop 12 SP4 (64-bit)", mappings);
+        guestOsMapper.addGuestOsAndHypervisorMappings(5, "SUSE Linux Enterprise Desktop 12 SP4 (64-bit)", mappings);
         mappings.clear();
 
-        // Add support for SUSE Linux Enterprise Server 12 SP4 (64-bit) for Xenserver 8.1.0
+        // Add support for SUSE Linux Enterprise Server 12 SP4 (64-bit) and NeoKylin Linux Server 7 for Xenserver 8.1.0
         mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "SUSE Linux Enterprise Server 12 SP4 (64-bit)"));
         mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "NeoKylin Linux Server 7"));
         guestOsMapper.addGuestOsAndHypervisorMappings(5, "SUSE Linux Enterprise Server 12 SP4 (64-bit)", mappings);
         mappings.clear();
 
-        // Add support for Scientific Linux 7 for Xenserver 8.1.0
+        // Add support for Scientific Linux 7 and NeoKylin Linux Server 7 for Xenserver 8.1.0
         mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "Scientific Linux 7"));
-        guestOsMapper.addGuestOsAndHypervisorMappings (9, "Scientific Linux 7", mappings);
+        mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "NeoKylin Linux Server 7"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(9, "Scientific Linux 7", mappings);
         mappings.clear();
 
         // Add support for NeoKylin Linux Server 7 for Xenserver 8.1.0
+        mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "NeoKylin Linux Server 7"));
         guestOsMapper.addGuestOsAndHypervisorMappings(9, "NeoKylin Linux Server 7", mappings); //334
         mappings.clear();
 
@@ -382,6 +384,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "other3xLinux64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "other3xLinux64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "other3xLinux64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "other3xLinux64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "other3xLinux64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "other3xLinux64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "other3xLinux64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(2, "Linux 3.x Kernel (64 bit)", mappings);
         mappings.clear();
 
@@ -391,6 +397,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "other3xLinuxGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "other3xLinuxGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "other3xLinuxGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "other3xLinuxGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "other3xLinuxGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "other3xLinuxGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "other3xLinuxGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(2, "Linux 3.x Kernel (32 bit)", mappings);
         mappings.clear();
 
@@ -398,6 +408,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "amazonlinux2_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "amazonlinux2_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "amazonlinux2_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "amazonlinux2_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "amazonlinux2_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "amazonlinux2_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "amazonlinux2_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Amazon Linux 2 (64 bit)", mappings);
         mappings.clear();
 
@@ -408,6 +422,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux4Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux4Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux4Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux4Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux4Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux4Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux4Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 4 (32 bit)", mappings);
         mappings.clear();
 
@@ -418,6 +436,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux4_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux4_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux4_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux4_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux4_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux4_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux4_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 4 (64 bit)", mappings);
         mappings.clear();
 
@@ -428,6 +450,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux5Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux5Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux5Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 5 (32 bit)", mappings);
         mappings.clear();
 
@@ -438,6 +464,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux5_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux5_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux5_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux5_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux5_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux5_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux5_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 5 (64 bit)", mappings);
         mappings.clear();
 
@@ -447,6 +477,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux7Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux7Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux7Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux7Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux7Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux7Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux7Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 7 (32 bit)", mappings);
         mappings.clear();
 
@@ -456,6 +490,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux7_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux7_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux7_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux7_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux7_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux7_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux7_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 7 (64 bit)", mappings);
         mappings.clear();
 
@@ -464,6 +502,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "asianux8_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "asianux8_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "asianux8_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "asianux8_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "asianux8_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "asianux8_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "asianux8_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Asianux Server 8 (64 bit)", mappings);
         mappings.clear();
 
@@ -472,6 +514,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "eComStation2Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "eComStation2Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "eComStation2Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "eComStation2Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "eComStation2Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "eComStation2Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "eComStation2Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "eComStation 2.0", mappings);
         mappings.clear();
 
@@ -480,6 +526,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "darwin17_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "darwin17_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "darwin17_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "darwin17_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "darwin17_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "darwin17_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "darwin17_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 10.13 (64 bit)", mappings);
         mappings.clear();
 
@@ -488,6 +538,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "darwin18_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "darwin18_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "darwin18_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "darwin18_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "darwin18_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "darwin18_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "darwin18_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 10.14 (64 bit)", mappings);
         mappings.clear();
 
@@ -498,6 +552,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "fedora64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "fedora64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "fedora64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "fedora64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "fedora64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "fedora64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "fedora64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Fedora Linux (64 bit)", mappings);
         mappings.clear();
 
@@ -508,6 +566,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "fedoraGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "fedoraGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "fedoraGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "fedoraGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "fedoraGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "fedoraGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "fedoraGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Fedora Linux", mappings);
         mappings.clear();
 
@@ -518,6 +580,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "mandrakeGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "mandrakeGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "mandrakeGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "mandrakeGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "mandrakeGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "mandrakeGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "mandrakeGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Mandrake Linux", mappings);
         mappings.clear();
 
@@ -528,6 +594,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "mandriva64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "mandriva64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "mandriva64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "mandriva64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "mandriva64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "mandriva64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "mandriva64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Mandriva Linux (64 bit)", mappings);
         mappings.clear();
 
@@ -538,6 +608,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "mandrivaGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "mandrivaGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "mandrivaGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "mandrivaGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "mandrivaGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "mandrivaGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "mandrivaGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Mandriva Linux", mappings);
         mappings.clear();
 
@@ -548,6 +622,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "openServer5Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "openServer5Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "openServer5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "openServer5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "openServer5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "openServer5Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "openServer5Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "SCO OpenServer 5", mappings);
         mappings.clear();
 
@@ -558,6 +636,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "openServer6Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "openServer6Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "openServer6Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "openServer6Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "openServer6Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "openServer6Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "openServer6Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "SCO OpenServer 6", mappings);
         mappings.clear();
 
@@ -568,6 +650,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "opensuse64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "opensuse64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "opensuse64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "opensuse64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "opensuse64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "opensuse64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "opensuse64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "OpenSUSE Linux (64 bit)", mappings);
         mappings.clear();
 
@@ -578,6 +664,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "opensuseGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "opensuseGuest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "opensuseGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "opensuseGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "opensuseGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "opensuseGuest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "opensuseGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "OpenSUSE Linux (32 bit)", mappings);
         mappings.clear();
 
@@ -588,6 +678,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "solaris11_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "solaris11_64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "solaris11_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "solaris11_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "solaris11_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "solaris11_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "solaris11_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Solaris 11 (64 bit)", mappings);
         mappings.clear();
 
@@ -597,6 +691,10 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "vmwarePhoton64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.2", "vmwarePhoton64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.3", "vmwarePhoton64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "vmwarePhoton64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "vmwarePhoton64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "vmwarePhoton64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "vmwarePhoton64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "VMware Photon (64 bit)", mappings);
     }
 
