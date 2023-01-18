@@ -562,13 +562,6 @@ public class AgentProperties{
     public static final Property<Integer> HOST_CPU_MANUAL_SPEED_MHZ = new Property<>("host.cpu.manual.speed.mhz", 0);
 
     /**
-     * Enable manually IO driver on KVM's VM. <br>
-     * Data type: Boolean.<br>
-     * Default value: <code>null</code>
-     */
-    public static final Property<Boolean> ENABLE_IO_URING = new Property<>("enable.io.uring", null, Boolean.class);
-
-    /**
      * Defines the location for Hypervisor scripts.<br>
      * The path defined in this property is relative.<br>
      * To locate the script, ACS first tries to concatenate the property path with "/usr/share/cloudstack-agent/lib/".<br>
