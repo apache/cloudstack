@@ -45,6 +45,8 @@ class sysConfigAgentFactory:
             return sysConfigRedhat7(glbEnv)
         elif distribution == "RHEL8":
             return sysConfigRedhat8(glbEnv)
+        elif distribution == "RHEL9":
+            return sysConfigRedhat9(glbEnv)
         elif distribution == "SUSE":
             return sysConfigSUSE(glbEnv)
         else:
@@ -214,6 +216,18 @@ class sysConfigRedhat7(sysConfigAgentRedhat7Base):
 class sysConfigRedhat8(sysConfigAgentRedhat8Base):
     def __init__(self, glbEnv):
         super(sysConfigRedhat8, self).__init__(glbEnv)
+        self.services = [hostConfig(self),
+                         securityPolicyConfigRedhat(self),
+                         networkConfigRedhat(self),
+                         libvirtConfigRedhat(self),
+                         firewallConfigAgent(self),
+                         nfsConfig(self),
+                         cloudAgentConfig(self)]
+
+#it covers RHEL9
+class sysConfigRedhat9(sysConfigAgentRedhat8Base):
+    def __init__(self, glbEnv):
+        super(sysConfigRedhat9, self).__init__(glbEnv)
         self.services = [hostConfig(self),
                          securityPolicyConfigRedhat(self),
                          networkConfigRedhat(self),
