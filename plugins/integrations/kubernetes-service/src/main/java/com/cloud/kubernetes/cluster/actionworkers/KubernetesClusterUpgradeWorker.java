@@ -61,8 +61,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
     }
 
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
-        int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
-        String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
+        int nodeSshPort = sshPort == CLUSTER_NODES_DEFAULT_SSH_PORT_SG ? sshPort : sshPort + index;
+        String nodeAddress = (index > 0 && sshPort == CLUSTER_NODES_DEFAULT_SSH_PORT_SG) ? vm.getPrivateIpAddress() : publicIpAddress;
         SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", upgradeScriptFile.getAbsolutePath(), "0755");
         String cmdStr = String.format("sudo ./%s %s %s %s %s",
@@ -122,7 +122,9 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                     logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get control Kubernetes node on VM : %s in ready state", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                 }
             }
-            if (!KubernetesClusterUtil.clusterNodeVersionMatches(upgradeVersion.getSemanticVersion(), i==0, publicIpAddress, sshPort, getControlNodeLoginUser(), getManagementServerSshPublicKeyFile(), hostName)) {
+            int nodeSshPort = sshPort == CLUSTER_NODES_DEFAULT_SSH_PORT_SG ? sshPort : sshPort + i;
+            String nodeAddress = (i > 0 && sshPort == CLUSTER_NODES_DEFAULT_SSH_PORT_SG) ? vm.getPrivateIpAddress() : publicIpAddress;
+            if (!KubernetesClusterUtil.clusterNodeVersionMatches(upgradeVersion.getSemanticVersion(), i==0, nodeAddress, nodeSshPort, getControlNodeLoginUser(), getManagementServerSshPublicKeyFile(), hostName)) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to get Kubernetes node on VM : %s upgraded to version %s", kubernetesCluster.getName(), vm.getDisplayName(), upgradeVersion.getSemanticVersion()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             if (LOGGER.isInfoEnabled()) {

@@ -344,7 +344,7 @@ public class KubernetesClusterUtil {
             }
             return false;
         }
-        if (Boolean.FALSE.equals(result.first()) || StringUtils.isBlank(result.second())) {
+        if ((isControlNode && Boolean.FALSE.equals(result.first())) || StringUtils.isBlank(result.second())) {
             return false;
         }
         String response = result.second();
