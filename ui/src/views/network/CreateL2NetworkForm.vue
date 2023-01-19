@@ -40,7 +40,7 @@
               <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
             </template>
             <a-input
-              v-model:value="form.displaytext"
+              v-model:value="form.name"
               :placeholder="apiParams.displaytext.description"/>
           </a-form-item>
           <a-form-item name="zoneid" ref="zoneid">
@@ -266,7 +266,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
         vlanid: [{ required: true, message: this.$t('message.please.enter.value') }]
