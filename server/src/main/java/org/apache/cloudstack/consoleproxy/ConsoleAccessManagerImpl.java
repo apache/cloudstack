@@ -33,6 +33,7 @@ import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -274,6 +275,10 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
+        String displayName = vm.getHostName();
+        if (vm instanceof UserVm) {
+            displayName = ((UserVm) vm).getDisplayName();
+        }
 
         String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag, sessionUuid);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
@@ -282,6 +287,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         param.setClientHostPort(port);
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
+        param.setClientDisplayName(displayName);
         param.setTicket(ticket);
         param.setSessionUuid(sessionUuid);
         param.setSourceIP(addr);

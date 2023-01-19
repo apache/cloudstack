@@ -76,6 +76,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String portStr = queryMap.get("port");
         String sid = queryMap.get("sid");
         String tag = queryMap.get("tag");
+        String displayName = queryMap.get("displayname");
         String ticket = queryMap.get("ticket");
         String ajaxSessionIdStr = queryMap.get("sess");
         String eventStr = queryMap.get("event");
@@ -129,6 +130,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             param.setClientHostPort(port);
             param.setClientHostPassword(sid);
             param.setClientTag(tag);
+            param.setClientDisplayName(displayName);
             param.setTicket(ticket);
             param.setClientTunnelUrl(console_url);
             param.setClientTunnelSession(console_host_session);
