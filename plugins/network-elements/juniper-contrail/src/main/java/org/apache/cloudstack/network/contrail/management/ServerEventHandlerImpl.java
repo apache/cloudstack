@@ -22,7 +22,8 @@ import java.util.HashMap;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -62,7 +63,7 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
     private HashMap<String, Method> _methodMap;
     private HashMap<String, Class<?>> _classMap;
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     ServerEventHandlerImpl() {
         setMethodMap();

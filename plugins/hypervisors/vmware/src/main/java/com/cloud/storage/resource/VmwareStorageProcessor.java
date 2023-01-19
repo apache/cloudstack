@@ -58,7 +58,8 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -150,7 +151,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int DEFAULT_NFS_PORT = 2049;
     private static final int SECONDS_TO_WAIT_FOR_DATASTORE = 120;
 

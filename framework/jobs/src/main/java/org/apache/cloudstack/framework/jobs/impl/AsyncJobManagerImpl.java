@@ -35,7 +35,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.storage.dao.VolumeDetailsDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -59,7 +58,6 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -95,6 +93,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.storage.dao.VolumeDao;
 
 import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+import org.apache.logging.log4j.ThreadContext;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
@@ -553,19 +552,19 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 String related = job.getRelated();
                 String logContext = job.getShortUuid();
                 if (related != null && !related.isEmpty()) {
-                    NDC.push("job-" + related + "/" + "job-" + job.getId());
+                    ThreadContext.push("job-" + related + "/" + "job-" + job.getId());
                     AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
                     if (relatedJob != null) {
                         logContext = relatedJob.getShortUuid();
                     }
                 } else {
-                    NDC.push("job-" + job.getId());
+                    ThreadContext.push("job-" + job.getId());
                 }
-                MDC.put("logcontextid", logContext);
+                ThreadContext.put("logcontextid", logContext);
                 try {
                     super.run();
                 } finally {
-                    NDC.pop();
+                    ThreadContext.pop();
                 }
             }
 
@@ -596,7 +595,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             logContext = relatedJob.getShortUuid();
                         }
                     }
-                    MDC.put("logcontextid", logContext);
+                    ThreadContext.put("logcontextid", logContext);
 
                     // execute the job
                     if (logger.isDebugEnabled()) {

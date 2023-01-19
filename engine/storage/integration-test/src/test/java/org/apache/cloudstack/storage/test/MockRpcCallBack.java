@@ -18,7 +18,8 @@ package org.apache.cloudstack.storage.test;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
@@ -28,7 +29,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.utils.db.DB;
 
 public class MockRpcCallBack implements Runnable {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     AgentManager agentMgr;
     private Command cmd;

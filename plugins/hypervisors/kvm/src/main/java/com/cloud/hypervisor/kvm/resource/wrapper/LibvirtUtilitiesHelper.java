@@ -22,7 +22,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -41,7 +42,7 @@ import com.cloud.utils.script.Script;
  * and the methods wrapped here.
  */
 public class LibvirtUtilitiesHelper {
-    protected static Logger LOGGER = Logger.getLogger(LibvirtUtilitiesHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtUtilitiesHelper.class);
 
     public static final int TIMEOUT = 10000;
 

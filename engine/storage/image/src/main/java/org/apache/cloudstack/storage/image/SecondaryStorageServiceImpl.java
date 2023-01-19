@@ -44,7 +44,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -53,7 +54,7 @@ import com.cloud.utils.Pair;
 
 public class SecondaryStorageServiceImpl implements SecondaryStorageService {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     DataMotionService motionSrv;

@@ -35,7 +35,8 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -85,7 +86,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  **/
 public class HypervDirectConnectResourceTest {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // TODO: make this a config parameter
     private static final String sampleLegitDiskImageURL = "http://s3-eu-west-1.amazonaws.com/cshv3eu/SmallDisk.vhdx";

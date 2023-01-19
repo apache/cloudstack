@@ -26,7 +26,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.configuration.ManagementServiceConfiguration;
@@ -35,7 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStateSync {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject MessageBus _messageBus;
     @Inject VMInstanceDao _instanceDao;

@@ -21,7 +21,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.Gson;
 
@@ -40,7 +41,7 @@ import com.cloud.utils.Pair;
  */
 public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private Object _target;
     private Map<Class<?>, Method> _handlerMethodMap = new HashMap<Class<?>, Method>();

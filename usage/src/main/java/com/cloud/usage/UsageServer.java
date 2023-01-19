@@ -19,14 +19,15 @@ package com.cloud.usage;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.component.ComponentContext;
 
 public class UsageServer implements Daemon {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static final String Name = "usage-server";
 
     private UsageManager mgr;

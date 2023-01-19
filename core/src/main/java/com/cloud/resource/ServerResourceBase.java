@@ -35,7 +35,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -45,7 +46,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 public abstract class ServerResourceBase implements ServerResource {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     protected String _name;
     private ArrayList<String> _warnings = new ArrayList<String>();
     private ArrayList<String> _errors = new ArrayList<String>();

@@ -16,14 +16,15 @@
 // under the License.
 package com.cloud.storage.resource;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;
 
 public class VmwareSecondaryStorageContextFactory {
-    protected static Logger LOGGER = Logger.getLogger(VmwareSecondaryStorageContextFactory.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareSecondaryStorageContextFactory.class);
 
     private static volatile int s_seq = 1;
 

@@ -20,14 +20,15 @@ import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebListener
 public class ApiSessionListener implements HttpSessionListener {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static Map<String, HttpSession> sessions = new ConcurrentHashMap<>();
 
     /**

@@ -29,7 +29,8 @@ import com.cloud.user.User;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +65,7 @@ import com.cloud.utils.net.Ip;
 
 public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
-    private Logger logger = Logger.getLogger(GlobalLoadBalancingRulesServiceImplTest.class);
+    private Logger logger = LogManager.getLogger(GlobalLoadBalancingRulesServiceImplTest.class);
 
     @Override
     @Before

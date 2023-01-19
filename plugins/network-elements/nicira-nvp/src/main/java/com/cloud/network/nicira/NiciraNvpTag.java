@@ -19,11 +19,12 @@
 
 package com.cloud.network.nicira;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class NiciraNvpTag {
     private static final int TAG_MAX_LEN = 40;
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private String scope;
     private String tag;
 

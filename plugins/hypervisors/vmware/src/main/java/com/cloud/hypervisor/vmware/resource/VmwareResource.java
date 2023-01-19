@@ -67,7 +67,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.joda.time.Duration;
 
 import com.cloud.agent.IAgentControl;
@@ -462,7 +462,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     public Answer executeRequest(Command cmd) {
         logCommand(cmd);
         Answer answer = null;
-        NDC.push(getCommandLogTitle(cmd));
+        ThreadContext.push(getCommandLogTitle(cmd));
         try {
             long cmdSequence = _cmdSequence++;
             Date startTime = DateUtil.currentGMTTime();
@@ -633,7 +633,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         } finally {
             recycleServiceContext();
-            NDC.pop();
+            ThreadContext.pop();
         }
 
         if (logger.isTraceEnabled())

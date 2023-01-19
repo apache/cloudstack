@@ -19,12 +19,13 @@
 
 package com.cloud.utils.nicira.nvp.plugin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
 
 public class NiciraNvpApiVersion {
-    protected static Logger LOGGER = Logger.getLogger(NiciraNvpApiVersion.class);
+    protected static Logger LOGGER = LogManager.getLogger(NiciraNvpApiVersion.class);
 
     private static String niciraApiVersion;
 

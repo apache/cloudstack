@@ -21,11 +21,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class BuildGuestNetwork {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int ApiPort = 8096;
     private static final int DeveloperPort = 8080;
     private static final String ApiUrl = "/client/api";

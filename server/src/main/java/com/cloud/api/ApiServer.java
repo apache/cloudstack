@@ -132,7 +132,8 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
@@ -1254,7 +1255,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     // code to be very specific to our needs
     static class ListenerThread extends Thread {
 
-        private static Logger LOGGER = Logger.getLogger(ListenerThread.class);
+        private static Logger LOGGER = LogManager.getLogger(ListenerThread.class);
         private HttpService _httpService = null;
         private ServerSocket _serverSocket = null;
         private HttpParams _params = null;

@@ -35,7 +35,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -47,7 +48,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class ReflectUtil {
 
-    protected static Logger LOGGER = Logger.getLogger(ReflectUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(ReflectUtil.class);
 
     public static Pair<Class<?>, Field> getAnyField(Class<?> clazz, String fieldName) {
         try {

@@ -25,7 +25,8 @@ import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * This worker validates parameters in a generic way, by using annotated
@@ -37,7 +38,7 @@ import org.apache.log4j.Logger;
  */
 public class ParamGenericValidationWorker implements DispatchWorker {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected static final List<String> defaultParamNames = new ArrayList<String>();
 

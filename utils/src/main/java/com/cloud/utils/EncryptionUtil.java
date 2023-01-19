@@ -20,7 +20,8 @@ package com.cloud.utils;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jasypt.encryption.pbe.PBEStringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
@@ -31,7 +32,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 public class EncryptionUtil {
-    protected static Logger LOGGER = Logger.getLogger(EncryptionUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(EncryptionUtil.class);
     private static PBEStringEncryptor encryptor;
 
     private static void initialize(String key) {

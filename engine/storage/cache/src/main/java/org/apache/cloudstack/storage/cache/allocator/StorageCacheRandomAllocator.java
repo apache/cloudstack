@@ -22,7 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -39,7 +40,7 @@ import com.cloud.storage.ScopeType;
 
 @Component
 public class StorageCacheRandomAllocator implements StorageCacheAllocator {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject

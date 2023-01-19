@@ -28,10 +28,11 @@ import java.util.stream.Collectors;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class FileUtil {
-    protected static Logger LOGGER = Logger.getLogger(FileUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(FileUtil.class);
 
     public static void copyfile(File source, File destination) throws IOException {
         FileUtils.copyFile(source, destination);

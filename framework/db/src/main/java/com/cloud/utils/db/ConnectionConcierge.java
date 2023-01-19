@@ -30,7 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.StandardMBean;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -45,7 +46,7 @@ import com.cloud.utils.mgmt.JmxUtil;
  */
 public class ConnectionConcierge {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final ConnectionConciergeManager sMgr = new ConnectionConciergeManager();
 

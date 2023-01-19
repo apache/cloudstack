@@ -36,7 +36,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import junit.framework.Assert;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -63,7 +64,7 @@ import com.cloud.utils.component.ComponentContext;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FirewallManagerTest {
-    private Logger logger = Logger.getLogger(FirewallManagerTest.class);
+    private Logger logger = LogManager.getLogger(FirewallManagerTest.class);
 
 
     @Ignore("Requires database to be set up")

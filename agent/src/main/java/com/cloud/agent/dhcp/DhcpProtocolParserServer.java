@@ -27,10 +27,11 @@ import java.util.concurrent.TimeUnit;
 
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class DhcpProtocolParserServer extends Thread {
-    protected Logger logger = Logger.getLogger(DhcpProtocolParserServer.class);;
+    protected Logger logger = LogManager.getLogger(DhcpProtocolParserServer.class);;
     protected ExecutorService _executor;
     private int dhcpServerPort = 67;
     private int bufferSize = 300;

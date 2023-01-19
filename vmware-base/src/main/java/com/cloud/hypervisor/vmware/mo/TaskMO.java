@@ -24,11 +24,12 @@ import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class TaskMO extends BaseMO {
 
-    protected static Logger LOGGER = Logger.getLogger(TaskMO.class);
+    protected static Logger LOGGER = LogManager.getLogger(TaskMO.class);
     public TaskMO(VmwareContext context, ManagedObjectReference morTask) {
         super(context, morTask);
     }

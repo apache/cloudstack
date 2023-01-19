@@ -20,7 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
 import com.google.common.base.Enums;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +38,7 @@ public enum RoleType {
     private Account.Type accountType;
     private int mask;
 
-    private static Logger LOGGER = Logger.getLogger(RoleType.class.getName());
+    private static Logger LOGGER = LogManager.getLogger(RoleType.class.getName());
     private static Map<Account.Type, RoleType> ACCOUNT_TYPE_MAP = new HashMap<>();
 
     static {

@@ -18,7 +18,8 @@ package com.cloud.hypervisor.kvm.resource.rolling.maintenance;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 
@@ -30,7 +31,7 @@ public abstract class RollingMaintenanceExecutorBase implements RollingMaintenan
 
     static final int exitValueAvoidMaintenance = 70;
     static final int exitValueTerminatedSignal = 143;
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     void setTimeout(int timeout) {
         this.timeout = timeout;

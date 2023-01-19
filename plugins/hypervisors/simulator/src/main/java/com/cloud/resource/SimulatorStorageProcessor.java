@@ -23,7 +23,8 @@ import java.io.File;
 import java.util.UUID;
 
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -57,7 +58,7 @@ import com.cloud.storage.resource.StorageProcessor;
 
 public class SimulatorStorageProcessor implements StorageProcessor {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     protected SimulatorManager hypervisorResource;
 
     public SimulatorStorageProcessor(SimulatorManager resource) {

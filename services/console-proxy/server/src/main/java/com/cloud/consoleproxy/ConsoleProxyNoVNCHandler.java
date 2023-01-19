@@ -39,7 +39,7 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     private ConsoleProxyNoVncClient viewer = null;
-    private  Logger logger = Logger.getLogger(ConsoleProxyNoVNCHandler.class);
+    protected Logger logger = Logger.getLogger(ConsoleProxyNoVNCHandler.class);
 
     public ConsoleProxyNoVNCHandler() {
         super();

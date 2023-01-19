@@ -21,7 +21,8 @@ package org.apache.cloudstack.utils.process;
 
 import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.StringUtils;
 
 public final class ProcessRunner {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // Default maximum timeout of 5 minutes for any command
     public static final Duration DEFAULT_MAX_TIMEOUT = new Duration(5 * 60 * 1000);

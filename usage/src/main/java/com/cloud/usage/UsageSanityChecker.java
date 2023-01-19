@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.db.TransactionLegacy;
  */
 public class UsageSanityChecker {
 
-    protected static Logger LOGGER = Logger.getLogger(UsageSanityChecker.class);
+    protected static Logger LOGGER = LogManager.getLogger(UsageSanityChecker.class);
     protected static final int DEFAULT_AGGREGATION_RANGE = 1440;
     protected StringBuilder errors;
     protected List<CheckCase> checkCases;

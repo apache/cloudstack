@@ -48,13 +48,14 @@ import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class BigSwitchBcfApi {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private final static String S_PROTOCOL = "https";
     private final static String S_NS_BASE_URL = "/networkService/v1.1";
     private final static String CONTENT_TYPE = "Content-type";

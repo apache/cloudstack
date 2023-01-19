@@ -23,7 +23,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 import org.apache.commons.lang.SystemUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.Message;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -51,7 +52,7 @@ public class ScriptTest {
     public void testLogger() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(Matchers.any());
+        Mockito.doNothing().when(mock).debug((Message)Matchers.any());
         Script script = new Script("/bin/echo", mock);
         script.execute();
     }
@@ -80,7 +81,7 @@ public class ScriptTest {
     public void testExecute() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(Matchers.any());
+        Mockito.doNothing().when(mock).debug((Message)Matchers.any());
         for (int i = 0; i < 100000; i++) {
             Script script = new Script("/bin/false", mock);
             script.execute();

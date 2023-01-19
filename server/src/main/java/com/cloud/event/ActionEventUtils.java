@@ -36,7 +36,8 @@ import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.configuration.Config;
@@ -56,7 +57,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
 public class ActionEventUtils {
-    protected static Logger LOGGER = Logger.getLogger(ActionEventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(ActionEventUtils.class);
 
     private static EventDao s_eventDao;
     private static AccountDao s_accountDao;

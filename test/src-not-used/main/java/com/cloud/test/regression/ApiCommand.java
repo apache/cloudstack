@@ -39,7 +39,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -48,7 +49,7 @@ import org.w3c.dom.NodeList;
 import com.cloud.test.utils.UtilsForTest;
 
 public class ApiCommand {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static enum CommandType {
         HTTP, MYSQL, SCRIPT;

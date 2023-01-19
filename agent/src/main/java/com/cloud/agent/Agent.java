@@ -53,8 +53,8 @@ import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -86,6 +86,7 @@ import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * @config
@@ -101,7 +102,7 @@ import com.cloud.utils.script.Script;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public enum ExitStatus {
         Normal(0), // Normal status = 0.
@@ -595,7 +596,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 Answer answer;
                 try {
                     if (cmd.getContextParam("logid") != null) {
-                        MDC.put("logcontextid", cmd.getContextParam("logid"));
+                        ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
                     if (logger.isDebugEnabled()) {
                         if (!requestLogged) // ensures request is logged only once per method call
@@ -872,7 +873,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             final Request req = (Request)obj;
             final Command command = req.getCommand();
             if (command.getContextParam("logid") != null) {
-                MDC.put("logcontextid", command.getContextParam("logid"));
+                ThreadContext.put("logcontextid", command.getContextParam("logid"));
             }
             Answer answer = null;
             _inProgress.incrementAndGet();

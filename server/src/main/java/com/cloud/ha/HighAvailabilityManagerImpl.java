@@ -35,7 +35,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.log4j.NDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -78,6 +77,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
@@ -983,14 +983,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                     }
                 }
 
-                NDC.push("work-" + work.getId());
+                ThreadContext.push("work-" + work.getId());
                 logger.info("Processing work " + work);
                 processWork(work);
             } catch (final Throwable th) {
                 logger.error("Caught this throwable, ", th);
             } finally {
                 if (work != null) {
-                    NDC.pop();
+                    ThreadContext.pop();
                 }
             }
         }

@@ -38,11 +38,12 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.mail.EmailConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SMTPMailSender {
 
-    protected Logger logger = Logger.getLogger(SMTPMailSender.class);
+    protected Logger logger = LogManager.getLogger(SMTPMailSender.class);
 
     protected Session session = null;
     protected SMTPSessionProperties sessionProps;

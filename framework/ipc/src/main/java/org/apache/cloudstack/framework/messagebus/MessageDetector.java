@@ -18,10 +18,11 @@
  */
 package org.apache.cloudstack.framework.messagebus;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class MessageDetector implements MessageSubscriber {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private MessageBus _messageBus;
     private String[] _subjects;

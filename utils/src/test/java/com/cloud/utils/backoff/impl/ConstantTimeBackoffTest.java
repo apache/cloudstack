@@ -21,12 +21,13 @@ package com.cloud.utils.backoff.impl;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class ConstantTimeBackoffTest {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Test
     public void waitBeforeRetryWithInterrupt() throws InterruptedException {

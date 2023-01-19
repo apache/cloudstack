@@ -29,11 +29,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class FtpTemplateUploader implements TemplateUploader {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     public TemplateUploader.Status status = TemplateUploader.Status.NOT_STARTED;
     public String errorString = "";
     public long totalBytes = 0;

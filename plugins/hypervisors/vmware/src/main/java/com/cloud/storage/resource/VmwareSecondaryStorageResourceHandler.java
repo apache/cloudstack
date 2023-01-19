@@ -20,8 +20,8 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -50,9 +50,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
+import org.apache.logging.log4j.ThreadContext;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final PremiumSecondaryStorageResource _resource;
     private final VmwareStorageManager _storageMgr;
@@ -94,7 +95,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
         try {
             Answer answer;
-            NDC.push(getCommandLogTitle(cmd));
+            ThreadContext.push(getCommandLogTitle(cmd));
             logCommand(cmd);
 
             if (cmd instanceof PrimaryStorageDownloadCommand) {
@@ -138,7 +139,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             if (logger.isDebugEnabled())
                 logger.debug("Done executing " + _gson.toJson(cmd));
             recycleServiceContext();
-            NDC.pop();
+            ThreadContext.pop();
         }
     }
 

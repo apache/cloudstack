@@ -36,7 +36,8 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -50,7 +51,7 @@ import com.cloud.user.UserAccountVO;
  *
  */
 public class RegionsApiUtil {
-    protected static Logger LOGGER = Logger.getLogger(RegionsApiUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(RegionsApiUtil.class);
 
     /**
      * Makes an api call using region service end_point, api command and params

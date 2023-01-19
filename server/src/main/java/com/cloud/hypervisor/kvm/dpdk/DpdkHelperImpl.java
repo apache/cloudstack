@@ -31,7 +31,8 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -47,7 +48,7 @@ public class DpdkHelperImpl implements DpdkHelper {
     @Inject
     private UserVmDetailsDao userVmDetailsDao;
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private ServiceOffering getServiceOfferingFromVMProfile(VirtualMachineProfile virtualMachineProfile) {
         ServiceOffering offering = virtualMachineProfile.getServiceOffering();

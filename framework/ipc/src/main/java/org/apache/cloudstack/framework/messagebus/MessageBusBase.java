@@ -26,7 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 
@@ -41,7 +42,7 @@ public class MessageBusBase implements MessageBus {
     private final SubscriptionNode _subscriberRoot;
     private MessageSerializer _messageSerializer;
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public MessageBusBase() {
         _gate = new Gate();

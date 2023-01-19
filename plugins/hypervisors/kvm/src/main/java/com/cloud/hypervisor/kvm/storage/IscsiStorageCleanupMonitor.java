@@ -20,7 +20,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -33,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 public class IscsiStorageCleanupMonitor implements Runnable{
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int CLEANUP_INTERVAL_SEC = 60; // check every X seconds
     private static final String ISCSI_PATH_PREFIX = "/dev/disk/by-path";
     private static final String KEYWORD_ISCSI = "iscsi";

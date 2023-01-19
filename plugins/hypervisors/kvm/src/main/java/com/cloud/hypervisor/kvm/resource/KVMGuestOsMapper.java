@@ -19,10 +19,11 @@ package com.cloud.hypervisor.kvm.resource;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class KVMGuestOsMapper {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static Map<String, String> s_mapper = new HashMap<String, String>();
     static {
         s_mapper.put("CentOS 4.5 (32-bit)", "CentOS 4.5");

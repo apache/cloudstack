@@ -50,7 +50,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.MDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -120,6 +119,7 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -393,7 +393,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 cmd.setContextParam("job", "job-" + job.getId());
             }
         }
-        String logcontextid = (String) MDC.get("logcontextid");
+        String logcontextid = ThreadContext.get("logcontextid");
         if (StringUtils.isNotEmpty(logcontextid)) {
             cmd.setContextParam("logid", logcontextid);
         }

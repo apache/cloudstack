@@ -29,7 +29,8 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.aop.framework.Advised;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -49,7 +50,7 @@ import com.cloud.utils.mgmt.ManagementBean;
  */
 @SuppressWarnings("unchecked")
 public class ComponentContext implements ApplicationContextAware {
-    protected static Logger LOGGER = Logger.getLogger(ComponentContext.class);
+    protected static Logger LOGGER = LogManager.getLogger(ComponentContext.class);
 
     private static ApplicationContext s_appContext;
     private static Map<Class<?>, ApplicationContext> s_appContextDelegates;

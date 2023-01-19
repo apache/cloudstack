@@ -41,7 +41,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -57,7 +58,7 @@ import java.util.UUID;
 
 public class DateraUtil {
 
-    protected static Logger LOGGER = Logger.getLogger(DateraUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(DateraUtil.class);
     private static final String API_VERSION = "v2";
 
     public static final String PROVIDER_NAME = "Datera";

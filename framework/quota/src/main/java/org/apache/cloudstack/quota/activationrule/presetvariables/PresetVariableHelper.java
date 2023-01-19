@@ -44,7 +44,8 @@ import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -95,7 +96,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class PresetVariableHelper {
-    protected Logger logger = Logger.getLogger(PresetVariableHelper.class);
+    protected Logger logger = LogManager.getLogger(PresetVariableHelper.class);
 
     @Inject
     AccountDao accountDao;

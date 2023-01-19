@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.MDC;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -37,6 +36,7 @@ import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.resource.ServerResource;
+import org.apache.logging.log4j.ThreadContext;
 
 public class DirectAgentAttache extends AgentAttache {
 
@@ -176,7 +176,7 @@ public class DirectAgentAttache extends AgentAttache {
                     }
 
                     if (cmd.getContextParam("logid") != null) {
-                        MDC.put("logcontextid", cmd.getContextParam("logid"));
+                        ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
                     if (logger.isDebugEnabled()) {
                         logger.debug("Ping from " + _id + "(" + _name + ")");
@@ -244,7 +244,7 @@ public class DirectAgentAttache extends AgentAttache {
                     Answer answer = null;
                     Command currentCmd = cmds[i];
                     if (currentCmd.getContextParam("logid") != null) {
-                        MDC.put("logcontextid", currentCmd.getContextParam("logid"));
+                        ThreadContext.put("logcontextid", currentCmd.getContextParam("logid"));
                     }
                     try {
                         if (resource != null) {
@@ -306,7 +306,7 @@ public class DirectAgentAttache extends AgentAttache {
                     Answer answer = null;
                     Command currentCmd = cmds[i];
                     if (currentCmd.getContextParam("logid") != null) {
-                        MDC.put("logcontextid", currentCmd.getContextParam("logid"));
+                        ThreadContext.put("logcontextid", currentCmd.getContextParam("logid"));
                     }
                     try {
                         if (resource != null) {

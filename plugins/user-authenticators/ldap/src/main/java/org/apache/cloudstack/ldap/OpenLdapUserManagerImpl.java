@@ -36,10 +36,11 @@ import javax.naming.ldap.PagedResultsResponseControl;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class OpenLdapUserManagerImpl implements LdapUserManager {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     protected LdapConfiguration _ldapConfiguration;

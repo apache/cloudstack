@@ -22,7 +22,8 @@ import groovy.lang.GroovyObject;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.io.File;
@@ -34,7 +35,7 @@ public class LibvirtKvmAgentHook {
     private final GroovyScriptEngine gse;
     private final Binding binding = new Binding();
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public LibvirtKvmAgentHook(String path, String script, String method) throws IOException {
         this.script = script;

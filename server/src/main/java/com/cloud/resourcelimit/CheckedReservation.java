@@ -27,12 +27,13 @@ import org.apache.cloudstack.user.ResourceReservation;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 
 
 public class CheckedReservation  implements AutoCloseable, ResourceReservation {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final int TRY_TO_GET_LOCK_TIME = 120;
     private GlobalLock quotaLimitLock;

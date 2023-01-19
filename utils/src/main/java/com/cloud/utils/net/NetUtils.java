@@ -50,7 +50,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.commons.validator.routines.RegexValidator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
@@ -61,7 +62,7 @@ import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
-    protected static Logger LOGGER = Logger.getLogger(NetUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(NetUtils.class);
 
     private static final int MAX_CIDR = 32;
     private static final int RFC_3021_31_BIT_CIDR = 31;

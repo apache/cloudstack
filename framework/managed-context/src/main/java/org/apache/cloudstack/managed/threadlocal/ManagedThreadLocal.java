@@ -21,7 +21,8 @@ package org.apache.cloudstack.managed.threadlocal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.managed.context.ManagedContextUtils;
 
@@ -35,7 +36,7 @@ public class ManagedThreadLocal<T> extends ThreadLocal<T> {
     };
 
     private static boolean s_validateContext = false;
-    protected static Logger LOGGER = Logger.getLogger(ManagedThreadLocal.class);
+    protected static Logger LOGGER = LogManager.getLogger(ManagedThreadLocal.class);
 
     @SuppressWarnings("unchecked")
     @Override

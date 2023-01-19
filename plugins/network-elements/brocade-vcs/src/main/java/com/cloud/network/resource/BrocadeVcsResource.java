@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -50,7 +51,7 @@ import com.cloud.network.schema.showvcs.VcsNodeInfo;
 import com.cloud.resource.ServerResource;
 
 public class BrocadeVcsResource implements ServerResource {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String _name;
     private String _guid;

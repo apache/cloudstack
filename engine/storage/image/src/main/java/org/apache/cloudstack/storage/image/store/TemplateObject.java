@@ -24,7 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.user.UserData;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -59,7 +60,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @SuppressWarnings("serial")
 public class TemplateObject implements TemplateInfo {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private VMTemplateVO imageVO;
     private DataStore dataStore;
     private String url;

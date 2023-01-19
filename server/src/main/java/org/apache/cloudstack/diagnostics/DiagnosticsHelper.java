@@ -30,12 +30,13 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.script.Script2;
 
 public class DiagnosticsHelper {
-    protected static Logger LOGGER = Logger.getLogger(DiagnosticsHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(DiagnosticsHelper.class);
 
     public static void setDirFilePermissions(Path path) throws java.io.IOException {
         Set<PosixFilePermission> perms = Files.readAttributes(path, PosixFileAttributes.class).permissions();

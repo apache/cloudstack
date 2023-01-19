@@ -20,11 +20,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class PasswordPolicyImpl implements PasswordPolicy, Configurable {
 
-    private Logger logger = Logger.getLogger(PasswordPolicyImpl.class);
+    private Logger logger = LogManager.getLogger(PasswordPolicyImpl.class);
 
     public void verifyIfPasswordCompliesWithPasswordPolicies(String password, String username, Long domainId) {
         int numberOfSpecialCharactersInPassword = 0;

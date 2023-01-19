@@ -31,7 +31,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.network.opendaylight.agent.commands.AddHypervisorCommand;
 import org.apache.cloudstack.network.opendaylight.agent.commands.ConfigureNetworkCommand;
@@ -71,7 +72,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 
 public class OpenDaylightControllerResource implements ServerResource {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private Map<String, Object> configuration = new HashMap<String, Object>();
 
     private URL controllerUrl;

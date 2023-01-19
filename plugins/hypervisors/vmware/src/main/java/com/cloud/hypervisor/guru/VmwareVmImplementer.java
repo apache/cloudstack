@@ -48,7 +48,8 @@ import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ import java.util.List;
 import java.util.Map;
 
 class VmwareVmImplementer {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     DomainRouterDao domainRouterDao;

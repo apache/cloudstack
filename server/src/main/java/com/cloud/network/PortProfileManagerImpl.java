@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.PortProfileDaoImpl;
@@ -29,7 +30,7 @@ public class PortProfileManagerImpl {
 
     private PortProfileDaoImpl _portProfileDao;
 
-    private static final org.apache.log4j.Logger logger = Logger.getLogger(PortProfileManagerImpl.class);
+    protected static Logger logger = LogManager.getLogger(PortProfileManagerImpl.class);
 
     public PortProfileManagerImpl() {
         _portProfileDao = new PortProfileDaoImpl();

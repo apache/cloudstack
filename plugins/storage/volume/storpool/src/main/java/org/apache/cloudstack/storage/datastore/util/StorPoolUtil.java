@@ -44,7 +44,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -65,7 +66,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class StorPoolUtil {
-    protected static Logger LOGGER = Logger.getLogger(StorPoolUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(StorPoolUtil.class);
 
     private static final File spLogFile = new File("/var/log/cloudstack/management/storpool-plugin.log");
     private static PrintWriter spLogPrinterWriter = spLogFileInitialize();

@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class DbUpgradeAbstractImpl implements DbUpgrade {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 }

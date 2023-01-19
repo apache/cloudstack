@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -39,7 +40,7 @@ import com.cloud.utils.Pair;
 
 @Component
 public class LoadBalancerUsageParser {
-    protected static Logger LOGGER = Logger.getLogger(LoadBalancerUsageParser.class);
+    protected static Logger LOGGER = LogManager.getLogger(LoadBalancerUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageLoadBalancerPolicyDao s_usageLoadBalancerPolicyDao;

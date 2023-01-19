@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.upgrade;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,7 +26,7 @@ import java.sql.SQLException;
 
 public class RolePermissionChecker {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final String checkAnnotationRulesPermissionPreparedStatement =
             "SELECT permission FROM `cloud`.`role_permissions` WHERE role_id = ? AND rule = ?";

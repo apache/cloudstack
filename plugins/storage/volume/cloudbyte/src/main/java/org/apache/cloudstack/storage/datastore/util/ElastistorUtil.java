@@ -28,7 +28,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 import org.apache.http.auth.InvalidCredentialsException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientResponse;
 
@@ -55,7 +56,7 @@ import java.util.List;
 
 public class ElastistorUtil {
 
-    protected static Logger LOGGER = Logger.getLogger(ElastistorUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(ElastistorUtil.class);
 
     private static ConfigurationDao configurationDao;
 

@@ -21,7 +21,8 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import streamer.BaseElement;
 import streamer.ByteBuffer;
@@ -29,7 +30,7 @@ import streamer.Element;
 import streamer.Link;
 
 public class BufferedImagePixelsAdapter extends BaseElement {
-    protected static Logger LOGGER = Logger.getLogger(BufferedImagePixelsAdapter.class);
+    protected static Logger LOGGER = LogManager.getLogger(BufferedImagePixelsAdapter.class);
 
     public static final String TARGET_X = "x";
     public static final String TARGET_Y = "y";

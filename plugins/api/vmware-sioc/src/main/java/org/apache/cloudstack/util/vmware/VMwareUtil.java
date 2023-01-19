@@ -35,7 +35,8 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceException;
 
 import org.apache.cloudstack.util.LoginInfo;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.vmware.vim25.DynamicProperty;
@@ -71,7 +72,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualSCSIController;
 
 public class VMwareUtil {
-    protected static Logger LOGGER = Logger.getLogger(VMwareUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(VMwareUtil.class);
 
     private VMwareUtil() {}
 

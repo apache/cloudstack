@@ -17,7 +17,7 @@
 package com.cloud.usage;
 
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;

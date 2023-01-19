@@ -25,7 +25,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
@@ -53,7 +54,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class ElastistorPrimaryDataStoreProvider implements PrimaryDataStoreProvider {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // these classes will be injected by spring
     private ElastistorPrimaryDataStoreLifeCycle lifecycle;

@@ -24,7 +24,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import java.io.BufferedReader;
@@ -46,7 +47,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Script implements Callable<String> {
-    protected static Logger LOGGER = Logger.getLogger(Script.class);
+    protected static Logger LOGGER = LogManager.getLogger(Script.class);
 
     private final Logger _logger;
 

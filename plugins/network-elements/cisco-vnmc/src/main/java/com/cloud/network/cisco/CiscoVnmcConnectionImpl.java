@@ -30,7 +30,8 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -46,7 +47,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     private final String _password;
     private String _cookie;
 
-    protected static Logger LOGGER = Logger.getLogger(CiscoVnmcConnectionImpl.class);
+    protected static Logger LOGGER = LogManager.getLogger(CiscoVnmcConnectionImpl.class);
 
     private enum VnmcXml {
         LOGGERIN("login.xml", "mgmt-controller"),

@@ -30,12 +30,13 @@ import java.nio.charset.Charset;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
 
 public final class QCOW2Utils {
-    protected static Logger LOGGER = Logger.getLogger(QCOW2Utils.class);
+    protected static Logger LOGGER = LogManager.getLogger(QCOW2Utils.class);
 
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
     private static final int VIRTUALSIZE_HEADER_LENGTH = 8;

@@ -47,7 +47,8 @@ import org.apache.cloudstack.storage.datastore.util.DateraObject;
 import org.apache.cloudstack.storage.datastore.util.DateraUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -85,7 +86,7 @@ import com.google.common.primitives.Ints;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int s_lockTimeInSeconds = 300;
     private static final int s_lowestHypervisorSnapshotReserve = 10;
 

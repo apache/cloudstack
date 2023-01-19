@@ -25,7 +25,8 @@ import java.util.Random;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.log4j.NDC;
 
 import com.trilead.ssh2.ChannelCondition;
@@ -36,7 +37,7 @@ import com.trilead.ssh2.Session;
 public class TestClient {
     private static long sleepTime = 180000L; // default 0
     private static boolean cleanUp = true;
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static boolean repeat = true;
     private static int numOfUsers = 0;
     private static String[] users = null;

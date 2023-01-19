@@ -28,7 +28,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Level;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
@@ -58,6 +57,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 
 public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModifierActionWorker {
 

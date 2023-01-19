@@ -28,7 +28,8 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -80,7 +81,7 @@ import com.solidfire.jsvcgen.javautil.Optional;
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 
 public class SolidFireUtil {
-    protected static Logger LOGGER = Logger.getLogger(SolidFireUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(SolidFireUtil.class);
 
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";

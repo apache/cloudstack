@@ -22,8 +22,10 @@ package com.cloud.agent.transport;
 import java.nio.ByteBuffer;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.mockito.Mockito;
 
@@ -58,7 +60,7 @@ import com.cloud.template.VirtualMachineTemplate;
  */
 
 public class RequestTest extends TestCase {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public void testSerDeser() {
         logger.info("Testing serializing and deserializing works as expected");
@@ -74,10 +76,10 @@ public class RequestTest extends TestCase {
         Request sreq = new Request(2, 3, new Command[] {cmd1, cmd2, cmd3}, true, true);
         sreq.setSequence(892403717);
 
-        Logger logger = Logger.getLogger(GsonHelper.class);
+        Logger logger = LogManager.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        Configurator.setLevel(logger, Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -85,7 +87,7 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.TRACE);
+        Configurator.setLevel(logger, Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
@@ -93,11 +95,11 @@ public class RequestTest extends TestCase {
         assert (!log.contains("username"));
         assert (!log.contains("password"));
 
-        logger.setLevel(Level.INFO);
+        Configurator.setLevel(logger, Level.INFO);
         log = sreq.log("Info", true, Level.INFO);
         assert (log == null);
 
-        logger.setLevel(level);
+        Configurator.setLevel(logger, level);
 
         byte[] bytes = sreq.getBytes();
 
@@ -217,22 +219,22 @@ public class RequestTest extends TestCase {
         GetHostStatsCommand cmd3 = new GetHostStatsCommand("hostguid", "hostname", 101);
         Request sreq = new Request(2, 3, new Command[] {cmd3}, true, true);
         sreq.setSequence(1);
-        Logger logger = Logger.getLogger(GsonHelper.class);
+        Logger logger = LogManager.getLogger(GsonHelper.class);
         Level level = logger.getLevel();
 
-        logger.setLevel(Level.DEBUG);
+        Configurator.setLevel(logger, Level.DEBUG);
         String log = sreq.log("Debug", true, Level.DEBUG);
         assert (log == null);
 
         log = sreq.log("Debug", false, Level.DEBUG);
         assert (log != null);
 
-        logger.setLevel(Level.TRACE);
+        Configurator.setLevel(logger, Level.TRACE);
         log = sreq.log("Trace", true, Level.TRACE);
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         logger.debug(log);
 
-        logger.setLevel(level);
+        Configurator.setLevel(logger, level);
     }
 
     protected void compareRequest(Request req1, Request req2) {

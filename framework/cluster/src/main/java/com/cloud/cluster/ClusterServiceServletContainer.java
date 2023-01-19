@@ -45,7 +45,8 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class ClusterServiceServletContainer {
 
@@ -70,7 +71,7 @@ public class ClusterServiceServletContainer {
 
     static class ListenerThread extends Thread {
 
-        private static Logger LOGGER = Logger.getLogger(ListenerThread.class);
+        private static Logger LOGGER = LogManager.getLogger(ListenerThread.class);
         private HttpService _httpService = null;
         private volatile ServerSocket _serverSocket = null;
         private HttpParams _params = null;

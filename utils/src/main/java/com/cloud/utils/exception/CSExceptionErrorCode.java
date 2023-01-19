@@ -21,7 +21,8 @@ package com.cloud.utils.exception;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * CSExceptionErrorCode lists the CloudStack error codes that correspond
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
 
 public class CSExceptionErrorCode {
 
-    protected static Logger LOGGER = Logger.getLogger(CSExceptionErrorCode.class);
+    protected static Logger LOGGER = LogManager.getLogger(CSExceptionErrorCode.class);
 
     // Declare a hashmap of CloudStack Error Codes for Exceptions.
     protected static final HashMap<String, Integer> ExceptionErrorCodeMap;

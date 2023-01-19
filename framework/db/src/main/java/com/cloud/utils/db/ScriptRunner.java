@@ -29,13 +29,14 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Tool to run database scripts
  */
 public class ScriptRunner {
-    private static Logger LOGGER = Logger.getLogger(ScriptRunner.class);
+    private static Logger LOGGER = LogManager.getLogger(ScriptRunner.class);
 
     private static final String DEFAULT_DELIMITER = ";";
 

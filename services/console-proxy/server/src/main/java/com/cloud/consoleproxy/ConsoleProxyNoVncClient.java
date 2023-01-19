@@ -17,7 +17,8 @@
 package com.cloud.consoleproxy;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.extensions.Frame;
 
@@ -31,7 +32,7 @@ import java.util.List;
 import com.cloud.consoleproxy.vnc.NoVncClient;
 
 public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static int nextClientId = 0;
 
     private NoVncClient client;

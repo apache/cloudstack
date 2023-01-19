@@ -20,14 +20,15 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
 public class SshTest {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static String host = "";
     public static String password = "password";
     public static String url = "http://google.com";

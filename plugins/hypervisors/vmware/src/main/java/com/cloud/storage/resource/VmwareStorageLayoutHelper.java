@@ -22,7 +22,8 @@ import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
@@ -37,7 +38,7 @@ import com.cloud.utils.Pair;
  *
  */
 public class VmwareStorageLayoutHelper implements Configurable {
-    protected static Logger LOGGER = Logger.getLogger(VmwareStorageLayoutHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareStorageLayoutHelper.class);
 
     static final ConfigKey<String> VsphereLinkedCloneExtensions = new ConfigKey<String>("Hidden", String.class,
             "vsphere.linked.clone.extensions", "delta.vmdk,sesparse.vmdk",

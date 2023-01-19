@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.lang3.StringUtils;
@@ -39,7 +40,7 @@ import com.cloud.utils.Pair;
 
 @Component
 public class VMInstanceUsageParser {
-    protected static Logger LOGGER = Logger.getLogger(VMInstanceUsageParser.class);
+    protected static Logger LOGGER = LogManager.getLogger(VMInstanceUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageVMInstanceDao s_usageInstanceDao;

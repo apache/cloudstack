@@ -22,7 +22,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.TimingOutCallback;
 import org.apache.xmlrpc.client.XmlRpcClient;
@@ -30,7 +31,7 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.client.XmlRpcClientRequestImpl;
 
 public class Connection extends XmlRpcClient {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
     private XmlRpcClient xmlClient;
     private String hostUser = null;

@@ -50,7 +50,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -62,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ParamProcessWorker implements DispatchWorker {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String inputFormatString = "yyyy-MM-dd";
     private static final String newInputFormatString = "yyyy-MM-dd HH:mm:ss";
     public static final DateFormat inputFormat = new SimpleDateFormat(inputFormatString);

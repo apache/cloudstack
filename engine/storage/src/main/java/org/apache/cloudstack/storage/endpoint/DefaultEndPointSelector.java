@@ -46,7 +46,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityManager;
@@ -69,7 +70,7 @@ import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     private HostDao hostDao;
     @Inject

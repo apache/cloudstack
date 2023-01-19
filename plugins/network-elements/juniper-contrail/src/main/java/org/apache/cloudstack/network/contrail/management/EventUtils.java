@@ -23,7 +23,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ import com.cloud.utils.component.ComponentMethodInterceptor;
 
 @Component
 public class EventUtils {
-    protected static Logger LOGGER = Logger.getLogger(EventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(EventUtils.class);
 
     protected static  EventBus s_eventBus = null;
 
@@ -82,7 +83,7 @@ public class EventUtils {
 
     public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
 
-    protected Logger LOGGER = Logger.getLogger(getClass());
+    protected Logger LOGGER = LogManager.getLogger(getClass());
 
         public EventInterceptor() {
 

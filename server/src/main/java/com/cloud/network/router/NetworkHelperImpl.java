@@ -35,7 +35,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.apache.cloudstack.utils.CloudStackVersion;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -112,7 +113,7 @@ import com.cloud.vm.dao.NicDao;
 
 public class NetworkHelperImpl implements NetworkHelper {
 
-    protected Logger logger = Logger.getLogger(NetworkHelperImpl.class);
+    protected Logger logger = LogManager.getLogger(NetworkHelperImpl.class);
 
     protected static Account s_systemAccount;
     protected static String s_vmInstanceName;

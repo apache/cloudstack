@@ -19,7 +19,8 @@
 
 package org.apache.cloudstack.utils.security;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.ssl.SSLContext;
 import java.security.NoSuchAlgorithmException;
@@ -29,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SSLUtils {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static String[] getSupportedProtocols(String[] protocols) {
         Set<String> set = new HashSet<String>();

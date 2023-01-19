@@ -24,7 +24,8 @@ import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HttpClientError;
 import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -87,7 +88,7 @@ import java.net.UnknownHostException;
 public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
 
     /** Log object for this class. */
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private SSLContext sslcontext = null;
 

@@ -19,7 +19,8 @@ package org.apache.cloudstack.hypervisor.xenserver;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -29,7 +30,7 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 public class ExtraConfigurationUtility {
-    protected static Logger LOGGER = Logger.getLogger(ExtraConfigurationUtility.class);
+    protected static Logger LOGGER = LogManager.getLogger(ExtraConfigurationUtility.class);
 
     public static void setExtraConfigurationToVm(Connection conn, VM.Record vmr, VM vm, Map<String, String> extraConfig) {
         Map<String, Object> recordMap = vmr.toMap();

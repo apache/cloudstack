@@ -30,7 +30,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 
@@ -162,7 +163,7 @@ public class NetscalerResource implements ServerResource {
     private String _publicIPNetmask;
     private String _publicIPVlan;
 
-    protected static Logger LOGGER = Logger.getLogger(NetscalerResource.class);
+    protected static Logger LOGGER = LogManager.getLogger(NetscalerResource.class);
     protected Gson _gson;
     private final String _objectNamePathSep = "-";
 

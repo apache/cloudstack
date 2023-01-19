@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -42,7 +43,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class StorageUsageParser {
-    protected static Logger LOGGER = Logger.getLogger(StorageUsageParser.class);
+    protected static Logger LOGGER = LogManager.getLogger(StorageUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageStorageDao s_usageStorageDao;

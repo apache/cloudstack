@@ -44,7 +44,8 @@ import com.vmware.pbm.PbmService;
 import com.vmware.pbm.PbmServiceInstanceContent;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Element;
 
 import com.vmware.vim25.DynamicProperty;
@@ -81,7 +82,7 @@ import com.vmware.vim25.WaitOptions;
  *
  */
 public class VmwareClient {
-    protected static Logger LOGGER = Logger.getLogger(VmwareClient.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareClient.class);
 
     private static class TrustAllTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
 

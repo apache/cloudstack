@@ -30,7 +30,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.util.LoginInfo;
 import org.apache.cloudstack.util.vmware.VMwareUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -63,7 +64,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 
 @Component
 public class SiocManagerImpl implements SiocManager {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int LOCK_TIME_IN_SECONDS = 3;
     private static final int ONE_GB_IN_BYTES = 1000000000;
     private static final int LOWEST_SHARES_PER_VIRTUAL_DISK = 2000; // We want this to be greater than 1,000, which is the VMware default value.

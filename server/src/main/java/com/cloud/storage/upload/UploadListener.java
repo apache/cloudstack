@@ -25,7 +25,6 @@ import java.util.Timer;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.log4j.Level;
 
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
@@ -60,7 +59,9 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.upload.UploadState.UploadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class UploadListener implements Listener {
 
@@ -93,7 +94,7 @@ public class UploadListener implements Listener {
         }
     }
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
 

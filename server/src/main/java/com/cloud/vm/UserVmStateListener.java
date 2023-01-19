@@ -27,7 +27,8 @@ import javax.inject.Inject;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.dao.UserVmDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -56,7 +57,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected UserVmDao _userVmDao;
     @Inject protected UserVmManager _userVmMgr;
     @Inject protected ConfigurationDao _configDao;
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected static EventBus s_eventBus = null;
 

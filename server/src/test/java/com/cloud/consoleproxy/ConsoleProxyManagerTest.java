@@ -26,7 +26,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +53,7 @@ import com.google.gson.JsonParseException;
 
 public class ConsoleProxyManagerTest {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Mock
     GlobalLock globalLockMock;

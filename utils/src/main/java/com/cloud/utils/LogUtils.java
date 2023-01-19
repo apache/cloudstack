@@ -20,17 +20,18 @@
 package com.cloud.utils;
 
 import java.io.File;
-import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.Configurator;
 
 public class LogUtils {
-    protected static Logger LOGGER = Logger.getLogger(LogUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(LogUtils.class);
 
     private static String configFileLocation = null;
 
@@ -39,13 +40,13 @@ public class LogUtils {
         File file = PropertiesUtil.findConfigFile(log4jConfigFileName);
         if (file != null) {
             configFileLocation = file.getAbsolutePath();
-            DOMConfigurator.configureAndWatch(configFileLocation);
+            Configurator.initialize(null, configFileLocation);
         } else {
             String nameWithoutExtension = log4jConfigFileName.substring(0, log4jConfigFileName.lastIndexOf('.'));
             file = PropertiesUtil.findConfigFile(nameWithoutExtension + ".properties");
             if (file != null) {
                 configFileLocation = file.getAbsolutePath();
-                DOMConfigurator.configureAndWatch(configFileLocation);
+                Configurator.initialize(null, configFileLocation);
             }
         }
         if (configFileLocation != null) {
@@ -54,21 +55,21 @@ public class LogUtils {
     }
     public static Set<String> getLogFileNames() {
         Set<String> fileNames = new HashSet<>();
-        Enumeration appenders = LOGGER.getRootLogger().getAllAppenders();
-        int appenderCount=0;
-        while (appenders.hasMoreElements()) {
+        org.apache.logging.log4j.core.Logger rootLogger = (org.apache.logging.log4j.core.Logger)LogManager.getRootLogger();
+        Map<String, Appender> appenderMap = rootLogger.getAppenders();
+        int appenderCount = 0;
+        for (Appender appender : appenderMap.values()){
             ++appenderCount;
-            Appender currAppender = (Appender) appenders.nextElement();
-            if (currAppender instanceof FileAppender) {
-                String fileName =((FileAppender) currAppender).getFile();
+            if (appender instanceof FileAppender) {
+                String fileName =((FileAppender) appender).getFileName();
                 fileNames.add(fileName);
-                LOGGER.debug(String.format("file for %s : %s", currAppender.getName(), fileName));
+                LOGGER.debug("File for {} : {}", appender.getName(), fileName);
             } else if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("not counting %s as a file.", currAppender.getName()));
+                LOGGER.trace("Not counting {} as a file.", appender.getName());
             }
         }
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("out of %d appenders, %d are log files", appenderCount, fileNames.size()));
+            LOGGER.trace("Out of {} appenders, {} are log files.", appenderCount, fileNames.size());
         }
         return fileNames;
     }

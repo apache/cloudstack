@@ -45,7 +45,8 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -77,7 +78,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class CertUtils {
 
-    protected static Logger LOGGER = Logger.getLogger(CertUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(CertUtils.class);
 
     public static KeyPair generateRandomKeyPair(final int keySize) throws NoSuchProviderException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());

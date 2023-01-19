@@ -37,7 +37,8 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
@@ -67,7 +68,7 @@ import com.cloud.vm.VirtualMachineManager;
 @Component("consoleServlet")
 public class ConsoleProxyServlet extends HttpServlet {
     private static final long serialVersionUID = -5515382620323808168L;
-    protected static Logger LOGGER = Logger.getLogger(ConsoleProxyServlet.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxyServlet.class);
     private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
 

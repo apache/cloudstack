@@ -43,7 +43,8 @@ import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
@@ -62,7 +63,7 @@ import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VimPortType;
 
 public class VmwareContext {
-    protected static Logger LOGGER = Logger.getLogger(VmwareContext.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareContext.class);
 
     private static final int MAX_CONNECT_RETRY = 5;
     private static final int CONNECT_RETRY_INTERVAL = 1000;

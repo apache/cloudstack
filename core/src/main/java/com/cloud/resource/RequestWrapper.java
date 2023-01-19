@@ -23,7 +23,8 @@ import java.text.MessageFormat;
 import java.util.Hashtable;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -39,7 +40,7 @@ public abstract class RequestWrapper {
         }
     }
 
-    protected Logger logger = Logger.getLogger(RequestWrapper.class);
+    protected Logger logger = LogManager.getLogger(RequestWrapper.class);
 
     @SuppressWarnings("rawtypes")
     protected Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>> resources = new Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>>();

@@ -34,7 +34,7 @@ import javax.mail.internet.MimeMessage;
 import junit.framework.TestCase;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.mail.EmailConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

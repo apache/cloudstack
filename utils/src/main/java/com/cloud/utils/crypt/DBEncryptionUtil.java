@@ -21,7 +21,8 @@ package com.cloud.utils.crypt;
 
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
@@ -30,7 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
 
-    protected static Logger LOGGER = Logger.getLogger(DBEncryptionUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(DBEncryptionUtil.class);
     private static StandardPBEStringEncryptor s_encryptor = null;
 
     public static String encrypt(String plain) {

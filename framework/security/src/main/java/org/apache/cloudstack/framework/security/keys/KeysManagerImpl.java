@@ -23,7 +23,8 @@ import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -50,7 +51,7 @@ import com.cloud.utils.db.SearchCriteria;
  *
  */
 public class KeysManagerImpl implements KeysManager, Configurable {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     ConfigurationDao _configDao;

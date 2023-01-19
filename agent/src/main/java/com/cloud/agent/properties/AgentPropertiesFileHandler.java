@@ -22,7 +22,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * This class provides a facility to read the agent's properties file and get
@@ -31,7 +32,7 @@ import org.apache.log4j.Logger;
  */
 public class AgentPropertiesFileHandler {
 
-    protected static Logger LOGGER = Logger.getLogger(AgentPropertiesFileHandler.class);
+    protected static Logger LOGGER = LogManager.getLogger(AgentPropertiesFileHandler.class);
 
     /**
      * This method reads the property in the agent.properties file.

@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -41,7 +42,7 @@ import com.cloud.storage.ScopeType;
 
 public class SwiftImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject

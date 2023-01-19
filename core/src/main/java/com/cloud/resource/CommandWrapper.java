@@ -21,10 +21,11 @@ package com.cloud.resource;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class CommandWrapper<T extends Command, A extends Answer, R extends ServerResource> {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     /**
      * @param T is the command to be used.

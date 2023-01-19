@@ -37,7 +37,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import com.cloud.network.NetworkModel;
@@ -49,7 +50,7 @@ import com.google.gson.JsonObject;
 
 public class ConfigDriveBuilder {
 
-    protected static Logger LOGGER = Logger.getLogger(ConfigDriveBuilder.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConfigDriveBuilder.class);
 
     /**
      * Writes a content {@link String} to a file that is going to be created in a folder. We will not append to the file if it already exists. Therefore, its content will be overwritten.

@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.storage.upload;
 
-import org.apache.log4j.Level;
 
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import org.apache.logging.log4j.Level;
 
 public abstract class UploadActiveState extends UploadState {
 

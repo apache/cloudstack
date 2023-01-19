@@ -48,7 +48,8 @@ import javax.net.ssl.TrustManagerFactory;
 import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -56,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 /**
  */
 public class Link {
-    protected static Logger LOGGER = Logger.getLogger(Link.class);
+    protected static Logger LOGGER = LogManager.getLogger(Link.class);
 
     private final InetSocketAddress _addr;
     private final NioConnection _connection;

@@ -37,7 +37,8 @@ import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Upload;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -94,7 +95,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
-    protected Logger logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
+    protected Logger logger = LogManager.getLogger(BaseImageStoreDriverImpl.class);
 
     @Inject
     protected VMTemplateDao _templateDao;

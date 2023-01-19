@@ -27,13 +27,14 @@ import java.util.Map;
 
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.certificate.dao.CrlDao;
 import org.apache.commons.lang3.StringUtils;
 
 public final class RootCACustomTrustManager implements X509TrustManager {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String clientAddress = "Unknown";
     private boolean authStrictness = true;

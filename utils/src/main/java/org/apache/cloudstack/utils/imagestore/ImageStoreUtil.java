@@ -21,10 +21,11 @@ package org.apache.cloudstack.utils.imagestore;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class ImageStoreUtil {
-    protected static Logger LOGGER = Logger.getLogger(ImageStoreUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(ImageStoreUtil.class);
 
     public static String generatePostUploadUrl(String ssvmUrlDomain, String ipAddress, String uuid, String protocol) {
         String hostname = ipAddress;

@@ -29,7 +29,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Formatter;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * This class retrieves the (first) MAC address for the machine is it is loaded on and stores it statically for retrieval.
@@ -37,7 +38,7 @@ import org.apache.log4j.Logger;
  * copied fnd addpeted rom the public domain utility from John Burkard.
  **/
 public class MacAddress {
-    protected static Logger LOGGER = Logger.getLogger(MacAddress.class);
+    protected static Logger LOGGER = LogManager.getLogger(MacAddress.class);
     private long _addr = 0;
 
     protected MacAddress() {

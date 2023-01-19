@@ -33,7 +33,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,7 +75,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HighAvailabilityManagerImplTest {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     @Mock
     HighAvailabilityDao _haDao;
     @Mock
@@ -184,13 +185,13 @@ public class HighAvailabilityManagerImplTest {
         List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>();
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.lenient().when(vm1.getHostId()).thenReturn(1l);
-        Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
+        //Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.isHaEnabled()).thenReturn(true);
         vms.add(vm1);
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getHostId()).thenReturn(1l);
-        Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
+        //Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
         Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
         Mockito.when(vm2.isHaEnabled()).thenReturn(true);
         vms.add(vm2);

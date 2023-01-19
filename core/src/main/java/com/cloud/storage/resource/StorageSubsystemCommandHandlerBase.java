@@ -23,7 +23,8 @@ import com.cloud.serializer.GsonHelper;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -48,7 +49,7 @@ import com.cloud.storage.Volume;
 import com.google.gson.Gson;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     protected static final Gson s_gogger = GsonHelper.getGsonLogger();
     protected StorageProcessor processor;
 

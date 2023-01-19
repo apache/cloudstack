@@ -21,7 +21,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
@@ -30,7 +31,7 @@ import com.trilead.ssh2.Session;
 public class WgetTest {
 
     public static final int MAX_RETRY_LINUX = 1;
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static String host = "";
     public static String password = "rs-ccb35ea5";
 

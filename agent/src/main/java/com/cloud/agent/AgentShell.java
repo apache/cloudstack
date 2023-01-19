@@ -34,8 +34,9 @@ import org.apache.commons.daemon.DaemonInitException;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.naming.ConfigurationException;
 import java.io.File;
@@ -53,7 +54,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 public class AgentShell implements IAgentShell, Daemon {
-    protected static Logger LOGGER = Logger.getLogger(AgentShell.class);
+    protected static Logger LOGGER = LogManager.getLogger(AgentShell.class);
 
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
@@ -369,7 +370,7 @@ public class AgentShell implements IAgentShell, Daemon {
         }
 
         if (null != file) {
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+            Configurator.initialize(null, file.getAbsolutePath());
 
             LOGGER.info("Agent started");
         } else {

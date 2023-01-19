@@ -19,7 +19,8 @@ package org.apache.cloudstack.outofbandmanagement;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
@@ -27,7 +28,7 @@ import com.cloud.event.EventVO;
 import com.cloud.host.Host;
 
 public class PowerOperationTask implements Runnable {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     final private OutOfBandManagementService service;
     final private Host host;
