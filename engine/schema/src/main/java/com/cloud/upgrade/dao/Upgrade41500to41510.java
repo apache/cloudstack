@@ -30,7 +30,6 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate {

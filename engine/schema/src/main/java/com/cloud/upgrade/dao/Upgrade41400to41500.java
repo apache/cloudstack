@@ -29,7 +29,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41400to41500 implements DbUpgrade {
