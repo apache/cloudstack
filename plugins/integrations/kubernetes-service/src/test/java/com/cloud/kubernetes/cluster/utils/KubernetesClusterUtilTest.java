@@ -74,7 +74,7 @@ public class KubernetesClusterUtilTest {
 
         mockSshHelperExecuteAndTestVersionMatch(true, v1240WorkerNodeOutput, true, false);
 
-        mockSshHelperExecuteAndTestVersionMatch(false, v1240WorkerNodeOutput, false, true);
+        mockSshHelperExecuteAndTestVersionMatch(false, v1240WorkerNodeOutput, false, false);
 
         mockSshHelperExecuteAndTestVersionMatch(true, v1233WorkerNodeOutput, false, false);
 
