@@ -36,7 +36,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41500to41510.class);
-    private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -66,6 +65,7 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        // nothing to do for this upgrade
     }
 
     @Override

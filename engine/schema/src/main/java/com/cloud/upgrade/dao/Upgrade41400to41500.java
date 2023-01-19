@@ -35,7 +35,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class Upgrade41400to41500 implements DbUpgrade {
 
     final static Logger LOG = Logger.getLogger(Upgrade41400to41500.class);
-    private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     @Override
     public String[] getUpgradableVersionRange() {
