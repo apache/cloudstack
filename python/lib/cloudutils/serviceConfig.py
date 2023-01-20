@@ -657,8 +657,18 @@ class libvirtConfigSUSE(serviceCfgBase):
             configureLibvirtConfig(self.syscfg.env.secure, self)
 
             if os.path.exists("/usr/lib/systemd/system/libvirtd.socket"):
-                bash("/bin/systemctl mask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket");
-                bash("/bin/systemctl mask virtqemud.socket virtqemud-ro.socket virtqemud-admin.socket virtqemud virtnetworkd virtstoraged");
+                bash("/bin/systemctl mask \
+                libvirtd.socket \
+                libvirtd-ro.socket \
+                libvirtd-admin.socket \
+                libvirtd-tls.socket \
+                libvirtd-tcp.socket \
+                virtqemud.socket \
+                virtqemud-ro.socket \
+                virtqemud-admin.socket \
+                virtqemud \
+                virtnetworkd \
+                virtstoraged");
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
