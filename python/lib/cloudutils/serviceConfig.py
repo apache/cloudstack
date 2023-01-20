@@ -708,8 +708,18 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo = configFileOps("/etc/default/libvirtd", self)
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
-                bash("/bin/systemctl mask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket");
-                bash("/bin/systemctl mask virtqemud.socket virtqemud-ro.socket virtqemud-admin.socket virtqemud virtnetworkd virtstoraged");
+                bash("/bin/systemctl mask \
+                libvirtd.socket \
+                libvirtd-ro.socket \
+                libvirtd-admin.socket \
+                libvirtd-tls.socket \
+                libvirtd-tcp.socket \
+                virtqemud.socket \
+                virtqemud-ro.socket \
+                virtqemud-admin.socket \
+                virtqemud \
+                virtnetworkd \
+                virtstoraged");
 
     def config(self):
         try:
