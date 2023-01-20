@@ -51,6 +51,7 @@ import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.FileUtil;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -2431,7 +2432,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         scsiUnitNumber++;
                     }
 
-                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
+                    Long maxIops = volumeTO.getIopsWriteRate() + volumeTO.getIopsReadRate();
+                    VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1, maxIops);
+                    s_logger.debug(LogUtils.logGsonWithoutException("The following definitions will be used to start the VM: virtual device [%s], volume [%s].", device, volumeTO));
 
                     diskStoragePolicyId = volumeTO.getvSphereStoragePolicyId();
                     if (StringUtils.isNotEmpty(diskStoragePolicyId)) {

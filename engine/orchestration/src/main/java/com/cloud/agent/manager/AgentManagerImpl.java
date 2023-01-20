@@ -655,7 +655,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         } catch (final ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + host.getResource(), e);
         } catch (final InstantiationException e) {
-            s_logger.warn("Unablet to instantiate class " + host.getResource(), e);
+            s_logger.warn("Unable to instantiate class " + host.getResource(), e);
         } catch (final IllegalAccessException e) {
             s_logger.warn("Illegal access " + host.getResource(), e);
         } catch (final SecurityException e) {
@@ -1403,7 +1403,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
-                        final String message = String.format("Exception occurred when executing taks! Error '%s'", e.getMessage());
+                        final String message = String.format("Exception occurred when executing tasks! Error '%s'", e.getMessage());
                         s_logger.error(message);
                         throw new TaskExecutionException(message, e);
                     }
@@ -1464,8 +1464,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
             } catch (final NoTransitionException e1) {
-                s_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName() + ", mangement server id is " + msId);
-                throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId + "," + e1.getMessage());
+                s_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName() + ", management server id is " + msId);
+                throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", management server id is " + msId + "," + e1.getMessage());
             }
         } finally {
             _agentStatusLock.unlock();

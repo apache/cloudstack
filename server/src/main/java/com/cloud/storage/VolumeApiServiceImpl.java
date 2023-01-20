@@ -329,7 +329,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
 
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
-            "Check the url for a volume before downloading it from the management server. Set to false when you managment has no internet access.", true);
+            "Check the url for a volume before downloading it from the management server. Set to false when your management has no internet access.", true);
 
     public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
             "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
@@ -724,12 +724,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (size == null) {
                     throw new InvalidParameterValueException("This disk offering requires a custom size specified");
                 }
-                Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-                Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
-
-                if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
-                    throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" + customDiskOfferingMinSize);
-                }
+                validateCustomDiskOfferingSizeRange(sizeInGB);
             }
 
             if (!diskOffering.isCustomized() && size != null) {
@@ -884,6 +879,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
+    }
+
+    @Override
+    public void validateCustomDiskOfferingSizeRange(Long sizeInGB) {
+        Long customDiskOfferingMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
+        Long customDiskOfferingMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
+
+        if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
+            throw new InvalidParameterValueException(String.format("Volume size: %s GB is out of allowed range. Min: %s. Max: %s", sizeInGB, customDiskOfferingMinSize, customDiskOfferingMaxSize));
+        }
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
@@ -1075,6 +1080,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw new InvalidParameterValueException(String.format("Resize of volume %s is not allowed, since disk size is strictly fixed as per the disk offering", volume.getUuid()));
                 }
 
+                if (diskOffering.isCustomized()) {
+                    validateCustomDiskOfferingSizeRange(newSize);
+                }
+
                 if (isNotPossibleToResize(volume, diskOffering)) {
                     throw new InvalidParameterValueException(
                             "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
@@ -1157,6 +1166,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (newSize == null) {
                     throw new InvalidParameterValueException("The new disk offering requires that a size be specified.");
                 }
+
+                validateCustomDiskOfferingSizeRange(newSize);
 
                 // convert from GiB to bytes
                 newSize = newSize << 30;

@@ -45,6 +45,7 @@
   <bean id="accountJoinDaoImpl" class="com.cloud.api.query.dao.AccountJoinDaoImpl" />
   <bean id="accountVlanMapDaoImpl" class="com.cloud.dc.dao.AccountVlanMapDaoImpl" />
   <bean id="alertDaoImpl" class="com.cloud.alert.dao.AlertDaoImpl" />
+  <bean id="consoleSessionDaoImpl" class="com.cloud.vm.dao.ConsoleSessionDaoImpl" />
   <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
   <bean id="autoScalePolicyConditionMapDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyConditionMapDaoImpl" />
   <bean id="autoScalePolicyDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyDaoImpl" />
