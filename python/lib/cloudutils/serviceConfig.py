@@ -618,17 +618,19 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.save()
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
                 bash("/bin/systemctl mask \
-                libvirtd.socket \
-                libvirtd-ro.socket \
-                libvirtd-admin.socket \
-                libvirtd-tls.socket \
-                libvirtd-tcp.socket \
-                virtqemud.socket \
-                virtqemud-ro.socket \
-                virtqemud-admin.socket \
-                virtqemud \
-                virtnetworkd \
-                virtstoraged");
+                    libvirtd.socket \
+                    libvirtd-ro.socket \
+                    libvirtd-admin.socket \
+                    libvirtd-tls.socket \
+                    libvirtd-tcp.socket");
+            if os.path.exists("/lib/systemd/system/virtqemud.socket"):
+                bash("/bin/systemctl mask \
+                    virtqemud.socket \
+                    virtqemud-ro.socket \
+                    virtqemud-admin.socket \
+                    virtqemud \
+                    virtnetworkd \
+                    virtstoraged");
 
             filename = "/etc/libvirt/qemu.conf"
 
@@ -658,17 +660,19 @@ class libvirtConfigSUSE(serviceCfgBase):
 
             if os.path.exists("/usr/lib/systemd/system/libvirtd.socket"):
                 bash("/bin/systemctl mask \
-                libvirtd.socket \
-                libvirtd-ro.socket \
-                libvirtd-admin.socket \
-                libvirtd-tls.socket \
-                libvirtd-tcp.socket \
-                virtqemud.socket \
-                virtqemud-ro.socket \
-                virtqemud-admin.socket \
-                virtqemud \
-                virtnetworkd \
-                virtstoraged");
+                    libvirtd.socket \
+                    libvirtd-ro.socket \
+                    libvirtd-admin.socket \
+                    libvirtd-tls.socket \
+                    libvirtd-tcp.socket");
+            if os.path.exists("/usr/lib/systemd/system/virtqemud.socket"):
+                bash("/bin/systemctl mask \
+                    virtqemud.socket \
+                    virtqemud-ro.socket \
+                    virtqemud-admin.socket \
+                    virtqemud \
+                    virtnetworkd \
+                    virtstoraged");
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
@@ -709,17 +713,19 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
                 bash("/bin/systemctl mask \
-                libvirtd.socket \
-                libvirtd-ro.socket \
-                libvirtd-admin.socket \
-                libvirtd-tls.socket \
-                libvirtd-tcp.socket \
-                virtqemud.socket \
-                virtqemud-ro.socket \
-                virtqemud-admin.socket \
-                virtqemud \
-                virtnetworkd \
-                virtstoraged");
+                    libvirtd.socket \
+                    libvirtd-ro.socket \
+                    libvirtd-admin.socket \
+                    libvirtd-tls.socket \
+                    libvirtd-tcp.socket");
+            if os.path.exists("/lib/systemd/system/virtqemud.socket"):
+                bash("/bin/systemctl mask \
+                    virtqemud.socket \
+                    virtqemud-ro.socket \
+                    virtqemud-admin.socket \
+                    virtqemud \
+                    virtnetworkd \
+                    virtstoraged");
 
     def config(self):
         try:
