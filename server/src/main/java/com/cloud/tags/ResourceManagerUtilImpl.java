@@ -72,6 +72,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import java.util.Optional;
 
 public class ResourceManagerUtilImpl implements ResourceManagerUtil {
     public static final Map<ResourceTag.ResourceObjectType, Class<?>> s_typeMap = new HashMap<>();
@@ -159,13 +160,8 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
 
     @Override
     public ResourceTag.ResourceObjectType getResourceType(String resourceTypeStr) {
-
-        for (ResourceTag.ResourceObjectType type : ResourceTag.ResourceObjectType.values()) {
-            if (type.toString().equalsIgnoreCase(resourceTypeStr)) {
-                return type;
-            }
-        }
-        throw new InvalidParameterValueException("Invalid resource type: " + resourceTypeStr);
+        return Optional.ofNullable(ResourceTag.ResourceObjectType.getResourceObjectType(resourceTypeStr))
+                .orElseThrow(() -> new InvalidParameterValueException("Invalid resource type " + resourceTypeStr));
     }
 
     public void checkResourceAccessible(Long accountId, Long domainId, String exceptionMessage) {

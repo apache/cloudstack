@@ -109,7 +109,7 @@ public interface VpcService {
             Map<String, String> tags, Long projectId, Boolean display);
 
     /**
-     * Starts VPC which includes starting VPC provider and applying all the neworking rules on the backend
+     * Starts VPC which includes starting VPC provider and applying all the networking rules on the backend
      *
      * @param vpcId
      * @param destroyOnFailure TODO

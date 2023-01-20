@@ -22,20 +22,38 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManagerImpl;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.SSHKeyPair;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
+
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
@@ -44,6 +62,7 @@ import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,17 +76,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
-
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddressManagerImpl;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.user.Account;
-import com.cloud.user.SSHKeyPair;
-import com.cloud.user.SSHKeyPairVO;
-import com.cloud.user.dao.SSHKeyPairDao;
-import com.cloud.utils.db.SearchCriteria;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,6 +126,12 @@ public class ManagementServerImplTest {
 
     ConfigKey mockConfig;
 
+    @Mock
+    UserVmDetailsDao userVmDetailsDao;
+
+    @Mock
+    HostDetailsDao hostDetailsDao;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
@@ -128,6 +143,8 @@ public class ManagementServerImplTest {
         spy.templateDao = _templateDao;
         spy._userVmDao = _userVmDao;
         spy.annotationDao = annotationDao;
+        spy._UserVmDetailsDao = userVmDetailsDao;
+        spy._detailsDao = hostDetailsDao;
     }
 
     @After
@@ -536,4 +553,100 @@ public class ManagementServerImplTest {
         Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
     }
 
+    private UserVmVO mockFilterUefiHostsTestVm(String uefiValue) {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        if (uefiValue == null) {
+            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
+        } else {
+            UserVmDetailVO detail = new UserVmDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
+            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
+            Mockito.when(hostDetailsDao.findByName(Host.HOST_UEFI_ENABLE)).thenReturn(new ArrayList<>(List.of(new DetailVO(1l, Host.HOST_UEFI_ENABLE, "true"), new DetailVO(2l, Host.HOST_UEFI_ENABLE, "false"))));
+        }
+        return vm;
+    }
+
+    private List<HostVO> mockHostsList(Long filtered) {
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO h1 = new HostVO("guid-1");
+        ReflectionTestUtils.setField(h1, "id", 1L);
+        hosts.add(h1);
+        HostVO h2 = new HostVO("guid-2");
+        ReflectionTestUtils.setField(h2, "id", 2L);
+        hosts.add(h2);
+        HostVO h3 = new HostVO("guid-3");
+        ReflectionTestUtils.setField(h3, "id", 3L);
+        hosts.add(h3);
+        if (filtered != null) {
+            hosts.removeIf(h -> h.getId() == filtered);
+        }
+        return hosts;
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationBiosVm() {
+        UserVmVO vm = mockFilterUefiHostsTestVm(null);
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(new ArrayList<>(), new ArrayList<>(), vm);
+        Assert.assertTrue(result.first());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationBiosVmFiltered() {
+        List<HostVO> filteredHosts = mockHostsList(2L);
+        UserVmVO vm = mockFilterUefiHostsTestVm(null);
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(new ArrayList<>(), filteredHosts, vm);
+        Assert.assertTrue(result.first());
+        Assert.assertNotNull(result.second());
+        Assert.assertEquals(2, result.second().size());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationUefiInvalidValueVm() {
+        UserVmVO vm = mockFilterUefiHostsTestVm("");
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(new ArrayList<>(), new ArrayList<>(), vm);
+        Assert.assertTrue(result.first());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationUefiVMHostsUnavailable() {
+        UserVmVO vm = mockFilterUefiHostsTestVm(ApiConstants.BootMode.SECURE.toString());
+        List<HostVO> filteredHosts = new ArrayList<>();
+        Mockito.when(hostDetailsDao.findByName(Host.HOST_UEFI_ENABLE)).thenReturn(new ArrayList<>());
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(mockHostsList(null), filteredHosts, vm);
+        Assert.assertFalse(result.first());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationUefiVMHostsAvailable() {
+        UserVmVO vm = mockFilterUefiHostsTestVm(ApiConstants.BootMode.LEGACY.toString());
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(mockHostsList(null), null, vm);
+        Assert.assertTrue(result.first());
+        Assert.assertNotNull(result.second());
+        Assert.assertEquals(1, result.second().size());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationNoHostsAvailable() {
+        UserVmVO vm = mockFilterUefiHostsTestVm(ApiConstants.BootMode.SECURE.toString());
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(new ArrayList<>(), null, vm);
+        Assert.assertFalse(result.first());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationUefiVMHostsAvailableFiltered() {
+        UserVmVO vm = mockFilterUefiHostsTestVm(ApiConstants.BootMode.LEGACY.toString());
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(mockHostsList(null), mockHostsList(3L), vm);
+        Assert.assertTrue(result.first());
+        Assert.assertNotNull(result.second());
+        Assert.assertEquals(1, result.second().size());
+    }
+
+    @Test
+    public void testFilterUefiHostsForMigrationUefiVMNoHostsAvailableFiltered() {
+        UserVmVO vm = mockFilterUefiHostsTestVm(ApiConstants.BootMode.SECURE.toString());
+        Pair<Boolean, List<HostVO>> result = spy.filterUefiHostsForMigration(mockHostsList(null), mockHostsList(1L), vm);
+        Assert.assertFalse(result.first());
+        Assert.assertNotNull(result.second());
+        Assert.assertEquals(0, result.second().size());
+    }
 }

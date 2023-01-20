@@ -30,6 +30,13 @@ export default {
       docHelp: 'adminguide/storage.html#working-with-volumes',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
+      filters: () => {
+        if (store.getters.userInfo.roletype === 'Admin') {
+          return ['user', 'all']
+        } else {
+          return []
+        }
+      },
       columns: () => {
         const fields = ['name', 'state', 'type', 'vmname', 'sizegb']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
