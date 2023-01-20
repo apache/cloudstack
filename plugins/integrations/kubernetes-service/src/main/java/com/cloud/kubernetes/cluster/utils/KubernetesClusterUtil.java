@@ -333,7 +333,8 @@ public class KubernetesClusterUtil {
                                                     final String user, final File sshKeyFile,
                                                     final String hostName,
                                                     final long timeoutTime, final long waitDuration) {
-        while (System.currentTimeMillis() < timeoutTime) {
+        int retry = 10;
+        while (System.currentTimeMillis() < timeoutTime && retry-- > 0) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Checking if the Kubernetes version of cluster node %s is %s", hostName, version));
             }
