@@ -1431,6 +1431,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
 
+                                    if (persistVolumeStats) {
+                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, vm.getHypervisorType(), previousVmDiskStats, timestamp);
+                                    }
+
                                     if (areAllDiskStatsZero(vmDiskStatEntry)) {
                                         LOGGER.debug("IO/bytes read and write are all 0. Not updating vm_disk_statistics");
                                         continue;
@@ -1447,10 +1451,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                                 + " . VM: " + vmDiskStatEntry.getVmName() + " Read(Bytes): " + toHumanReadableSize(vmDiskStatEntry.getBytesRead()) + " write(Bytes): " + toHumanReadableSize(vmDiskStatEntry.getBytesWrite())
                                                 + " Read(IO): " + toHumanReadableSize(vmDiskStatEntry.getIORead()) + " write(IO): " + toHumanReadableSize(vmDiskStatEntry.getIOWrite()));
                                         continue;
-                                    }
-
-                                    if (persistVolumeStats) {
-                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, vm.getHypervisorType(), previousVmDiskStats, timestamp);
                                     }
 
                                     if (vmDiskStat_lock.getCurrentBytesRead() > vmDiskStatEntry.getBytesRead()) {
@@ -1897,7 +1897,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, HypervisorType hypervisorType, VmDiskStatisticsVO previousStats, Date timestamp) {
         String stats;
-        if (!HypervisorType.VMware.equals(hypervisorType)) {
+        if (HypervisorType.Simulator.equals(hypervisorType)) {
             VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry();
             volumeStatsVmDiskEntry.setVmName(statsForCurrentIteration.getVmName());
             volumeStatsVmDiskEntry.setPath(statsForCurrentIteration.getPath());

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,6 +33,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,7 +55,6 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
-
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -85,8 +87,8 @@ import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
 import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
-import org.libvirt.VcpuInfo;
 import org.libvirt.Secret;
+import org.libvirt.VcpuInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -187,18 +189,17 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.utils.UuidUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
-
-import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+import com.google.gson.Gson;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -416,6 +417,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
+    private final Map<String, DomainBlockStats> vmDiskStats = new ConcurrentHashMap<>();
+
     protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
     static {
         s_powerStatesTable = new HashMap<DomainState, PowerState>();
@@ -446,6 +449,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
     protected LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+
+    private static Gson gson = new Gson();
 
     /**
      * Virsh command to set the memory balloon stats period.<br><br>
@@ -4016,14 +4021,37 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     break;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+                s_logger.info(String.format("STATS_LOG getVmDiskStat @ %s: Disk: %s---------------%s", new Date(), disk.getDiskLabel(), gson.toJson(blockStats)));
                 final String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
                 String diskPath = null;
                 if (path != null) {
                     final String[] token = path.split("/");
                     if (token.length > 3) {
                         diskPath = token[3];
-                        final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                        final VmDiskStatsEntry stat = new VmDiskStatsEntry();
+                        stat.setVmName(vmName);
+                        stat.setPath(diskPath);
+                        final DomainBlockStats oldStats = vmDiskStats.get(String.format("%s-%s", vmName, diskPath));
+                        if (oldStats != null) {
+                            final long deltaiord = blockStats.rd_req - oldStats.rd_req;
+                            if (deltaiord > 0) {
+                                stat.setIORead(deltaiord);
+                            }
+                            final long deltaiowr = blockStats.wr_req - oldStats.wr_req;
+                            if (deltaiowr > 0) {
+                                stat.setIOWrite(deltaiowr);
+                            }
+                            final long deltabytesrd = blockStats.rd_bytes - oldStats.rd_bytes;
+                            if (deltabytesrd > 0) {
+                                stat.setBytesRead(deltabytesrd);
+                            }
+                            final long deltabyteswr = blockStats.wr_bytes - oldStats.wr_bytes;
+                            if (deltabyteswr > 0) {
+                                stat.setBytesWrite(deltabyteswr);
+                            }
+                        }
                         stats.add(stat);
+                        vmDiskStats.put(String.format("%s-%s", vmName, diskPath), blockStats);
                     }
                 }
             }
@@ -4115,6 +4143,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     continue;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+                s_logger.info(String.format("STATS_LOG getVm****Stat @ %s: Disk: %s---------------%s", new Date(), disk.getDiskLabel(), gson.toJson(blockStats)));
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;
                 bytes_rd += blockStats.rd_bytes;
