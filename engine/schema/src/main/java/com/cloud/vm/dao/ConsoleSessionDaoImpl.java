@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,18 +15,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.consoleproxy;
+//
 
-import com.cloud.utils.component.Manager;
-import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+package com.cloud.vm.dao;
 
-public interface ConsoleAccessManager extends Manager {
+import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.utils.db.GenericDaoBase;
 
-    ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
+public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
 
-    boolean isSessionAllowed(String sessionUuid);
+    @Override
+    public void removeSession(String sessionUuid) {
+        ConsoleSessionVO session = findByUuid(sessionUuid);
+        remove(session.getId());
+    }
 
-    void removeSessions(String[] sessionUuids);
-
-    void removeSession(String sessionUuid);
+    @Override
+    public boolean isSessionAllowed(String sessionUuid) {
+        return findByUuid(sessionUuid) != null;
+    }
 }
