@@ -617,8 +617,18 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
             cfo.save()
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
-                bash("/bin/systemctl mask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket");
-                bash("/bin/systemctl mask virtqemud.socket virtqemud-ro.socket virtqemud-admin.socket virtqemud virtnetworkd virtstoraged");
+                bash("/bin/systemctl mask \
+                libvirtd.socket \
+                libvirtd-ro.socket \
+                libvirtd-admin.socket \
+                libvirtd-tls.socket \
+                libvirtd-tcp.socket \
+                virtqemud.socket \
+                virtqemud-ro.socket \
+                virtqemud-admin.socket \
+                virtqemud \
+                virtnetworkd \
+                virtstoraged");
 
             filename = "/etc/libvirt/qemu.conf"
 
