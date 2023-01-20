@@ -1039,3 +1039,21 @@ WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User -
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
 FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
+
+--- Create table for handling console sessions #7094
+
+CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
+    `created` datetime NOT NULL COMMENT 'When the session was created',
+    `account_id` bigint(20) unsigned NOT NULL COMMENT 'Account who generated the session',
+    `user_id` bigint(20) unsigned NOT NULL COMMENT 'User who generated the session',
+    `instance_id` bigint(20) unsigned NOT NULL COMMENT 'VM for which the session was generated',
+    `host_id` bigint(20) unsigned NOT NULL COMMENT 'Host where the VM was when the session was generated',
+    `removed` datetime COMMENT 'When the session was removed/used',
+    CONSTRAINT `fk_consolesession__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account` (`id`),
+    CONSTRAINT `fk_consolesession__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),
+    CONSTRAINT `fk_consolesession__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `cloud`.`vm_instance`(`id`),
+    CONSTRAINT `fk_consolesession__host_id` FOREIGN KEY(`host_id`) REFERENCES `cloud`.`host`(`id`),
+    CONSTRAINT `uc_consolesession__uuid` UNIQUE (`uuid`)
+);
