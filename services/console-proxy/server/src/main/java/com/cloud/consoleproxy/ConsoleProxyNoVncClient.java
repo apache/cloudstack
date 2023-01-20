@@ -120,6 +120,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             client.readBytes(bytesArr, nextBytes);
                             if (nextBytes > 0) {
                                 session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
+                                updateFrontEndActivityTime();
                             }
                         } else {
                             b = new byte[100];
