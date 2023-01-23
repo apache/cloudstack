@@ -168,15 +168,15 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="service_package_id")
     String servicePackageUuid = null;
 
-    @Column(name = "select_snat_address_allowed")
-    boolean selectSnatIpAllowed = false;
+    @Column(name = "specify_source_nat_address_allowed")
+    boolean specifySourceNatAllowed = false;
 
-    public boolean isSelectSnatIpAllowed() {
-        return selectSnatIpAllowed;
+    public boolean isSpecifySourceNatAllowed() {
+        return specifySourceNatAllowed;
     }
 
-    public void setSelectSnatIpAllowed(boolean selectSnatIpAllowed) {
-        this.selectSnatIpAllowed = selectSnatIpAllowed;
+    public void setSpecifySourceNatAllowed(boolean specifySourceNatAllowed) {
+        this.specifySourceNatAllowed = specifySourceNatAllowed;
     }
 
     @Override
@@ -383,7 +383,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
                              Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb,
                              boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent,
-                             boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressdefaultpolicy, boolean supportsStrechedL2, boolean supportsPublicAccess, boolean selectSnatIpAllowed) {
+                             boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressdefaultpolicy, boolean supportsStrechedL2, boolean supportsPublicAccess, boolean specifySourceNatAllowed) {
         this(name,
             displayText,
             trafficType,
@@ -403,7 +403,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
-        this.selectSnatIpAllowed = selectSnatIpAllowed;
+        this.specifySourceNatAllowed = specifySourceNatAllowed;
         this.elasticIp = elasticIp;
         this.elasticLb = elasticLb;
         this.inline = inline;

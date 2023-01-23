@@ -1298,7 +1298,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateSharedRouterIPv4(String routerIp, String startIp, String endIp, String gateway, String netmask) {
+    private void validateSharedNetworkRouterIPv4(String routerIp, String startIp, String endIp, String gateway, String netmask) {
         if (StringUtils.isNotBlank(routerIp)) {
             if (startIp != null && endIp == null) {
                 endIp = startIp;
@@ -1317,7 +1317,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateSharedRouterIPv6(String routerIPv6, String startIPv6, String endIPv6, String cidrIPv6) {
+    private void validateSharedNetworkRouterIPv6(String routerIPv6, String startIPv6, String endIPv6, String cidrIPv6) {
         if (StringUtils.isNotBlank(routerIPv6)) {
             if (startIPv6 != null && endIPv6 == null) {
                 endIPv6 = startIPv6;
@@ -1336,13 +1336,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateIsolatedRouterIPv4(String routerIPv4) {
+    private void validateIsolatedNetworkRouterIPv4(String routerIPv4) {
         if (StringUtils.isNotBlank(routerIPv4)) {
             isIPv4AddressValid(routerIPv4);
         }
     }
 
-    private void validateIsolatedRouterIPv6(String routerIPv6) {
+    private void validateIsolatedNetworkRouterIPv6(String routerIPv6) {
         if (StringUtils.isNotBlank(routerIPv6)) {
             isIPv6AddressValid(routerIPv6);
         }
@@ -1629,12 +1629,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared) {
-            validateSharedRouterIPv4(cmd.getRouterIPv4(), startIP, endIP, gateway, netmask);
-            validateSharedRouterIPv6(cmd.getRouterIPv6(), startIPv6, endIPv6, ip6Cidr);
+            validateSharedNetworkRouterIPv4(cmd.getRouterIPv4(), startIP, endIP, gateway, netmask);
+            validateSharedNetworkRouterIPv6(cmd.getRouterIPv6(), startIPv6, endIPv6, ip6Cidr);
 
         } else if (ntwkOff.getGuestType() == GuestType.Isolated) {
-            validateIsolatedRouterIPv4(cmd.getRouterIPv4());
-            validateIsolatedRouterIPv6(cmd.getRouterIPv6());
+            validateIsolatedNetworkRouterIPv4(cmd.getRouterIPv4());
+            validateIsolatedNetworkRouterIPv6(cmd.getRouterIPv6());
         }
         Pair<String, String> ip6GatewayCidr = null;
         if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {

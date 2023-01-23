@@ -534,9 +534,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilityList);
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
-        final boolean selectSnatIpAllowed = isVpcSelectSnatIpAllowed(serviceCapabilityList);
+        final boolean specifySourceNatAllowed = isVpcSpecifySourceNatAllowed(serviceCapabilityList);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter, selectSnatIpAllowed);
+                redundantRouter, specifySourceNatAllowed);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -564,13 +564,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter, final boolean selectSnatIpAllowed) {
+                                              final boolean redundantRouter, final boolean specifySourceNatAllowed) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
             public VpcOfferingVO doInTransaction(final TransactionStatus status) {
                 // create vpc offering object
-                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC, redundantRouter, selectSnatIpAllowed);
+                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC, redundantRouter, specifySourceNatAllowed);
 
                 if (state != null) {
                     offering.setState(state);
@@ -685,8 +685,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return findCapabilityForService(serviceCapabilitystList, Capability.RedundantRouter, Service.SourceNat);
     }
 
-    private boolean isVpcSelectSnatIpAllowed(final Map<String, String> serviceCapabilitystList) {
-        return findCapabilityForService(serviceCapabilitystList, Capability.SelectSnatIpAllowed, Service.SourceNat);
+    private boolean isVpcSpecifySourceNatAllowed(final Map<String, String> serviceCapabilitystList) {
+        return findCapabilityForService(serviceCapabilitystList, Capability.SpecifySourceNatIp, Service.SourceNat);
     }
 
     @Override

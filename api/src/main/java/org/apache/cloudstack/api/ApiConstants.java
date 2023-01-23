@@ -1017,7 +1017,7 @@ public class ApiConstants {
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
-    public static final String IS_SELECTION_OF_STATIC_NAT_ALLOWED = "selectsnatipallowed";
+    public static final String IS_SELECTION_OF_SOURCE_NAT_ALLOWED = "selectsnatipallowed";
 
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";

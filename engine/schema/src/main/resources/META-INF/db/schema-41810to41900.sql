@@ -20,8 +20,8 @@
 --;
 
 -- select initial ip for VPCs --
-ALTER TABLE cloud.network_offerings ADD select_snat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to spicify the primary public ip for this network on creation';
-ALTER TABLE cloud.vpc_offerings ADD select_snat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to spicify the primary public ip for this vpc on creation';
+ALTER TABLE cloud.network_offerings ADD specify_source_nat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to specify the primary public ip for this network on creation';
+ALTER TABLE cloud.vpc_offerings ADD specify_source_nat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to specify the primary public ip for this vpc on creation';
 
 -- cloud.network_offering_view source
 
@@ -67,7 +67,7 @@ CREATE VIEW `cloud`.`network_offering_view` AS
         `network_offerings`.`supports_vm_autoscaling` AS `supports_vm_autoscaling`,
         `network_offerings`.`for_vpc` AS `for_vpc`,
         `network_offerings`.`service_package_id` AS `service_package_id`,
-        `network_offerings`.`select_snat_address_allowed` as `select_snat_address_allowed`,
+        `network_offerings`.`specify_source_nat_address_allowed` as `specify_source_nat_address_allowed`,
         GROUP_CONCAT(DISTINCT domain.id) AS domain_id,
         GROUP_CONCAT(DISTINCT domain.uuid) AS domain_uuid,
         GROUP_CONCAT(DISTINCT domain.name) AS domain_name,
@@ -110,7 +110,7 @@ select
     `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
     `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
     `vpc_offerings`.`sort_key` AS `sort_key`,
-    `vpc_offerings`.`select_snat_address_allowed` as `select_snat_address_allowed`,
+    `vpc_offerings`.`specify_source_nat_address_allowed` as `specify_source_nat_address_allowed`,
     group_concat(distinct `domain`.`id` separator ',') AS `domain_id`,
     group_concat(distinct `domain`.`uuid` separator ',') AS `domain_uuid`,
     group_concat(distinct `domain`.`name` separator ',') AS `domain_name`,

@@ -6212,7 +6212,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && sourceNatServiceCapabilityMap.size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap)) {
             throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
                     + ", " + Capability.RedundantRouter
-                    + " and " + Capability.SelectSnatIpAllowed
+                    + " and " + Capability.SpecifySourceNatIp
                     + " capabilities can be sepcified for source nat service");
         }
     }
@@ -6227,7 +6227,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Either peraccount or perzone source NAT type can be specified for "
                             + Capability.SupportedSourceNatTypes.getName());
                 }
-            } else if (Arrays.asList(Capability.RedundantRouter, Capability.SelectSnatIpAllowed).contains(capability)) {
+            } else if (Arrays.asList(Capability.RedundantRouter, Capability.SpecifySourceNatIp).contains(capability)) {
                 if (! Arrays.asList("true", "false").contains(value)) {
                     throw new InvalidParameterValueException("Unknown specified value for " + capability.getName());
                 }
@@ -6354,7 +6354,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean elasticLb = false;
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
-        boolean selectSnatIpAllowed = false;
+        boolean specifySourceNatAllowed = false;
         boolean elasticIp = false;
         boolean associatePublicIp = false;
         boolean inline = false;
@@ -6425,10 +6425,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     redundantRouter = param.contains("true");
                 }
 
-                param = sourceNatServiceCapabilityMap.get(Capability.SelectSnatIpAllowed);
+                param = sourceNatServiceCapabilityMap.get(Capability.SpecifySourceNatIp);
                 if (param != null) {
-                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SelectSnatIpAllowed, param);
-                    selectSnatIpAllowed = param.contains("true");
+                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SpecifySourceNatIp, param);
+                    specifySourceNatAllowed = param.contains("true");
                 }
             }
 
@@ -6469,7 +6469,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final NetworkOfferingVO offeringFinal = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability,
                 tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb,
-                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess, selectSnatIpAllowed);
+                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess, specifySourceNatAllowed);
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);

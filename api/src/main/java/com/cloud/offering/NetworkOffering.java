@@ -152,5 +152,5 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     Date getCreated();
 
-    boolean isSelectSnatIpAllowed();
+    boolean isSpecifySourceNatAllowed();
 }

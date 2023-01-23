@@ -940,7 +940,7 @@ export default {
             }
             if (values.selectsnatipallowed === true) {
               params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SelectSnatIpAllowed'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SpecifySourceNatAllowed'
               params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
               serviceCapabilityIndex++
             }

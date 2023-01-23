@@ -572,13 +572,13 @@ public class ConfigurationManagerTest {
     @Test
     public void validateInvalidBooleanValueForSourceNatServiceCapablitiesTest() {
         Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
-        sourceNatServiceCapabilityMap.put(Capability.SelectSnatIpAllowed, "maybe");
+        sourceNatServiceCapabilityMap.put(Capability.SpecifySourceNatIp, "maybe");
 
         boolean caught = false;
         try {
             configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Unknown specified value for SelectSnatIpAllowed"));
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Unknown specified value for SpecifySourceNatAllowed"));
             caught = true;
         }
         Assert.assertTrue("should not be accepted", caught);
@@ -593,7 +593,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] and Network.Capability[name=SelectSnatIpAllowed] capabilities can be sepcified for source nat service"));
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] and Network.Capability[name=SpecifySourceNatAllowed] capabilities can be sepcified for source nat service"));
             caught = true;
         }
         Assert.assertTrue("should not be accepted", caught);

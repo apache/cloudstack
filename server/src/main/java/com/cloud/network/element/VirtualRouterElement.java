@@ -574,7 +574,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "peraccount");
         sourceNatCapabilities.put(Capability.RedundantRouter, "true");
-        sourceNatCapabilities.put(Capability.SelectSnatIpAllowed, "true");
+        sourceNatCapabilities.put(Capability.SpecifySourceNatIp, "true");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
 
         capabilities.put(Service.StaticNat, null);
