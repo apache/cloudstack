@@ -736,8 +736,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          private void getDynamicDataFromDB() {
              Map<String, String> stats = DbUtil.getDbInfo("STATUS", queries, uptime);
              dbStats.put(collectionTime, new Date());
-             dbStats.put(queries, (Integer.valueOf(stats.get(queries))));
-             dbStats.put(uptime, (Integer.valueOf(stats.get(uptime))));
+             dbStats.put(queries, (Long.valueOf(stats.get(queries))));
+             dbStats.put(uptime, (Long.valueOf(stats.get(uptime))));
          }
 
 
