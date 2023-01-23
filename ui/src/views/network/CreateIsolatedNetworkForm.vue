@@ -40,7 +40,7 @@
               <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
             </template>
             <a-input
-             v-model:value="form.name"
+             v-model:value="form.displaytext"
               :placeholder="apiParams.displaytext.description"/>
           </a-form-item>
           <a-form-item ref="zoneid" name="zoneid">

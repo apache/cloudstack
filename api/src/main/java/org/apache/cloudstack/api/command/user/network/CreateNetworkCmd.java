@@ -61,7 +61,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the network")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = false, description = "the display text of the network")
     private String displayText;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
@@ -218,7 +218,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        if(displayText == null)
+            return name;
+        else
+            return displayText;
     }
 
     public String getNetworkDomain() {
