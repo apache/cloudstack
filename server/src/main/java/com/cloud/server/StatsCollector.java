@@ -82,6 +82,7 @@ import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmDiskStatsEntryWithDelta;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
@@ -1432,7 +1433,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
 
                                     if (persistVolumeStats) {
-                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, vm.getHypervisorType(), previousVmDiskStats, timestamp);
+                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, timestamp);
                                     }
 
                                     if (areAllDiskStatsZero(vmDiskStatEntry)) {
@@ -1895,16 +1896,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * @param statsForCurrentIteration the metrics stats data to persist.
      * @param timestamp the time that will be stamped.
      */
-    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, HypervisorType hypervisorType, VmDiskStatisticsVO previousStats, Date timestamp) {
+    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, Date timestamp) {
         String stats;
-        if (HypervisorType.Simulator.equals(hypervisorType)) {
-            VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry();
-            volumeStatsVmDiskEntry.setVmName(statsForCurrentIteration.getVmName());
-            volumeStatsVmDiskEntry.setPath(statsForCurrentIteration.getPath());
-            volumeStatsVmDiskEntry.setBytesRead(Math.max(0, statsForCurrentIteration.getBytesRead() - previousStats.getCurrentBytesRead()));
-            volumeStatsVmDiskEntry.setBytesWrite(Math.max(0, statsForCurrentIteration.getBytesWrite() - previousStats.getCurrentBytesWrite()));
-            volumeStatsVmDiskEntry.setIOWrite(Math.max(0, statsForCurrentIteration.getIOWrite() - previousStats.getCurrentIOWrite()));
-            volumeStatsVmDiskEntry.setIORead(Math.max(0, statsForCurrentIteration.getIORead() - previousStats.getCurrentIORead()));
+        if (statsForCurrentIteration instanceof VmDiskStatsEntryWithDelta) {
+            VmDiskStatsEntryWithDelta deltaStats = (VmDiskStatsEntryWithDelta)statsForCurrentIteration;
+            VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry(deltaStats.getVmName(),
+                    deltaStats.getPath(),
+                    deltaStats.getDeltaIoWrite(),
+                    deltaStats.getDeltaIoRead(),
+                    deltaStats.getDeltaBytesWrite(),
+                    deltaStats.getDeltaBytesRead());
             stats = gson.toJson(volumeStatsVmDiskEntry);
         } else {
             stats = gson.toJson(statsForCurrentIteration);

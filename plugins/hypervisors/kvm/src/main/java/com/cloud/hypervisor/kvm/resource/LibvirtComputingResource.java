@@ -108,6 +108,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmDiskStatsEntryWithDelta;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -4021,33 +4022,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     break;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                s_logger.info(String.format("STATS_LOG getVmDiskStat @ %s: Disk: %s---------------%s", new Date(), disk.getDiskLabel(), gson.toJson(blockStats)));
                 final String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
                 String diskPath = null;
                 if (path != null) {
                     final String[] token = path.split("/");
                     if (token.length > 3) {
                         diskPath = token[3];
-                        final VmDiskStatsEntry stat = new VmDiskStatsEntry();
-                        stat.setVmName(vmName);
-                        stat.setPath(diskPath);
+                        final VmDiskStatsEntryWithDelta stat = new VmDiskStatsEntryWithDelta(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
                         final DomainBlockStats oldStats = vmDiskStats.get(String.format("%s-%s", vmName, diskPath));
                         if (oldStats != null) {
                             final long deltaiord = blockStats.rd_req - oldStats.rd_req;
                             if (deltaiord > 0) {
-                                stat.setIORead(deltaiord);
+                                stat.setDeltaIoRead(deltaiord);
                             }
                             final long deltaiowr = blockStats.wr_req - oldStats.wr_req;
                             if (deltaiowr > 0) {
-                                stat.setIOWrite(deltaiowr);
+                                stat.setDeltaIoWrite(deltaiowr);
                             }
                             final long deltabytesrd = blockStats.rd_bytes - oldStats.rd_bytes;
                             if (deltabytesrd > 0) {
-                                stat.setBytesRead(deltabytesrd);
+                                stat.setDeltaBytesRead(deltabytesrd);
                             }
                             final long deltabyteswr = blockStats.wr_bytes - oldStats.wr_bytes;
                             if (deltabyteswr > 0) {
-                                stat.setBytesWrite(deltabyteswr);
+                                stat.setDeltaBytesWrite(deltabyteswr);
                             }
                         }
                         stats.add(stat);

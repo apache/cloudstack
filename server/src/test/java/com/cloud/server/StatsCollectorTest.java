@@ -53,6 +53,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmDiskStatsEntryWithDelta;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
@@ -447,18 +448,32 @@ public class StatsCollectorTest {
         vmDiskStatisticsVO.setCurrentIOWrite(2000);
         vmDiskStatisticsVO.setCurrentBytesRead(10240);
         vmDiskStatisticsVO.setCurrentBytesWrite(20480);
-        VmDiskStatsEntry statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
-                vmDiskStatisticsVO.getCurrentIOWrite() + ioWriteDiff,
-                vmDiskStatisticsVO.getCurrentIORead() + ioReadDiff,
-                vmDiskStatisticsVO.getCurrentBytesWrite() + writeDiff,
-                vmDiskStatisticsVO.getCurrentBytesRead() + readDiff);
+        VmDiskStatsEntry statsForCurrentIteration = null;
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            VmDiskStatsEntryWithDelta statsForCurrentIterationWithDelta = new VmDiskStatsEntryWithDelta(vmName, path,
+                    2000 + ioWriteDiff,
+                    1000 + ioReadDiff,
+                    20480 + writeDiff,
+                    10240 + readDiff);
+            statsForCurrentIterationWithDelta.setDeltaIoRead(ioReadDiff);
+            statsForCurrentIterationWithDelta.setDeltaIoWrite(ioWriteDiff);
+            statsForCurrentIterationWithDelta.setDeltaBytesRead(readDiff);
+            statsForCurrentIterationWithDelta.setDeltaBytesWrite(writeDiff);
+            statsForCurrentIteration = statsForCurrentIterationWithDelta;
+        } else {
+            statsForCurrentIteration= new VmDiskStatsEntry(vmName, path,
+                    ioWriteDiff,
+                    ioReadDiff,
+                    writeDiff,
+                    readDiff);
+        }
         List<VolumeStatsVO> persistedStats = new ArrayList<>();
         Mockito.when(volumeStatsDao.persist(Mockito.any(VolumeStatsVO.class))).thenAnswer((Answer<VolumeStatsVO>) invocation -> {
             VolumeStatsVO statsVO = (VolumeStatsVO)invocation.getArguments()[0];
             persistedStats.add(statsVO);
             return statsVO;
         });
-        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, hypervisorType, vmDiskStatisticsVO, timestamp);
+        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, timestamp);
         Assert.assertTrue(CollectionUtils.isNotEmpty(persistedStats));
         Assert.assertNotNull(persistedStats.get(0));
         VolumeStatsVO stat = persistedStats.get(0);
@@ -466,17 +481,10 @@ public class StatsCollectorTest {
         VmDiskStatsEntry entry = gson.fromJson(stat.getVolumeStatsData(), VmDiskStatsEntry.class);
         Assert.assertEquals(vmName, entry.getVmName());
         Assert.assertEquals(path, entry.getPath());
-        if (Hypervisor.HypervisorType.VMware.equals(hypervisorType)) {
-            Assert.assertEquals(statsForCurrentIteration.getIORead(), entry.getIORead());
-            Assert.assertEquals(statsForCurrentIteration.getIOWrite(), entry.getIOWrite());
-            Assert.assertEquals(statsForCurrentIteration.getBytesRead(), entry.getBytesRead());
-            Assert.assertEquals(statsForCurrentIteration.getBytesWrite(), entry.getBytesWrite());
-        } else {
-            Assert.assertEquals(ioReadDiff, entry.getIORead());
-            Assert.assertEquals(ioWriteDiff, entry.getIOWrite());
-            Assert.assertEquals(readDiff, entry.getBytesRead());
-            Assert.assertEquals(writeDiff, entry.getBytesWrite());
-        }
+        Assert.assertEquals(ioReadDiff, entry.getIORead());
+        Assert.assertEquals(ioWriteDiff, entry.getIOWrite());
+        Assert.assertEquals(readDiff, entry.getBytesRead());
+        Assert.assertEquals(writeDiff, entry.getBytesWrite());
     }
 
     @Test
