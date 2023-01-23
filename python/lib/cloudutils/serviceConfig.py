@@ -665,14 +665,6 @@ class libvirtConfigSUSE(serviceCfgBase):
                     libvirtd-admin.socket \
                     libvirtd-tls.socket \
                     libvirtd-tcp.socket");
-            if os.path.exists("/usr/lib/systemd/system/virtqemud.socket"):
-                bash("/bin/systemctl mask \
-                    virtqemud.socket \
-                    virtqemud-ro.socket \
-                    virtqemud-admin.socket \
-                    virtqemud \
-                    virtnetworkd \
-                    virtstoraged");
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
