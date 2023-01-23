@@ -230,7 +230,7 @@ public class UriUtils {
                 httpConn.setRequestMethod(method);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
-                String contentLength = httpConn.getHeaderField("Content-Length");
+                String contentLength = httpConn.getHeaderField("content-length");
                 if (contentLength != null) {
                     remoteSize = Long.parseLong(contentLength);
                 } else if (method.equals("GET") && httpConn.getResponseCode() < 300) {
