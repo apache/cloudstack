@@ -704,6 +704,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return serviceProviderMap;
     }
 
+    private void verifyDomainId(Long domainId, Account caller) {
+        if (domainId == null) {
+            return;
+        }
+        Domain domain = _entityMgr.findById(Domain.class, domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+        }
+        if (!domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+            throw new InvalidParameterValueException(String.format("Unable to list VPC offerings for domain: %s as caller does not have access for it", domain.getUuid()));
+        }
+    }
+
     @Override
     public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(ListVPCOfferingsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
@@ -722,15 +735,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         searchFilter.addOrderBy(VpcOfferingJoinVO.class, "id", true);
         final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
 
-        if (domainId != null) {
-            Domain domain = _entityMgr.findById(Domain.class, domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
-            }
-            if (!domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                throw new InvalidParameterValueException(String.format("Unable to list VPC offerings for domain: %s as caller does not have access for it", domain.getUuid()));
-            }
-        }
+        verifyDomainId(domainId, caller);
 
         if (keyword != null) {
             final SearchCriteria<VpcOfferingJoinVO> ssc = vpcOfferingJoinDao.createSearchCriteria();
