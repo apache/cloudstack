@@ -945,7 +945,7 @@ public class ApiConstants {
     public enum IoDriverPolicy {
         NATIVE("native"),
         THREADS("threads"),
-        IOURING("io_uring"),
+        IO_URING("io_uring"),
         STORAGE_SPECIFIC("storage_specific");
 
         String ioDriver;

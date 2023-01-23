@@ -5845,25 +5845,25 @@ public class LibvirtComputingResourceTest {
 
     public void setDiskIoDriverTestIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
-        Assert.assertEquals(IoDriverPolicy.IOURING, diskDef.getIoDriver());
+        Assert.assertEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     @Test
     public void setDiskIoDriverTestLibvirtSupportsIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(123l, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
-        Assert.assertNotEquals(IoDriverPolicy.IOURING, diskDef.getIoDriver());
+        Assert.assertNotEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     @Test
     public void setDiskIoDriverTestQemuSupportsIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, 123l);
-        Assert.assertNotEquals(IoDriverPolicy.IOURING, diskDef.getIoDriver());
+        Assert.assertNotEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     @Test
     public void setDiskIoDriverTestNoSupportToIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(123l, 123l);
-        Assert.assertNotEquals(IoDriverPolicy.IOURING, diskDef.getIoDriver());
+        Assert.assertNotEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     private DiskDef configureAndTestSetDiskIoDriverTest(long hypervisorLibvirtVersion, long hypervisorQemuVersion) {
@@ -5871,7 +5871,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
         Mockito.when(libvirtComputingResourceSpy.getHypervisorLibvirtVersion()).thenReturn(hypervisorLibvirtVersion);
         Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
-        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, IoDriverPolicy.IOURING);
+        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, IoDriverPolicy.IO_URING);
         return diskDef;
     }
 

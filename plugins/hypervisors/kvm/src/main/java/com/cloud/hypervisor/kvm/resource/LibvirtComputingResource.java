@@ -3076,10 +3076,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public void setDiskIoDriver(DiskDef disk, IoDriverPolicy ioDriver) {
         s_logger.debug(String.format("Disk IO driver policy [%s]. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
         if (ioDriver != null) {
-            if (IoDriverPolicy.IOURING != ioDriver) {
+            if (IoDriverPolicy.IO_URING != ioDriver) {
                 disk.setIoDriver(ioDriver);
             } else if (enableIoUring) {
-                disk.setIoDriver(IoDriverPolicy.IOURING);
+                disk.setIoDriver(IoDriverPolicy.IO_URING);
             }
         }
     }
