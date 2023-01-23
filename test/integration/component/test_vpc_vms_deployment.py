@@ -993,7 +993,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                 "ListNetwork response should be empty as network is deleted"
                 )
 
-        self.debug("Create a new netowrk in VPC: %s" % vpc.name)
+        self.debug("Create a new network in VPC: %s" % vpc.name)
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" % nw_off.id)
 
@@ -1263,7 +1263,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                 "ListNetwork response should be empty as network is deleted"
                 )
 
-        self.debug("Create a new netowrk in VPC: %s" % vpc.name)
+        self.debug("Create a new network in VPC: %s" % vpc.name)
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
                                                         nw_off_no_lb.id)

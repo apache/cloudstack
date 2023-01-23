@@ -26,4 +26,6 @@ public interface ConsoleAccessManager extends Manager {
     boolean isSessionAllowed(String sessionUuid);
 
     void removeSessions(String[] sessionUuids);
+
+    void removeSession(String sessionUuid);
 }

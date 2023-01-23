@@ -25,7 +25,7 @@ public class TcpAclRule extends AclRule {
     private int lastPort;
 
     public TcpAclRule() {
-        // Empty contructor for (de)serialization
+        // Empty constructor for (de)serialization
     }
 
     public TcpAclRule(String cidr, boolean allowed, int firstPort, int lastPort) {

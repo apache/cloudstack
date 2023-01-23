@@ -17,37 +17,21 @@
 // under the License.
 //
 
-package com.cloud.agent.resource.virtualnetwork.model;
+package com.cloud.vm.dao;
 
-public class UdpAclRule extends AclRule {
-    private final String type = "udp";
-    private int firstPort;
-    private int lastPort;
+import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.utils.db.GenericDaoBase;
 
-    public UdpAclRule() {
-        // Empty constructor for (de)serialization
+public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
+
+    @Override
+    public void removeSession(String sessionUuid) {
+        ConsoleSessionVO session = findByUuid(sessionUuid);
+        remove(session.getId());
     }
 
-    public UdpAclRule(String cidr, boolean allowed, int firstPort, int lastPort) {
-        super(cidr, allowed);
-        this.firstPort = firstPort;
-        this.lastPort = lastPort;
+    @Override
+    public boolean isSessionAllowed(String sessionUuid) {
+        return findByUuid(sessionUuid) != null;
     }
-
-    public int getFirstPort() {
-        return firstPort;
-    }
-
-    public void setFirstPort(int firstPort) {
-        this.firstPort = firstPort;
-    }
-
-    public int getLastPort() {
-        return lastPort;
-    }
-
-    public void setLastPort(int lastPort) {
-        this.lastPort = lastPort;
-    }
-
 }
