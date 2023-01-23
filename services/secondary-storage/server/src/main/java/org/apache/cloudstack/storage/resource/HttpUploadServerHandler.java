@@ -79,13 +79,13 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private boolean requestProcessed = false;
 
-    private static final String HEADER_SIGNATURE = "X-signature";
+    private static final String HEADER_SIGNATURE = "x-signature";
 
-    private static final String HEADER_METADATA = "X-metadata";
+    private static final String HEADER_METADATA = "x-metadata";
 
-    private static final String HEADER_EXPIRES = "X-expires";
+    private static final String HEADER_EXPIRES = "x-expires";
 
-    private static final String HEADER_HOST = "X-Forwarded-Host";
+    private static final String HEADER_HOST = "x-forwarded-host";
 
     private static long processTimeout;
 
@@ -152,7 +152,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 logger.info("HEADER: metadata=" + metadata);
                 logger.info("HEADER: expires=" + expires);
                 logger.info("HEADER: hostname=" + hostname);
-                logger.info("HEADER: Content-Length=" + contentLength);
+                logger.info("HEADER: content-length=" + contentLength);
                 QueryStringDecoder decoderQuery = new QueryStringDecoder(uri);
                 Map<String, List<String>> uriAttributes = decoderQuery.parameters();
                 uuid = uriAttributes.get("uuid").get(0);
@@ -279,7 +279,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, statusCode, buf);
         response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         if (!close) {
-            // There's no need to add 'Content-Length' header if this is the last response.
+            // There's no need to add 'content-length' header if this is the last response.
             response.headers().set(CONTENT_LENGTH, buf.readableBytes());
         }
         // Write the response.
