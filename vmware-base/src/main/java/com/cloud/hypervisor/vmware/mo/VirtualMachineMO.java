@@ -52,6 +52,7 @@ import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -1395,7 +1396,10 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String vSphereStoragePolicyId) throws Exception {
+        attachDisk(vmdkDatastorePathChain, morDs, diskController, vSphereStoragePolicyId, null);
+    }
 
+    public void attachDisk(String[] vmdkDatastorePathChain, ManagedObjectReference morDs, String diskController, String vSphereStoragePolicyId, Long maxIops) throws Exception {
         if(s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
                             + GSON.toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
@@ -1425,7 +1429,7 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         synchronized (_mor.getValue().intern()) {
-            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, controllerKey, vmdkDatastorePathChain, morDs, unitNumber, 1);
+            VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, controllerKey, vmdkDatastorePathChain, morDs, unitNumber, 1, maxIops);
             if (StringUtils.isNotBlank(diskController)) {
                 String vmdkFileName = vmdkDatastorePathChain[0];
                 updateVmdkAdapter(vmdkFileName, diskController);
@@ -2086,7 +2090,7 @@ public class VirtualMachineMO extends BaseMO {
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
-            VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, null, -1, disks, morDs, -1, 1);
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(clonedVmMo, null, -1, disks, morDs, -1, 1, null);
 
             deviceConfigSpec.setDevice(device);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
@@ -2120,6 +2124,7 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void plugDevice(VirtualDevice device) throws Exception {
+        s_logger.debug(LogUtils.logGsonWithoutException("Pluging device [%s] to VM [%s].", device, getVmName()));
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
         deviceConfigSpec.setDevice(device);

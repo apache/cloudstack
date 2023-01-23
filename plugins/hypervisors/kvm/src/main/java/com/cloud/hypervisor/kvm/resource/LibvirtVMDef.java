@@ -990,6 +990,10 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
         }
 
+        public DiskProtocol getDiskProtocol() {
+            return _diskProtocol;
+        }
+
         public DiskBus getBusType() {
             return _bus;
         }

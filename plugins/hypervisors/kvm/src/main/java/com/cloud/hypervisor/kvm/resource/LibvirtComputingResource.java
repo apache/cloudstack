@@ -3078,10 +3078,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         return enableIoUringConfig != null ?
                 enableIoUringConfig:
-                (isBaseOsUbuntu() || isIoUringSupportedByQemu());
+                (isUbuntuHost() || isIoUringSupportedByQemu());
     }
 
-    private boolean isBaseOsUbuntu() {
+    public boolean isUbuntuHost() {
         Map<String, String> versionString = getVersionStrings();
         String hostKey = "Host.OS";
         if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
@@ -4022,35 +4022,29 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     break;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                final String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
-                String diskPath = null;
-                if (path != null) {
-                    final String[] token = path.split("/");
-                    if (token.length > 3) {
-                        diskPath = token[3];
-                        final VmDiskStatsEntryWithDelta stat = new VmDiskStatsEntryWithDelta(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
-                        final DomainBlockStats oldStats = vmDiskStats.get(String.format("%s-%s", vmName, diskPath));
-                        if (oldStats != null) {
-                            final long deltaiord = blockStats.rd_req - oldStats.rd_req;
-                            if (deltaiord > 0) {
-                                stat.setDeltaIoRead(deltaiord);
-                            }
-                            final long deltaiowr = blockStats.wr_req - oldStats.wr_req;
-                            if (deltaiowr > 0) {
-                                stat.setDeltaIoWrite(deltaiowr);
-                            }
-                            final long deltabytesrd = blockStats.rd_bytes - oldStats.rd_bytes;
-                            if (deltabytesrd > 0) {
-                                stat.setDeltaBytesRead(deltabytesrd);
-                            }
-                            final long deltabyteswr = blockStats.wr_bytes - oldStats.wr_bytes;
-                            if (deltabyteswr > 0) {
-                                stat.setDeltaBytesWrite(deltabyteswr);
-                            }
+                String diskPath = getDiskPathFromDiskDef(disk);
+                if (diskPath != null) {final VmDiskStatsEntryWithDelta stat = new VmDiskStatsEntryWithDelta(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                    final DomainBlockStats oldStats = vmDiskStats.get(String.format("%s-%s", vmName, diskPath));
+                    if (oldStats != null) {
+                        final long deltaiord = blockStats.rd_req - oldStats.rd_req;
+                        if (deltaiord > 0) {
+                            stat.setDeltaIoRead(deltaiord);
                         }
-                        stats.add(stat);
-                        vmDiskStats.put(String.format("%s-%s", vmName, diskPath), blockStats);
+                        final long deltaiowr = blockStats.wr_req - oldStats.wr_req;
+                        if (deltaiowr > 0) {
+                            stat.setDeltaIoWrite(deltaiowr);
+                        }
+                        final long deltabytesrd = blockStats.rd_bytes - oldStats.rd_bytes;
+                        if (deltabytesrd > 0) {
+                            stat.setDeltaBytesRead(deltabytesrd);
+                        }
+                        final long deltabyteswr = blockStats.wr_bytes - oldStats.wr_bytes;
+                        if (deltabyteswr > 0) {
+                            stat.setDeltaBytesWrite(deltabyteswr);
+                        }
                     }
+                    stats.add(stat);
+                    vmDiskStats.put(String.format("%s-%s", vmName, diskPath), blockStats);
                 }
             }
 
@@ -4060,6 +4054,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 dm.free();
             }
         }
+    }
+
+    protected String getDiskPathFromDiskDef(DiskDef disk) {
+        final String path = disk.getDiskPath();
+        if (path != null) {
+            final String[] token = path.split("/");
+            if (DiskProtocol.RBD.equals(disk.getDiskProtocol())) {
+                // for example, path = <RBD pool>/<disk path>
+                if (token.length > 1) {
+                    return token[1];
+                }
+            } else if (token.length > 3) {
+                // for example, path = /mnt/pool_uuid/disk_path/
+                return token[3];
+            }
+        }
+        return null;
     }
 
     private class VmStats {
