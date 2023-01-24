@@ -51,6 +51,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "300",
             "The backup and recovery background sync task polling interval in seconds.", true);
 
+    ConfigKey<Boolean> BackupEnableAttachDetachVolumes = new ConfigKey<>("Advanced", Boolean.class,
+            "backup.enable.attach.detach.of.volumes",
+            "false",
+            "Enable volume attach/detach operations for VMs that are assigned to Backup Offerings.", true);
+
     /**
      * List backup provider offerings
      * @param zoneId zone id

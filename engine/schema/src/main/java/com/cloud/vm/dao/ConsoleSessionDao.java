@@ -17,27 +17,15 @@
 // under the License.
 //
 
-package com.cloud.agent.api.routing;
+package com.cloud.vm.dao;
 
-import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.utils.db.GenericDao;
 
-public class IpAssocCommand extends NetworkElementCommand {
+public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
-    IpAddressTO[] ipAddresses;
+    void removeSession(String sessionUuid);
 
-    protected IpAssocCommand() {
-    }
+    boolean isSessionAllowed(String sessionUuid);
 
-    public IpAssocCommand(IpAddressTO[] ips) {
-        this.ipAddresses = ips;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return false;
-    }
-
-    public IpAddressTO[] getIpAddresses() {
-        return ipAddresses;
-    }
 }

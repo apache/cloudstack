@@ -120,6 +120,10 @@ class Distribution:
                 version.find("CentOS Linux release 8") != -1 or version.find("CentOS release 8.") != -1 or
                 version.find("Linux release 8") != -1):
                 self.distro = "RHEL8"
+            elif (version.find("Red Hat Enterprise Linux Server release 9") != -1 or version.find("Scientific Linux release 9") != -1 or
+                version.find("Red Hat Enterprise Linux release 9") != -1 or version.find("Linux release 9.") != -1 or
+                version.find("Linux release 9") != -1):
+                self.distro = "RHEL9"
             elif version.find("CentOS") != -1:
                 self.distro = "CentOS"
             else:

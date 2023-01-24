@@ -587,6 +587,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find backup offering of the VM backup");
         }
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (!backupProvider.restoreVMFromBackup(vm, backup)) {
             throw new CloudRuntimeException("Error restoring VM from backup ID " + backup.getId());
@@ -619,7 +620,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = findVmById(vmId);
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
-        if (vm.getBackupOfferingId() != null) {
+        if (vm.getBackupOfferingId() != null && !BackupEnableAttachDetachVolumes.value()) {
             throw new CloudRuntimeException("The selected VM has backups, cannot restore and attach volume to the VM.");
         }
 
@@ -841,7 +842,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return new ConfigKey[]{
                 BackupFrameworkEnabled,
                 BackupProviderPlugin,
-                BackupSyncPollingInterval
+                BackupSyncPollingInterval,
+                BackupEnableAttachDetachVolumes
         };
     }
 

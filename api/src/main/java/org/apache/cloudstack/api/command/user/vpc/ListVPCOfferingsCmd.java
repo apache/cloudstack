@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -60,10 +61,17 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list VPC offerings by state")
     private String state;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "list VPC offerings available for VPC creation in specific domain",
+            since = "4.18")
+    private Long domainId;
+
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "id of zone disk offering is associated with",
+            description = "id of zone VPC offering is associated with",
             since = "4.13")
     private Long zoneId;
 
@@ -92,6 +100,10 @@ public class ListVPCOfferingsCmd extends BaseListCmd {
 
     public String getState() {
         return state;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     public Long getZoneId() {

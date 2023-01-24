@@ -139,13 +139,13 @@
               <a-radio-button value="all" v-if="isAdmin()">
                 {{ $t('label.all') }}
               </a-radio-button>
-              <a-radio-button value="domain" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') && isAdminOrDomainAdmin()">
+              <a-radio-button value="domain" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') && isAdminOrDomainAdmin() || 'Advanced' === selectedZone.networktype && isAdmin()">
                 {{ $t('label.domain') }}
               </a-radio-button>
-              <a-radio-button value="account" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="account" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') || 'Advanced' === selectedZone.networktype && isAdmin()">
                 {{ $t('label.account') }}
               </a-radio-button>
-              <a-radio-button value="project" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="project" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') || 'Advanced' === selectedZone.networktype && isAdmin()">
                 {{ $t('label.project') }}
               </a-radio-button>
             </a-radio-group>
@@ -648,7 +648,7 @@ export default {
         api('listZones', params).then(json => {
           for (const i in json.listzonesresponse.zone) {
             const zone = json.listzonesresponse.zone[i]
-            if (zone.networktype === 'Advanced') {
+            if (zone.networktype === 'Advanced' && (isAdmin() || zone.securitygroupsenabled !== true)) {
               this.zones.push(zone)
             }
           }

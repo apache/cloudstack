@@ -143,8 +143,8 @@
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
             <appstore-outlined />
-            <span v-if="resource.cputotal">{{ resource.cputotal }}</span>
-            <span v-else>{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <span v-else>{{ resource.cputotal }}</span>
           </div>
           <div>
             <span v-if="resource.cpuused">

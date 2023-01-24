@@ -211,7 +211,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 
     private void sendResponse(HttpExchange t, String contentType, String response) throws IOException {
         Headers hds = t.getResponseHeaders();
-        hds.set("Content-Type", contentType);
+        hds.set("content-type", contentType);
 
         t.sendResponseHeaders(200, response.length());
         OutputStream os = t.getResponseBody();
@@ -383,9 +383,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String response = viewer.onAjaxClientStart(title, languages, guest);
 
         Headers hds = t.getResponseHeaders();
-        hds.set("Content-Type", "text/html");
-        hds.set("Cache-Control", "no-cache");
-        hds.set("Cache-Control", "no-store");
+        hds.set("content-type", "text/html");
+        hds.set("cache-control", "no-cache");
+        hds.set("cache-control", "no-store");
         t.sendResponseHeaders(200, response.length());
 
         OutputStream os = t.getResponseBody();
@@ -400,7 +400,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String response = viewer.onAjaxClientUpdate();
 
         Headers hds = t.getResponseHeaders();
-        hds.set("Content-Type", "text/javascript");
+        hds.set("content-type", "text/javascript");
         t.sendResponseHeaders(200, response.length());
 
         OutputStream os = t.getResponseBody();
