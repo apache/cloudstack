@@ -81,6 +81,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -703,6 +704,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return serviceProviderMap;
     }
 
+    private void verifyDomainId(Long domainId, Account caller) {
+        if (domainId == null) {
+            return;
+        }
+        Domain domain = _entityMgr.findById(Domain.class, domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+        }
+        if (!domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+            throw new InvalidParameterValueException(String.format("Unable to list VPC offerings for domain: %s as caller does not have access for it", domain.getUuid()));
+        }
+    }
+
     @Override
     public Pair<List<? extends VpcOffering>, Integer> listVpcOfferings(ListVPCOfferingsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
@@ -715,10 +729,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String state = cmd.getState();
         final Long startIndex = cmd.getStartIndex();
         final Long pageSizeVal = cmd.getPageSizeVal();
+        final Long domainId = cmd.getDomainId();
         final Long zoneId = cmd.getZoneId();
         final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
         searchFilter.addOrderBy(VpcOfferingJoinVO.class, "id", true);
         final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
+
+        verifyDomainId(domainId, caller);
 
         if (keyword != null) {
             final SearchCriteria<VpcOfferingJoinVO> ssc = vpcOfferingJoinDao.createSearchCriteria();
@@ -760,25 +777,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         final List<VpcOfferingJoinVO> offerings = vpcOfferingJoinDao.search(sc, searchFilter);
 
-        // Remove offerings that are not associated with caller's domain
-        // TODO: Better approach
-        if (caller.getType() != Account.Type.ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+        // Remove offerings that are not associated with caller's domain or domainId passed
+        if ((!Account.Type.ADMIN.equals(caller.getType()) || domainId != null) && CollectionUtils.isNotEmpty(offerings)) {
             ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 VpcOfferingJoinVO offering = it.next();
-                if(org.apache.commons.lang3.StringUtils.isNotEmpty(offering.getDomainId())) {
-                    boolean toRemove = true;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (domainDao.isChildDomain(dId, caller.getDomainId())) {
-                            toRemove = false;
-                            break;
-                        }
-                    }
-                    if (toRemove) {
-                        it.remove();
-                    }
+                if (org.apache.commons.lang3.StringUtils.isEmpty(offering.getDomainId())) {
+                    continue;
+                }
+                if (!domainDao.domainIdListContainsAccessibleDomain(offering.getDomainId(), caller, domainId)) {
+                    it.remove();
                 }
             }
         }

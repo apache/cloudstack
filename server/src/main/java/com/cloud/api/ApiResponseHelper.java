@@ -4612,7 +4612,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     sshkeyPair.getFingerprint(), sshkeyPair.getPrivateKey());
         }
         Account account = ApiDBUtils.findAccountById(sshkeyPair.getAccountId());
-        response.setAccountName(account.getAccountName());
+        if (account.getType() == Account.Type.PROJECT) {
+            Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getAccountId());
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
         Domain domain = ApiDBUtils.findDomainById(sshkeyPair.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());

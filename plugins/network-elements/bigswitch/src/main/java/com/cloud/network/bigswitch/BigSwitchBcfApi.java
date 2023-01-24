@@ -57,7 +57,7 @@ public class BigSwitchBcfApi {
     private static final Logger S_LOGGER = Logger.getLogger(BigSwitchBcfApi.class);
     private final static String S_PROTOCOL = "https";
     private final static String S_NS_BASE_URL = "/networkService/v1.1";
-    private final static String CONTENT_TYPE = "Content-type";
+    private final static String CONTENT_TYPE = "content-type";
     private final static String ACCEPT = "Accept";
     private final static String CONTENT_JSON = "application/json";
     private final static String HTTP_HEADER_INSTANCE_ID = "Instance-ID";

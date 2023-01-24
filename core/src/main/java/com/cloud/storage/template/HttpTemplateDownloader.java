@@ -293,7 +293,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     }
 
     private boolean tryAndGetRemoteSize() {
-        Header contentLengthHeader = request.getResponseHeader("Content-Length");
+        Header contentLengthHeader = request.getResponseHeader("content-length");
         boolean chunked = false;
         long reportedRemoteSize = 0;
         if (contentLengthHeader == null) {
