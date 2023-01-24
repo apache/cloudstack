@@ -144,13 +144,13 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
 
         if (responseContent != null) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Write reponse with HTTP OK " + responseContent);
+                logger.trace("Write response with HTTP OK " + responseContent);
             }
 
             writeResponse(response, HttpStatus.SC_OK, responseContent);
         } else {
             if (logger.isTraceEnabled()) {
-                logger.trace("Write reponse with HTTP Bad request");
+                logger.trace("Write response with HTTP Bad request");
             }
 
             writeResponse(response, HttpStatus.SC_BAD_REQUEST, null);

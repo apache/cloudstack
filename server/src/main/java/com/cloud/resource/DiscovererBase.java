@@ -90,7 +90,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         } catch (ClassNotFoundException e) {
             logger.warn("Unable to find class " + resourceName, e);
         } catch (InstantiationException e) {
-            logger.warn("Unablet to instantiate class " + resourceName, e);
+            logger.warn("Unable to instantiate class " + resourceName, e);
         } catch (IllegalAccessException e) {
             logger.warn("Illegal access " + resourceName, e);
         } catch (SecurityException e) {

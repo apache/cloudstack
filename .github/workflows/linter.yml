@@ -32,7 +32,7 @@ jobs:
       contents: read  # for actions/checkout to fetch code
       statuses: write  # for github/super-linter to mark status of each linter run
     name: Super-Linter Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -48,7 +48,7 @@ jobs:
           VALIDATE_PYTHON_FLAKE8: true
   pre-commit:
     name: Run pre-commit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Out
         uses: actions/checkout@v3

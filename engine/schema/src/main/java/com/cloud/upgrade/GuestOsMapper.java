@@ -54,22 +54,24 @@ public class GuestOsMapper {
 
     private long getGuestOsId(long categoryId, String displayName) {
         GuestOSVO guestOS = guestOSDao.findByCategoryIdAndDisplayNameOrderByCreatedDesc(categoryId, displayName);
+        long id = 0l;
         if (guestOS != null) {
-            guestOS.getId();
+            id = guestOS.getId();
+        } else {
+            logger.warn(String.format("Unable to find the guest OS details with category id: %d and display name: %s",  + categoryId, displayName));
         }
-
-        logger.warn("Unable to find the guest OS details with category id: " + categoryId + " and display name: " + displayName);
-        return 0;
+        return id;
     }
 
     private long getGuestOsIdFromHypervisorMapping(GuestOSHypervisorMapping mapping) {
         GuestOSHypervisorVO guestOSHypervisorVO = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(mapping.getGuestOsName(), mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        long id = 0;
         if (guestOSHypervisorVO != null) {
-            guestOSHypervisorVO.getGuestOsId();
+            id = guestOSHypervisorVO.getGuestOsId();
+        } else {
+            logger.warn(String.format("Unable to find the guest OS hypervisor mapping details for %s", mapping.toString()));
         }
-
-        logger.debug("Unable to find the guest OS hypervisor mapping details for " + mapping.toString());
-        return 0;
+        return id;
     }
 
     public void addGuestOsAndHypervisorMappings(long categoryId, String displayName, List<GuestOSHypervisorMapping> mappings) {

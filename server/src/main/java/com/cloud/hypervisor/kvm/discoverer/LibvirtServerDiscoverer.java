@@ -258,10 +258,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
             final String privateKey = _configDao.getValue("ssh.privatekey");
             if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
-                logger.error("Failed to authenticate with ssh key");
                 if (org.apache.commons.lang3.StringUtils.isEmpty(password)) {
+                    logger.error("Failed to authenticate with ssh key");
                     throw new DiscoveredWithErrorException("Authentication error with ssh private key");
                 }
+                logger.info("Failed to authenticate with ssh key, retrying with password");
                 if (!sshConnection.authenticateWithPassword(username, password)) {
                     logger.error("Failed to authenticate with password");
                     throw new DiscoveredWithErrorException("Authentication error with host password");

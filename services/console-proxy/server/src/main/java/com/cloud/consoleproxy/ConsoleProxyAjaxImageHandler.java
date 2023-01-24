@@ -128,9 +128,9 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
             javax.imageio.ImageIO.write(bufferedImage, "jpg", bos);
             byte[] bs = bos.toByteArray();
             Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "image/jpeg");
-            hds.set("Cache-Control", "no-cache");
-            hds.set("Cache-Control", "no-store");
+            hds.set("content-type", "image/jpeg");
+            hds.set("cache-control", "no-cache");
+            hds.set("cache-control", "no-store");
             t.sendResponseHeaders(200, bs.length);
             OutputStream os = t.getResponseBody();
             os.write(bs);
@@ -141,7 +141,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 
             if (img != null) {
                 Headers hds = t.getResponseHeaders();
-                hds.set("Content-Type", "image/jpeg");
+                hds.set("content-type", "image/jpeg");
                 t.sendResponseHeaders(200, img.length);
 
                 OutputStream os = t.getResponseBody();

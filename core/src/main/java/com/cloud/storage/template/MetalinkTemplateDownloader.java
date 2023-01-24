@@ -138,7 +138,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
             i++;
         }
         if (!downloaded) {
-            logger.error("Template couldnt be downloaded");
+            logger.error("Template couldn't be downloaded");
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }

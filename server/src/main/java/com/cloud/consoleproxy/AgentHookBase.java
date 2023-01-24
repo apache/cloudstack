@@ -106,9 +106,12 @@ public abstract class AgentHookBase implements AgentHook {
             }
 
             if (!consoleAccessManager.isSessionAllowed(sessionUuid)) {
-                logger.error("Invalid session, only one session allowed per token");
+                logger.error(String.format("Session [%s] has been already used or does not exist.", sessionUuid));
                 return new ConsoleAccessAuthenticationAnswer(cmd, false);
             }
+
+            logger.debug(String.format("Removing session [%s] as it was just used.", sessionUuid));
+            consoleAccessManager.removeSession(sessionUuid);
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();

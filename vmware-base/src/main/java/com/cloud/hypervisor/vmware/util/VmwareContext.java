@@ -380,8 +380,8 @@ public class VmwareContext {
         conn.setRequestMethod(httpMethod);
         conn.setRequestProperty("Connection", "Keep-Alive");
         String contentType = "application/octet-stream";
-        conn.setRequestProperty("Content-Type", contentType);
-        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        conn.setRequestProperty("content-type", contentType);
+        conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
         OutputStream out = null;
         InputStream in = null;
@@ -437,8 +437,8 @@ public class VmwareContext {
         String contentType = urlString.endsWith(".iso") ?
                 "application/octet-stream" :
                 "application/x-vnd.vmware-streamVmdk";
-        conn.setRequestProperty("Content-Type", contentType);
-        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        conn.setRequestProperty("content-type", contentType);
+        conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 
         BufferedOutputStream bos = null;

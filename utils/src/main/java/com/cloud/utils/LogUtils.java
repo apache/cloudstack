@@ -20,7 +20,9 @@
 package com.cloud.utils;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,8 +32,11 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import com.google.gson.Gson;
+
 public class LogUtils {
     protected static Logger LOGGER = LogManager.getLogger(LogUtils.class);
+    private static final Gson GSON = new Gson();
 
     private static String configFileLocation = null;
 
@@ -72,5 +77,24 @@ public class LogUtils {
             LOGGER.trace("Out of {} appenders, {} are log files.", appenderCount, fileNames.size());
         }
         return fileNames;
+    }
+
+    public static String logGsonWithoutException(String formatMessage, Object ... objects) {
+        List<String> gsons = new ArrayList<>();
+        for (Object object : objects) {
+            try {
+                gsons.add(GSON.toJson(object));
+            } catch (Exception e) {
+                LOGGER.debug(String.format("Failed to log object [%s] using GSON.", object != null ? object.getClass().getSimpleName() : "null"));
+                gsons.add("error to decode");
+            }
+        }
+        try {
+            return String.format(formatMessage, gsons.toArray());
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to log objects using GSON due to: [%s].", e.getMessage());
+            LOGGER.error(errorMsg, e);
+            return errorMsg;
+        }
     }
 }

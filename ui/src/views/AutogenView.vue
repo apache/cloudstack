@@ -55,8 +55,10 @@
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                      ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
+                        ? 'all' : ['publicip'].includes($route.name)
+                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
+                        ? 'all' : ['volume'].includes($route.name)
+                        ? 'user' : 'self')"
                     style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -847,10 +849,6 @@ export default {
         delete params.showunique
       }
 
-      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
-        params.listsystemvms = true
-      }
-
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -1542,6 +1540,12 @@ export default {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
         query.isofilter = filter
+      } else if (this.$route.name === 'volume') {
+        if (filter === 'all') {
+          query.listsystemvms = true
+        } else {
+          delete query.listsystemvms
+        }
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
           delete query.networkfilter

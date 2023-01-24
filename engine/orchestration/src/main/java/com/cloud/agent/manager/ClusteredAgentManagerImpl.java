@@ -714,11 +714,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
             } catch (final ClassNotFoundException e) {
-                final String message = String.format("ClassNotFoundException occurred when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("ClassNotFoundException occurred when executing tasks! Error '%s'", e.getMessage());
                 logger.error(message);
                 throw new TaskExecutionException(message, e);
             } catch (final UnsupportedVersionException e) {
-                final String message = String.format("UnsupportedVersionException occurred when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("UnsupportedVersionException occurred when executing tasks! Error '%s'", e.getMessage());
                 logger.error(message);
                 throw new TaskExecutionException(message, e);
             } finally {
@@ -1273,7 +1273,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 cmds = _gson.fromJson(pdu.getJsonPackage(), Command[].class);
             } catch (final Throwable e) {
                 assert false;
-                logger.error("Excection in gson decoding : ", e);
+                logger.error("Exception in gson decoding : ", e);
             }
 
             if (cmds.length == 1 && cmds[0] instanceof ChangeAgentCommand) { // intercepted

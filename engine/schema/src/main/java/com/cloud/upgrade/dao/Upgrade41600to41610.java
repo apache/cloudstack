@@ -17,8 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.storage.GuestOSHypervisorMapping;
-import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -28,7 +26,6 @@ import java.sql.Connection;
 public class Upgrade41600to41610 extends DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
 
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
-    private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -58,12 +55,7 @@ public class Upgrade41600to41610 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public void performDataMigration(Connection conn) {
-        correctGuestOsIdsInHypervisorMapping(conn);
-    }
-
-    private void correctGuestOsIdsInHypervisorMapping(final Connection conn) {
-        logger.debug("Correcting guest OS ids in hypervisor mappings");
-        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
+        // nothing to do
     }
 
     @Override
