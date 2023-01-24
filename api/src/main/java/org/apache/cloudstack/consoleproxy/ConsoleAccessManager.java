@@ -19,6 +19,8 @@ package org.apache.cloudstack.consoleproxy;
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 
+import java.util.Date;
+
 public interface ConsoleAccessManager extends Manager {
 
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
@@ -28,4 +30,7 @@ public interface ConsoleAccessManager extends Manager {
     void removeSessions(String[] sessionUuids);
 
     void removeSession(String sessionUuid);
+
+    String genAccessTicket(String host, String port, String sid, String tag, String sessionUuid);
+    String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime, String sessionUuid);
 }

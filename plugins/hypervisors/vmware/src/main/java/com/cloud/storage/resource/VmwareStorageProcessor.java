@@ -2411,7 +2411,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
-        s_logger.debug(LogUtils.logGsonWithoutException("Executing CreateObjectCommand cmd: [%s].", cmd));
+        logger.debug(LogUtils.logGsonWithoutException("Executing CreateObjectCommand cmd: [%s].", cmd));
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
         DataStoreTO primaryStore = volume.getDataStore();
         String vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();

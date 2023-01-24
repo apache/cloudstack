@@ -308,7 +308,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
                     return true;
                 }
             } catch (NumberFormatException nfe) {
-                s_logger.debug(String.format("Unable to parse %s as domain ID from the list of domain IDs: %s", domainIdList.trim(), domainIdList), nfe);
+                logger.debug(String.format("Unable to parse %s as domain ID from the list of domain IDs: %s", domainIdList.trim(), domainIdList), nfe);
             }
         }
         return false;

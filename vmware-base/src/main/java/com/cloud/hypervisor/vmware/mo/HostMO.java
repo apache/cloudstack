@@ -642,7 +642,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     @Override
     public boolean createVm(VirtualMachineConfigSpec vmSpec) throws Exception {
         assert (vmSpec != null);
-        s_logger.debug(LogUtils.logGsonWithoutException("Creating VM with configuration: [%s].", vmSpec));
+        logger.debug(LogUtils.logGsonWithoutException("Creating VM with configuration: [%s].", vmSpec));
         DatacenterMO dcMo = new DatacenterMO(_context, getHyperHostDatacenter());
         ManagedObjectReference morPool = getHyperHostOwnerResourcePool();
 

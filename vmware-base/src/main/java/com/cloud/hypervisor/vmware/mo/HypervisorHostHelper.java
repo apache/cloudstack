@@ -1624,7 +1624,7 @@ public class HypervisorHostHelper {
         DatacenterMO dataCenterMo = new DatacenterMO(host.getContext(), host.getHyperHostDatacenter());
         setVMHardwareVersion(vmConfig, clusterMo, dataCenterMo);
 
-        s_logger.debug(LogUtils.logGsonWithoutException("Creating blank VM with configuration [%s].", vmConfig));
+        LOGGER.debug(LogUtils.logGsonWithoutException("Creating blank VM with configuration [%s].", vmConfig));
         if (host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where

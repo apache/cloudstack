@@ -2432,7 +2432,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
                     Long maxIops = volumeTO.getIopsWriteRate() + volumeTO.getIopsReadRate();
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1, maxIops);
-                    s_logger.debug(LogUtils.logGsonWithoutException("The following definitions will be used to start the VM: virtual device [%s], volume [%s].", device, volumeTO));
+                    logger.debug(LogUtils.logGsonWithoutException("The following definitions will be used to start the VM: virtual device [%s], volume [%s].", device, volumeTO));
 
                     diskStoragePolicyId = volumeTO.getvSphereStoragePolicyId();
                     if (StringUtils.isNotEmpty(diskStoragePolicyId)) {

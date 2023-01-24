@@ -2122,7 +2122,7 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void plugDevice(VirtualDevice device) throws Exception {
-        s_logger.debug(LogUtils.logGsonWithoutException("Pluging device [%s] to VM [%s].", device, getVmName()));
+        logger.debug(LogUtils.logGsonWithoutException("Pluging device [%s] to VM [%s].", device, getVmName()));
         VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
         VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
         deviceConfigSpec.setDevice(device);

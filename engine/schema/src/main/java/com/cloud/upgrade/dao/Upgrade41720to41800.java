@@ -246,7 +246,7 @@ public class Upgrade41720to41800 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     private void updateGuestOsMappings() {
-        LOG.debug("Updating guest OS mappings");
+        logger.debug("Updating guest OS mappings");
 
         // Add support for SUSE Linux Enterprise Desktop 12 SP3 (64-bit) for Xenserver 8.1.0
         List<GuestOSHypervisorMapping> mappings = new ArrayList<GuestOSHypervisorMapping>();
@@ -697,7 +697,7 @@ public class Upgrade41720to41800 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     private void correctGuestOsIdsInHypervisorMapping(final Connection conn) {
-        LOG.debug("Correcting guest OS ids in hypervisor mappings");
+        logger.debug("Correcting guest OS ids in hypervisor mappings");
         guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 10, "Ubuntu 20.04 LTS", new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
     }
 }
