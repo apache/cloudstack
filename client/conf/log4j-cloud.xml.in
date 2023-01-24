@@ -20,6 +20,10 @@ under the License.
 <Configuration monitorInterval="60">
    <Appenders>
 
+      <properties>
+        <property name="filters">net.sf.cglib.proxy</property>
+      </properties>
+
       <!-- ================================= -->
       <!-- Preserve messages in a local file -->
       <!-- ================================= -->
@@ -30,7 +34,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
       </RollingFile>
 
 
@@ -39,7 +43,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
       </RollingFile>
 
       <!-- ============================== -->
@@ -48,7 +52,7 @@ under the License.
 
       <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
       </Syslog>
 
       <!-- ============================== -->
@@ -57,13 +61,13 @@ under the License.
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
       </Console>
 
 
       <Syslog name="ALERTSYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
       </Syslog>
     <!-- TODO
       <appender name="SNMP" class="org.apache.cloudstack.alert.snmp.SnmpTrapAppender">
@@ -113,8 +117,8 @@ under the License.
          <AppenderRef ref="SYSLOG"/>
          <AppenderRef ref="CONSOLE"/>
          <AppenderRef ref="FILE"/>
-      <!--<AppenderRef ref="SNMP"/>
-          <AppenderRef ref="ALERTSYSLOG"/>-->
+      <!--<AppenderRef ref="SNMP"/>-->
+          <AppenderRef ref="ALERTSYSLOG"/>
       </Logger>
 
    <!-- ======================= -->

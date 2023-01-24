@@ -19,78 +19,77 @@
     under the License.
 
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+  http://www.apache.org/licenses/LICENSE-2.0
 
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<Configuration monitorInterval="60">
+   <Appenders>
 
-   <!-- A time/date based rolling appender -->
-   <appender name="FILE" class="org.apache.log4j.DailyRollingFileAppender">
-      <param name="File" value="/var/log/vmops/vmops-testcase.log"/>
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="INFO"/>
+      <!-- ================================= -->
+      <!-- Preserve messages in a local file -->
+      <!-- ================================= -->
 
-      <!-- Rollover at midnight each day -->
-      <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+      <!-- A time/date based rolling appender -->
+      <RollingFile name="FILE" append="true" fileName="/var/log/vmops/vmops-testcase.log" filePattern="/var/log/vmops/vmops-testcase.log.%d{yyyy-MM-dd}.gz">
+         <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d %-5p [%c{3}] (%t:%x) %m%n"/>
+      </RollingFile>
 
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
-   
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{ABSOLUTE} %5p %c{1}:%L - %m%n"/>
+      </Console>
+   </Appenders>
 
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ABSOLUTE} %5p %c{1}:%L - %m%n"/>
-      </layout>
-   </appender>
+   <Loggers>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
-   
-   <category name="com.vmops.utils.db">
-      <priority value="DEBUG"/>
-   </category>
+      <!-- ================ -->
+      <!-- Limit categories -->
+      <!-- ================ -->
 
-   <category name="com.vmops.utils.db.Transaction.Transaction">
-      <priority value="TRACE"/>
-   </category>
+      <Logger name="com.vmops.utils.db" level="DEBUG"/>
 
-   <category name="com.vmops">
-     <priority value="TRACE"/>
-   </category>
-   
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="com.vmops.utils.db.Transaction.Transaction" level="TRACE"/>
 
-   <category name="org">
-      <priority value="INFO"/>
-   </category>
-   
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+      <Logger name="com.vmops" level="TRACE"/>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
+      <Logger name="org.apache" level="INFO"/>
 
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
-   </root>
+      <Logger name="org" level="INFO"/>
 
-</log4j:configuration>
+      <Logger name="net" level="INFO"/>
+
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
+
+      <Root level="INFO">
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+      </Root>
+
+   </Loggers>
+</Configuration>

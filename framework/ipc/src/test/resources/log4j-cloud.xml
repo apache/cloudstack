@@ -24,7 +24,7 @@ under the License.
       <!-- ================================= -->
 
       <!-- A time/date based rolling appender -->
-      <RollingFile name="FILE" append="true" fileName="samplemanagementserver.log" filePattern="'.'yyyy-MM-dd">
+      <RollingFile name="FILE" append="true" fileName="samplemanagementserver.log" filePattern="samplemanagementserver.log.%d{yyyy-MM-dd}">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
          <Policies>
             <TimeBasedTriggeringPolicy/>
