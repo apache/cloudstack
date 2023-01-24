@@ -53,7 +53,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
-import com.cloud.agent.api.VmDiskStatsEntryWithDelta;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
@@ -443,25 +442,19 @@ public class StatsCollectorTest {
         long readDiff = 1024;
         long writeDiff = 0;
         Long volumeId = 1L;
-        VmDiskStatisticsVO vmDiskStatisticsVO = new VmDiskStatisticsVO(1L, 1L, 1L, volumeId);
-        vmDiskStatisticsVO.setCurrentIORead(1000);
-        vmDiskStatisticsVO.setCurrentIOWrite(2000);
-        vmDiskStatisticsVO.setCurrentBytesRead(10240);
-        vmDiskStatisticsVO.setCurrentBytesWrite(20480);
         VmDiskStatsEntry statsForCurrentIteration = null;
         if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
-            VmDiskStatsEntryWithDelta statsForCurrentIterationWithDelta = new VmDiskStatsEntryWithDelta(vmName, path,
+            statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
                     2000 + ioWriteDiff,
                     1000 + ioReadDiff,
                     20480 + writeDiff,
                     10240 + readDiff);
-            statsForCurrentIterationWithDelta.setDeltaIoRead(ioReadDiff);
-            statsForCurrentIterationWithDelta.setDeltaIoWrite(ioWriteDiff);
-            statsForCurrentIterationWithDelta.setDeltaBytesRead(readDiff);
-            statsForCurrentIterationWithDelta.setDeltaBytesWrite(writeDiff);
-            statsForCurrentIteration = statsForCurrentIterationWithDelta;
+            statsForCurrentIteration.setDeltaIoRead(ioReadDiff);
+            statsForCurrentIteration.setDeltaIoWrite(ioWriteDiff);
+            statsForCurrentIteration.setDeltaBytesRead(readDiff);
+            statsForCurrentIteration.setDeltaBytesWrite(writeDiff);
         } else {
-            statsForCurrentIteration= new VmDiskStatsEntry(vmName, path,
+            statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
                     ioWriteDiff,
                     ioReadDiff,
                     writeDiff,
@@ -473,7 +466,7 @@ public class StatsCollectorTest {
             persistedStats.add(statsVO);
             return statsVO;
         });
-        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, timestamp);
+        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, hypervisorType, timestamp);
         Assert.assertTrue(CollectionUtils.isNotEmpty(persistedStats));
         Assert.assertNotNull(persistedStats.get(0));
         VolumeStatsVO stat = persistedStats.get(0);

@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -82,7 +83,6 @@ import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
-import com.cloud.agent.api.VmDiskStatsEntryWithDelta;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
@@ -107,6 +107,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.org.Cluster;
@@ -167,6 +168,8 @@ import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import com.sun.management.OperatingSystemMXBean;
@@ -1433,7 +1436,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(vm.getAccountId(), vm.getDataCenterId(), vmId, volume.getId());
 
                                     if (persistVolumeStats) {
-                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, timestamp);
+                                        persistVolumeStats(volume.getId(), vmDiskStatEntry, vm.getHypervisorType(), timestamp);
                                     }
 
                                     if (areAllDiskStatsZero(vmDiskStatEntry)) {
@@ -1891,26 +1894,33 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         vmStatsDao.persist(vmStatsVO);
     }
 
+    private String getVmDiskStatsEntryAsString(VmDiskStatsEntry statsForCurrentIteration, Hypervisor.HypervisorType hypervisorType) {
+        VmDiskStatsEntry entry;
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            entry = new VmDiskStatsEntry(statsForCurrentIteration.getVmName(),
+                    statsForCurrentIteration.getPath(),
+                    statsForCurrentIteration.getDeltaIoWrite(),
+                    statsForCurrentIteration.getDeltaIoRead(),
+                    statsForCurrentIteration.getDeltaBytesWrite(),
+                    statsForCurrentIteration.getDeltaBytesRead());
+        } else {
+            entry = statsForCurrentIteration;
+        }
+        JsonElement element = gson.toJsonTree(entry);
+        JsonObject obj = element.getAsJsonObject();
+        for (String key : Arrays.asList("deltaIoRead", "deltaIoWrite", "deltaBytesWrite", "deltaBytesRead")) {
+            obj.remove(key);
+        }
+        return obj.toString();
+    }
+
     /**
      * Persists VM disk stats in the database.
      * @param statsForCurrentIteration the metrics stats data to persist.
      * @param timestamp the time that will be stamped.
      */
-    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, Date timestamp) {
-        String stats;
-        if (statsForCurrentIteration instanceof VmDiskStatsEntryWithDelta) {
-            VmDiskStatsEntryWithDelta deltaStats = (VmDiskStatsEntryWithDelta)statsForCurrentIteration;
-            VmDiskStatsEntry volumeStatsVmDiskEntry = new VmDiskStatsEntry(deltaStats.getVmName(),
-                    deltaStats.getPath(),
-                    deltaStats.getDeltaIoWrite(),
-                    deltaStats.getDeltaIoRead(),
-                    deltaStats.getDeltaBytesWrite(),
-                    deltaStats.getDeltaBytesRead());
-            stats = gson.toJson(volumeStatsVmDiskEntry);
-        } else {
-            stats = gson.toJson(statsForCurrentIteration);
-        }
-        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, stats);
+    protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, Hypervisor.HypervisorType hypervisorType, Date timestamp) {
+        VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, getVmDiskStatsEntryAsString(statsForCurrentIteration, hypervisorType));
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("Recording volume stats: [%s].", volumeStatsVO));
         }

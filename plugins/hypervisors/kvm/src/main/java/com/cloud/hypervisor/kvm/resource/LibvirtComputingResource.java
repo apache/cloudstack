@@ -108,7 +108,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
-import com.cloud.agent.api.VmDiskStatsEntryWithDelta;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -4013,7 +4012,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             dm = getDomain(conn, vmName);
 
-            final List<VmDiskStatsEntry> stats = new ArrayList<VmDiskStatsEntry>();
+            final List<VmDiskStatsEntry> stats = new ArrayList<>();
 
             final List<DiskDef> disks = getDisks(conn, vmName);
 
@@ -4023,7 +4022,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
                 String diskPath = getDiskPathFromDiskDef(disk);
-                if (diskPath != null) {final VmDiskStatsEntryWithDelta stat = new VmDiskStatsEntryWithDelta(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                if (diskPath != null) {
+                    final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
                     final DomainBlockStats oldStats = vmDiskStats.get(String.format("%s-%s", vmName, diskPath));
                     if (oldStats != null) {
                         final long deltaiord = blockStats.rd_req - oldStats.rd_req;
