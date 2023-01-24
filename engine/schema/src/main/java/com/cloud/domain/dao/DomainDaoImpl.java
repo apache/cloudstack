@@ -24,11 +24,13 @@ import java.util.List;
 import java.util.Set;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -289,5 +291,28 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         }
 
         return parentDomains;
+    }
+
+    @Override
+    public boolean domainIdListContainsAccessibleDomain(String domainIdList, Account caller, Long domainId) {
+        if (StringUtils.isEmpty(domainIdList)) {
+            return false;
+        }
+        String[] domainIdsArray = domainIdList.split(",");
+        for (String domainIdString : domainIdsArray) {
+            try {
+                Long dId = Long.valueOf(domainIdString.trim());
+                if (!Account.Type.ADMIN.equals(caller.getType()) &&
+                        isChildDomain(dId, caller.getDomainId())) {
+                    return true;
+                }
+                if (domainId != null && isChildDomain(dId, domainId)) {
+                    return true;
+                }
+            } catch (NumberFormatException nfe) {
+                s_logger.debug(String.format("Unable to parse %s as domain ID from the list of domain IDs: %s", domainIdList.trim(), domainIdList), nfe);
+            }
+        }
+        return false;
     }
 }
