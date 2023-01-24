@@ -33,6 +33,10 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN `private_mtu` bigint unsigned comment 
 ALTER TABLE `cloud`.`vpc` ADD COLUMN `public_mtu` bigint unsigned comment "MTU for VPC VR public interface" ;
 ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;
 
+UPDATE `cloud`.`networks` SET public_mtu = 1500, private_mtu = 1500 WHERE removed IS NULL AND guest_type='Isolated';
+UPDATE `cloud`.`vpc` SET public_mtu = 1500 WHERE removed IS NULL;
+UPDATE `cloud`.`nics` SET mtu = 1500 WHERE vm_type='DomainRouter' AND removed IS NULL AND reserver_name IN ('PublicNetworkGuru', 'ExternalGuestNetworkGuru');
+
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
     select
