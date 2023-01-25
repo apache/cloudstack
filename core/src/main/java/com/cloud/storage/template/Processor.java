@@ -40,7 +40,7 @@ public interface Processor extends Adapter {
      *
      * @param templatePath path to the templates to process.
      * @param format Format of the original file.  If null, it means unknown.  If not null,
-     *        there is already a file with thte template name and image format extension
+     *        there is already a file with the template name and image format extension
      *        that exists in case a conversion can be done.
      */
     FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException;

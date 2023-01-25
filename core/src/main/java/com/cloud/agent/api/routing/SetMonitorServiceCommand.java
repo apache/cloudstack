@@ -95,4 +95,9 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
         this.deleteFromProcessedCache = deleteFromProcessedCache;
     }
+
+    @Override
+    public int getAnswersCount() {
+        return 2 + (reconfigureAfterUpdate ? 1 : 0);
+    }
 }

@@ -22,7 +22,7 @@
       :placeholder="$t('label.search')"
       v-model:value="filter"
       @search="handleSearch" />
-    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8">
+    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8" v-if="showCreateButton">
       {{ $t('label.create.network') }}
     </a-button>
     <a-table
@@ -100,6 +100,7 @@
 <script>
 import _ from 'lodash'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import store from '@/store'
 import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -150,6 +151,7 @@ export default {
         loading: false,
         opts: []
       },
+      showCreateButton: false,
       showCreateForm: false,
       oldZoneId: null,
       options: {
@@ -237,6 +239,13 @@ export default {
       }
     },
     loading () {
+      api('listZones', { id: this.zoneId }).then(json => {
+        const zoneResponse = json.listzonesresponse.zone || []
+        this.showCreateButton = false
+        if (zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
+          this.showCreateButton = true
+        }
+      })
       if (!this.loading) {
         if (this.preFillContent.networkids) {
           this.selectedRowKeys = this.preFillContent.networkids

@@ -137,6 +137,15 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.StoragePool,
             null);
 
+    ConfigKey<String> STORAGE_POOL_IO_POLICY = new ConfigKey<>(String.class,
+            "kvm.storage.pool.io.policy",
+            "Storage",
+            null,
+            "IO driver policy - 'threads', 'native' or 'io_uring'. If the IO policy is set for a specific storage and enabled in the VM settings this option will override be overridden from the VM's setting",
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
     ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
 
