@@ -33,20 +33,20 @@ import com.cloud.utils.component.AdapterBase;
 
 import java.security.SecureRandom;
 
-public class GoogleUserTwoFactorAuthenticator extends AdapterBase implements UserTwoFactorAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(GoogleUserTwoFactorAuthenticator.class);
+public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserTwoFactorAuthenticator {
+    public static final Logger s_logger = Logger.getLogger(TotpUserTwoFactorAuthenticator.class);
 
     @Inject
     private UserAccountDao _userAccountDao;
 
     @Override
     public String getName() {
-        return "google";
+        return "totp";
     }
 
     @Override
     public String getDescription() {
-        return "Google user two factor authentication provider Plugin";
+        return "TOTP user two factor authentication provider Plugin";
     }
 
     @Override

@@ -40,7 +40,7 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.2fa.authenticators.order" />
         <property name="excludeKey" value="user.2fa.authenticators.exclude" />
-        <property name="orderConfigDefault" value="google,staticpin" />
+        <property name="orderConfigDefault" value="totp,staticpin" />
     </bean>
 
     <bean id="pluggableAPIAuthenticatorsRegistry"

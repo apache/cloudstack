@@ -51,13 +51,14 @@
             :key="opt.name"
             :value="opt.name">
             <div>
-              <span v-if="opt.name === 'google'">
-                <google-outlined />
+              <span v-if="opt.name === 'totp'">
+                <field-time-outlined />
+                {{ opt.name.toUpperCase() }}
               </span>
               <span v-if="opt.name === 'staticpin'">
                 <lock-outlined />
+                {{ opt.name }}
               </span>
-              {{ opt.name }}
             </div>
           </a-select-option>
         </a-select>
@@ -71,7 +72,7 @@
           <p v-html="$t('message.two.fa.register.account.login.page')"></p>
           <vue-qrious
             class="center-align"
-            :value="googleUrl"
+            :value="totpUrl"
             @change="onDataUrlChange"
           />
           <div style="text-align: center"> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.setup.key') }}</a></div>
@@ -127,7 +128,7 @@ export default {
   },
   data () {
     return {
-      googleUrl: '',
+      totpUrl: '',
       dataUrl: '',
       pin: '',
       code: '',
@@ -159,14 +160,14 @@ export default {
       if (!this.twoFAenabled) {
         api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
           this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
-          if (this.selectedProvider === 'google') {
+          if (this.selectedProvider === 'totp') {
             this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
 
             var issuer = 'CloudStack'
             if (store.getters.twoFaIssuer !== '' && store.getters.twoFaIssuer !== undefined) {
               issuer = store.getters.twoFaIssuer
             }
-            this.googleUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
+            this.totpUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
 
             this.showPin = false
           }

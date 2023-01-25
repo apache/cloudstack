@@ -810,7 +810,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
 
-        accountManagerImpl.enableTwoFactorAuthentication(userId, "google");
+        accountManagerImpl.enableTwoFactorAuthentication(userId, "totp");
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -849,14 +849,14 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         UserTwoFactorAuthenticator googleProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
         Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
-        Mockito.when(userTwoFactorAuthenticationProvidersMap.containsKey("google")).thenReturn( true);
-        Mockito.when(userTwoFactorAuthenticationProvidersMap.get("google")).thenReturn( googleProvider);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.containsKey("totp")).thenReturn( true);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.get("totp")).thenReturn( googleProvider);
         AccountManagerImpl.userTwoFactorAuthenticationProvidersMap = userTwoFactorAuthenticationProvidersMap;
         Mockito.when(googleProvider.setup2FAKey(userAccount)).thenReturn("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
         Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
         Mockito.when(userDaoMock.update(userId, userVoMock)).thenReturn(true);
 
-        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.enableTwoFactorAuthentication(userId, "google");
+        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.enableTwoFactorAuthentication(userId, "totp");
 
         Assert.assertEquals("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL", response.getSecretCode());
     }
@@ -879,7 +879,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountService.getActiveAccountById(1L)).thenReturn(caller);
 
         userVoMock.setKeyFor2fa("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
-        userVoMock.setUser2faProvider("google");
+        userVoMock.setUser2faProvider("totp");
         userVoMock.setUser2faEnabled(true);
 
         Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);

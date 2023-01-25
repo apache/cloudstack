@@ -75,6 +75,7 @@ import {
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
+  FieldTimeOutlined,
   FileProtectOutlined,
   FilterOutlined,
   FilterTwoTone,
@@ -227,6 +228,7 @@ export default {
     app.component('ExclamationCircleOutlined', ExclamationCircleOutlined)
     app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EyeOutlined', EyeOutlined)
+    app.component('FieldTimeOutlined', FieldTimeOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FilterOutlined', FilterOutlined)
     app.component('FilterTwoTone', FilterTwoTone)

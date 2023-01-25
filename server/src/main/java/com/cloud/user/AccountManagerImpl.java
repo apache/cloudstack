@@ -354,8 +354,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
             "user.2fa.default.provider",
-            "google",
-            "The default user two factor authentication provider plugin. Eg. google, staticpin", true, ConfigKey.Scope.Domain);
+            "totp",
+            "The default user two factor authentication provider plugin. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
 
     protected AccountManagerImpl() {
         super();
