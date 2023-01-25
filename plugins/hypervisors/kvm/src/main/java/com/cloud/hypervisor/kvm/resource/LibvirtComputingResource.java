@@ -46,6 +46,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -1063,8 +1064,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
-        Boolean enableIoUringConfig = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
-        enableIoUring = isIoUringEnabled(enableIoUringConfig);
+        enableIoUring = isIoUringEnabled();
         s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
         final String cpuArchOverride = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_ARCH);
@@ -2507,7 +2507,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (busT == DiskDef.DiskBus.SCSI) {
-            devices.addDevice(createSCSIDef(vcpus));
+            Map<String, String> details = vmTO.getDetails();
+
+            boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
+            devices.addDevice(createSCSIDef(vcpus, isIothreadsEnabled));
         }
         return devices;
     }
@@ -2545,8 +2548,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Creates Virtio SCSI controller. <br>
      * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
      */
-    protected SCSIDef createSCSIDef(int vcpus) {
-        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
+    protected SCSIDef createSCSIDef(int vcpus, boolean isIothreadsEnabled) {
+        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus, isIothreadsEnabled);
     }
 
     protected ConsoleDef createConsoleDef() {
@@ -2673,13 +2676,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setGuestArch(_guestCpuArch != null ? _guestCpuArch : vmTO.getArch());
         guest.setMachineType(isGuestAarch64() ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
-        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
-            guest.setBootType(GuestDef.BootType.UEFI);
-            guest.setBootMode(GuestDef.BootMode.LEGACY);
-            guest.setMachineType(Q35);
-            if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setBootMode(GuestDef.BootMode.SECURE);
+        if (MapUtils.isNotEmpty(customParams)) {
+            if (customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
+                guest.setBootType(GuestDef.BootType.UEFI);
+                guest.setBootMode(GuestDef.BootMode.LEGACY);
+                guest.setMachineType(Q35);
+                if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                    guest.setBootMode(GuestDef.BootMode.SECURE);
+                }
             }
+            guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
         }
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
@@ -2823,6 +2829,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (isUefiEnabled) {
             isSecureBoot = isSecureMode(details.get(GuestDef.BootType.UEFI.toString()));
         }
+
         if (vmSpec.getOs().toLowerCase().contains("window")) {
             isWindowsTemplate =true;
         }
@@ -2913,7 +2920,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setDiscard(DiscardType.UNMAP);
                 }
 
-                setDiskIoDriver(disk);
+                boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
+                disk.isIothreadsEnabled(iothreadsEnabled);
+
+                String ioDriver =  null;
+
+                if (MapUtils.isNotEmpty(volume.getDetails()) && volume.getDetails().containsKey(VmDetailConstants.IO_POLICY)) {
+                    ioDriver = volume.getDetails().get(VmDetailConstants.IO_POLICY).toUpperCase();
+                } else if (iothreadsEnabled) {
+                    ioDriver = IoDriverPolicy.THREADS.name();
+                }
+
+                setDiskIoDriver(disk, getIoDriverForTheStorage(ioDriver));
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -3055,24 +3073,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
-    protected void setDiskIoDriver(DiskDef disk) {
-        if (enableIoUring) {
-            disk.setIoDriver(DiskDef.IoDriver.IOURING);
+    public void setDiskIoDriver(DiskDef disk, IoDriverPolicy ioDriver) {
+        s_logger.debug(String.format("Disk IO driver policy [%s]. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
+        if (ioDriver != null) {
+            if (IoDriverPolicy.IO_URING != ioDriver) {
+                disk.setIoDriver(ioDriver);
+            } else if (enableIoUring) {
+                disk.setIoDriver(IoDriverPolicy.IO_URING);
+            }
         }
+    }
+
+    public IoDriverPolicy getIoDriverForTheStorage(String ioDriver) {
+        if (ioDriver == null) {
+            return null;
+        }
+        return IoDriverPolicy.valueOf(ioDriver);
     }
 
     /**
      * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
      */
-    private boolean isIoUringEnabled(Boolean enableIoUringConfig) {
+    private boolean isIoUringEnabled() {
         boolean meetRequirements = getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
                 && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING;
         if (!meetRequirements) {
             return false;
         }
-        return enableIoUringConfig != null ?
-                enableIoUringConfig:
-                (isUbuntuHost() || isIoUringSupportedByQemu());
+        return isUbuntuHost() || isIoUringSupportedByQemu();
     }
 
     public boolean isUbuntuHost() {

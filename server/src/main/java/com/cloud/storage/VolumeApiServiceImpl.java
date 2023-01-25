@@ -35,6 +35,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -4057,6 +4058,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 details.put(DiskTO.PROTOCOL_TYPE, (volumeToAttach.getPoolType() != null) ? volumeToAttach.getPoolType().toString() : null);
                 details.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(volumeToAttachStoragePool.getId())));
 
+                _userVmDao.loadDetails(vm);
+                if (isIothreadsSupported(vm)) {
+                    details.put(VmDetailConstants.IOTHREADS, VmDetailConstants.IOTHREADS);
+                }
+
+                String ioPolicy = getIoPolicy(vm, volumeToAttachStoragePool.getId());
+                if (ioPolicy != null) {
+                    details.put(VmDetailConstants.IO_POLICY, ioPolicy);
+                }
+
                 if (chapInfo != null) {
                     details.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
                     details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
@@ -4071,7 +4082,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
 
-                _userVmDao.loadDetails(vm);
                 Map<String, String> controllerInfo = new HashMap<String, String>();
                 controllerInfo.put(VmDetailConstants.ROOT_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER));
                 controllerInfo.put(VmDetailConstants.DATA_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER));
@@ -4167,6 +4177,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
+    }
+
+    private boolean isIothreadsSupported(UserVmVO vm) {
+        return vm.getHypervisorType() == HypervisorType.KVM
+                && vm.getDetails() != null
+                && vm.getDetail(VmDetailConstants.IOTHREADS) != null;
+    }
+
+    private String getIoPolicy(UserVmVO vm, long poolId) {
+        String ioPolicy = null;
+        if (vm.getHypervisorType() == HypervisorType.KVM && vm.getDetails() != null && vm.getDetail(VmDetailConstants.IO_POLICY) != null) {
+            ioPolicy = vm.getDetail(VmDetailConstants.IO_POLICY);
+            if (IoDriverPolicy.STORAGE_SPECIFIC.toString().equals(ioPolicy)) {
+                String storageIoPolicyDriver = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(poolId);
+                ioPolicy = storageIoPolicyDriver != null ? storageIoPolicyDriver : null;
+            }
+        }
+        return ioPolicy;
     }
 
     private void provideVMInfo(DataStore dataStore, long vmId, Long volumeId) {

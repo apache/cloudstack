@@ -4516,6 +4516,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         continue;
                     }
 
+                    if (!hypervisorType.equals(HypervisorType.KVM)) {
+                        if (key.equalsIgnoreCase(VmDetailConstants.IOTHREADS)) {
+                            vm.details.remove(VmDetailConstants.IOTHREADS);
+                            continue;
+                        }
+                        if (key.equalsIgnoreCase(VmDetailConstants.IO_POLICY)) {
+                            vm.details.remove(VmDetailConstants.IO_POLICY);
+                            continue;
+                        }
+                    }
+
                     if (key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
                             key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
                             key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
