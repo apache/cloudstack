@@ -46,6 +46,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -126,7 +127,6 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -1551,7 +1551,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
         vifDrivers.add(_defaultVifDriver);
-        if (ConfigurationManagerImpl.TUNGSTEN_ENABLED.valueIn(Long.parseLong(_dcId))) {
+        if (TungstenService.isTungstenEnabled(Long.parseLong(_dcId))) {
             vifDrivers.add(tungstenVifDriver);
         }
         vifDrivers.addAll(_trafficTypeVifDrivers.values());

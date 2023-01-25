@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.tungsten.service;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -115,6 +116,7 @@ import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
@@ -228,22 +230,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-public class TungstenServiceImpl extends ManagerBase implements TungstenService {
+public class TungstenServiceImpl extends ManagerBase implements TungstenService, Configurable {
     private static final Logger s_logger = Logger.getLogger(TungstenServiceImpl.class);
 
     private static final String NETWORK = "network";
-
-    private static final ConfigKey<String> NetworkLBHaproxyStatsVisbility = new ConfigKey<>(NETWORK, String.class, "network.loadbalancer.haproxy.stats.visibility", "global",
-            "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default", true);
-
-    private static final ConfigKey<String> NetworkLBHaproxyStatsUri = new ConfigKey<>(NETWORK, String.class, "network.loadbalancer.haproxy.stats.uri", "/admin?stats",
-            "Load Balancer(haproxy) uri.", true);
-
-    private static final ConfigKey<String> NetworkLBHaproxyStatsAuth = new ConfigKey<>("Secure", String.class, "network.loadbalancer.haproxy.stats.auth", "admin1:AdMiN123",
-            "Load Balancer(haproxy) authetication string in the format username:password", true);
-
-    private static final ConfigKey<String> NetworkLBHaproxyStatsPort = new ConfigKey<>(NETWORK, String.class, "network.loadbalancer.haproxy.stats.port", "8081",
-            "Load Balancer(haproxy) stats port number.", true);
 
     @Inject
     protected MessageBus messageBus;
@@ -1138,11 +1128,11 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     private boolean updateHaproxyStats(List<HostVO> hostList, String lbUuid) {
         // update haproxy stats
-        String lbStatsVisibility = NetworkLBHaproxyStatsVisbility.value();
+        String lbStatsVisibility = configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         if (!lbStatsVisibility.equals("disabled")) {
-            String lbStatsUri = NetworkLBHaproxyStatsUri.value();
-            String lbStatsAuth = NetworkLBHaproxyStatsAuth.value();
-            String lbStatsPort = NetworkLBHaproxyStatsPort.value();
+            String lbStatsUri = configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
+            String lbStatsAuth = configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
+            String lbStatsPort = configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
             UpdateTungstenLoadbalancerStatsCommand updateTungstenLoadbalancerStatsCommand =
                     new UpdateTungstenLoadbalancerStatsCommand(lbUuid, lbStatsPort, lbStatsUri, lbStatsAuth);
             for (HostVO host : hostList) {
@@ -2549,5 +2539,17 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
             }
         }
         return resultList;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return TungstenServiceImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+            TUNGSTEN_ENABLED
+        };
     }
 }
