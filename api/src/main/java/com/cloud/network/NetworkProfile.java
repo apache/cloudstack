@@ -22,11 +22,8 @@ import java.util.Date;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 public class NetworkProfile implements Network {
-    static final Logger s_logger = LogManager.getLogger(NetworkProfile.class);
     private final long id;
     private final String uuid;
     private final long dataCenterId;
