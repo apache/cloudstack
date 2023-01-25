@@ -6705,28 +6705,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final List<NetworkOfferingJoinVO> offerings = networkOfferingJoinDao.search(sc, searchFilter);
         // Remove offerings that are not associated with caller's domain or domainId passed
-        if ((caller.getType() != Account.Type.ADMIN || domainId != null) && CollectionUtils.isNotEmpty(offerings)) {
+        if ((!Account.Type.ADMIN.equals(caller.getType()) || domainId != null) && CollectionUtils.isNotEmpty(offerings)) {
             ListIterator<NetworkOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 NetworkOfferingJoinVO offering = it.next();
-                if (StringUtils.isNotEmpty(offering.getDomainId())) {
-                    boolean toRemove = false;
-                    String[] domainIdsArray = offering.getDomainId().split(",");
-                    for (String domainIdString : domainIdsArray) {
-                        Long dId = Long.valueOf(domainIdString.trim());
-                        if (caller.getType() != Account.Type.ADMIN &&
-                                !_domainDao.isChildDomain(dId, caller.getDomainId())) {
-                            toRemove = true;
-                            break;
-                        }
-                        if (domainId != null && !_domainDao.isChildDomain(dId, domainId)) {
-                            toRemove = true;
-                            break;
-                        }
-                    }
-                    if (toRemove) {
-                        it.remove();
-                    }
+                if (StringUtils.isEmpty(offering.getDomainId())) {
+                    continue;
+                }
+                if (!_domainDao.domainIdListContainsAccessibleDomain(offering.getDomainId(), caller, domainId)) {
+                    it.remove();
                 }
             }
         }

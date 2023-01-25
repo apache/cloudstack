@@ -19,9 +19,11 @@
 -- Schema upgrade from 4.17.2.0 to 4.18.0.0
 --;
 
--- Add support for VMware 8.0
+-- Add support for VMware 8.0 and 8.0a (8.0.0.1)
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0', 1024, 0, 59, 64, 1, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.1', 1024, 0, 59, 64, 1, 1);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '8.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='7.0.3.0';
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '8.0.0.1', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='7.0.3.0';
 
 -- Enable CPU cap for default system offerings;
 UPDATE `cloud`.`service_offering` so
@@ -32,6 +34,10 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN `public_mtu` bigint unsigned comment "
 ALTER TABLE `cloud`.`networks` ADD COLUMN `private_mtu` bigint unsigned comment "MTU for VR private interfaces" ;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN `public_mtu` bigint unsigned comment "MTU for VPC VR public interface" ;
 ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;
+
+UPDATE `cloud`.`networks` SET public_mtu = 1500, private_mtu = 1500 WHERE removed IS NULL AND guest_type='Isolated';
+UPDATE `cloud`.`vpc` SET public_mtu = 1500 WHERE removed IS NULL;
+UPDATE `cloud`.`nics` SET mtu = 1500 WHERE vm_type='DomainRouter' AND removed IS NULL AND reserver_name IN ('PublicNetworkGuru', 'ExternalGuestNetworkGuru');
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
