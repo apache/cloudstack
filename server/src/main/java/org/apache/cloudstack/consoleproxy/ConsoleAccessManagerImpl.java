@@ -161,10 +161,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             Integer retentionHours = ConsoleAccessManager.ConsoleSessionCleanupRetentionHours.value();
             Date dateBefore = DateTime.now().minusHours(retentionHours).toDate();
             int sessionsExpunged = consoleSessionDao.expungeSessionsOlderThanDate(dateBefore);
-            if (sessionsExpunged > 0) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.info(String.format("Expunged %s removed console session records", sessionsExpunged));
-                }
+            if (sessionsExpunged > 0 && s_logger.isDebugEnabled()) {
+                s_logger.info(String.format("Expunged %s removed console session records", sessionsExpunged));
             }
         }
     }

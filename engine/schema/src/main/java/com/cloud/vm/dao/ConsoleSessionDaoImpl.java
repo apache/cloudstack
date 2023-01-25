@@ -28,12 +28,12 @@ import java.util.Date;
 
 public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
 
-    private final SearchBuilder<ConsoleSessionVO> SearchByRemovedDate;
+    private final SearchBuilder<ConsoleSessionVO> searchByRemovedDate;
 
     public ConsoleSessionDaoImpl() {
-        SearchByRemovedDate = createSearchBuilder();
-        SearchByRemovedDate.and("removedNotNull", SearchByRemovedDate.entity().getRemoved(), SearchCriteria.Op.NNULL);
-        SearchByRemovedDate.and("removed", SearchByRemovedDate.entity().getRemoved(), SearchCriteria.Op.LTEQ);
+        searchByRemovedDate = createSearchBuilder();
+        searchByRemovedDate.and("removedNotNull", searchByRemovedDate.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        searchByRemovedDate.and("removed", searchByRemovedDate.entity().getRemoved(), SearchCriteria.Op.LTEQ);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
 
     @Override
     public int expungeSessionsOlderThanDate(Date date) {
-        SearchCriteria<ConsoleSessionVO> searchCriteria = SearchByRemovedDate.create();
+        SearchCriteria<ConsoleSessionVO> searchCriteria = searchByRemovedDate.create();
         searchCriteria.setParameters("removed", date);
         return expunge(searchCriteria);
     }
