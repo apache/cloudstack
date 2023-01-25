@@ -1402,6 +1402,51 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    private void checkPodAttributesForNonEdgeZone(final long podId, final String podName, final DataCenter zone, final String gateway,
+          final String cidr, final String startIp, final String endIp, final boolean skipGatewayOverlapCheck) {
+
+        String cidrAddress;
+        long cidrSize;
+        // Get the individual cidrAddress and cidrSize values, if the CIDR is
+        // valid. If it's not valid, return an error.
+        if (NetUtils.isValidIp4Cidr(cidr)) {
+            cidrAddress = getCidrAddress(cidr);
+            cidrSize = getCidrSize(cidr);
+        } else {
+            throw new InvalidParameterValueException("Please enter a valid CIDR for pod: " + podName);
+        }
+
+        // Check if the IP range is valid
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+
+        // Check if the IP range overlaps with the public ip
+        if (StringUtils.isNotEmpty(startIp)) {
+            checkOverlapPublicIpRange(zone.getId(), startIp, endIp);
+        }
+
+        // Check if the gateway is a valid IP address
+        if (!NetUtils.isValidIp4(gateway)) {
+            throw new InvalidParameterValueException("The gateway is not a valid IP address.");
+        }
+
+        // Check if the gateway is in the CIDR subnet
+        if (!NetUtils.getCidrSubNet(gateway, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+            throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
+        }
+
+        // Don't allow gateway to overlap with start/endIp
+        if (!skipGatewayOverlapCheck) {
+            if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+                throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+            }
+        }
+
+        final String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
+        if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
+            checkPodCidrSubnets(zone.getId(), podId, cidr);
+        }
+    }
+
     private void checkPodAttributes(final long podId, final String podName, final DataCenter zone, final String gateway, final String cidr, final String startIp, final String endIp, final String allocationStateStr,
             final boolean checkForDuplicates, final boolean skipGatewayOverlapCheck) {
         if (checkForDuplicates) {
@@ -1412,46 +1457,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (!DataCenter.Type.Edge.equals(zone.getType())) {
-            String cidrAddress;
-            long cidrSize;
-            // Get the individual cidrAddress and cidrSize values, if the CIDR is
-            // valid. If it's not valid, return an error.
-            if (NetUtils.isValidIp4Cidr(cidr)) {
-                cidrAddress = getCidrAddress(cidr);
-                cidrSize = getCidrSize(cidr);
-            } else {
-                throw new InvalidParameterValueException("Please enter a valid CIDR for pod: " + podName);
-            }
-
-            // Check if the IP range is valid
-            checkIpRange(startIp, endIp, cidrAddress, cidrSize);
-
-            // Check if the IP range overlaps with the public ip
-            if (StringUtils.isNotEmpty(startIp)) {
-                checkOverlapPublicIpRange(zone.getId(), startIp, endIp);
-            }
-
-            // Check if the gateway is a valid IP address
-            if (!NetUtils.isValidIp4(gateway)) {
-                throw new InvalidParameterValueException("The gateway is not a valid IP address.");
-            }
-
-            // Check if the gateway is in the CIDR subnet
-            if (!NetUtils.getCidrSubNet(gateway, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
-                throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
-            }
-
-            // Don't allow gateway to overlap with start/endIp
-            if (!skipGatewayOverlapCheck) {
-                if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-                    throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
-                }
-            }
-
-            final String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
-            if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
-                checkPodCidrSubnets(zone.getId(), podId, cidr);
-            }
+            checkPodAttributesForNonEdgeZone(podId, podName, zone, gateway, cidr, startIp, endIp, skipGatewayOverlapCheck);
         }
 
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
@@ -2164,6 +2170,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return pod;
     }
 
+    private void checkPodRangeParametersBasicsForNonEdgeZone(final String startIp, final String endIp, final String gateway, final String netmask) {
+        if (!NetUtils.isValidIp4(startIp)) {
+            throw new InvalidParameterValueException("The start IP is invalid");
+        }
+        if (endIp != null && !NetUtils.isValidIp4(endIp)) {
+            throw new InvalidParameterValueException("The end IP is invalid");
+        }
+        if (!NetUtils.isValidIp4(gateway)) {
+            throw new InvalidParameterValueException("The gateway is invalid");
+        }
+        if (!NetUtils.isValidIp4Netmask(netmask)) {
+            throw new InvalidParameterValueException("The netmask is invalid");
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_POD_CREATE, eventDescription = "creating pod", async = false)
     public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
@@ -2179,18 +2200,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         String cidr = null;
         if (!DataCenter.Type.Edge.equals(zone.getType())) {
-            if (!NetUtils.isValidIp4(startIp)) {
-                throw new InvalidParameterValueException("The start IP is invalid");
-            }
-            if (endIp != null && !NetUtils.isValidIp4(endIp)) {
-                throw new InvalidParameterValueException("The end IP is invalid");
-            }
-            if (!NetUtils.isValidIp4(gateway)) {
-                throw new InvalidParameterValueException("The gateway is invalid");
-            }
-            if (!NetUtils.isValidIp4Netmask(netmask)) {
-                throw new InvalidParameterValueException("The netmask is invalid");
-            }
+            checkPodRangeParametersBasicsForNonEdgeZone(startIp, endIp, gateway, netmask);
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         } else {
             if (ObjectUtils.anyNotNull(startIp, endIp, gateway, netmask)) {

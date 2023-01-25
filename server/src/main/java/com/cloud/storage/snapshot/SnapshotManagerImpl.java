@@ -228,6 +228,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     private ScheduledExecutorService backupSnapshotExecutor;
 
+    protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
+        Boolean value = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
+        if (Boolean.FALSE.equals(value)) {
+            return false;
+        }
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
+        return !DataCenter.Type.Edge.equals(zone.getType());
+    }
+
     @Override
     public String getConfigComponentName() {
         return SnapshotManager.class.getSimpleName();
@@ -1255,13 +1264,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupSnapToSecondary = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
-            if (backupSnapToSecondary) {
-                DataCenterVO zone = dataCenterDao.findById(snapshot.getDataCenterId());
-                if (DataCenter.Type.Edge.equals(zone.getType())) {
-                    backupSnapToSecondary = false;
-                }
-            }
+            boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId());
 
             if (backupSnapToSecondary) {
                 backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);
