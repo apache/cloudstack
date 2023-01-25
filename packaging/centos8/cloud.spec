@@ -58,6 +58,7 @@ Requires: bash
 Requires: gawk
 Requires: which
 Requires: file
+Requires: tar
 Requires: bzip2
 Requires: gzip
 Requires: unzip
