@@ -134,7 +134,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     boolean forVpc;
 
     @Column(name = "for_tungsten")
-    boolean forTungsten;
+    boolean forTungsten = false;
 
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;

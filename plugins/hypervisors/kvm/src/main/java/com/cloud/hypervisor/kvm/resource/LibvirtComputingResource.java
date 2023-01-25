@@ -126,6 +126,7 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -1550,7 +1551,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
         vifDrivers.add(_defaultVifDriver);
-        vifDrivers.add(tungstenVifDriver);
+        if (ConfigurationManagerImpl.TUNGSTEN_ENABLED.valueIn(Long.parseLong(_dcId))) {
+            vifDrivers.add(tungstenVifDriver);
+        }
         vifDrivers.addAll(_trafficTypeVifDrivers.values());
 
         final ArrayList<VifDriver> vifDriverList = new ArrayList<VifDriver>(vifDrivers);
