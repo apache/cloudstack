@@ -18,8 +18,30 @@ package org.apache.cloudstack.consoleproxy;
 
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface ConsoleAccessManager extends Manager {
+
+    ConfigKey<Boolean> ConsoleSessionCleanupEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "console.session.cleanup.enabled",
+            "true",
+            "Enables/disables the console session cleanup thread.",
+            true,
+            ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> ConsoleSessionCleanupRetentionDays = new ConfigKey<>("Advanced", Integer.class,
+            "console.session.cleanup.retention.days",
+            "7",
+            "Determines the days to keep removed console session records before expunging them",
+            true,
+            ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> ConsoleSessionCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
+            "console.session.cleanup.interval",
+            "180",
+            "Determines how long (in hours) to wait before actually expunging destroyed console session records",
+            true,
+            ConfigKey.Scope.Global);
 
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 

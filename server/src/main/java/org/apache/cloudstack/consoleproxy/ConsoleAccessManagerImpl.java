@@ -36,7 +36,9 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.UserVmDetailVO;
@@ -50,8 +52,11 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -63,9 +68,13 @@ import javax.naming.ConfigurationException;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
@@ -88,6 +97,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private ConsoleSessionDao consoleSessionDao;
 
+    private ScheduledExecutorService executorService = null;
+
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
 
@@ -100,7 +111,51 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         ConsoleAccessManagerImpl.secretKeysManager = keysManager;
+        executorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConsoleSession-Scavenger"));
         return super.configure(name, params);
+    }
+
+    @Override
+    public boolean start() {
+        Integer consoleCleanupInterval = ConsoleAccessManager.ConsoleSessionCleanupInterval.value();
+        Boolean consoleCleanupEnabled = ConsoleAccessManager.ConsoleSessionCleanupEnabled.value();
+        if (BooleanUtils.isTrue(consoleCleanupEnabled)) {
+            s_logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
+            executorService.scheduleWithFixedDelay(new ConsoleSessionCleanupTask(), consoleCleanupInterval, consoleCleanupInterval, TimeUnit.HOURS);
+        }
+        return true;
+    }
+
+    public class ConsoleSessionCleanupTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            final GlobalLock gcLock = GlobalLock.getInternLock("ConsoleSession.Cleanup.Lock");
+            try {
+                if (gcLock.lock(3)) {
+                    try {
+                        reallyRun();
+                    } finally {
+                        gcLock.unlock();
+                    }
+                }
+            } finally {
+                gcLock.releaseRef();
+            }
+        }
+
+        private void reallyRun() {
+            s_logger.info("Starting ConsoleSessionCleanupTask...");
+            Integer retentionDays = ConsoleAccessManager.ConsoleSessionCleanupRetentionDays.value();
+            Date date = GregorianCalendar.getInstance().getTime();
+            Date dateBefore = new Date(date.getTime() - retentionDays * 24 * 3600 * 1000);
+            List<ConsoleSessionVO> sessionsToExpunge = consoleSessionDao.listRemovedSessionsOlderThanDate(dateBefore);
+            if (CollectionUtils.isNotEmpty(sessionsToExpunge)) {
+                s_logger.info(String.format("Expunging %s removed console session records"));
+                for (ConsoleSessionVO sessionVO : sessionsToExpunge) {
+                    consoleSessionDao.expunge(sessionVO.getId());
+                }
+            }
+        }
     }
 
     @Override
