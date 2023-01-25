@@ -19,8 +19,9 @@ package org.apache.cloudstack.consoleproxy;
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public interface ConsoleAccessManager extends Manager {
+public interface ConsoleAccessManager extends Manager, Configurable {
 
     ConfigKey<Integer> ConsoleSessionCleanupRetentionHours = new ConfigKey<>("Advanced", Integer.class,
             "console.session.cleanup.retention.hours",

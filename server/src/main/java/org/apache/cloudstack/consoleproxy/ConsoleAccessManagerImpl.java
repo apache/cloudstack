@@ -51,6 +51,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
@@ -121,6 +122,19 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             executorService.scheduleWithFixedDelay(new ConsoleSessionCleanupTask(), consoleCleanupInterval, consoleCleanupInterval, TimeUnit.HOURS);
         }
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ConsoleAccessManager.class.getName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[] {
+                ConsoleAccessManager.ConsoleSessionCleanupInterval,
+                ConsoleAccessManager.ConsoleSessionCleanupRetentionHours
+        };
     }
 
     public class ConsoleSessionCleanupTask extends ManagedContextRunnable {
