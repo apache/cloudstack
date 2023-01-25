@@ -54,12 +54,11 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -68,7 +67,6 @@ import javax.naming.ConfigurationException;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -117,9 +115,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public boolean start() {
-        Integer consoleCleanupInterval = ConsoleAccessManager.ConsoleSessionCleanupInterval.value();
-        Boolean consoleCleanupEnabled = ConsoleAccessManager.ConsoleSessionCleanupEnabled.value();
-        if (BooleanUtils.isTrue(consoleCleanupEnabled)) {
+        int consoleCleanupInterval = ConsoleAccessManager.ConsoleSessionCleanupInterval.value();
+        if (consoleCleanupInterval > 0) {
             s_logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
             executorService.scheduleWithFixedDelay(new ConsoleSessionCleanupTask(), consoleCleanupInterval, consoleCleanupInterval, TimeUnit.HOURS);
         }
@@ -144,15 +141,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         private void reallyRun() {
-            s_logger.info("Starting ConsoleSessionCleanupTask...");
-            Integer retentionDays = ConsoleAccessManager.ConsoleSessionCleanupRetentionDays.value();
-            Date date = GregorianCalendar.getInstance().getTime();
-            Date dateBefore = new Date(date.getTime() - retentionDays * 24 * 3600 * 1000);
-            List<ConsoleSessionVO> sessionsToExpunge = consoleSessionDao.listRemovedSessionsOlderThanDate(dateBefore);
-            if (CollectionUtils.isNotEmpty(sessionsToExpunge)) {
-                s_logger.info(String.format("Expunging %s removed console session records"));
-                for (ConsoleSessionVO sessionVO : sessionsToExpunge) {
-                    consoleSessionDao.expunge(sessionVO.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Starting ConsoleSessionCleanupTask...");
+            }
+            Integer retentionHours = ConsoleAccessManager.ConsoleSessionCleanupRetentionHours.value();
+            Date dateBefore = DateTime.now().minusHours(retentionHours).toDate();
+            int sessionsExpunged = consoleSessionDao.expungeSessionsOlderThanDate(dateBefore);
+            if (sessionsExpunged > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.info(String.format("Expunged %s removed console session records", sessionsExpunged));
                 }
             }
         }

@@ -23,7 +23,6 @@ import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.utils.db.GenericDao;
 
 import java.util.Date;
-import java.util.List;
 
 public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
@@ -31,5 +30,5 @@ public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
     boolean isSessionAllowed(String sessionUuid);
 
-    List<ConsoleSessionVO> listRemovedSessionsOlderThanDate(Date date);
+    int expungeSessionsOlderThanDate(Date date);
 }
