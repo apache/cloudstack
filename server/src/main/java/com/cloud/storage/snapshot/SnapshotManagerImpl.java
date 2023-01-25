@@ -229,8 +229,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     private ScheduledExecutorService backupSnapshotExecutor;
 
     protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
-        Boolean value = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
-        if (Boolean.FALSE.equals(value)) {
+        if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
             return false;
         }
         DataCenterVO zone = dataCenterDao.findById(zoneId);

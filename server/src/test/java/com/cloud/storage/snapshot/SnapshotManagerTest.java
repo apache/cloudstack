@@ -542,9 +542,9 @@ public class SnapshotManagerTest {
         Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(Mockito.any(), Mockito.any());
     }
 
-    private void mockForBackupSnapshotToSecondaryZoneTest(final String configValue, final DataCenter.Type dcType) {
+    private void mockForBackupSnapshotToSecondaryZoneTest(final Boolean configValue, final DataCenter.Type dcType) {
         try {
-            Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+            Field f = ConfigKey.class.getDeclaredField("_value");
             f.setAccessible(true);
             f.set(SnapshotInfo.BackupSnapshotAfterTakingSnapshot, configValue);
         } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -561,18 +561,18 @@ public class SnapshotManagerTest {
     }
     @Test
     public void testIsBackupSnapshotToSecondaryForCoreZoneEnabledConfig() {
-        mockForBackupSnapshotToSecondaryZoneTest("true", DataCenter.Type.Core);
+        mockForBackupSnapshotToSecondaryZoneTest(true, DataCenter.Type.Core);
         Assert.assertTrue(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
     }
     @Test
     public void testIsBackupSnapshotToSecondaryForCoreZoneDisabledConfig() {
-        mockForBackupSnapshotToSecondaryZoneTest("false", DataCenter.Type.Core);
+        mockForBackupSnapshotToSecondaryZoneTest(false, DataCenter.Type.Core);
         Assert.assertFalse(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
     }
 
     @Test
     public void testIsBackupSnapshotToSecondaryForEdgeZone() {
-        mockForBackupSnapshotToSecondaryZoneTest("true", DataCenter.Type.Edge);
+        mockForBackupSnapshotToSecondaryZoneTest(true, DataCenter.Type.Edge);
         Assert.assertFalse(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
     }
 }
