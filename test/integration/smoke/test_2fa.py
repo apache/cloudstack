@@ -138,10 +138,25 @@ class TestUserLogin(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+
+        self.debug("Enabling 2FA in global setting")
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "enable.user.2fa"
+        updateConfigurationCmd.value = "true"
+        updateConfigurationResponse = self.apiclient.updateConfiguration(
+            updateConfigurationCmd)
+
         self.cleanup = []
         return
 
     def tearDown(self):
+        self.debug("Disable 2FA in global setting")
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "enable.user.2fa"
+        updateConfigurationCmd.value = "false"
+        updateConfigurationResponse = self.apiclient.updateConfiguration(
+            updateConfigurationCmd)
+
         super(TestUserLogin,self).tearDown()
 
     @attr(tags=["login", "accounts", "simulator", "advanced",
@@ -157,9 +172,9 @@ class TestUserLogin(cloudstackTestCase):
 
         # Setup Global settings
 
-        self.debug("Enabling 2FA in global setting")
+        self.debug("Mandate 2FA in global setting")
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "enable.user.2fa"
+        updateConfigurationCmd.name = "mandate.user.2fa"
         updateConfigurationCmd.value = "true"
         updateConfigurationResponse = self.apiclient.updateConfiguration(
             updateConfigurationCmd)
@@ -187,9 +202,9 @@ class TestUserLogin(cloudstackTestCase):
             "2FA enabled for user"
         )
 
-        self.debug("Disable 2FA in global setting")
+        self.debug("Remove mandating 2FA in global setting")
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "enable.user.2fa"
+        updateConfigurationCmd.name = "mandate.user.2fa"
         updateConfigurationCmd.value = "false"
         updateConfigurationResponse = self.apiclient.updateConfiguration(
             updateConfigurationCmd)
@@ -212,9 +227,9 @@ class TestUserLogin(cloudstackTestCase):
 
         # Setup Global settings
 
-        self.debug("Enabling 2FA in global setting")
+        self.debug("Mandate 2FA in global setting")
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "enable.user.2fa"
+        updateConfigurationCmd.name = "mandate.user.2fa"
         updateConfigurationCmd.value = "true"
         updateConfigurationResponse = self.apiclient.updateConfiguration(
             updateConfigurationCmd)
@@ -269,9 +284,9 @@ class TestUserLogin(cloudstackTestCase):
             "2FA disabled for user"
         )
 
-        self.debug("Disable 2FA in global setting")
+        self.debug("Remove mandating 2FA in global setting")
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "enable.user.2fa"
+        updateConfigurationCmd.name = "mandate.user.2fa"
         updateConfigurationCmd.value = "false"
         updateConfigurationResponse = self.apiclient.updateConfiguration(
             updateConfigurationCmd)
