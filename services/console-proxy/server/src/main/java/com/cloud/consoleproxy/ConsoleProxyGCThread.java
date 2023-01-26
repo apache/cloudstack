@@ -74,10 +74,10 @@ public class ConsoleProxyGCThread extends Thread {
         while (true) {
             cleanupLogging();
             bReportLoad = false;
-            removedSessions.clear();
 
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("connMap=" + connMap);
+            }
             Enumeration<String> e = connMap.keys();
             while (e.hasMoreElements()) {
                 String key;
@@ -111,9 +111,11 @@ public class ConsoleProxyGCThread extends Thread {
                 String loadInfo = collector.getStatsReport();
                 ConsoleProxy.reportLoadInfo(loadInfo);
                 lastReportTick = System.currentTimeMillis();
+                removedSessions.clear();
 
-                if (s_logger.isDebugEnabled())
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Report load change : " + loadInfo);
+                }
             }
 
             try {

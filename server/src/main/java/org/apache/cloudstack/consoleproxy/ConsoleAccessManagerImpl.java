@@ -222,9 +222,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
     }
 
-    @Override
-    public void removeSession(String sessionUuid) {
+    protected void removeSession(String sessionUuid) {
         consoleSessionDao.removeSession(sessionUuid);
+    }
+
+    @Override
+    public void acquireSession(String sessionUuid) {
+        consoleSessionDao.acquireSession(sessionUuid);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {

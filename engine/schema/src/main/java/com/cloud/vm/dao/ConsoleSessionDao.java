@@ -31,4 +31,6 @@ public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
     boolean isSessionAllowed(String sessionUuid);
 
     int expungeSessionsOlderThanDate(Date date);
+
+    void acquireSession(String sessionUuid);
 }

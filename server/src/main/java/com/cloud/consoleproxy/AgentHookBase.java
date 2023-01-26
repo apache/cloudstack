@@ -111,7 +111,7 @@ public abstract class AgentHookBase implements AgentHook {
             }
 
             s_logger.debug(String.format("Removing session [%s] as it was just used.", sessionUuid));
-            consoleAccessManager.removeSession(sessionUuid);
+            consoleAccessManager.acquireSession(sessionUuid);
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();

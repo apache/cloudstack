@@ -43,5 +43,5 @@ public interface ConsoleAccessManager extends Manager, Configurable {
 
     void removeSessions(String[] sessionUuids);
 
-    void removeSession(String sessionUuid);
+    void acquireSession(String sessionUuid);
 }

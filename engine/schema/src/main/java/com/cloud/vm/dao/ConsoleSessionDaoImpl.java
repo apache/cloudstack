@@ -44,7 +44,11 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
 
     @Override
     public boolean isSessionAllowed(String sessionUuid) {
-        return findByUuid(sessionUuid) != null;
+        ConsoleSessionVO consoleSessionVO = findByUuid(sessionUuid);
+        if (consoleSessionVO == null) {
+            return false;
+        }
+        return !consoleSessionVO.isAcquired();
     }
 
     @Override
@@ -52,6 +56,13 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
         SearchCriteria<ConsoleSessionVO> searchCriteria = searchByRemovedDate.create();
         searchCriteria.setParameters("removed", date);
         return expunge(searchCriteria);
+    }
+
+    @Override
+    public void acquireSession(String sessionUuid) {
+        ConsoleSessionVO consoleSessionVO = findByUuid(sessionUuid);
+        consoleSessionVO.setAcquired(true);
+        update(consoleSessionVO.getId(), consoleSessionVO);
     }
 
 
