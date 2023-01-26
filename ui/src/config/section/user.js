@@ -115,7 +115,7 @@ export default {
       show: (record, store) => {
         return (record.is2faenabled === false && record.id === store.userInfo.id)
       },
-      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/RegisterTwoFactorAuth.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
     },
     {
       api: 'setupUserTwoFactorAuthentication',

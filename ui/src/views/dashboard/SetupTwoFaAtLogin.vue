@@ -120,7 +120,7 @@ import store from '@/store'
 import VueQrious from 'vue-qrious'
 import eventBus from '@/config/eventBus'
 export default {
-  name: 'RegisterTwoFactorAuth',
+  name: 'SetupTwoFaAtLogin',
   props: {
     resource: {
       type: Object,
