@@ -2734,6 +2734,7 @@
 "message.volume.state.uploadabandoned": "Volume upload is abandoned since the upload was never initiated within a specified time.",
 "message.volume.state.uploaded": "Volume is uploaded.",
 "message.volume.state.uploaderror": "Volume upload encountered some error.",
+"message.volume.state.uploading": "Volume is being uploaded.",
 "message.volume.state.uploadinprogress": "Volume upload is in progress.",
 "message.volume.state.uploadop": "The volume upload operation is in progress or in short the volume is on secondary storage.",
 "message.volume.state.primary.storage.suitability": "The suitability of a primary storage for a volume depends on the disk offering of the volume and on the virtual machine allocations if the volume is attached to a virtual machine.",

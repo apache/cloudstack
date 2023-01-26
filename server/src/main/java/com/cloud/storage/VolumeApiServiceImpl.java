@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -412,7 +411,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
                 throw new CloudRuntimeException(details);
             }
-            if (! (sizeInGB ==null || Objects.equals(sizeInGB, vol.getSize()))) {
+            volume = _volsDao.findById(vol.getId());
+            if (sizeInGB != null && sizeInGB * GiB_TO_BYTES > volume.getSize()) {
                 volume.setSize(sizeInGB * GiB_TO_BYTES);
                 _volsDao.persist(volume);
             }

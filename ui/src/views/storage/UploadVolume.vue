@@ -100,6 +100,16 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="size" ref="size">
+          <template #label>
+            <tooltip-label :title="$t('label.size')" :tooltip="apiParams.size.description"/>
+          </template>
+          <a-input
+            v-model:value="form.size"
+            type="number"
+            :placeholder="$t('label.disk.size')"
+          />
+        </a-form-item>
         <a-form-item name="checksum" ref="checksum">
           <template #label>
             <tooltip-label :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
