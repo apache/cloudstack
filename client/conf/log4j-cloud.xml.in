@@ -17,7 +17,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<Configuration monitorInterval="60">
+<Configuration monitorInterval="60" packages="org.apache.cloudstack.alert.snmp">
    <Appenders>
 
       <properties>
@@ -34,7 +34,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%xEx{filters(${filters})}%n"/>
       </RollingFile>
 
 
@@ -43,7 +43,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%xEx{filters(${filters})}%n"/>
       </RollingFile>
 
       <!-- ============================== -->
@@ -52,7 +52,7 @@ under the License.
 
       <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%xEx{filters(${filters})}%n"/>
       </Syslog>
 
       <!-- ============================== -->
@@ -61,7 +61,7 @@ under the License.
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
+         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%xEx{filters(${filters})}%n"/>
       </Console>
 
 
@@ -69,18 +69,11 @@ under the License.
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
          <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
       </Syslog>
-    <!-- TODO
-      <appender name="SNMP" class="org.apache.cloudstack.alert.snmp.SnmpTrapAppender">
-      <param name="Threshold" value="WARN"/>
-      <param name="SnmpManagerIpAddresses" value=""/>
-      <param name="SnmpManagerPorts" value=""/>
-      <param name="SnmpManagerCommunities" value=""/>
-      <layout class="org.apache.cloudstack.alert.snmp.SnmpEnhancedPatternLayout">
-         <param name="PairDelimiter" value="//"/>
-         <param name="KeyValueDelimiter" value="::"/>
-      </layout>
-   </appender>
-      -->
+
+
+      <SnmpTrapAppender name="SNMP" SnmpManagerIpAddresses="" SnmpManagerPorts="" SnmpManagerCommunities="">
+               <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+      </SnmpTrapAppender>
    </Appenders>
 
    <Loggers>
@@ -117,11 +110,11 @@ under the License.
          <AppenderRef ref="SYSLOG"/>
          <AppenderRef ref="CONSOLE"/>
          <AppenderRef ref="FILE"/>
-      <!--<AppenderRef ref="SNMP"/>-->
-          <AppenderRef ref="ALERTSYSLOG"/>
+         <AppenderRef ref="SNMP"/>
+         <AppenderRef ref="ALERTSYSLOG"/>
       </Logger>
 
-   <!-- ======================= -->
+      <!-- ======================= -->
       <!-- Setup the Root category -->
       <!-- ======================= -->
 

@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.storage.resource;
 
+import org.apache.logging.log4j.Logger;
 import static org.mockito.Matchers.any;
+import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
@@ -34,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.times;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -45,6 +48,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class NfsSecondaryStorageResourceTest {
 
     private NfsSecondaryStorageResource resource;
+
+    @Mock
+    private Logger loggerMock;
 
     @Before
     public void setUp() {
@@ -75,18 +81,14 @@ public class NfsSecondaryStorageResourceTest {
     public void testCleanupStagingNfs() throws Exception{
 
         NfsSecondaryStorageResource spyResource = spy(resource);
+        spyResource.logger = loggerMock;
         RuntimeException exception = new RuntimeException();
         doThrow(exception).when(spyResource).execute(any(DeleteCommand.class));
         TemplateObjectTO mockTemplate = Mockito.mock(TemplateObjectTO.class);
 
-        //TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        //appenderBuilder.addExpectedPattern(Level.DEBUG, "Failed to clean up staging area:");
-        //TestAppender testLogAppender = appenderBuilder.build();
-        //TestAppender.safeAddAppender(resource.logger, testLogAppender);
-
         spyResource.cleanupStagingNfs(mockTemplate);
 
-        //testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).debug("Failed to clean up staging area:", exception);
 
     }
 }
