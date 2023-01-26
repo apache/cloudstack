@@ -714,11 +714,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              LOGGER.debug(String.format("%s is running...", this.getClass().getSimpleName()));
 
              try {
-                 int lastUptime = (dbStats.containsKey(uptime) ? (Integer) dbStats.get(uptime) : 0);
-                 int lastQueries = (dbStats.containsKey(queries) ? (Integer) dbStats.get(queries) : 0);
+                 long lastUptime = (dbStats.containsKey(uptime) ? (Long) dbStats.get(uptime) : 0);
+                 long lastQueries = (dbStats.containsKey(queries) ? (Long) dbStats.get(queries) : 0);
                  getDynamicDataFromDB();
-                 int interval = (Integer) dbStats.get(uptime) - lastUptime;
-                 int activity = (Integer) dbStats.get(queries) - lastQueries;
+                 long interval = (Long) dbStats.get(uptime) - lastUptime;
+                 long activity = (Long) dbStats.get(queries) - lastQueries;
                  loadHistory.add(0, Double.valueOf(activity / interval));
                  int maxsize = DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER.value();
                  while (loadHistory.size() > maxsize) {
@@ -736,8 +736,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          private void getDynamicDataFromDB() {
              Map<String, String> stats = DbUtil.getDbInfo("STATUS", queries, uptime);
              dbStats.put(collectionTime, new Date());
-             dbStats.put(queries, (Integer.valueOf(stats.get(queries))));
-             dbStats.put(uptime, (Integer.valueOf(stats.get(uptime))));
+             dbStats.put(queries, (Long.valueOf(stats.get(queries))));
+             dbStats.put(uptime, (Long.valueOf(stats.get(uptime))));
          }
 
 
