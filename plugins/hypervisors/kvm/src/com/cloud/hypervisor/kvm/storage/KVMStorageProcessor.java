@@ -875,10 +875,16 @@ public class KVMStorageProcessor implements StorageProcessor {
         final String secondaryStoragePoolUrl = nfsImageStore.getUrl();
         // NOTE: snapshot name is encoded in snapshot path
         final int index = snapshot.getPath().lastIndexOf("/");
-        final boolean isCreatedFromVmSnapshot = (index == -1) ? true: false; // -1 means the snapshot is created from existing vm snapshot
-
-        final String snapshotName = snapshot.getPath().substring(index + 1);
+        final boolean isCreatedFromVmSnapshot = index == -1; // -1 means the snapshot is created from existing vm snapshot
+        boolean skipRemoveSnapshot = isCreatedFromVmSnapshot;
+        String snapshotName = snapshot.getPath().substring(index + 1);
         String descName = snapshotName;
+        // This signifies that it is an ONTAP plugin snapshot, so we change our behavior here
+        if (snapshot.getPath().startsWith("/.snapshot")) {
+            snapshotName = snapshot.getPath();
+            descName = UUID.randomUUID().toString();
+            skipRemoveSnapshot = true;
+        }
         final String volumePath = snapshot.getVolume().getPath();
         String snapshotDestPath = null;
         String snapshotRelPath = null;
@@ -976,8 +982,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to backup snapshot: ", e);
             return new CopyCmdAnswer(e.toString());
         } finally {
-            if (isCreatedFromVmSnapshot) {
-                s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
+            if (skipRemoveSnapshot) {
+                s_logger.debug("Ignoring removal of vm snapshot on primary");
             } else {
                 try {
                     /* Delete the snapshot on primary */
@@ -994,44 +1000,44 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                     final KVMStoragePool primaryStorage = storagePoolMgr.getStoragePool(primaryStore.getPoolType(),
                             primaryStore.getUuid());
-                    if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
-                        final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                        try {
-                            vm.suspend();
-                        } catch(final Exception e) {
-                            s_logger.debug("Failed to suspend the VM: " + e);
-                            throw e;
-                        }
-                        snap.delete(0);
+                        if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
+                            final DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
+                            try {
+                                vm.suspend();
+                            } catch(final Exception e) {
+                                s_logger.debug("Failed to suspend the VM: " + e);
+                                throw e;
+                            }
+                            snap.delete(0);
 
-                        /*
-                         * libvirt on RHEL6 doesn't handle resume event emitted from
-                         * qemu
-                         */
-                        vm = resource.getDomain(conn, vmName);
-                        state = vm.getInfo().state;
-                        if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
-                            vm.resume();
-                        }
-                    } else {
-                        if (primaryPool.getType() != StoragePoolType.RBD) {
-                            final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-                            command.add("-d", snapshotDisk.getPath());
-                            command.add("-n", snapshotName);
-                            final String result = command.execute();
-                            if (result != null) {
-                                s_logger.debug("Failed to delete snapshot on primary: " + result);
-                                // return new CopyCmdAnswer("Failed to backup snapshot: " + result);
+                            /*
+                             * libvirt on RHEL6 doesn't handle resume event emitted from
+                             * qemu
+                             */
+                            vm = resource.getDomain(conn, vmName);
+                            state = vm.getInfo().state;
+                            if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                                vm.resume();
+                            }
+                        } else {
+                            if (primaryPool.getType() != StoragePoolType.RBD) {
+                                final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
+                                command.add("-d", snapshotDisk.getPath());
+                                command.add("-n", snapshotName);
+                                final String result = command.execute();
+                                if (result != null) {
+                                    s_logger.debug("Failed to delete snapshot on primary: " + result);
+                                    // return new CopyCmdAnswer("Failed to backup snapshot: " + result);
+                                }
                             }
                         }
-                    }
                 } catch (final Exception ex) {
                     s_logger.error("Failed to delete snapshots on primary", ex);
                 }
             }
 
-            try {
-                if (secondaryStoragePool != null) {
+        try {
+            if (secondaryStoragePool != null) {
                     secondaryStoragePool.delete();
                 }
             } catch (final Exception ex) {
