@@ -32,17 +32,21 @@
           style="width: 100%"
           @change="val => { handleSelectChange(val) }">
           <a-select-option
-            v-for="(opt) in providers.slice().reverse()"
-            :key="opt.name"
-            :value="opt.name">
+            v-for="(opt) in providers"
+            :key="opt"
+            :value="opt">
             <div>
-              <span v-if="opt.name === 'totp'">
-                <field-time-outlined />
-                {{ opt.name.toUpperCase() }}
+              <span v-if="opt === 'totp'">
+                <google-outlined />
+                Google Authenticator
               </span>
-              <span v-if="opt.name === 'staticpin'">
+              <span v-if="opt === 'othertotp'">
+                <field-time-outlined />
+                Other TOTP Authenticators
+              </span>
+              <span v-if="opt === 'staticpin'">
                 <lock-outlined />
-                {{ opt.name.toUpperCase() }}
+                Static PIN
               </span>
             </div>
           </a-select-option>
@@ -157,6 +161,9 @@ export default {
     },
     setup2FAProvider () {
       if (!this.twoFAenabled) {
+        if (this.selectedProvider === 'othertotp') {
+          this.selectedProvider = 'totp'
+        }
         api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
           this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
           if (this.selectedProvider === 'totp') {
@@ -197,7 +204,15 @@ export default {
     },
     list2FAProviders () {
       api('listUserTwoFactorAuthenticatorProviders', {}).then(response => {
-        this.providers = response.listusertwofactorauthenticatorprovidersresponse.providers || []
+        var providerlist = response.listusertwofactorauthenticatorprovidersresponse.providers || []
+        var providernames = []
+        for (const provider of providerlist.slice().reverse()) {
+          providernames.push(provider.name)
+          if (provider.name === 'totp') {
+            providernames.push('othertotp')
+          }
+        }
+        this.providers = providernames
       })
     },
     submitPin () {
