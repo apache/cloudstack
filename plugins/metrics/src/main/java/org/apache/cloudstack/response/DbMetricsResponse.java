@@ -43,7 +43,7 @@ public class DbMetricsResponse extends BaseResponse {
 
     @SerializedName(MetricConstants.UPTIME)
     @Param(description = "the uptime of the DB in seconds")
-    private int uptime;
+    private long uptime;
 
     @SerializedName(MetricConstants.TLS_VERSIONS)
     @Param(description = "the tls versions currently in use (accepted) by the DB")
@@ -59,7 +59,7 @@ public class DbMetricsResponse extends BaseResponse {
 
     @SerializedName(MetricConstants.QUERIES)
     @Param(description = "the number of queries performed on the DB")
-    private int queries;
+    private long queries;
 
     @SerializedName(MetricConstants.DATABASE_LOAD_AVERAGES)
     @Param(description = "the last measured load averages on the DB")
@@ -77,7 +77,7 @@ public class DbMetricsResponse extends BaseResponse {
         this.connections = connections;
     }
 
-    public void setUptime(int uptime) {
+    public void setUptime(long uptime) {
         this.uptime = uptime;
     }
 
@@ -93,7 +93,7 @@ public class DbMetricsResponse extends BaseResponse {
         this.versionComment = versionComment;
     }
 
-    public void setQueries(int queries) {
+    public void setQueries(long queries) {
         this.queries = queries;
     }
 

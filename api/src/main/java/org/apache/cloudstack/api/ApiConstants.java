@@ -922,6 +922,8 @@ public class ApiConstants {
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
+    public static final String IOTHREADS_ENABLED = "iothreadsenabled";
+    public static final String IO_DRIVER_POLICY = "iodriverpolicy";
 
     public static final String POOL_TYPE = "pooltype";
     public static final String REDUNDANT_STATE = "redundantstate";
@@ -935,6 +937,29 @@ public class ApiConstants {
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
+
+    /**
+     * This enum specifies IO Drivers, each option controls specific policies on I/O.
+     * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
+     */
+    public enum IoDriverPolicy {
+        NATIVE("native"),
+        THREADS("threads"),
+        IO_URING("io_uring"),
+        STORAGE_SPECIFIC("storage_specific");
+
+        String ioDriver;
+
+        IoDriverPolicy(String driver) {
+            ioDriver = driver;
+        }
+
+        @Override
+        public String toString() {
+            return ioDriver;
+        }
+    }
+
     public enum BootType {
         UEFI, BIOS;
 

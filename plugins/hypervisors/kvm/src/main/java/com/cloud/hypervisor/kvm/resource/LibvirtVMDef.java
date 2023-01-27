@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +42,7 @@ public class LibvirtVMDef {
     private String _desc;
     private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
+    private static final int NUMBER_OF_IOTHREADS = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
 
     public static class GuestDef {
         enum GuestType {
@@ -105,6 +107,7 @@ public class LibvirtVMDef {
         private String _machine;
         private String _nvram;
         private String _nvramTemplate;
+        private boolean iothreads;
 
         public static final String GUEST_LOADER_SECURE = "guest.loader.secure";
         public static final String GUEST_LOADER_LEGACY = "guest.loader.legacy";
@@ -167,6 +170,10 @@ public class LibvirtVMDef {
             this._bootmode = bootmode;
         }
 
+        public void setIothreads(boolean iothreads) {
+            this.iothreads = iothreads;
+        }
+
         @Override
         public String toString() {
             if (_type == GuestType.KVM) {
@@ -219,6 +226,9 @@ public class LibvirtVMDef {
                     guestDef.append("<smbios mode='sysinfo'/>\n");
                 }
                 guestDef.append("</os>\n");
+                if (iothreads) {
+                    guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
+                }
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {
                 StringBuilder guestDef = new StringBuilder();
@@ -571,6 +581,7 @@ public class LibvirtVMDef {
     }
 
     public static class DiskDef {
+
         public static class LibvirtDiskEncryptDetails {
             String passphraseUuid;
             QemuObject.EncryptFormat encryptFormat;
@@ -688,26 +699,6 @@ public class LibvirtVMDef {
 
         }
 
-        /**
-         * This enum specifies IO Drivers, each option controls specific policies on I/O.
-         * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
-         */
-        public enum IoDriver {
-            NATIVE("native"),
-            THREADS("threads"),
-            IOURING("io_uring");
-            String ioDriver;
-
-            IoDriver(String driver) {
-                ioDriver = driver;
-            }
-
-            @Override
-            public String toString() {
-                return ioDriver;
-            }
-        }
-
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -738,8 +729,9 @@ public class LibvirtVMDef {
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
-        private IoDriver ioDriver;
+        private IoDriverPolicy ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
+        private boolean isIothreadsEnabled;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -749,16 +741,20 @@ public class LibvirtVMDef {
             this._discard = discard;
         }
 
-        public DiskDef.IoDriver getIoDriver() {
+        public IoDriverPolicy getIoDriver() {
             return ioDriver;
         }
 
-        public void setIoDriver(IoDriver ioDriver) {
+        public void setIoDriver(IoDriverPolicy ioDriver) {
             this.ioDriver = ioDriver;
         }
 
         public void setDeviceType(DeviceType deviceType) {
             _deviceType = deviceType;
+        }
+
+        public void isIothreadsEnabled(boolean isIothreadsEnabled) {
+            this.isIothreadsEnabled = isIothreadsEnabled;
         }
 
         public void defFileBasedDisk(String filePath, String diskLabel, DiskBus bus, DiskFmtType diskFmtType) {
@@ -1097,9 +1093,12 @@ public class LibvirtVMDef {
                 }
 
                 if(ioDriver != null) {
-                    diskBuilder.append(String.format("io='%s'", ioDriver));
+                    diskBuilder.append(String.format("io='%s' ", ioDriver));
                 }
 
+                if (isIothreadsEnabled && _bus == DiskBus.VIRTIO) {
+                    diskBuilder.append(String.format("iothread='%s' ", NUMBER_OF_IOTHREADS));
+                }
                 diskBuilder.append("/>\n");
             }
 
@@ -1907,6 +1906,7 @@ public class LibvirtVMDef {
         private int slot = 9;
         private int function = 0;
         private int queues = 0;
+        private boolean isIoThreadsEnabled;
 
         public SCSIDef(short index, int domain, int bus, int slot, int function, int queues) {
             this.index = index;
@@ -1915,6 +1915,16 @@ public class LibvirtVMDef {
             this.slot = slot;
             this.function = function;
             this.queues = queues;
+        }
+
+        public SCSIDef(short index, int domain, int bus, int slot, int function, int queues, boolean ioThreadsEnabled) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+            this.queues = queues;
+            this.isIoThreadsEnabled = ioThreadsEnabled;
         }
 
         public SCSIDef() {
@@ -1928,9 +1938,17 @@ public class LibvirtVMDef {
             scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index));
             scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
                     this.domain, this.bus, this.slot, this.function ) );
-            if (this.queues > 0) {
-                scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
+            if (this.queues > 0 || isIoThreadsEnabled) {
+                scsiBuilder.append("<driver");
+                if (queues > 0) {
+                    scsiBuilder.append(String.format(" queues='%s'", queues));
+                }
+                if (isIoThreadsEnabled) {
+                    scsiBuilder.append(String.format(" iothread='%s'", NUMBER_OF_IOTHREADS));
+                }
+                scsiBuilder.append("/>\n");
             }
+
             scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }
