@@ -210,7 +210,7 @@ public class XenServerConnectionPool {
                         throw e;
                 } catch (Exception e) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("connect through IP(" + mConn.getIp() + " for pool(" + poolUuid + ") is broken due to " + e.toString());
+                        s_logger.debug("connect through IP(" + (mConn != null ? mConn.getIp() : null) + ") for pool(" + poolUuid + ") is broken due to " + e.toString());
                     }
                     removeConnect(poolUuid);
                     mConn = null;
