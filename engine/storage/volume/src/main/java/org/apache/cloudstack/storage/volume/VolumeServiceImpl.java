@@ -2763,10 +2763,10 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
 
         if (volumeStore == null) {
-            s_logger.debug(String.format("Volume [%s] is not present in the secondary storage. Therefore we do not need to move it in the secondary storage.", volume));
+            logger.debug(String.format("Volume [%s] is not present in the secondary storage. Therefore we do not need to move it in the secondary storage.", volume));
             return;
         }
-        s_logger.debug(String.format("Volume [%s] is present in secondary storage. It will be necessary to move it from the source account's [%s] folder to the destination "
+        logger.debug(String.format("Volume [%s] is present in secondary storage. It will be necessary to move it from the source account's [%s] folder to the destination "
                         + "account's [%s] folder.",
                 volume.getUuid(), sourceAccount, destAccount));
 
@@ -2785,17 +2785,17 @@ public class VolumeServiceImpl implements VolumeService {
             String msg = String.format("Unable to move volume [%s] from [%s] (source account's [%s] folder) to [%s] (destination account's [%s] folder) in the secondary storage, due "
                             + "to [%s].",
                     volume.getUuid(), srcPath.getParent(), sourceAccount, destPath, destAccount, answer.getDetails());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
-        s_logger.debug(String.format("Volume [%s] was moved from [%s] (source account's [%s] folder) to [%s] (destination account's [%s] folder) in the secondary storage.",
+        logger.debug(String.format("Volume [%s] was moved from [%s] (source account's [%s] folder) to [%s] (destination account's [%s] folder) in the secondary storage.",
                 volume.getUuid(), srcPath.getParent(), sourceAccount, destPath, destAccount));
 
         volumeStore.setInstallPath(String.format("%s/%s", destPath, srcPath.getFileName().toString()));
         if (!_volumeStoreDao.update(volumeStore.getId(), volumeStore)) {
             String msg = String.format("Unable to update volume [%s] install path in the DB.", volumeStore.getVolumeId());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }

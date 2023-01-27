@@ -30,7 +30,7 @@ public class PortProfileManagerImpl {
 
     private PortProfileDaoImpl _portProfileDao;
 
-    protected static Logger logger = LogManager.getLogger(PortProfileManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public PortProfileManagerImpl() {
         _portProfileDao = new PortProfileDaoImpl();

@@ -137,7 +137,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     }
                     connectionAlive = false;
                 } catch (IOException e) {
-                    s_logger.error("Error on VNC client", e);
+                    logger.error("Error on VNC client", e);
                 }
             }
 
@@ -214,8 +214,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     protected void authenticateVNCServerThroughNioSocket() {
         handshakePhase();
         initialisationPhase();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Authenticated successfully");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Authenticated successfully");
         }
     }
 
@@ -245,7 +245,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         try {
             session.getRemote().sendBytes(ByteBuffer.wrap(arr, 0, length));
         } catch (IOException e) {
-            s_logger.error("Error sending a message to the noVNC client", e);
+            logger.error("Error sending a message to the noVNC client", e);
         }
     }
 

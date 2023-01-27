@@ -563,18 +563,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Path destPath = Paths.get(rootDir + cmd.getDestPath());
 
         try {
-            s_logger.debug(String.format("Trying to create missing directories (if any) to move volume [%s].", volumeToString));
+            logger.debug(String.format("Trying to create missing directories (if any) to move volume [%s].", volumeToString));
             Files.createDirectories(destPath.getParent());
-            s_logger.debug(String.format("Trying to move volume [%s] to [%s].", volumeToString, destPath));
+            logger.debug(String.format("Trying to move volume [%s] to [%s].", volumeToString, destPath));
             Files.move(srcPath, destPath);
 
             String msg = String.format("Moved volume [%s] from [%s] to [%s].", volumeToString, srcPath, destPath);
-            s_logger.debug(msg);
+            logger.debug(msg);
 
             return new Answer(cmd, true, msg);
 
         } catch (IOException ioException) {
-            s_logger.error(String.format("Failed to move volume [%s] from [%s] to [%s] due to [%s].", volumeToString, srcPath, destPath, ioException.getMessage()),
+            logger.error(String.format("Failed to move volume [%s] from [%s] to [%s] due to [%s].", volumeToString, srcPath, destPath, ioException.getMessage()),
                     ioException);
             return new Answer(cmd, ioException);
         }

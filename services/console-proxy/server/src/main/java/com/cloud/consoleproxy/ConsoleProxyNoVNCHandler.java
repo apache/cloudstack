@@ -180,6 +180,6 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketError
     public void onError(Throwable cause) {
-        s_logger.error("Error on websocket", cause);
+        logger.error("Error on websocket", cause);
     }
 }

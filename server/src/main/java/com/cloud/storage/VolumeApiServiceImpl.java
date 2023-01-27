@@ -3840,7 +3840,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volume.getInstanceId() != null) {
             VMInstanceVO vmInstanceVo = _vmInstanceDao.findById(volume.getInstanceId());
             String msg = String.format("Volume [%s] is attached to [%s], so it cannot be moved to a different account.", volumeToString, vmInstanceVo);
-            s_logger.error(msg);
+            logger.error(msg);
             throw new PermissionDeniedException(msg);
         }
 
