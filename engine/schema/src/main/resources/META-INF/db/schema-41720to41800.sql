@@ -1063,3 +1063,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
     CONSTRAINT `fk_consolesession__host_id` FOREIGN KEY(`host_id`) REFERENCES `cloud`.`host`(`id`),
     CONSTRAINT `uc_consolesession__uuid` UNIQUE (`uuid`)
 );
+
+-- Add assignVolume API permission to default resource admin and domain admin
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 2, 'assignVolume', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 3, 'assignVolume', 'ALLOW');
+
