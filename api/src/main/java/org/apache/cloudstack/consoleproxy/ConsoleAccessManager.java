@@ -33,7 +33,7 @@ public interface ConsoleAccessManager extends Manager, Configurable {
     ConfigKey<Integer> ConsoleSessionCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
             "console.session.cleanup.interval",
             "180",
-            "Determines how long (in hours) to wait before actually expunging destroyed console session records",
+            "Determines the interval (in hours) to wait between the console session cleanup tasks",
             false,
             ConfigKey.Scope.Global);
 
