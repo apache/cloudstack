@@ -897,6 +897,8 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         # Create and attach volumes
         volume_ids = []
+        self.services["custom_volume"]["customdisksize"] = 1
+        self.services["custom_volume"]["zoneid"] = self.zone.id
         for i in range(14):
             volume = Volume.create_custom_disk(
                 self.apiclient,
