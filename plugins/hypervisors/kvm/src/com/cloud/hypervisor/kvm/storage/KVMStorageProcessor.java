@@ -893,6 +893,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         Connect conn = null;
         KVMPhysicalDisk snapshotDisk = null;
         KVMStoragePool primaryPool = null;
+        CopyCmdAnswer answer = null;
         try {
             conn = LibvirtConnection.getConnectionByVmName(vmName);
 
@@ -942,14 +943,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.debug("Finished backing up RBD snapshot " + rbdSnapshot + " to " + snapshotFile + " Snapshot size: " + size);
                 } catch (final FileNotFoundException e) {
                     s_logger.error("Failed to open " + snapshotDestPath + ". The error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
+                    answer = appendAnswer(answer, e.toString());
                 } catch (final IOException e) {
                     s_logger.error("Failed to create " + snapshotDestPath + ". The error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
+                    answer = appendAnswer(answer, e.toString());
                 }  catch (final QemuImgException e) {
                     s_logger.error("Failed to backup the RBD snapshot from " + rbdSnapshot +
                             " to " + snapshotFile + " the error was: " + e.getMessage());
-                    return new CopyCmdAnswer(e.toString());
+                    answer = appendAnswer(answer, e.toString());
                 }
             } else {
                 final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), s_logger);
@@ -963,7 +964,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final String result = command.execute();
                 if (result != null) {
                     s_logger.debug("Failed to backup snaptshot: " + result);
-                    return new CopyCmdAnswer(result);
+                    answer = appendAnswer(answer, result);
                 }
                 final File snapFile = new File(snapshotDestPath + "/" + descName);
                 if(snapFile.exists()){
@@ -971,16 +972,18 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
-            newSnapshot.setPath(snapshotRelPath + File.separator + descName);
-            newSnapshot.setPhysicalSize(size);
-            return new CopyCmdAnswer(newSnapshot);
+            if (answer == null) {
+                final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+                newSnapshot.setPath(snapshotRelPath + File.separator + descName);
+                newSnapshot.setPhysicalSize(size);
+                answer = new CopyCmdAnswer(newSnapshot);
+            }
         } catch (final LibvirtException e) {
             s_logger.debug("Failed to backup snapshot: ", e);
-            return new CopyCmdAnswer(e.toString());
+            answer = appendAnswer(answer, e.toString());
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Failed to backup snapshot: ", e);
-            return new CopyCmdAnswer(e.toString());
+            answer = appendAnswer(answer, e.toString());
         } finally {
             if (skipRemoveSnapshot) {
                 s_logger.debug("Ignoring removal of vm snapshot on primary");
@@ -1027,12 +1030,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                                 final String result = command.execute();
                                 if (result != null) {
                                     s_logger.debug("Failed to delete snapshot on primary: " + result);
-                                    // return new CopyCmdAnswer("Failed to backup snapshot: " + result);
+                                    answer = appendAnswer(answer, "Failed to delete snapshot on primary: " + result);
                                 }
                             }
                         }
                 } catch (final Exception ex) {
                     s_logger.error("Failed to delete snapshots on primary", ex);
+                    answer = appendAnswer(answer, "Failed to delete snapshot on primary: " + ex);
                 }
             }
 
@@ -1044,6 +1048,18 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("Failed to delete secondary storage", ex);
             }
         }
+        return answer;
+    }
+
+    // This will make a successful answer turn failed
+    private CopyCmdAnswer appendAnswer(CopyCmdAnswer answer, String newDetails) {
+        if (newDetails != null) {
+            if (answer != null) {
+                return new CopyCmdAnswer(newDetails + " : " + answer.getDetails());
+            }
+            return new CopyCmdAnswer(newDetails);
+        }
+        return answer;
     }
 
     protected synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach) throws LibvirtException, URISyntaxException,
