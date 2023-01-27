@@ -41,6 +41,8 @@ public class PasswordGenerator {
     static private char[] alphaNumeric = new char[] {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
         'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9'};
 
+    static private char[] specialChar = new char[] {'!', '#', '@', '(', '%', '^', '&', '*', '$', ')', '-', '_', '+', '=', '{', '}', '[', ']', '|', '\\', ':', ';', '"', '\'', '<', '>', '.', '?'};
+
     static private int minLength = 3;
 
     static {
@@ -95,6 +97,12 @@ public class PasswordGenerator {
     private static char generateAlphaNumeric(Random r) {
         return alphaNumeric[r.nextInt(alphaNumeric.length)];
     }
+
+    private static char generateSymbol(Random r) {
+        return specialChar[r.nextInt(symbols.length)];
+    }
+
+
 
     public static String generatePresharedKey(int numChars) {
         Random r = new SecureRandom();

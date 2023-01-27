@@ -810,7 +810,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
-    static final ConfigKey<String> vmPasswordComplexity = new ConfigKey<String>("Advanced", String.class, "vm.password.complexity", "^(?=.{6,})(?=.*[A-Z])(?=.*[a-z])(?=.*[@#%&^~.,!,?,:,;])", "Specifies the pattern for generated password", false);    
+    static final ConfigKey<String> vmPasswordComplexity = new ConfigKey<String>("Advanced", String.class, "vm.password.complexity", ".*", "Specifies the pattern for generated password", true);    
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
@@ -1096,8 +1096,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public String generateRandomPassword() {
         final Integer passwordLength = vmPasswordLength.value();
+        final String passwordComplexity = "^(?=.{6,})(?=.*[A-Z])(?=.*[a-z])(?=.*[@#%&^~.,!,?,:,;])"
         String pswd= PasswordGenerator.generateRandomPassword(passwordLength);
-        while (!pswd.matches(vmPasswordComplexity.value())) {
+        while (!pswd.matches(passwordComplexity)) {
          pswd= PasswordGenerator.generateRandomPassword(passwordLength);
         }
         return pswd;

@@ -34,6 +34,7 @@ public class PasswordGeneratorTest {
         Assert.assertTrue(containsDigit(password));
         Assert.assertTrue(containsLowercase(password));
         Assert.assertTrue(containsUppercase(password));
+        Assert.assertTrue(containsSpecialChar(password));
     }
 
     private boolean containsUppercase(String password) {
@@ -57,6 +58,15 @@ public class PasswordGeneratorTest {
     private boolean containsDigit(String password) {
         for (char c : password.toCharArray()) {
             if (Character.isDigit(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean containsSpecialChar(String password) {
+        String specialChar = "!@#%^&*(){}[];:.,_-";
+        for (char c : password.toCharArray()) {
+            if (specialChar.contains(String.valueOf(c))) {
                 return true;
             }
         }
