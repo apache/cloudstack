@@ -724,6 +724,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -3717,6 +3718,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListResourceIconCmd.class);
         cmdList.add(PatchSystemVMCmd.class);
         cmdList.add(ListGuestVlansCmd.class);
+        cmdList.add(AssignVolumeCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);

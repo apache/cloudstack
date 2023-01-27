@@ -17,6 +17,10 @@
 package com.cloud.storage;
 
 import static org.junit.Assert.assertEquals;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.storage.dao.SnapshotDao;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -60,6 +64,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -191,11 +197,27 @@ public class VolumeApiServiceImplTest {
     private VolumeDataStoreVO volumeDataStoreVoMock;
     @Mock
     private AsyncCallFuture<VolumeApiResult> asyncCallFutureVolumeapiResultMock;
+    @Mock
+    private ArrayList<SnapshotVO> snapshotVOArrayListMock;
+
+    @Mock
+    private SnapshotDao snapshotDaoMock;
+
+    @Mock
+    private Project projectMock;
+
+    @Mock
+    private ProjectManager projectManagerMock;
 
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
     private long volumeSizeMock = 456789921939l;
+
+    private String projectMockUuid = "projectUuid";
+    private long projecMockId = 13801801923810L;
+
+    private long projectMockAccountId = 132329390L;
 
     private long diskOfferingMockId = 100203L;
 
@@ -208,6 +230,9 @@ public class VolumeApiServiceImplTest {
         Mockito.lenient().doReturn(accountMockId).when(accountMock).getId();
         Mockito.doReturn(volumeSizeMock).when(volumeVoMock).getSize();
         Mockito.doReturn(volumeSizeMock).when(newDiskOfferingMock).getDiskSize();
+        Mockito.doReturn(projectMockUuid).when(projectMock).getUuid();
+        Mockito.doReturn(projecMockId).when(projectMock).getId();
+        Mockito.doReturn(projectMockAccountId).when(projectMock).getProjectAccountId();
 
         Mockito.doReturn(Mockito.mock(VolumeApiResult.class)).when(asyncCallFutureVolumeapiResultMock).get();
 
@@ -1315,6 +1340,138 @@ public class VolumeApiServiceImplTest {
         }
         boolean result = volumeApiServiceImpl.isNewDiskOfferingTheSameAndCustomServiceOffering(existingDiskOffering, newDiskOffering);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void checkIfVolumeCanBeReassignedTestNullVolume() {
+        volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), null);
+    }
+
+    @Test (expected = PermissionDeniedException.class)
+    public void checkIfVolumeCanBeReassignedTestAttachedVolume() {
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+
+        volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+    }
+
+    @Test (expected = PermissionDeniedException.class)
+    @PrepareForTest (CollectionUtils.class)
+    public void checkIfVolumeCanBeReassignedTestVolumeWithSnapshots() {
+        Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
+        Mockito.doReturn(snapshotVOArrayListMock).when(snapshotDaoMock).listByStatusNotIn(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+        PowerMockito.mockStatic(CollectionUtils.class);
+        PowerMockito.when(CollectionUtils.isNotEmpty(snapshotVOArrayListMock)).thenReturn(true);
+
+        volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+    }
+
+    @Test
+    @PrepareForTest (CollectionUtils.class)
+    public void checkIfVolumeCanBeReassignedTestValidVolume() {
+        Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
+        Mockito.doReturn(snapshotVOArrayListMock).when(snapshotDaoMock).listByStatusNotIn(Mockito.anyLong(), Mockito.any(), Mockito.any());
+
+        PowerMockito.mockStatic(CollectionUtils.class);
+        PowerMockito.when(CollectionUtils.isNotEmpty(snapshotVOArrayListMock)).thenReturn(false);
+
+        volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateAccountsTestNullOldAccount() {
+        volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, null, accountMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateAccountsTestNullNewAccount() {
+        volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, accountMock, null);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateAccountsTestDisabledNewAccount() {
+        Mockito.doReturn(Account.State.DISABLED).when(accountMock).getState();
+        volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, null, accountMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateAccountsTestLockedNewAccount() {
+        Mockito.doReturn(Account.State.LOCKED).when(accountMock).getState();
+        volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, null, accountMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateAccountsTestSameAccounts() {
+        volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, accountMock, accountMock);
+    }
+
+    @Test
+    public void validateAccountsTestValidAccounts() {
+        Account newAccount = new AccountVO(accountMockId+1);
+        volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, accountMock, newAccount);
+    }
+
+    @Test
+    @PrepareForTest(UsageEventUtils.class)
+    public void updateVolumeAccountTest() {
+        PowerMockito.mockStatic(UsageEventUtils.class);
+        Account newAccountMock = new AccountVO(accountMockId+1);
+
+        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).persist(volumeVoMock);
+
+        volumeApiServiceImpl.updateVolumeAccount(accountMock, volumeVoMock, newAccountMock);
+
+        PowerMockito.verifyStatic(UsageEventUtils.class);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
+                volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume());
+
+        Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
+        Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
+
+        Mockito.verify(volumeVoMock).setAccountId(newAccountMock.getAccountId());
+        Mockito.verify(volumeVoMock).setDomainId(newAccountMock.getDomainId());
+
+        Mockito.verify(volumeDaoMock).persist(volumeVoMock);
+
+        Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
+        Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
+
+        PowerMockito.verifyStatic(UsageEventUtils.class);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
+                volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume());
+
+        Mockito.verify(volumeServiceMock).moveVolumeOnSecondaryStorageToAnotherAccount(volumeVoMock, accountMock, newAccountMock);
+    }
+
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void getAccountOrProjectTestAccountAndProjectInformed() {
+        volumeApiServiceImpl.getAccountOrProject(projectMock.getUuid(), accountMock.getId(), projectMock.getId(), accountMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void getAccountOrProjectTestUnableToFindProject() {
+        Mockito.doReturn(null).when(projectManagerMock).getProject(projecMockId);
+        volumeApiServiceImpl.getAccountOrProject(projectMock.getUuid(), null, projectMock.getId(), accountMock);
+    }
+
+    @Test (expected = PermissionDeniedException.class)
+    public void getAccountOrProjectTestCallerDoesNotHaveAccessToProject() {
+        Mockito.doReturn(projectMock).when(projectManagerMock).getProject(projecMockId);
+        Mockito.doReturn(false).when(projectManagerMock).canAccessProjectAccount(accountMock, projectMockAccountId);
+        volumeApiServiceImpl.getAccountOrProject(projectMock.getUuid(), null, projectMock.getId(), accountMock);
+    }
+
+    @Test
+    public void getAccountOrProjectTestValidProject() {
+        Mockito.doReturn(projectMock).when(projectManagerMock).getProject(projecMockId);
+        Mockito.doReturn(true).when(projectManagerMock).canAccessProjectAccount(accountMock, projectMockAccountId);
+        volumeApiServiceImpl.getAccountOrProject(projectMock.getUuid(), null, projectMock.getId(), accountMock);
+    }
+
+    @Test
+    public void getAccountOrProjectTestValidAccount() {
+        volumeApiServiceImpl.getAccountOrProject(projectMock.getUuid(), accountMock.getId(),null, accountMock);
     }
 
     @Test

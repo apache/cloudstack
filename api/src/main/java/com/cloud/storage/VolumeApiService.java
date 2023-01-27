@@ -21,6 +21,7 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -118,6 +119,8 @@ public interface VolumeApiService {
      *            id (the id of the volume)
      */
     String extractVolume(ExtractVolumeCmd cmd);
+
+    Volume assignVolumeToAccount(AssignVolumeCmd cmd) throws ResourceAllocationException;
 
     boolean isDisplayResourceEnabled(Long id);
 

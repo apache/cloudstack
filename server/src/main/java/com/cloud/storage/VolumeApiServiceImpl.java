@@ -33,6 +33,9 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
@@ -93,6 +96,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -183,6 +187,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UUIDManager;
@@ -317,6 +322,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private ManagementService managementService;
     @Inject
     protected SnapshotHelper snapshotHelper;
+
+    @Inject
+    protected ProjectManager projectManager;
 
     protected Gson _gson;
 
@@ -3743,6 +3751,126 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateExtractVolume(volume.getId(), zoneId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "Assigning volume to new account", async = false)
+    public Volume assignVolumeToAccount(AssignVolumeCmd command) throws ResourceAllocationException {
+        Account caller = CallContext.current().getCallingAccount();
+        VolumeVO volume = _volsDao.findById(command.getVolumeId());
+        Map<String, String> fullUrlParams = command.getFullUrlParams();
+
+        validateVolume(fullUrlParams.get("volumeid"), volume);
+
+        Account oldAccount = _accountMgr.getActiveAccountById(volume.getAccountId());
+        Account newAccount = getAccountOrProject(fullUrlParams.get("projectid"), command.getAccountId(), command.getProjectid(), caller);
+
+        validateAccounts(fullUrlParams.get("accountid"), volume, oldAccount, newAccount);
+
+        _accountMgr.checkAccess(caller, null, true, oldAccount);
+        _accountMgr.checkAccess(caller, null, true, newAccount);
+
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volume.getSize()));
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.primary_storage, volume.getSize());
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                updateVolumeAccount(oldAccount, volume, newAccount);
+            }
+        });
+
+        return volume;
+    }
+
+    protected void updateVolumeAccount(Account oldAccount, VolumeVO volume, Account newAccount) {
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+        _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volume.getSize()));
+        _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
+
+        volume.setAccountId(newAccount.getAccountId());
+        volume.setDomainId(newAccount.getDomainId());
+        _volsDao.persist(volume);
+
+        _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volume.getSize()));
+        _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
+
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
+                volume.getUuid(), volume.isDisplayVolume());
+
+        volService.moveVolumeOnSecondaryStorageToAnotherAccount(volume, oldAccount, newAccount);
+    }
+
+    /**
+     * Validates if the accounts are null, if the new account state is correct, and if the two accounts are the same.
+     * Throws {@link InvalidParameterValueException}.
+     * */
+    protected void validateAccounts(String newAccountUuid, VolumeVO volume, Account oldAccount, Account newAccount) {
+        if (oldAccount == null) {
+            throw new InvalidParameterValueException(String.format("The current account of the volume [%s] is invalid.",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volume, "name", "uuid")));
+        }
+
+        if (newAccount == null) {
+            throw new InvalidParameterValueException(String.format("UUID of the destination account is invalid. No account was found with UUID [%s].", newAccountUuid));
+        }
+
+        if (newAccount.getState() == Account.State.DISABLED || newAccount.getState() == Account.State.LOCKED) {
+            throw new InvalidParameterValueException(String.format("Unable to assign volume to destination account [%s], as it is in [%s] state.", newAccount,
+                    newAccount.getState().toString()));
+        }
+
+        if (oldAccount.getAccountId() == newAccount.getAccountId()) {
+            throw new InvalidParameterValueException(String.format("The new account and the old account are the same [%s].", oldAccount));
+        }
+    }
+
+    /**
+     * Validates if the volume can be reassigned to another account.
+     * Throws {@link InvalidParameterValueException} if volume is null.
+     * Throws {@link PermissionDeniedException} if volume is attached to a VM or if it has snapshots.
+     * */
+    protected void validateVolume(String volumeUuid, VolumeVO volume) {
+        if (volume == null) {
+            throw new InvalidParameterValueException(String.format("No volume was found with UUID [%s].", volumeUuid));
+        }
+
+        String volumeToString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volume, "name", "uuid");
+
+        if (volume.getInstanceId() != null) {
+            VMInstanceVO vmInstanceVo = _vmInstanceDao.findById(volume.getInstanceId());
+            String msg = String.format("Volume [%s] is attached to [%s], so it cannot be moved to a different account.", volumeToString, vmInstanceVo);
+            s_logger.error(msg);
+            throw new PermissionDeniedException(msg);
+        }
+
+        List<SnapshotVO> snapshots = _snapshotDao.listByStatusNotIn(volume.getId(), Snapshot.State.Destroyed, Snapshot.State.Error);
+        if (CollectionUtils.isNotEmpty(snapshots)) {
+            throw new PermissionDeniedException(String.format("Volume [%s] has snapshots. Remove the volume's snapshots before assigning it to another account.", volumeToString));
+        }
+    }
+
+    protected Account getAccountOrProject(String projectUuid, Long accountId, Long projectId, Account caller) {
+        if (projectId != null && accountId != null) {
+            throw new InvalidParameterValueException("Both 'accountid' and 'projectid' were informed. You must inform only one of them.");
+        }
+
+        if (projectId != null) {
+            Project project = projectManager.getProject(projectId);
+            if (project == null) {
+                throw new InvalidParameterValueException(String.format("Unable to find project [%s]", projectUuid));
+            }
+
+            if (!projectManager.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                throw new PermissionDeniedException(String.format("Account [%s] does not have access to project [%s].", caller, projectUuid));
+            }
+
+            return _accountMgr.getAccount(project.getProjectAccountId());
+        }
+
+        return  _accountMgr.getActiveAccountById(accountId);
     }
 
     private Optional<String> setExtractVolumeSearchCriteria(SearchCriteria<VolumeDataStoreVO> sc, VolumeVO volume) {
