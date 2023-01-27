@@ -1009,6 +1009,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
+                      sed -i 's/vnc_tls.*/vnc_tls=0/g' /etc/libvirt/qemu.conf && \
                       service libvirtd start ; \
                       service libvirt-bin start ; \
                       sleep 30 ; \

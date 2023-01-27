@@ -22,7 +22,7 @@ public interface RfbConstants {
 
     public static final String RFB_PROTOCOL_VERSION_MAJOR = "RFB 003.";
     // public static final String VNC_PROTOCOL_VERSION_MINOR = "003";
-    public static final String VNC_PROTOCOL_VERSION_MINOR = "003";
+    public static final String VNC_PROTOCOL_VERSION_MINOR = "008";
     public static final String RFB_PROTOCOL_VERSION = RFB_PROTOCOL_VERSION_MAJOR + VNC_PROTOCOL_VERSION_MINOR;
 
     /**
@@ -39,7 +39,8 @@ public interface RfbConstants {
     /**
      * Server authorization type
      */
-    public final static int CONNECTION_FAILED = 0, NO_AUTH = 1, VNC_AUTH = 2;
+    public final static int CONNECTION_FAILED = 0, NO_AUTH = 1, VNC_AUTH = 2,
+        V_ENCRYPT = 19, V_ENCRYPT_X509_VNC = 261;
 
     /**
      * Server authorization reply.
