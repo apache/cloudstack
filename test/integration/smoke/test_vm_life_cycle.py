@@ -876,6 +876,70 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_12_start_vm_multiple_volumes_allocated(self):
+        """Test attaching 14 datadisks and start VM
+        """
+
+        # Validate the following
+        # 1. Deploys a VM without starting it and attaches 14 datadisks to it
+        # 2. Start VM successfully
+        # 3. Destroys the VM with DataDisks option
+
+        custom_disk_offering = DiskOffering.list(self.apiclient, name='Custom')[0]
+
+        # Create VM without starting it
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.small_offering.id,
+            startvm=False
+        )
+
+        # Create and attach volumes
+        volume_ids = []
+        self.services["custom_volume"]["customdisksize"] = 1
+        self.services["custom_volume"]["zoneid"] = self.zone.id
+        for i in range(14):
+            volume = Volume.create_custom_disk(
+                self.apiclient,
+                self.services["custom_volume"],
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=custom_disk_offering.id
+            )
+            volume_ids.append(volume.id)
+            VirtualMachine.attach_volume(vm, self.apiclient, volume)
+
+        # Start the VM
+        self.debug("Starting VM - ID: %s" % vm.id)
+        vm.start(self.apiclient)
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+
+        # Destroy VM and volumes
+        self.debug("Destroy VM - ID: %s" % vm.id)
+        vm.delete(self.apiclient, volumeIds=volume_ids)
+
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
