@@ -51,6 +51,12 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         if self.template == FAILED:
             assert False, "get_suitable_test_template() failed to return template with description %s" % self.services["ostype"]
 
+        self.excluded_pools = []
+        storage_pool_list = StoragePool.list(self.apiclient, zoneid=self.zone.id)
+        for pool in storage_pool_list:
+            if pool.state != 'Up':
+                self.excluded_pools.append(pool.id)
+
         return
 
     def tearDown(self):
@@ -301,6 +307,8 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             for pool in storage_pool_list:
                 if (pool.id == storage_pool_2.id):
                     continue
+                if pool.id in self.excluded_pools:
+                    continue
                 StoragePool.update(self.apiclient, id=pool.id, enabled=False)
 
             # deployvm
@@ -333,6 +341,8 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 # cancel maintenance
                 for pool in storage_pool_list:
                     if (pool.id == storage_pool_2.id):
+                        continue
+                    if pool.id in self.excluded_pools:
                         continue
                     StoragePool.update(self.apiclient, id=pool.id, enabled=True)
                 # Enable all hosts
