@@ -36,7 +36,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.StringUtils;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
@@ -44,7 +43,7 @@ import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -303,8 +302,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
             HostVO host = _hostDao.findById(hostIdSpecified);
             if (host != null && StringUtils.isNotBlank(uefiFlag) && "yes".equalsIgnoreCase(uefiFlag)) {
-                _hostDao.loadDetails(host);
-                if (MapUtils.isNotEmpty(host.getDetails()) && host.getDetails().containsKey(Host.HOST_UEFI_ENABLE) && "false".equalsIgnoreCase(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                DetailVO uefiHostDetail = _hostDetailsDao.findDetail(host.getId(), Host.HOST_UEFI_ENABLE);
+                if (uefiHostDetail == null || "false".equalsIgnoreCase(uefiHostDetail.getValue())) {
                     s_logger.debug("Cannot deploy to specified host as host does n't support uefi vm deployment, returning.");
                     return null;
 
