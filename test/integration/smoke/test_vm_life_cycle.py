@@ -894,6 +894,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             serviceofferingid=self.small_offering.id,
             startvm=False
         )
+        self.cleanup.append(vm)
 
         hosts = Host.list(
             self.apiclient,
@@ -902,16 +903,10 @@ class TestVMLifeCycle(cloudstackTestCase):
             hypervisor=self.hypervisor,
             state='Up')
 
-        if self.hypervisor.lower() in ["simulator"]:
+        if self.hypervisor.lower() in ["simulator"] or not hosts[0].hypervisorversion:
             hypervisor_version = "default"
         else:
-            res = self.dbclient.execute("select hypervisor_version from host where uuid = '%s'" % hosts[0].id)
-            if isinstance(res, list) and len(res) > 0:
-                hypervisor_version = res[0][0]
-                if not hypervisor_version:
-                    hypervisor_version = "default"
-            else:
-                hypervisor_version = "default"
+            hypervisor_version = hosts[0].hypervisorversion
 
         res = self.dbclient.execute("select max_data_volumes_limit from hypervisor_capabilities where "
                                     "hypervisor_type='%s' and hypervisor_version='%s';" %
@@ -936,6 +931,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                 diskofferingid=custom_disk_offering.id
             )
             volume_ids.append(volume.id)
+            self.cleanup.append(volume)
             VirtualMachine.attach_volume(vm, self.apiclient, volume)
 
         # Start the VM
@@ -960,10 +956,6 @@ class TestVMLifeCycle(cloudstackTestCase):
             "Running",
             "Check virtual machine is in running state"
         )
-
-        # Destroy VM and volumes
-        self.debug("Destroy VM - ID: %s" % vm.id)
-        vm.delete(self.apiclient, volumeIds=volume_ids)
 
 
 class TestSecuredVmMigration(cloudstackTestCase):
