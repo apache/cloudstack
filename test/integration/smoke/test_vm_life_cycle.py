@@ -875,11 +875,11 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_12_start_vm_multiple_volumes_allocated(self):
-        """Test attaching 14 datadisks and start VM
+        """Test attaching multiple datadisks and start VM
         """
 
         # Validate the following
-        # 1. Deploys a VM without starting it and attaches 14 datadisks to it
+        # 1. Deploys a VM without starting it and attaches multiple datadisks to it
         # 2. Start VM successfully
         # 3. Destroys the VM with DataDisks option
 
@@ -895,11 +895,39 @@ class TestVMLifeCycle(cloudstackTestCase):
             startvm=False
         )
 
+        hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor=self.hypervisor,
+            state='Up')
+
+        if self.hypervisor.lower() in ["simulator"]:
+            hypervisor_version = "default"
+        else:
+            res = self.dbclient.execute("select hypervisor_version from host where uuid = '%s'" % hosts[0].id)
+            if isinstance(res, list) and len(res) > 0:
+                hypervisor_version = res[0][0]
+                if not hypervisor_version:
+                    hypervisor_version = "default"
+            else:
+                hypervisor_version = "default"
+
+        res = self.dbclient.execute("select max_data_volumes_limit from hypervisor_capabilities where "
+                                    "hypervisor_type='%s' and hypervisor_version='%s';" %
+                                    (self.hypervisor.lower(), hypervisor_version))
+        if isinstance(res, list) and len(res) > 0:
+            max_volumes = res[0][0]
+            if max_volumes > 14:
+                max_volumes = 14
+        else:
+            max_volumes = 6
+
         # Create and attach volumes
         volume_ids = []
         self.services["custom_volume"]["customdisksize"] = 1
         self.services["custom_volume"]["zoneid"] = self.zone.id
-        for i in range(14):
+        for i in range(max_volumes):
             volume = Volume.create_custom_disk(
                 self.apiclient,
                 self.services["custom_volume"],
