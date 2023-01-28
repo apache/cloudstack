@@ -919,7 +919,6 @@ class TestVMLifeCycle(cloudstackTestCase):
             max_volumes = 6
 
         # Create and attach volumes
-        volume_ids = []
         self.services["custom_volume"]["customdisksize"] = 1
         self.services["custom_volume"]["zoneid"] = self.zone.id
         for i in range(max_volumes):
@@ -930,7 +929,6 @@ class TestVMLifeCycle(cloudstackTestCase):
                 domainid=self.account.domainid,
                 diskofferingid=custom_disk_offering.id
             )
-            volume_ids.append(volume.id)
             self.cleanup.append(volume)
             VirtualMachine.attach_volume(vm, self.apiclient, volume)
 
