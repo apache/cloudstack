@@ -4092,12 +4092,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     protected String getMinimumHypervisorVersionInDatacenter(long datacenterId, HypervisorType hypervisorType) {
+        String defaultHypervisorVersion = "default";
         if (hypervisorType == HypervisorType.Simulator) {
-            return "default";
+            return defaultHypervisorVersion;
         }
         List<String> hwVersions = _hostDao.listOrderedHostsHypervisorVersionsInDatacenter(datacenterId, hypervisorType);
-        String minHwVersion = CollectionUtils.isNotEmpty(hwVersions) ? hwVersions.get(0) : "default";
-        return StringUtils.isBlank(minHwVersion) ? "default" : minHwVersion;
+        String minHwVersion = CollectionUtils.isNotEmpty(hwVersions) ? hwVersions.get(0) : defaultHypervisorVersion;
+        return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
     private Long getDeviceId(UserVmVO vm, Long deviceId) {
