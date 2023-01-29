@@ -91,7 +91,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             "join host h on (vm.host_id=h.id) " +
             "where vm.service_offering_id= ? and vm.state not in (\"Destroyed\", \"Expunging\", \"Error\") group by h.id";
     private static final String GET_ORDERED_HW_VERSIONS_IN_DC = "select hypervisor_version from host " +
-            "where type = 'Routing' and status = 'Up' and hypervisor_type = '?' " +
+            "where type = 'Routing' and status = 'Up' and hypervisor_type = ? and data_center_id = ? " +
             "group by hypervisor_version " +
             "order by hypervisor_version asc";
 
@@ -1310,6 +1310,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             TransactionLegacy txn = TransactionLegacy.currentTxn();
             pstmt = txn.prepareAutoCloseStatement(GET_ORDERED_HW_VERSIONS_IN_DC);
             pstmt.setString(1, Objects.toString(hypervisorType));
+            pstmt.setLong(2, datacenterId);
             ResultSet resultSet = pstmt.executeQuery();
             while (resultSet.next()) {
                 result.add(resultSet.getString(1));
