@@ -1379,8 +1379,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     private void logLessLatestStatDiscrepancy(String prefix, String hostName, String vmName, long reported, long stored, boolean toHumanReadable) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("%s that's less than the last one.  Assuming something went wrong and persisting it. Host: %s . VM: %s Reported: %s Stored: %s",
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("%s that's less than the last one.  Assuming something went wrong and persisting it. Host: %s . VM: %s Reported: %s Stored: %s",
                     prefix, hostName, vmName, toHumanReadable ? toHumanReadableSize(reported) : reported, toHumanReadable ? toHumanReadableSize(stored) : stored));
         }
     }
@@ -1919,8 +1919,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     protected void persistVolumeStats(long volumeId, VmDiskStatsEntry statsForCurrentIteration, Hypervisor.HypervisorType hypervisorType, Date timestamp) {
         VolumeStatsVO volumeStatsVO = new VolumeStatsVO(volumeId, msId, timestamp, getVmDiskStatsEntryAsString(statsForCurrentIteration, hypervisorType));
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Recording volume stats: [%s].", volumeStatsVO));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Recording volume stats: [%s].", volumeStatsVO));
         }
         volumeStatsDao.persist(volumeStatsVO);
     }
@@ -1949,13 +1949,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected void cleanUpVolumeStats() {
         Integer maxRetentionTime = vmDiskStatsMaxRetentionTime.value();
         if (maxRetentionTime <= 0) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Skipping Volume stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Skipping Volume stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
                         vmDiskStatsMaxRetentionTime.scope(), vmDiskStatsMaxRetentionTime.toString()));
             }
             return;
         }
-        LOGGER.trace("Removing older Volume stats records.");
+        logger.trace("Removing older Volume stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
         volumeStatsDao.removeAllByTimestampLessThan(limit);

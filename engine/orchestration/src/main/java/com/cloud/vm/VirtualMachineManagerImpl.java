@@ -5858,12 +5858,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         Answer answer = _agentMgr.easySend(hostId, new GetVmStatsCommand(new ArrayList<>(vmNames.keySet()), _hostDao.findById(hostId).getGuid(), hostName));
         if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to obtain VM statistics.");
+            logger.warn("Unable to obtain VM statistics.");
             return vmStatsById;
         } else {
             HashMap<String, VmStatsEntry> vmStatsByName = ((GetVmStatsAnswer)answer).getVmStatsMap();
             if (vmStatsByName == null) {
-                s_logger.warn("Unable to obtain VM statistics.");
+                logger.warn("Unable to obtain VM statistics.");
                 return vmStatsById;
             }
             for (Map.Entry<String, VmStatsEntry> entry : vmStatsByName.entrySet()) {
@@ -5885,12 +5885,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         Answer answer = _agentMgr.easySend(hostId, new GetVmDiskStatsCommand(new ArrayList<>(vmNames.keySet()), _hostDao.findById(hostId).getGuid(), hostName));
         if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to obtain VM disk statistics.");
+            logger.warn("Unable to obtain VM disk statistics.");
             return vmDiskStatsById;
         } else {
             HashMap<String, List<VmDiskStatsEntry>> vmDiskStatsByName = ((GetVmDiskStatsAnswer)answer).getVmDiskStatsMap();
             if (vmDiskStatsByName == null) {
-                s_logger.warn("Unable to obtain VM disk statistics.");
+                logger.warn("Unable to obtain VM disk statistics.");
                 return vmDiskStatsById;
             }
             for (Map.Entry<String, List<VmDiskStatsEntry>> entry: vmDiskStatsByName.entrySet()) {
@@ -5912,12 +5912,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         Answer answer = _agentMgr.easySend(hostId, new GetVmNetworkStatsCommand(new ArrayList<>(vmNames.keySet()), _hostDao.findById(hostId).getGuid(), hostName));
         if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to obtain VM network statistics.");
+            logger.warn("Unable to obtain VM network statistics.");
             return vmNetworkStatsById;
         } else {
             HashMap<String, List<VmNetworkStatsEntry>> vmNetworkStatsByName = ((GetVmNetworkStatsAnswer)answer).getVmNetworkStatsMap();
             if (vmNetworkStatsByName == null) {
-                s_logger.warn("Unable to obtain VM network statistics.");
+                logger.warn("Unable to obtain VM network statistics.");
                 return vmNetworkStatsById;
             }
             for (Map.Entry<String, List<VmNetworkStatsEntry>> entry: vmNetworkStatsByName.entrySet()) {

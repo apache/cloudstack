@@ -1313,7 +1313,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 result.add(resultSet.getString(1));
             }
         } catch (SQLException e) {
-            s_logger.error("Error trying to obtain hypervisor version on datacenter", e);
+            logger.error("Error trying to obtain hypervisor version on datacenter", e);
         }
         return result;
     }
