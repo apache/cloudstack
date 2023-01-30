@@ -27,7 +27,7 @@ from marvin.lib.decoratorGenerators import skipTestIf
 from marvin.lib.utils import *
 from nose.plugins.attrib import attr
 
-_multiprocess_shared_ = True
+_multiprocess_shared_ = False
 
 
 class TestPrimaryStorageServices(cloudstackTestCase):
@@ -592,6 +592,8 @@ class TestStorageTags(cloudstackTestCase):
         )
         self.debug("VM-1 Volumes: %s" % vm_1_volumes)
         self.assertEqual(vm_1_volumes[0].id, self.volume_1.id, "Check that volume V-1 has been attached to VM-1")
+
+        time.sleep(30)
         self.virtual_machine_1.detach_volume(self.apiclient, self.volume_1)
 
         return
