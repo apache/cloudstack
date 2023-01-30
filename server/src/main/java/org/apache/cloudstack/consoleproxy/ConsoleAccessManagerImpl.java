@@ -37,21 +37,29 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.ConsoleSessionDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -60,11 +68,12 @@ import javax.naming.ConfigurationException;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
@@ -84,6 +93,10 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private AgentManager agentManager;
     @Inject
     private ConsoleProxyManager consoleProxyManager;
+    @Inject
+    private ConsoleSessionDao consoleSessionDao;
+
+    private ScheduledExecutorService executorService = null;
 
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
@@ -94,13 +107,64 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
 
-    private static Set<String> allowedSessions;
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         ConsoleAccessManagerImpl.secretKeysManager = keysManager;
-        ConsoleAccessManagerImpl.allowedSessions = new HashSet<>();
+        executorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ConsoleSession-Scavenger"));
         return super.configure(name, params);
+    }
+
+    @Override
+    public boolean start() {
+        int consoleCleanupInterval = ConsoleAccessManager.ConsoleSessionCleanupInterval.value();
+        if (consoleCleanupInterval > 0) {
+            s_logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
+            executorService.scheduleWithFixedDelay(new ConsoleSessionCleanupTask(), consoleCleanupInterval, consoleCleanupInterval, TimeUnit.HOURS);
+        }
+        return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ConsoleAccessManager.class.getName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[] {
+                ConsoleAccessManager.ConsoleSessionCleanupInterval,
+                ConsoleAccessManager.ConsoleSessionCleanupRetentionHours
+        };
+    }
+
+    public class ConsoleSessionCleanupTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            final GlobalLock gcLock = GlobalLock.getInternLock("ConsoleSession.Cleanup.Lock");
+            try {
+                if (gcLock.lock(3)) {
+                    try {
+                        reallyRun();
+                    } finally {
+                        gcLock.unlock();
+                    }
+                }
+            } finally {
+                gcLock.releaseRef();
+            }
+        }
+
+        private void reallyRun() {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Starting ConsoleSessionCleanupTask...");
+            }
+            Integer retentionHours = ConsoleAccessManager.ConsoleSessionCleanupRetentionHours.value();
+            Date dateBefore = DateTime.now().minusHours(retentionHours).toDate();
+            int sessionsExpunged = consoleSessionDao.expungeSessionsOlderThanDate(dateBefore);
+            if (sessionsExpunged > 0 && s_logger.isDebugEnabled()) {
+                s_logger.info(String.format("Expunged %s removed console session records", sessionsExpunged));
+            }
+        }
     }
 
     @Override
@@ -144,14 +208,25 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public boolean isSessionAllowed(String sessionUuid) {
-        return allowedSessions.contains(sessionUuid);
+        return consoleSessionDao.isSessionAllowed(sessionUuid);
     }
 
     @Override
     public void removeSessions(String[] sessionUuids) {
-        for (String r : sessionUuids) {
-            allowedSessions.remove(r);
+        if (ArrayUtils.isNotEmpty(sessionUuids)) {
+            for (String sessionUuid : sessionUuids) {
+                removeSession(sessionUuid);
+            }
         }
+    }
+
+    protected void removeSession(String sessionUuid) {
+        consoleSessionDao.removeSession(sessionUuid);
+    }
+
+    @Override
+    public void acquireSession(String sessionUuid) {
+        consoleSessionDao.acquireSession(sessionUuid);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
@@ -341,7 +416,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             s_logger.debug("Compose console url: " + sb);
         }
         s_logger.debug("Adding allowed session: " + sessionUuid);
-        allowedSessions.add(sessionUuid);
+        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId());
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         String url = sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
@@ -354,6 +429,16 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
         }
         return consoleEndpoint;
+    }
+
+    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId) {
+        ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
+        consoleSessionVo.setUuid(sessionUuid);
+        consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
+        consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
+        consoleSessionVo.setInstanceId(instanceId);
+        consoleSessionVo.setHostId(hostId);
+        consoleSessionDao.persist(consoleSessionVo);
     }
 
     public static Ternary<String, String, String> parseHostInfo(String hostInfo) {
