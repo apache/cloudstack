@@ -149,4 +149,12 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
      */
     int countByMs(long msid);
+
+    /**
+     * Retrieves the hypervisor versions of the hosts in the datacenter which are in Up state in ascending order
+     * @param datacenterId data center id
+     * @param hypervisorType hypervisor type of the hosts
+     * @return ordered list of hypervisor versions
+     */
+    List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
 }

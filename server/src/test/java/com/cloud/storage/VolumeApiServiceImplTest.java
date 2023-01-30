@@ -1537,4 +1537,36 @@ public class VolumeApiServiceImplTest {
                 offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
 
     }
+
+    private void testBaseListOrderedHostsHypervisorVersionInDc(List<String> hwVersions, HypervisorType hypervisorType,
+                                                               String expected) {
+        when(_hostDao.listOrderedHostsHypervisorVersionsInDatacenter(anyLong(), any(HypervisorType.class)))
+                .thenReturn(hwVersions);
+        String min = volumeApiServiceImpl.getMinimumHypervisorVersionInDatacenter(1L, hypervisorType);
+        Assert.assertEquals(expected, min);
+    }
+
+    @Test
+    public void testGetMinimumHypervisorVersionInDatacenterSimulator() {
+        List<String> hwVersions = List.of("4.17.3.0-SNAPSHOT");
+        HypervisorType hypervisorType = HypervisorType.Simulator;
+        String expected = "default";
+        testBaseListOrderedHostsHypervisorVersionInDc(hwVersions, hypervisorType, expected);
+    }
+
+    @Test
+    public void testGetMinimumHypervisorVersionInDatacenterEmptyVersion() {
+        List<String> hwVersions = List.of("", "xxxx", "yyyy");
+        HypervisorType hypervisorType = HypervisorType.KVM;
+        String expected = "default";
+        testBaseListOrderedHostsHypervisorVersionInDc(hwVersions, hypervisorType, expected);
+    }
+
+    @Test
+    public void testGetMinimumHypervisorVersionInDatacenterVersions() {
+        List<String> hwVersions = List.of("6.7", "6.7.1", "6.7.2");
+        HypervisorType hypervisorType = HypervisorType.VMware;
+        String expected = "6.7";
+        testBaseListOrderedHostsHypervisorVersionInDc(hwVersions, hypervisorType, expected);
+    }
 }

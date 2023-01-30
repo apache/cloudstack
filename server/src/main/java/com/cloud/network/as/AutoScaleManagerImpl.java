@@ -37,14 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -78,6 +70,11 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
@@ -85,9 +82,9 @@ import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
 import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
 import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
 import com.cloud.api.ApiDBUtils;
@@ -172,9 +169,9 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -184,10 +181,14 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManager, AutoScaleService, Configurable {
 
@@ -271,6 +272,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private AffinityGroupDao affinityGroupDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
@@ -2651,21 +2654,21 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             List<Long> vmIds = hostAndVmIds.getValue();
 
             if (!DEFAULT_HOST_ID.equals(hostId)) {
-                Map<Long, VmStatsEntry> vmStatsById = getVmStatsByIdFromHost(hostId, vmIds);
+                Map<Long, ? extends VmStats> vmStatsById = getVmStatsByIdFromHost(hostId, vmIds);
                 processVmStatsByIdFromHost(groupTO, vmIds, vmStatsById, policyCountersMap);
             }
         }
     }
 
-    protected Map<Long, VmStatsEntry> getVmStatsByIdFromHost(Long hostId, List<Long> vmIds) {
-        Map<Long, VmStatsEntry> vmStatsById = new HashMap<>();
+    protected Map<Long, ? extends VmStats> getVmStatsByIdFromHost(Long hostId, List<Long> vmIds) {
+        Map<Long, ? extends VmStats> vmStatsById = new HashMap<>();
         HostVO host = hostDao.findById(hostId);
         if (host == null) {
             logger.debug("Failed to get VM stats from non-existing host : " + hostId);
             return vmStatsById;
         }
         try {
-            vmStatsById = userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
+            vmStatsById = virtualMachineManager.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
             if (MapUtils.isEmpty(vmStatsById)) {
                 logger.warn("Got empty result for virtual machine statistics from host: " + host);
             }
@@ -2675,10 +2678,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return vmStatsById;
     }
 
-    protected void processVmStatsByIdFromHost(AutoScaleVmGroupTO groupTO, List<Long> vmIds, Map<Long, VmStatsEntry> vmStatsById, Map<Long, List<CounterTO>> policyCountersMap) {
+    protected void processVmStatsByIdFromHost(AutoScaleVmGroupTO groupTO, List<Long> vmIds, Map<Long, ? extends VmStats> vmStatsById, Map<Long, List<CounterTO>> policyCountersMap) {
         Date timestamp = new Date();
         for (Long vmId : vmIds) {
-            VmStatsEntry vmStats = vmStatsById == null ? null : vmStatsById.get(vmId);
+            VmStatsEntry vmStats = vmStatsById == null ? null : (VmStatsEntry)vmStatsById.get(vmId);
             for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
                 Long policyId = policyCounters.getKey();
                 List<CounterTO> counters = policyCounters.getValue();
