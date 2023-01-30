@@ -39,16 +39,16 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
     @Inject
     QuotaResponseBuilder responseBuilder;
 
-    @Parameter(name = ApiConstants.UUID, type = BaseCmd.CommandType.STRING, required = true, entityType = QuotaTariffResponse.class,
-            description = "UUID of the quota tariff", validations = {ApiArgValidator.UuidString})
-    private String quotaTariffUuid;
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.STRING, required = true, entityType = QuotaTariffResponse.class,
+            description = "ID of the quota tariff", validations = {ApiArgValidator.UuidString})
+    private String id;
 
-    public String getQuotaTariffUuid() {
-        return quotaTariffUuid;
+    public String getId() {
+        return id;
     }
 
-    public void setQuotaTariffId(String quotaTariffUuid) {
-        this.quotaTariffUuid = quotaTariffUuid;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public QuotaTariffDeleteCmd() {
@@ -57,7 +57,7 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean result = responseBuilder.deleteQuotaTariff(getQuotaTariffUuid());
+        boolean result = responseBuilder.deleteQuotaTariff(getId());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);
