@@ -4078,7 +4078,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             HypervisorType hypervisorType = vm.getHypervisorType();
             if (hypervisorType != null && CollectionUtils.isNotEmpty(supportingDefaultHV) && supportingDefaultHV.contains(hypervisorType)) {
-                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, "default");
+                String hwVersion = getMinimumHypervisorVersionInDatacenter(vm.getDataCenterId(), hypervisorType);
+                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, hwVersion);
             }
         }
         if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
@@ -4088,6 +4089,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return maxDataVolumesSupported.intValue();
+    }
+
+    protected String getMinimumHypervisorVersionInDatacenter(long datacenterId, HypervisorType hypervisorType) {
+        String defaultHypervisorVersion = "default";
+        if (hypervisorType == HypervisorType.Simulator) {
+            return defaultHypervisorVersion;
+        }
+        List<String> hwVersions = _hostDao.listOrderedHostsHypervisorVersionsInDatacenter(datacenterId, hypervisorType);
+        String minHwVersion = CollectionUtils.isNotEmpty(hwVersions) ? hwVersions.get(0) : defaultHypervisorVersion;
+        return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
     private Long getDeviceId(UserVmVO vm, Long deviceId) {

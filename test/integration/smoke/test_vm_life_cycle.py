@@ -873,6 +873,88 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_12_start_vm_multiple_volumes_allocated(self):
+        """Test attaching multiple datadisks and start VM
+        """
+
+        # Validate the following
+        # 1. Deploys a VM without starting it and attaches multiple datadisks to it
+        # 2. Start VM successfully
+        # 3. Destroys the VM with DataDisks option
+
+        custom_disk_offering = DiskOffering.list(self.apiclient, name='Custom')[0]
+
+        # Create VM without starting it
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.small_offering.id,
+            startvm=False
+        )
+        self.cleanup.append(vm)
+
+        hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor=self.hypervisor,
+            state='Up')
+
+        if self.hypervisor.lower() in ["simulator"] or not hosts[0].hypervisorversion:
+            hypervisor_version = "default"
+        else:
+            hypervisor_version = hosts[0].hypervisorversion
+
+        res = self.dbclient.execute("select max_data_volumes_limit from hypervisor_capabilities where "
+                                    "hypervisor_type='%s' and hypervisor_version='%s';" %
+                                    (self.hypervisor.lower(), hypervisor_version))
+        if isinstance(res, list) and len(res) > 0:
+            max_volumes = res[0][0]
+            if max_volumes > 14:
+                max_volumes = 14
+        else:
+            max_volumes = 6
+
+        # Create and attach volumes
+        self.services["custom_volume"]["customdisksize"] = 1
+        self.services["custom_volume"]["zoneid"] = self.zone.id
+        for i in range(max_volumes):
+            volume = Volume.create_custom_disk(
+                self.apiclient,
+                self.services["custom_volume"],
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=custom_disk_offering.id
+            )
+            self.cleanup.append(volume)
+            VirtualMachine.attach_volume(vm, self.apiclient, volume)
+
+        # Start the VM
+        self.debug("Starting VM - ID: %s" % vm.id)
+        vm.start(self.apiclient)
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
