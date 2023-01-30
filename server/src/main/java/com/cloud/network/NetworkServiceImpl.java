@@ -2098,12 +2098,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                 throw new InvalidParameterValueException("Unable to find specified NetworkACL");
                             }
 
-                            if (aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
-                                // ACL is not default DENY/ALLOW
-                                // ACL should be associated with a VPC
-                                if (!vpcId.equals(acl.getVpcId())) {
-                                    throw new InvalidParameterValueException("ACL: " + aclId + " do not belong to the VPC");
-                                }
+                            Long aclVpcId = acl.getVpcId();
+                            if (!isDefaultAcl(aclId) && isAclAttachedToVpc(aclVpcId, vpcId)) {
+                                throw new InvalidParameterValueException(String.format("ACL [%s] does not belong to the VPC [%s].", aclId, aclVpcId));
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
@@ -5919,5 +5916,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+    }
+
+    public boolean isDefaultAcl(Long aclId) {
+        return aclId == NetworkACL.DEFAULT_DENY || aclId == NetworkACL.DEFAULT_ALLOW;
+    }
+
+    public boolean isAclAttachedToVpc(Long aclVpcId, Long vpcId) {
+        return aclVpcId != 0 && !vpcId.equals(aclVpcId);
     }
 }

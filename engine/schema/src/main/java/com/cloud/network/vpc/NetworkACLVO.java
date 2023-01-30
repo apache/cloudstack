@@ -17,6 +17,8 @@
 
 package com.cloud.network.vpc;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -83,6 +85,11 @@ public class NetworkACLVO implements NetworkACL {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "vpcId");
     }
 
     public void setUuid(String uuid) {
