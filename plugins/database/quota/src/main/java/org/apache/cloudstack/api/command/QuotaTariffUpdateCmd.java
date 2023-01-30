@@ -65,16 +65,12 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
-            "numeric value will be applied; if the result is neither a boolean nor a value, the tariff will not be applied. If the rule is not informed, the tariff value will be " +
-            "applied. Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
+            "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
+            "value will be applied. Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
     private String activationRule;
 
     public Integer getUsageType() {
         return usageType;
-    }
-
-    public void setUsageType(Integer usageType) {
-        this.usageType = usageType;
     }
 
     public Double getValue() {

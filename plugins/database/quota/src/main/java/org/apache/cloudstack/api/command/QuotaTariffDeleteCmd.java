@@ -47,14 +47,6 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public QuotaTariffDeleteCmd() {
-        super();
-    }
-
     @Override
     public void execute() {
         boolean result = responseBuilder.deleteQuotaTariff(getId());
