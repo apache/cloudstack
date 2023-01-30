@@ -1862,10 +1862,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             s_logger.debug("Found " + routers.size() + " running routers. ");
             for (final DomainRouterVO router : routers) {
-                final String serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
+                final Boolean serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
                 // Skip the routers in VPC network or skip the routers where
                 // Monitor service is not enabled in the corresponding Zone
-                if (!Boolean.parseBoolean(serviceMonitoringFlag)) {
+                if (serviceMonitoringFlag == null || !serviceMonitoringFlag) {
                     continue;
                 }
                 String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
