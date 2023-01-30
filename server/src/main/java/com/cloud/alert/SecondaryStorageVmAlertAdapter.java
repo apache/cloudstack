@@ -90,7 +90,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
                     s_logger.debug(message);
                 }
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, message, "Secondary Storage Vm up " + zone);
+                _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, message, "Secondary Storage Vm up " + zone);
                 break;
 
             case SecStorageVmAlertEventArgs.SSVM_DOWN:
