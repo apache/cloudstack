@@ -42,27 +42,31 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     @Inject
     QuotaResponseBuilder _responseBuilder;
 
-    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, description = "Integer value for the usage type of the resource")
+    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, description = "DEPRECATED. Integer value for the usage type of the resource")
     private Integer usageType;
 
     @Parameter(name = ApiConstants.VALUE, type = CommandType.DOUBLE, description = "The quota tariff value of the resource as per the default unit.")
     private Double value;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Use yyyy-MM-dd as"
-            + " the date format, e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "DEPRECATED. The effective start date on/after which the quota tariff is effective. " +
+            "Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
             + " endDate=2009-06-03.", since = "4.18.0.0")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 65535, since = "4.18.0.0")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description. Inform empty to remove the description.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description. Inform empty to remove the description.", length = 65535,
+            since = "4.18.0.0")
     private String description;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. Inform empty to remove the activation rule.")
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. It can receive a JS script that results in either " +
+            "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
+            "numeric value will be applied; if the result is neither a boolean nor a value, the tariff will not be applied. If the rule is not informed, the tariff value will be " +
+            "applied. Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
     private String activationRule;
 
     public Integer getUsageType() {
