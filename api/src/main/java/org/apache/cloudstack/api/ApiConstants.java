@@ -213,6 +213,10 @@ public class ApiConstants {
     public static final String ID = "id";
     public static final String IDS = "ids";
     public static final String INDEX = "index";
+    public static final String INSTANCES_DISKS_STATS_RETENTION_ENABLED = "instancesdisksstatsretentionenabled";
+    public static final String INSTANCES_DISKS_STATS_RETENTION_TIME = "instancesdisksstatsretentiontime";
+    public static final String INSTANCES_STATS_RETENTION_TIME = "instancesstatsretentiontime";
+    public static final String INSTANCES_STATS_USER_ONLY = "instancesstatsuseronly";
     public static final String PREFIX = "prefix";
     public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
@@ -393,6 +397,7 @@ public class ApiConstants {
     public static final String START_IPV6 = "startipv6";
     public static final String START_PORT = "startport";
     public static final String STATE = "state";
+    public static final String STATS = "stats";
     public static final String STATUS = "status";
     public static final String STORAGE_TYPE = "storagetype";
     public static final String STORAGE_POLICY = "storagepolicy";
@@ -923,6 +928,8 @@ public class ApiConstants {
     public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
+    public static final String IOTHREADS_ENABLED = "iothreadsenabled";
+    public static final String IO_DRIVER_POLICY = "iodriverpolicy";
 
     public static final String POOL_TYPE = "pooltype";
     public static final String REDUNDANT_STATE = "redundantstate";
@@ -936,6 +943,29 @@ public class ApiConstants {
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
+
+    /**
+     * This enum specifies IO Drivers, each option controls specific policies on I/O.
+     * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
+     */
+    public enum IoDriverPolicy {
+        NATIVE("native"),
+        THREADS("threads"),
+        IO_URING("io_uring"),
+        STORAGE_SPECIFIC("storage_specific");
+
+        String ioDriver;
+
+        IoDriverPolicy(String driver) {
+            ioDriver = driver;
+        }
+
+        @Override
+        public String toString() {
+            return ioDriver;
+        }
+    }
+
     public enum BootType {
         UEFI, BIOS;
 

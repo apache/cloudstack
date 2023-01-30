@@ -55,4 +55,14 @@ public class ByteScaleUtils {
     public static long bytesToMebibytes(long bytes) {
         return bytes / MiB;
     }
+
+    /**
+     * Converts bytes to gibibytes.
+     *
+     * @param b The value in bytes to convert to gibibytes.
+     * @return The parameter divided by 1024 * 1024 * 1024 (1 GiB).
+     */
+    public static long bytesToGibibytes(long b) {
+        return b / GiB;
+    }
 }
