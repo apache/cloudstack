@@ -89,7 +89,6 @@
 import { api } from '@/api'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
-import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import ActionButton from '@/components/view/ActionButton'
@@ -103,7 +102,6 @@ export default {
   name: 'ConfigurationTab',
   components: {
     Breadcrumb,
-    Console,
     OsLogo,
     Status,
     ActionButton,
@@ -172,7 +170,6 @@ export default {
       }
       api('listConfigurationGroups', params).then(response => {
         this.groups = response.listconfigurationgroupsresponse.configurationgroup
-        console.log(this.groups)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.loading.setting'))
@@ -201,20 +198,15 @@ export default {
         params.keyword = this.filter
       }
 
-      console.table(params)
-      console.time('fetchConfigurationData')
       api('listConfigurations', params).then(response => {
         this.config = []
         let config = response.listconfigurationsresponse.configuration || []
         this.count = response.listconfigurationsresponse.count || 0
         if (this.group.length > 0) {
-          console.time('hierarchy')
           config = this.convertConfigToHierarchy(config)
-          console.timeEnd('hierarchy')
         }
         this.config = config
-        // console.log(this.config)
-        console.timeEnd('fetchConfigurationData')
+        window.scrollTo(0, 0)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.loading.setting'))
@@ -242,7 +234,6 @@ export default {
       return config
     },
     changePage (page, pagesize) {
-      console.log(page, pagesize)
       const query = {}
       if (page) {
         query.page = page
@@ -279,7 +270,6 @@ export default {
     },
     changeGroupTab (e) {
       this.group = e
-      console.log('changeGroupTab : ' + e)
       if (this.group.length > 0) {
         for (const groupIndex in this.groups) {
           if (this.groups[groupIndex].name === this.group) {
@@ -304,7 +294,6 @@ export default {
         this.pushToHistory(query)
         this.fetchConfigurationData()
       }
-      console.log('End changeGroupTab')
     },
     changeSubgroupTab (e) {
       this.subgroup = e || this.subgroup
@@ -325,7 +314,6 @@ export default {
           '#' + this.$route.path
         )
       }
-      console.log('End changeSubgroupTab')
     }
   }
 }

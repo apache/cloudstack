@@ -232,8 +232,6 @@ export default {
       this.editableValueKey = null
     },
     updateConfigurationValue (configrecord) {
-      console.log(configrecord)
-      console.log(this.editableValue)
       this.valueLoading = true
       this.editableValueKey = null
       var newValue = this.editableValue
@@ -241,7 +239,6 @@ export default {
         newValue = newValue / 100
       }
       if (['Order', 'CSV'].includes(configrecord.type)) {
-        console.table(configrecord)
         newValue = newValue.join(',')
       }
       const params = {
