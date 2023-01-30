@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
@@ -1416,5 +1417,37 @@ public class NetworkACLServiceImplTest {
         networkAclServiceImpl.validateAclConsistency(moveNetworkAclItemCmdMock, networkACLVOMock, allAclRules);
 
         Mockito.verify(moveNetworkAclItemCmdMock, Mockito.times(1)).getAclConsistencyHash();
+    }
+
+    @Test
+    public void checkGlobalAclPermissionTestGlobalAclWithRootAccountShouldWork() {
+        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
+        Mockito.doReturn(true).when(networkAclServiceImpl).isGlobalAcl(Mockito.anyLong());
+
+        networkAclServiceImpl.checkGlobalAclPermission(networkMockVpcMockId, accountMock, "exception");
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void checkGlobalAclPermissionTestGlobalAclWithNonRootAccountShouldThrow() {
+        Mockito.doReturn(Account.Type.NORMAL).when(accountMock).getType();
+        Mockito.doReturn(true).when(networkAclServiceImpl).isGlobalAcl(Mockito.anyLong());
+
+        networkAclServiceImpl.checkGlobalAclPermission(networkMockVpcMockId, accountMock, "exception");
+    }
+
+    @Test
+    public void validateAclAssociatedToVpcTestNonNullVpcShouldCheckAccess() {
+        Mockito.doReturn(vpcVOMock).when(vpcDaoMock).findById(Mockito.anyLong());
+
+        networkAclServiceImpl.validateAclAssociatedToVpc(networkMockVpcMockId, accountMock, SOME_UUID);
+
+        Mockito.verify(accountManagerMock, Mockito.times(1)).checkAccess(Mockito.any(Account.class), isNull(), Mockito.anyBoolean(), Mockito.any(Vpc.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAclAssociatedToVpcTestNullVpcShouldThrowInvalidParameterValueException() {
+        Mockito.doReturn(null).when(vpcDaoMock).findById(Mockito.anyLong());
+
+        networkAclServiceImpl.validateAclAssociatedToVpc(networkMockVpcMockId, accountMock, SOME_UUID);
     }
 }
