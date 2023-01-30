@@ -492,9 +492,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AssignIpAddressSearch.and("dc", AssignIpAddressSearch.entity().getDataCenterId(), Op.EQ);
         AssignIpAddressSearch.and("allocated", AssignIpAddressSearch.entity().getAllocatedTime(), Op.NULL);
         AssignIpAddressSearch.and("vlanId", AssignIpAddressSearch.entity().getVlanId(), Op.IN);
-        if (SystemVmPublicIpReservationModeStrictness.value()) {
-            AssignIpAddressSearch.and("forSystemVms", AssignIpAddressSearch.entity().isForSystemVms(), Op.EQ);
-        }
+        AssignIpAddressSearch.and("forSystemVms", AssignIpAddressSearch.entity().isForSystemVms(), Op.EQ);
+
         SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("type", vlanSearch.entity().getVlanType(), Op.EQ);
         vlanSearch.and("networkId", vlanSearch.entity().getNetworkId(), Op.EQ);
@@ -840,29 +839,71 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     errorMessage.append(" zone id=" + dcId);
                 }
 
-                // If owner has dedicated Public IP ranges, fetch IP from the dedicated range
-                // Otherwise fetch IP from the system pool
+                sc.setParameters("dc", dcId);
+
+                // for direct network take ip addresses only from the vlans belonging to the network
+                if (vlanUse == VlanType.DirectAttached) {
+                    sc.setJoinParameters("vlan", "networkId", guestNetworkId);
+                    errorMessage.append(", network id=" + guestNetworkId);
+                }
+                if (requestedGateway != null) {
+                    sc.setJoinParameters("vlan", "vlanGateway", requestedGateway);
+                    errorMessage.append(", requested gateway=" + requestedGateway);
+                }
+                sc.setJoinParameters("vlan", "type", vlanUse);
+
                 Network network = _networksDao.findById(guestNetworkId);
-                //Checking if network is null in the case of system VM's. At the time of allocation of IP address to systemVm, no network is present.
-                if(network == null || !(network.getGuestType() == GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
-                    List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
-                    for (AccountVlanMapVO map : maps) {
+                String routerIpAddress = null;
+                if (network != null) {
+                    NetworkDetailVO routerIpDetail = _networkDetailsDao.findDetail(network.getId(), ApiConstants.ROUTER_IP);
+                    routerIpAddress = routerIpDetail != null ? routerIpDetail.getValue() : null;
+                }
+                if (requestedIp != null) {
+                    sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
+                    errorMessage.append(": requested ip " + requestedIp + " is not available");
+                } else if (routerIpAddress != null) {
+                    sc.addAnd("address", Op.NEQ, routerIpAddress);
+                }
+
+                boolean ascOrder = ! forSystemVms;
+                Filter filter = new Filter(IPAddressVO.class, "forSystemVms", ascOrder, 0l, 1l);
+
+                filter.addOrderBy(IPAddressVO.class,"vlanId", true);
+
+                List<IPAddressVO> addrs = new ArrayList<>();
+
+                if (forSystemVms) {
+                    // Get Public IPs for system vms in dedicated ranges
+                    sc.setParameters("forSystemVms", true);
+                    if (lockOneRow) {
+                        addrs = _ipAddressDao.lockRows(sc, filter, true);
+                    } else {
+                        addrs = new ArrayList<>(_ipAddressDao.search(sc, null));
+                    }
+                }
+                if (vlanUse == VlanType.VirtualNetwork && (!lockOneRow || (lockOneRow && addrs.size() == 0)) &&
+                        !(forSystemVms && SystemVmPublicIpReservationModeStrictness.value())) {
+                    sc.setParameters("forSystemVms", false);
+                    // If owner has dedicated Public IP ranges, fetch IP from the dedicated range
+                    // Otherwise fetch IP from the system pool
+                    // Checking if network is null in the case of system VM's. At the time of allocation of IP address to systemVm, no network is present.
+                    if (network == null || !(network.getGuestType() == GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
+                        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
+                        for (AccountVlanMapVO map : maps) {
+                            if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
+                                dedicatedVlanDbIds.add(map.getVlanDbId());
+                        }
+                    }
+                    List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
+                    for (DomainVlanMapVO map : domainMaps) {
                         if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
                             dedicatedVlanDbIds.add(map.getVlanDbId());
                     }
-                }
-                List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
-                for (DomainVlanMapVO map : domainMaps) {
-                    if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
-                        dedicatedVlanDbIds.add(map.getVlanDbId());
-                }
-                List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(dcId);
-                for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
-                    if (vlanDbIds == null || vlanDbIds.contains(nonDedicatedVlan.getId()))
-                        nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
-                }
-
-                if (vlanUse == VlanType.VirtualNetwork) {
+                    List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(dcId);
+                    for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
+                        if (vlanDbIds == null || vlanDbIds.contains(nonDedicatedVlan.getId()))
+                            nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
+                    }
                     if (!dedicatedVlanDbIds.isEmpty()) {
                         fetchFromDedicatedRange = true;
                         sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
@@ -881,46 +922,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
                         throw ex;
                     }
-                }
-
-                sc.setParameters("dc", dcId);
-
-                // for direct network take ip addresses only from the vlans belonging to the network
-                if (vlanUse == VlanType.DirectAttached) {
-                    sc.setJoinParameters("vlan", "networkId", guestNetworkId);
-                    errorMessage.append(", network id=" + guestNetworkId);
-                }
-                if (requestedGateway != null) {
-                    sc.setJoinParameters("vlan", "vlanGateway", requestedGateway);
-                    errorMessage.append(", requested gateway=" + requestedGateway);
-                }
-                sc.setJoinParameters("vlan", "type", vlanUse);
-                String routerIpAddress = null;
-                if (network != null) {
-                    NetworkDetailVO routerIpDetail = _networkDetailsDao.findDetail(network.getId(), ApiConstants.ROUTER_IP);
-                    routerIpAddress = routerIpDetail != null ? routerIpDetail.getValue() : null;
-                }
-                if (requestedIp != null) {
-                    sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
-                    errorMessage.append(": requested ip " + requestedIp + " is not available");
-                } else if (routerIpAddress != null) {
-                    sc.addAnd("address", Op.NEQ, routerIpAddress);
-                }
-
-                boolean ascOrder = ! forSystemVms;
-                Filter filter = new Filter(IPAddressVO.class, "forSystemVms", ascOrder, 0l, 1l);
-                if (SystemVmPublicIpReservationModeStrictness.value()) {
-                    sc.setParameters("forSystemVms", forSystemVms);
-                }
-
-                filter.addOrderBy(IPAddressVO.class,"vlanId", true);
-
-                List<IPAddressVO> addrs;
-
-                if (lockOneRow) {
-                    addrs = _ipAddressDao.lockRows(sc, filter, true);
-                } else {
-                    addrs = new ArrayList<>(_ipAddressDao.search(sc, null));
+                    if (lockOneRow) {
+                        addrs = _ipAddressDao.lockRows(sc, filter, true);
+                    } else {
+                        addrs = new ArrayList<>(_ipAddressDao.search(sc, null));
+                    }
                 }
 
                 // If all the dedicated IPs of the owner are in use fetch an IP from the system pool

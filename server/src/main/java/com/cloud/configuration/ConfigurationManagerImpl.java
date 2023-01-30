@@ -7164,7 +7164,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Domain getVlanDomain(long vlanId) {
         Vlan vlan = _vlanDao.findById(vlanId);
-        Long domainId = null;
 
         // if vlan is Virtual Domain specific, get vlan information from the
         // accountVlanMap; otherwise get account information
