@@ -21,25 +21,26 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.response.VmMetricsStatsResponse;
+import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 
-@APICommand(name = "listVirtualMachinesUsageHistory", description = "Lists VM stats", responseObject = VmMetricsStatsResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.17",
+@APICommand(name = "listVolumesUsageHistory", description = "Lists volume stats", responseObject = VolumeMetricsStatsResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
+public class ListVolumesUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the volume.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=UserVmResponse.class, description="the IDs of the virtual machines, mutually exclusive with id.")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType= SystemVmResponse.class, description="the IDs of the volumes, mutually exclusive with id.")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine (a substring match is made against the parameter value returning the data for all matching VMs).")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the volume (a substring match is made against the parameter value returning the data for all matching Volumes).")
     private String name;
 
     /////////////////////////////////////////////////////
@@ -64,7 +65,7 @@ public class ListVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
 
     @Override
     public void execute() {
-        ListResponse<VmMetricsStatsResponse> response = metricsService.searchForVmMetricsStats(this);
+        ListResponse<VolumeMetricsStatsResponse> response = metricsService.searchForVolumeMetricsStats(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

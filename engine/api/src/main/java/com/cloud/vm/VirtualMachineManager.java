@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -262,5 +263,26 @@ public interface VirtualMachineManager extends Manager {
     boolean isRootVolumeOnLocalStorage(long vmId);
 
     Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
+
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmIds list of VM IDs
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmMap map of VM IDs and the corresponding VirtualMachine object
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
 
 }
