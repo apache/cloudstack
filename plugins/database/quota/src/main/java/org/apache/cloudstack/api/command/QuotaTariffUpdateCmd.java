@@ -53,13 +53,13 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
-            + " endDate=2009-06-03.")
+            + " endDate=2009-06-03.", since = "4.18.0.0")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", since = "4.18.0.0")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description. Inform empty to remove the description.")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description. Inform empty to remove the description.", since = "4.18.0.0")
     private String description;
 
     @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. Inform empty to remove the activation rule.")
@@ -82,11 +82,11 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     }
 
     public Date getStartDate() {
-        return startDate == null ? null : new Date(startDate.getTime());
+        return startDate;
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.startDate = startDate;
     }
 
     public Date getEndDate() {
