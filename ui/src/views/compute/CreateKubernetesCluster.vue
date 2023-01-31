@@ -343,6 +343,7 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false

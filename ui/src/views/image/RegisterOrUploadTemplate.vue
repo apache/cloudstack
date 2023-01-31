@@ -107,7 +107,7 @@
               @change="handlerSelectZone"
               :placeholder="apiParams.zoneid.description"
               :loading="zones.loading">
-              <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id" :label="zone.name || zone.description">
+              <a-select-option :value="zone.id" v-for="zone in filteredZones" :key="zone.id" :label="zone.name || zone.description">
                 <span>
                   <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                   <global-outlined v-else style="margin-right: 5px" />
@@ -421,6 +421,13 @@ export default {
   computed: {
     isAdminRole () {
       return this.$store.getters.userInfo.roletype === 'Admin'
+    },
+    filteredZones () {
+      let zoneList = this.zones.opts
+      if (zoneList && zoneList.length > 0 && this.currentForm === 'Upload') {
+        zoneList = zoneList.filter(zone => zone.type !== 'Edge')
+      }
+      return zoneList
     }
   },
   methods: {
@@ -532,9 +539,14 @@ export default {
         listZones = listZones.concat(listZonesResponse)
         this.zones.opts = listZones
       }).finally(() => {
-        this.form.zoneid = (this.zones.opts && this.zones.opts[1]) ? this.zones.opts[1].id : ''
+        this.form.zoneid = (this.filteredZones && this.filteredZones[1]) ? this.filteredZones[1].id : ''
+        if (!this.form.zoneid) {
+          this.form.zoneid = (this.filteredZones && this.filteredZones[0] && this.filteredZones[0].id !== this.$t('label.all.zone')) ? this.filteredZones[0].id : ''
+        }
         this.zones.loading = false
-        this.fetchHyperVisor({ zoneid: this.form.zoneid })
+        if (this.form.zoneid) {
+          this.fetchHyperVisor({ zoneid: this.form.zoneid })
+        }
       })
     },
     fetchHyperVisor (params) {
@@ -548,7 +560,7 @@ export default {
         }
         if (this.currentForm !== 'Upload') {
           listhyperVisors.push({
-            name: 'Any'
+            name: 'Simulator'
           })
         }
         this.hyperVisor.opts = listhyperVisors

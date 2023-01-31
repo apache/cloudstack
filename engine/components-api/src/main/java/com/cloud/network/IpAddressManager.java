@@ -49,11 +49,12 @@ public interface IpAddressManager {
             "When true, ip address delete (ipassoc) failures are  ignored", true);
 
     ConfigKey<String> VrouterRedundantTiersPlacement = new ConfigKey<String>(
-            "Advanced", String.class,
+            String.class,
             "vrouter.redundant.tiers.placement",
+            "Advanced",
             "random",
             "Set placement of vrouter ips in redundant mode in vpc tiers, this can be 3 value: `first` to use first ips in tiers, `last` to use last ips in tiers and `random` to take random ips in tiers.",
-            true, ConfigKey.Scope.Account);
+            true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.Select, "first,last,random");
 
     /**
      * Assigns a new public ip address.

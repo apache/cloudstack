@@ -24,7 +24,7 @@ public class ConfigTest {
         for (Config configuration : Config.values()) {
             if (configuration.getType().equals(Integer.class) && configuration.getRange() != null) {
                 try {
-                    final String[] options = configuration.getRange()[0].split("-");
+                    final String[] options = configuration.getRange().split("-");
                     final int min = Integer.parseInt(options[0]);
                     final int max = Integer.parseInt(options[1]);
                     if (options.length != 2) {

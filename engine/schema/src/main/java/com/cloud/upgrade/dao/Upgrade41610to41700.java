@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.exception.CloudRuntimeException;
-
-
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -28,7 +24,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public class Upgrade41610to41700 extends DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
+
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+public class Upgrade41610to41700 extends  DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
 
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 

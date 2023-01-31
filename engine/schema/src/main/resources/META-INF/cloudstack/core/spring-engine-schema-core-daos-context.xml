@@ -61,6 +61,8 @@
   <bean id="commandExecLogDaoImpl" class="com.cloud.secstorage.CommandExecLogDaoImpl" />
   <bean id="conditionDaoImpl" class="com.cloud.network.as.dao.ConditionDaoImpl" />
   <bean id="consoleProxyDaoImpl" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
+  <bean id="configurationGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
+  <bean id="configurationSubGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
   <bean id="counterDaoImpl" class="com.cloud.network.as.dao.CounterDaoImpl" />
   <bean id="dataCenterJoinDaoImpl" class="com.cloud.api.query.dao.DataCenterJoinDaoImpl" />
   <bean id="domainVlanMapDaoImpl" class="com.cloud.dc.dao.DomainVlanMapDaoImpl" />

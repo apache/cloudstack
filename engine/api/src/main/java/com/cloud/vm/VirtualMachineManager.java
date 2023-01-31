@@ -66,7 +66,7 @@ public interface VirtualMachineManager extends Manager {
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> VmConfigDriveUseHostCacheOnUnsupportedPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.use.host.cache.on.unsupported.pool", "true",
-            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone);
+            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone, VmConfigDriveOnPrimaryPool.key());
 
     ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
             "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);

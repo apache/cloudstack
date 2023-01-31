@@ -1048,4 +1048,8 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd) {
         return false;
     }
+
+    @Override
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) {
+    }
 }

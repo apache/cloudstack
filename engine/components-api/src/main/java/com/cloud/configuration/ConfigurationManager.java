@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
+
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -42,6 +44,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -127,7 +130,7 @@ public interface ConfigurationManager {
      *
      * @param userId
      * @param podName
-     * @param zoneId
+     * @param zone
      * @param gateway
      * @param cidr
      * @param startIp
@@ -137,7 +140,7 @@ public interface ConfigurationManager {
      *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
      * @return Pod
      */
-    HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState,
+    HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
         boolean skipGatewayOverlapCheck);
 
     /**
@@ -164,7 +167,7 @@ public interface ConfigurationManager {
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
         Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
-        String ip6Dns2);
+        String ip6Dns2, boolean isEdge);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
@@ -261,4 +264,10 @@ public interface ConfigurationManager {
     AllocationState findPodAllocationState(HostPodVO pod);
 
     AllocationState findClusterAllocationState(ClusterVO cluster);
+
+    String getConfigurationType(String configName);
+
+    Pair<String, String> getConfigurationGroupAndSubGroup(String configName);
+
+    List<ConfigurationSubGroupVO> getConfigurationSubGroups(Long groupId);
 }

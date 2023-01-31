@@ -305,6 +305,9 @@ export default {
     securityGroupsEnabled () {
       return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
     networkOfferingSelected () {
       return this.prefillContent.networkOfferingSelected
     },
@@ -312,11 +315,17 @@ export default {
       if (!this.isAdvancedZone) { // Basic zone
         return (this.networkOfferingSelected && (this.networkOfferingSelected.havingEIP || this.networkOfferingSelected.havingELB))
       } else {
-        return !this.securityGroupsEnabled
+        return !this.securityGroupsEnabled && !this.isEdgeZone
       }
     },
+    needsManagementTraffic () {
+      return !this.isEdgeZone
+    },
     requiredTrafficTypes () {
-      const traffics = ['management', 'guest']
+      const traffics = ['guest']
+      if (this.needsManagementTraffic) {
+        traffics.push('management')
+      }
       if (this.needsPublicTraffic) {
         traffics.push('public')
       }

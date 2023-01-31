@@ -30,8 +30,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.VolumeApiService;
-import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -50,6 +48,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -111,6 +111,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
@@ -126,6 +127,7 @@ import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
@@ -149,8 +151,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
 * Class to manage secondary storages. <br><br>
@@ -265,7 +265,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
     static final ConfigKey<String> NTPServerConfig = new ConfigKey<String>(String.class, "ntp.server.list", "Advanced", null,
-            "Comma separated list of NTP servers to configure in Secondary storage VM", true, ConfigKey.Scope.Global, null);
+            "Comma separated list of NTP servers to configure in Secondary storage VM", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     static final ConfigKey<Integer> MaxNumberOfSsvmsForMigration = new ConfigKey<Integer>("Advanced", Integer.class, "max.ssvm.count", "5",
             "Number of additional SSVMs to handle migration of data objects concurrently", true, ConfigKey.Scope.Global);
@@ -1305,15 +1305,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public Long[] getScannablePools() {
-        List<DataCenterVO> zones = _dcDao.listEnabledZones();
-
-        Long[] dcIdList = new Long[zones.size()];
-        int i = 0;
-        for (DataCenterVO dc : zones) {
-            dcIdList[i++] = dc.getId();
+        List<Long> zoneIds = _dcDao.listEnabledNonEdgeZoneIds();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", StringUtils.join(zoneIds, ",")));
         }
-
-        return dcIdList;
+        return zoneIds.toArray(Long[]::new);
     }
 
     @Override
