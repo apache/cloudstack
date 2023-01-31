@@ -1764,9 +1764,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
 
-                    // 4) vpc and network should belong to the same owner
-                    if (vpc.getAccountId() != networkOwner.getId()) {
-                        throw new InvalidParameterValueException("Vpc " + vpc + " owner is different from the network owner " + networkOwner);
+                    // 4) Vpc's account should be able to access network owner's account
+                    Account vpcaccount = _accountMgr.getAccount(vpc.getAccountId());
+                    try {
+                        _accountMgr.checkAccess(vpcaccount, null, false, networkOwner);
+                    }
+                    catch (PermissionDeniedException e) {
+                        s_logger.error(e.getMessage());
+                        throw new InvalidParameterValueException(String.format("VPC owner does not have access to account [%s].", networkOwner.getAccountName()));
                     }
 
                     // 5) network domain should be the same as VPC's

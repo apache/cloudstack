@@ -2534,7 +2534,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getVpcId() != null) {
             Vpc vpc = ApiDBUtils.findVpcById(network.getVpcId());
             if (vpc != null) {
-                response.setVpcId(vpc.getUuid());
+                try {
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
+                    response.setVpcId(vpc.getUuid());
+                } catch (PermissionDeniedException e){
+                }
                 response.setVpcName(vpc.getName());
             }
         }
