@@ -64,9 +64,9 @@ public class PasswordGeneratorTest {
         return false;
     }
     private boolean containsSpecialChar(String password) {
-        String specialChar = "!@#%^&*(){}[];:.,_-";
+        String symbols = new String(passwordgenerator.symbols);
         for (char c : password.toCharArray()) {
-            if (specialChar.contains(String.valueOf(c))) {
+            if (symbols.contains(String.valueOf(c))) {
                 return true;
             }
         }
