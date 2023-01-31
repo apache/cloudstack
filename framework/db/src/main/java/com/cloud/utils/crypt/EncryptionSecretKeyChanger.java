@@ -139,7 +139,7 @@ public class EncryptionSecretKeyChanger {
         }
 
         System.out.println("Started database migration at " + new Date());
-        if (!migrateEverything(oldMSKey, oldDBKey, newMSKey, newDBKey, newEncryptorVersion, loadNewMsKeyFromEnv, forced, skipped)) {
+        if (!migratePropertiesAndDatabase(oldMSKey, oldDBKey, newMSKey, newDBKey, newEncryptorVersion, loadNewMsKeyFromEnv, forced, skipped)) {
             System.out.println("Got error during database migration at " + new Date());
             System.exit(3);
         }
@@ -232,9 +232,9 @@ public class EncryptionSecretKeyChanger {
         return true;
     }
 
-    private static boolean migrateEverything(String oldMSKey, String oldDBKey, String newMSKey, String newDBKey,
-                                             String newEncryptorVersion, boolean loadNewMsKeyFromEnv,
-                                             boolean forced, boolean skipped) {
+    private static boolean migratePropertiesAndDatabase(String oldMSKey, String oldDBKey, String newMSKey, String newDBKey,
+                                                        String newEncryptorVersion, boolean loadNewMsKeyFromEnv,
+                                                        boolean forced, boolean skipped) {
 
         final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
         final Properties dbProps = new Properties();
