@@ -17,7 +17,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<Configuration monitorInterval="60" packages="org.apache.cloudstack.alert.snmp">
+<Configuration monitorInterval="60" packages="org.apache.cloudstack.alert.snmp,org.apache.cloudstack.syslog">
    <Appenders>
 
       <properties>
@@ -56,6 +56,15 @@ under the License.
       </Syslog>
 
       <!-- ============================== -->
+      <!-- Append alerts to the syslog if it is configured -->
+      <!-- ============================== -->
+
+      <AlertSyslogAppender name="ALERTSYSLOG" syslogHosts="" facility="LOCAL6">
+         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
+      </AlertSyslogAppender>
+
+      <!-- ============================== -->
       <!-- Append messages to the console -->
       <!-- ============================== -->
 
@@ -64,12 +73,9 @@ under the License.
          <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%xEx{filters(${filters})}%n"/>
       </Console>
 
-
-      <Syslog name="ALERTSYSLOG" host="localhost" facility="LOCAL6">
-         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %mxEx{filters(${filters})}%n"/>
-      </Syslog>
-
+      <!-- ============================== -->
+      <!-- send alert warnings+ as the SNMP trap if it is configured! -->
+      <!-- ============================== -->
 
       <SnmpTrapAppender name="SNMP" SnmpManagerIpAddresses="" SnmpManagerPorts="" SnmpManagerCommunities="">
                <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
