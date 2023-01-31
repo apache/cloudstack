@@ -19,7 +19,10 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -35,7 +38,9 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "listConfigurations", description = "Lists all configurations.", responseObject = ConfigurationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -89,6 +94,15 @@ public class ListCfgsByCmd extends BaseListCmd {
             description = "the ID of the Image Store to update the parameter value for corresponding image store")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration by group name (primarily used for UI)", since = "4.18.0")
+    private String groupName;
+
+    @Parameter(name = ApiConstants.SUBGROUP, type = CommandType.STRING, description = "lists configuration by subgroup name (primarily used for UI)", since = "4.18.0")
+    private String subGroupName;
+
+    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "lists configuration by parent name (primarily used for UI)", since = "4.18.0")
+    private String parentName;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -125,6 +139,26 @@ public class ListCfgsByCmd extends BaseListCmd {
         return imageStoreId;
     }
 
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public String getSubGroupName() {
+        return subGroupName;
+    }
+
+    public String getParentName() {
+        return parentName;
+    }
+
+    @Override
+    public Integer getPageSize() {
+        if (StringUtils.isNotEmpty(getGroupName())) {
+            return Integer.valueOf(s_pageSizeUnlimited.intValue());
+        }
+        return super.getPageSize();
+    }
+
     @Override
     public Long getPageSizeVal() {
         Long defaultPageSize = 500L;
@@ -143,37 +177,74 @@ public class ListCfgsByCmd extends BaseListCmd {
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
+    private void setScope(ConfigurationResponse cfgResponse) {
+        if (!matchesConfigurationGroup(cfgResponse)) {
+            return;
+        }
+        cfgResponse.setObjectName("configuration");
+        if (getZoneId() != null) {
+            cfgResponse.setScope("zone");
+        }
+        if (getClusterId() != null) {
+            cfgResponse.setScope("cluster");
+        }
+        if (getStoragepoolId() != null) {
+            cfgResponse.setScope("storagepool");
+        }
+        if (getAccountId() != null) {
+            cfgResponse.setScope("account");
+        }
+        if (getDomainId() != null) {
+            cfgResponse.setScope("domain");
+        }
+        if (getImageStoreId() != null){
+            cfgResponse.setScope("imagestore");
+        }
+    }
+
     @Override
     public void execute() {
-        Pair<List<? extends Configuration>, Integer> result = _mgr.searchForConfigurations(this);
-        ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
-        List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
-        for (Configuration cfg : result.first()) {
-            ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
-            cfgResponse.setObjectName("configuration");
-            if (getZoneId() != null) {
-                cfgResponse.setScope("zone");
+        validateParameters();
+        try {
+            Pair<List<? extends Configuration>, Integer> result = _mgr.searchForConfigurations(this);
+            ListResponse<ConfigurationResponse> response = new ListResponse<>();
+            List<ConfigurationResponse> configResponses = new ArrayList<>();
+            for (Configuration cfg : result.first()) {
+                ConfigurationResponse cfgResponse = _responseGenerator.createConfigurationResponse(cfg);
+                setScope(cfgResponse);
+                configResponses.add(cfgResponse);
             }
-            if (getClusterId() != null) {
-                cfgResponse.setScope("cluster");
-            }
-            if (getStoragepoolId() != null) {
-                cfgResponse.setScope("storagepool");
-            }
-            if (getAccountId() != null) {
-                cfgResponse.setScope("account");
-            }
-            if (getDomainId() != null) {
-                cfgResponse.setScope("domain");
-            }
-            if (getImageStoreId() != null){
-                cfgResponse.setScope("imagestore");
-            }
-            configResponses.add(cfgResponse);
-        }
 
-        response.setResponses(configResponses, result.second());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+            if (StringUtils.isNotEmpty(getGroupName())) {
+                response.setResponses(configResponses, configResponses.size());
+            } else {
+                response.setResponses(configResponses, result.second());
+            }
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        }  catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    private void validateParameters() {
+        if (StringUtils.isNotEmpty(getSubGroupName()) && StringUtils.isEmpty(getGroupName())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Configuration group name must be specified with the subgroup name");
+        }
+    }
+
+    private boolean matchesConfigurationGroup(ConfigurationResponse cfgResponse) {
+        if (StringUtils.isNotEmpty(getGroupName())) {
+            if (!(getGroupName().equalsIgnoreCase(cfgResponse.getGroup()))) {
+                return false;
+            }
+            if (StringUtils.isNotEmpty(getSubGroupName()) &&
+                !getSubGroupName().equalsIgnoreCase(cfgResponse.getSubGroup())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

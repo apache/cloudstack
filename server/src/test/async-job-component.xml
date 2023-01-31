@@ -81,6 +81,8 @@
     <dao name="VM Template Pool" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
     <dao name="Launch Permission" class="com.cloud.storage.dao.LaunchPermissionDaoImpl" />
     <dao name="Configuration" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+    <dao name="Configuration Group" class="com.cloud.configuration.dao.ConfigurationGroupDaoImpl" />
+    <dao name="Configuration SubGroup" class="com.cloud.configuration.dao.ConfigurationSubGroupDaoImpl" />
     <dao name="HA" class="com.cloud.ha.dao.HighAvailabilityDaoImpl" />
     <dao name="Console Proxy" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
     <dao name="Upgrade" class="com.cloud.maint.dao.AgentUpgradeDaoImpl" />

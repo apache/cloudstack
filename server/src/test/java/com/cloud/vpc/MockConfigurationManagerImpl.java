@@ -56,6 +56,7 @@ import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.springframework.stereotype.Component;
@@ -661,4 +662,21 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return null;
     }
 
+    @Override
+    public String getConfigurationType(String configName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<String, String> getConfigurationGroupAndSubGroup(String configName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<ConfigurationSubGroupVO> getConfigurationSubGroups(Long groupId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

@@ -4656,6 +4656,14 @@ class Configurations:
 
 
     @classmethod
+    def listGroups(cls, apiclient, **kwargs):
+        """Lists configuration groups"""
+        cmd = listConfigurationGroups.listConfigurationGroupsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listConfigurationGroups(cmd))
+
+
+    @classmethod
     def reset(cls, apiclient, name, zoneid=None, clusterid=None, storageid=None, domainid=None, accountid=None):
         """Resets the specified configuration to original value"""
 

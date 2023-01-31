@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
+
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -42,6 +44,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -50,6 +53,12 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 public interface ConfigurationManager {
+
+    public static final String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
+    public static final String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
+    public static final String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
+    public static final String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
+
     /**
      * @param offering
      * @return
@@ -262,8 +271,9 @@ public interface ConfigurationManager {
 
     AllocationState findClusterAllocationState(ClusterVO cluster);
 
-    public static final String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
-    public static final String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
-    public static final String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
-    public static final String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
+    String getConfigurationType(String configName);
+
+    Pair<String, String> getConfigurationGroupAndSubGroup(String configName);
+
+    List<ConfigurationSubGroupVO> getConfigurationSubGroups(Long groupId);
 }
