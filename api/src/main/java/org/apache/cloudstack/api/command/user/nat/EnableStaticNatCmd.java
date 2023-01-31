@@ -42,7 +42,6 @@ import com.cloud.uservm.UserVm;
 public class EnableStaticNatCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableStaticNatCmd.class.getName());
 
-    private static final String s_name = "enablestaticnatresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -112,11 +111,6 @@ public class EnableStaticNatCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

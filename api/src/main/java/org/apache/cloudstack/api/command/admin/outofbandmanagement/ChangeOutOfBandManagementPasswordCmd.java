@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -40,11 +39,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 
-@APICommand(name = ChangeOutOfBandManagementPasswordCmd.APINAME, description = "Changes out-of-band management interface password on the host and updates the interface configuration in CloudStack if the operation succeeds, else reverts the old password",
+@APICommand(name = "changeOutOfBandManagementPassword", description = "Changes out-of-band management interface password on the host and updates the interface configuration in CloudStack if the operation succeeds, else reverts the old password",
         responseObject = OutOfBandManagementResponse.class, requestHasSensitiveInfo = true, responseHasSensitiveInfo = false,
         since = "4.9.0", authorized = {RoleType.Admin})
 public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
-    public static final String APINAME = "changeOutOfBandManagementPassword";
 
     @Inject
     private OutOfBandManagementService outOfBandManagementService;
@@ -77,11 +75,6 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
         final OutOfBandManagementResponse response = outOfBandManagementService.changePassword(host, getPassword());
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

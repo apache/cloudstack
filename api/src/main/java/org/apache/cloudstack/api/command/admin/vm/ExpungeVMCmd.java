@@ -45,7 +45,6 @@ import com.cloud.vm.VirtualMachine;
 public class ExpungeVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExpungeVMCmd.class.getName());
 
-    private static final String s_name = "expungevirtualmachineresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,11 +65,6 @@ public class ExpungeVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

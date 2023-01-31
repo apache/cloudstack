@@ -44,7 +44,6 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AssignCertToLoadBalancerCmd.class.getName());
 
-    private static final String s_name = "assigncerttoloadbalancerresponse";
 
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
@@ -75,11 +74,6 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_LB_CERT_ASSIGN;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

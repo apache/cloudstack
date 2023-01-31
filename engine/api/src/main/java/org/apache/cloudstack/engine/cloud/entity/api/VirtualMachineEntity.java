@@ -132,7 +132,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * Destroys the VM.
      * @param expunge indicates if vm should be expunged
      */
-    boolean destroy(String caller, boolean expunge) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
+    boolean destroy(boolean expunge) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
 
     /**
      * Duplicate this VM in the database so that it will start new
@@ -168,9 +168,9 @@ public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * Disconnect the VM from this network
-     * @param netowrk network to disconnect from
+     * @param network network to disconnect from
      */
-    void disconnectFrom(NetworkEntity netowrk, short nicId);
+    void disconnectFrom(NetworkEntity network, short nicId);
 
     /**
      *  passing additional params of deployment associated with the virtual machine

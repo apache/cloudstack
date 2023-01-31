@@ -39,7 +39,6 @@ import com.cloud.utils.Ternary;
 public class FindHostsForMigrationCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(FindHostsForMigrationCmd.class.getName());
 
-    private static final String s_name = "findhostsformigrationresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

@@ -178,7 +178,7 @@
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="maclearning" ref="maclearning">
               <template #label>
                 <tooltip-label :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
               </template>
@@ -237,7 +237,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
           <a-alert v-if="!isVirtualRouterForAtLeastOneService" type="warning" style="margin-bottom: 10px">
             <template #message>
               <span v-if="guestType === 'l2'" v-html="$t('message.vr.alert.upon.network.offering.creation.l2')" />
@@ -279,6 +279,13 @@
               {{ $t('label.per.zone') }}
             </a-radio-button>
           </a-radio-group>
+        </a-form-item>
+        <a-form-item
+          name="vmautoscalingcapability"
+          ref="vmautoscalingcapability"
+          :label="$t('label.supportsvmautoscaling')"
+          v-if="lbServiceChecked && ['Netscaler', 'VirtualRouter', 'VpcVirtualRouter'].includes(lbServiceProvider)">
+          <a-switch v-model:checked="form.vmautoscalingcapability" />
         </a-form-item>
         <a-form-item
           name="elasticlb"
@@ -561,6 +568,7 @@ export default {
         maclearning: this.macLearningValue,
         sourcenattype: 'peraccount',
         inlinemode: 'false',
+        vmautoscalingcapability: true,
         isolation: 'dedicated',
         conservemode: true,
         availability: 'optional',
@@ -948,6 +956,12 @@ export default {
             delete params.associatepublicip
           }
           if (supportedServices.includes('Lb')) {
+            if ('vmautoscalingcapability' in values) {
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'VmAutoScaling'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.vmautoscalingcapability
+              serviceCapabilityIndex++
+            }
             if (values.elasticlb === true) {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'

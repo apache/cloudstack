@@ -46,6 +46,8 @@ import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6Prefi
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -66,12 +68,14 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
@@ -106,10 +110,10 @@ import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.projects.ProjectManager;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -1229,5 +1233,96 @@ public class ConfigurationManagerTest {
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void mockPersistDatacenterForCreateZone() {
+        Mockito.when(_zoneDao.persist(Mockito.any(DataCenterVO.class))).thenAnswer((Answer<DataCenterVO>) invocation -> {
+            DataCenterVO zone = (DataCenterVO)invocation.getArguments()[0];
+            ReflectionTestUtils.setField(zone, "uuid", UUID.randomUUID().toString());
+            ReflectionTestUtils.setField(zone, "id", 1L);
+            return zone;
+        });
+    }
+
+    @Test
+    public void testCreateEdgeZone() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(true);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Advanced.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        mockPersistDatacenterForCreateZone();
+        DataCenter zone = configurationMgr.createZone(cmd);
+        Assert.assertNotNull(zone);
+        Assert.assertEquals(NetworkType.Advanced, zone.getNetworkType());
+        Assert.assertEquals(DataCenter.Type.Edge, zone.getType());
+    }
+
+    @Test
+    public void testCreateCoreZone() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(false);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Advanced.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        mockPersistDatacenterForCreateZone();
+        DataCenter zone = configurationMgr.createZone(cmd);
+        Assert.assertNotNull(zone);
+        Assert.assertEquals(NetworkType.Advanced, zone.getNetworkType());
+        Assert.assertEquals(DataCenter.Type.Core, zone.getType());
+    }
+
+    @Test
+    public void testCreateBasicZone() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(false);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Basic.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        mockPersistDatacenterForCreateZone();
+        DataCenter zone = configurationMgr.createZone(cmd);
+        Assert.assertNotNull(zone);
+        Assert.assertEquals(NetworkType.Basic, zone.getNetworkType());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateBasicEdgeZoneFailure() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(true);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Basic.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        configurationMgr.createZone(cmd);
+    }
+
+    @Test
+    public void testEditEdgeZone() {
+        // editZone should be successful despite no Public network
+        final Long zoneId = 1L;
+        UpdateZoneCmd cmd = Mockito.mock(UpdateZoneCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(zoneId);
+        Mockito.when(cmd.getZoneName()).thenReturn("NewName");
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getNetworkType()).thenReturn(NetworkType.Advanced);
+        Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
+        Mockito.when(zone.getId()).thenReturn(zoneId);
+        Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(zone);
+        Mockito.when(_networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public)).thenReturn(null);
+        Mockito.when(_zoneDao.update(Mockito.anyLong(), Mockito.any(DataCenterVO.class))).thenReturn(true);
+        configurationMgr.editZone(cmd);
+    }
+
+    @Test
+    public void testEdgeZoneCreatePod() {
+        final long zoneId = 1L;
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getNetworkType()).thenReturn(NetworkType.Advanced);
+        Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
+        Mockito.when(zone.getId()).thenReturn(1L);
+        Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(zone);
+        Mockito.when(_configDao.getValue(Config.ControlCidr.key())).thenReturn(Config.ControlCidr.getDefaultValue());
+        Mockito.when(_podDao.persist(Mockito.any(HostPodVO.class))).thenAnswer((Answer<HostPodVO>) invocation -> {
+            HostPodVO pod = (HostPodVO)invocation.getArguments()[0];
+            ReflectionTestUtils.setField(pod, "uuid", UUID.randomUUID().toString());
+            ReflectionTestUtils.setField(pod, "id", 1L);
+            return pod;
+        });
+        configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null);
     }
 }

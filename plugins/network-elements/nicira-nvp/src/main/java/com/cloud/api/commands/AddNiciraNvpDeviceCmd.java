@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "addNiciraNvpDevice", responseObject = NiciraNvpDeviceResponse.class, description = "Adds a Nicira NVP device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "addniciranvpdeviceresponse";
     @Inject
     protected NiciraNvpElementService niciraNvpElementService;
 
@@ -140,11 +139,6 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

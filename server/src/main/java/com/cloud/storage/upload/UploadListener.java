@@ -24,6 +24,7 @@ import java.util.Timer;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -104,9 +105,9 @@ public class UploadListener implements Listener {
     public static final Map<String, String> responseNameMap;
     static {
         Map<String, String> tempMap = new HashMap<String, String>();
-        tempMap.put(Type.ISO.toString(), ExtractIsoCmd.getStaticName());
-        tempMap.put(Type.TEMPLATE.toString(), ExtractTemplateCmd.getStaticName());
-        tempMap.put(Type.VOLUME.toString(), ExtractVolumeCmd.getStaticName());
+        tempMap.put(Type.ISO.toString(), BaseCmd.getResponseNameByClass(ExtractIsoCmd.class));
+        tempMap.put(Type.TEMPLATE.toString(), BaseCmd.getResponseNameByClass(ExtractTemplateCmd.class));
+        tempMap.put(Type.VOLUME.toString(), BaseCmd.getResponseNameByClass(ExtractVolumeCmd.class));
         tempMap.put("DEFAULT", "extractresponse");
         responseNameMap = Collections.unmodifiableMap(tempMap);
     }

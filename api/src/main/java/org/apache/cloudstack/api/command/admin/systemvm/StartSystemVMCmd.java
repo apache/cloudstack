@@ -39,7 +39,6 @@ import com.cloud.vm.VirtualMachine;
 public class StartSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
-    private static final String s_name = "startsystemvmresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "systemvm";

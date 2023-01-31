@@ -557,7 +557,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 data.isIso = false;
                 vm.disks.add(data);
             } else {
-                throw new CloudRuntimeException("Unknow volume type: " + volume.getType());
+                throw new CloudRuntimeException("Unknown volume type: " + volume.getType());
             }
         }
     }
@@ -1100,7 +1100,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             OvmStoragePool.delete(_conn, cmd.getPool().getUuid());
         } catch (Exception e) {
-            s_logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell managment server it succeeded", e);
+            s_logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell management server it succeeded", e);
         }
 
         return new Answer(cmd);

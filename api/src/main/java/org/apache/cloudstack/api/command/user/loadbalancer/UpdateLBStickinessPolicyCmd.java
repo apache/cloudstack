@@ -31,7 +31,6 @@ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateLBStickinessPolicyCmd.class.getName());
 
-    private static final String s_name = "updatelbstickinesspolicyresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -51,11 +50,6 @@ public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
 
     public Boolean getDisplay() {
         return display;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

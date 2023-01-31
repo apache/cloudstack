@@ -41,7 +41,6 @@ import com.cloud.utils.Pair;
             responseHasSensitiveInfo = false)
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
-    private static final String Name = "listnetworkserviceprovidersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,11 +78,6 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return Name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

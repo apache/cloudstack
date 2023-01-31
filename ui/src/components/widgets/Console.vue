@@ -19,7 +19,7 @@
   <a
     v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
     @click="consoleUrl">
-    <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state)" >
+    <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state) || resource.hostcontrolstate === 'Offline'" >
       <code-outlined />
     </a-button>
   </a>
@@ -28,7 +28,6 @@
 <script>
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import { api } from '@/api'
-import { uuid } from 'vue-uuid'
 
 export default {
   name: 'Console',
@@ -44,24 +43,12 @@ export default {
   },
   data () {
     return {
-      url: '',
-      tokenValidationEnabled: false
+      url: ''
     }
   },
-  created () {
-    this.verifyExtraValidationEnabled()
-  },
   methods: {
-    verifyExtraValidationEnabled () {
-      api('listConfigurations', { name: 'consoleproxy.extra.security.validation.enabled' }).then(json => {
-        this.tokenValidationEnabled = json?.listconfigurationsresponse?.configuration && json?.listconfigurationsresponse?.configuration[0]?.value === 'true'
-      })
-    },
     consoleUrl () {
       const params = {}
-      if (this.tokenValidationEnabled) {
-        params.token = uuid.v4()
-      }
       params.virtualmachineid = this.resource.id
       api('createConsoleEndpoint', params).then(json => {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'

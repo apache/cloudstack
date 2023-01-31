@@ -118,6 +118,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the host for the virtual machine")
     private String hostName;
 
+    @SerializedName(ApiConstants.HOST_CONTROL_STATE)
+    @Param(description = "the control state of the host for the virtual machine")
+    private String hostControlState;
+
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private String templateId;
@@ -329,8 +333,16 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long bytesSent;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
-    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0")
     ResourceIconResponse resourceIconResponse;
+
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_ID)
+    @Param(description = "ID of AutoScale VM group", since = "4.18.0")
+    String autoScaleVmGroupId;
+
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_NAME)
+    @Param(description = "Name of AutoScale VM group", since = "4.18.0")
+    String autoScaleVmGroupName;
 
     @SerializedName(ApiConstants.USER_DATA)
     @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
@@ -349,11 +361,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String userDataDetails;
 
     public UserVmResponse() {
-        securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
+        securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
-        tags = new LinkedHashSet<ResourceTagResponse>();
-        tagIds = new LinkedHashSet<Long>();
-        affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
+        tags = new LinkedHashSet<>();
+        tagIds = new LinkedHashSet<>();
+        affinityGroupList = new LinkedHashSet<>();
     }
 
     public void setHypervisor(String hypervisor) {
@@ -451,6 +463,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getHostName() {
         return hostName;
+    }
+
+    public String getHostControlState() {
+        return hostControlState;
     }
 
     public String getTemplateId() {
@@ -693,6 +709,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public void setHostControlState(String hostControlState) {
+        this.hostControlState = hostControlState;
     }
 
     public void setTemplateId(String templateId) {
@@ -971,6 +991,22 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
+    }
+
+    public void setAutoScaleVmGroupId(String autoScaleVmGroupId) {
+        this.autoScaleVmGroupId = autoScaleVmGroupId;
+    }
+
+    public void setAutoScaleVmGroupName(String autoScaleVmGroupName) {
+        this.autoScaleVmGroupName = autoScaleVmGroupName;
+    }
+
+    public String getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
     }
 
     public void setUserData(String userData) {

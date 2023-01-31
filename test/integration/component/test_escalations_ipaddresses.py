@@ -3730,7 +3730,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step13: Listing Autoscale VM Profile by id
         Step14: Verifying details of the created autoscale
                 vm profile are matching with listed autoscal vm profile
-        Step15: Updating Autoscale VM profile with destroy vm grace period
+        Step15: Updating Autoscale VM profile with expunge vm grace period
         Step16: Verifying that Autoscale VM is updated
         """
         if self.hypervisor.lower() == 'kvm':
@@ -3943,7 +3943,7 @@ class TestIpAddresses(cloudstackTestCase):
                 zoneid=self.zone.id,
                 templateid=list_templates_featured[0].id,
                 autoscaleuserid=list_users[0].id,
-                destroyvmgraceperiod='100',
+                expungevmgraceperiod='100',
                 counterparam=counterparam
             )
             self.assertIsNotNone(
@@ -3989,8 +3989,8 @@ class TestIpAddresses(cloudstackTestCase):
                 "serviceofferingid": list_service_offerings[0].id,
                 "zoneid": self.zone.id,
                 "templateid": list_templates_featured[0].id,
-                "destroyvmgraceperiod":
-                autoscalevm_profile.destroyvmgraceperiod}
+                "expungevmgraceperiod":
+                autoscalevm_profile.expungevmgraceperiod}
             actual_dict = {
                 "id": list_autoscalvmprofile[0].id,
                 "account": list_autoscalvmprofile[0].account,
@@ -4001,8 +4001,8 @@ class TestIpAddresses(cloudstackTestCase):
                 list_autoscalvmprofile[0].serviceofferingid,
                 "zoneid": list_autoscalvmprofile[0].zoneid,
                 "templateid": list_autoscalvmprofile[0].templateid,
-                "destroyvmgraceperiod":
-                list_autoscalvmprofile[0].destroyvmgraceperiod}
+                "expungevmgraceperiod":
+                list_autoscalvmprofile[0].expungevmgraceperiod}
             autoscalevm_profile_status = self.__verify_values(
                 expected_dict,
                 actual_dict
@@ -4017,19 +4017,19 @@ class TestIpAddresses(cloudstackTestCase):
                 self.userapiclient,
                 id=autoscalevm_profile.id,
                 autoscaleuserid=list_users[0].id,
-                destroyvmgraceperiod='200',
+                expungevmgraceperiod='200',
                 templateid=list_templates_featured[0].id,
             )
             self.assertIsNotNone(
                 autoscalevm_profile_updated,
                 "Failed to update Autoscale VM Profile"
             )
-            # Verifyign that Destroy VM Graceperiod is updated in autoscale VM
+            # Verifyign that Expunge VM Grace period is updated in autoscale VM
             # Profile
             self.assertEqual(
                 200,
-                autoscalevm_profile_updated.destroyvmgraceperiod,
-                "Failed to update destroy vm grace period"
+                autoscalevm_profile_updated.expungevmgraceperiod,
+                "Failed to update expunge vm grace period"
             )
             # Destroying the VM
             vm_created.delete(self.apiClient)
@@ -4267,7 +4267,7 @@ class TestIpAddresses(cloudstackTestCase):
                 zoneid=self.zone.id,
                 templateid=self.template.id,
                 autoscaleuserid=list_users[0].id,
-                destroyvmgraceperiod='30',
+                expungevmgraceperiod='30',
                 counterparam=counterparam
             )
             self.assertIsNotNone(

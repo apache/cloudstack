@@ -413,6 +413,7 @@ export const resourceTypePlugin = {
         case 'Role':
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
+        case 'AutoScaleVmGroup':
           return resourceType.toLowerCase()
       }
       return ''

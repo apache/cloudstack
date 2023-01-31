@@ -68,7 +68,7 @@
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
       @submitLaunchZone="submitLaunchZone"
-      :fields="podFields"
+      :fields="filteredPodFields"
       :prefillContent="prefillContent"
       :description="podSetupDescription"
       :isFixError="isFixError"
@@ -151,11 +151,17 @@ export default {
     zoneType () {
       return this.prefillContent?.zoneType || null
     },
+    isAdvancedZone () {
+      return this.zoneType === 'Advanced'
+    },
     sgEnabled () {
       return this.prefillContent?.securityGroupsEnabled || false
     },
     havingNetscaler () {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
+    },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     guestTrafficRangeMode () {
       return this.zoneType === 'Basic' ||
@@ -312,6 +318,14 @@ export default {
       }
 
       return fields
+    },
+    filteredPodFields () {
+      var fields = [...this.podFields]
+      if (this.isEdgeZone) {
+        fields = fields.filter(x => !['podReservedGateway', 'podReservedNetmask', 'podReservedStartIp', 'podReservedStopIp'].includes(x.key))
+        return fields
+      }
+      return fields
     }
   },
   data () {
@@ -363,7 +377,7 @@ export default {
           title: 'label.end.reserved.system.ip',
           key: 'podReservedStopIp',
           placeHolder: 'message.installwizard.tooltip.addpod.reservedsystemendip',
-          required: false,
+          required: true,
           ipV4: true,
           message: 'message.error.ipv4.address'
         }
@@ -449,6 +463,7 @@ export default {
     },
     filteredSteps () {
       return this.allSteps.filter(step => {
+        if (step.formKey === 'pod' && this.isEdgeZone) return false
         if (!step.trafficType) return true
         if (this.physicalNetworks) {
           let neededTraffic = false

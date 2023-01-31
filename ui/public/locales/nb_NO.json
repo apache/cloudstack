@@ -1461,7 +1461,7 @@
 "message.validate.range.length": "Vennligst skriv inn en verdi som er mellom {0} og {1} tegn langt.",
 "message.vm.review.launch": "Vennligst vurder f\u00f8lgende informasjon og bekreft at din virtuelle instans er korrekt f\u00f8r kj\u00f8ring",
 "message.zone.creation.complete": "Opprettelsen av sonen utf\u00f8rt",
-"messgae.validate.min": "Skriv en verdig st\u00f8rre enn eller lik {0}.",
+"message.validate.min": "Skriv en verdig st\u00f8rre enn eller lik {0}.",
 "side.by.side": "Side ved side",
 "state.completed": "Utf\u00f8rt",
 "state.declined": "Avvist",

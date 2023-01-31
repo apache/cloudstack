@@ -33,7 +33,7 @@ public class ConditionDaoImpl extends GenericDaoBase<ConditionVO, Long> implemen
     protected ConditionDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
-        AllFieldsSearch.and("counterId", AllFieldsSearch.entity().getCounterid(), Op.EQ);
+        AllFieldsSearch.and("counterId", AllFieldsSearch.entity().getCounterId(), Op.EQ);
         AllFieldsSearch.done();
     }
 

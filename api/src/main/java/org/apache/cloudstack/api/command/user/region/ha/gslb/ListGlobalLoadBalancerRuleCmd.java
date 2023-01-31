@@ -40,7 +40,6 @@ import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 public class ListGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListGlobalLoadBalancerRuleCmd.class.getName());
 
-    private static final String s_name = "listgloballoadbalancerrulesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -70,11 +69,6 @@ public class ListGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
 
     @Inject
     public GlobalLoadBalancingRulesService _gslbService;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {
