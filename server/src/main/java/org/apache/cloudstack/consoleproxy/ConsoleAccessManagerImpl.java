@@ -167,9 +167,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             }
             Integer retentionHours = ConsoleAccessManager.ConsoleSessionCleanupRetentionHours.value();
             Date dateBefore = DateTime.now().minusHours(retentionHours).toDate();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Retention hours: %s, checking for removed console session " +
+                        "records to expunge older than: %s", retentionHours, dateBefore));
+            }
             int sessionsExpunged = consoleSessionDao.expungeSessionsOlderThanDate(dateBefore);
-            if (sessionsExpunged > 0 && s_logger.isDebugEnabled()) {
-                s_logger.info(String.format("Expunged %s removed console session records", sessionsExpunged));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(sessionsExpunged > 0 ?
+                        String.format("Expunged %s removed console session records", sessionsExpunged) :
+                        "No removed console session records expunged on this cleanup task run");
             }
         }
     }
