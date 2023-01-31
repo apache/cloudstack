@@ -65,7 +65,9 @@ import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.ConfigurationGroupResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ConfigurationSubGroupResponse;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
@@ -170,6 +172,8 @@ import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.config.ConfigurationGroup;
+import org.apache.cloudstack.config.ConfigurationSubGroup;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
@@ -560,6 +564,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConfigurationResponse createConfigurationResponse(Configuration cfg) {
         ConfigurationResponse cfgResponse = new ConfigurationResponse();
         cfgResponse.setCategory(cfg.getCategory());
+        Pair<String, String> configGroupAndSubGroup = _configMgr.getConfigurationGroupAndSubGroup(cfg.getName());
+        cfgResponse.setGroup(configGroupAndSubGroup.first());
+        cfgResponse.setSubGroup(configGroupAndSubGroup.second());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
         if (cfg.isEncrypted()) {
@@ -567,10 +574,46 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             cfgResponse.setValue(cfg.getValue());
         }
+        cfgResponse.setDefaultValue(cfg.getDefaultValue());
         cfgResponse.setIsDynamic(cfg.isDynamic());
+        cfgResponse.setComponent(cfg.getComponent());
+        if (cfg.getParent() != null) {
+            cfgResponse.setParent(cfg.getParent());
+        }
+        cfgResponse.setDisplayText(cfg.getDisplayText());
+        cfgResponse.setType(_configMgr.getConfigurationType(cfg.getName()));
+        if (cfg.getOptions() != null) {
+            cfgResponse.setOptions(cfg.getOptions());
+        }
         cfgResponse.setObjectName("configuration");
 
         return cfgResponse;
+    }
+
+    @Override
+    public ConfigurationGroupResponse createConfigurationGroupResponse(ConfigurationGroup cfgGroup) {
+        ConfigurationGroupResponse cfgGroupResponse = new ConfigurationGroupResponse();
+        cfgGroupResponse.setGroupName(cfgGroup.getName());
+        cfgGroupResponse.setDescription(cfgGroup.getDescription());
+        cfgGroupResponse.setPrecedence(cfgGroup.getPrecedence());
+
+        List<? extends ConfigurationSubGroup> subgroups = _configMgr.getConfigurationSubGroups(cfgGroup.getId());
+        List<ConfigurationSubGroupResponse> cfgSubGroupResponses = new ArrayList<>();
+        for (ConfigurationSubGroup subgroup : subgroups) {
+            ConfigurationSubGroupResponse cfgSubGroupResponse = createConfigurationSubGroupResponse(subgroup);
+            cfgSubGroupResponses.add(cfgSubGroupResponse);
+        }
+        cfgGroupResponse.setSubGroups(cfgSubGroupResponses);
+        cfgGroupResponse.setObjectName("configurationgroup");
+        return cfgGroupResponse;
+    }
+
+    private ConfigurationSubGroupResponse createConfigurationSubGroupResponse(ConfigurationSubGroup cfgSubGroup) {
+        ConfigurationSubGroupResponse cfgSubGroupResponse = new ConfigurationSubGroupResponse();
+        cfgSubGroupResponse.setSubGroupName(cfgSubGroup.getName());
+        cfgSubGroupResponse.setPrecedence(cfgSubGroup.getPrecedence());
+        cfgSubGroupResponse.setObjectName("subgroup");
+        return cfgSubGroupResponse;
     }
 
     @Override

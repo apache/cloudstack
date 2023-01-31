@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.user.UserData;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
+import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.config.ConfigurationGroup;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
@@ -101,6 +103,13 @@ public interface ManagementService {
      * @return map of configuration name/values
      */
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
+
+    /**
+     * returns the the configuration groups
+     *
+     * @return list of configuration groups
+     */
+    Pair<List<? extends ConfigurationGroup>, Integer> listConfigurationGroups(ListCfgGroupsByCmd cmd);
 
     /**
      * Searches for Clusters by the specified search criteria

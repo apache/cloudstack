@@ -97,6 +97,10 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -295,6 +299,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     EntityManager _entityMgr;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ConfigurationGroupDao _configGroupDao;
+    @Inject
+    ConfigurationSubGroupDao _configSubGroupDao;
     @Inject
     ConfigDepot _configDepot;
     @Inject
@@ -1232,10 +1240,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
 
-        final String[] range = configuration.getRange();
-        if (range == null) {
+        if (configuration.getRange() == null) {
             return null;
         }
+        String[] range = configuration.getRange().split(",");
 
         if (type.equals(String.class)) {
             return validateIfStringValueIsInRange(name, value, range);
@@ -7561,6 +7569,91 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN, ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS
         };
+    }
+
+    @Override
+    public String getConfigurationType(final String configName) {
+        final ConfigurationVO cfg = _configDao.findByName(configName);
+        if (cfg == null) {
+            s_logger.warn("Configuration " + configName + " not found");
+            return Configuration.ValueType.String.name();
+        }
+
+        if (weightBasedParametersForValidation.contains(configName)) {
+            return Configuration.ValueType.Range.name();
+        }
+
+        Class<?> type = null;
+        final Config c = Config.getConfig(configName);
+        if (c == null) {
+            s_logger.warn("Configuration " + configName + " no found. Perhaps moved to ConfigDepot");
+            final ConfigKey<?> configKey = _configDepot.get(configName);
+            if (configKey == null) {
+                s_logger.warn("Couldn't find configuration " + configName + " in ConfigDepot too.");
+                return Configuration.ValueType.String.name();
+            }
+            type = configKey.type();
+        } else {
+            type = c.getType();
+        }
+
+        return getInputType(type, cfg);
+    }
+
+    private String getInputType(Class<?> type, ConfigurationVO cfg) {
+        if (type == null) {
+            return Configuration.ValueType.String.name();
+        }
+
+        if (type == String.class || type == Character.class) {
+            if (cfg.getKind() == null) {
+                return Configuration.ValueType.String.name();
+            }
+            return cfg.getKind();
+        }
+        if (type == Integer.class || type == Long.class || type == Short.class) {
+            return Configuration.ValueType.Number.name();
+        }
+        if (type == Float.class || type == Double.class) {
+            return Configuration.ValueType.Decimal.name();
+        }
+        if (type == Boolean.class) {
+            return Configuration.ValueType.Boolean.name();
+        }
+        return Configuration.ValueType.String.name();
+    }
+
+    @Override
+    public Pair<String, String> getConfigurationGroupAndSubGroup(final String configName) {
+        if (StringUtils.isBlank(configName)) {
+            throw new CloudRuntimeException("Empty configuration name provided");
+        }
+
+        final ConfigurationVO cfg = _configDao.findByName(configName);
+        if (cfg == null) {
+            s_logger.warn("Configuration " + configName + " not found");
+            throw new InvalidParameterValueException("configuration with name " + configName + " doesn't exist");
+        }
+
+        String groupName = "Miscellaneous";
+        String subGroupName = "Others";
+        ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findById(cfg.getSubGroupId());
+        if (configSubGroup != null) {
+            subGroupName = configSubGroup.getName();
+        }
+
+        ConfigurationGroupVO configGroup = _configGroupDao.findById(cfg.getGroupId());
+        if (configGroup != null) {
+            groupName = configGroup.getName();
+        }
+
+        return new Pair<String, String>(groupName, subGroupName);
+    }
+
+    @Override
+    public List<ConfigurationSubGroupVO> getConfigurationSubGroups(final Long groupId) {
+        List<ConfigurationSubGroupVO> configSubGroups = _configSubGroupDao.findByGroup(groupId);
+        return configSubGroups;
     }
 
     static class ParamCountPair {

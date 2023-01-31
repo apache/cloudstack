@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
+
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -42,6 +44,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -261,4 +264,10 @@ public interface ConfigurationManager {
     AllocationState findPodAllocationState(HostPodVO pod);
 
     AllocationState findClusterAllocationState(ClusterVO cluster);
+
+    String getConfigurationType(String configName);
+
+    Pair<String, String> getConfigurationGroupAndSubGroup(String configName);
+
+    List<ConfigurationSubGroupVO> getConfigurationSubGroups(Long groupId);
 }

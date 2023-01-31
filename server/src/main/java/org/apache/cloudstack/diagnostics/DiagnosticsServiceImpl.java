@@ -106,7 +106,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             "Enable the garbage collector background task to delete old files from secondary storage.", false);
     private static final ConfigKey<Integer> GarbageCollectionInterval = new ConfigKey<>("Advanced", Integer.class,
             "diagnostics.data.gc.interval", "86400",
-            "The interval at which the garbage collector background tasks in seconds", false);
+            "The interval at which the garbage collector background tasks in seconds", false, EnableGarbageCollector.key());
 
     // These are easily computed properties and need not need a restart of the management server
     private static final ConfigKey<Long> DataRetrievalTimeout = new ConfigKey<>("Advanced", Long.class,
@@ -114,7 +114,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             "Overall system VM script execution time out in seconds.", true);
     private static final ConfigKey<Long> MaximumFileAgeforGarbageCollection = new ConfigKey<>("Advanced", Long.class,
             "diagnostics.data.max.file.age", "86400",
-            "Sets the maximum time in seconds a file can stay in secondary storage before it is deleted.", true);
+            "Sets the maximum time in seconds a file can stay in secondary storage before it is deleted.", true, EnableGarbageCollector.key());
     private static final ConfigKey<Double> DiskQuotaPercentageThreshold = new ConfigKey<>("Advanced", Double.class,
             "diagnostics.data.disable.threshold", "0.9",
             "Sets the secondary storage disk utilisation percentage for file retrieval. " +

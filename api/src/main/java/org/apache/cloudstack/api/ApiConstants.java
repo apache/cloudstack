@@ -118,6 +118,7 @@ public class ApiConstants {
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
+    public static final String DEFAULT_VALUE = "defaultvalue";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION = "destination";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
@@ -187,6 +188,7 @@ public class ApiConstants {
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
+    public static final String SUBGROUP = "subgroup";
     public static final String GROUP_ID = "groupid";
     public static final String GSLB_LB_METHOD = "gslblbmethod";
     public static final String GSLB_SERVICE_DOMAIN_NAME = "gslbdomainname";
@@ -301,6 +303,7 @@ public class ApiConstants {
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
+    public static final String OPTIONS = "options";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_ID = "osid";
@@ -312,6 +315,7 @@ public class ApiConstants {
     public static final String OUTPUT = "output";
     public static final String PROPERTIES = "properties";
     public static final String PARAMS = "params";
+    public static final String PARENT = "parent";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
@@ -333,6 +337,7 @@ public class ApiConstants {
     public static final String POSITION = "position";
     public static final String POST_URL = "postURL";
     public static final String POWER_STATE = "powerstate";
+    public static final String PRECEDENCE = "precedence";
     public static final String PRIVATE_INTERFACE = "privateinterface";
     public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";

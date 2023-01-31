@@ -98,6 +98,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -202,6 +203,16 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     String description = c.getDescription();
                     ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
                     configVO.setDefaultValue(value);
+                    Pair<Long, Long> configGroupAndSubGroup = _configDepotAdmin.getConfigurationGroupAndSubGroupByName(name);
+                    configVO.setGroupId(configGroupAndSubGroup.first());
+                    configVO.setSubGroupId(configGroupAndSubGroup.second());
+                    if (c.getKind() != null) {
+                        configVO.setKind(c.getKind());
+                    }
+                    if (c.getOptions() != null) {
+                        configVO.setOptions(c.getOptions());
+                    }
+
                     _configDao.persist(configVO);
                 }
             }

@@ -624,14 +624,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> EnableAdditionalVmConfig = new ConfigKey<>("Advanced", Boolean.class,
             "enable.additional.vm.configuration", "false", "allow additional arbitrary configuration to vm", true, ConfigKey.Scope.Account);
 
-    private static final ConfigKey<String> KvmAdditionalConfigAllowList = new ConfigKey<>("Advanced", String.class,
-            "allow.additional.vm.configuration.list.kvm", "", "Comma separated list of allowed additional configuration options.", true);
+    private static final ConfigKey<String> KvmAdditionalConfigAllowList = new ConfigKey<>(String.class,
+    "allow.additional.vm.configuration.list.kvm", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
-    private static final ConfigKey<String> XenServerAdditionalConfigAllowList = new ConfigKey<>("Advanced", String.class,
-            "allow.additional.vm.configuration.list.xenserver", "", "Comma separated list of allowed additional configuration options", true);
+    private static final ConfigKey<String> XenServerAdditionalConfigAllowList = new ConfigKey<>(String.class,
+    "allow.additional.vm.configuration.list.xenserver", "Advanced", "", "Comma separated list of allowed additional configuration options", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
-    private static final ConfigKey<String> VmwareAdditionalConfigAllowList = new ConfigKey<>("Advanced", String.class,
-            "allow.additional.vm.configuration.list.vmware", "", "Comma separated list of allowed additional configuration options.", true);
+    private static final ConfigKey<String> VmwareAdditionalConfigAllowList = new ConfigKey<>(String.class,
+    "allow.additional.vm.configuration.list.vmware", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
