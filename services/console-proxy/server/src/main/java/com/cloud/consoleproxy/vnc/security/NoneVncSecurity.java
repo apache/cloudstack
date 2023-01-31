@@ -14,42 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.consoleproxy.vnc.security;
 
-<template>
-  <Line
-    :chart-options="chartOptions"
-    :chart-data="chartData"
-    :width="width"
-    :height="height"
-  />
-</template>
+import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
 
-<script>
-import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler } from 'chart.js'
+public class NoneVncSecurity implements VncSecurity {
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler)
-
-export default {
-  name: 'LineChart',
-  components: { Line },
-  props: {
-    chartData: {
-      type: Object,
-      required: true
-    },
-    chartOptions: {
-      type: Object,
-      default: () => {}
-    },
-    width: {
-      type: Number,
-      default: 650
-    },
-    height: {
-      type: Number,
-      default: 250
+    @Override
+    public void process(NioSocketHandler socketHandler) {
+        // No auth required
     }
-  }
 }
-</script>

@@ -23,7 +23,7 @@
       size="small"
       :current="currentStep">
       <a-step
-        v-for="(item, index) in steps"
+        v-for="(item, index) in zoneSteps"
         :key="item.title"
         :title="$t(item.title)"
         :ref="`step${index}`">
@@ -31,13 +31,21 @@
     </a-steps>
     <div>
       <zone-wizard-zone-type-step
-        v-if="currentStep === 0"
+        v-if="zoneSteps[currentStep].name === 'type'"
         @nextPressed="nextPressed"
         @fieldsChanged="onFieldsChanged"
         :prefillContent="zoneConfig"
       />
+      <zone-wizard-core-zone-type-step
+        v-else-if="zoneSteps[currentStep].name === 'coreType'"
+        @nextPressed="nextPressed"
+        @backPressed="backPressed"
+        @fieldsChanged="onFieldsChanged"
+        :isFixError="stepFixError"
+        :prefillContent="zoneConfig"
+      />
       <zone-wizard-zone-details-step
-        v-else-if="currentStep === 1"
+        v-else-if="zoneSteps[currentStep].name === 'details'"
         @nextPressed="nextPressed"
         @backPressed="backPressed"
         @fieldsChanged="onFieldsChanged"
@@ -46,7 +54,7 @@
         :prefillContent="zoneConfig"
       />
       <zone-wizard-network-setup-step
-        v-else-if="currentStep === 2"
+        v-else-if="zoneSteps[currentStep].name === 'network'"
         @nextPressed="nextPressed"
         @backPressed="backPressed"
         @fieldsChanged="onFieldsChanged"
@@ -56,7 +64,7 @@
         :prefillContent="zoneConfig"
       />
       <zone-wizard-add-resources
-        v-else-if="currentStep === 3"
+        v-else-if="zoneSteps[currentStep].name === 'resources'"
         @nextPressed="nextPressed"
         @backPressed="backPressed"
         @fieldsChanged="onFieldsChanged"
@@ -83,6 +91,7 @@
 <script>
 import { mixinDevice } from '@/utils/mixin.js'
 import ZoneWizardZoneTypeStep from '@views/infra/zone/ZoneWizardZoneTypeStep'
+import ZoneWizardCoreZoneTypeStep from '@views/infra/zone/ZoneWizardCoreZoneTypeStep'
 import ZoneWizardZoneDetailsStep from '@views/infra/zone/ZoneWizardZoneDetailsStep'
 import ZoneWizardNetworkSetupStep from '@views/infra/zone/ZoneWizardNetworkSetupStep'
 import ZoneWizardAddResources from '@views/infra/zone/ZoneWizardAddResources'
@@ -91,6 +100,7 @@ import ZoneWizardLaunchZone from '@views/infra/zone/ZoneWizardLaunchZone'
 export default {
   components: {
     ZoneWizardZoneTypeStep,
+    ZoneWizardCoreZoneTypeStep,
     ZoneWizardZoneDetailsStep,
     ZoneWizardNetworkSetupStep,
     ZoneWizardAddResources,
@@ -104,32 +114,44 @@ export default {
       launchZone: false,
       launchData: {},
       stepChild: '',
+      coreZoneTypeStep: {
+        name: 'coreType',
+        title: 'label.core.zone.type',
+        step: [],
+        description: this.$t('message.select.zone.description'),
+        hint: this.$t('message.select.zone.hint')
+      },
       steps: [
         {
+          name: 'type',
           title: 'label.zone.type',
           step: [],
           description: this.$t('message.select.zone.description'),
           hint: this.$t('message.select.zone.hint')
         },
         {
+          name: 'details',
           title: 'label.zone.details',
           step: ['stepAddZone', 'dedicateZone'],
           description: this.$t('message.zone.detail.description'),
           hint: this.$t('message.zone.detail.hint')
         },
         {
+          name: 'network',
           title: 'label.network',
           step: ['physicalNetwork', 'netscaler', 'pod', 'guestTraffic', 'storageTraffic', 'publicTraffic'],
           description: this.$t('message.network.description'),
           hint: this.$t('message.network.hint')
         },
         {
+          name: 'resources',
           title: 'label.add.resources',
           step: ['clusterResource', 'hostResource', 'primaryResource', 'secondaryResource'],
           description: this.$t('message.add.resource.description'),
           hint: this.$t('message.add.resource.hint')
         },
         {
+          name: 'launch',
           title: 'label.launch',
           step: ['launchZone'],
           description: this.$t('message.launch.zone.description'),
@@ -137,6 +159,15 @@ export default {
         }
       ],
       zoneConfig: {}
+    }
+  },
+  computed: {
+    zoneSteps () {
+      var steps = [...this.steps]
+      if (this.zoneConfig.zoneSuperType !== 'Edge') {
+        steps.splice(1, 0, this.coreZoneTypeStep)
+      }
+      return steps
     }
   },
   methods: {
