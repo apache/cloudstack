@@ -438,6 +438,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
+        if (serviceOfferingId != null) {
+            _ntwkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
+        }
+
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));

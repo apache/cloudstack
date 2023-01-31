@@ -16,11 +16,33 @@
 // under the License.
 package org.apache.cloudstack.consoleproxy;
 
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmVncTicketAnswer;
 import com.cloud.agent.api.GetVmVncTicketCommand;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -33,6 +55,7 @@ import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -49,28 +72,10 @@ import com.cloud.vm.dao.ConsoleSessionDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +98,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private AgentManager agentManager;
     @Inject
     private ConsoleProxyManager consoleProxyManager;
+    @Inject
+    DataCenterDao dataCenterDao;
     @Inject
     private ConsoleSessionDao consoleSessionDao;
 
@@ -196,6 +203,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             if (!checkSessionPermission(vm, account)) {
                 return new ConsoleEndpoint(false, null, "Permission denied");
+            }
+
+            DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
+            if (zone != null && DataCenter.Type.Edge.equals(zone.getType())) {
+                String errorMsg = "Console access is not supported for Edge zones";
+                s_logger.error(errorMsg);
+                return new ConsoleEndpoint(false, null, errorMsg);
             }
 
             String sessionUuid = UUID.randomUUID().toString();
@@ -353,11 +367,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
+        String displayName = vm.getHostName();
+        if (vm instanceof UserVm) {
+            displayName = ((UserVm) vm).getDisplayName();
+        }
 
         String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag, sessionUuid);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = generateConsoleProxyClientParam(parsedHostInfo, port, sid, tag, ticket,
-                sessionUuid, addr, extraSecurityToken, vm, hostVo, details, portInfo, host);
+                sessionUuid, addr, extraSecurityToken, vm, hostVo, details, portInfo, host, displayName);
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
         int vncPort = consoleProxyManager.getVncPort();
 
@@ -421,12 +439,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                                                                     String sessionUuid, String addr,
                                                                     String extraSecurityToken, VirtualMachine vm,
                                                                     HostVO hostVo, UserVmDetailVO details,
-                                                                    Pair<String, Integer> portInfo, String host) {
+                                                                    Pair<String, Integer> portInfo, String host,
+                                                                    String displayName) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(port);
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
+        param.setClientDisplayName(displayName);
         param.setTicket(ticket);
         param.setSessionUuid(sessionUuid);
         param.setSourceIP(addr);
