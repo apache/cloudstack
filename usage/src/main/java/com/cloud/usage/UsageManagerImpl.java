@@ -95,6 +95,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -208,10 +209,17 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.info("Implementation Version is " + _version);
         }
 
-        Map<String, String> configs = _configDao.getConfiguration(params);
+        Map<String, String> configs;
+        try {
+            configs = _configDao.getConfiguration(params);
 
-        if (params != null) {
-            mergeConfigs(configs, params);
+            if (params != null) {
+                mergeConfigs(configs, params);
+                s_logger.info("configs = " + configs);
+            }
+        } catch (CloudRuntimeException e) {
+            s_logger.error("Unhandled configuration exception: " + e.getMessage());
+            throw new CloudRuntimeException("Unhandled configuration exception", e);
         }
 
         String execTime = configs.get("usage.stats.job.exec.time");

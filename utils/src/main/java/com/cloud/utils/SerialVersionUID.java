@@ -71,4 +71,5 @@ public interface SerialVersionUID {
     public static final long UnavailableCommandException = Base | 0x2f;
     public static final long OriginDeniedException = Base | 0x30;
     public static final long StorageAccessException = Base | 0x31;
+    public static final long EncryptionException = Base | 0x32;
 }
