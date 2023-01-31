@@ -43,6 +43,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
 
     @Override
     public Answer execute(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        LOGGER.info("I'm here HARIIIII");
         KVMStoragePoolManager storagePoolManager = libvirtComputingResource.getStoragePoolMgr();
 
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
