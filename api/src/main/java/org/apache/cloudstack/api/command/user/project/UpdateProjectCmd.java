@@ -67,6 +67,9 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             "to promote or demote the user/account based on the roleType (Regular or Admin) provided. Defaults to true")
     private Boolean swapOwner;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the project")
+    private String name;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,6 +88,10 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     public Long getUserId() {
         return userId;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public ProjectAccount.Role getRoleType(String role) {
@@ -136,9 +143,9 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
         Project project = null;
         if (isSwapOwner()) {
-            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
+            project = _projectService.updateProject(getId(), getName(), getDisplayText(), getAccountName());
         }  else {
-            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountRole());
+            project = _projectService.updateProject(getId(), getName(), getDisplayText(), getAccountName(), getUserId(), getAccountRole());
         }
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);

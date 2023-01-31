@@ -640,7 +640,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
-    public Project updateProject(final long projectId, final String displayText, final String newOwnerName) throws ResourceAllocationException {
+    public Project updateProject(final long projectId, String name, final String displayText, final String newOwnerName) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
@@ -658,6 +658,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
                 if (displayText != null) {
                     project.setDisplayText(displayText);
+                    _projectDao.update(projectId, project);
+                }
+
+                if (name != null) {
+                    project.setName(name);
                     _projectDao.update(projectId, project);
                 }
 
@@ -707,7 +712,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
-    public Project updateProject(final long projectId, final String displayText, final String newOwnerName, Long userId,
+    public Project updateProject(final long projectId, String name, final String displayText, final String newOwnerName, Long userId,
                                  Role newRole) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -731,6 +736,12 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     project.setDisplayText(displayText);
                     _projectDao.update(projectId, project);
                 }
+
+                if (name != null) {
+                    project.setName(name);
+                    _projectDao.update(projectId, project);
+                }
+
                 if (newOwnerName != null) {
                     //check that the new owner exists
                     Account updatedAcc = _accountMgr.getActiveAccountByName(newOwnerName, project.getDomainId());
