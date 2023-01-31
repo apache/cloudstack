@@ -5318,10 +5318,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if any of the Public IP addresses is allocated to another
         // account
-        boolean forSystemVms = false;
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         for (final IPAddressVO ip : ips) {
-            forSystemVms = ip.isForSystemVms();
+            if (ip.isForSystemVms()) {
+                throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is dedicated to system vms ");
+            }
             final Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
                 if (vlanOwner != null && allocatedToAccountId != vlanOwner.getId()) {
@@ -5346,7 +5347,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
                         vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
             }
-        } else if (domain != null && !forSystemVms) {
+        } else if (domain != null) {
             // Create an DomainVlanMapVO entry
             DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
             _domainVlanMapDao.persist(domainVlanMapVO);
