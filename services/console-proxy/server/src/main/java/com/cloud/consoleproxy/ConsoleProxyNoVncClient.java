@@ -126,16 +126,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
-                            if (readBytes == -1) {
-                                break;
-                            }
-                            if (readBytes > 0) {
-                                try {
-                                    session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
-                                    updateFrontEndActivityTime();
-                                } catch (WebSocketException e) {
-                                    connectionAlive = false;
-                                }
+                            if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
+                                connectionAlive = false;
                             }
                         }
                     }
@@ -147,6 +139,17 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
 
         });
         worker.start();
+    }
+
+    private boolean sendReadBytesToNoVNC(byte[] b, int readBytes) {
+        try {
+            session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
+            updateFrontEndActivityTime();
+        } catch (WebSocketException | IOException e) {
+            s_logger.debug("Connection exception", e);
+            return false;
+        }
+        return true;
     }
 
     /**

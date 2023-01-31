@@ -18,8 +18,8 @@ package com.cloud.consoleproxy;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -35,11 +35,11 @@ public class ConsoleProxyGCThread extends Thread {
 
     private final static int MAX_SESSION_IDLE_SECONDS = 180;
 
-    private final Hashtable<String, ConsoleProxyClient> connMap;
+    private final Map<String, ConsoleProxyClient> connMap;
     private final Set<String> removedSessionsSet;
     private long lastLogScan = 0;
 
-    public ConsoleProxyGCThread(Hashtable<String, ConsoleProxyClient> connMap, Set<String> removedSet) {
+    public ConsoleProxyGCThread(Map<String, ConsoleProxyClient> connMap, Set<String> removedSet) {
         this.connMap = connMap;
         this.removedSessionsSet = removedSet;
     }
@@ -79,13 +79,14 @@ public class ConsoleProxyGCThread extends Thread {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
             }
-            Enumeration<String> e = connMap.keys();
-            while (e.hasMoreElements()) {
+            Set<String> e = connMap.keySet();
+            Iterator<String> iterator = e.iterator();
+            while (iterator.hasNext()) {
                 String key;
                 ConsoleProxyClient client;
 
                 synchronized (connMap) {
-                    key = e.nextElement();
+                    key = iterator.next();
                     client = connMap.get(key);
                 }
 
