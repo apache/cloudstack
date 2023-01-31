@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -247,6 +249,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
+import com.cloud.service.ServiceOfferingVO;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -395,6 +398,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     CommandSetupHelper commandSetupHelper;
     @Inject
     AgentManager agentManager;
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -4135,6 +4140,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return vlanTokens;
 
     }
+
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) {
+        s_logger.debug(String.format("Validating if service offering [%s] is active, and if system VM is of Domain Router type.", serviceOfferingId));
+        final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException(String.format("Could not find specified service offering [%s].", serviceOfferingId));
+        }
+
+        if (serviceOffering.getState() == ServiceOffering.State.Inactive) {
+            throw new InvalidParameterValueException(String.format("The specified service offering [%s] is inactive.", serviceOffering));
+        }
+
+        final String virtualMachineDomainRouterType = VirtualMachine.Type.DomainRouter.toString();
+        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getSystemVmType())) {
+            throw new InvalidParameterValueException(String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering "
+                    + "of type [%s].", serviceOffering, serviceOffering.getSystemVmType(), virtualMachineDomainRouterType.toLowerCase()));
+        }
+    }
+
 
     public String generateVnetString(List<String> vnetList) {
         Collections.sort(vnetList, new Comparator<String>() {

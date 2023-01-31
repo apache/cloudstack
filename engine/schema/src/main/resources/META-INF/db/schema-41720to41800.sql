@@ -912,6 +912,17 @@ SET     description = "Use SSL method used to encrypt copy traffic between zones
 generating links for external access."
 WHERE   name = 'secstorage.encrypt.copy';
 
+-- Create table to persist volume stats.
+DROP TABLE IF EXISTS `cloud`.`volume_stats`;
+CREATE TABLE `cloud`.`volume_stats` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `volume_id` bigint unsigned NOT NULL,
+    `mgmt_server_id` bigint unsigned NOT NULL,
+    `timestamp` datetime NOT NULL,
+    `volume_stats_data` text NOT NULL,
+    PRIMARY KEY(`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- allow isolated networks without services to be used as is.
 UPDATE `cloud`.`networks` ntwk
   SET ntwk.state = 'Implemented'
@@ -1063,3 +1074,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
     CONSTRAINT `fk_consolesession__host_id` FOREIGN KEY(`host_id`) REFERENCES `cloud`.`host`(`id`),
     CONSTRAINT `uc_consolesession__uuid` UNIQUE (`uuid`)
 );
+
+-- Add assignVolume API permission to default resource admin and domain admin
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 2, 'assignVolume', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 3, 'assignVolume', 'ALLOW');
+

@@ -5885,13 +5885,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long serviceOfferingId = cmd.getServiceOfferingId();
 
         if (serviceOfferingId != null) {
-            final ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
-            if (offering == null) {
-                throw new InvalidParameterValueException("Cannot find specified service offering: " + serviceOfferingId);
-            }
-            if (!VirtualMachine.Type.DomainRouter.toString().equalsIgnoreCase(offering.getSystemVmType())) {
-                throw new InvalidParameterValueException("The specified service offering " + serviceOfferingId + " cannot be used by virtual router!");
-            }
+            _networkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
 
         // configure service provider map

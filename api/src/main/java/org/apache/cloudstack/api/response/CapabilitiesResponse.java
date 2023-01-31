@@ -104,6 +104,22 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "default page size in the UI for various views, value set in the configurations", since = "4.15.2")
     private Long defaultUiPageSize;
 
+    @SerializedName(ApiConstants.INSTANCES_STATS_RETENTION_TIME)
+    @Param(description = "the retention time for Instances stats", since = "4.18.0")
+    private Integer instancesStatsRetentionTime;
+
+    @SerializedName(ApiConstants.INSTANCES_STATS_USER_ONLY)
+    @Param(description = "true if stats are collected only for user instances, false if system instance stats are also collected", since = "4.18.0")
+    private Boolean instancesStatsUserOnly;
+
+    @SerializedName(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED)
+    @Param(description = "true if stats are retained for instance disks otherwise false", since = "4.18.0")
+    private Boolean instancesDisksStatsRetentionEnabled;
+
+    @SerializedName(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME)
+    @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
+    private Integer instancesDisksStatsRetentionTime;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -182,5 +198,21 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setDefaultUiPageSize(Long defaultUiPageSize) {
         this.defaultUiPageSize = defaultUiPageSize;
+    }
+
+    public void setInstancesStatsRetentionTime(Integer instancesStatsRetentionTime) {
+        this.instancesStatsRetentionTime = instancesStatsRetentionTime;
+    }
+
+    public void setInstancesStatsUserOnly(Boolean instancesStatsUserOnly) {
+        this.instancesStatsUserOnly = instancesStatsUserOnly;
+    }
+
+    public void setInstancesDisksStatsRetentionEnabled(Boolean instancesDisksStatsRetentionEnabled) {
+        this.instancesDisksStatsRetentionEnabled = instancesDisksStatsRetentionEnabled;
+    }
+
+    public void setInstancesDisksStatsRetentionTime(Integer instancesDisksStatsRetentionTime) {
+        this.instancesDisksStatsRetentionTime = instancesDisksStatsRetentionTime;
     }
 }

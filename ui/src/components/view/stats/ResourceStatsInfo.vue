@@ -20,12 +20,7 @@
     <div v-if="messages.length > 1">
       <ul>
         <li v-for="(msg, index) in messages" :key="index">
-          <div v-if="index === messages.length - 1">
-            {{ msg }}.
-          </div>
-          <div v-else>
-            {{ msg }};
-          </div>
+          {{ msg }}
         </li>
       </ul>
     </div>
@@ -88,6 +83,9 @@ export default {
     for (const element of this.info) {
       if (element.resourceType === this.resourceType) {
         this.messages = element.messageList
+        if (this.$route.fullPath.startsWith('/volume/')) {
+          this.messages = this.messages.filter(x => x !== this.$t('message.disk.usage.info.sum.of.disks'))
+        }
       }
     }
   }

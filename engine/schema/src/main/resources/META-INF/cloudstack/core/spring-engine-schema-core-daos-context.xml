@@ -226,6 +226,7 @@
   <bean id="volumeDetailsDaoImpl" class="com.cloud.storage.dao.VolumeDetailsDaoImpl" />
   <bean id="volumeJoinDaoImpl" class="com.cloud.api.query.dao.VolumeJoinDaoImpl" />
   <bean id="volumeReservationDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VolumeReservationDaoImpl" />
+  <bean id="volumeStatsDaoImpl" class="com.cloud.storage.dao.VolumeStatsDaoImpl" />
   <bean id="vpcDaoImpl" class="com.cloud.network.vpc.dao.VpcDaoImpl" />
   <bean id="vpcGatewayDaoImpl" class="com.cloud.network.vpc.dao.VpcGatewayDaoImpl" />
   <bean id="vpcOfferingDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDaoImpl" />

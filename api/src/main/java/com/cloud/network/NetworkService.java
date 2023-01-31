@@ -41,6 +41,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -241,4 +242,6 @@ public interface NetworkService {
     boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd);
 
     boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd);
+
+    void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) throws InvalidParameterValueException;
 }
