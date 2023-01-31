@@ -7573,7 +7573,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public String getConfigurationType(final String configName) {
         final ConfigurationVO cfg = _configDao.findByName(configName);
         if (cfg == null) {
-            s_logger.warn("Configuration " + configName + " not found");
+            logger.warn("Configuration " + configName + " not found");
             return Configuration.ValueType.String.name();
         }
 
@@ -7584,10 +7584,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Class<?> type = null;
         final Config c = Config.getConfig(configName);
         if (c == null) {
-            s_logger.warn("Configuration " + configName + " no found. Perhaps moved to ConfigDepot");
+            logger.warn("Configuration " + configName + " no found. Perhaps moved to ConfigDepot");
             final ConfigKey<?> configKey = _configDepot.get(configName);
             if (configKey == null) {
-                s_logger.warn("Couldn't find configuration " + configName + " in ConfigDepot too.");
+                logger.warn("Couldn't find configuration " + configName + " in ConfigDepot too.");
                 return Configuration.ValueType.String.name();
             }
             type = configKey.type();
@@ -7629,7 +7629,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final ConfigurationVO cfg = _configDao.findByName(configName);
         if (cfg == null) {
-            s_logger.warn("Configuration " + configName + " not found");
+            logger.warn("Configuration " + configName + " not found");
             throw new InvalidParameterValueException("configuration with name " + configName + " doesn't exist");
         }
 

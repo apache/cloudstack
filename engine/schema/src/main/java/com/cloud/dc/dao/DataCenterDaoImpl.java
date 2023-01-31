@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;

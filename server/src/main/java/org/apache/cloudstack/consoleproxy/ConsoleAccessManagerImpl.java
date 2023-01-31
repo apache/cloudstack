@@ -34,7 +34,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -70,6 +69,8 @@ import com.cloud.vm.dao.ConsoleSessionDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
@@ -143,7 +144,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
             if (zone != null && DataCenter.Type.Edge.equals(zone.getType())) {
                 String errorMsg = "Console access is not supported for Edge zones";
-                s_logger.error(errorMsg);
+                logger.error(errorMsg);
                 return new ConsoleEndpoint(false, null, errorMsg);
             }
 

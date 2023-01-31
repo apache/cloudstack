@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -1491,8 +1490,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Override
     public Long[] getScannablePools() {
         List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
         }
         return zoneIds.toArray(Long[]::new);
     }

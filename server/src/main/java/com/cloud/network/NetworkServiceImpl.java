@@ -4140,7 +4140,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) {
-        s_logger.debug(String.format("Validating if service offering [%s] is active, and if system VM is of Domain Router type.", serviceOfferingId));
+        logger.debug(String.format("Validating if service offering [%s] is active, and if system VM is of Domain Router type.", serviceOfferingId));
         final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
 
         if (serviceOffering == null) {

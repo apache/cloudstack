@@ -1306,8 +1306,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public Long[] getScannablePools() {
         List<Long> zoneIds = _dcDao.listEnabledNonEdgeZoneIds();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", StringUtils.join(zoneIds, ",")));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Enabled non-edge zones available for scan: %s", StringUtils.join(zoneIds, ",")));
         }
         return zoneIds.toArray(Long[]::new);
     }
