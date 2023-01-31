@@ -3320,6 +3320,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
+                RouterTemplateKvm,
+                RouterTemplateVmware,
+                RouterTemplateHyperV,
+                RouterTemplateLxc,
+                RouterTemplateOvm3,
                 UseExternalDnsServers,
                 RouterVersionCheckEnabled,
                 SetServiceMonitor,

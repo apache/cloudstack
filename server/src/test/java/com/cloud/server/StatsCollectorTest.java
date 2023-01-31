@@ -18,9 +18,10 @@
 //
 package com.cloud.server;
 
+import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,8 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.CollectionUtils;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
@@ -43,6 +46,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -50,16 +54,18 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
+import com.cloud.storage.VolumeStatsVO;
+import com.cloud.storage.dao.VolumeStatsDao;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.VmStatsDao;
+import com.google.gson.Gson;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-
-import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(DataProviderRunner.class)
@@ -96,6 +102,11 @@ public class StatsCollectorTest {
 
     @Mock
     VmStatsEntry vmStatsEntryMock;
+
+    @Mock
+    VolumeStatsDao volumeStatsDao;
+
+    private static Gson gson = new Gson();
 
     @Test
     public void createInfluxDbConnectionTest() {
@@ -420,5 +431,62 @@ public class StatsCollectorTest {
         when(statsCollector.getDbProperties()).thenReturn(p);
 
         Assert.assertFalse(statsCollector.isDbLocal());
+    }
+
+    private void performPersistVolumeStatsTest(Hypervisor.HypervisorType hypervisorType) {
+        Date timestamp = new Date();
+        String vmName= "vm";
+        String path = "path";
+        long ioReadDiff = 100;
+        long ioWriteDiff = 200;
+        long readDiff = 1024;
+        long writeDiff = 0;
+        Long volumeId = 1L;
+        VmDiskStatsEntry statsForCurrentIteration = null;
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
+                    2000 + ioWriteDiff,
+                    1000 + ioReadDiff,
+                    20480 + writeDiff,
+                    10240 + readDiff);
+            statsForCurrentIteration.setDeltaIoRead(ioReadDiff);
+            statsForCurrentIteration.setDeltaIoWrite(ioWriteDiff);
+            statsForCurrentIteration.setDeltaBytesRead(readDiff);
+            statsForCurrentIteration.setDeltaBytesWrite(writeDiff);
+        } else {
+            statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
+                    ioWriteDiff,
+                    ioReadDiff,
+                    writeDiff,
+                    readDiff);
+        }
+        List<VolumeStatsVO> persistedStats = new ArrayList<>();
+        Mockito.when(volumeStatsDao.persist(Mockito.any(VolumeStatsVO.class))).thenAnswer((Answer<VolumeStatsVO>) invocation -> {
+            VolumeStatsVO statsVO = (VolumeStatsVO)invocation.getArguments()[0];
+            persistedStats.add(statsVO);
+            return statsVO;
+        });
+        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, hypervisorType, timestamp);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(persistedStats));
+        Assert.assertNotNull(persistedStats.get(0));
+        VolumeStatsVO stat = persistedStats.get(0);
+        Assert.assertEquals(volumeId, stat.getVolumeId());
+        VmDiskStatsEntry entry = gson.fromJson(stat.getVolumeStatsData(), VmDiskStatsEntry.class);
+        Assert.assertEquals(vmName, entry.getVmName());
+        Assert.assertEquals(path, entry.getPath());
+        Assert.assertEquals(ioReadDiff, entry.getIORead());
+        Assert.assertEquals(ioWriteDiff, entry.getIOWrite());
+        Assert.assertEquals(readDiff, entry.getBytesRead());
+        Assert.assertEquals(writeDiff, entry.getBytesWrite());
+    }
+
+    @Test
+    public void testPersistVolumeStatsKVM() {
+        performPersistVolumeStatsTest(Hypervisor.HypervisorType.KVM);
+    }
+
+    @Test
+    public void testPersistVolumeStatsVmware() {
+        performPersistVolumeStatsTest(Hypervisor.HypervisorType.VMware);
     }
 }

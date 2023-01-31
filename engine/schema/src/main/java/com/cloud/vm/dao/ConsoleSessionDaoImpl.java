@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,42 +15,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-<template>
-  <Line
-    :chart-options="chartOptions"
-    :chart-data="chartData"
-    :width="width"
-    :height="height"
-  />
-</template>
+package com.cloud.vm.dao;
 
-<script>
-import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler } from 'chart.js'
+import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.utils.db.GenericDaoBase;
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler)
+public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
 
-export default {
-  name: 'LineChart',
-  components: { Line },
-  props: {
-    chartData: {
-      type: Object,
-      required: true
-    },
-    chartOptions: {
-      type: Object,
-      default: () => {}
-    },
-    width: {
-      type: Number,
-      default: 650
-    },
-    height: {
-      type: Number,
-      default: 250
+    @Override
+    public void removeSession(String sessionUuid) {
+        ConsoleSessionVO session = findByUuid(sessionUuid);
+        remove(session.getId());
     }
-  }
+
+    @Override
+    public boolean isSessionAllowed(String sessionUuid) {
+        return findByUuid(sessionUuid) != null;
+    }
 }
-</script>

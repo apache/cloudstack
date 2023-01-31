@@ -19,6 +19,12 @@
 -- Schema upgrade from 4.17.2.0 to 4.18.0.0
 --;
 
+-- Add support for VMware 8.0 and 8.0a (8.0.0.1)
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0', 1024, 0, 59, 64, 1, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.1', 1024, 0, 59, 64, 1, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '8.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='7.0.3.0';
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '8.0.0.1', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='7.0.3.0';
+
 -- Enable CPU cap for default system offerings;
 UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
@@ -28,6 +34,54 @@ ALTER TABLE `cloud`.`networks` ADD COLUMN `public_mtu` bigint unsigned comment "
 ALTER TABLE `cloud`.`networks` ADD COLUMN `private_mtu` bigint unsigned comment "MTU for VR private interfaces" ;
 ALTER TABLE `cloud`.`vpc` ADD COLUMN `public_mtu` bigint unsigned comment "MTU for VPC VR public interface" ;
 ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;
+
+UPDATE `cloud`.`networks` SET public_mtu = 1500, private_mtu = 1500 WHERE removed IS NULL AND guest_type='Isolated';
+UPDATE `cloud`.`vpc` SET public_mtu = 1500 WHERE removed IS NULL;
+UPDATE `cloud`.`nics` SET mtu = 1500 WHERE vm_type='DomainRouter' AND removed IS NULL AND reserver_name IN ('PublicNetworkGuru', 'ExternalGuestNetworkGuru');
+
+-- Add type column to data_center table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'type', 'varchar(32) DEFAULT ''Core'' COMMENT ''the type of the zone'' ');
+
+-- Recreate data_center_view
+DROP VIEW IF EXISTS `cloud`.`data_center_view`;
+CREATE VIEW `cloud`.`data_center_view` AS
+    select
+        data_center.id,
+        data_center.uuid,
+        data_center.name,
+        data_center.is_security_group_enabled,
+        data_center.is_local_storage_enabled,
+        data_center.description,
+        data_center.dns1,
+        data_center.dns2,
+        data_center.ip6_dns1,
+        data_center.ip6_dns2,
+        data_center.internal_dns1,
+        data_center.internal_dns2,
+        data_center.guest_network_cidr,
+        data_center.domain,
+        data_center.networktype,
+        data_center.allocation_state,
+        data_center.zone_token,
+        data_center.dhcp_provider,
+        data_center.type,
+        data_center.removed,
+        data_center.sort_key,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        dedicated_resources.affinity_group_id,
+        dedicated_resources.account_id,
+        affinity_group.uuid affinity_group_uuid
+    from
+        `cloud`.`data_center`
+            left join
+        `cloud`.`domain` ON data_center.domain_id = domain.id
+            left join
+        `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
+            left join
+        `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
@@ -55,7 +109,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
-        data_center.networktype data_center_type,
+        data_center.networktype data_center_network_type,
         data_center.dns1 dns1,
         data_center.dns2 dns2,
         data_center.ip6_dns1 ip6_dns1,
@@ -741,7 +795,7 @@ SELECT
     `data_center`.`uuid` AS `data_center_uuid`,
     `data_center`.`name` AS `data_center_name`,
     `data_center`.`is_security_group_enabled` AS `security_group_enabled`,
-    `data_center`.`networktype` AS `data_center_type`,
+    `data_center`.`networktype` AS `data_center_network_type`,
     `host`.`id` AS `host_id`,
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,
@@ -902,6 +956,17 @@ SET     description = "Use SSL method used to encrypt copy traffic between zones
 generating links for external access."
 WHERE   name = 'secstorage.encrypt.copy';
 
+-- Create table to persist volume stats.
+DROP TABLE IF EXISTS `cloud`.`volume_stats`;
+CREATE TABLE `cloud`.`volume_stats` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `volume_id` bigint unsigned NOT NULL,
+    `mgmt_server_id` bigint unsigned NOT NULL,
+    `timestamp` datetime NOT NULL,
+    `volume_stats_data` text NOT NULL,
+    PRIMARY KEY(`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- allow isolated networks without services to be used as is.
 UPDATE `cloud`.`networks` ntwk
   SET ntwk.state = 'Implemented'
@@ -998,8 +1063,63 @@ BEGIN
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only Admin - Default');
+
+UPDATE  `cloud`.`role_permissions`
+SET     sort_order = sort_order + 2
+WHERE   rule = '*'
+AND     permission = 'DENY'
+AND     role_id in (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaStatement', 'ALLOW', MAX(sort_order)-1
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
+INSERT  INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT  UUID(), role_id, 'quotaBalance', 'ALLOW', MAX(sort_order)-2
+FROM    `cloud`.`role_permissions` RP
+WHERE   role_id = (SELECT id FROM `cloud`.`roles` WHERE name = 'Read-Only User - Default');
+
 -- Add permission for domain admins to call isAccountAllowedToCreateOfferingsWithTags API
 
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 SELECT UUID(), `roles`.`id`, 'isAccountAllowedToCreateOfferingsWithTags', 'ALLOW'
 FROM `cloud`.`roles` WHERE `role_type` = 'DomainAdmin';
+
+--- Create table for handling console sessions #7094
+
+CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
+    `created` datetime NOT NULL COMMENT 'When the session was created',
+    `account_id` bigint(20) unsigned NOT NULL COMMENT 'Account who generated the session',
+    `user_id` bigint(20) unsigned NOT NULL COMMENT 'User who generated the session',
+    `instance_id` bigint(20) unsigned NOT NULL COMMENT 'VM for which the session was generated',
+    `host_id` bigint(20) unsigned NOT NULL COMMENT 'Host where the VM was when the session was generated',
+    `removed` datetime COMMENT 'When the session was removed/used',
+    CONSTRAINT `fk_consolesession__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account` (`id`),
+    CONSTRAINT `fk_consolesession__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),
+    CONSTRAINT `fk_consolesession__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `cloud`.`vm_instance`(`id`),
+    CONSTRAINT `fk_consolesession__host_id` FOREIGN KEY(`host_id`) REFERENCES `cloud`.`host`(`id`),
+    CONSTRAINT `uc_consolesession__uuid` UNIQUE (`uuid`)
+);
+
+-- Add assignVolume API permission to default resource admin and domain admin
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 2, 'assignVolume', 'ALLOW');
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 3, 'assignVolume', 'ALLOW');
+

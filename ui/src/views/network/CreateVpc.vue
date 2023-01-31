@@ -269,8 +269,8 @@ export default {
     },
     fetchOfferings () {
       this.loadingOffering = true
-      api('listVPCOfferings', { zoneid: this.form.zoneid, state: 'Enabled' }).then((reponse) => {
-        this.vpcOfferings = reponse.listvpcofferingsresponse.vpcoffering
+      api('listVPCOfferings', { zoneid: this.form.zoneid, state: 'Enabled' }).then((response) => {
+        this.vpcOfferings = response.listvpcofferingsresponse.vpcoffering
         this.form.vpcofferingid = this.vpcOfferings[0].id || ''
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
