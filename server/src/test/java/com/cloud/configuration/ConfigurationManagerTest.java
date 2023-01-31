@@ -53,6 +53,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBusBase;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -207,6 +208,8 @@ public class ConfigurationManagerTest {
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
     @Mock
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
+    @Mock
+    MessageBusBase messageBus;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -1323,6 +1326,7 @@ public class ConfigurationManagerTest {
             ReflectionTestUtils.setField(pod, "id", 1L);
             return pod;
         });
+        Mockito.doNothing().when(messageBus).publish(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null);
     }
 }
