@@ -23,7 +23,7 @@ under the License.
         <!-- ================================= -->
         <!-- Preserve messages in a local file -->
         <!-- ================================= -->
-        <RollingFile name="cloudLog" fileName="/var/log/cloud.log">
+        <RollingFile name="cloudLog" fileName="/var/log/cloud.log" filePattern="/var/log/cloud.%i.log">
             <Policies>
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
@@ -31,7 +31,7 @@ under the License.
             <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
         </RollingFile>
 
-        <RollingFile name="cloudOut" append="true" fileName="/var/log/cloud/cloud.out">
+        <RollingFile name="cloudOut" append="true" fileName="/var/log/cloud/cloud.out" filePattern="/var/log/cloud/cloud.%i.out">
             <Policies>
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
@@ -39,7 +39,7 @@ under the License.
             <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
         </RollingFile>
 
-        <RollingFile name="cloudSystemvmLog" append="true" fileName="/usr/local/cloud/systemvm/cloud.log">
+        <RollingFile name="cloudSystemvmLog" append="true" fileName="/usr/local/cloud/systemvm/cloud.log" filePattern="/usr/local/cloud/systemvm/cloud.%i.log">
             <Policies>
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
