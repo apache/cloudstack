@@ -25,25 +25,49 @@
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit"
      >
-      <a-form-item name="zoneSuperType" ref="zoneSuperType">
-        <a-radio-group v-model:value="form.zoneSuperType">
+      <a-form-item name="zoneType" ref="zoneType">
+        <a-radio-group v-model:value="form.zoneType">
           <a-card class="card-item">
             <a-row :gutter="12">
               <a-col :md="6" :lg="6">
-                <a-radio class="card-form-item" value="Core">{{ $t('label.core') }}</a-radio>
+                <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
+                <span style="margin-top: 20px;" class="card-form-item" v-else>
+                  <setting-outlined style="margin-right: 10px" />
+                  {{ $t('label.advanced') }}
+                </span>
               </a-col>
               <a-col :md="18" :lg="18">
-                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Core) }}</a-card>
+                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Advanced) }}</a-card>
+              </a-col>
+            </a-row>
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6" style="margin-top: 15px">
+                <a-form-item
+                  name="securityGroupsEnabled"
+                  ref="securityGroupsEnabled"
+                  class="card-form-item"
+                  v-bind="formItemLayout">
+                  <a-switch
+                    class="card-form-item"
+                    v-model:checked="form.securityGroupsEnabled"
+                    :disabled="!isAdvancedZone"
+                    v-focus="true"
+                  />
+                </a-form-item>
+                <span>{{ $t('label.menu.security.groups') }}</span>
+              </a-col>
+              <a-col :md="18" :lg="18" style="margin-top: 15px;">
+                <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
               </a-col>
             </a-row>
           </a-card>
-          <a-card class="card-item">
+          <a-card class="card-item" v-if="$config.basicZoneEnabled">
             <a-row :gutter="12">
               <a-col :md="6" :lg="6">
-                <a-radio class="card-form-item" value="Edge">{{ $t('label.edge') }}</a-radio>
+                <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
               </a-col>
               <a-col :md="18" :lg="18">
-                <a-card class="ant-form-text zone-support"><span v-html="$t(zoneDescription.Edge)"></span></a-card>
+                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
               </a-col>
             </a-row>
           </a-card>
@@ -51,6 +75,12 @@
       </a-form-item>
     </a-form>
     <div class="form-action">
+      <a-button
+        @click="handleBack"
+        class="button-back"
+        v-if="!isFixError">
+        {{ $t('label.previous') }}
+      </a-button>
       <a-button ref="submit" type="primary" @click="handleSubmit" class="button-next">
         {{ $t('label.next') }}
       </a-button>
@@ -68,6 +98,10 @@ export default {
       default: function () {
         return {}
       }
+    },
+    isFixError: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -76,8 +110,9 @@ export default {
       wrapperCol: { span: 14 }
     },
     zoneDescription: {
-      Core: 'message.desc.core.zone',
-      Edge: 'message.desc.edge.zone'
+      Basic: 'message.desc.basic.zone',
+      Advanced: 'message.desc.advanced.zone',
+      SecurityGroups: 'message.advanced.security.group'
     },
     formModel: {}
   }),
@@ -94,25 +129,32 @@ export default {
     }
   },
   computed: {
-    zoneSuperType () {
-      return this.prefillContent.zoneSuperType ? this.prefillContent.zoneSuperType : 'Core'
+    isAdvancedZone () {
+      return this.zoneType === 'Advanced'
+    },
+    zoneType () {
+      return this.prefillContent.zoneType ? this.prefillContent.zoneType : 'Advanced'
+    },
+    securityGroupsEnabled () {
+      return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     }
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        zoneSuperType: this.zoneSuperType
+        zoneType: this.zoneType,
+        securityGroupsEnabled: this.securityGroupsEnabled
       })
       this.rules = reactive({
-        zoneSuperType: [{ required: true, message: this.$t('message.error.zone.type') }]
+        zoneType: [{ required: true, message: this.$t('message.error.zone.type') }]
       })
       this.formModel = toRaw(this.form)
     },
+    handleBack () {
+      this.$emit('backPressed')
+    },
     handleSubmit () {
-      if (this.form.zoneSuperType === 'Edge') {
-        this.form.zoneType = 'Advanced'
-      }
       this.formRef.value.validate().then(() => {
         this.$emit('nextPressed')
       }).catch(error => {
@@ -139,8 +181,6 @@ export default {
 
     .card-form-item {
       float: left;
-      font-weight: bold;
-        font-size: 15px;
     }
 
     .checkbox-advance {

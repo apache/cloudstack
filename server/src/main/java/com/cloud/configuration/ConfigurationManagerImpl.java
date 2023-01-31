@@ -1402,14 +1402,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private void checkPodAttributes(final long podId, final String podName, final long zoneId, final String gateway, final String cidr, final String startIp, final String endIp, final String allocationStateStr,
-            final boolean checkForDuplicates, final boolean skipGatewayOverlapCheck) {
-        if (checkForDuplicates) {
-            // Check if the pod already exists
-            if (validPod(podName, zoneId)) {
-                throw new InvalidParameterValueException("A pod with name: " + podName + " already exists in zone " + zoneId + ". Please specify a different pod name. ");
-            }
-        }
+    private void checkPodAttributesForNonEdgeZone(final long podId, final String podName, final DataCenter zone, final String gateway,
+          final String cidr, final String startIp, final String endIp, final boolean skipGatewayOverlapCheck) {
 
         String cidrAddress;
         long cidrSize;
@@ -1426,8 +1420,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
         // Check if the IP range overlaps with the public ip
-        if(StringUtils.isNotEmpty(startIp)) {
-            checkOverlapPublicIpRange(zoneId, startIp, endIp);
+        if (StringUtils.isNotEmpty(startIp)) {
+            checkOverlapPublicIpRange(zone.getId(), startIp, endIp);
         }
 
         // Check if the gateway is a valid IP address
@@ -1449,7 +1443,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
         if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
-            checkPodCidrSubnets(zoneId, podId, cidr);
+            checkPodCidrSubnets(zone.getId(), podId, cidr);
+        }
+    }
+
+    private void checkPodAttributes(final long podId, final String podName, final DataCenter zone, final String gateway, final String cidr, final String startIp, final String endIp, final String allocationStateStr,
+            final boolean checkForDuplicates, final boolean skipGatewayOverlapCheck) {
+        if (checkForDuplicates) {
+            // Check if the pod already exists
+            if (validPod(podName, zone.getId())) {
+                throw new InvalidParameterValueException("A pod with name: " + podName + " already exists in zone " + zone.getId() + ". Please specify a different pod name. ");
+            }
+        }
+
+        if (!DataCenter.Type.Edge.equals(zone.getType())) {
+            checkPodAttributesForNonEdgeZone(podId, podName, zone, gateway, cidr, startIp, endIp, skipGatewayOverlapCheck);
         }
 
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
@@ -2098,7 +2106,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Verify pod's attributes
         final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         final boolean checkForDuplicates = !oldPodName.equals(name);
-        checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, allocationStateStr, checkForDuplicates, true);
+        final DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
+        checkPodAttributes(id, name, zone, gateway, cidr, startIp, endIp, allocationStateStr, checkForDuplicates, true);
 
         // Valid check is already done in checkPodAttributes method.
         final String cidrAddress = getCidrAddress(cidr);
@@ -2161,48 +2170,62 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return pod;
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_POD_CREATE, eventDescription = "creating pod", async = false)
-    public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
-        // Check if the gateway is a valid IP address
+    private void checkPodRangeParametersBasicsForNonEdgeZone(final String startIp, final String endIp, final String gateway, final String netmask) {
+        if (!NetUtils.isValidIp4(startIp)) {
+            throw new InvalidParameterValueException("The start IP is invalid");
+        }
+        if (endIp != null && !NetUtils.isValidIp4(endIp)) {
+            throw new InvalidParameterValueException("The end IP is invalid");
+        }
         if (!NetUtils.isValidIp4(gateway)) {
             throw new InvalidParameterValueException("The gateway is invalid");
         }
-
         if (!NetUtils.isValidIp4Netmask(netmask)) {
             throw new InvalidParameterValueException("The netmask is invalid");
         }
-
-        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-
-        final Long userId = CallContext.current().getCallingUserId();
-
-        if (allocationState == null) {
-            allocationState = Grouping.AllocationState.Enabled.toString();
-        }
-        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp, allocationState, false);
     }
 
     @Override
-    @DB
-    public HostPodVO createPod(final long userId, final String podName, final long zoneId, final String gateway, final String cidr, final String startIp, String endIp, final String allocationStateStr,
-            final boolean skipGatewayOverlapCheck) {
-
-        // Check if the zone is valid
-        if (!validZone(zoneId)) {
+    @ActionEvent(eventType = EventTypes.EVENT_POD_CREATE, eventDescription = "creating pod", async = false)
+    public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
+        final DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
-
-        // Check if zone is disabled
-        final DataCenterVO zone = _zoneDao.findById(zoneId);
         final Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
                 && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
-        final String cidrAddress = getCidrAddress(cidr);
-        final int cidrSize = getCidrSize(cidr);
+        String cidr = null;
+        if (!DataCenter.Type.Edge.equals(zone.getType())) {
+            checkPodRangeParametersBasicsForNonEdgeZone(startIp, endIp, gateway, netmask);
+            cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        } else {
+            if (ObjectUtils.anyNotNull(startIp, endIp, gateway, netmask)) {
+                throw new InvalidParameterValueException("IP range parameters can not be specified for a pod in an edge zone");
+            }
+        }
+
+        final Long userId = CallContext.current().getCallingUserId();
+
+        if (allocationState == null) {
+            allocationState = Grouping.AllocationState.Enabled.toString();
+        }
+        return createPod(userId.longValue(), name, zone, gateway, cidr, startIp, endIp, allocationState, false);
+    }
+
+    @Override
+    @DB
+    public HostPodVO createPod(final long userId, final String podName, final DataCenter zone, final String gateway, final String cidr, String startIp, String endIp, final String allocationStateStr,
+            final boolean skipGatewayOverlapCheck) {
+        final String cidrAddress = DataCenter.Type.Edge.equals(zone.getType()) ? "" : getCidrAddress(cidr);
+        final int cidrSize = DataCenter.Type.Edge.equals(zone.getType()) ? 0 : getCidrSize(cidr);
+        if (DataCenter.Type.Edge.equals(zone.getType())) {
+            startIp = null;
+            endIp = null;
+        }
 
         // endIp is an optional parameter; if not specified - default it to the
         // end ip of the pod's cidr
@@ -2213,18 +2236,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Validate new pod settings
-        checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, allocationStateStr, true, skipGatewayOverlapCheck);
+        checkPodAttributes(-1, podName, zone, gateway, cidr, startIp, endIp, allocationStateStr, true, skipGatewayOverlapCheck);
 
         // Create the new pod in the database
-        String ipRange;
-
+        String ipRange = null;
         if (StringUtils.isNotEmpty(startIp)) {
             ipRange = startIp + "-" + endIp + "-" + DefaultForSystemVmsForPodIpRange + "-" + DefaultVlanForPodIpRange;
-        } else {
-            throw new InvalidParameterValueException("Start ip is required parameter");
         }
 
-        final HostPodVO podFinal = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
+        final HostPodVO podFinal = new HostPodVO(podName, zone.getId(), StringUtils.defaultIfEmpty(gateway, "") , cidrAddress, cidrSize, ipRange);
 
         Grouping.AllocationState allocationState = null;
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
@@ -2232,26 +2252,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             podFinal.setAllocationState(allocationState);
         }
 
+        final String startIpFinal = startIp;
         final String endIpFinal = endIp;
-        return Transaction.execute(new TransactionCallback<HostPodVO>() {
-            @Override
-            public HostPodVO doInTransaction(final TransactionStatus status) {
+        return Transaction.execute((TransactionCallback<HostPodVO>) status -> {
 
-                final HostPodVO pod = _podDao.persist(podFinal);
+            final HostPodVO pod = _podDao.persist(podFinal);
 
-                if (StringUtils.isNotEmpty(startIp)) {
-                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
-                }
-
-                final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
-                if (linkLocalIpRanges != null) {
-                    _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
-                }
-
-                CallContext.current().putContextParameter(Pod.class, pod.getUuid());
-
-                return pod;
+            if (StringUtils.isNotEmpty(startIpFinal)) {
+                _zoneDao.addPrivateIpAddress(zone.getId(), pod.getId(), startIpFinal, endIpFinal, false, null);
             }
+
+            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+            if (linkLocalIpRanges.length > 1) {
+                _zoneDao.addLinkLocalIpAddress(zone.getId(), pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+            }
+
+            CallContext.current().putContextParameter(Pod.class, pod.getUuid());
+
+            return pod;
         });
     }
 
@@ -2624,7 +2642,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                     final Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
 
-                    if (allocationState == Grouping.AllocationState.Enabled) {
+                    if (allocationState == Grouping.AllocationState.Enabled && !DataCenter.Type.Edge.equals(zone.getType())) {
                         // check if zone has necessary trafficTypes before enabling
                         try {
                             PhysicalNetwork mgmtPhyNetwork;
@@ -2694,7 +2712,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public DataCenterVO createZone(final long userId, final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final String guestCidr, final String domain,
             final Long domainId, final NetworkType zoneType, final String allocationStateStr, final String networkDomain, final boolean isSecurityGroupEnabled, final boolean isLocalStorageEnabled,
-            final String ip6Dns1, final String ip6Dns2) {
+            final String ip6Dns1, final String ip6Dns2, final boolean isEdge) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
@@ -2728,6 +2746,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // physical network and providers setup.
             zoneFinal.setAllocationState(Grouping.AllocationState.Disabled);
         }
+        zoneFinal.setType(isEdge ? DataCenter.Type.Edge : DataCenter.Type.Core);
 
         return Transaction.execute(new TransactionCallback<DataCenterVO>() {
             @Override
@@ -2838,6 +2857,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String networkDomain = cmd.getDomain();
         boolean isSecurityGroupEnabled = cmd.getSecuritygroupenabled();
         final boolean isLocalStorageEnabled = cmd.getLocalStorageEnabled();
+        final boolean isEdge = cmd.isEdge();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Disabled.toString();
@@ -2856,6 +2876,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("guestCidrAddress parameter is not supported for Basic zone");
         }
 
+        if (!NetworkType.Advanced.equals(zoneType) && isEdge) {
+            throw new InvalidParameterValueException("Only advanced network type zones can be edge zones");
+        }
+
         DomainVO domainVO = null;
 
         if (domainId != null) {
@@ -2867,7 +2891,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState,
-                networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2);
+                networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, isEdge);
     }
 
     @Override
@@ -5711,10 +5735,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private boolean validPod(final String podName, final long zoneId) {
-        if (!validZone(zoneId)) {
-            return false;
-        }
-
         return _podDao.findByName(podName, zoneId) != null;
     }
 

@@ -39,6 +39,50 @@ UPDATE `cloud`.`networks` SET public_mtu = 1500, private_mtu = 1500 WHERE remove
 UPDATE `cloud`.`vpc` SET public_mtu = 1500 WHERE removed IS NULL;
 UPDATE `cloud`.`nics` SET mtu = 1500 WHERE vm_type='DomainRouter' AND removed IS NULL AND reserver_name IN ('PublicNetworkGuru', 'ExternalGuestNetworkGuru');
 
+-- Add type column to data_center table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'type', 'varchar(32) DEFAULT ''Core'' COMMENT ''the type of the zone'' ');
+
+-- Recreate data_center_view
+DROP VIEW IF EXISTS `cloud`.`data_center_view`;
+CREATE VIEW `cloud`.`data_center_view` AS
+    select
+        data_center.id,
+        data_center.uuid,
+        data_center.name,
+        data_center.is_security_group_enabled,
+        data_center.is_local_storage_enabled,
+        data_center.description,
+        data_center.dns1,
+        data_center.dns2,
+        data_center.ip6_dns1,
+        data_center.ip6_dns2,
+        data_center.internal_dns1,
+        data_center.internal_dns2,
+        data_center.guest_network_cidr,
+        data_center.domain,
+        data_center.networktype,
+        data_center.allocation_state,
+        data_center.zone_token,
+        data_center.dhcp_provider,
+        data_center.type,
+        data_center.removed,
+        data_center.sort_key,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        dedicated_resources.affinity_group_id,
+        dedicated_resources.account_id,
+        affinity_group.uuid affinity_group_uuid
+    from
+        `cloud`.`data_center`
+            left join
+        `cloud`.`domain` ON data_center.domain_id = domain.id
+            left join
+        `cloud`.`dedicated_resources` ON data_center.id = dedicated_resources.data_center_id
+            left join
+        `cloud`.`affinity_group` ON dedicated_resources.affinity_group_id = affinity_group.id;
+
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
     select
@@ -65,7 +109,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         data_center.id data_center_id,
         data_center.uuid data_center_uuid,
         data_center.name data_center_name,
-        data_center.networktype data_center_type,
+        data_center.networktype data_center_network_type,
         data_center.dns1 dns1,
         data_center.dns2 dns2,
         data_center.ip6_dns1 ip6_dns1,
@@ -751,7 +795,7 @@ SELECT
     `data_center`.`uuid` AS `data_center_uuid`,
     `data_center`.`name` AS `data_center_name`,
     `data_center`.`is_security_group_enabled` AS `security_group_enabled`,
-    `data_center`.`networktype` AS `data_center_type`,
+    `data_center`.`networktype` AS `data_center_network_type`,
     `host`.`id` AS `host_id`,
     `host`.`uuid` AS `host_uuid`,
     `host`.`name` AS `host_name`,

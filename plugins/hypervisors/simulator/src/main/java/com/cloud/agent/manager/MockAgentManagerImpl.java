@@ -28,6 +28,9 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.api.commands.SimulatorAddSecondaryAgent;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
@@ -79,6 +82,8 @@ import java.util.regex.PatternSyntaxException;
 public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
     private static final Logger s_logger = Logger.getLogger(MockAgentManagerImpl.class);
     @Inject
+    DataCenterDao dcDao;
+    @Inject
     HostPodDao _podDao = null;
     @Inject
     MockHostDao _mockHostDao = null;
@@ -106,7 +111,12 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
 
     private Pair<String, Long> getPodCidr(long podId, long dcId) {
         try {
-
+            DataCenterVO zone = dcDao.findById(dcId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                String subnet = String.format("172.%d.%d.0", random.nextInt(15) + 16, random.nextInt(6) + 1);
+                s_logger.info(String.format("Pod belongs to an edge zone hence CIDR cannot be found, returning %s/24", subnet));
+                return new Pair<>(subnet, 24L);
+            }
             HashMap<Long, List<Object>> podMap = _podDao.getCurrentPodCidrSubnets(dcId, 0);
             List<Object> cidrPair = podMap.get(podId);
             String cidrAddress = (String)cidrPair.get(0);
