@@ -206,7 +206,7 @@ export default {
       api('listUserTwoFactorAuthenticatorProviders', {}).then(response => {
         var providerlist = response.listusertwofactorauthenticatorprovidersresponse.providers || []
         var providernames = []
-        for (const provider of providerlist.slice().reverse()) {
+        for (const provider of providerlist) {
           providernames.push(provider.name)
           if (provider.name === 'totp') {
             providernames.push('othertotp')

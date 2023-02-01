@@ -328,7 +328,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
 
-    static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
+    public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
             Boolean.class,
             "enable.user.2fa",
             "false",
@@ -340,7 +340,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             Boolean.class,
             "mandate.user.2fa",
             "false",
-            "Determines whether to make the two factor authentication mandatory or not. This can also be configured at domain level.",
+            "Determines whether to make the two factor authentication mandatory or not. This setting is applicable only when enable.user.2fa is true. This can also be configured at domain level.",
             true,
             ConfigKey.Scope.Domain);
 

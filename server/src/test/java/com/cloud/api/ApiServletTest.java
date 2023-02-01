@@ -365,6 +365,10 @@ public class ApiServletTest {
         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
 
+        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+        AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+
         ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
         AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
         Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
