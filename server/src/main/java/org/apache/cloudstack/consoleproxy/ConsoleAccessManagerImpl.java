@@ -126,7 +126,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     public boolean start() {
         int consoleCleanupInterval = ConsoleAccessManager.ConsoleSessionCleanupInterval.value();
         if (consoleCleanupInterval > 0) {
-            s_logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
+            logger.info(String.format("The ConsoleSessionCleanupTask will run every %s hours", consoleCleanupInterval));
             executorService.scheduleWithFixedDelay(new ConsoleSessionCleanupTask(), consoleCleanupInterval, consoleCleanupInterval, TimeUnit.HOURS);
         }
         return true;
@@ -163,18 +163,18 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         private void reallyRun() {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Starting ConsoleSessionCleanupTask...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting ConsoleSessionCleanupTask...");
             }
             Integer retentionHours = ConsoleAccessManager.ConsoleSessionCleanupRetentionHours.value();
             Date dateBefore = DateTime.now().minusHours(retentionHours).toDate();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Retention hours: %s, checking for removed console session " +
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Retention hours: %s, checking for removed console session " +
                         "records to expunge older than: %s", retentionHours, dateBefore));
             }
             int sessionsExpunged = consoleSessionDao.expungeSessionsOlderThanDate(dateBefore);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(sessionsExpunged > 0 ?
+            if (logger.isDebugEnabled()) {
+                logger.debug(sessionsExpunged > 0 ?
                         String.format("Expunged %s removed console session records", sessionsExpunged) :
                         "No removed console session records expunged on this cleanup task run");
             }

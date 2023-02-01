@@ -4591,7 +4591,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean setupTungstenVRouter(final String oper, final String inf, final String subnet, final String route,
         final String vrf) {
-        final Script cmd = new Script(setupTungstenVrouterPath, _timeout, s_logger);
+        final Script cmd = new Script(setupTungstenVrouterPath, _timeout, logger);
         cmd.add(oper);
         cmd.add(inf);
         cmd.add(subnet);
@@ -4604,7 +4604,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean updateTungstenLoadbalancerStats(final String lbUuid, final String lbStatsPort,
         final String lbStatsUri, final String lbStatsAuth) {
-        final Script cmd = new Script(updateTungstenLoadbalancerStatsPath, _timeout, s_logger);
+        final Script cmd = new Script(updateTungstenLoadbalancerStatsPath, _timeout, logger);
         cmd.add(lbUuid);
         cmd.add(lbStatsPort);
         cmd.add(lbStatsUri);
@@ -4616,7 +4616,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean updateTungstenLoadbalancerSsl(final String lbUuid, final String sslCertName,
         final String certificateKey, final String privateKey, final String privateIp, final String port) {
-        final Script cmd = new Script(updateTungstenLoadbalancerSslPath, _timeout, s_logger);
+        final Script cmd = new Script(updateTungstenLoadbalancerSslPath, _timeout, logger);
         cmd.add(lbUuid);
         cmd.add(sslCertName);
         cmd.add(certificateKey);
@@ -4629,7 +4629,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean setupTfRoute(final String privateIpAddress, final String fromNetwork, final String toNetwork) {
-        final Script setupTfRouteScript = new Script(_routerProxyPath, _timeout, s_logger);
+        final Script setupTfRouteScript = new Script(_routerProxyPath, _timeout, logger);
         setupTfRouteScript.add("setup_tf_route.py");
         setupTfRouteScript.add(privateIpAddress);
         setupTfRouteScript.add(fromNetwork);
@@ -4638,7 +4638,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final OutputInterpreter.OneLineParser setupTfRouteParser = new OutputInterpreter.OneLineParser();
         final String result = setupTfRouteScript.execute(setupTfRouteParser);
         if (result != null) {
-            s_logger.debug("Failed to execute setup TF Route:" + result);
+            logger.debug("Failed to execute setup TF Route:" + result);
             return false;
         }
         return true;

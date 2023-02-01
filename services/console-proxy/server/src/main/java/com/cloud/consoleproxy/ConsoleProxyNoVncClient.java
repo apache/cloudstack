@@ -147,7 +147,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
             session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
             updateFrontEndActivityTime();
         } catch (WebSocketException | IOException e) {
-            s_logger.debug("Connection exception", e);
+            logger.debug("Connection exception", e);
             return false;
         }
         return true;

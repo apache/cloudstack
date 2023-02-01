@@ -47,7 +47,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +57,6 @@ import javax.inject.Inject;
 @APICommand(name = ConfigTungstenFabricServiceCmd.APINAME, description = "config Tungsten-Fabric service",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigTungstenFabricServiceCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ConfigTungstenFabricServiceCmd.class.getName());
     public static final String APINAME = "configTungstenFabricService";
     public static final String NETWORKOFFERING = "DefaultTungstenFarbicNetworkOffering";
 
