@@ -117,7 +117,7 @@ public class UpdateHostCmd extends BaseCmd {
         Host result;
         try {
             result = _resourceService.updateHost(this);
-            if(getAnnotation() != null) {
+            if (getAnnotation() != null) {
                 annotationService.addAnnotation(getAnnotation(), AnnotationService.EntityType.HOST, result.getUuid(), true);
             }
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);

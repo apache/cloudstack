@@ -3456,6 +3456,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return pingRoutingCommand;
     }
 
+    /**
+     * The health check result is true, if the script is executed successfully and the exit code is 0
+     * The health check result is false, if the script is executed successfully and the exit code is 1
+     * The health check result is null, if
+     * - Script file is not specified, or
+     * - Script file does not exist, or
+     * - Script file is not accessible by the user of the cloudstack-agent process, or
+     * - Script file is not executable
+     * - There are errors when the script is executed (exit codes other than 0 or 1)
+     */
     private Boolean getHostHealthCheckResult(String hostHealthCheckScriptPath) {
         if (org.apache.commons.lang3.StringUtils.isBlank(hostHealthCheckScriptPath)) {
             s_logger.debug("Host health check script path is not specified");
@@ -3472,7 +3482,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
         }
-        return exitCode == 0;
+        return exitCode != 0 && exitCode != 1 ? null : exitCode == 0;
     }
 
     @Override
