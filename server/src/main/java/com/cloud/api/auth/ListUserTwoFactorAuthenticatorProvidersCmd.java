@@ -78,11 +78,11 @@ public class ListUserTwoFactorAuthenticatorProvidersCmd extends BaseCmd {
             if (provider == null || (getName() != null && !provider.getName().equals(getName()))) {
                 continue;
             }
-            final UserTwoFactorAuthenticatorProviderResponse UserTwoFactorAuthenticatorProviderResponse = new UserTwoFactorAuthenticatorProviderResponse();
-            UserTwoFactorAuthenticatorProviderResponse.setName(provider.getName());
-            UserTwoFactorAuthenticatorProviderResponse.setDescription(provider.getDescription());
-            UserTwoFactorAuthenticatorProviderResponse.setObjectName("providers");
-            responses.add(UserTwoFactorAuthenticatorProviderResponse);
+            final UserTwoFactorAuthenticatorProviderResponse userTwoFactorAuthenticatorProviderResponse = new UserTwoFactorAuthenticatorProviderResponse();
+            userTwoFactorAuthenticatorProviderResponse.setName(provider.getName());
+            userTwoFactorAuthenticatorProviderResponse.setDescription(provider.getDescription());
+            userTwoFactorAuthenticatorProviderResponse.setObjectName("providers");
+            responses.add(userTwoFactorAuthenticatorProviderResponse);
         }
         response.setResponses(responses);
         response.setResponseName(getCommandName());

@@ -290,7 +290,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
         this.icon = icon;
     }
 
-    public Boolean Is2FAenabled() {
+    public Boolean is2FAenabled() {
         return is2FAenabled;
     }
 

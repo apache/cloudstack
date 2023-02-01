@@ -293,12 +293,12 @@ public class ApiServletTest {
     public void testSkip2FAcheckForAPIs() {
         String command = "listZones";
         Map<String, Object[]> params = new HashMap<String, Object[]>();
-        boolean result = servlet.skip2FAcheckForAPIs(command, params);
+        boolean result = servlet.skip2FAcheckForAPIs(command);
         Assert.assertEquals(false, result);
 
         command = ListCfgsByCmd.APINAME;
         params.put(ApiConstants.NAME, new String[] { UserVmManager.AllowUserExpungeRecoverVm.key() });
-        result = servlet.skip2FAcheckForAPIs(command, params);
+        result = servlet.skip2FAcheckForAPIs(command);
         Assert.assertEquals(false, result);
     }
 
@@ -308,7 +308,7 @@ public class ApiServletTest {
                 ListUserTwoFactorAuthenticatorProvidersCmd.APINAME, SetupUserTwoFactorAuthenticationCmd.APINAME};
         Map<String, Object[]> params = new HashMap<String, Object[]>();
         for (String cmd: commands) {
-            boolean result = servlet.skip2FAcheckForAPIs(cmd, params);
+            boolean result = servlet.skip2FAcheckForAPIs(cmd);
             Assert.assertEquals(true, result);
         }
     }

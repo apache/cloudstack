@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -94,7 +95,7 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
         if (params.containsKey(ApiConstants.CODE_FOR_2FA)) {
             codeFor2FA = ((String[])params.get(ApiConstants.CODE_FOR_2FA))[0];
         }
-        if (codeFor2FA.isEmpty()) {
+        if (StringUtils.isEmpty(codeFor2FA)) {
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Code for two factor authentication is required");
         }
 

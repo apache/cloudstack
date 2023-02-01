@@ -53,7 +53,7 @@ public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAu
 
         if (StringUtils.isAnyEmpty(username, password)) {
             s_logger.debug("Username or Password cannot be empty");
-            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+            return new Pair<>(false, null);
         }
 
         boolean realUser = true;
@@ -63,10 +63,10 @@ public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAu
             realUser = false;
         }
         /* Fake Data */
-        String realPassword = new String(s_defaultPassword);
-        byte[] salt = new String(s_defaultSalt).getBytes();
+        String realPassword = s_defaultPassword;
+        byte[] salt = s_defaultSalt.getBytes();
         if (realUser) {
-            String storedPassword[] = user.getPassword().split(":");
+            String[] storedPassword = user.getPassword().split(":");
             if (storedPassword.length != 2) {
                 s_logger.warn("The stored password for " + username + " isn't in the right format for this authenticator");
                 realUser = false;
@@ -83,10 +83,8 @@ public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAu
             if (!result && realUser) {
                 action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
             }
-            return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
-        } catch (NoSuchAlgorithmException e) {
-            throw new CloudRuntimeException("Unable to hash password", e);
-        } catch (UnsupportedEncodingException e) {
+            return new Pair<>(result, action);
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable to hash password", e);
         }
     }
@@ -101,7 +99,7 @@ public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAu
         try {
             randomGen = SecureRandom.getInstance("SHA1PRNG");
 
-            byte salt[] = new byte[s_saltlen];
+            byte[] salt = new byte[s_saltlen];
             randomGen.nextBytes(salt);
 
             String saltString = new String(Base64.encode(salt));
@@ -109,9 +107,7 @@ public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAu
 
             // 3. concatenate the two and return
             return saltString + ":" + hashString;
-        } catch (NoSuchAlgorithmException e) {
-            throw new CloudRuntimeException("Unable to hash password", e);
-        } catch (UnsupportedEncodingException e) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable to hash password", e);
         }
     }

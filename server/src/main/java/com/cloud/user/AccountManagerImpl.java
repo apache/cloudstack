@@ -328,7 +328,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
 
-    public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+    static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
             Boolean.class,
             "enable.user.2fa",
             "false",
@@ -336,7 +336,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             true,
             ConfigKey.Scope.Domain);
 
-    public static ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<Boolean>("Advanced",
+    public static ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
             Boolean.class,
             "mandate.user.2fa",
             "false",
@@ -344,7 +344,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             true,
             ConfigKey.Scope.Domain);
 
-    public static ConfigKey<String> userTwoFactorAuthenticationIssuer = new ConfigKey<String>("Advanced",
+    public static final ConfigKey<String> userTwoFactorAuthenticationIssuer = new ConfigKey<>("Advanced",
             String.class,
             "user.2fa.issuer",
             "CloudStack",
@@ -352,7 +352,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             true,
             ConfigKey.Scope.Domain);
 
-    ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
+    static final ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
             "user.2fa.default.provider",
             "totp",
             "The default user two factor authentication provider plugin. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
@@ -374,7 +374,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     public void setUserTwoFactorAuthenticators(List<UserTwoFactorAuthenticator> twoFactorAuthenticators) {
-        _userTwoFactorAuthenticators = _userTwoFactorAuthenticators;
+        _userTwoFactorAuthenticators = twoFactorAuthenticators;
     }
 
     public List<UserAuthenticator> getUserPasswordEncoders() {
@@ -1413,8 +1413,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isNotBlank(timezone)) {
             user.setTimezone(timezone);
         }
-        Boolean is2FAenabled = updateUserCmd.getEnable2FA();
-        if (is2FAenabled != null && is2FAenabled) {
+        Boolean mandate2FA = updateUserCmd.getMandate2FA();
+        if (mandate2FA != null && mandate2FA) {
             user.setUser2faEnabled(true);
         }
         _userDao.update(user.getId(), user);
@@ -3250,26 +3250,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
-        if (cmd.getEnable()) {
+        if (Boolean.TRUE.equals(cmd.getEnable())) {
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
 
-            UserTwoFactorAuthenticationSetupResponse response = enableTwoFactorAuthentication(userId, providerName);
-            return response;
+            return enableTwoFactorAuthentication(userId, providerName);
         }
 
         // Admin can disable 2FA of the users
         Long userId = cmd.getUserId();
-        UserTwoFactorAuthenticationSetupResponse response = disableTwoFactorAuthentication(userId, caller, owner);
-
-        return response;
+        return disableTwoFactorAuthentication(userId, caller, owner);
     }
 
     protected UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
         UserAccountVO userAccount = _userAccountDao.findById(userId);
         UserVO userVO = _userDao.findById(userId);
 
-        if (!enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()) && !mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) {
+        if (Boolean.FALSE.equals(enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) && Boolean.FALSE.equals(mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()))) {
             throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
         }
 
@@ -3296,9 +3293,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO userVO = null;
         if (userId != null) {
             userVO = validateUser(userId, caller.getDomainId());
-            if (userVO == null) {
-                throw new InvalidParameterValueException("Unable to find user= " + userVO.getUsername() + " in domain id = " + caller.getDomainId());
-            }
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();

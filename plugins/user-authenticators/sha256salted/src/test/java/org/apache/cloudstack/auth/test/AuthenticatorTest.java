@@ -80,7 +80,7 @@ public class AuthenticatorTest {
         String encodedPassword = authenticator.encode("password");
 
         String storedPassword[] = encodedPassword.split(":");
-        assertEquals("hash must consist of two components", storedPassword.length, 2);
+        assertEquals("hash must consist of two components", 2, storedPassword.length);
 
         byte salt[] = Base64.decode(storedPassword[0]);
         String hashedPassword = authenticator.encode("password", salt);

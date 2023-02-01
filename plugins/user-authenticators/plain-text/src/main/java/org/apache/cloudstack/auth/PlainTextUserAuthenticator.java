@@ -41,20 +41,20 @@ public class PlainTextUserAuthenticator extends AdapterBase implements UserAuthe
 
         if (StringUtils.isAnyEmpty(username, password)) {
             s_logger.debug("Username or Password cannot be empty");
-            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+            return new Pair<>(false, null);
         }
 
         UserAccount user = _userAccountDao.getUserAccount(username, domainId);
         if (user == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
-            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+            return new Pair<>(false, null);
         }
 
         if (!user.getPassword().equals(password)) {
             s_logger.debug("Password does not match");
-            return new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+            return new Pair<>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
         }
-        return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
+        return new Pair<>(true, null);
     }
 
     @Override
