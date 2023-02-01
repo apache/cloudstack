@@ -1487,11 +1487,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            if (userVm != null) {
+            if (Volume.Type.ROOT.equals(volume.getVolumeType()) && userVm != null) {
                 UserVmDetailVO userVmDetailVO = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
                 if (userVmDetailVO != null) {
                     userVmDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
                     userVmDetailsDao.update(userVmDetailVO.getId(), userVmDetailVO);
+                } else {
+                    UserVmDetailVO detailVO = new UserVmDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(newSize/ GiB_TO_BYTES), true);
+                    userVmDetailsDao.persist(detailVO);
                 }
             }
 
