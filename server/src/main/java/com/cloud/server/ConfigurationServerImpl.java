@@ -992,6 +992,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
 
+        final Map<Network.Service, Network.Provider> defaultTungstenSharedSGNetworkOfferingProviders = new HashMap<>();
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Connectivity, Provider.Tungsten);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.Tungsten);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.Tungsten);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.Tungsten);
+
         final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -1043,6 +1049,21 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 for (Service service : defaultSharedNetworkOfferingProviders.keySet()) {
                     NetworkOfferingServiceMapVO offService =
                             new NetworkOfferingServiceMapVO(defaultSharedNetworkOffering.getId(), service, defaultSharedNetworkOfferingProviders.get(service));
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+
+                NetworkOfferingVO defaultTungstenSharedSGNetworkOffering =
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE, "Offering for Tungsten Shared Security group enabled networks",
+                                TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false, false);
+
+                defaultTungstenSharedSGNetworkOffering.setForTungsten(true);
+                defaultTungstenSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultTungstenSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultTungstenSharedSGNetworkOffering);
+
+                for (Map.Entry<Network.Service, Network.Provider> service : defaultTungstenSharedSGNetworkOfferingProviders.entrySet()) {
+                    NetworkOfferingServiceMapVO offService =
+                            new NetworkOfferingServiceMapVO(defaultTungstenSharedSGNetworkOffering.getId(), service.getKey(), service.getValue());
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }

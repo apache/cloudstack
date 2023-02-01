@@ -945,6 +945,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             });
 
+            _messageBus.publish(_name, MESSAGE_ASSIGN_NIC_SECONDARY_IP_EVENT, PublishScope.LOCAL, id);
+
             return getNicSecondaryIp(id);
         } else {
             return null;
@@ -1057,6 +1059,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 _nicSecondaryIpDao.remove(ipVO.getId());
             }
         });
+
+        _messageBus.publish(_name, MESSAGE_RELEASE_NIC_SECONDARY_IP_EVENT, PublishScope.LOCAL, ipVO);
 
         return true;
     }
@@ -3889,6 +3893,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     //Add Internal Load Balancer element as a default network service provider
                     addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
 
+                    //Add tungsten network service provider
+                    addDefaultTungstenProviderToPhysicalNetwork(pNetwork.getId());
+
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
 
@@ -5190,6 +5197,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         _internalLbElementSvc.addInternalLoadBalancerElement(nsp.getId());
 
+        return nsp;
+    }
+
+    private PhysicalNetworkServiceProvider addDefaultTungstenProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.Tungsten.getName(), null, null);
+
+        NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.Tungsten.getName());
+        if (networkElement == null) {
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the " + Provider.Tungsten.getName() + " Provider");
+        }
         return nsp;
     }
 

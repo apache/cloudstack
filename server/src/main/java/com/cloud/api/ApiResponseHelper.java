@@ -2262,6 +2262,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             serviceResponses.add(svcRsp);
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
+        response.setForTungsten(offering.isForTungsten());
         response.setServices(serviceResponses);
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
@@ -2937,7 +2938,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Network.Provider serviceProvider : serviceProviders) {
             // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
             if (service == Service.Firewall
-                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf)) {
+                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf || serviceProvider == Provider.Tungsten)) {
                 continue;
             }
 

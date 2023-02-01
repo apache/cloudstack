@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -1538,6 +1539,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
+        messageBus.publish(_name, MESSAGE_DELETE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
+
         return true;
     }
 
@@ -1698,6 +1701,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Failed to create Pod IP range. Please contact Cloud Support.");
         }
 
+        messageBus.publish(_name, MESSAGE_CREATE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
+
         return pod;
     }
 
@@ -1812,6 +1817,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             s_logger.error("Unable to delete Pod " + podId + "IP range due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to delete Pod " + podId + "IP range. Please contact Cloud Support.");
         }
+
+        messageBus.publish(_name, MESSAGE_DELETE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
     }
 
     @Override
@@ -2170,6 +2177,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _podDao.update(id, pod);
                 }
             });
+
+            messageBus.publish(_name, MESSAGE_DELETE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
+            messageBus.publish(_name, MESSAGE_CREATE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, pod);
         } catch (final Exception e) {
             s_logger.error("Unable to edit pod due to " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
@@ -2262,8 +2272,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final String startIpFinal = startIp;
         final String endIpFinal = endIp;
-        return Transaction.execute((TransactionCallback<HostPodVO>) status -> {
-
+        HostPodVO hostPodVO = Transaction.execute((TransactionCallback<HostPodVO>) status -> {
             final HostPodVO pod = _podDao.persist(podFinal);
 
             if (StringUtils.isNotEmpty(startIpFinal)) {
@@ -2279,6 +2288,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             return pod;
         });
+
+        messageBus.publish(_name, MESSAGE_CREATE_POD_IP_RANGE_EVENT, PublishScope.LOCAL, hostPodVO);
+
+        return hostPodVO;
     }
 
     @DB
@@ -4441,7 +4454,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         commitVlanLock.lock(5);
         s_logger.debug("Acquiring lock for committing vlan");
         try {
-            return Transaction.execute(new TransactionCallback<Vlan>() {
+            Vlan vlan = Transaction.execute(new TransactionCallback<Vlan>() {
                 @Override
                 public Vlan doInTransaction(final TransactionStatus status) {
                     String newVlanNetmask = newVlanNetmaskFinal;
@@ -4470,6 +4483,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     return vlan;
                 }
             });
+
+            messageBus.publish(_name, MESSAGE_CREATE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
+
+            return vlan;
         } finally {
             commitVlanLock.unlock();
         }
@@ -5272,6 +5289,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
+        messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlanRange);
+
         return true;
     }
 
@@ -5834,6 +5853,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
+        Boolean forTungsten = cmd.getForTungsten();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
@@ -5854,6 +5874,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             for (Long zoneId : zoneIds) {
                 if (_zoneDao.findById(zoneId) == null)
                     throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
+        // if network offering is for tungsten check if every item from serviceProviderList has Tungsten-Fabric provider
+        // except ConfigDrive
+        if(Boolean.TRUE.equals(forTungsten)){
+            for(Map.Entry<String, List<String>> item : cmd.getServiceProviders().entrySet()) {
+                if (item.getValue().size() != 1 || !(item.getValue().contains("Tungsten") || item.getValue().contains("ConfigDrive"))) {
+                    throw new InvalidParameterValueException("Please specify Tungsten-Fabric provider for the " + item.getKey() + " service provider.");
+                }
             }
         }
 
@@ -5995,6 +6025,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             forVpc = true;
                         }
 
+                        if (forTungsten == null && Provider.Tungsten.equals(provider)){
+                            forTungsten = true;
+                        }
+
                         if (service == Service.Dhcp) {
                             dhcpProvider = provider;
                         }
@@ -6117,7 +6151,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, domainIds, zoneIds, enable, internetProtocol);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
@@ -6264,7 +6298,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+            Boolean forTungsten, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6432,6 +6466,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
+
+        offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);

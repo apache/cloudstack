@@ -112,6 +112,8 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -264,6 +266,7 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -556,6 +559,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private AnnotationDao annotationDao;
     @Inject
     private VmStatsDao vmStatsDao;
+    @Inject
+    private MessageBus messageBus;
     @Inject
     protected CommandSetupHelper commandSetupHelper;
     @Autowired
@@ -3638,6 +3643,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
                             owner.getDomainId(), owner.getId(), owner.getAccountName());
+                    messageBus.publish(_name, SecurityGroupService.MESSAGE_CREATE_TUNGSTEN_SECURITY_GROUP_EVENT,
+                        PublishScope.LOCAL, defaultGroup);
                     securityGroupIdList.add(defaultGroup.getId());
                 }
             }

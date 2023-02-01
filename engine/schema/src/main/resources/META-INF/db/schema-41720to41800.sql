@@ -1049,6 +1049,132 @@ WHERE   usage_unit = 'Policy-Month';
 -- delete configuration task.cleanup.retry.interval #6910
 DELETE FROM `cloud`.`configuration` WHERE name='task.cleanup.retry.interval';
 
+-- Tungsten Fabric Plugin --
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_tungsten', 'int(1) unsigned DEFAULT "0" COMMENT "is tungsten enabled for the resource"');
+
+-- Network offering with multi-domains and multi-zones
+DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
+CREATE VIEW `cloud`.`network_offering_view` AS
+    SELECT
+        `network_offerings`.`id` AS `id`,
+        `network_offerings`.`uuid` AS `uuid`,
+        `network_offerings`.`name` AS `name`,
+        `network_offerings`.`unique_name` AS `unique_name`,
+        `network_offerings`.`display_text` AS `display_text`,
+        `network_offerings`.`nw_rate` AS `nw_rate`,
+        `network_offerings`.`mc_rate` AS `mc_rate`,
+        `network_offerings`.`traffic_type` AS `traffic_type`,
+        `network_offerings`.`tags` AS `tags`,
+        `network_offerings`.`system_only` AS `system_only`,
+        `network_offerings`.`specify_vlan` AS `specify_vlan`,
+        `network_offerings`.`service_offering_id` AS `service_offering_id`,
+        `network_offerings`.`conserve_mode` AS `conserve_mode`,
+        `network_offerings`.`created` AS `created`,
+        `network_offerings`.`removed` AS `removed`,
+        `network_offerings`.`default` AS `default`,
+        `network_offerings`.`availability` AS `availability`,
+        `network_offerings`.`dedicated_lb_service` AS `dedicated_lb_service`,
+        `network_offerings`.`shared_source_nat_service` AS `shared_source_nat_service`,
+        `network_offerings`.`sort_key` AS `sort_key`,
+        `network_offerings`.`redundant_router_service` AS `redundant_router_service`,
+        `network_offerings`.`state` AS `state`,
+        `network_offerings`.`guest_type` AS `guest_type`,
+        `network_offerings`.`elastic_ip_service` AS `elastic_ip_service`,
+        `network_offerings`.`eip_associate_public_ip` AS `eip_associate_public_ip`,
+        `network_offerings`.`elastic_lb_service` AS `elastic_lb_service`,
+        `network_offerings`.`specify_ip_ranges` AS `specify_ip_ranges`,
+        `network_offerings`.`inline` AS `inline`,
+        `network_offerings`.`is_persistent` AS `is_persistent`,
+        `network_offerings`.`internal_lb` AS `internal_lb`,
+        `network_offerings`.`public_lb` AS `public_lb`,
+        `network_offerings`.`egress_default_policy` AS `egress_default_policy`,
+        `network_offerings`.`concurrent_connections` AS `concurrent_connections`,
+        `network_offerings`.`keep_alive_enabled` AS `keep_alive_enabled`,
+        `network_offerings`.`supports_streched_l2` AS `supports_streched_l2`,
+        `network_offerings`.`supports_public_access` AS `supports_public_access`,
+        `network_offerings`.`supports_vm_autoscaling` AS `supports_vm_autoscaling`,
+        `network_offerings`.`for_vpc` AS `for_vpc`,
+        `network_offerings`.`for_tungsten` AS `for_tungsten`,
+        `network_offerings`.`service_package_id` AS `service_package_id`,
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        `offering_details`.value AS internet_protocol
+    FROM
+        `cloud`.`network_offerings`
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `domain_details` ON `domain_details`.`network_offering_id` = `network_offerings`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
+    GROUP BY
+        `network_offerings`.`id`;
+
+
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_providers` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `uuid` varchar(40),
+    `host_id` bigint unsigned NOT NULL,
+    `provider_name` varchar(40),
+    `port` varchar(40),
+    `hostname` varchar(40),
+    `gateway` varchar(40),
+    `vrouter_port` varchar(40),
+    `introspect_port` varchar(40),
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fk_tungsten_providers__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_tungsten_providers__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `uc_tungsten_providers__uuid` UNIQUE (`uuid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_guest_network_ip_address` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+    `public_ip_address` varchar(15) COMMENT 'ip public_ip_address',
+    `guest_ip_address` varchar(15) NOT NULL COMMENT 'ip guest_ip_address',
+    `logical_router_uuid` varchar(40) COMMENT 'logical router uuid',
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fk_tungsten_guest_network_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_security_group_rule` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40) NOT NULL COMMENT 'rule uuid',
+    `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `security_group_id` bigint unsigned NOT NULL COMMENT 'security group id',
+    `rule_type` varchar(40) NOT NULL COMMENT 'rule type',
+    `rule_target` varchar(40) NOT NULL COMMENT 'rule target',
+    `ether_type` varchar(40) NOT NULL COMMENT 'ether type',
+    `default_rule` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if security group is default',
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fk_tungsten_security_group_rule__security_group_id` FOREIGN KEY (`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_lb_health_monitor` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `uuid` varchar(40),
+    `load_balancer_id` bigint unsigned NOT NULL,
+    `type` varchar(40) NOT NULL,
+    `retry` bigint unsigned NOT NULL,
+    `timeout` bigint unsigned NOT NULL,
+    `interval` bigint unsigned NOT NULL,
+    `http_method` varchar(40),
+    `expected_code` varchar(40),
+    `url_path` varchar(255),
+    PRIMARY KEY  (`id`),
+    CONSTRAINT `fk_tungsten_lb_health_monitor__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --- #6888 add index to speed up querying IPs in the network-tab
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_KEY`;
 

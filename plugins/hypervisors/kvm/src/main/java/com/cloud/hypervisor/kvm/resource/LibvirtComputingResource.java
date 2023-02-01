@@ -50,6 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -297,6 +298,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
+    public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
+
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -311,6 +314,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _ovsTunnelPath;
+
+    private String setupTungstenVrouterPath;
+    private String updateTungstenLoadbalancerStatsPath;
+    private String updateTungstenLoadbalancerSslPath;
+    private String _host;
+
     private String _dcId;
     private String _clusterId;
     private final Properties _uefiProperties = new Properties();
@@ -341,10 +350,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private KVMStoragePoolManager _storagePoolMgr;
 
     private VifDriver _defaultVifDriver;
+    private VifDriver tungstenVifDriver;
     private Map<TrafficType, VifDriver> _trafficTypeVifDrivers;
 
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+    protected static final String DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.VRouterVifDriver";
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
 
@@ -702,7 +713,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected List<String> _cpuFeatures;
 
     protected enum BridgeType {
-        NATIVE, OPENVSWITCH
+        NATIVE, OPENVSWITCH, TUNGSTEN
     }
 
     protected BridgeType _bridgeType;
@@ -789,6 +800,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _publicNic;
     }
 
+    protected String getDefaultTungstenScriptsDir() {
+        return TUNGSTEN_PATH;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         boolean success = super.configure(name, params);
@@ -814,8 +829,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String storageScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.STORAGE_SCRIPTS_DIR);
 
+        String tungstenScriptsDir = (String) params.get("tungsten.scripts.dir");
+        if (tungstenScriptsDir == null) {
+            tungstenScriptsDir = getDefaultTungstenScriptsDir();
+        }
+
         final String bridgeType = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_BRIDGE_TYPE);
-        _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
+        if (bridgeType == null) {
+            _bridgeType = BridgeType.NATIVE;
+        } else {
+            _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
+        }
 
         Boolean dpdk = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED);
         if (_bridgeType == BridgeType.OPENVSWITCH && BooleanUtils.isTrue(dpdk)) {
@@ -916,6 +940,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-vm.sh");
         if (_ovsPvlanVmPath == null) {
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
+        }
+
+        setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
+        if (setupTungstenVrouterPath == null) {
+            throw new ConfigurationException("Unable to find the setup_tungsten_vrouter.sh");
+        }
+
+        updateTungstenLoadbalancerStatsPath = Script.findScript(tungstenScriptsDir, "update_tungsten_loadbalancer_stats.sh");
+        if (updateTungstenLoadbalancerStatsPath == null) {
+            throw new ConfigurationException("Unable to find the update_tungsten_loadbalancer_stats.sh");
+        }
+
+        updateTungstenLoadbalancerSslPath = Script.findScript(tungstenScriptsDir, "update_tungsten_loadbalancer_ssl.sh");
+        if (updateTungstenLoadbalancerSslPath == null) {
+            throw new ConfigurationException("Unable to find the update_tungsten_loadbalancer_ssl.sh");
         }
 
         final boolean isDeveloper = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER);
@@ -1442,6 +1481,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 defaultVifDriverName = DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME;
             }
         }
+        tungstenVifDriver = getVifDriverClass(DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME, params);
         _defaultVifDriver = getVifDriverClass(defaultVifDriverName, params);
 
         // Load any per-traffic-type vif drivers
@@ -1516,6 +1556,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
         vifDrivers.add(_defaultVifDriver);
+        if (TungstenService.isTungstenEnabled(Long.parseLong(_dcId))) {
+            vifDrivers.add(tungstenVifDriver);
+        }
         vifDrivers.addAll(_trafficTypeVifDrivers.values());
 
         final ArrayList<VifDriver> vifDriverList = new ArrayList<VifDriver>(vifDrivers);
@@ -4540,6 +4583,61 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String result = cmd.execute();
         if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean setupTungstenVRouter(final String oper, final String inf, final String subnet, final String route,
+        final String vrf) {
+        final Script cmd = new Script(setupTungstenVrouterPath, _timeout, s_logger);
+        cmd.add(oper);
+        cmd.add(inf);
+        cmd.add(subnet);
+        cmd.add(route);
+        cmd.add(vrf);
+
+        final String result = cmd.execute();
+        return result == null;
+    }
+
+    public boolean updateTungstenLoadbalancerStats(final String lbUuid, final String lbStatsPort,
+        final String lbStatsUri, final String lbStatsAuth) {
+        final Script cmd = new Script(updateTungstenLoadbalancerStatsPath, _timeout, s_logger);
+        cmd.add(lbUuid);
+        cmd.add(lbStatsPort);
+        cmd.add(lbStatsUri);
+        cmd.add(lbStatsAuth);
+
+        final String result = cmd.execute();
+        return result == null;
+    }
+
+    public boolean updateTungstenLoadbalancerSsl(final String lbUuid, final String sslCertName,
+        final String certificateKey, final String privateKey, final String privateIp, final String port) {
+        final Script cmd = new Script(updateTungstenLoadbalancerSslPath, _timeout, s_logger);
+        cmd.add(lbUuid);
+        cmd.add(sslCertName);
+        cmd.add(certificateKey);
+        cmd.add(privateKey);
+        cmd.add(privateIp);
+        cmd.add(port);
+
+        final String result = cmd.execute();
+        return result == null;
+    }
+
+    public boolean setupTfRoute(final String privateIpAddress, final String fromNetwork, final String toNetwork) {
+        final Script setupTfRouteScript = new Script(_routerProxyPath, _timeout, s_logger);
+        setupTfRouteScript.add("setup_tf_route.py");
+        setupTfRouteScript.add(privateIpAddress);
+        setupTfRouteScript.add(fromNetwork);
+        setupTfRouteScript.add(toNetwork);
+
+        final OutputInterpreter.OneLineParser setupTfRouteParser = new OutputInterpreter.OneLineParser();
+        final String result = setupTfRouteScript.execute(setupTfRouteParser);
+        if (result != null) {
+            s_logger.debug("Failed to execute setup TF Route:" + result);
             return false;
         }
         return true;
