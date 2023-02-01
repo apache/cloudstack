@@ -18,9 +18,10 @@ package com.cloud.consoleproxy;
 
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -42,7 +43,7 @@ public class ConsoleProxyClientStatsCollector {
         removedSessions.addAll(removed);
     }
 
-    public ConsoleProxyClientStatsCollector(Hashtable<String, ConsoleProxyClient> connMap) {
+    public ConsoleProxyClientStatsCollector(Map<String, ConsoleProxyClient> connMap) {
         setConnections(connMap);
     }
 
@@ -56,13 +57,14 @@ public class ConsoleProxyClientStatsCollector {
         gson.toJson(this, os);
     }
 
-    private void setConnections(Hashtable<String, ConsoleProxyClient> connMap) {
+    private void setConnections(Map<String, ConsoleProxyClient> connMap) {
 
         ArrayList<ConsoleProxyConnection> conns = new ArrayList<ConsoleProxyConnection>();
-        Enumeration<String> e = connMap.keys();
-        while (e.hasMoreElements()) {
+        Set<String> e = connMap.keySet();
+        Iterator<String> iterator = e.iterator();
+        while (iterator.hasNext()) {
             synchronized (connMap) {
-                String key = e.nextElement();
+                String key = iterator.next();
                 ConsoleProxyClient client = connMap.get(key);
 
                 ConsoleProxyConnection conn = new ConsoleProxyConnection();

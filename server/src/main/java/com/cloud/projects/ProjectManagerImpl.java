@@ -50,6 +50,8 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.springframework.stereotype.Component;
 
@@ -150,6 +152,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     private VMSnapshotDao _vmSnapshotDao;
     @Inject
     private VpcManager _vpcMgr;
+    @Inject
+    MessageBus messageBus;
 
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400000;
@@ -257,7 +261,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
         final Account ownerFinal = owner;
         User finalUser = user;
-        return Transaction.execute(new TransactionCallback<Project>() {
+        Project project =  Transaction.execute(new TransactionCallback<Project>() {
             @Override
             public Project doInTransaction(TransactionStatus status) {
 
@@ -284,6 +288,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         return project;
     }
         });
+
+        messageBus.publish(_name, ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
+
+        return project;
     }
 
     @Override
@@ -373,6 +381,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
+                //check if any Tungsten-Fabric provider exists and delete the project from Tungsten-Fabric providers
+                messageBus.publish(_name, ProjectManager.MESSAGE_DELETE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
                 return _projectDao.remove(project.getId());
             }
         } else {

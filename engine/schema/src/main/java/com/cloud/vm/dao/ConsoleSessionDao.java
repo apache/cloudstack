@@ -22,10 +22,15 @@ package com.cloud.vm.dao;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.Date;
+
 public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
     void removeSession(String sessionUuid);
 
     boolean isSessionAllowed(String sessionUuid);
 
+    int expungeSessionsOlderThanDate(Date date);
+
+    void acquireSession(String sessionUuid);
 }

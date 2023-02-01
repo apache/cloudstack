@@ -136,6 +136,7 @@
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
   <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
+  <bean id="tungstenControllerDaoImpl" class="com.cloud.network.dao.TungstenProviderDaoImpl"/>
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
   <bean id="physicalNetworkServiceProviderDaoImpl" class="com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl" />
@@ -239,6 +240,8 @@
   <bean id="applicationLbRuleDaoImpl" class="org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDaoImpl" />
   <bean id="vpcOfferingDetailsDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDetailsDaoImpl"/>
   <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
+  <bean id="tungstenGuestNetworkIpAddressDaoImpl" class="com.cloud.network.dao.TungstenGuestNetworkIpAddressDaoImpl"/>
+  <bean id="tungstenSecurityGroupRuleDaoImpl" class="com.cloud.network.security.dao.TungstenSecurityGroupRuleDaoImpl"/>
   <bean id="vlanDetailsDaoImpl" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
   <bean id="AffinityGroupDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDaoImpl" />
   <bean id="AffinityGroupVMMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl" />

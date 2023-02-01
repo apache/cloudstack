@@ -33,17 +33,17 @@ import javax.inject.Inject;
 
 import java.util.Date;
 
-@APICommand(name = "quotaTariffCreate", responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.17.0.0",
+@APICommand(name = "quotaTariffCreate", responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.18.0.0",
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffCreateCmd extends BaseCmd {
 
     @Inject
     QuotaResponseBuilder responseBuilder;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 32)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 65535)
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description.", length = 256)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description.", length = 65535)
     private String description;
 
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = true, description = "Integer value for the usage type of the resource.")
@@ -52,8 +52,10 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     @Parameter(name = "value", type = CommandType.DOUBLE, required = true, description = "The quota tariff value of the resource as per the default unit.")
     private Double value;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule.",
-            length = 65535)
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. It can receive a JS script that results in either " +
+            "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
+            "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
+            "value will be applied.", length = 65535)
     private String activationRule;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Use yyyy-MM-dd as"
@@ -63,10 +65,6 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
             + " endDate=2009-06-03.")
     private Date endDate;
-
-    public QuotaTariffCreateCmd() {
-        super();
-    }
 
     @Override
     public void execute() {
@@ -106,10 +104,6 @@ public class QuotaTariffCreateCmd extends BaseCmd {
         return usageType;
     }
 
-    public void setUsageType(Integer usageType) {
-        this.usageType = usageType;
-    }
-
     public Double getValue() {
         return value;
     }
@@ -120,10 +114,6 @@ public class QuotaTariffCreateCmd extends BaseCmd {
 
     public String getActivationRule() {
         return activationRule;
-    }
-
-    public void setActivationRule(String activationRule) {
-        this.activationRule = activationRule;
     }
 
     public Date getStartDate() {
