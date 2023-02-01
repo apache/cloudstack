@@ -162,12 +162,15 @@ export default {
     },
     setup2FAProvider () {
       if (!this.twoFAenabled) {
+        var provider
         if (this.selectedProvider === 'othertotp') {
-          this.selectedProvider = 'totp'
+          provider = 'totp'
+        } else {
+          provider = this.selectedProvider
         }
-        api('setupUserTwoFactorAuthentication', { provider: this.selectedProvider }).then(response => {
+        api('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
           this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
-          if (this.selectedProvider === 'totp') {
+          if (this.selectedProvider === 'totp' || this.selectedProvider === 'othertotp') {
             this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
 
             var issuer = 'CloudStack'
