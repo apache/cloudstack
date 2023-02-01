@@ -44,10 +44,10 @@ import com.cloud.utils.fsm.NoTransitionException;
 public interface ResourceService {
     /**
      * Updates a host
-     *
-     * @param cmd - the command specifying hostId
      */
     Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
+
+    Host updateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException;
 
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 

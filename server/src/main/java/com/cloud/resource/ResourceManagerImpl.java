@@ -1774,73 +1774,92 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return hostInMaintenance;
     }
 
+    private void updateHostAllocationState(HostVO host, String allocationState) throws NoTransitionException {
+        final ResourceState.Event resourceEvent = ResourceState.Event.toEvent(allocationState);
+        if (resourceEvent != ResourceState.Event.Enable && resourceEvent != ResourceState.Event.Disable) {
+            throw new CloudRuntimeException(String.format("Invalid allocation state: %s, " +
+                    "only Enable/Disable are allowed", allocationState));
+        }
+
+        resourceStateTransitTo(host, resourceEvent, _nodeId);
+    }
+
+    private void updateHostName(HostVO host, String name) {
+        s_logger.debug("Updating Host name to: " + name);
+        host.setName(name);
+        _hostDao.update(host.getId(), host);
+    }
+
+    private void updateHostGuestOSCategory(Long hostId, Long guestOSCategoryId) {
+        // Verify that the guest OS Category exists
+        if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+        }
+
+        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+        final DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
+
+        if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
+            // Create/Update an entry for guest.os.category.id
+            if (guestOSDetail != null) {
+                guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
+                _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
+            } else {
+                final Map<String, String> detail = new HashMap<String, String>();
+                detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+                _hostDetailsDao.persist(hostId, detail);
+            }
+        } else {
+            // Delete any existing entry for guest.os.category.id
+            if (guestOSDetail != null) {
+                _hostDetailsDao.remove(guestOSDetail.getId());
+            }
+        }
+    }
+
+    private void updateHostTags(HostVO host, Long hostId, List<String> hostTags) {
+        List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
+        s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. " +
+                "Updating the host tags will not affect them.", activeVMs, host));
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Updating Host Tags to :" + hostTags);
+        }
+        _hostTagsDao.persist(hostId, new ArrayList<>(new HashSet<>(hostTags)));
+    }
+
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        Long hostId = cmd.getId();
-        String name = cmd.getName();
-        Long guestOSCategoryId = cmd.getOsCategoryId();
+        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags());
+    }
 
+    private Host updateHost(Long hostId, String name, Long guestOSCategoryId,
+                            String allocationState, String url, List<String> hostTags) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
 
-        if (cmd.getAllocationState() != null) {
-            final ResourceState.Event resourceEvent = ResourceState.Event.toEvent(cmd.getAllocationState());
-            if (resourceEvent != ResourceState.Event.Enable && resourceEvent != ResourceState.Event.Disable) {
-                throw new CloudRuntimeException("Invalid allocation state:" + cmd.getAllocationState() + ", only Enable/Disable are allowed");
-            }
-
-            resourceStateTransitTo(host, resourceEvent, _nodeId);
+        if (StringUtils.isNotBlank(allocationState)) {
+            updateHostAllocationState(host, allocationState);
         }
 
         if (StringUtils.isNotBlank(name)) {
-            s_logger.debug("Updating Host name to: " + name);
-            host.setName(name);
-            _hostDao.update(host.getId(), host);
+            updateHostName(host, name);
         }
 
         if (guestOSCategoryId != null) {
-            // Verify that the guest OS Category exists
-            if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS category.");
-            }
-
-            final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-            final DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
-
-            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
-                // Create/Update an entry for guest.os.category.id
-                if (guestOSDetail != null) {
-                    guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
-                    _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
-                } else {
-                    final Map<String, String> detail = new HashMap<String, String>();
-                    detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-                    _hostDetailsDao.persist(hostId, detail);
-                }
-            } else {
-                // Delete any existing entry for guest.os.category.id
-                if (guestOSDetail != null) {
-                    _hostDetailsDao.remove(guestOSDetail.getId());
-                }
-            }
+            updateHostGuestOSCategory(hostId, guestOSCategoryId);
         }
-        final List<String> hostTags = cmd.getHostTags();
+
         if (hostTags != null) {
-            List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
-            s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. Updating the host tags will not affect them.", activeVMs, host));
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Updating Host Tags to :" + hostTags);
-            }
-            _hostTagsDao.persist(hostId, new ArrayList(new HashSet<String>(hostTags)));
+            updateHostTags(host, hostId, hostTags);
         }
 
-        final String url = cmd.getUrl();
         if (url != null) {
-            _storageMgr.updateSecondaryStorage(cmd.getId(), cmd.getUrl());
+            _storageMgr.updateSecondaryStorage(hostId, url);
         }
         try {
             _storageMgr.enableHost(hostId);
@@ -1850,6 +1869,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         final HostVO updatedHost = _hostDao.findById(hostId);
         return updatedHost;
+    }
+
+    @Override
+    public Host updateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException {
+        return updateHost(hostId, null, null, allocationState, null, null);
     }
 
     @Override

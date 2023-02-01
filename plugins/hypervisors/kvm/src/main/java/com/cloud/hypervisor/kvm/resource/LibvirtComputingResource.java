@@ -323,6 +323,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _dcId;
     private String _clusterId;
     private final Properties _uefiProperties = new Properties();
+    private String hostHealthCheckScriptPath;
 
     private long _hvVersion;
     private Duration _timeout;
@@ -940,6 +941,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-vm.sh");
         if (_ovsPvlanVmPath == null) {
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
+        }
+
+        String healthCheckScriptPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEALTH_CHECK_SCRIPT_PATH);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(healthCheckScriptPath)) {
+            if (new File(healthCheckScriptPath).exists()) {
+                hostHealthCheckScriptPath = healthCheckScriptPath;
+            } else {
+                s_logger.info(String.format("Unable to find the host health check script at: %s, " +
+                        "discarding it", healthCheckScriptPath));
+            }
         }
 
         setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
@@ -3431,13 +3442,37 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public PingCommand getCurrentStatus(final long id) {
-
+        PingRoutingCommand pingRoutingCommand;
         if (!_canBridgeFirewall) {
-            return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
+            pingRoutingCommand = new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
         } else {
             final HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
-            return new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
+            pingRoutingCommand = new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
         }
+        Boolean healthCheckResult = getHostHealthCheckResult(hostHealthCheckScriptPath);
+        if (healthCheckResult != null) {
+            pingRoutingCommand.setHostHealthCheckResult(healthCheckResult);
+        }
+        return pingRoutingCommand;
+    }
+
+    private Boolean getHostHealthCheckResult(String hostHealthCheckScriptPath) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(hostHealthCheckScriptPath)) {
+            s_logger.debug("Host health check script path is not specified");
+            return null;
+        }
+        File script = new File(hostHealthCheckScriptPath);
+        if (!script.exists() || !script.isFile() || !script.canExecute()) {
+            s_logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
+                            "reason: %s", hostHealthCheckScriptPath,
+                    !script.exists() ? "file does not exist" : "please check file permissions to execute this file"));
+            return null;
+        }
+        int exitCode = executeBashScriptAndRetrieveExitValue(hostHealthCheckScriptPath);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
+        }
+        return exitCode == 0;
     }
 
     @Override
@@ -3479,6 +3514,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        Boolean healthCheckResult = getHostHealthCheckResult(hostHealthCheckScriptPath);
+        if (healthCheckResult != null) {
+            cmd.setHostHealthCheckResult(healthCheckResult);
+        }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
             _hostDistro = cmd.getHostDetails().get("Host.OS");
