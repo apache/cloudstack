@@ -6209,7 +6209,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     void validateSourceNatServiceCapablities(final Map<Capability, String> sourceNatServiceCapabilityMap) {
-        if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && sourceNatServiceCapabilityMap.size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap)) {
+        if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && (sourceNatServiceCapabilityMap.size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap))) {
             throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
                     + ", " + Capability.RedundantRouter
                     + " and " + Capability.SpecifySourceNatIp
