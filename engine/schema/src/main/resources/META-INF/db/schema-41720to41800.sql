@@ -1480,6 +1480,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
     `user_id` bigint(20) unsigned NOT NULL COMMENT 'User who generated the session',
     `instance_id` bigint(20) unsigned NOT NULL COMMENT 'VM for which the session was generated',
     `host_id` bigint(20) unsigned NOT NULL COMMENT 'Host where the VM was when the session was generated',
+    `acquired` int(1) NOT NULL DEFAULT 0 COMMENT 'True if the session was already used',
     `removed` datetime COMMENT 'When the session was removed/used',
     CONSTRAINT `fk_consolesession__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account` (`id`),
     CONSTRAINT `fk_consolesession__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),

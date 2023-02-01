@@ -54,6 +54,9 @@ public class ConsoleSessionVO {
     @Column(name = "host_id")
     private long hostId;
 
+    @Column(name = "acquired")
+    private boolean acquired;
+
     @Column(name = "removed")
     private Date removed;
 
@@ -119,5 +122,13 @@ public class ConsoleSessionVO {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public boolean isAcquired() {
+        return acquired;
+    }
+
+    public void setAcquired(boolean acquired) {
+        this.acquired = acquired;
     }
 }

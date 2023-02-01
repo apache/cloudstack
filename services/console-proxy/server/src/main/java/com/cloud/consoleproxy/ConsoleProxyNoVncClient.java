@@ -19,6 +19,7 @@ package com.cloud.consoleproxy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WebSocketException;
 import org.eclipse.jetty.websocket.api.extensions.Frame;
 
 import java.awt.Image;
@@ -125,12 +126,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
-                            if (readBytes == -1) {
-                                break;
-                            }
-                            if (readBytes > 0) {
-                                session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
-                                updateFrontEndActivityTime();
+                            if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
+                                connectionAlive = false;
                             }
                         }
                     }
@@ -142,6 +139,17 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
 
         });
         worker.start();
+    }
+
+    private boolean sendReadBytesToNoVNC(byte[] b, int readBytes) {
+        try {
+            session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
+            updateFrontEndActivityTime();
+        } catch (WebSocketException | IOException e) {
+            s_logger.debug("Connection exception", e);
+            return false;
+        }
+        return true;
     }
 
     /**
