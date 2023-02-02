@@ -71,19 +71,19 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     private String sessionKey;
 
     @SerializedName(value = ApiConstants.IS_2FA_ENABLED)
-    @Param(description = "Is two factor authentication enabled")
+    @Param(description = "Is two factor authentication enabled", since = "4.18.0.0")
     private String is2FAenabled;
 
     @SerializedName(value = ApiConstants.IS_2FA_VERIFIED)
-    @Param(description = "Is two factor authentication verified")
+    @Param(description = "Is two factor authentication verified", since = "4.18.0.0")
     private String is2FAverified;
 
     @SerializedName(value = ApiConstants.PROVIDER_FOR_2FA)
-    @Param(description = "Two factor authentication provider")
+    @Param(description = "Two factor authentication provider", since = "4.18.0.0")
     private String providerFor2FA;
 
     @SerializedName(value = ApiConstants.ISSUER_FOR_2FA)
-    @Param(description = "Two factor authentication issuer")
+    @Param(description = "Two factor authentication issuer", since = "4.18.0.0")
     private String issuerFor2FA;
 
     public String getUsername() {
