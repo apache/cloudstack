@@ -26,8 +26,9 @@
         :src="$config.banner"
         class="user-layout-logo"
         alt="logo">
-      <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
       <br />
+      <br />
+      <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
       <br />
     </a-form>
     <p v-html="$t('message.two.fa.login.page')"></p>
@@ -77,6 +78,7 @@
           <vue-qrious
             class="center-align"
             :value="totpUrl"
+            size="200"
             @change="onDataUrlChange"
           />
           <div style="text-align: center"> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.setup.key') }}</a></div>

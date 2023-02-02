@@ -76,6 +76,7 @@
           <vue-qrious
             class="center-align"
             :value="totpUrl"
+            size="200"
             @change="onDataUrlChange"
           />
           <div style="text-align: center"> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.setup.key') }}</a></div>
