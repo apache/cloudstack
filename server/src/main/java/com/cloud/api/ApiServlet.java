@@ -303,7 +303,7 @@ public class ApiServlet extends HttpServlet {
                 s_logger.trace(String.format("new session: %s", session));
             }
 
-            if (!isNew && !skip2FAcheckForAPIs(command) && !skip2FAcheckForUser(session)) {
+            if (session != null && !skip2FAcheckForAPIs(command) && !skip2FAcheckForUser(session)) {
                 s_logger.debug("Verifying two factor authentication");
                 boolean success = verify2FA(session, command, auditTrailSb, params, remoteAddress, responseType, req, resp);
                 if (!success) {
