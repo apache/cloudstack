@@ -261,7 +261,7 @@ export default {
     left: 50%;
     -webkit-transform: translate(-50%, -50%);
 
-    background-color: #D3D3D3;
+    background-color: transparent;
     padding: 70px 50px 70px 50px;
     z-index: 100;
   }
