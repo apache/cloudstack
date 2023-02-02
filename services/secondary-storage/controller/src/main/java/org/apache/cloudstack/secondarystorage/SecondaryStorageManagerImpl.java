@@ -48,6 +48,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1087,12 +1088,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" template=domP type=secstorage");
         buf.append(" host=").append(com.cloud.utils.StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
-        buf.append(" name=").append(profile.getVirtualMachine().getHostName());
+        String vmName = profile.getVirtualMachine().getHostName();
+        buf.append(" name=").append(vmName);
 
         buf.append(" zone=").append(dest.getDataCenter().getId());
         buf.append(" pod=").append(dest.getPod().getId());
 
-        buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
+        buf.append(" guid=").append(vmName);
 
         buf.append(" workers=").append(_configDao.getValue("workers"));
         String msPublicKey = _configDao.getValue("ssh.publickey");
@@ -1180,7 +1182,27 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         s_logger.debug(String.format("Setting UseHttpsToUpload config on cmdline with [%s] value.", useHttpsToUpload));
         buf.append(" useHttpsToUpload=").append(useHttpsToUpload);
 
+        addSecondaryStorageServerAddressToBuffer(buf, secStore, vmName);
+
         return true;
+    }
+
+    /**
+     * Adds the secondary storage address to the buffer if it is in the following pattern: <protocol>//<address>/...
+     */
+    protected void addSecondaryStorageServerAddressToBuffer(StringBuilder buffer, DataStore dataStore, String vmName) {
+        String url = dataStore.getTO().getUrl();
+        String[] urlArray = url.split("/");
+
+        s_logger.debug(String.format("Found [%s] as secondary storage's URL for SSVM [%s].", url, vmName));
+        if (ArrayUtils.getLength(urlArray) < 3) {
+            s_logger.debug(String.format("Could not retrieve secondary storage address from URL [%s] of SSVM [%s].", url, vmName));
+            return;
+        }
+
+        String address = urlArray[2];
+        s_logger.info(String.format("Using [%s] as address of secondary storage of SSVM [%s].", address, vmName));
+            buffer.append(" secondaryStorageServerAddress=").append(address);
     }
 
     @Override
