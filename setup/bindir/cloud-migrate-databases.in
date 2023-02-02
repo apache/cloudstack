@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/bin/bash
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,271 +17,32 @@
 # specific language governing permissions and limitations
 # under the License.
 
+LOGFILE=/tmp/cloudstack-migrate-databases.log
 
-import os,logging,sys
-from optparse import OptionParser
-import mysql.connector
-import subprocess
-import glob
+check_if_svc_active() {
+  svc_name=$1
+  systemctl is-active $svc_name -q
+  if [ $? -eq 0 ];then
+    echo "service $svc_name is still active. Please stop it and retry." |tee -a ${LOGFILE}
+    exit 1
+  fi
+}
 
-# ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
-# ---- We do this so cloud_utils can be looked up in the following order:
-# ---- 1) Sources directory
-# ---- 2) waf configured PYTHONDIR
-# ---- 3) System Python path
-for pythonpath in (
-		"@PYTHONDIR@",
-		os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
-	):
-		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
-# ---- End snippet of code ----
-from cloud_utils import check_selinux, CheckFailed, resolves_to_ipv6
-import cloud_utils
+if [ "$1" != "" ] && [ "$1" != "-h" ] && [ "$1" != "--help" ];then
+  check_if_svc_active "cloudstack-management"
+  check_if_svc_active "cloudstack-usage"
+fi
 
-# RUN ME LIKE THIS
-# python setup/bindir/cloud-migrate-databases.in --config=client/conf/override/db.properties --resourcedir=setup/db  --dry-run
-# --dry-run makes it so the changes to the database in the context of the migrator are rolled back
+java -classpath /etc/cloudstack/management:/usr/share/cloudstack-management/lib/* \
+  com.cloud.utils.crypt.EncryptionSecretKeyChanger \
+  "$@" \
+  > >(tee -a ${LOGFILE}) 2> >(tee -a ${LOGFILE} >/dev/null)
 
-# This program / library breaks down as follows:
-#   high-level breakdown:
-#   the module calls main()
-#   main processes command-line options
-#   main() instantiates a migrator with a a list of possible migration steps
-#   migrator discovers and topologically sorts migration steps from the given list
-#   main() run()s the migrator
-#      for each one of the migration steps:
-#          the migrator instantiates the migration step with the context as first parameter
-#          the instantiated migration step saves the context onto itself as self.context
-#          the migrator run()s the instantiated migration step.  within run(), self.context is the context
-#      the migrator commits the migration context to the database (or rollsback if --dry-run is specified)
-#   that is it
+res=$?
+if [ $res -eq 0 ];then
+   rm -f $LOGFILE
+else
+   echo "Failed to migrate databases. You may find more logs in $LOGFILE"
+fi
 
-# The specific library code is in cloud_utils.py
-# What needs to be implemented is MigrationSteps
-# Specifically in the FromInitialTo21 evolver.
-# What Db20to21MigrationUtil.java does, needs to be done within run() of that class
-# refer to the class docstring to find out how
-# implement them below
-
-class CloudContext(cloud_utils.MigrationContext):
-	def __init__(self,host,port,username,password,database,configdir,resourcedir):
-		self.host = host
-		self.port = port
-		self.username = username
-		self.password = password
-		self.database = database
-		self.configdir = configdir
-		self.resourcedir = resourcedir
-		self.conn = mysql.connector.connect(host=self.host,
-			user=self.username,
-			password=self.password,
-			database=self.database,
-			port=self.port)
-		self.conn.autocommit(False)
-		self.db = self.conn.cursor()
-		def wrapex(func):
-			sqlogger = logging.getLogger("SQL")
-			def f(stmt,parms=None):
-				if parms: sqlogger.debug("%s | with parms %s",stmt,parms)
-				else: sqlogger.debug("%s",stmt)
-				return func(stmt,parms)
-			return f
-		self.db.execute = wrapex(self.db.execute)
-	
-	def __str__(self):
-		return "CloudStack %s database at %s"%(self.database,self.host)
-	
-	def get_schema_level(self):
-		return self.get_config_value('schema.level') or cloud_utils.INITIAL_LEVEL
-	
-	def set_schema_level(self,l):
-		self.db.execute(
-		"INSERT INTO configuration (category,instance,component,name,value,description) VALUES ('Hidden', 'DEFAULT', 'database', 'schema.level', %s, 'The schema level of this database') ON DUPLICATE KEY UPDATE value = %s", (l,l)
-		)
-		self.commit()
-
-	def commit(self):
-		self.conn.commit()
-		#self.conn.close()
-		
-	def close(self):
-		self.conn.close()
-		
-	def get_config_value(self,name):
-		self.db.execute("select value from configuration where name = %s",(name,))
-		try: return self.db.fetchall()[0][0]
-		except IndexError: return
-		
-	def run_sql_resource(self,resource):
-		sqlfiletext = file(os.path.join(self.resourcedir,resource)).read(-1)
-		sqlstatements = sqlfiletext.split(";")
-		for stmt in sqlstatements:
-			if not stmt.strip(): continue # skip empty statements
-			self.db.execute(stmt)
-
-
-class FromInitialTo21NewSchema(cloud_utils.MigrationStep):
-	def __str__(self): return "Altering the database schema"
-	from_level = cloud_utils.INITIAL_LEVEL
-	to_level = "2.1-01"
-	def run(self): self.context.run_sql_resource("schema-20to21.sql")
-
-class From21NewSchemaTo21NewSchemaPlusIndex(cloud_utils.MigrationStep):
-	def __str__(self): return "Altering indexes"
-	from_level = "2.1-01"
-	to_level = "2.1-02"
-	def run(self): self.context.run_sql_resource("index-20to21.sql")
-
-class From21NewSchemaPlusIndexTo21DataMigratedPart1(cloud_utils.MigrationStep):
-	def __str__(self): return "Performing data migration, stage 1"
-	from_level = "2.1-02"
-	to_level = "2.1-03"
-	def run(self):	self.context.run_sql_resource("data-20to21.sql")
-
-class From21step1toTo21datamigrated(cloud_utils.MigrationStep):
-	def __str__(self): return "Performing data migration, stage 2"
-	from_level = "2.1-03"
-	to_level = "2.1-04"
-	
-	def run(self):
-		systemjars = "@SYSTEMJARS@".split()
-		pipe = subprocess.Popen(["build-classpath"]+systemjars,stdout=subprocess.PIPE)
-		systemcp,throwaway = pipe.communicate()
-		systemcp = systemcp.strip()
-		if pipe.wait(): # this means that build-classpath failed miserably
-			systemcp = "@SYSTEMCLASSPATH@"
-		pcp = os.path.pathsep.join( glob.glob( os.path.join ( "@PREMIUMJAVADIR@" , "*" ) ) )
-		mscp = "@MSCLASSPATH@"
-		depscp = "@DEPSCLASSPATH@"
-		migrationxml = "@SERVERSYSCONFDIR@"
-		conf = self.context.configdir
-		cp = os.path.pathsep.join([pcp,systemcp,depscp,mscp,migrationxml,conf])
-		cmd = ["java"]
-		cmd += ["-cp",cp]
-		cmd += ["com.cloud.migration.Db20to21MigrationUtil"]
-		logging.debug("Running command: %s"," ".join(cmd))
-		subprocess.check_call(cmd)
-
-class From21datamigratedTo21postprocessed(cloud_utils.MigrationStep):
-	def __str__(self): return "Postprocessing migrated data"
-	from_level = "2.1-04"
-	to_level = "2.1"
-	def run(self): self.context.run_sql_resource("postprocess-20to21.sql")
-
-class From21To213(cloud_utils.MigrationStep):
-	def __str__(self): return "Dropping obsolete indexes"
-	from_level = "2.1"
-	to_level = "2.1.3"
-	def run(self): self.context.run_sql_resource("index-212to213.sql")
-
-class From213To22data(cloud_utils.MigrationStep):
-	def __str__(self): return "Migrating data"
-	from_level = "2.1.3"
-	to_level = "2.2-01"
-	def run(self): self.context.run_sql_resource("data-21to22.sql")
-
-class From22dataTo22(cloud_utils.MigrationStep):
-	def __str__(self): return "Migrating indexes"
-	from_level = "2.2-01"
-	to_level = "2.2"
-	def run(self): self.context.run_sql_resource("index-21to22.sql")
-
-# command line harness functions
-
-def setup_logging(level):
-	l = logging.getLogger()
-	l.setLevel(level)
-	h = logging.StreamHandler(sys.stderr)
-	l.addHandler(h)
-
-
-def setup_optparse():
-	usage = \
-"""%prog [ options ... ]
-
-This command migrates the CloudStack database."""
-	parser = OptionParser(usage=usage)
-	parser.add_option("-c", "--config", action="store", type="string",dest='configdir',
-		default=os.path.join("@MSCONF@"),
-		help="Configuration directory with a db.properties file, pointing to the CloudStack database")
-	parser.add_option("-r", "--resourcedir", action="store", type="string",dest='resourcedir',
-		default="@SETUPDATADIR@",
-		help="Resource directory with database SQL files used by the migration process")
-	parser.add_option("-d", "--debug", action="store_true", dest='debug',
-		default=False,
-		help="Increase log level from INFO to DEBUG")
-	parser.add_option("-e", "--dump-evolvers", action="store_true", dest='dumpevolvers',
-		default=False,
-		help="Dump evolvers in the order they would be executed, but do not run them")
-	#parser.add_option("-n", "--dry-run", action="store_true", dest='dryrun',
-		#default=False,
-		#help="Run the process as it would normally run, but do not commit the final transaction, so database changes are never saved")
-	parser.add_option("-f", "--start-at-level", action="store", type="string",dest='fromlevel',
-		default=None,
-		help="Rather than discovering the database schema level to start from, start migration from this level.  The special value '-' (a dash without quotes) represents the earliest schema level")
-	parser.add_option("-t", "--end-at-level", action="store", type="string",dest='tolevel',
-		default=None,
-		help="Rather than evolving the database to the most up-to-date level, end migration at this level")
-	return parser
-
-
-def main(*args):
-	"""The entry point of this program"""
-	
-	parser = setup_optparse()
-	opts, args = parser.parse_args(*args)
-	if args: parser.error("This command accepts no parameters")
-
-	if opts.debug: loglevel = logging.DEBUG
-	else: loglevel = logging.INFO
-	setup_logging(loglevel)
-	
-	# FIXME implement
-	opts.dryrun = False
-
-	configdir = opts.configdir
-	resourcedir = opts.resourcedir
-	
-	try:
-		props = cloud_utils.read_properties(os.path.join(configdir,'db.properties'))
-	except (IOError,OSError) as e:
-		logging.error("Cannot read from config file: %s",e)
-		logging.error("You may want to point to a specific config directory with the --config= option")
-		return 2
-	
-	if not os.path.isdir(resourcedir):
-		logging.error("Cannot find directory with SQL files %s",resourcedir)
-		logging.error("You may want to point to a specific resource directory with the --resourcedir= option")
-		return 2
-	
-	host = props["db.cloud.host"]
-	port = int(props["db.cloud.port"])
-	username = props["db.cloud.username"]
-	password = props["db.cloud.password"]
-	database = props["db.cloud.name"]
-	
-	# tell the migrator to load its steps from the globals list
-	migrator = cloud_utils.Migrator(list(globals().values()))
-	
-	if opts.dumpevolvers:
-		print("Evolution steps:")
-		print("	%s	%s	%s"%("From","To","Evolver in charge"))
-		for f,t,e in migrator.get_evolver_chain():
-			print("	%s	%s	%s"%(f,t,e))
-		return
-	
-	#initialize a context with the read configuration
-	context = CloudContext(host=host,port=port,username=username,password=password,database=database,configdir=configdir,resourcedir=resourcedir)
-	try:
-	    try:
-		migrator.run(context,dryrun=opts.dryrun,starting_level=opts.fromlevel,ending_level=opts.tolevel)
-	    finally:
-		context.close()
-	except (cloud_utils.NoMigrationPath,cloud_utils.NoMigrator) as e:
-		logging.error("%s",e)
-		return 4
-
-if __name__ == "__main__":
-	retval = main()
-	if retval: sys.exit(retval)
-	else: sys.exit()
+exit $res

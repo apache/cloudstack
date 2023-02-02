@@ -281,6 +281,7 @@ ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.3.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
+install -D utils/target/cloud-utils-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
 
 install -D packaging/centos8/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos8/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
@@ -626,6 +627,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0644,root,root) %{_datadir}/%{name}-common/python-site/__pycache__/*
 %attr(0644,root,root) %{_datadir}/%{name}-common/python-site/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/%{name}-utils.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
