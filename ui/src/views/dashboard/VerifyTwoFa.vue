@@ -40,15 +40,17 @@
         </a-form-item>
         <br/>
         <div :span="24" class="center-align top-padding">
-            <a-button
-              :loading="loading"
-              ref="submit"
-              type="primary"
-              class="center-align"
-              @click="handleSubmit">{{ $t('label.verify') }}
-            </a-button>
-          </div>
-        <p style="text-align: center" v-html="$t('message.two.fa.auth')"></p>
+          <a-button
+            :loading="loading"
+            ref="submit"
+            type="primary"
+            class="center-align"
+            @click="handleSubmit">{{ $t('label.verify') }}
+          </a-button>
+        </div>
+
+        <p v-if="$store.getters.twoFaProvider === 'totp'" style="text-align: center" v-html="$t('message.two.fa.auth.totp')"></p>
+        <p v-if="$store.getters.twoFaProvider === 'staticpin'" style="text-align: center" v-html="$t('message.two.fa.auth.staticpin')"></p>
       </a-form>
     </a-form>
   </div>
@@ -56,6 +58,7 @@
 <script>
 
 import { api } from '@/api'
+import store from '@/store'
 import { ref, reactive, toRaw } from 'vue'
 
 export default {
