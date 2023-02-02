@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -109,7 +108,7 @@ public class Upgrade450to451 extends DbUpgradeAbstractImpl {
                 String preSharedKey = resultSet.getString(2);
                 try {
                     preSharedKey = DBEncryptionUtil.decrypt(preSharedKey);
-                } catch (EncryptionOperationNotPossibleException ignored) {
+                } catch (CloudRuntimeException ignored) {
                     logger.debug("The ipsec_psk preshared key id=" + rowId + "in remote_access_vpn is not encrypted, encrypting it.");
                 }
                 try (PreparedStatement updateStatement = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` SET ipsec_psk=? WHERE id=?");) {

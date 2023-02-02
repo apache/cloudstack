@@ -23,16 +23,13 @@ import java.util.Properties;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
-
     protected static Logger LOGGER = LogManager.getLogger(DBEncryptionUtil.class);
-    private static StandardPBEStringEncryptor s_encryptor = null;
+    private static CloudStackEncryptor s_encryptor = null;
 
     public static String encrypt(String plain) {
         if (!EncryptionSecretKeyChecker.useEncryption() || (plain == null) || plain.isEmpty()) {
@@ -41,14 +38,7 @@ public class DBEncryptionUtil {
         if (s_encryptor == null) {
             initialize();
         }
-        String encryptedString = null;
-        try {
-            encryptedString = s_encryptor.encrypt(plain);
-        } catch (EncryptionOperationNotPossibleException e) {
-            LOGGER.debug("Error while encrypting: " + plain);
-            throw e;
-        }
-        return encryptedString;
+        return s_encryptor.encrypt(plain);
     }
 
     public static String decrypt(String encrypted) {
@@ -59,17 +49,11 @@ public class DBEncryptionUtil {
             initialize();
         }
 
-        String plain = null;
-        try {
-            plain = s_encryptor.decrypt(encrypted);
-        } catch (EncryptionOperationNotPossibleException e) {
-            LOGGER.debug("Error while decrypting: " + encrypted);
-            throw e;
-        }
-        return plain;
+        return s_encryptor.decrypt(encrypted);
     }
 
-    private static void initialize() {
+    protected static void initialize() {
+        s_logger.debug("Calling to initialize");
         final Properties dbProps = DbProperties.getDbProperties();
 
         if (EncryptionSecretKeyChecker.useEncryption()) {
@@ -77,12 +61,12 @@ public class DBEncryptionUtil {
             if (dbSecretKey == null || dbSecretKey.isEmpty()) {
                 throw new CloudRuntimeException("Empty DB secret key in db.properties");
             }
+            String dbEncryptorVersion = dbProps.getProperty("db.cloud.encryptor.version");
 
-            s_encryptor = new StandardPBEStringEncryptor();
-            s_encryptor.setAlgorithm("PBEWithMD5AndDES");
-            s_encryptor.setPassword(dbSecretKey);
+            s_encryptor = new CloudStackEncryptor(dbSecretKey, dbEncryptorVersion, DBEncryptionUtil.class);
         } else {
-            throw new CloudRuntimeException("Trying to encrypt db values when encrytion is not enabled");
+            throw new CloudRuntimeException("Trying to encrypt db values when encryption is not enabled");
         }
+        s_logger.debug("initialized");
     }
 }

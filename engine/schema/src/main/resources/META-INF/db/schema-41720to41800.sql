@@ -214,7 +214,7 @@ BEGIN
 -- Add passphrase table
 CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
     `id` bigint unsigned NOT NULL auto_increment,
-    `passphrase` varchar(64) DEFAULT NULL,
+    `passphrase` varchar(255) DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
