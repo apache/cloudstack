@@ -1080,6 +1080,6 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 3, 'assignVolume', 'ALLOW');
 
 
--- Increases the overall size of the decimal places of the column `quota_used` from 15 to 20.
+-- Increases the precision of the column `quota_used` from 15 to 20, keeping the scale of 8.
 
 ALTER TABLE `cloud_usage`.`quota_usage` MODIFY COLUMN quota_used decimal(20,8) unsigned NOT NULL;
