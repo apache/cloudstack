@@ -1192,14 +1192,14 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         String url = dataStore.getTO().getUrl();
         String[] urlArray = url.split("/");
 
-        s_logger.debug(String.format("Found [%s] as secondary storage's URL for SSVM [%s].", url, vmName));
+        logger.debug(String.format("Found [%s] as secondary storage's URL for SSVM [%s].", url, vmName));
         if (ArrayUtils.getLength(urlArray) < 3) {
-            s_logger.debug(String.format("Could not retrieve secondary storage address from URL [%s] of SSVM [%s].", url, vmName));
+            logger.debug(String.format("Could not retrieve secondary storage address from URL [%s] of SSVM [%s].", url, vmName));
             return;
         }
 
         String address = urlArray[2];
-        s_logger.info(String.format("Using [%s] as address of secondary storage of SSVM [%s].", address, vmName));
+        logger.info(String.format("Using [%s] as address of secondary storage of SSVM [%s].", address, vmName));
             buffer.append(" secondaryStorageServerAddress=").append(address);
     }
 

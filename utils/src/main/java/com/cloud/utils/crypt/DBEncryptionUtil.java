@@ -53,7 +53,7 @@ public class DBEncryptionUtil {
     }
 
     protected static void initialize() {
-        s_logger.debug("Calling to initialize");
+        LOGGER.debug("Calling to initialize");
         final Properties dbProps = DbProperties.getDbProperties();
 
         if (EncryptionSecretKeyChecker.useEncryption()) {
@@ -67,6 +67,6 @@ public class DBEncryptionUtil {
         } else {
             throw new CloudRuntimeException("Trying to encrypt db values when encryption is not enabled");
         }
-        s_logger.debug("initialized");
+        LOGGER.debug("initialized");
     }
 }

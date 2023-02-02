@@ -418,13 +418,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             decryptInit(conn);
             txn.commit();
         } catch (CloudRuntimeException e) {
-            s_logger.error(e.getMessage());
+            logger.error(e.getMessage());
             errorMessage = String.format("Unable to initialize the database encryptors due to %s. " +
                     "Please check if database encryption key and database encryptor version are correct.", errorMessage);
-            s_logger.error(errorMessage);
+            logger.error(errorMessage);
             throw new CloudRuntimeException(errorMessage, e);
         } catch (SQLException e) {
-            s_logger.error(errorMessage, e);
+            logger.error(errorMessage, e);
             throw new CloudRuntimeException(errorMessage, e);
         } finally {
             txn.close();
@@ -437,7 +437,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
              ResultSet result = pstmt.executeQuery()) {
             if (result.next()) {
                 String init = result.getString(1);
-                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+                logger.info("init = " + DBEncryptionUtil.decrypt(init));
             }
         }
     }

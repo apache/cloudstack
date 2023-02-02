@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 public class TungstenVRouterApi {
-    protected static Logger logger = LogManager.getLogger(TungstenVRouterApi.class);
+    protected static Logger LOGGER = LogManager.getLogger(TungstenVRouterApi.class);
 
     private TungstenVRouterApi() {
     }
@@ -38,7 +38,7 @@ public class TungstenVRouterApi {
         try {
             return getvRouterApiConnector(host, vrouterPort).addPort(port);
         } catch (IOException ex) {
-            logger.error("Fail to add vrouter port : " + ex.getMessage());
+            LOGGER.error("Fail to add vrouter port : " + ex.getMessage());
             return false;
         }
     }
