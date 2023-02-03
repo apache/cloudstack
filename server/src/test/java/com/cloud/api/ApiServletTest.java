@@ -330,6 +330,7 @@ public class ApiServletTest {
         Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
         Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(true);
+        Mockito.when(userAccount.getSource()).thenReturn(User.Source.UNKNOWN);
 
         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
         Assert.assertEquals(false, result);
@@ -344,6 +345,7 @@ public class ApiServletTest {
 
         Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+        Mockito.when(userAccount.getSource()).thenReturn(User.Source.UNKNOWN);
         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
 
         ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
@@ -363,6 +365,7 @@ public class ApiServletTest {
 
         Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+        Mockito.when(userAccount.getSource()).thenReturn(User.Source.UNKNOWN);
         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
 
         ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
@@ -375,6 +378,25 @@ public class ApiServletTest {
 
         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
         Assert.assertEquals(false, result);
+    }
+
+    @Test
+    public void testSkip2FAcheckForUserUsingLDAPorSAML() {
+        servlet.accountMgr = accountMgr;
+        HttpSession cuurentSession = Mockito.mock(HttpSession.class);
+        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
+
+        Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+        Mockito.when(userAccount.getSource()).thenReturn(User.Source.LDAP);
+
+        boolean result = servlet.skip2FAcheckForUser(cuurentSession);
+        Assert.assertEquals(true, result);
+
+        Mockito.when(userAccount.getSource()).thenReturn(User.Source.SAML2);
+
+        result = servlet.skip2FAcheckForUser(cuurentSession);
+        Assert.assertEquals(true, result);
     }
 
     @Test

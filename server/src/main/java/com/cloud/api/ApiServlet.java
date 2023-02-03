@@ -375,6 +375,17 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    private boolean checkIfAuthenticatorIsOf2FA(String command) {
+        boolean verify2FA = false;
+        APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
+        if (apiAuthenticator != null && apiAuthenticator.getAPIType().equals(APIAuthenticationType.LOGIN_2FA_API)) {
+            verify2FA = true;
+        } else {
+            verify2FA = false;
+        }
+        return verify2FA;
+    }
+
     protected boolean skip2FAcheckForAPIs(String command) {
         boolean skip2FAcheck = false;
 
@@ -396,15 +407,19 @@ public class ApiServlet extends HttpServlet {
             skip2FAcheck = true;
         } else {
             UserAccount userAccount = accountMgr.getUserAccountById(userId);
-            boolean is2FAenabled = userAccount.isUser2faEnabled();
-            if (is2FAenabled) {
-                skip2FAcheck = false;
+            if (userAccount.getSource().equals(User.Source.LDAP) || userAccount.getSource().equals(User.Source.SAML2)) {
+                skip2FAcheck = true;
             } else {
-                boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()));
-                if (is2FAmandated) {
+                boolean is2FAenabled = userAccount.isUser2faEnabled();
+                if (is2FAenabled) {
                     skip2FAcheck = false;
                 } else {
-                    skip2FAcheck = true;
+                    boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()));
+                    if (is2FAmandated) {
+                        skip2FAcheck = false;
+                    } else {
+                        skip2FAcheck = true;
+                    }
                 }
             }
         }
