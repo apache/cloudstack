@@ -26,8 +26,19 @@ CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'KVM', 'default',
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'KVM', 'default', 'Red Hat Enterprise Linux 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'KVM', 'default', 'Rocky Linux 9');
 
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.1.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.1.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.1.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.1.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.2.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.2.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.2.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.2.0', 'otherLinux64Guest');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS 9', 'VMware', '7.0.3.0', 'centos9_64Guest');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.3.0', 'rhel9_64Guest,');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
