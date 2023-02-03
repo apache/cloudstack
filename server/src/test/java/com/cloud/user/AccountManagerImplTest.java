@@ -813,8 +813,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl.enableTwoFactorAuthentication(userId, "totp");
     }
 
-    @Test(expected = InvalidParameterValueException.class)
-    public void testEnableUserTwoFactorAuthenticationWhenProviderNameIsNull() {
+    @Test
+    public void testEnableUserTwoFactorAuthenticationWhenProviderNameIsNullExpectedDefaultProviderTOTP() {
         Long userId = 1L;
 
         UserAccountVO userAccount = Mockito.mock(UserAccountVO.class);
@@ -826,10 +826,20 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
-
         Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
 
-        accountManagerImpl.enableTwoFactorAuthentication(userId, null);
+        UserTwoFactorAuthenticator totpProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
+        Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.containsKey("totp")).thenReturn( true);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.get("totp")).thenReturn(totpProvider);
+        AccountManagerImpl.userTwoFactorAuthenticationProvidersMap = userTwoFactorAuthenticationProvidersMap;
+        Mockito.when(totpProvider.setup2FAKey(userAccount)).thenReturn("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
+        Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
+        Mockito.when(userDaoMock.update(userId, userVoMock)).thenReturn(true);
+
+        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.enableTwoFactorAuthentication(userId, null);
+
+        Assert.assertEquals("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL", response.getSecretCode());
     }
 
     @Test
@@ -847,12 +857,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
         Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
 
-        UserTwoFactorAuthenticator googleProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
+        UserTwoFactorAuthenticator totpProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
         Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
         Mockito.when(userTwoFactorAuthenticationProvidersMap.containsKey("totp")).thenReturn( true);
-        Mockito.when(userTwoFactorAuthenticationProvidersMap.get("totp")).thenReturn( googleProvider);
+        Mockito.when(userTwoFactorAuthenticationProvidersMap.get("totp")).thenReturn(totpProvider);
         AccountManagerImpl.userTwoFactorAuthenticationProvidersMap = userTwoFactorAuthenticationProvidersMap;
-        Mockito.when(googleProvider.setup2FAKey(userAccount)).thenReturn("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
+        Mockito.when(totpProvider.setup2FAKey(userAccount)).thenReturn("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
         Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
         Mockito.when(userDaoMock.update(userId, userVoMock)).thenReturn(true);
 

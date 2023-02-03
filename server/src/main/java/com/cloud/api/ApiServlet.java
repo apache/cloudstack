@@ -431,19 +431,26 @@ public class ApiServlet extends HttpServlet {
             Long userId = (Long) session.getAttribute("userid");
             UserAccount userAccount = accountMgr.getUserAccountById(userId);
             boolean is2FAenabled = userAccount.isUser2faEnabled();
+            String keyFor2fa = userAccount.getKeyFor2fa();
+            String providerFor2fa = userAccount.getUser2faProvider();
             String errorMsg;
             if (is2FAenabled) {
-                errorMsg = "Two factor authentication 2FA is enabled but not verified, please verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs";
+                if (org.apache.commons.lang3.StringUtils.isEmpty(keyFor2fa) || org.apache.commons.lang3.StringUtils.isEmpty(providerFor2fa)) {
+                    errorMsg = "Two factor authentication is mandated by admin, user needs to setup 2FA using setupUserTwoFactorAuthentication API and" +
+                            " then verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs. Existing session is invalidated.";
+                } else {
+                    errorMsg = "Two factor authentication 2FA is enabled but not verified, please verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs. Existing session is invalidated.";
+                }
             } else {
                 // when (is2FAmandated) is true
                 errorMsg = "Two factor authentication is mandated by admin, user needs to setup 2FA using setupUserTwoFactorAuthentication API and" +
-                        " then verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs";
+                        " then verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs. Existing session is invalidated.";
             }
             s_logger.error(errorMsg);
 
-            invalidateHttpSession(session, String.format("request verification failed for %s from %s due to %s", userId, remoteAddress.getHostAddress(), errorMsg));
+            invalidateHttpSession(session, String.format("Unable to process the API request for %s from %s due to %s", userId, remoteAddress.getHostAddress(), errorMsg));
             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + errorMsg);
-            final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "two factor authentication is not done", params, responseType);
+            final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to process the API request due to :" + errorMsg, params, responseType);
             HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
             verify2FA = false;
         }

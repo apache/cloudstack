@@ -3271,8 +3271,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (StringUtils.isEmpty(providerName)) {
-            throw new InvalidParameterValueException("Provider name is mandatory to setup 2FA");
+            providerName = userTwoFactorAuthenticationDefaultProvider.valueIn(userAccount.getDomainId());
+            s_logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
         }
+
         UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
         String code = provider.setup2FAKey(userAccount);
         UserVO user = _userDao.createForUpdate();
