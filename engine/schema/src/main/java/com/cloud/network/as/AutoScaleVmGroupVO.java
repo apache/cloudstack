@@ -30,14 +30,16 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "autoscale_vmgroups")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
+public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,6 +60,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
 
     @Column(name = "load_balancer_id")
     private Long loadBalancerId;
+
+    @Column(name = "name")
+    String name;
 
     @Column(name = "min_members", updatable = true)
     private int minMembers;
@@ -85,20 +90,28 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     protected Date created;
 
     @Column(name = "state")
-    private String state;
+    private State state;
 
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
+
+    @Column(name = "next_vm_seq")
+    private long nextVmSeq = 1L;
 
     public AutoScaleVmGroupVO() {
     }
 
     public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId,
-            long accountId, int minMembers, int maxMembers, int memberPort,
-            int interval, Date lastInterval, long profileId, String state) {
+            long accountId, String name, int minMembers, int maxMembers, int memberPort,
+            int interval, Date lastInterval, long profileId, State state) {
 
         uuid = UUID.randomUUID().toString();
         loadBalancerId = lbRuleId;
+        if (StringUtils.isBlank(name)) {
+            this.name = uuid;
+        } else {
+            this.name = name;
+        }
         this.minMembers = minMembers;
         this.maxMembers = maxMembers;
         this.memberPort = memberPort;
@@ -113,7 +126,11 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
 
     @Override
     public String toString() {
-        return new StringBuilder("AutoScaleVmGroupVO[").append("id").append("]").toString();
+        return new StringBuilder("AutoScaleVmGroupVO[").append("id=").append(id)
+                .append("|name=").append(name)
+                .append("|loadBalancerId=").append(loadBalancerId)
+                .append("|profileId=").append(profileId)
+                .append("]").toString();
     }
 
     @Override
@@ -138,6 +155,11 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Override
     public Long getLoadBalancerId() {
         return loadBalancerId;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -174,17 +196,22 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         return removed;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
 
     @Override
-    public String getState() {
+    public State getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(State state) {
         this.state = state;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setMinMembers(int minMembers) {
@@ -225,13 +252,16 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
         return display;
     }
 
-    @Override
-    public Class<?> getEntityType() {
-        return AutoScaleVmGroup.class;
+    public long getNextVmSeq() {
+        return nextVmSeq;
+    }
+
+    public void setNextVmSeq(long nextVmSeq) {
+        this.nextVmSeq = nextVmSeq;
     }
 
     @Override
-    public String getName() {
-        return null;
+    public Class<?> getEntityType() {
+        return AutoScaleVmGroup.class;
     }
 }

@@ -21,8 +21,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Types.XenAPIException;
+
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
 
 public class XcpServerResourceTest extends CitrixResourceBaseTest {
 
@@ -49,5 +53,26 @@ public class XcpServerResourceTest extends CitrixResourceBaseTest {
     @Test
     public void testGetFilesListReturned() {
         testGetPathFilesListReturned();
+    }
+
+    private void testNetworkUsageInternal(String option, String publicIp, String expectedArgs) {
+        String result = citrixResourceBase.networkUsage(null, "10.10.10.10", option, "eth0", publicIp);
+
+        Assert.assertEquals("result", result);
+        Mockito.verify(citrixResourceBase).executeInVR("10.10.10.10", "netusage.sh", expectedArgs);
+    }
+
+    @Test
+    public void testNetworkUsage() {
+        ExecutionResult executionResult = new ExecutionResult(true, "result");
+
+        doReturn(executionResult).when(citrixResourceBase).executeInVR(anyString(), anyString(), anyString());
+
+        testNetworkUsageInternal("get", "", "-g");
+        testNetworkUsageInternal("get", "20.20.20.20", "-g -l 20.20.20.20");
+        testNetworkUsageInternal("create", "", "-c");
+        testNetworkUsageInternal("reset", "", "-r");
+        testNetworkUsageInternal("addVif", "", "-a eth0");
+        testNetworkUsageInternal("deleteVif", "", "-d eth0");
     }
 }

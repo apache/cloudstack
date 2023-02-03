@@ -48,7 +48,6 @@ import com.google.common.base.Preconditions;
 public class MoveUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(MoveUserCmd.class.getName());
 
-    public static final String APINAME = "moveUser";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -93,11 +92,6 @@ public class MoveUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

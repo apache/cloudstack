@@ -55,8 +55,6 @@
             <span v-if="resource.name==='BigSwitchBcf'">{{ $t('label.delete.bigswitchbcf') }}</span>
             <span v-else-if="resource.name==='BrocadeVcs'">{{ $t('label.delete.brocadevcs') }}</span>
             <span v-else-if="resource.name==='NiciraNvp'">{{ $t('label.delete.niciranvp') }}</span>
-            <span v-else-if="resource.name==='F5BigIp'">{{ $t('label.delete.f5') }}</span>
-            <span v-else-if="resource.name==='JuniperSRX'">{{ $t('label.delete.srx') }}</span>
             <span v-else-if="resource.name==='Netscaler'">{{ $t('label.delete.netscaler') }}</span>
             <span v-else-if="resource.name==='Opendaylight'">{{ $t('label.delete.opendaylight.device') }}</span>
             <span v-else-if="resource.name==='PaloAlto'">{{ $t('label.delete.pa') }}</span>
@@ -231,13 +229,6 @@ export default {
           apiName = 'deleteBrocadeVcsDevice'
           confirmation = 'message.confirm.delete.brocadevcs'
           params.vcsdeviceid = record.vcsdeviceid
-          break
-        case 'JuniperSRX':
-          label = 'label.delete.srx'
-          name = record.ipaddress
-          apiName = 'deleteSrxFirewall'
-          confirmation = 'message.confirm.delete.srx'
-          params.fwdeviceid = record.fwdeviceid
           break
         case 'Netscaler':
           label = 'label.delete.netscaler'

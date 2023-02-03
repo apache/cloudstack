@@ -127,7 +127,8 @@ public class Networks {
             }
         },
         UnDecided(null, null),
-        OpenDaylight("opendaylight", String.class);
+        OpenDaylight("opendaylight", String.class),
+        TUNGSTEN("tf", String.class);
 
         private final String scheme;
         private final Class<?> type;
@@ -194,7 +195,7 @@ public class Networks {
         /**
          * converts a String to a BroadcastDomainType
          *
-         * @param scheme convert a string representation to a BroacastDomainType
+         * @param scheme convert a string representation to a BroadcastDomainType
          * @return the value of this
          */
         public static BroadcastDomainType toEnumValue(String scheme) {

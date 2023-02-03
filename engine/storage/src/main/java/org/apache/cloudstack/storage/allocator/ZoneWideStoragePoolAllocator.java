@@ -102,7 +102,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
             }
         }
-        LOGGER.debug(String.format("ZoneWideStoragePoolAllocator is returning [%s] suitable storage pools [%s].", suitablePools.size(), suitablePools));
+        logEndOfSearch(suitablePools);
 
         return suitablePools;
     }

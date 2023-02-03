@@ -32,6 +32,7 @@ public class DettachCommand extends StorageSubSystemCommand {
     private int _storagePort;
     private Map<String, String> params;
     private boolean forced;
+    private long waitDetachDevice;
 
     public DettachCommand(final DiskTO disk, final String vmName) {
         super();
@@ -113,6 +114,14 @@ public class DettachCommand extends StorageSubSystemCommand {
 
     public void setForced(boolean forced) {
         this.forced = forced;
+    }
+
+    public void setWaitDetachDevice(long wait) {
+        this.waitDetachDevice = wait;
+    }
+
+    public long getWaitDetachDevice(){
+        return waitDetachDevice;
     }
 
     @Override

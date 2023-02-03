@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RolePermissionResponse;
@@ -33,12 +32,11 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 
-@APICommand(name = CreateRolePermissionCmd.APINAME, description = "Adds an API permission to a role", responseObject = RolePermissionResponse.class,
+@APICommand(name = "createRolePermission", description = "Adds an API permission to a role", responseObject = RolePermissionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
 public class CreateRolePermissionCmd extends BaseRolePermissionCmd {
-    public static final String APINAME = "createRolePermission";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,11 +57,6 @@ public class CreateRolePermissionCmd extends BaseRolePermissionCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

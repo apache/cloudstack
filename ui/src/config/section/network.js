@@ -40,7 +40,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -123,6 +123,17 @@ export default {
           docHelp: 'adminguide/networking_and_traffic.html#configure-guest-traffic-in-an-advanced-zone',
           listView: true,
           popup: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            const AdvancedZones = store.getters.zones.filter(zone => zone.networktype === 'Advanced')
+            const AdvancedZonesWithoutSG = store.getters.zones.filter(zone => zone.securitygroupsenabled === false)
+            if ((isAdmin() && AdvancedZones && AdvancedZones.length > 0) || (AdvancedZonesWithoutSG && AdvancedZonesWithoutSG.length > 0)) {
+              return true
+            }
+            return false
+          },
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateNetwork.vue')))
         },
         {
@@ -191,7 +202,7 @@ export default {
       permission: ['listVPCs'],
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',
@@ -225,7 +236,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext']
+          args: ['name', 'displaytext', 'publicmtu']
         },
         {
           api: 'restartVPC',

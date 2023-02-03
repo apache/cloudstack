@@ -16,6 +16,13 @@
 // under the License.
 
 <template>
+  <a-alert type="error" v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'hostcontrolstate' in resource && resource.hostcontrolstate !== 'Enabled'">
+    <template #message>
+      <div class="title">
+        {{ $t('message.host.controlstate') }} {{ resource.hostcontrolstate }}. {{ $t('message.host.controlstate.retry') }}
+      </div>
+    </template>
+  </a-alert>
   <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
     <template #description>
       <p v-html="ip6routes" />
@@ -74,6 +81,13 @@
           <div>{{ ipV6Address }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="(item === 'privatemtu' && !['L2', 'Shared'].includes(dataResource['type'])) || (item === 'publicmtu' && dataResource['type'] !== 'L2')">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -128,7 +142,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      return ['ip6routes']
+      return ['ip6routes', 'privatemtu', 'publicmtu']
     },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {

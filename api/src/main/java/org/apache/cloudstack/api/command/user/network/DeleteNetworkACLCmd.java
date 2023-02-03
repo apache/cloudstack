@@ -37,7 +37,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLCmd.class.getName());
-    private static final String s_name = "deletenetworkaclresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -57,11 +56,6 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_ACL_ITEM_DELETE;

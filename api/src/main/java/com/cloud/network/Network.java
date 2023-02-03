@@ -202,6 +202,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);
         //Add ConfigDrive provider
         public static final Provider ConfigDrive = new Provider("ConfigDrive", false);
+        //Add Tungsten Fabric provider
+        public static final Provider Tungsten = new Provider("Tungsten", false);
 
         private final String name;
         private final boolean isExternal;
@@ -285,6 +287,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability NoVlan = new Capability("NoVlan");
         public static final Capability PublicAccess = new Capability("PublicAccess");
         public static final Capability ExtraDhcpOptions = new Capability("ExtraDhcpOptions");
+        public static final Capability VmAutoScaling = new Capability("VmAutoScaling");
 
         private final String name;
 
@@ -492,4 +495,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getIp6Dns2();
 
     Date getCreated();
+
+    Integer getPublicMtu();
+
+    Integer getPrivateMtu();
 }

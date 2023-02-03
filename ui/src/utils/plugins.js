@@ -413,6 +413,7 @@ export const resourceTypePlugin = {
         case 'Role':
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
+        case 'AutoScaleVmGroup':
           return resourceType.toLowerCase()
       }
       return ''
@@ -484,4 +485,21 @@ export const genericUtilPlugin = {
       return regexExp.test(uuid)
     }
   }
+}
+
+export function createPathBasedOnVmType (vmtype, virtualmachineid) {
+  let path = ''
+  switch (vmtype) {
+    case 'ConsoleProxy':
+    case 'SecondaryStorageVm':
+      path = '/systemvm/'
+      break
+    case 'DomainRouter':
+      path = '/router/'
+      break
+    default:
+      path = '/vm/'
+  }
+
+  return path + virtualmachineid
 }

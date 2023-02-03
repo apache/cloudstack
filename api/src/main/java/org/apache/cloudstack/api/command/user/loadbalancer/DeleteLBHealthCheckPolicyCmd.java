@@ -38,7 +38,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLBHealthCheckPolicyCmd.class.getName());
-    private static final String s_name = "deletelbhealthcheckpolicyresponse";
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
@@ -61,11 +60,6 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

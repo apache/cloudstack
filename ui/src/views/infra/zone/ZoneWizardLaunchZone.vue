@@ -161,6 +161,9 @@ export default {
     sgEnabled () {
       return this.prefillContent?.securityGroupsEnabled || false
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
     havingNetscaler () {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
@@ -197,7 +200,8 @@ export default {
         this.stepData.tasks = []
         this.stepData.stepMove = this.stepData.stepMove.filter(item => item.indexOf('createStorageNetworkIpRange') === -1)
       }
-      this.handleSubmit()
+      console.log('step-data', this.stepData)
+      // this.handleSubmit()
     }
   },
   methods: {
@@ -341,6 +345,7 @@ export default {
       params.internaldns1 = this.prefillContent?.internalDns1 || null
       params.internaldns2 = this.prefillContent?.internalDns2 || null
       params.domain = this.prefillContent?.networkDomain || null
+      params.isedge = this.prefillContent?.zoneSuperType === 'Edge' || false
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {
@@ -631,11 +636,11 @@ export default {
 
           try {
             // Advanced SG-disabled zone
-            if (!this.sgEnabled) {
+            if (!this.sgEnabled && !this.isEdgeZone) {
               // ***** VPC Virtual Router ***** (begin) *****
               await this.configVpcVirtualRouter(physicalNetwork)
               // ***** VPC Virtual Router ***** (end) *****
-            } else {
+            } else if (this.sgEnabled && !this.isEdgeZone) {
               this.stepData.physicalNetworkReturned = physicalNetwork
               await this.stepEnableSecurityGroupProvider()
             }
@@ -657,7 +662,7 @@ export default {
       }
     },
     async configOvs (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
+      if (this.isEdgeZone || this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
         return
       }
 
@@ -677,7 +682,7 @@ export default {
       this.stepData.stepMove.push('configOvs' + physicalNetwork.id)
     },
     async configInternalLBVM (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
+      if (this.isEdgeZone || this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
         return
       }
 
@@ -830,7 +835,7 @@ export default {
 
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
-      params.name = this.prefillContent?.podName || null
+      params.name = this.prefillContent?.podName || this.stepData.zoneReturned.type === 'Edge' ? 'Pod-' + this.stepData.zoneReturned.name : null
       params.gateway = this.prefillContent?.podReservedGateway || null
       params.netmask = this.prefillContent?.podReservedNetmask || null
       params.startIp = this.prefillContent?.podReservedStartIp || null
@@ -883,7 +888,7 @@ export default {
       if (
         (this.isBasicZone &&
           (this.havingSG && this.havingEIP && this.havingELB)) ||
-        (this.isAdvancedZone && !this.sgEnabled)) {
+        (this.isAdvancedZone && !this.sgEnabled && !this.isEdgeZone)) {
         this.setStepStatus(STATUS_FINISH)
         this.currentStep++
         this.addStep('message.configuring.public.traffic', 'publicTraffic')
@@ -1213,7 +1218,7 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      let clusterName = this.prefillContent.clusterName
+      let clusterName = this.prefillContent.clusterName || this.stepData.zoneReturned.type === 'Edge' ? 'Cluster-' + this.stepData.zoneReturned.name : null
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null

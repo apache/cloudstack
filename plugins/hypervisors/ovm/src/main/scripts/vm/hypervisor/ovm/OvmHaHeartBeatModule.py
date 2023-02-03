@@ -102,4 +102,3 @@ class OvmHaHeartBeat(object):
             stopOldHeartBeat(pid)
 
         setupHeartBeat()
-

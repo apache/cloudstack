@@ -42,7 +42,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class ResetCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ResetCfgCmd.class.getName());
-    private static final String s_name = "resetconfigurationresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -122,11 +121,6 @@ public class ResetCfgCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

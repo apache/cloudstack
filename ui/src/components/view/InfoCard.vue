@@ -143,8 +143,8 @@
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
             <appstore-outlined />
-            <span v-if="resource.cputotal">{{ resource.cputotal }}</span>
-            <span v-else>{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <span v-else>{{ resource.cputotal }}</span>
           </div>
           <div>
             <span v-if="resource.cpuused">
@@ -317,6 +317,13 @@
             </div>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.loadbalancer">
+          <div class="resource-detail-item__label">{{ $t('label.loadbalancerrule') }}</div>
+          <div class="resource-detail-item__details">
+            <api-outlined />
+            <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.ipaddress">
           <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
           <div class="resource-detail-item__details">
@@ -351,6 +358,13 @@
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.autoscalevmgroupid">
+          <div class="resource-detail-item__label">{{ $t('label.autoscalevmgroupname') }}</div>
+          <div class="resource-detail-item__details">
+            <gold-outlined />
+            <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">
@@ -370,7 +384,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
             <desktop-outlined />
-            <router-link :to="{ path: '/vm/' + resource.virtualmachineid }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
             <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
           </div>
         </div>
@@ -400,6 +414,13 @@
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.publicip">
+          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__details">
+            <gateway-outlined />
+            <router-link :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
@@ -610,7 +631,7 @@
         <a-divider/>
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
-            v-if="$router.resolve('/' + item.name).matched[0].redirect !== '/exception/404'"
+            v-if="(item.show === undefined || item.show(resource)) && $router.resolve('/' + item.name).matched[0].redirect !== '/exception/404'"
             :to="{ name: item.name, query: getRouterQuery(item) }">
             <a-button style="margin-right: 10px">
               <template #icon>
@@ -705,6 +726,7 @@
 
 <script>
 import { api } from '@/api'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
@@ -772,7 +794,10 @@ export default {
     }
   },
   watch: {
-    '$route.fullPath': function () {
+    '$route.fullPath': function (path) {
+      if (path === '/user/login') {
+        return
+      }
       this.getIcons()
     },
     resource: {
@@ -834,6 +859,7 @@ export default {
     }
   },
   methods: {
+    createPathBasedOnVmType: createPathBasedOnVmType,
     updateResourceAdditionalData () {
       if (!this.resource) return
       this.resourceType = this.$route.meta.resourceType

@@ -29,7 +29,6 @@ import javax.inject.Inject;
 @APICommand(name = "quotaEmailTemplateList", responseObject = QuotaEmailTemplateResponse.class, description = "Lists all quota email templates", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaEmailTemplateListCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateListCmd.class);
-    private static final String s_name = "quotaemailtemplatelistresponse";
 
     @Inject
     QuotaResponseBuilder _quotaResponseBuilder;
@@ -53,8 +52,4 @@ public class QuotaEmailTemplateListCmd extends BaseListCmd {
         setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-}

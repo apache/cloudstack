@@ -50,6 +50,8 @@
         <module>affinity-group-processors/explicit-dedication</module>
         <module>affinity-group-processors/host-affinity</module>
         <module>affinity-group-processors/host-anti-affinity</module>
+        <module>affinity-group-processors/non-strict-host-affinity</module>
+        <module>affinity-group-processors/non-strict-host-anti-affinity</module>
 
         <module>alert-handlers/snmp-alerts</module>
         <module>alert-handlers/syslog-alerts</module>
@@ -59,6 +61,7 @@
         <module>api/solidfire-intg-test</module>
 
         <module>backup/dummy</module>
+        <module>backup/networker</module>
 
         <module>ca/root-ca</module>
 
@@ -106,6 +109,7 @@
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
         <module>network-elements/vxlan</module>
+        <module>network-elements/tungsten</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
@@ -165,17 +169,6 @@
         </dependency>
     </dependencies>
     <profiles>
-        <profile>
-            <id>srx</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>network-elements/juniper-srx</module>
-            </modules>
-        </profile>
         <profile>
             <id>vmware</id>
             <activation>

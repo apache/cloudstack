@@ -36,7 +36,6 @@ public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());
 
-    private static final String s_name = "listalertsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -70,11 +69,6 @@ public class ListAlertsCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

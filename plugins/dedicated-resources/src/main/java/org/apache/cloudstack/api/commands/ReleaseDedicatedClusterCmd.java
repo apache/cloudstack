@@ -38,7 +38,6 @@ import com.cloud.user.Account;
 public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedClusterCmd.class.getName());
 
-    private static final String s_name = "releasededicatedclusterresponse";
     @Inject
     DedicatedService dedicatedService;
 
@@ -60,11 +59,6 @@ public class ReleaseDedicatedClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

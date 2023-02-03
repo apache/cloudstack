@@ -78,7 +78,10 @@ import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -216,12 +219,22 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+    @Inject
+    DataCenterDao dataCenterDao;
 
     private int _totalRetries;
     private int _pauseInterval;
     private int snapshotBackupRetries, snapshotBackupRetryInterval;
 
     private ScheduledExecutorService backupSnapshotExecutor;
+
+    protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
+        if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
+            return false;
+        }
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
+        return !DataCenter.Type.Edge.equals(zone.getType());
+    }
 
     @Override
     public String getConfigComponentName() {
@@ -231,7 +244,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
     }
 
     @Override
@@ -330,7 +343,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
 
         if (snapshotStrategy == null) {
-            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+            s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
             String errorMsg = String.format("Revert snapshot command failed for snapshot with id %d, because this command is supported only for KVM hypervisor", snapshotId);
             throw new CloudRuntimeException(errorMsg);
         }
@@ -497,7 +510,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.BACKUP);
             if (snapshotStrategy == null) {
-                throw new CloudRuntimeException("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+                throw new CloudRuntimeException("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
             }
             snapshotInfo = snapshotStrategy.backupSnapshot(snapshotInfo);
 
@@ -598,7 +611,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
 
         if (snapshotStrategy == null) {
-            s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
+            s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
 
             return false;
         }
@@ -815,7 +828,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             for (SnapshotVO snapshot : snapshots) {
                 SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.DELETE);
                 if (snapshotStrategy == null) {
-                    s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshot.getId() + "'");
+                    s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshot.getId() + "'");
                     continue;
                 }
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
@@ -1250,7 +1263,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupSnapToSecondary = BackupSnapshotAfterTakingSnapshot.value() == null || BackupSnapshotAfterTakingSnapshot.value();
+            boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId());
 
             if (backupSnapToSecondary) {
                 backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);
@@ -1262,7 +1275,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-                DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                DataStoreRole dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
                 if (snapshotStoreRef == null) {

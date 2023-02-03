@@ -43,11 +43,10 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = LinkAccountToLdapCmd.APINAME, description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
+@APICommand(name = "linkAccountToLdap", description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
 public class LinkAccountToLdapCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(LinkAccountToLdapCmd.class.getName());
-    public static final String APINAME = "linkAccountToLdap";
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain that is to contain the linked account.")
     private Long domainId;
@@ -101,17 +100,12 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                     LOGGER.debug("ldap user with username " + admin + " is disabled in the given group/ou");
                 }
             }
-            response.setObjectName(APINAME);
+            response.setObjectName(this.getActualCommandName());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (final InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

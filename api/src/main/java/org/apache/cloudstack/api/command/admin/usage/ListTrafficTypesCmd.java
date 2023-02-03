@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTrafficTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypesCmd.class.getName());
-    private static final String s_name = "listtraffictypesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,11 +64,6 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

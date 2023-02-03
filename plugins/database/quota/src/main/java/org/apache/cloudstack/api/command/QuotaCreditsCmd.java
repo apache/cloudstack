@@ -44,7 +44,6 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class);
 
-    private static final String s_name = "quotacreditsresponse";
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which quota credits need to be added")
     private String accountName;
@@ -103,11 +102,6 @@ public class QuotaCreditsCmd extends BaseCmd {
 
     public QuotaCreditsCmd() {
         super();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

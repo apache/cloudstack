@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class RegisterNetscalerControlCenterCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(RegisterNetscalerControlCenterCmd.class.getName());
-    private static final String s_name = "registernetscalercontrolcenterresponse";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;
 
@@ -81,10 +80,6 @@ public class RegisterNetscalerControlCenterCmd extends BaseAsyncCmd {
 
     public static Logger getsLogger() {
         return s_logger;
-    }
-
-    public static String getsName() {
-        return s_name;
     }
 
     public NetscalerLoadBalancerElementService get_netsclarLbService() {
@@ -131,11 +126,6 @@ public class RegisterNetscalerControlCenterCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_NCC_DEVICE_ADD;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

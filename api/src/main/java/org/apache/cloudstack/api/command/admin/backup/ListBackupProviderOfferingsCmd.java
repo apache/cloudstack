@@ -38,12 +38,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListBackupProviderOfferingsCmd.APINAME,
+@APICommand(name = "listBackupProviderOfferings",
         description = "Lists external backup offerings of the provider",
         responseObject = BackupOfferingResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
 public class ListBackupProviderOfferingsCmd extends BaseBackupListCmd {
-    public static final String APINAME = "listBackupProviderOfferings";
 
     @Inject
     private BackupManager backupManager;
@@ -87,8 +86,4 @@ public class ListBackupProviderOfferingsCmd extends BaseBackupListCmd {
         }
     }
 
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
-}

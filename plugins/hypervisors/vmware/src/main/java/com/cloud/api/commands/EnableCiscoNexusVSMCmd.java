@@ -43,7 +43,6 @@ import com.cloud.user.Account;
 public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(EnableCiscoNexusVSMCmd.class.getName());
-    private static final String s_name = "enablecisconexusvsmresponse";
     @Inject
     CiscoNexusVSMElementService _ciscoNexusVSMService;
 
@@ -81,11 +80,6 @@ public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

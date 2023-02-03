@@ -47,9 +47,4 @@ public class SetStaticNatRulesCommand extends NetworkElementCommand {
     public Long getVpcId() {
         return vpcId;
     }
-
-    @Override
-    public int getAnswersCount() {
-        return rules.length;
-    }
 }

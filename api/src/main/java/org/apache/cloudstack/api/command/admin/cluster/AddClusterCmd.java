@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class AddClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
-    private static final String s_name = "addclusterresponse";
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "the cluster name")
     private String clusterName;
@@ -179,11 +178,6 @@ public class AddClusterCmd extends BaseCmd {
 
     public String getHypervisor() {
         return hypervisor;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public String getClusterType() {

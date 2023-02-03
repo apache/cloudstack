@@ -43,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deleteNiciraNvpDevice", responseObject = SuccessResponse.class, description = " delete a nicira nvp device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
-    private static final String s_name = "deleteniciranvpdeviceresponse";
     @Inject
     protected NiciraNvpElementService niciraNvpElementService;
 
@@ -87,11 +86,6 @@ public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

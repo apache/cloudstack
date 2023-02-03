@@ -40,6 +40,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -160,7 +163,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -774,6 +776,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            // delete autoscaling VM groups
+            if (!_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(accountId)) {
+                accountCleanupNeeded = true;
+            }
+
+
             // delete global load balancer rules for the account.
             List<org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
             if (gslbRules != null && !gslbRules.isEmpty()) {
@@ -849,7 +857,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
-                if (!_vmMgr.expunge(vm, callerUserId, caller)) {
+                if (!_vmMgr.expunge(vm)) {
                     s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
@@ -881,6 +889,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
+            }
+
+            // Cleanup tungsten security groups
+            List<SecurityGroupVO> securityGroupList = _securityGroupDao.listByAccountId(accountId);
+            for(SecurityGroupVO securityGroupVO : securityGroupList) {
+                _messageBus.publish(_name, SecurityGroupService.MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, securityGroupVO);
             }
 
             // Cleanup security groups
@@ -2049,7 +2063,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
         if (newAccount.getDomainId() != domainId) {
             // not in scope
-            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in another domain is not supported!");
         }
     }
 

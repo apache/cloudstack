@@ -33,7 +33,7 @@ public class IpAddress {
     private boolean newNic;
     private String nwType;
     private boolean isPrivateGateway;
-
+    private  Integer mtu;
     public IpAddress() {
         // Empty constructor for (de)serialization
     }
@@ -142,4 +142,11 @@ public class IpAddress {
         this.isPrivateGateway = isPrivateGateway;
     }
 
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
 }

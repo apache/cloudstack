@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -118,29 +119,28 @@ public class StorPoolHostListener implements HypervisorHostListener {
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         StoragePoolHostVO poolHost = storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
+        boolean isPoolConnectedToTheHost = poolHost != null;
 
         if (answer == null) {
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
+            removePoolOnHost(poolHost, isPoolConnectedToTheHost);
             throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command" + pool.getId());
         }
 
         if (!answer.getResult()) {
-            if (answer.getDetails() != null) {
-                if (answer.getDetails().equals("objectDoesNotExist")) {
-                    StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
-                    storagePoolDetailsDao.remove(volumeOnPool.getId());
-                    return false;
-                } else if (answer.getDetails().equals("spNotFound")) {
-                    return false;
-                }
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            removePoolOnHost(poolHost, isPoolConnectedToTheHost);
 
+            if (answer.getDetails() != null && isStorPoolVolumeOrStorageNotExistsOnHost(answer)) {
+                deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
+                return false;
             }
             String msg = "Unable to attach storage pool" + poolId + " to the host" + hostId;
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
             throw new CloudRuntimeException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails() +
                 pool.getId());
         }
-
-        StorPoolUtil.spLog("hostConnect: hostId=%d, poolId=%d", hostId, poolId);
 
         StorPoolModifyStoragePoolAnswer mspAnswer = (StorPoolModifyStoragePoolAnswer)answer;
         if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
@@ -155,7 +155,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
             }
         }
 
-        if (poolHost == null) {
+        if (!isPoolConnectedToTheHost) {
             poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
             storagePoolHostDao.persist(poolHost);
         } else {
@@ -164,8 +164,23 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         StorPoolHelper.setSpClusterIdIfNeeded(hostId, mspAnswer.getClusterId(), clusterDao, hostDao, clusterDetailsDao);
 
-        log.info("Connection established between storage pool " + pool + " and host " + hostId);
+        StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
         return true;
+    }
+
+    private boolean isStorPoolVolumeOrStorageNotExistsOnHost(final Answer answer) {
+        return StringUtils.equalsAny(answer.getDetails(), "objectDoesNotExist", "spNotFound");
+    }
+
+    private void deleteVolumeWhenHostCannotConnectPool(SpConnectionDesc conn, StoragePoolDetailVO volumeOnPool) {
+        StorPoolUtil.volumeDelete(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeOnPool.getValue(), true), conn);
+        storagePoolDetailsDao.remove(volumeOnPool.getId());
+    }
+
+    private void removePoolOnHost(StoragePoolHostVO poolHost, boolean isPoolConnectedToTheHost) {
+        if (isPoolConnectedToTheHost) {
+            storagePoolHostDao.remove(poolHost.getId());
+        }
     }
 
     private synchronized StoragePoolDetailVO verifyVolumeIsOnCluster(long poolId, SpConnectionDesc conn, long clusterId) {

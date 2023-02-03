@@ -303,4 +303,3 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         )
 
         return
-

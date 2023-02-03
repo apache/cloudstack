@@ -35,7 +35,6 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSSHKeyPairsCmd.class.getName());
-    private static final String s_name = "listsshkeypairsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -84,9 +83,4 @@ public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
         setResponseObject(response);
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-
-}

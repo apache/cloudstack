@@ -52,8 +52,7 @@ public class AddHostCmdTest extends TestCase {
     public void setUp() {
         resourceService = Mockito.mock(ResourceService.class);
         responseGenerator = Mockito.mock(ResponseGenerator.class);
-        addHostCmd = new AddHostCmd() {
-        };
+        addHostCmd = new AddHostCmd();
     }
 
     @Test

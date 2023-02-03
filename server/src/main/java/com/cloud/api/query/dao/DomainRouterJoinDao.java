@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.network.Networks;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 
 import com.cloud.api.query.vo.DomainRouterJoinVO;
@@ -34,4 +35,6 @@ public interface DomainRouterJoinDao extends GenericDao<DomainRouterJoinVO, Long
     List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr);
 
     List<DomainRouterJoinVO> searchByIds(Long... ids);
+
+    List<DomainRouterJoinVO> getRouterByIdAndTrafficType(Long id, Networks.TrafficType... trafficType);
 }

@@ -197,7 +197,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="isAdmin()" name="tags" ref="tags">
+        <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="tags" ref="tags">
           <template #label>
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
@@ -211,7 +211,7 @@
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
-            v-if="isAdmin()">
+            v-if="isAdmin() || isDomainAdminAllowedToInformTags">
             <a-select-option v-for="(opt) in storageTags" :key="opt">
               {{ opt }}
             </a-select-option>
@@ -301,6 +301,7 @@ import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import store from '@/store'
 
 export default {
   name: 'AddDiskOffering',
@@ -323,7 +324,8 @@ export default {
       zoneLoading: false,
       loading: false,
       disksizestrictness: false,
-      encryptdisk: false
+      encryptdisk: false,
+      isDomainAdminAllowedToInformTags: false
     }
   },
   beforeCreate () {
@@ -388,9 +390,24 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
       }
+      if (this.isDomainAdmin()) {
+        this.checkIfDomainAdminIsAllowedToInformTag()
+        if (this.isDomainAdminAllowedToInformTags) {
+          this.fetchStorageTagData()
+        }
+      }
+    },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     isAdmin () {
       return isAdmin()
+    },
+    checkIfDomainAdminIsAllowedToInformTag () {
+      const params = { id: store.getters.userInfo.accountid }
+      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+        this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
+      })
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0

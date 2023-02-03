@@ -41,7 +41,7 @@
     </scm>
 
     <issueManagement>
-        <system>Github</system>
+        <system>GitHub</system>
         <url>https://github.com/apache/cloudstack/issues</url>
     </issueManagement>
 
@@ -49,7 +49,7 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.systemvm.template.version>4.17.0.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.18.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -72,7 +72,7 @@
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
-        <cs.owasp.dependency-checker-plugin.version>5.3.0</cs.owasp.dependency-checker-plugin.version>
+        <cs.owasp.dependency-checker-plugin.version>7.4.4</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
@@ -86,6 +86,7 @@
 
         <!-- Apache Commons versions -->
         <cs.codec.version>1.15</cs.codec.version>
+        <cs.commons-cli.version>1.5.0</cs.commons-cli.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
         <cs.commons-compress.version>1.21</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
@@ -110,6 +111,7 @@
         <cs.hamcrest.version>1.3</cs.hamcrest.version>
         <cs.junit.version>4.13.2</cs.junit.version>
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
+        <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
         <cs.mockito.version>3.2.4</cs.mockito.version>
         <cs.powermock.version>2.0.5</cs.powermock.version>
@@ -170,9 +172,10 @@
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
+        <cs.tink.version>1.7.0</cs.tink.version>
         <cs.tomcat-embed-core.version>10.0.22</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
-        <cs.vmware.api.version>7.0</cs.vmware.api.version>
+        <cs.vmware.api.version>8.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
@@ -1024,6 +1027,7 @@
                             <exclude>debian/rules</exclude>
                             <exclude>debian/source/format</exclude>
                             <exclude>dist/console-proxy/js/jquery.js</exclude>
+                            <exclude>engine/schema/dist/**</exclude>
                             <exclude>plugins/hypervisors/hyperv/conf/agent.properties</exclude>
                             <exclude>plugins/hypervisors/hyperv/DotNet/ServerResource/**</exclude>
                             <exclude>scripts/installer/windows/acs_license.rtf</exclude>

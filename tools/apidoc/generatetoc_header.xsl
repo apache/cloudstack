@@ -22,7 +22,7 @@ version="1.0">
 <xsl:output method="html" doctype-public="-//W3C//DTD HTML 1.0 Transitional//EN"/>
 <xsl:template match="/">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <link rel= "stylesheet" href="includes/main.css" type="text/css" />
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
