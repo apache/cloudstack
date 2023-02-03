@@ -407,19 +407,15 @@ public class ApiServlet extends HttpServlet {
             skip2FAcheck = true;
         } else {
             UserAccount userAccount = accountMgr.getUserAccountById(userId);
-            if (userAccount.getSource().equals(User.Source.LDAP) || userAccount.getSource().equals(User.Source.SAML2)) {
-                skip2FAcheck = true;
+            boolean is2FAenabled = userAccount.isUser2faEnabled();
+            if (is2FAenabled) {
+                skip2FAcheck = false;
             } else {
-                boolean is2FAenabled = userAccount.isUser2faEnabled();
-                if (is2FAenabled) {
+                boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()));
+                if (is2FAmandated) {
                     skip2FAcheck = false;
                 } else {
-                    boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()));
-                    if (is2FAmandated) {
-                        skip2FAcheck = false;
-                    } else {
-                        skip2FAcheck = true;
-                    }
+                    skip2FAcheck = true;
                 }
             }
         }
