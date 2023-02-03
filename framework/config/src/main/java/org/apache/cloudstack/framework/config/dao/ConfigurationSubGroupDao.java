@@ -14,42 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.framework.config.dao;
 
-<template>
-  <Line
-    :chart-options="chartOptions"
-    :chart-data="chartData"
-    :width="width"
-    :height="height"
-  />
-</template>
+import java.util.List;
 
-<script>
-import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler } from 'chart.js'
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler)
+import com.cloud.utils.db.GenericDao;
 
-export default {
-  name: 'LineChart',
-  components: { Line },
-  props: {
-    chartData: {
-      type: Object,
-      required: true
-    },
-    chartOptions: {
-      type: Object,
-      default: () => {}
-    },
-    width: {
-      type: Number,
-      default: 650
-    },
-    height: {
-      type: Number,
-      default: 250
-    }
-  }
+public interface ConfigurationSubGroupDao extends GenericDao<ConfigurationSubGroupVO, Long> {
+    ConfigurationSubGroupVO findByName(String name);
+    ConfigurationSubGroupVO startsWithName(String name);
+    ConfigurationSubGroupVO findByKeyword(String keyword);
+    ConfigurationSubGroupVO findByNameAndGroup(String name, Long groupId);
+    List<ConfigurationSubGroupVO> findByGroup(Long groupId);
 }
-</script>

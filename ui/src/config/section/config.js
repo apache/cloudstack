@@ -26,7 +26,9 @@ export default {
       title: 'label.global.settings',
       icon: 'setting-outlined',
       permission: ['listConfigurations'],
-      columns: ['name', 'description', 'category', 'value', 'actions']
+      listView: true,
+      popup: true,
+      component: () => import('@/views/setting/ConfigurationTab.vue')
     },
     {
       name: 'ldapsetting',

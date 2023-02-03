@@ -166,6 +166,12 @@ public class QuotaManagerImplTest {
                    expected = 5.5555556;
                    break;
 
+               case BYTES:
+               case IOPS:
+                   //The value 4000.0 is referent to the calculation ( raw usage * tariffs values ).
+                   expected = 4000.0;
+                   break;
+
                default:
                    break;
            }

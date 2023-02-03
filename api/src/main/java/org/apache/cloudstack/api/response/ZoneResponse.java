@@ -141,6 +141,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "The maximum value the MTU can have on the VR's public interfaces", since = "4.18.0")
     private Integer routerPublicInterfaceMaxMtu;
 
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "the type of the zone - core or edge", since = "4.18.0")
+    String type;
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -351,5 +355,13 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public void setRouterPublicInterfaceMaxMtu(Integer routerPublicInterfaceMaxMtu) {
         this.routerPublicInterfaceMaxMtu = routerPublicInterfaceMaxMtu;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
     }
 }

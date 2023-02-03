@@ -128,6 +128,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC network belongs to")
     private Long vpcId;
 
+    @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID, type = CommandType.STRING, description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
+
     @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
 
@@ -255,6 +258,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Long getAssociatedNetworkId() {
         return associatedNetworkId;
+    }
+
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
     }
 
     @Override

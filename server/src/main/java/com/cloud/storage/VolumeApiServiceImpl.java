@@ -1487,11 +1487,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            if (userVm != null) {
+            if (Volume.Type.ROOT.equals(volume.getVolumeType()) && userVm != null) {
                 UserVmDetailVO userVmDetailVO = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
                 if (userVmDetailVO != null) {
                     userVmDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
                     userVmDetailsDao.update(userVmDetailVO.getId(), userVmDetailVO);
+                } else {
+                    UserVmDetailVO detailVO = new UserVmDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(newSize/ GiB_TO_BYTES), true);
+                    userVmDetailsDao.persist(detailVO);
                 }
             }
 
@@ -4353,7 +4356,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             HypervisorType hypervisorType = vm.getHypervisorType();
             if (hypervisorType != null && CollectionUtils.isNotEmpty(supportingDefaultHV) && supportingDefaultHV.contains(hypervisorType)) {
-                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, "default");
+                String hwVersion = getMinimumHypervisorVersionInDatacenter(vm.getDataCenterId(), hypervisorType);
+                maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(hypervisorType, hwVersion);
             }
         }
         if (maxDataVolumesSupported == null || maxDataVolumesSupported.intValue() <= 0) {
@@ -4363,6 +4367,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return maxDataVolumesSupported.intValue();
+    }
+
+    protected String getMinimumHypervisorVersionInDatacenter(long datacenterId, HypervisorType hypervisorType) {
+        String defaultHypervisorVersion = "default";
+        if (hypervisorType == HypervisorType.Simulator) {
+            return defaultHypervisorVersion;
+        }
+        List<String> hwVersions = _hostDao.listOrderedHostsHypervisorVersionsInDatacenter(datacenterId, hypervisorType);
+        String minHwVersion = CollectionUtils.isNotEmpty(hwVersions) ? hwVersions.get(0) : defaultHypervisorVersion;
+        return StringUtils.isBlank(minHwVersion) ? defaultHypervisorVersion : minHwVersion;
     }
 
     private Long getDeviceId(UserVmVO vm, Long deviceId) {
