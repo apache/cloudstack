@@ -290,7 +290,7 @@ class TestNetworkManagement(cloudstackTestCase):
 
         self.cleanup.append(self.network_offering)
 
-    @attr(tags=["adeancedsg"], required_hardware="false")
+    @attr(tags=["adeancedsg", "simulator"], required_hardware="false")
     def test_03_create_network_with_empty_displayText(self):
         """Create Shared network with empty displayText
            and verify value of displayText after network
