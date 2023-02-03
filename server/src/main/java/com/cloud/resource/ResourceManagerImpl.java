@@ -1774,12 +1774,60 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return hostInMaintenance;
     }
 
-    private void updateHostAllocationState(HostVO host, String allocationState) throws NoTransitionException {
+    private ResourceState.Event getResourceEventFromAllocationStateString(String allocationState) {
         final ResourceState.Event resourceEvent = ResourceState.Event.toEvent(allocationState);
         if (resourceEvent != ResourceState.Event.Enable && resourceEvent != ResourceState.Event.Disable) {
-            throw new CloudRuntimeException(String.format("Invalid allocation state: %s, " +
+            throw new InvalidParameterValueException(String.format("Invalid allocation state: %s, " +
                     "only Enable/Disable are allowed", allocationState));
         }
+        return resourceEvent;
+    }
+
+    private void handleAutoEnableDisableKVMHost(boolean autoEnableDisableKVMSetting,
+                                                boolean isUpdateFromHostHealthCheck,
+                                                HostVO host, DetailVO hostDetail,
+                                                ResourceState.Event resourceEvent) {
+        if (autoEnableDisableKVMSetting) {
+            if (!isUpdateFromHostHealthCheck && hostDetail != null &&
+                    !Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Enable) {
+                hostDetail.setValue(Boolean.TRUE.toString());
+                _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+            } else if (!isUpdateFromHostHealthCheck && Boolean.parseBoolean(hostDetail.getValue())
+                    && resourceEvent == ResourceState.Event.Disable) {
+                s_logger.info(String.format("The setting %s is enabled but the host %s is manually set into %s state," +
+                                "ignoring future auto enabling of the host based on health check results",
+                        AgentManager.EnableKVMAutoEnableDisable.key(), host.getName(), resourceEvent));
+                hostDetail.setValue(Boolean.FALSE.toString());
+                _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+            } else if (isUpdateFromHostHealthCheck && hostDetail == null) {
+                hostDetail = new DetailVO(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST, Boolean.TRUE.toString());
+                _hostDetailsDao.persist(hostDetail);
+            }
+        }
+    }
+    private void updateHostAllocationState(HostVO host, String allocationState,
+                                           boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+        boolean autoEnableDisableKVMSetting = AgentManager.EnableKVMAutoEnableDisable.valueIn(host.getClusterId()) &&
+                host.getHypervisorType() == HypervisorType.KVM;
+        ResourceState.Event resourceEvent = getResourceEventFromAllocationStateString(allocationState);
+        DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST);
+
+        if ((host.getResourceState() == ResourceState.Enabled && resourceEvent == ResourceState.Event.Enable) ||
+                (host.getResourceState() == ResourceState.Disabled && resourceEvent == ResourceState.Event.Disable)) {
+            s_logger.info(String.format("The host %s is already on the allocated state", host.getName()));
+            return;
+        }
+
+        if (autoEnableDisableKVMSetting && isUpdateFromHostHealthCheck && hostDetail != null &&
+                !Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Enable) {
+            s_logger.debug(String.format("The setting %s is enabled and the health check succeeds on the host, " +
+                            "but the host has been manually disabled previously, ignoring auto enabling",
+                    AgentManager.EnableKVMAutoEnableDisable.key()));
+            return;
+        }
+
+        handleAutoEnableDisableKVMHost(autoEnableDisableKVMSetting, isUpdateFromHostHealthCheck, host,
+                hostDetail, resourceEvent);
 
         resourceStateTransitTo(host, resourceEvent, _nodeId);
     }
@@ -1831,11 +1879,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags());
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), false);
     }
 
-    private Host updateHost(Long hostId, String name, Long guestOSCategoryId,
-                            String allocationState, String url, List<String> hostTags) throws NoTransitionException {
+    private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
+                            String url, List<String> hostTags, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -1843,7 +1891,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (StringUtils.isNotBlank(allocationState)) {
-            updateHostAllocationState(host, allocationState);
+            updateHostAllocationState(host, allocationState, isUpdateFromHostHealthCheck);
         }
 
         if (StringUtils.isNotBlank(name)) {
@@ -1872,8 +1920,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host updateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException {
-        return updateHost(hostId, null, null, allocationState, null, null);
+    public Host autoUpdateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException {
+        return updateHost(hostId, null, null, allocationState, null, null, true);
     }
 
     @Override

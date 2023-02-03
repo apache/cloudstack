@@ -1449,7 +1449,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     hostHealthCheckResult ? "succeeds" : "fails",
                     hostHealthCheckResult ? "enabling" : "disabling",
                     host.getName()));
-            _resourceMgr.updateHostAllocationState(hostId, allocationState);
+            _resourceMgr.autoUpdateHostAllocationState(hostId, allocationState);
         } catch (NoTransitionException e) {
             s_logger.error(String.format("Cannot Auto %s host: %s", allocationState, host.getName()), e);
         }

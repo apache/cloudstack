@@ -74,7 +74,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public Host updateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException {
+    public Host autoUpdateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException {
         return null;
     }
 

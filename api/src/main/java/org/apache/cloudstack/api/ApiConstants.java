@@ -1010,6 +1010,7 @@ public class ApiConstants {
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
+    public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

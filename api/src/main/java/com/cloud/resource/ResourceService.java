@@ -49,7 +49,7 @@ public interface ResourceService {
      */
     Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
 
-    Host updateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException;
+    Host autoUpdateHostAllocationState(Long hostId, String allocationState) throws NoTransitionException;
 
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 
