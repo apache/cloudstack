@@ -19,6 +19,30 @@
 -- Schema upgrade from 4.17.2.0 to 4.18.0.0
 --;
 
+-- Add el9 guest OS mappings
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'KVM', 'default', 'AlmaLinux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS 9', 'KVM', 'default', 'CentOS 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'KVM', 'default', 'Oracle Linux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'KVM', 'default', 'Red Hat Enterprise Linux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'KVM', 'default', 'Rocky Linux 9');
+
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.1.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.1.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.1.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.1.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.2.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.2.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.2.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.2.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Oracle Linux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Red Hat Enterprise Linux 9', 'VMware', '7.0.3.0', 'rhel9_64Guest,');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'VMware', '7.0.3.0', 'otherLinux64Guest');
+
 -- Add support for VMware 8.0 and 8.0a (8.0.0.1)
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0', 1024, 0, 59, 64, 1, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.1', 1024, 0, 59, 64, 1, 1);
@@ -1493,3 +1517,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`console_session` (
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 2, 'assignVolume', 'ALLOW');
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`) VALUES (UUID(), 3, 'assignVolume', 'ALLOW');
 
+-- Increases the precision of the column `quota_used` from 15 to 20, keeping the scale of 8.
+
+ALTER TABLE `cloud_usage`.`quota_usage` MODIFY COLUMN quota_used decimal(20,8) unsigned NOT NULL;
