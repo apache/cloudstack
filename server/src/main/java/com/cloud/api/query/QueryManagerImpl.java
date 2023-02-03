@@ -132,6 +132,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -617,7 +618,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ssc.addOr("email", Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", Op.LIKE, "%" + keyword + "%");
             ssc.addOr("accountName", Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountType", Op.LIKE, "%" + keyword + "%");
+            if (EnumUtils.isValidEnum(Account.Type.class, keyword.toString().toUpperCase())) {
+                ssc.addOr("accountType", Op.EQ, EnumUtils.getEnum(Account.Type.class, keyword.toString().toUpperCase()));
+            }
 
             sc.addAnd("username", Op.SC, ssc);
         }
