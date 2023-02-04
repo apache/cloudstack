@@ -3482,9 +3482,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
         }
-        return exitCode != 0 && exitCode != 1 ?
-                HealthCheckResult.IGNORE :
-                (exitCode == 0 ? HealthCheckResult.SUCCESS : HealthCheckResult.FAILURE);
+        return retrieveHealthCheckResultFromExitCode(exitCode);
+    }
+
+    private HealthCheckResult retrieveHealthCheckResultFromExitCode(int exitCode) {
+        if (exitCode != 0 && exitCode != 1) {
+            return HealthCheckResult.IGNORE;
+        }
+        return exitCode == 0 ? HealthCheckResult.SUCCESS : HealthCheckResult.FAILURE;
     }
 
     @Override

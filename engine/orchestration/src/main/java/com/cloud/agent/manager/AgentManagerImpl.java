@@ -1250,6 +1250,34 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             super(type, link, data);
         }
 
+        private void processHostHealthCheckResult(Boolean hostHealthCheckResult, long hostId) {
+            if (hostHealthCheckResult == null) {
+                return;
+            }
+            HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                s_logger.error(String.format("Unable to find host with ID: %s", hostId));
+                return;
+            }
+            if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
+                s_logger.debug(String.format("%s is disabled for the cluster %s, cannot process the health check result " +
+                        "received for the host %s", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName()));
+                return;
+            }
+
+            String allocationState = hostHealthCheckResult ? "Enable" : "Disable";
+
+            try {
+                s_logger.info(String.format("Host health check %s, auto %s KVM host: %s",
+                        hostHealthCheckResult ? "succeeds" : "fails",
+                        hostHealthCheckResult ? "enabling" : "disabling",
+                        host.getName()));
+                _resourceMgr.autoUpdateHostAllocationState(hostId, allocationState);
+            } catch (NoTransitionException e) {
+                s_logger.error(String.format("Cannot Auto %s host: %s", allocationState, host.getName()), e);
+            }
+        }
+
         private void processStartupRoutingCommand(StartupRoutingCommand startup, long hostId) {
             if (startup == null) {
                 s_logger.error("Empty StartupRoutingCommand received");
@@ -1443,34 +1471,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } finally {
                 txn.close();
             }
-        }
-    }
-
-    private void processHostHealthCheckResult(Boolean hostHealthCheckResult, long hostId) {
-        if (hostHealthCheckResult == null) {
-            return;
-        }
-        HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            s_logger.error(String.format("Unable to find host with ID: %s", hostId));
-            return;
-        }
-        if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
-            s_logger.debug(String.format("%s is disabled for the cluster %s, cannot process the health check result " +
-                    "received for the host %s", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName()));
-            return;
-        }
-
-        String allocationState = hostHealthCheckResult ? "Enable" : "Disable";
-
-        try {
-            s_logger.info(String.format("Host health check %s, auto %s KVM host: %s",
-                    hostHealthCheckResult ? "succeeds" : "fails",
-                    hostHealthCheckResult ? "enabling" : "disabling",
-                    host.getName()));
-            _resourceMgr.autoUpdateHostAllocationState(hostId, allocationState);
-        } catch (NoTransitionException e) {
-            s_logger.error(String.format("Cannot Auto %s host: %s", allocationState, host.getName()), e);
         }
     }
 
