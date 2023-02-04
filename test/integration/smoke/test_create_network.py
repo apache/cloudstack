@@ -290,7 +290,7 @@ class TestNetworkManagement(cloudstackTestCase):
 
         self.cleanup.append(self.network_offering)
 
-    @attr(tags=["adeancedsg", "simulator"], required_hardware="false")
+    @attr(tags=["adeancedsg", "Simulator"], required_hardware="false")
     def test_03_create_network_with_empty_displayText(self):
         """Create Shared network with empty displayText
            and verify value of displayText after network
@@ -343,7 +343,7 @@ class TestNetworkManagement(cloudstackTestCase):
         self.cleanup.append(network1)
 
         self.assertEqual(
-            network.displayText,
+            network1.displayText,
             self.testdata["shared_network_sg"]["name"],
             msg="displayText does not match name"
         )
@@ -360,13 +360,13 @@ class TestNetworkManagement(cloudstackTestCase):
             domainid=self.account.domainid
         )
 
+        self.cleanup.append(network2)
+
         self.assertNotEqual(
-            network.displayText,
+            network2.displayText,
             self.testdata["shared_network_sg"]["name"],
             msg="displayText does not match name"
         )
-
-        self.cleanup.append(network2)
 
         return
 

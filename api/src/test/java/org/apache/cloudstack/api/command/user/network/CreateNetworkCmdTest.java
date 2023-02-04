@@ -109,7 +109,6 @@ public class CreateNetworkCmdTest extends TestCase {
     public void testGetDisplayTextWhenEmpty() {
         String description = null;
         String netName = "net-isolated";
-        ReflectionTestUtils.setField(cmd, "displayText", description);
         ReflectionTestUtils.setField(cmd, "name", netName);
         Assert.assertEquals(cmd.getDisplayText(), netName);
     }
