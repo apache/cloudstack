@@ -1792,8 +1792,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     !Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Enable) {
                 hostDetail.setValue(Boolean.TRUE.toString());
                 _hostDetailsDao.update(hostDetail.getId(), hostDetail);
-            } else if (!isUpdateFromHostHealthCheck && Boolean.parseBoolean(hostDetail.getValue())
-                    && resourceEvent == ResourceState.Event.Disable) {
+            } else if (!isUpdateFromHostHealthCheck && hostDetail != null &&
+                    Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Disable) {
                 s_logger.info(String.format("The setting %s is enabled but the host %s is manually set into %s state," +
                                 "ignoring future auto enabling of the host based on health check results",
                         AgentManager.EnableKVMAutoEnableDisable.key(), host.getName(), resourceEvent));

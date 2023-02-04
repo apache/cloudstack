@@ -717,6 +717,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         NATIVE, OPENVSWITCH, TUNGSTEN
     }
 
+    protected enum HealthCheckResult {
+        SUCCESS, FAILURE, IGNORE
+    }
+
     protected BridgeType _bridgeType;
 
     protected StorageSubsystemCommandHandler storageHandler;
@@ -3445,9 +3449,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
             pingRoutingCommand = new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
         }
-        Boolean healthCheckResult = getHostHealthCheckResult();
-        if (healthCheckResult != null) {
-            pingRoutingCommand.setHostHealthCheckResult(healthCheckResult);
+        HealthCheckResult healthCheckResult = getHostHealthCheckResult();
+        if (healthCheckResult != HealthCheckResult.IGNORE) {
+            pingRoutingCommand.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
         }
         return pingRoutingCommand;
     }
@@ -3462,23 +3466,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * - Script file is not executable
      * - There are errors when the script is executed (exit codes other than 0 or 1)
      */
-    private Boolean getHostHealthCheckResult() {
+    private HealthCheckResult getHostHealthCheckResult() {
         if (StringUtils.isBlank(hostHealthCheckScriptPath)) {
             s_logger.debug("Host health check script path is not specified");
-            return null;
+            return HealthCheckResult.IGNORE;
         }
         File script = new File(hostHealthCheckScriptPath);
         if (!script.exists() || !script.isFile() || !script.canExecute()) {
             s_logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
                             "reason: %s", hostHealthCheckScriptPath,
                     !script.exists() ? "file does not exist" : "please check file permissions to execute this file"));
-            return null;
+            return HealthCheckResult.IGNORE;
         }
         int exitCode = executeBashScriptAndRetrieveExitValue(hostHealthCheckScriptPath);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
         }
-        return exitCode != 0 && exitCode != 1 ? null : exitCode == 0;
+        return exitCode != 0 && exitCode != 1 ?
+                HealthCheckResult.IGNORE :
+                (exitCode == 0 ? HealthCheckResult.SUCCESS : HealthCheckResult.FAILURE);
     }
 
     @Override
@@ -3520,9 +3526,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
-        Boolean healthCheckResult = getHostHealthCheckResult();
-        if (healthCheckResult != null) {
-            cmd.setHostHealthCheckResult(healthCheckResult);
+        HealthCheckResult healthCheckResult = getHostHealthCheckResult();
+        if (healthCheckResult != HealthCheckResult.IGNORE) {
+            cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
         }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
