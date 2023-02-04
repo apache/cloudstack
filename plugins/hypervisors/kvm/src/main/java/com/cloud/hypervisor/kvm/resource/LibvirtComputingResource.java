@@ -943,14 +943,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
         }
 
-        String healthCheckScriptPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEALTH_CHECK_SCRIPT_PATH);
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(healthCheckScriptPath)) {
-            if (new File(healthCheckScriptPath).exists()) {
-                hostHealthCheckScriptPath = healthCheckScriptPath;
-            } else {
-                s_logger.info(String.format("Unable to find the host health check script at: %s, " +
-                        "discarding it", healthCheckScriptPath));
-            }
+        hostHealthCheckScriptPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEALTH_CHECK_SCRIPT_PATH);
+        if (StringUtils.isNotBlank(hostHealthCheckScriptPath) && !new File(hostHealthCheckScriptPath).exists()) {
+            s_logger.info(String.format("Unable to find the host health check script at: %s, " +
+                    "discarding it", hostHealthCheckScriptPath));
         }
 
         setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
@@ -3449,7 +3445,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
             pingRoutingCommand = new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
         }
-        Boolean healthCheckResult = getHostHealthCheckResult(hostHealthCheckScriptPath);
+        Boolean healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != null) {
             pingRoutingCommand.setHostHealthCheckResult(healthCheckResult);
         }
@@ -3466,8 +3462,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * - Script file is not executable
      * - There are errors when the script is executed (exit codes other than 0 or 1)
      */
-    private Boolean getHostHealthCheckResult(String hostHealthCheckScriptPath) {
-        if (org.apache.commons.lang3.StringUtils.isBlank(hostHealthCheckScriptPath)) {
+    private Boolean getHostHealthCheckResult() {
+        if (StringUtils.isBlank(hostHealthCheckScriptPath)) {
             s_logger.debug("Host health check script path is not specified");
             return null;
         }
@@ -3524,7 +3520,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
-        Boolean healthCheckResult = getHostHealthCheckResult(hostHealthCheckScriptPath);
+        Boolean healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != null) {
             cmd.setHostHealthCheckResult(healthCheckResult);
         }
