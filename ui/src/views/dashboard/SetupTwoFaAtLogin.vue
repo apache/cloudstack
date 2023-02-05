@@ -39,7 +39,6 @@
       layout="vertical">
       <div class="form-layout form-align" v-ctrl-enter="submitPin">
          <a-select
-          :disabled="twoFAenabled === true"
           v-model:value="selectedProvider"
           optionFilterProp="label"
           :filterOption="(input, option) => {
@@ -68,7 +67,7 @@
           </a-select-option>
         </a-select>
         <div :span="24" v-if="selectedProvider">
-          <a-button ref="submit" type="primary" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
+          <a-button ref="submit" type="primary" :disabled="twoFAenabled" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
         </div>
       </div>
       <div v-if="twoFAenabled">
@@ -95,7 +94,7 @@
           <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
             <a-input-password v-model:value="code"/>
             <div :span="24">
-              <a-button ref="submit" type="primary" :disabled="buttonstate" @click="submitPin">{{ $t('label.verify') }}</a-button>
+              <a-button ref="submit" type="primary" :disabled="verifybuttonstate" @click="submitPin">{{ $t('label.verify') }}</a-button>
             </div>
           </a-form>
         </div>
@@ -143,7 +142,7 @@ export default {
       twoFAverified: false,
       providers: [],
       selectedProvider: null,
-      buttonstate: false
+      verifybuttonstate: false
     }
   },
   mounted () {
@@ -161,33 +160,14 @@ export default {
       this.dataUrl = dataUrl
     },
     handleSelectChange (val) {
-      this.selectedProvider = val
-    },
-    setup2FAProvider () {
-      if (!this.twoFAenabled) {
-        var provider
-        if (this.selectedProvider === 'othertotp') {
-          provider = 'totp'
-        } else {
-          provider = this.selectedProvider
-        }
-        api('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
-          this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
-          if (this.selectedProvider === 'totp' || this.selectedProvider === 'othertotp') {
-            this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
-
-            var issuer = 'CloudStack'
-            if (store.getters.twoFaIssuer !== '' && store.getters.twoFaIssuer !== undefined) {
-              issuer = store.getters.twoFaIssuer
-            }
-            this.totpUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
-
-            this.showPin = false
-          }
-          if (this.selectedProvider === 'staticpin') {
-            this.showPin = true
-          }
-          this.twoFAenabled = true
+      if (this.twoFAenabled) {
+        api('setupUserTwoFactorAuthentication', { enable: 'false' }).then(response => {
+          this.pin = ''
+          this.username = ''
+          this.totpUrl = ''
+          this.dataUrl = ''
+          this.showPin = false
+          this.twoFAenabled = false
           this.twoFAverified = false
         }).catch(error => {
           this.$notification.error({
@@ -196,6 +176,40 @@ export default {
           })
         })
       }
+      this.selectedProvider = val
+      this.twoFAenabled = false
+    },
+    setup2FAProvider () {
+      var provider
+      if (this.selectedProvider === 'othertotp') {
+        provider = 'totp'
+      } else {
+        provider = this.selectedProvider
+      }
+      api('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
+        this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
+        if (this.selectedProvider === 'totp' || this.selectedProvider === 'othertotp') {
+          this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
+
+          var issuer = 'CloudStack'
+          if (store.getters.twoFaIssuer !== '' && store.getters.twoFaIssuer !== undefined) {
+            issuer = store.getters.twoFaIssuer
+          }
+          this.totpUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
+
+          this.showPin = false
+        }
+        if (this.selectedProvider === 'staticpin') {
+          this.showPin = true
+        }
+        this.twoFAenabled = true
+        this.twoFAverified = false
+      }).catch(error => {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+        })
+      })
     },
     disable2FAProvider () {
       api('setupUserTwoFactorAuthentication', { enable: false }).then(response => {
@@ -224,7 +238,7 @@ export default {
     },
     submitPin () {
       if (this.code !== null) {
-        this.buttonstate = true
+        this.verifybuttonstate = true
       }
       api('validateUserTwoFactorAuthenticationCode', { codefor2fa: this.code }).then(response => {
         this.$message.success({
