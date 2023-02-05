@@ -44,6 +44,7 @@
             :loading="loading"
             ref="submit"
             type="primary"
+            :disabled="buttonstate"
             class="center-align"
             @click="handleSubmit">{{ $t('label.verify') }}
           </a-button>
@@ -64,7 +65,8 @@ export default {
   name: 'VerifyTwoFa',
   data () {
     return {
-      twoFAresponse: false
+      twoFAresponse: false,
+      buttonstate: false
     }
   },
   created () {
@@ -81,6 +83,9 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+        if (values.code !== null) {
+          this.buttonstate = true
+        }
         api('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code }).then(response => {
           this.twoFAresponse = true
           if (this.twoFAresponse) {

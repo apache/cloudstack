@@ -1151,7 +1151,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
             String issuerFor2FA = AccountManagerImpl.userTwoFactorAuthenticationIssuer.valueIn(userAcct.getDomainId());
             session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(is2faEnabled));
-            session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
+            if (!is2faEnabled) {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
+            } else {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
+            }
             session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
             session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
 

@@ -95,7 +95,7 @@
           <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
             <a-input-password v-model:value="code"/>
             <div :span="24">
-              <a-button ref="submit" type="primary" @click="submitPin">{{ $t('label.verify') }}</a-button>
+              <a-button ref="submit" type="primary" :disabled="buttonstate" @click="submitPin">{{ $t('label.verify') }}</a-button>
             </div>
           </a-form>
         </div>
@@ -142,7 +142,8 @@ export default {
       twoFAenabled: false,
       twoFAverified: false,
       providers: [],
-      selectedProvider: null
+      selectedProvider: null,
+      buttonstate: false
     }
   },
   mounted () {
@@ -222,6 +223,9 @@ export default {
       })
     },
     submitPin () {
+      if (this.code !== null) {
+        this.buttonstate = true
+      }
       api('validateUserTwoFactorAuthenticationCode', { codefor2fa: this.code }).then(response => {
         this.$message.success({
           content: `${this.$t('label.action.enable.two.factor.authentication')}`,
