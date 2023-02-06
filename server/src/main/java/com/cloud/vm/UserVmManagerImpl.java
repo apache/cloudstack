@@ -7290,7 +7290,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
-            throw new RuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
+            throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
 
         s_logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
