@@ -115,8 +115,6 @@ import net.juniper.tungsten.api.types.VirtualMachineInterface;
 import net.juniper.tungsten.api.types.VirtualNetwork;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.network.tungsten.agent.api.AddTungstenNetworkGatewayToLogicalRouterCommand;
@@ -230,7 +228,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-public class TungstenServiceImpl extends ManagerBase implements TungstenService, Configurable {
+public class TungstenServiceImpl extends ManagerBase implements TungstenService {
     private static final Logger s_logger = Logger.getLogger(TungstenServiceImpl.class);
 
     private static final String NETWORK = "network";
@@ -2539,17 +2537,5 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService,
             }
         }
         return resultList;
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return TungstenServiceImpl.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {
-            TUNGSTEN_ENABLED
-        };
     }
 }
