@@ -121,7 +121,7 @@ export default {
       api: 'setupUserTwoFactorAuthentication',
       icon: 'scan-outlined',
       label: 'label.action.disable.2FA.user.auth',
-      message: 'message.action.disable.2FA.user.auth',
+      message: (record) => { return record.is2famandated === true ? 'message.action.about.mandate.and.disable.2FA.user.auth' : 'message.action.disable.2FA.user.auth' },
       dataView: true,
       groupAction: true,
       popup: true,

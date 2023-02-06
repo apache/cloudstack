@@ -2203,6 +2203,7 @@
 "message.action.destroy.systemvm": "Please confirm that you want to destroy the System VM.",
 "message.action.destroy.volume": "Please confirm that you want to destroy the volume.",
 "message.action.disable.2FA.user.auth": "Please confirm that you want to disable user two factor authentication.",
+"message.action.about.mandate.and.disable.2FA.user.auth": "Two factor authentication is mandated for the user, if this is disabled now user will need to setup two factor authentication again during next login. <br><br>Please confirm that you want to disable.",
 "message.action.disable.cluster": "Please confirm that you want to disable this cluster.",
 "message.action.disable.physical.network": "Please confirm that you want to disable this physical network.",
 "message.action.disable.pod": "Please confirm that you want to disable this pod.",

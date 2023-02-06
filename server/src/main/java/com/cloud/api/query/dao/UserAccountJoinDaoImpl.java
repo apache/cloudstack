@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 
+import com.cloud.user.AccountManagerImpl;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,6 +74,8 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         userResponse.setSecretKey(usr.getSecretKey());
         userResponse.setIsDefault(usr.isDefault());
         userResponse.set2FAenabled(usr.isUser2faEnabled());
+        boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(usr.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(usr.getDomainId()));
+        userResponse.set2FAmandated(is2FAmandated);
 
         // set async job
         if (usr.getJobId() != null) {

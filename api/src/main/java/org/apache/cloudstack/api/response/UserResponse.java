@@ -124,6 +124,10 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @Param(description = "true if user has two factor authentication enabled", since = "4.18.0.0")
     private Boolean is2FAenabled;
 
+    @SerializedName(ApiConstants.IS_2FA_MANDATED)
+    @Param(description = "true if user has two factor authentication is mandated", since = "4.18.0.0")
+    private Boolean is2FAmandated;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -296,5 +300,13 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
 
     public void set2FAenabled(Boolean is2FAenabled) {
         this.is2FAenabled = is2FAenabled;
+    }
+
+    public Boolean getIs2FAmandated() {
+        return is2FAmandated;
+    }
+
+    public void set2FAmandated(Boolean is2FAmandated) {
+        this.is2FAmandated = is2FAmandated;
     }
 }
