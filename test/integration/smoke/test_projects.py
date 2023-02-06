@@ -1820,3 +1820,156 @@ class TestProjectSuspendActivate(cloudstackTestCase):
                 "VM should be in Running state after project activation"
             )
         return
+
+class TestProjectUpdateName(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(
+            TestProjectUpdateName,
+            cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.domain = get_domain(cls.api_client)
+        cls.services['mode'] = cls.zone.networktype
+        cls.template = get_test_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        cls._cleanup = []
+        cls.isGlobalSettingInvalid = False
+        configs = Configurations.list(
+            cls.api_client,
+            name='project.invite.required'
+        )
+
+        if (configs[0].value).lower() != 'false':
+            cls.isGlobalSettingInvalid = True
+            return
+
+
+        cls.account = Account.create(
+            cls.api_client,
+            cls.services["account"],
+            admin=True,
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
+        cls.user = Account.create(
+            cls.api_client,
+            cls.services["account"],
+            admin=True,
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.user)
+
+        # Create project as a domain admin
+        cls.project = Project.create(
+            cls.api_client,
+            cls.services["project"],
+            account=cls.account.name,
+            domainid=cls.account.domainid
+        )
+        cls._cleanup.append(cls.project)
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Cleanup resources used
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        if self.isGlobalSettingInvalid:
+            self.skipTest("'project.invite.required' should be set to false")
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created accounts, domains etc
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
+    def test_10_project_update_name(self):
+        """ Test Verify that name get updated in
+            updateProject API.
+        """
+        # Validate the following
+        # 1. Create a project.
+        # 2. Update Project name
+        # 3. Verify Project name is updated.
+
+        # Create project as a domain admin
+        project = Project.create(
+            self.apiclient,
+            self.services["project"],
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        
+        # Cleanup created project at end of test
+        self.cleanup.append(project)
+        self.debug("Created project with domain admin with ID: %s" %
+                   project.id)
+
+        list_projects_response = Project.list(
+            self.apiclient,
+            id=project.id,
+            listall=True
+        )
+
+        list_project = list_projects_response[0]
+
+        self.assertNotEqual(
+            len(list_projects_response),
+            0,
+            "Check list project response returns a valid project"
+        )
+
+        self.assertEqual(
+            project.name,
+            list_project.name,
+            "Check project name from list response"
+        )
+
+        project_updated = Project.update(
+            self.apiclient,
+            name="newProject"
+        )
+
+        self.assertEqual(
+            project_updated.name,
+            "newProject",
+            "Project name not updated"
+        )
+
+        return
+
+
+
+
+

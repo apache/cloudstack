@@ -656,13 +656,15 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null) {
+                if (displayText != null && name != null) {
                     project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
-
-                if (name != null) {
                     project.setName(name);
+                    _projectDao.update(projectId, project);
+                } else if (name !=null) {
+                    project.setName(name);
+                    _projectDao.update(projectId, project);
+                } else {
+                    project.setDisplayText(displayText);
                     _projectDao.update(projectId, project);
                 }
 
@@ -732,13 +734,15 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null) {
+                if (displayText != null && name != null) {
                     project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
-
-                if (name != null) {
                     project.setName(name);
+                    _projectDao.update(projectId, project);
+                } else if (name !=null) {
+                    project.setName(name);
+                    _projectDao.update(projectId, project);
+                } else {
+                    project.setDisplayText(displayText);
                     _projectDao.update(projectId, project);
                 }
 
