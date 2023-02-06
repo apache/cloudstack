@@ -68,6 +68,15 @@ router.beforeEach((to, from, next) => {
         NProgress.done()
       }
     } else {
+      if (!store.getters.loginFlag) {
+        if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '' && store.getters.twoFaProvider !== undefined) {
+          next({ path: '/verify2FA' })
+          return
+        } else if (store.getters.twoFaEnabled === true && (store.getters.twoFaProvider === '' || store.getters.twoFaProvider === undefined)) {
+          next({ path: '/setup2FA' })
+          return
+        }
+      }
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {
