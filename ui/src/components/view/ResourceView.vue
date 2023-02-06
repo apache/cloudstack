@@ -36,6 +36,7 @@
             :tab="tabs[0].name" />
         </keep-alive>
         <a-tabs
+          v-else
           style="width: 100%"
           :class="[{ 'custom-tab': tabs.length > 9 }]"
           :animated="false"

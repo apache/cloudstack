@@ -144,8 +144,6 @@ export default {
         return
       }
 
-      console.log(123)
-
       const params = {}
       if (args.mapping) {
         Object.keys(args.mapping).map(key => {
