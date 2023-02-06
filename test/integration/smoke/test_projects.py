@@ -1956,20 +1956,16 @@ class TestProjectUpdateName(cloudstackTestCase):
             "Check project name from list response"
         )
 
-        project_updated = Project.update(
+        #update the project with new name
+        project.update(
             self.apiclient,
             name="newProject"
         )
 
         self.assertEqual(
-            project_updated.name,
+            project.name,
             "newProject",
             "Project name not updated"
         )
 
         return
-
-
-
-
-
