@@ -365,10 +365,7 @@ class TestNetworkManagement(cloudstackTestCase):
         self.assertNotEqual(
             network2.displayText,
             self.testdata["shared_network_sg"]["name"],
-            msg="displayText does not match name"
+            msg="displayText and name are equal"
         )
 
         return
-
-
-
