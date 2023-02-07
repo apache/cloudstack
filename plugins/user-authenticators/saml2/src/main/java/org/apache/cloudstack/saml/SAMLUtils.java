@@ -288,7 +288,7 @@ public class SAMLUtils {
         resp.addCookie(new Cookie("isSAML", URLEncoder.encode("true", HttpUtils.UTF_8)));
         resp.addCookie(new Cookie("twoFaEnabled", URLEncoder.encode(loginResponse.is2FAenabled(), HttpUtils.UTF_8)));
         String providerFor2FA = loginResponse.getProviderFor2FA();
-        if (!StringUtils.isNoneEmpty(providerFor2FA)) {
+        if (StringUtils.isNotEmpty(providerFor2FA)) {
             resp.addCookie(new Cookie("twoFaProvider", URLEncoder.encode(loginResponse.getProviderFor2FA(), HttpUtils.UTF_8)));
         }
         String timezone = loginResponse.getTimeZone();
