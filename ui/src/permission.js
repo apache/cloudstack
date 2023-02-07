@@ -75,7 +75,7 @@ router.beforeEach((to, from, next) => {
       const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
       const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
       const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' })
-      if (isSAML === true && !store.getters.loginFlag) {
+      if (isSAML === true && !store.getters.loginFlag && to.path !== '/dashboard') {
         if (twoFaEnabled === true && twoFaProvider !== '' && twoFaProvider !== undefined) {
           next({ path: '/verify2FA' })
           return
