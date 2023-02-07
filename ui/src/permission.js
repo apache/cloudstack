@@ -73,17 +73,16 @@ router.beforeEach((to, from, next) => {
       const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
       const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
       const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' })
-      if (isSAML === true) {
+      if (isSAML === true && !store.getters.loginFlag) {
         if (twoFaEnabled === true && twoFaProvider !== '' && twoFaProvider !== undefined) {
           next({ path: '/verify2FA' })
           return
-        } else if (twoFaEnabled === true && twoFaProvider === '' || twoFaProvider === undefined) {
+        }
+        if (twoFaEnabled === true && (twoFaProvider === '' || twoFaProvider === undefined)) {
           next({ path: '/setup2FA' })
           return
-        } else {
-          store.commit('SET_LOGIN_FLAG', true)
-          return
         }
+        store.commit('SET_LOGIN_FLAG', true)
       }
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})
