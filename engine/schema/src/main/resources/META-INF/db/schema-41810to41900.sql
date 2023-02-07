@@ -19,10 +19,6 @@
 -- Schema upgrade from 4.18.1.0 to 4.19.0.0
 --;
 
--- select initial ip for VPCs --
-ALTER TABLE cloud.network_offerings ADD specify_source_nat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to specify the primary public ip for this network on creation';
-ALTER TABLE cloud.vpc_offerings ADD specify_source_nat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to specify the primary public ip for this vpc on creation';
-
 -- cloud.network_offering_view source
 
 DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
@@ -93,8 +89,8 @@ CREATE VIEW `cloud`.`network_offering_view` AS
 
 -- cloud.vpc_offering_view source
 
-CREATE OR REPLACE
-ALGORITHM = UNDEFINED VIEW `vpc_offering_view` AS
+DROP VIEW IF EXISTS `cloud`.`vpc_offering_view`;
+CREATE VIEW `cloud`.`vpc_offering_view` AS
 select
     `vpc_offerings`.`id` AS `id`,
     `vpc_offerings`.`uuid` AS `uuid`,

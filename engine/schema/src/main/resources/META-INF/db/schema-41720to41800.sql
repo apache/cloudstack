@@ -1576,7 +1576,6 @@ CREATE VIEW `cloud`.`user_view` AS
 DELETE FROM `cloud`.`snapshot_store_ref`
 WHERE store_role = "Primary" AND store_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
 
-
 -- Change usage of VM_DISK_IO_WRITE to use right usage_type
 UPDATE
   `cloud_usage`.`cloud_usage`
