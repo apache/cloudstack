@@ -62,8 +62,10 @@ router.beforeEach((to, from, next) => {
     } else if (to.path === '/verify2FA' || to.path === '/setup2FA') {
       const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
       const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' }) || store.getters.twoFaProvider
       if ((store.getters.twoFaEnabled && !store.getters.loginFlag) || (isSAML === true && twoFaEnabled === true)) {
         console.log('Do Two-factor authentication')
+        store.commit('SET_2FA_PROVIDER', twoFaProvider)
         next()
       } else {
         next({ path: '/dashboard' })
