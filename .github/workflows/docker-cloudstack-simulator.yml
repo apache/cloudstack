@@ -44,6 +44,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set Docker repository name
+        run: echo "DOCKER_REPOSITORY=apache" >> $GITHUB_ENV
+
       - uses: actions/checkout@v3
 
       - name: Set ACS version
@@ -53,7 +56,7 @@ jobs:
         run: echo "TAG=$(if [[ "${ACS_VERSION}" =~ .*-SNAPSHOT ]];then echo ${ACS_VERSION}-$(date +'%Y%m%d-%H%M%S');else echo ${ACS_VERSION};fi)" >> $GITHUB_ENV
 
       - name: Set Docker image FULL TAG
-        run: echo "FULL_TAG=$(if [ "${{ secrets.DOCKER_REGISTRY }}" = "" ];then echo ${{ secrets.DOCKERHUB_USER }}/cloudstack-simulator:${TAG};else echo ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKERHUB_USER }}/cloudstack-simulator:${TAG};fi)" >> $GITHUB_ENV
+        run: echo "FULL_TAG=$(if [ "${{ secrets.DOCKER_REGISTRY }}" = "" ];then echo ${DOCKER_REPOSITORY}/cloudstack-simulator:${TAG};else echo ${{ secrets.DOCKER_REGISTRY }}/${DOCKER_REPOSITORY}/cloudstack-simulator:${TAG};fi)" >> $GITHUB_ENV
 
       - name: Build the Docker image for cloudstack-simulator
         run: cd tools/docker && docker build ../.. --file Dockerfile --tag ${FULL_TAG}
