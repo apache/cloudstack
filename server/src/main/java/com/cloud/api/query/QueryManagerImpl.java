@@ -183,6 +183,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
@@ -3034,6 +3035,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<DiskOfferingJoinVO> zoneSC = sb.create();
             zoneSC.setParameters("zoneId", String.valueOf(zoneId));
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+            }
         }
 
         DiskOffering currentDiskOffering = null;
@@ -3281,6 +3286,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<ServiceOfferingJoinVO> zoneSC = sb.create();
             zoneSC.setParameters("zoneId", String.valueOf(zoneId));
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+            }
         }
 
         if (cpuNumber != null) {
@@ -4080,6 +4089,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
+            options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
+            options.put(VmDetailConstants.IOTHREADS, Arrays.asList("enabled"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {

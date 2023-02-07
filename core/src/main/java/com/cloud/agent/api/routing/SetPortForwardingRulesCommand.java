@@ -40,9 +40,4 @@ public class SetPortForwardingRulesCommand extends NetworkElementCommand {
     public PortForwardingRuleTO[] getRules() {
         return rules;
     }
-
-    @Override
-    public int getAnswersCount() {
-        return rules.length;
-    }
 }

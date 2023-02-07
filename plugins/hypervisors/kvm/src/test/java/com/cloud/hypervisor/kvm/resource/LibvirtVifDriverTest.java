@@ -57,7 +57,7 @@ public class LibvirtVifDriverTest {
     final String FakeVifDriverClassName = "com.cloud.hypervisor.kvm.resource.FakeVifDriver";
     final String NonExistentVifDriverClassName = "com.cloud.hypervisor.kvm.resource.NonExistentVifDriver";
 
-    private VifDriver fakeVifDriver, bridgeVifDriver, ovsVifDriver;
+    private VifDriver fakeVifDriver, bridgeVifDriver, ovsVifDriver, tungstenVifDriver;
 
     final String memInfo = "MemTotal:        5830236 kB\n" +
             "MemFree:          156752 kB\n" +
@@ -77,6 +77,7 @@ public class LibvirtVifDriverTest {
         try {
             bridgeVifDriver = (VifDriver)Class.forName(LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME).newInstance();
             ovsVifDriver = (VifDriver)Class.forName(LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME).newInstance();
+            tungstenVifDriver = (VifDriver)Class.forName(LibvirtComputingResource.DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME).newInstance();
 
             // Instantiating bridge vif driver again as the fake vif driver
             // is good enough, as this is a separate instance
@@ -84,6 +85,7 @@ public class LibvirtVifDriverTest {
 
             doReturn(bridgeVifDriver).when(res).getVifDriverClass(eq(LibvirtComputingResource.DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME), anyMap());
             doReturn(ovsVifDriver).when(res).getVifDriverClass(eq(LibvirtComputingResource.DEFAULT_OVS_VIF_DRIVER_CLASS_NAME), anyMap());
+            doReturn(tungstenVifDriver).when(res).getVifDriverClass(eq(LibvirtComputingResource.DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME), anyMap());
             doReturn(fakeVifDriver).when(res).getVifDriverClass(eq(FakeVifDriverClassName), anyMap());
 
         } catch (final ConfigurationException ex) {

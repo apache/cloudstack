@@ -51,6 +51,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String SystemPrivateGatewayNetworkOfferingWithoutVlan = "System-Private-Gateway-Network-Offering-Without-Vlan";
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public static final String DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE = "DefaultTungstenSharedNetworkOfferingWithSGService";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
@@ -86,6 +87,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     Integer getMulticastRateMbps();
 
     boolean isForVpc();
+
+    boolean isForTungsten();
 
     TrafficType getTrafficType();
 

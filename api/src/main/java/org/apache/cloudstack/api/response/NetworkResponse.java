@@ -203,6 +203,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "the name of the Network associated with this network")
     private String associatedNetworkName;
 
+    @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
+    @Param(description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -546,12 +550,20 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.redundantRouter = redundantRouter;
     }
 
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
+    }
+
     public Boolean getSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
     }
 
     public void setSupportsVmAutoScaling(Boolean supportsVmAutoScaling) {
         this.supportsVmAutoScaling = supportsVmAutoScaling;
+    }
+
+    public void setTungstenVirtualRouterUuid(String tungstenVirtualRouterUuid) {
+        this.tungstenVirtualRouterUuid = tungstenVirtualRouterUuid;
     }
 
     public String getVpcName() {

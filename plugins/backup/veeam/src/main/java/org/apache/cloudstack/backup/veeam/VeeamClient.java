@@ -202,7 +202,7 @@ public class VeeamClient {
         String url = apiURI.toString() + path;
         final HttpPost request = new HttpPost(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
-        request.setHeader("Content-type", "application/xml");
+        request.setHeader("content-type", "application/xml");
         if (StringUtils.isNotBlank(xml)) {
             request.setEntity(new StringEntity(xml));
         }

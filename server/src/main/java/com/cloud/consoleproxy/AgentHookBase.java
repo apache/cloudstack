@@ -110,8 +110,8 @@ public abstract class AgentHookBase implements AgentHook {
                 return new ConsoleAccessAuthenticationAnswer(cmd, false);
             }
 
-            s_logger.debug(String.format("Removing session [%s] as it was just used.", sessionUuid));
-            consoleAccessManager.removeSession(sessionUuid);
+            s_logger.debug(String.format("Acquiring session [%s] as it was just used.", sessionUuid));
+            consoleAccessManager.acquireSession(sessionUuid);
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,6 +33,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,13 +49,14 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.network.tungsten.service.TungstenService;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
-
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -85,8 +89,8 @@ import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
 import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
-import org.libvirt.VcpuInfo;
 import org.libvirt.Secret;
+import org.libvirt.VcpuInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -187,18 +191,17 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.utils.UuidUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
-
-import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+import com.google.gson.Gson;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -295,6 +298,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
+    public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
+
     private String _modifyVlanPath;
     private String _versionstringpath;
     private String _patchScriptPath;
@@ -309,6 +314,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _ovsTunnelPath;
+
+    private String setupTungstenVrouterPath;
+    private String updateTungstenLoadbalancerStatsPath;
+    private String updateTungstenLoadbalancerSslPath;
+    private String _host;
+
     private String _dcId;
     private String _clusterId;
     private final Properties _uefiProperties = new Properties();
@@ -339,10 +350,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private KVMStoragePoolManager _storagePoolMgr;
 
     private VifDriver _defaultVifDriver;
+    private VifDriver tungstenVifDriver;
     private Map<TrafficType, VifDriver> _trafficTypeVifDrivers;
 
     protected static final String DEFAULT_OVS_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.OvsVifDriver";
     protected static final String DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+    protected static final String DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.VRouterVifDriver";
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
 
@@ -416,6 +429,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
+    private final Map<String, DomainBlockStats> vmDiskStats = new ConcurrentHashMap<>();
+
     protected static final HashMap<DomainState, PowerState> s_powerStatesTable;
     static {
         s_powerStatesTable = new HashMap<DomainState, PowerState>();
@@ -446,6 +461,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
     protected LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+
+    private static Gson gson = new Gson();
 
     /**
      * Virsh command to set the memory balloon stats period.<br><br>
@@ -696,7 +713,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected List<String> _cpuFeatures;
 
     protected enum BridgeType {
-        NATIVE, OPENVSWITCH
+        NATIVE, OPENVSWITCH, TUNGSTEN
     }
 
     protected BridgeType _bridgeType;
@@ -783,6 +800,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _publicNic;
     }
 
+    protected String getDefaultTungstenScriptsDir() {
+        return TUNGSTEN_PATH;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         boolean success = super.configure(name, params);
@@ -808,8 +829,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String storageScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.STORAGE_SCRIPTS_DIR);
 
+        String tungstenScriptsDir = (String) params.get("tungsten.scripts.dir");
+        if (tungstenScriptsDir == null) {
+            tungstenScriptsDir = getDefaultTungstenScriptsDir();
+        }
+
         final String bridgeType = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_BRIDGE_TYPE);
-        _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
+        if (bridgeType == null) {
+            _bridgeType = BridgeType.NATIVE;
+        } else {
+            _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
+        }
 
         Boolean dpdk = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED);
         if (_bridgeType == BridgeType.OPENVSWITCH && BooleanUtils.isTrue(dpdk)) {
@@ -910,6 +940,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-vm.sh");
         if (_ovsPvlanVmPath == null) {
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
+        }
+
+        setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
+        if (setupTungstenVrouterPath == null) {
+            throw new ConfigurationException("Unable to find the setup_tungsten_vrouter.sh");
+        }
+
+        updateTungstenLoadbalancerStatsPath = Script.findScript(tungstenScriptsDir, "update_tungsten_loadbalancer_stats.sh");
+        if (updateTungstenLoadbalancerStatsPath == null) {
+            throw new ConfigurationException("Unable to find the update_tungsten_loadbalancer_stats.sh");
+        }
+
+        updateTungstenLoadbalancerSslPath = Script.findScript(tungstenScriptsDir, "update_tungsten_loadbalancer_ssl.sh");
+        if (updateTungstenLoadbalancerSslPath == null) {
+            throw new ConfigurationException("Unable to find the update_tungsten_loadbalancer_ssl.sh");
         }
 
         final boolean isDeveloper = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER);
@@ -1063,8 +1108,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
-        Boolean enableIoUringConfig = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
-        enableIoUring = isIoUringEnabled(enableIoUringConfig);
+        enableIoUring = isIoUringEnabled();
         s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
         final String cpuArchOverride = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_ARCH);
@@ -1437,6 +1481,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 defaultVifDriverName = DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME;
             }
         }
+        tungstenVifDriver = getVifDriverClass(DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME, params);
         _defaultVifDriver = getVifDriverClass(defaultVifDriverName, params);
 
         // Load any per-traffic-type vif drivers
@@ -1511,6 +1556,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
         vifDrivers.add(_defaultVifDriver);
+        if (TungstenService.isTungstenEnabled(Long.parseLong(_dcId))) {
+            vifDrivers.add(tungstenVifDriver);
+        }
         vifDrivers.addAll(_trafficTypeVifDrivers.values());
 
         final ArrayList<VifDriver> vifDriverList = new ArrayList<VifDriver>(vifDrivers);
@@ -2507,7 +2555,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (busT == DiskDef.DiskBus.SCSI) {
-            devices.addDevice(createSCSIDef(vcpus));
+            Map<String, String> details = vmTO.getDetails();
+
+            boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
+            devices.addDevice(createSCSIDef(vcpus, isIothreadsEnabled));
         }
         return devices;
     }
@@ -2545,8 +2596,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Creates Virtio SCSI controller. <br>
      * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
      */
-    protected SCSIDef createSCSIDef(int vcpus) {
-        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus);
+    protected SCSIDef createSCSIDef(int vcpus, boolean isIothreadsEnabled) {
+        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus, isIothreadsEnabled);
     }
 
     protected ConsoleDef createConsoleDef() {
@@ -2673,13 +2724,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setGuestArch(_guestCpuArch != null ? _guestCpuArch : vmTO.getArch());
         guest.setMachineType(isGuestAarch64() ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
-        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
-            guest.setBootType(GuestDef.BootType.UEFI);
-            guest.setBootMode(GuestDef.BootMode.LEGACY);
-            guest.setMachineType(Q35);
-            if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                guest.setBootMode(GuestDef.BootMode.SECURE);
+        if (MapUtils.isNotEmpty(customParams)) {
+            if (customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
+                guest.setBootType(GuestDef.BootType.UEFI);
+                guest.setBootMode(GuestDef.BootMode.LEGACY);
+                guest.setMachineType(Q35);
+                if (SECURE.equalsIgnoreCase(customParams.get(GuestDef.BootType.UEFI.toString()))) {
+                    guest.setBootMode(GuestDef.BootMode.SECURE);
+                }
             }
+            guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
         }
         guest.setUuid(uuid);
         guest.setBootOrder(GuestDef.BootOrder.CDROM);
@@ -2823,6 +2877,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (isUefiEnabled) {
             isSecureBoot = isSecureMode(details.get(GuestDef.BootType.UEFI.toString()));
         }
+
         if (vmSpec.getOs().toLowerCase().contains("window")) {
             isWindowsTemplate =true;
         }
@@ -2913,7 +2968,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setDiscard(DiscardType.UNMAP);
                 }
 
-                setDiskIoDriver(disk);
+                boolean iothreadsEnabled = MapUtils.isNotEmpty(details) && details.containsKey(VmDetailConstants.IOTHREADS);
+                disk.isIothreadsEnabled(iothreadsEnabled);
+
+                String ioDriver =  null;
+
+                if (MapUtils.isNotEmpty(volume.getDetails()) && volume.getDetails().containsKey(VmDetailConstants.IO_POLICY)) {
+                    ioDriver = volume.getDetails().get(VmDetailConstants.IO_POLICY).toUpperCase();
+                } else if (iothreadsEnabled) {
+                    ioDriver = IoDriverPolicy.THREADS.name();
+                }
+
+                setDiskIoDriver(disk, getIoDriverForTheStorage(ioDriver));
 
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
@@ -3055,24 +3121,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
-    protected void setDiskIoDriver(DiskDef disk) {
-        if (enableIoUring) {
-            disk.setIoDriver(DiskDef.IoDriver.IOURING);
+    public void setDiskIoDriver(DiskDef disk, IoDriverPolicy ioDriver) {
+        s_logger.debug(String.format("Disk IO driver policy [%s]. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
+        if (ioDriver != null) {
+            if (IoDriverPolicy.IO_URING != ioDriver) {
+                disk.setIoDriver(ioDriver);
+            } else if (enableIoUring) {
+                disk.setIoDriver(IoDriverPolicy.IO_URING);
+            }
         }
+    }
+
+    public IoDriverPolicy getIoDriverForTheStorage(String ioDriver) {
+        if (ioDriver == null) {
+            return null;
+        }
+        return IoDriverPolicy.valueOf(ioDriver);
     }
 
     /**
      * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
      */
-    private boolean isIoUringEnabled(Boolean enableIoUringConfig) {
+    private boolean isIoUringEnabled() {
         boolean meetRequirements = getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
                 && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING;
         if (!meetRequirements) {
             return false;
         }
-        return enableIoUringConfig != null ?
-                enableIoUringConfig:
-                (isUbuntuHost() || isIoUringSupportedByQemu());
+        return isUbuntuHost() || isIoUringSupportedByQemu();
     }
 
     public boolean isUbuntuHost() {
@@ -4007,7 +4083,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             dm = getDomain(conn, vmName);
 
-            final List<VmDiskStatsEntry> stats = new ArrayList<VmDiskStatsEntry>();
+            final List<VmDiskStatsEntry> stats = new ArrayList<>();
 
             final List<DiskDef> disks = getDisks(conn, vmName);
 
@@ -4019,7 +4095,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 String diskPath = getDiskPathFromDiskDef(disk);
                 if (diskPath != null) {
                     final VmDiskStatsEntry stat = new VmDiskStatsEntry(vmName, diskPath, blockStats.wr_req, blockStats.rd_req, blockStats.wr_bytes, blockStats.rd_bytes);
+                    final DomainBlockStats oldStats = vmDiskStats.get(String.format("%s-%s", vmName, diskPath));
+                    if (oldStats != null) {
+                        final long deltaiord = blockStats.rd_req - oldStats.rd_req;
+                        if (deltaiord > 0) {
+                            stat.setDeltaIoRead(deltaiord);
+                        }
+                        final long deltaiowr = blockStats.wr_req - oldStats.wr_req;
+                        if (deltaiowr > 0) {
+                            stat.setDeltaIoWrite(deltaiowr);
+                        }
+                        final long deltabytesrd = blockStats.rd_bytes - oldStats.rd_bytes;
+                        if (deltabytesrd > 0) {
+                            stat.setDeltaBytesRead(deltabytesrd);
+                        }
+                        final long deltabyteswr = blockStats.wr_bytes - oldStats.wr_bytes;
+                        if (deltabyteswr > 0) {
+                            stat.setDeltaBytesWrite(deltabyteswr);
+                        }
+                    }
                     stats.add(stat);
+                    vmDiskStats.put(String.format("%s-%s", vmName, diskPath), blockStats);
                 }
             }
 
@@ -4127,6 +4223,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     continue;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+                s_logger.info(String.format("STATS_LOG getVm****Stat @ %s: Disk: %s---------------%s", new Date(), disk.getDiskLabel(), gson.toJson(blockStats)));
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;
                 bytes_rd += blockStats.rd_bytes;
@@ -4486,6 +4583,61 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String result = cmd.execute();
         if (result != null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean setupTungstenVRouter(final String oper, final String inf, final String subnet, final String route,
+        final String vrf) {
+        final Script cmd = new Script(setupTungstenVrouterPath, _timeout, s_logger);
+        cmd.add(oper);
+        cmd.add(inf);
+        cmd.add(subnet);
+        cmd.add(route);
+        cmd.add(vrf);
+
+        final String result = cmd.execute();
+        return result == null;
+    }
+
+    public boolean updateTungstenLoadbalancerStats(final String lbUuid, final String lbStatsPort,
+        final String lbStatsUri, final String lbStatsAuth) {
+        final Script cmd = new Script(updateTungstenLoadbalancerStatsPath, _timeout, s_logger);
+        cmd.add(lbUuid);
+        cmd.add(lbStatsPort);
+        cmd.add(lbStatsUri);
+        cmd.add(lbStatsAuth);
+
+        final String result = cmd.execute();
+        return result == null;
+    }
+
+    public boolean updateTungstenLoadbalancerSsl(final String lbUuid, final String sslCertName,
+        final String certificateKey, final String privateKey, final String privateIp, final String port) {
+        final Script cmd = new Script(updateTungstenLoadbalancerSslPath, _timeout, s_logger);
+        cmd.add(lbUuid);
+        cmd.add(sslCertName);
+        cmd.add(certificateKey);
+        cmd.add(privateKey);
+        cmd.add(privateIp);
+        cmd.add(port);
+
+        final String result = cmd.execute();
+        return result == null;
+    }
+
+    public boolean setupTfRoute(final String privateIpAddress, final String fromNetwork, final String toNetwork) {
+        final Script setupTfRouteScript = new Script(_routerProxyPath, _timeout, s_logger);
+        setupTfRouteScript.add("setup_tf_route.py");
+        setupTfRouteScript.add(privateIpAddress);
+        setupTfRouteScript.add(fromNetwork);
+        setupTfRouteScript.add(toNetwork);
+
+        final OutputInterpreter.OneLineParser setupTfRouteParser = new OutputInterpreter.OneLineParser();
+        final String result = setupTfRouteScript.execute(setupTfRouteParser);
+        if (result != null) {
+            s_logger.debug("Failed to execute setup TF Route:" + result);
             return false;
         }
         return true;

@@ -40,6 +40,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -160,7 +163,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -887,6 +889,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
+            }
+
+            // Cleanup tungsten security groups
+            List<SecurityGroupVO> securityGroupList = _securityGroupDao.listByAccountId(accountId);
+            for(SecurityGroupVO securityGroupVO : securityGroupList) {
+                _messageBus.publish(_name, SecurityGroupService.MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, securityGroupVO);
             }
 
             // Cleanup security groups
