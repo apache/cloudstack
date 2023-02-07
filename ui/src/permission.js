@@ -60,7 +60,9 @@ router.beforeEach((to, from, next) => {
       next({ path: '/dashboard' })
       NProgress.done()
     } else if (to.path === '/verify2FA' || to.path === '/setup2FA') {
-      if (store.getters.twoFaEnabled && !store.getters.loginFlag) {
+      const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
+      const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      if ((store.getters.twoFaEnabled && !store.getters.loginFlag) || (isSAML === true && twoFaEnabled === true)) {
         console.log('Do Two-factor authentication')
         next()
       } else {
@@ -68,12 +70,18 @@ router.beforeEach((to, from, next) => {
         NProgress.done()
       }
     } else {
-      if (!store.getters.loginFlag) {
-        if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '' && store.getters.twoFaProvider !== undefined) {
+      const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
+      const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' })
+      if (isSAML === true) {
+        if (twoFaEnabled === true && twoFaProvider !== '' && twoFaProvider !== undefined) {
           next({ path: '/verify2FA' })
           return
-        } else if (store.getters.twoFaEnabled === true && (store.getters.twoFaProvider === '' || store.getters.twoFaProvider === undefined)) {
+        } else if (twoFaEnabled === true && twoFaProvider === '' || twoFaProvider === undefined) {
           next({ path: '/setup2FA' })
+          return
+        } else {
+          store.commit('SET_LOGIN_FLAG', true)
           return
         }
       }
