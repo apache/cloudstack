@@ -441,7 +441,6 @@ export default {
         url: [{ required: true, message: this.$t('message.error.required.input') }],
         file: [{ required: true, message: this.$t('message.error.required.input') }],
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneids: [
           { type: 'array', required: true, message: this.$t('message.error.select') },
           {
