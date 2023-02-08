@@ -910,7 +910,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountService.getUserAccountById(1L)).thenReturn(userAccountVO);
         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(false);
 
-        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L);
+        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -923,7 +923,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(true);
         Mockito.when(userAccountVO.getUser2faProvider()).thenReturn(null);
 
-        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L);
+        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L, false);
     }
 
     @Test
@@ -943,7 +943,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(userTwoFactorAuthenticationProvidersMap.get("staticpin")).thenReturn(staticpinProvider);
         AccountManagerImpl.userTwoFactorAuthenticationProvidersMap = userTwoFactorAuthenticationProvidersMap;
 
-        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L);
+        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L, false);
     }
 
     @Test

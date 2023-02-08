@@ -45,7 +45,7 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
-@APICommand(name = ValidateUserTwoFactorAuthenticationCodeCmd.APINAME, description = "Checks the 2fa code for the user.", requestHasSensitiveInfo = false,
+@APICommand(name = ValidateUserTwoFactorAuthenticationCodeCmd.APINAME, description = "Checks the 2FA code for the user.", requestHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User},
         responseObject = SuccessResponse.class, entityType = {}, since = "4.18.0")
 public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implements APIAuthenticator {
@@ -66,12 +66,21 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
     @Parameter(name = ApiConstants.CODE_FOR_2FA, type = CommandType.STRING, description = "two factor authentication code", required = true)
     private String codeFor2fa;
 
+    @Parameter(name = ApiConstants.SETUP_PHASE, type = CommandType.BOOLEAN, description = "true if this verification is during 2FA setup phase," +
+            "if this is true and verification is failed then 2FA will be disabled")
+    private Boolean setupPhase = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getCodeFor2fa() {
         return codeFor2fa;
+    }
+
+
+    public Boolean getSetupPhase() {
+        return setupPhase;
     }
 
     @Override
@@ -99,28 +108,35 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Code for two factor authentication is required");
         }
 
+        Boolean setupPhase = false;
+        if (params.containsKey(ApiConstants.SETUP_PHASE)) {
+            setupPhase = Boolean.parseBoolean(((String[])params.get(ApiConstants.SETUP_PHASE))[0]);
+        }
+
         final long currentUserId = (Long) session.getAttribute("userid");
         final UserAccount currentUserAccount = _accountService.getUserAccountById(currentUserId);
 
         String serializedResponse = null;
         try {
-            accountManager.verifyUsingTwoFactorAuthenticationCode(codeFor2FA, currentUserAccount.getDomainId(), currentUserId);
+            accountManager.verifyUsingTwoFactorAuthenticationCode(codeFor2FA, currentUserAccount.getDomainId(), currentUserId, setupPhase);
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
             return ApiResponseSerializer.toSerializedString(response, responseType);
         } catch (final CloudAuthenticationException ex) {
-            ApiServlet.invalidateHttpSession(session, "fall through to API key,");
+            if (!setupPhase) {
+                ApiServlet.invalidateHttpSession(session, "fall through to API key,");
+            }
             String msg = String.format("%s", ex.getMessage() != null ?
                     ex.getMessage() :
                     "failed to authenticate user, check if two factor authentication code is correct");
-            auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + msg);
-            serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), msg, params, responseType);
+            auditTrailSb.append(" " + ApiErrorCode.UNAUTHORIZED2FA + " " + msg);
+            serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), msg, params, responseType);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(msg);
             }
         }
         // We should not reach here and if we do we throw an exception
-        throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
+        throw new ServerApiException(ApiErrorCode.UNAUTHORIZED2FA, serializedResponse);
     }
 
     @Override

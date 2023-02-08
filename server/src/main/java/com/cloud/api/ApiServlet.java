@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -460,9 +461,9 @@ public class ApiServlet extends HttpServlet {
             s_logger.error(errorMsg);
 
             invalidateHttpSession(session, String.format("Unable to process the API request for %s from %s due to %s", userId, remoteAddress.getHostAddress(), errorMsg));
-            auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + errorMsg);
-            final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to process the API request due to :" + errorMsg, params, responseType);
-            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            auditTrailSb.append(" " + ApiErrorCode.UNAUTHORIZED2FA + " " + errorMsg);
+            final String serializedResponse = apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), "Unable to process the API request due to :" + errorMsg, params, responseType);
+            HttpUtils.writeHttpResponse(resp, serializedResponse, ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), responseType, ApiServer.JSONcontentType.value());
             verify2FA = false;
         }
 

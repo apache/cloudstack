@@ -240,7 +240,7 @@ export default {
       if (this.code !== null) {
         this.verifybuttonstate = true
       }
-      api('validateUserTwoFactorAuthenticationCode', { codefor2fa: this.code }).then(response => {
+      api('validateUserTwoFactorAuthenticationCode', { codefor2fa: this.code, setupphase: true }).then(response => {
         this.$message.success({
           content: `${this.$t('label.action.enable.two.factor.authentication')}`,
           duration: 2

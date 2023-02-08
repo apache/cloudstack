@@ -3212,7 +3212,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId) {
+    public void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId, Boolean setupPhase) {
 
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountService.getActiveAccountById(caller.getId());
@@ -3228,7 +3228,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         UserTwoFactorAuthenticator userTwoFactorAuthenticator = getUserTwoFactorAuthenticator(domainId, userAccountId);
-        userTwoFactorAuthenticator.check2FA(code, userAccount);
+        try {
+            userTwoFactorAuthenticator.check2FA(code, userAccount);
+        } catch (CloudAuthenticationException e) {
+            if (setupPhase) {
+                disableTwoFactorAuthentication(userAccountId, caller, owner);
+            }
+            throw e;
+        }
     }
 
     @Override
