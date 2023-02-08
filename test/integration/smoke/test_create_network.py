@@ -307,6 +307,7 @@ class TestNetworkManagement(cloudstackTestCase):
             self.apiclient,
             self.testdata["network_offering_shared"]
         )
+        self.cleanup.append( self.network_offering)
 
         NetworkOffering.update(
             self.network_offering,
