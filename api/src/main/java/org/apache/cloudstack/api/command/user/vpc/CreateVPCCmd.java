@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vpc;
 
 import com.cloud.network.NetworkService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -72,7 +73,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the VPC")
     private String vpcName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of " +
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of " +
             "the VPC")
     private String displayText;
 
@@ -137,7 +138,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? vpcName : displayText;
     }
 
     public Long getVpcOffering() {

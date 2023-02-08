@@ -25,6 +25,8 @@ import org.junit.Test;
 
 import org.apache.cloudstack.api.ApiCmdTestUtil;
 import org.apache.cloudstack.api.ApiConstants;
+import org.springframework.test.util.ReflectionTestUtils;
+
 
 public class CreateVPCOfferingCmdTest {
 
@@ -59,6 +61,14 @@ public class CreateVPCOfferingCmdTest {
         CreateVPCOfferingCmd cmd = new CreateVPCOfferingCmd();
         ApiCmdTestUtil.set(cmd, ApiConstants.SERVICE_PROVIDER_LIST, null);
         Assert.assertNull(cmd.getServiceProviders());
+    }
+
+    @Test
+    public void testCreateVPCOfferingWithEmptyDisplayText() {
+        CreateVPCOfferingCmd cmd = new CreateVPCOfferingCmd();
+        String netName = "net-vpc";
+        ReflectionTestUtils.setField(cmd,"vpcOfferingName", netName);
+        Assert.assertEquals(cmd.getDisplayText(), netName);
     }
 
 }
