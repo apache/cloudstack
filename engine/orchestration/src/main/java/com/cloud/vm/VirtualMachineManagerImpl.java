@@ -3741,6 +3741,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new InvalidParameterValueException("Invalid parameter, newServiceOffering can't be null");
         }
 
+        if (ServiceOffering.State.Inactive.equals(newServiceOffering.getState())) {
+            throw new InvalidParameterValueException(String.format("New service offering is inactive: [%s].", newServiceOffering.getUuid()));
+        }
+
         if (!(vmInstance.getState().equals(State.Stopped) || vmInstance.getState().equals(State.Running))) {
             s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
             throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " " + " in state " + vmInstance.getState() +
