@@ -1265,16 +1265,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 return;
             }
 
-            String allocationState = hostHealthCheckResult ? "Enable" : "Disable";
+            ResourceState.Event resourceEvent = hostHealthCheckResult ? ResourceState.Event.Enable : ResourceState.Event.Disable;
 
             try {
                 s_logger.info(String.format("Host health check %s, auto %s KVM host: %s",
                         hostHealthCheckResult ? "succeeds" : "fails",
                         hostHealthCheckResult ? "enabling" : "disabling",
                         host.getName()));
-                _resourceMgr.autoUpdateHostAllocationState(hostId, allocationState);
+                _resourceMgr.autoUpdateHostAllocationState(hostId, resourceEvent);
             } catch (NoTransitionException e) {
-                s_logger.error(String.format("Cannot Auto %s host: %s", allocationState, host.getName()), e);
+                s_logger.error(String.format("Cannot Auto %s host: %s", resourceEvent, host.getName()), e);
             }
         }
 

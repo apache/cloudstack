@@ -272,26 +272,12 @@ class TestAutoEnableDisableHost(cloudstackTestCase):
             cls.hypervisorNotSupported = True
             return
 
-        cls.template = get_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.hypervisor
-        )
-
         cls.logger = logging.getLogger('TestAutoEnableDisableHost')
-
-        cls._cleanup = [
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         super(TestAutoEnableDisableHost, cls).tearDownClass()
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.cleanup = []
-        return
 
     def tearDown(self):
         super(TestAutoEnableDisableHost, self).tearDown()
