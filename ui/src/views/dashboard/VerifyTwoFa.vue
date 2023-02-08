@@ -37,7 +37,7 @@
           <a-input-password
             style="width: 500px"
             v-model:value="form.code"
-            placeholder="xxxxxxx" />
+            placeholder="xxxxxx" />
         </a-form-item>
         <br/>
         <div :span="24" class="center-align top-padding">

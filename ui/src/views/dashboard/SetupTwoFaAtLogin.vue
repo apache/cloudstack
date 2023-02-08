@@ -35,43 +35,61 @@
     <br />
     <h3> {{ $t('label.select.2fa.provider') }} </h3>
     <a-form
+      :ref="formRef"
+      :model="form"
       :rules="rules"
       layout="vertical">
-      <div class="form-layout form-align" v-ctrl-enter="submitPin">
-         <a-select
-          v-model:value="selectedProvider"
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }"
-          style="width: 100%"
-          @change="val => { handleSelectChange(val) }">
-          <a-select-option
-            v-for="(opt) in providers"
-            :key="opt"
-            :value="opt">
-            <div>
-              <span v-if="opt === 'totp'">
-                <google-outlined />
-                Google Authenticator
-              </span>
-              <span v-if="opt === 'othertotp'">
-                <field-time-outlined />
-                Other TOTP Authenticators
-              </span>
-              <span v-if="opt === 'staticpin'">
-                <lock-outlined />
-                Static PIN
-              </span>
-            </div>
-          </a-select-option>
-        </a-select>
-        <div :span="24" v-if="selectedProvider">
-          <a-button ref="submit" type="primary" :disabled="twoFAenabled" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
-        </div>
+      <div style="display: inline-block; width: 100%">
+        <a-form-item v-ctrl-enter="submitPin" ref="selectedProvider" name="selectedProvider">
+           <a-select
+            v-model:value="form.selectedProvider"
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            @change="val => { handleSelectChange(val) }">
+            <a-select-option
+              v-for="(opt) in providers"
+              :key="opt"
+              :value="opt">
+              <div>
+                <span v-if="opt === 'totp'">
+                  <google-outlined />
+                  Google Authenticator
+                </span>
+                <span v-if="opt === 'othertotp'">
+                  <field-time-outlined />
+                  Other TOTP Authenticators
+                </span>
+                <span v-if="opt === 'staticpin'">
+                  <lock-outlined />
+                  Static PIN
+                </span>
+              </div>
+            </a-select-option>
+          </a-select>
+
+          <div v-if="selectedProvider">
+            <a-button ref="submit" type="primary" :disabled="twoFAenabled" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.accept.project.invitation')"
+              icon="check-outlined"
+              size="small"
+              @onClick="setup2FAProvider()"/>
+            <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.decline.invitation')"
+              type="primary"
+              :danger="true"
+              icon="close-outlined"
+              size="small"
+              @onClick="setup2FAProvider()"/>
+          </div>
+        </a-form-item>
       </div>
       <div v-if="twoFAenabled">
-        <div v-if="selectedProvider !== 'staticpin'">
+        <div v-if="form.selectedProvider !== 'staticpin'">
           <br />
           <p v-html="$t('message.two.fa.register.account.login.page')"></p>
           <vue-qrious
@@ -82,27 +100,29 @@
           />
           <div style="text-align: center"> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.setup.key') }}</a></div>
         </div>
-        <div v-if="selectedProvider === 'staticpin'">
+        <div v-if="form.selectedProvider === 'staticpin'">
           <br>
           <p v-html="$t('message.two.fa.staticpin.login.page')"></p>
           <br>
           <div> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.static.pin') }}</a></div>
         </div>
-        <div v-if="selectedProvider">
+        <div v-if="form.selectedProvider">
           <br />
           <h3> {{ $t('label.enter.code') }} </h3>
-          <a-form @finish="submitPin" v-ctrl-enter="submitPin" class="container">
-            <a-input-password v-model:value="code"/>
+          <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
+            <a-input-password
+              v-model:value="form.code"
+              placeholder="xxxxxx" />
             <div :span="24">
               <a-button ref="submit" type="primary" :disabled="verifybuttonstate" @click="submitPin">{{ $t('label.verify') }}</a-button>
             </div>
-          </a-form>
+          </a-form-item>
         </div>
 
         <a-modal
           v-if="showPin"
           :visible="showPin"
-          :title="$t(selectedProvider === 'staticpin'? 'label.two.factor.authentication.static.pin' : 'label.two.factor.authentication.secret.key')"
+          :title="$t(form.selectedProvider === 'staticpin'? 'label.two.factor.authentication.static.pin' : 'label.two.factor.authentication.secret.key')"
           :closable="true"
           :footer="null"
           @cancel="onCloseModal"
@@ -117,6 +137,7 @@
 <script>
 
 import { api } from '@/api'
+import { ref, reactive, toRaw } from 'vue'
 import store from '@/store'
 import VueQrious from 'vue-qrious'
 import eventBus from '@/config/eventBus'
@@ -136,7 +157,6 @@ export default {
       totpUrl: '',
       dataUrl: '',
       pin: '',
-      code: '',
       showPin: false,
       twoFAenabled: false,
       twoFAverified: false,
@@ -149,6 +169,7 @@ export default {
     this.list2FAProviders()
   },
   created () {
+    this.initForm()
     eventBus.on('action-closing', (args) => {
       if (args.action.api === 'setupUserTwoFactorAuthentication' && this.twoFAenabled && !this.twoFAverified) {
         this.disable2FAProvider()
@@ -156,6 +177,13 @@ export default {
     })
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        code: [{ required: true, message: this.$t('message.error.authentication.code') }]
+      })
+    },
     onDataUrlChange (dataUrl) {
       this.dataUrl = dataUrl
     },
@@ -180,34 +208,38 @@ export default {
       this.twoFAenabled = false
     },
     setup2FAProvider () {
-      var provider
-      if (this.selectedProvider === 'othertotp') {
-        provider = 'totp'
-      } else {
-        provider = this.selectedProvider
-      }
-      api('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
-        this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
-        if (this.selectedProvider === 'totp' || this.selectedProvider === 'othertotp') {
-          this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.selectedProvider = values.selectedProvider
+        var provider
+        if (this.selectedProvider === 'othertotp') {
+          provider = 'totp'
+        } else {
+          provider = this.selectedProvider
+        }
+        api('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
+          this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
+          if (this.selectedProvider === 'totp' || this.selectedProvider === 'othertotp') {
+            this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
 
-          var issuer = 'CloudStack'
-          if (store.getters.twoFaIssuer !== '' && store.getters.twoFaIssuer !== undefined) {
-            issuer = store.getters.twoFaIssuer
+            var issuer = 'CloudStack'
+            if (store.getters.twoFaIssuer !== '' && store.getters.twoFaIssuer !== undefined) {
+              issuer = store.getters.twoFaIssuer
+            }
+            this.totpUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
+
+            this.showPin = false
           }
-          this.totpUrl = 'otpauth://totp/' + issuer + ':' + this.username + '?secret=' + this.pin + '&issuer=' + issuer
-
-          this.showPin = false
-        }
-        if (this.selectedProvider === 'staticpin') {
-          this.showPin = true
-        }
-        this.twoFAenabled = true
-        this.twoFAverified = false
-      }).catch(error => {
-        this.$notification.error({
-          message: this.$t('message.request.failed'),
-          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          if (this.selectedProvider === 'staticpin') {
+            this.showPin = true
+          }
+          this.twoFAenabled = true
+          this.twoFAverified = false
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          })
         })
       })
     },
@@ -237,29 +269,43 @@ export default {
       })
     },
     submitPin () {
-      if (this.code !== null) {
-        this.verifybuttonstate = true
-      }
-      api('validateUserTwoFactorAuthenticationCode', { codefor2fa: this.code, setupphase: true }).then(response => {
-        this.$message.success({
-          content: `${this.$t('label.action.enable.two.factor.authentication')}`,
-          duration: 2
-        })
-        this.$notification.destroy()
-        this.$store.commit('SET_COUNT_NOTIFY', 0)
-        this.$store.commit('SET_LOGIN_FLAG', true)
-        this.$router.push({ path: '/dashboard' }).catch(() => {})
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        if (values.code !== null) {
+          this.verifybuttonstate = true
+        }
+        api('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code, setupphase: true }).then(response => {
+          this.$message.success({
+            content: `${this.$t('label.action.enable.two.factor.authentication')}`,
+            duration: 2
+          })
+          this.$notification.destroy()
+          this.$store.commit('SET_COUNT_NOTIFY', 0)
+          this.$store.commit('SET_LOGIN_FLAG', true)
+          this.$router.push({ path: '/dashboard' }).catch(() => {})
 
-        this.twoFAverified = true
-        this.$emit('refresh-data')
-      }).catch(error => {
-        this.$router.push({ path: '/user/login' }).catch(() => {})
-        this.$notification.error({
-          message: this.$t('message.request.failed'),
-          description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
+          this.twoFAverified = true
+          this.$emit('refresh-data')
+        }).catch(() => {
+          this.$store.dispatch('Logout').then(() => {
+            this.$router.replace({ path: '/user/login' })
+          })
+          let countNotify = store.getters.countNotify
+          countNotify++
+          this.$store.commit('SET_COUNT_NOTIFY', countNotify)
+
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.setup.2fa'),
+            duration: 0,
+            onClose: () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              this.$store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
+          })
         })
       })
-      this.closeAction()
     },
     closeAction () {
       this.$emit('close-action')
