@@ -318,6 +318,13 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckIfCanUpgradeFail() {
+        when(serviceOfferingMock.getState()).thenReturn(ServiceOffering.State.Inactive);
+
+        virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
+    }
+
     @Test
     public void isStorageCrossClusterMigrationTestStorageTypeEqualsCluster() {
         Mockito.doReturn(2L).when(storagePoolVoMock).getClusterId();
