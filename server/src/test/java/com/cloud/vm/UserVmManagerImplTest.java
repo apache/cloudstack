@@ -646,7 +646,6 @@ public class UserVmManagerImplTest {
         return newRootDiskOffering;
     }
 
-<<<<<<< HEAD
     private ServiceOfferingVO prepareOfferingsForEncryptionValidation(long diskOfferingId, boolean encryption) {
         ServiceOfferingVO svcOffering = Mockito.mock(ServiceOfferingVO.class);
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
