@@ -171,12 +171,13 @@ export default {
             },
             {
               api: 'removeTungstenFabricNetworkGatewayFromLogicalRouter',
-              icon: 'close',
+              icon: 'close-outlined',
               label: 'label.remove.logical.network',
               dataView: true,
               popup: true,
               fields: [
                 {
+                  label: 'label.network',
                   name: 'networkuuid',
                   required: true,
                   type: 'uuid',

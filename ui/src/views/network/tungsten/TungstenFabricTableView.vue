@@ -226,7 +226,7 @@ export default {
       params.listAll = true
       params.page = this.page
       params.pagesize = this.pageSize
-      params.query = this.searchQuery
+      params.keyword = this.searchQuery
       params.zoneid = this.resource.zoneid
 
       this.itemCount = 0
@@ -384,6 +384,8 @@ export default {
               isFetchData: false
             }
           })
+        }).catch(error => {
+          this.$notifyError(error)
         }).finally(() => {
           this.fetchLoading = false
           this.closeAction()
