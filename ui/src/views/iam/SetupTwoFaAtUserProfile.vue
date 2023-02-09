@@ -17,6 +17,7 @@
 
 <template>
   <div style="width:500px;height=500px">
+    <p v-html="$t('message.two.fa.setup.page')"></p>
     <h3> {{ $t('label.select.2fa.provider') }} </h3>
     <a-form
       :ref="formRef"

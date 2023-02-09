@@ -24,8 +24,8 @@
         class="user-layout-logo"
         alt="logo">
       <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
-      <p v-if="$store.getters.twoFaProvider === 'totp'" style="text-align: center; font-size: 18px;" v-html="$t('message.two.fa.auth.totp')"></p>
-      <p v-if="$store.getters.twoFaProvider === 'staticpin'" style="text-align: center; font-size: 18px;" v-html="$t('message.two.fa.auth.staticpin')"></p>
+      <p v-if="$store.getters.twoFaProvider === 'totp'" style="text-align: center; font-size: 16px;" v-html="$t('message.two.fa.auth.totp')"></p>
+      <p v-if="$store.getters.twoFaProvider === 'staticpin'" style="text-align: center; font-size: 16px;" v-html="$t('message.two.fa.auth.staticpin')"></p>
       <br />
       <a-form
         :ref="formRef"

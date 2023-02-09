@@ -31,7 +31,7 @@
       <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
       <br />
     </a-form>
-    <p style="text-align: center; font-size: 18px;" v-html="$t('message.two.fa.login.page')"></p>
+    <p style="font-size: 16px;" v-html="$t('message.two.fa.login.page')"></p>
     <br />
     <h3> {{ $t('label.select.2fa.provider') }} </h3>
     <a-form
