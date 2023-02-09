@@ -63,16 +63,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestVMDeploymentPlanner,
-                cls
-            ).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestVMDeploymentPlanner, cls).tearDownClass()
 
     def deploy_vm(self, destination_id):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
