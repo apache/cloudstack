@@ -422,6 +422,8 @@ export default {
             isFetchData: false
           }
         })
+      }).catch(error => {
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })

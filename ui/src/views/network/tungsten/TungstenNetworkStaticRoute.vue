@@ -346,6 +346,8 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.actionLoading = false
       })
     },
     onChangePage (page, pageSize) {
