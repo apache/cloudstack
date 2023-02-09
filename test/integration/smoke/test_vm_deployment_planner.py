@@ -56,7 +56,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             cls.services["service_offerings"]["tiny"]
         )
 
-        cls.cleanup = [
+        cls._cleanup = [
             cls.account,
             cls.service_offering
         ]
@@ -69,7 +69,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
                 cls
             ).getClsTestClient().getApiClient()
             # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls.cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
