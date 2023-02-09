@@ -901,7 +901,7 @@ export default {
           dataView: true,
           mapping: {
             policyuuid: {
-              values: (record) => { return record.uuid }
+              value: (record) => { return record.uuid }
             },
             zoneid: {
               value: (record) => { return record.zoneid }

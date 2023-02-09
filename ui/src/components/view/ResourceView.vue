@@ -38,7 +38,6 @@
         <a-tabs
           v-else
           style="width: 100%"
-          :class="[{ 'custom-tab': tabs.length > 9 }]"
           :animated="false"
           :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
@@ -188,10 +187,5 @@ export default {
 }
 </script>
 
-<style lang="less">
-.custom-tab {
-  .ant-tabs-bar {
-    display: grid;
-  }
-}
+<style lang="less" scoped>
 </style>
