@@ -725,10 +725,6 @@ export default {
           slots: { customRender: 'stickiness' }
         },
         {
-          title: this.$t('label.action.health.monitor'),
-          slots: { customRender: 'healthmonitor' }
-        },
-        {
           title: this.$t('label.autoscale'),
           slots: { customRender: 'autoscale' }
         },
@@ -858,6 +854,12 @@ export default {
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
         this.selectedTier = this.tiers.data?.[0]?.id ? this.tiers.data[0].id : null
+        if (this.tiers.data?.[0]?.broadcasturi === 'tf://tf') {
+          this.columns.splice(8, 0, {
+            title: this.$t('label.action.health.monitor'),
+            slots: { customRender: 'healthmonitor' }
+          })
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.tiers.loading = false })
@@ -1694,9 +1696,13 @@ export default {
           })
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.healthMonitorLoading = false
         })
       }).catch((error) => {
         this.monitorRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.healthMonitorLoading = false
       })
     }
   }
