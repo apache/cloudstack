@@ -931,7 +931,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                 final Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.debug("Request expired -- ignoring");
+                    signature = signature.replaceAll("[\n\r]", "_");
+                    apiKey = apiKey.replaceAll("[\n\r]", "_");
+                    s_logger.debug(String.format("Request expired -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
                     return false;
                 }
             }
@@ -978,7 +980,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
 
             if (!equalSig) {
-                s_logger.info("User signature is not equaled to computed signature: " + computedSignature);
+                signature = signature.replaceAll("[\n\r]", "_");
+                s_logger.info(String.format("User signature [%s] is not equaled to computed signature [%s].", signature, computedSignature));
             } else {
                 CallContext.register(user, account);
             }

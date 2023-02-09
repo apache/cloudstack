@@ -154,7 +154,10 @@ public class ConsoleProxyServlet extends HttpServlet {
 
             String cmd = req.getParameter("cmd");
             if (cmd == null || !isValidCmd(cmd)) {
-                s_logger.debug("invalid console servlet command.");
+                if (cmd != null) {
+                    cmd = cmd.replaceAll("[\n\r]", "_");
+                }
+                s_logger.debug(String.format("invalid console servlet command [%s].", cmd));
                 sendResponse(resp, "");
                 return;
             }
@@ -162,7 +165,10 @@ public class ConsoleProxyServlet extends HttpServlet {
             String vmIdString = req.getParameter("vm");
             VirtualMachine vm = _entityMgr.findByUuid(VirtualMachine.class, vmIdString);
             if (vm == null) {
-                s_logger.info("invalid console servlet command vm parameter.");
+                if (vmIdString != null) {
+                    vmIdString = vmIdString.replaceAll("[\n\r]", "_");
+                }
+                s_logger.info(String.format("invalid console servlet command vm parameter[%s].", vmIdString));
                 sendResponse(resp, "");
                 return;
             }
@@ -262,7 +268,10 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         String sid = req.getParameter("sid");
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            s_logger.warn("sid in url does not match stored sid.");
+            if(sid != null) {
+                sid = sid.replaceAll("[\n\r]", "_");
+            }
+            s_logger.warn(String.format("sid [%s] in url does not match stored sid.", sid));
             sendResponse(resp, "failed");
             return;
         }

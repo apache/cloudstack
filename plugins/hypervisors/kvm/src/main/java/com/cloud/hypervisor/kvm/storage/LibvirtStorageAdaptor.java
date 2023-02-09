@@ -1427,8 +1427,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 r.ioCtxDestroy(io);
             } catch (QemuImgException | LibvirtException e) {
-                s_logger.error(String.format("Failed to convert from %s to %s the error was: %s", srcFile != null ? srcFile.getFileName() : null,
-                        destFile != null ? destFile.getFileName() : null, e.getMessage()));
+                String srcFilename = srcFile != null ? srcFile.getFileName() : null;
+                String destFilename = destFile != null ? destFile.getFileName() : null;
+                s_logger.error(String.format("Failed to convert from %s to %s the error was: %s", srcFilename, destFilename, e.getMessage()));
                 newDisk = null;
             } catch (RadosException e) {
                 s_logger.error("A Ceph RADOS operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage());
