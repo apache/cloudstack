@@ -16,29 +16,24 @@
 // under the License.
 <template>
   <div class="center">
-    <a-form>
-      <img
-        v-if="$config.banner"
-        :style="{
-          width: $config.theme['@banner-width'],
-          height: $config.theme['@banner-height']
-        }"
-        :src="$config.banner"
-        class="user-layout-logo"
-        alt="logo">
-      <br />
-      <br />
-      <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
-      <br />
-    </a-form>
-    <p style="font-size: 16px;" v-html="$t('message.two.fa.login.page')"></p>
-    <br />
-    <h3> {{ $t('label.select.2fa.provider') }} </h3>
     <a-form
       :ref="formRef"
       :model="form"
       :rules="rules"
       layout="vertical">
+      <img
+        v-if="$config.banner"
+        :style="{
+          width: $config.theme['@banner-width'],
+          height: $config.theme['@banner-height'],
+        }"
+        :src="$config.banner"
+        class="center-align"
+        alt="logo">
+      <br />
+      <h1 style="text-align: center; font-size: 24px; color: gray"> {{ $t('label.two.factor.authentication') }} </h1>
+    <p style="font-size: 16px;" v-html="$t('message.two.fa.login.page')"></p>
+    <h3> {{ $t('label.select.2fa.provider') }} </h3>
       <a-row :gutter="24">
         <a-col :md="24" :lg="22">
           <a-form-item v-ctrl-enter="submitPin" ref="selectedProvider" name="selectedProvider">
