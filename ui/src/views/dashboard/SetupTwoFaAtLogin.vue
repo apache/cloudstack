@@ -39,55 +39,62 @@
       :model="form"
       :rules="rules"
       layout="vertical">
-      <div style="display: inline-block; width: 100%">
-        <a-form-item v-ctrl-enter="submitPin" ref="selectedProvider" name="selectedProvider">
-           <a-select
-            v-model:value="form.selectedProvider"
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            @change="val => { handleSelectChange(val) }">
-            <a-select-option
-              v-for="(opt) in providers"
-              :key="opt"
-              :value="opt">
-              <div>
-                <span v-if="opt === 'totp'">
-                  <google-outlined />
-                  Google Authenticator
-                </span>
-                <span v-if="opt === 'othertotp'">
-                  <field-time-outlined />
-                  Other TOTP Authenticators
-                </span>
-                <span v-if="opt === 'staticpin'">
-                  <lock-outlined />
-                  Static PIN
-                </span>
-              </div>
-            </a-select-option>
-          </a-select>
+      <a-row :gutter="24">
+        <a-col :md="24" :lg="22">
+          <a-form-item v-ctrl-enter="submitPin" ref="selectedProvider" name="selectedProvider">
+             <a-select
+              v-model:value="form.selectedProvider"
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              @change="val => { handleSelectChange(val) }">
+              <a-select-option
+                v-for="(opt) in providers"
+                :key="opt"
+                :value="opt">
+                <div>
+                  <span v-if="opt === 'totp'">
+                    <google-outlined />
+                    Google Authenticator
+                  </span>
+                  <span v-if="opt === 'othertotp'">
+                    <field-time-outlined />
+                    Other TOTP Authenticators
+                  </span>
+                  <span v-if="opt === 'staticpin'">
+                    <lock-outlined />
+                    Static PIN
+                  </span>
+                </div>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
 
-          <div v-if="selectedProvider">
-            <a-button ref="submit" type="primary" :disabled="twoFAenabled" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.accept.project.invitation')"
-              icon="check-outlined"
-              size="small"
-              @onClick="setup2FAProvider()"/>
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.decline.invitation')"
-              type="primary"
-              :danger="true"
-              icon="close-outlined"
-              size="small"
-              @onClick="setup2FAProvider()"/>
-          </div>
-        </a-form-item>
-      </div>
+        <a-col :md="24" :lg="2">
+          <a-form-item>
+            <div v-if="selectedProvider">
+              <a-button ref="submit" type="primary" :disabled="twoFAenabled" @click="setup2FAProvider">{{ $t('label.setup') }}</a-button>
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.accept.project.invitation')"
+                icon="check-outlined"
+                size="small"
+                @onClick="setup2FAProvider()"/>
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.decline.invitation')"
+                type="primary"
+                :danger="true"
+                icon="close-outlined"
+                size="small"
+                @onClick="setup2FAProvider()"/>
+            </div>
+          </a-form-item>
+        </a-col>
+      </a-row>
+
       <div v-if="twoFAenabled">
         <div v-if="form.selectedProvider !== 'staticpin'">
           <br />
@@ -109,14 +116,20 @@
         <div v-if="form.selectedProvider">
           <br />
           <h3> {{ $t('label.enter.code') }} </h3>
-          <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
-            <a-input-password
-              v-model:value="form.code"
-              placeholder="xxxxxx" />
-            <div :span="24">
-              <a-button ref="submit" type="primary" :disabled="verifybuttonstate" @click="submitPin">{{ $t('label.verify') }}</a-button>
-            </div>
-          </a-form-item>
+          <a-row :gutter="24">
+            <a-col :md="24" :lg="22">
+              <a-form-item @finish="submitPin" v-ctrl-enter="submitPin" name="code" ref="code">
+                <a-input-password
+                  v-model:value="form.code"
+                  placeholder="xxxxxx" />
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="2">
+              <a-form-item>
+                  <a-button ref="submit" type="primary" :disabled="verifybuttonstate" @click="submitPin">{{ $t('label.verify') }}</a-button>
+              </a-form-item>
+            </a-col>
+          </a-row>
         </div>
 
         <a-modal
@@ -287,22 +300,12 @@ export default {
           this.twoFAverified = true
           this.$emit('refresh-data')
         }).catch(() => {
-          this.$store.dispatch('Logout').then(() => {
-            this.$router.replace({ path: '/user/login' })
-          })
-          let countNotify = store.getters.countNotify
-          countNotify++
-          this.$store.commit('SET_COUNT_NOTIFY', countNotify)
-
           this.$notification.error({
             message: this.$t('message.request.failed'),
-            description: this.$t('message.error.setup.2fa'),
-            duration: 0,
-            onClose: () => {
-              let countNotify = store.getters.countNotify
-              countNotify > 0 ? countNotify-- : countNotify = 0
-              this.$store.commit('SET_COUNT_NOTIFY', countNotify)
-            }
+            description: this.$t('message.error.setup.2fa')
+          })
+          this.$store.dispatch('Logout').then(() => {
+            this.$router.replace({ path: '/user/login' })
           })
         })
       })
