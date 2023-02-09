@@ -57,7 +57,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the vpc offering")
     private String vpcOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of " + "the vpc offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the vpc offering, defaults to the 'name'")
     private String displayText;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,

@@ -32,7 +32,6 @@ public class CreateServiceOfferingCmdTest {
 
     @Test
     public void testGetDisplayTextWhenEmpty() {
-        createServiceOfferingCmd = new CreateServiceOfferingCmd();
         String netName = "net-offering";
         ReflectionTestUtils.setField(createServiceOfferingCmd, "serviceOfferingName", netName);
         Assert.assertEquals(createServiceOfferingCmd.getDisplayText(), netName);

@@ -56,7 +56,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               description = "the display text of the ISO. This is usually used for display purposes.",
+               description = "the display text of the ISO, defaults to the 'name'",
                length = 4096)
     private String displayText;
 

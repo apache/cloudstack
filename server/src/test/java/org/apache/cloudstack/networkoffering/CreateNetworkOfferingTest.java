@@ -29,17 +29,14 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -66,7 +63,6 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 import junit.framework.TestCase;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/createNetworkOffering.xml")
@@ -107,9 +103,6 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Inject
     AnnotationDao annotationDao;
-
-    @InjectMocks
-    private CreateNetworkOfferingCmd createNetworkOfferingCmd;
 
     @Override
     @Before
@@ -256,13 +249,4 @@ public class CreateNetworkOfferingTest extends TestCase {
         // System.out.println("Creating Vpc Network Offering");
         assertNotNull("Vpc Isolated network offering with Vpc and Netscaler provider ", off);
     }
-
-    @Test
-    public void createVpcNtwkOffWithEmptyDisplayText() {
-        createNetworkOfferingCmd = new CreateNetworkOfferingCmd();
-        String netName = "network";
-        ReflectionTestUtils.setField(createNetworkOfferingCmd, "networkOfferingName", netName);
-        Assert.assertEquals(createNetworkOfferingCmd.getDisplayText(), netName);
-    }
-
 }

@@ -56,7 +56,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network offering, defaults to the value of 'name'.")
     private String networkOfferingName;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering")

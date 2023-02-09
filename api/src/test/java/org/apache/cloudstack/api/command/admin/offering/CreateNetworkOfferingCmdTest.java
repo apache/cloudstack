@@ -15,26 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.user.iso;
+package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(MockitoJUnitRunner.class)
-public class RegisterIsoCmdTest  {
+public class CreateNetworkOfferingCmdTest {
 
     @InjectMocks
-    private RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
+    private CreateNetworkOfferingCmd createNetworkOfferingCmd = new CreateNetworkOfferingCmd();
 
     @Test
-    public void testGetDisplayTextWhenEmpty() {
-        String netName = "net-iso";
-        ReflectionTestUtils.setField(registerIsoCmd, "isoName", netName);
-        Assert.assertEquals(registerIsoCmd.getDisplayText(), netName);
+    public void createVpcNtwkOffWithEmptyDisplayText() {
+        String netName = "network";
+        ReflectionTestUtils.setField(createNetworkOfferingCmd, "networkOfferingName", netName);
+        Assert.assertEquals(createNetworkOfferingCmd.getDisplayText(), netName);
     }
-
 }

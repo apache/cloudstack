@@ -28,11 +28,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class CreateProjectCmdTest  {
 
     @InjectMocks
-    private CreateProjectCmd createProjectCmd;
+    private CreateProjectCmd createProjectCmd = new CreateProjectCmd();
 
     @Test
     public void testGetDisplayTextWhenEmpty() {
-        createProjectCmd = new CreateProjectCmd();
         String netName = "net-project";
         ReflectionTestUtils.setField(createProjectCmd , "name", netName);
         Assert.assertEquals(createProjectCmd.getDisplayText(), netName);

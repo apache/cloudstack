@@ -25,11 +25,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class CreateDiskOfferingCmdTest {
 
     @InjectMocks
-    private CreateDiskOfferingCmd createDiskOfferingCmd;
+    private CreateDiskOfferingCmd createDiskOfferingCmd = new CreateDiskOfferingCmd();
 
     @Test
     public void testGetDisplayTextWhenEmpty() {
-        createDiskOfferingCmd = new CreateDiskOfferingCmd();
         String netName = "net-offering";
         ReflectionTestUtils.setField(createDiskOfferingCmd , "offeringName", netName);
         Assert.assertEquals(createDiskOfferingCmd.getDisplayText(), netName);

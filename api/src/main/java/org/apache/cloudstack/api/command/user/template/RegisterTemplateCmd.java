@@ -61,7 +61,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               description = "the display text of the template. This is usually used for display purposes.",
+               description = "The display text of the template, defaults to 'name´.",
                length = 4096)
     private String displayText;
 

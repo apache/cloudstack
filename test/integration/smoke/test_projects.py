@@ -1892,12 +1892,7 @@ class TestProjectWithEmptyDisplayText(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestProjectWithEmptyDisplayText, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1909,12 +1904,7 @@ class TestProjectWithEmptyDisplayText(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created accounts, domains etc
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestProjectWithEmptyDisplayText, self).tearDown()
 
     @attr(
         tags=[

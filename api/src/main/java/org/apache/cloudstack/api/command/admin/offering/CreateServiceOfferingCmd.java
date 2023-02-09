@@ -59,7 +59,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "the CPU speed of the service offering in MHz.")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the service offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
