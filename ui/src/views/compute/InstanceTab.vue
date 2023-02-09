@@ -74,18 +74,6 @@
               icon="environment-outlined"
               :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
               @onClick="onAcquireSecondaryIPAddress(record)" />
-            <tooltip-button
-              v-if="('addTungstenFabricRouteTableToInterface' in $store.getters.apis) && checkTungstenZone(record.nic)"
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.add.router.table.to.instance')"
-              icon="plus-outlined"
-              @onClick="onShowRouterTable(record.nic, 'ADD')" />
-            <tooltip-button
-              v-if="('removeTungstenFabricRouteTableFromInterface' in $store.getters.apis) && checkTungstenZone(record.nic)"
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.action.remove.router.table.from.interface')"
-              icon="close-outlined"
-              @onClick="onShowRouterTable(record.nic, 'DEL')" />
             <a-popconfirm
               :title="$t('message.network.removenic')"
               @confirm="removeNIC(record.nic)"
@@ -160,7 +148,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="network in addNetworkData.allNetworks"
@@ -289,51 +277,11 @@
       </a-list>
     </a-modal>
 
-    <a-modal
-      :visible="showRouterTable"
-      :title="routerTableTitle"
-      :maskClosable="false"
-      :footer="null"
-      :closable="false"
-      class="wide-modal"
-      @cancel="closeModals"
-    >
-      <a-alert v-if="routerTableType === 'ADD'" type="warning" :message="$t('message.confirm.add.router.table.to.instance')"></a-alert>
-      <a-alert v-else type="warning" :message="$t('message.confirm.remove.router.table.to.instance')"></a-alert>
-
-      <div v-ctrl-enter="submitRouterTable">
-        <a-form
-          :ref="routerTableRef"
-          :model="formRouterTable"
-          :rules="routerTableRules"
-          layout="vertical">
-          <a-form-item name="tungstenRouteTable" ref="tungstenRouteTable" :label="$t('label.interface.router.table')">
-            <a-select
-              v-model:value="formRouterTable.tungstenRouteTable"
-              v-focus="true"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="routerTables.loading">
-              <a-select-option v-for="router in routerTables.opts" :key="router.uuid">{{ router.name }}</a-select-option>
-            </a-select>
-          </a-form-item>
-
-          <div :span="24" class="action-button">
-            <a-button :loading="routerTableLoading" @click="closeModals">{{ $t('label.cancel') }}</a-button>
-            <a-button :loading="routerTableLoading" type="primary" ref="submit" @click="submitRouterTable">{{ $t('label.ok') }}</a-button>
-          </div>
-        </a-form>
-      </div>
-    </a-modal>
-
   </a-spin>
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
@@ -401,23 +349,13 @@ export default {
         opts: []
       },
       annotations: [],
-      dataResource: {},
-      showRouterTable: false,
-      routerTableParams: {},
-      routerTables: {
-        loading: false,
-        opts: []
-      },
-      routerTableLoading: false,
-      routerTableType: '',
-      routerTableTitle: ''
+      dataResource: {}
     }
   },
   created () {
     const self = this
     this.dataResource = this.resource
     this.vm = this.dataResource
-    this.initForm()
     this.fetchData()
     window.addEventListener('popstate', function () {
       self.setCurrentTab()
@@ -442,16 +380,6 @@ export default {
     this.setCurrentTab()
   },
   methods: {
-    initForm () {
-      this.routerTableRef = ref()
-      this.formRouterTable = reactive({})
-      this.routerTableRules = reactive({
-        tungstenRouteTable: [{ required: true, message: this.$t('message.error.select') }]
-      })
-    },
-    checkTungstenZone (record) {
-      return record?.isolationuri === 'tf://tf' && record?.type !== 'Shared'
-    },
     setCurrentTab () {
       this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
     },
@@ -536,12 +464,10 @@ export default {
       this.showAddNetworkModal = false
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false
-      this.showRouterTable = false
       this.addNetworkData.network = ''
       this.addNetworkData.ip = ''
       this.editIpAddressValue = ''
       this.newSecondaryIp = ''
-      this.routerTableParams = {}
     },
     onChangeIPAddress (record) {
       this.editNicResource = record.nic
@@ -761,115 +687,6 @@ export default {
         this.$notifyError(error)
         this.loadingNic = false
         this.fetchSecondaryIPs(this.selectedNicId)
-      })
-    },
-    onShowRouterTable (record, type) {
-      this.showRouterTable = true
-      this.routerTableParams.tungstenvminterfaceuuid = record.id
-      this.routerTables.loading = true
-      this.routerTables.opts = []
-      this.routerTableType = type
-      if (this.routerTableType === 'DEL') {
-        this.routerTableTitle = this.$t('label.action.remove.router.table.from.interface')
-      } else {
-        this.routerTableTitle = this.$t('label.add.router.table.to.instance')
-      }
-
-      const params = {}
-      params.zoneid = this.dataResource.zoneid
-      params.tungstenvminterfaceuuid = record.id
-      params.isattachedtointerface = type === 'DEL'
-      api('listTungstenFabricInterfaceRouteTable', params).then(json => {
-        this.routerTables.opts = json?.listtungstenfabricinterfaceroutetableresponse?.interfaceroutetable || []
-        this.formRouterTable.tungstenRouteTable = this.routerTables.opts[0]?.uuid || null
-      }).finally(() => {
-        this.routerTables.loading = false
-      })
-    },
-    submitRouterTable () {
-      if (this.routerTableType === 'DEL') {
-        this.removeRouterTable()
-      } else {
-        this.addRouterTable()
-      }
-    },
-    addRouterTable () {
-      if (this.routerTableLoading) return
-
-      this.routerTableRef.value.validate().then(() => {
-        const values = toRaw(this.formRouterTable)
-
-        this.routerTableParams.zoneid = this.dataResource.zoneid
-        this.routerTableParams.tungsteninterfaceroutetableuuid = values.tungstenRouteTable
-        this.routerTableLoading = true
-
-        api('addTungstenFabricRouteTableToInterface', this.routerTableParams).then(json => {
-          this.$pollJob({
-            jobId: json.addtungstenfabricroutetabletointerfaceresponse.jobid,
-            title: this.$t('label.add.router.table.to.instance'),
-            successMessage: this.$t('message.success.add.router.table.to.instance'),
-            successMethod: () => {
-              this.closeModals()
-              this.parentFetchData()
-            },
-            errorMessage: this.$t('message.add.router.table.to.instance.failed'),
-            errorMethod: () => {
-              this.closeModals()
-              this.parentFetchData()
-            },
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            catchMethod: () => {
-              this.closeModals()
-              this.parentFetchData()
-            }
-          })
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.closeModals()
-          this.routerTableLoading = false
-        })
-      }).catch((error) => {
-        this.routerTableRef.value.scrollToField(error.errorFields[0].name)
-      })
-    },
-    removeRouterTable () {
-      if (this.routerTableLoading) return
-      this.routerTableRef.value.validate().then(() => {
-        const values = toRaw(this.formRouterTable)
-
-        this.routerTableParams.zoneid = this.dataResource.zoneid
-        this.routerTableParams.tungsteninterfaceroutetableuuid = values.tungstenRouteTable
-        this.routerTableLoading = true
-
-        api('removeTungstenFabricRouteTableFromInterface', this.routerTableParams).then(json => {
-          this.$pollJob({
-            jobId: json.removetungstenfabricroutetablefrominterfaceresponse.jobid,
-            title: this.$t('label.action.remove.router.table.from.interface'),
-            successMessage: this.$t('message.success.remove.router.table.from.interface'),
-            successMethod: () => {
-              this.closeModals()
-              this.parentFetchData()
-            },
-            errorMessage: this.$t('message.remove.router.table.from.interface.failed'),
-            errorMethod: () => {
-              this.closeModals()
-              this.parentFetchData()
-            },
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            catchMethod: () => {
-              this.closeModals()
-              this.parentFetchData()
-            }
-          })
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.closeModals()
-          this.routerTableLoading = false
-        })
-      }).catch((error) => {
-        this.routerTableRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }

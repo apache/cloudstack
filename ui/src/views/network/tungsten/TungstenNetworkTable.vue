@@ -31,11 +31,8 @@
           :enabled="true"
           :resource="record"
           @exec-action="(action) => execAction(action, record)"/> -->
-        <router-link v-if="apiName === 'listTungstenFabricNetworkRouteTable'" :to="{ path: '/tungstennetworkroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
-        <router-link v-else-if="apiName === 'listTungstenFabricInterfaceRouteTable'" :to="{ path: '/tungsteninterfaceroutertable/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
-        <router-link v-else-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
+        <router-link v-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricApplicationPolicySet'" :to="{ path: '/tungstenpolicyset/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
-        <router-link v-else-if="apiName === 'listTungstenFabricRoutingPolicy'" :to="{ path: '/tungstenroutingpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template #tungstenvms="{ record }">

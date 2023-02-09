@@ -77,18 +77,6 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }, {
-        name: 'tungsten.router.table',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkRouterTableTab.vue'))),
-        show: (record) => {
-          return ('listTungstenFabricNetworkRouteTable' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
-        }
-      }, {
-        name: 'tungsten.routing.polices',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkRoutingPolicyTab.vue'))),
-        show: (record) => {
-          return ('listTungstenFabricRoutingPolicy' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
-        }
-      }, {
         name: 'network.policy',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkPolicyTab.vue'))),
         show: (record) => {
@@ -799,78 +787,6 @@ export default {
       ]
     },
     {
-      name: 'tungstennetworkroutertable',
-      title: 'label.tungsten.network.router.table',
-      icon: shallowRef(tungsten),
-      hidden: true,
-      permission: ['listTungstenFabricNetworkRouteTable'],
-      columns: ['name', 'zonename'],
-      details: ['uuid', 'name', 'zonename'],
-      tabs: [
-        {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-        },
-        {
-          name: 'tungsten.static.routes',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenNetworkStaticRoute.vue')))
-        }
-      ],
-      actions: [
-        {
-          api: 'removeTungstenFabricNetworkRouteTable',
-          icon: 'delete-outlined',
-          label: 'label.remove.network.route.table',
-          message: 'label.confirm.remove.network.route.table',
-          dataView: true,
-          mapping: {
-            tungstennetworkroutetableuuid: {
-              value: (record) => { return record.uuid }
-            },
-            zoneid: {
-              value: (record) => { return record.zoneid }
-            }
-          }
-        }
-      ]
-    },
-    {
-      name: 'tungsteninterfaceroutertable',
-      title: 'label.tungsten.interface.router.table',
-      icon: shallowRef(tungsten),
-      hidden: true,
-      permission: ['listTungstenFabricInterfaceRouteTable'],
-      columns: ['name', 'zonename'],
-      details: ['uuid', 'name', 'zonename'],
-      tabs: [
-        {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-        },
-        {
-          name: 'tungsten.static.routes',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenInterfaceStaticRoute.vue')))
-        }
-      ],
-      actions: [
-        {
-          api: 'removeTungstenFabricInterfaceRouteTable',
-          icon: 'delete-outlined',
-          label: 'label.remove.interface.route.table',
-          message: 'label.confirm.remove.interface.route.table',
-          dataView: true,
-          mapping: {
-            tungsteninterfaceroutetableuuid: {
-              value: (record) => { return record.uuid }
-            },
-            zoneid: {
-              value: (record) => { return record.zoneid }
-            }
-          }
-        }
-      ]
-    },
-    {
       name: 'tungstenpolicy',
       title: 'label.network.policy',
       icon: shallowRef(tungsten),
@@ -941,42 +857,6 @@ export default {
           dataView: true,
           mapping: {
             applicationpolicysetuuid: {
-              value: (record) => { return record.uuid }
-            },
-            zoneid: {
-              value: (record) => { return record.zoneid }
-            }
-          }
-        }
-      ]
-    },
-    {
-      name: 'tungstenroutingpolicy',
-      title: 'label.routing.policy',
-      icon: shallowRef(tungsten),
-      hidden: true,
-      permission: ['listTungstenFabricRoutingPolicy'],
-      columns: ['name', 'zonename'],
-      details: ['uuid', 'name', 'zonename'],
-      tabs: [
-        {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-        },
-        {
-          name: 'routing.policy.terms',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/RoutingPolicyTermsTab.vue')))
-        }
-      ],
-      actions: [
-        {
-          api: 'removeTungstenFabricRoutingPolicy',
-          icon: 'delete-outlined',
-          label: 'label.remove.routing.policy',
-          message: 'message.confirm.remove.routing.policy',
-          dataView: true,
-          mapping: {
-            tungstenroutingpolicyuuid: {
               value: (record) => { return record.uuid }
             },
             zoneid: {

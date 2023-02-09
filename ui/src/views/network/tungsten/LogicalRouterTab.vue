@@ -32,23 +32,6 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template #action="{ record }">
-        <a-popconfirm
-          v-if="'removeTungstenFabricRouteTableFromNetwork' in $store.getters.apis"
-          placement="topRight"
-          :title="$t('message.action.remove.logical.router')"
-          :ok-text="$t('label.yes')"
-          :cancel-text="$t('label.no')"
-          :loading="deleteLoading"
-          @confirm="deleteLogicalRouter(record)"
-        >
-          <tooltip-button
-            :tooltip="$t('label.action.remove.logical.router')"
-            danger
-            type="primary"
-            icon="delete-outlined" />
-        </a-popconfirm>
-      </template>
     </a-table>
     <div style="display: block; text-align: right; margin-top: 10px;">
       <a-pagination
@@ -254,39 +237,6 @@ export default {
       }).finally(() => {
         this.submitLoading = false
       })
-    },
-    deleteLogicalRouter (record) {
-      if (this.deleteLoading) return
-      this.deleteLoading = true
-      const params = {}
-      params.zoneid = this.resource.zoneid
-      params.networkuuid = this.resource.id
-      params.logicalrouteruuid = record.uuid
-      api('removeTungstenFabricNetworkGatewayFromLogicalRouter', params).then(json => {
-        const jobId = json?.removetungstenfabricnetworkgatewayfromlogicalrouterresponse?.jobid
-        this.$pollJob({
-          jobId,
-          title: this.$t('label.action.remove.logical.router'),
-          description: record.name || record.uuid,
-          successMessage: `${this.$t('message.success.remove.logical.router')} ${record.name || record.uuid}`,
-          successMethod: () => {
-            this.fetchData()
-          },
-          errorMessage: this.$t('message.error.remove.logical.router'),
-          errorMethod: () => {
-            this.fetchData()
-          },
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.fetchData()
-          },
-          action: {
-            isFetchData: false
-          }
-        })
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => { this.deleteLoading = false })
     }
   }
 }
