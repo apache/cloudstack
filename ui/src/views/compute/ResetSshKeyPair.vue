@@ -26,7 +26,7 @@
           :placeholder="$t('label.search')"
           v-model:value="filter"
           @search="handleSearch"
-          v-focus="true" />
+          autoFocus />
       </div>
 
       <div class="form__item">

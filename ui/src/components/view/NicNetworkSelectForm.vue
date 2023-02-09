@@ -24,7 +24,7 @@
         v-model:value="searchQuery"
         style="margin-bottom: 10px;"
         @search="fetchNetworks"
-        v-focus="true" />
+        autoFocus />
       <a-table
         size="small"
         style="overflow-y: auto"

@@ -123,8 +123,7 @@
                 :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
               >
                 <a-button
-                  danger
-                  type="primary"
+                  type="danger"
                   shape="circle"
                   :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
                   <template #icon><delete-outlined /></template>

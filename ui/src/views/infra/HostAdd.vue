@@ -33,6 +33,7 @@
               v-focus="true"
               v-model:value="form.zoneid"
               :placeholder="placeholder.zoneid"
+              autoFocus
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
