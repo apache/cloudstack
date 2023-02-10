@@ -809,7 +809,7 @@ export default {
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.customTitle
+            key = columnKey.field
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
@@ -865,6 +865,21 @@ export default {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicy/')) {
+          params.policyuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicyset/')) {
+          params.applicationpolicysetuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstennetworkroutertable/')) {
+          params.tungstennetworkroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungsteninterfaceroutertable/')) {
+          params.tungsteninterfaceroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenfirewallpolicy/')) {
+          params.firewallpolicyuuid = this.$route.params.id
         }
       }
 
@@ -1446,7 +1461,7 @@ export default {
               if (!action.mapping[key].value) {
                 continue
               }
-              params[key] = action.mapping[key].value(this.resource, params)
+              params[key] = action.mapping[key].value(this.resource, params, this.$route.query)
             }
           }
         }

@@ -157,6 +157,7 @@ import {
   UsergroupDeleteOutlined,
   UserOutlined,
   UploadOutlined,
+  WarningOutlined,
   WifiOutlined,
   SolutionOutlined
 } from '@ant-design/icons-vue'
@@ -305,6 +306,7 @@ export default {
     app.component('UsergroupDeleteOutlined', UsergroupDeleteOutlined)
     app.component('UserOutlined', UserOutlined)
     app.component('UploadOutlined', UploadOutlined)
+    app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)
     app.component('SolutionOutlined', SolutionOutlined)
