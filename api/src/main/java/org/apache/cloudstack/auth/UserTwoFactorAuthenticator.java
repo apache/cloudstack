@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.auth;
 
-import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.component.Adapter;
 
@@ -38,7 +38,7 @@ public interface UserTwoFactorAuthenticator extends Adapter {
      * Verifies the 2FA code provided by user
      * @return returns description
      */
-    void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException;
+    void check2FA(String code, UserAccount userAccount) throws CloudTwoFactorAuthenticationException;
 
     String setup2FAKey(UserAccount userAccount);
 

@@ -17,7 +17,7 @@ package org.apache.cloudstack.auth;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
@@ -45,13 +45,13 @@ public class StaticPinUserTwoFactorAuthenticator extends AdapterBase implements 
     }
 
     @Override
-    public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException  {
+    public void check2FA(String code, UserAccount userAccount) throws CloudTwoFactorAuthenticationException  {
         String expectedCode = getStaticPin(userAccount);
         if (expectedCode.equals(code)) {
             s_logger.info("2FA matches user's input");
             return;
         }
-        throw new CloudAuthenticationException("two-factor authentication code provided is invalid");
+        throw new CloudTwoFactorAuthenticationException("two-factor authentication code provided is invalid");
     }
 
     private String getStaticPin(UserAccount userAccount) {

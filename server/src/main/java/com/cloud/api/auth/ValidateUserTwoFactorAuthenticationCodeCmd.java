@@ -18,10 +18,11 @@ package com.cloud.api.auth;
 
 import com.cloud.api.ApiServlet;
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
+import com.cloud.utils.exception.CSExceptionErrorCode;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -115,7 +116,7 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
             return ApiResponseSerializer.toSerializedString(response, responseType);
-        } catch (final CloudAuthenticationException ex) {
+        } catch (final CloudTwoFactorAuthenticationException ex) {
             if (!setupPhase) {
                 ApiServlet.invalidateHttpSession(session, "fall through to API key,");
             }
@@ -128,8 +129,9 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
                 s_logger.trace(msg);
             }
         }
-        // We should not reach here and if we do we throw an exception
-        throw new ServerApiException(ApiErrorCode.UNAUTHORIZED2FA, serializedResponse);
+        ServerApiException exception = new ServerApiException(ApiErrorCode.UNAUTHORIZED2FA, serializedResponse);
+        exception.setCSErrorCode(CSExceptionErrorCode.getCSErrCode(CloudTwoFactorAuthenticationException.class.getName()));
+        throw exception;
     }
 
     @Override

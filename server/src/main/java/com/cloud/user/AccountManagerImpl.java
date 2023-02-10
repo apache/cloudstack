@@ -107,6 +107,7 @@ import com.cloud.event.ActionEvents;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -3243,7 +3244,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 userDetailVO.setValue(UserAccountVO.Setup2FAstatus.VERIFIED.name());
                 _userDetailsDao.update(userDetailVO.getId(), userDetailVO);
             }
-        } catch (CloudAuthenticationException e) {
+        } catch (CloudTwoFactorAuthenticationException e) {
             UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, "2FAsetupComplete");
             if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
                 disableTwoFactorAuthentication(userAccountId, caller, owner);

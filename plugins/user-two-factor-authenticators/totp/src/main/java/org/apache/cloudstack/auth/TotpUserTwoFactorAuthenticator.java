@@ -18,10 +18,10 @@ package org.apache.cloudstack.auth;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import de.taimos.totp.TOTP;
 
-import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.UserAccount;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
@@ -50,13 +50,13 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
     }
 
     @Override
-    public void check2FA(String code, UserAccount userAccount) throws CloudAuthenticationException {
+    public void check2FA(String code, UserAccount userAccount) throws CloudTwoFactorAuthenticationException {
         String expectedCode = get2FACode(get2FAKey(userAccount));
         if (expectedCode.equals(code)) {
             s_logger.info("2FA matches user's input");
             return;
         }
-        throw new CloudAuthenticationException("two-factor authentication code provided is invalid");
+        throw new CloudTwoFactorAuthenticationException("two-factor authentication code provided is invalid");
     }
 
     private String get2FAKey(UserAccount userAccount) {
