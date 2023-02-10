@@ -656,17 +656,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null && name != null) {
-                    project.setDisplayText(displayText);
-                    project.setName(name);
-                    _projectDao.update(projectId, project);
-                } else if (name !=null) {
-                    project.setName(name);
-                    _projectDao.update(projectId, project);
-                } else {
-                    project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
+                updateDisplaytextAndName(projectId, name, displayText);
 
                 if (newOwnerName != null) {
                     //check that the new owner exists
@@ -734,17 +724,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null && name != null) {
-                    project.setDisplayText(displayText);
-                    project.setName(name);
-                    _projectDao.update(projectId, project);
-                } else if (name !=null) {
-                    project.setName(name);
-                    _projectDao.update(projectId, project);
-                } else {
-                    project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
+                updateDisplaytextAndName(projectId, name, displayText);
 
                 if (newOwnerName != null) {
                     //check that the new owner exists
@@ -1447,5 +1427,26 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS};
+    }
+
+    private void updateDisplaytextAndName(final long projectId, String name, String displayText) {
+
+        final ProjectVO project = getProject(projectId);
+
+        if (project == null) {
+            throw new InvalidParameterValueException("Unable to find the project id=" + projectId);
+        }
+
+        if (displayText != null && name != null) {
+            project.setDisplayText(displayText);
+            project.setName(name);
+            _projectDao.update(projectId, project);
+        } else if (name !=null) {
+            project.setName(name);
+            _projectDao.update(projectId, project);
+        } else if (displayText != null){
+            project.setDisplayText(displayText);
+            _projectDao.update(projectId, project);
+        }
     }
 }
