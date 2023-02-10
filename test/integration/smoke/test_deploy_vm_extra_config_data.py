@@ -74,7 +74,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             cls.services["service_offerings"]["small"]
         )
 
-        cls.cleanup = [
+        cls._cleanup = [
             cls.account,
             cls.service_offering
         ]
@@ -83,14 +83,9 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(TestAddConfigtoDeployVM, cls).getClsTestClient().getApiClient()
-            cls.reset_hosts_hugepages()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls.cleanup)
+        super(TestAddConfigtoDeployVM, cls).tearDownClass()
 
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        cls.reset_hosts_hugepages()
 
     @classmethod
     def set_hosts_hugepages(cls):
