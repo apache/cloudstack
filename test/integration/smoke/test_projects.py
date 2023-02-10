@@ -1852,7 +1852,6 @@ class TestProjectUpdateName(cloudstackTestCase):
             cls.isGlobalSettingInvalid = True
             return
 
-
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
@@ -1967,5 +1966,4 @@ class TestProjectUpdateName(cloudstackTestCase):
             "newProject",
             "Project name not updated"
         )
-
         return
