@@ -72,6 +72,8 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -205,6 +207,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private ResourceCountDao _resourceCountDao;
     @Inject
     private UserDao _userDao;
+    @Inject
+    private UserDetailsDao _userDetailsDao;
     @Inject
     private InstanceGroupDao _vmGroupDao;
     @Inject
@@ -3108,7 +3112,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount getUserAccountById(Long userId) {
-        return _userAccountDao.findById(userId);
+        UserAccount userAccount = _userAccountDao.findById(userId);
+        Map<String, String> details = _userDetailsDao.listDetailsKeyPairs(userId);
+        userAccount.setDetails(details);
+
+        return userAccount;
     }
 
     @Override
@@ -3212,7 +3220,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId, Boolean setupPhase) {
+    public void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId) {
 
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountService.getActiveAccountById(caller.getId());
@@ -3230,8 +3238,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserTwoFactorAuthenticator userTwoFactorAuthenticator = getUserTwoFactorAuthenticator(domainId, userAccountId);
         try {
             userTwoFactorAuthenticator.check2FA(code, userAccount);
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null) {
+                userDetailVO.setValue(UserAccountVO.Setup2FAstatus.VERIFIED.name());
+                _userDetailsDao.update(userDetailVO.getId(), userDetailVO);
+            }
         } catch (CloudAuthenticationException e) {
-            if (setupPhase) {
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, "2FAsetupComplete");
+            if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
                 disableTwoFactorAuthentication(userAccountId, caller, owner);
             }
             throw e;
@@ -3290,6 +3304,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         user.setUser2faEnabled(true);
         _userDao.update(userId, user);
 
+        // 2FA setup will be complete only upon successful verification with 2FA code
+        UserDetailVO setup2FAstatus = new UserDetailVO(userId, UserDetailVO.Setup2FADetail, UserAccountVO.Setup2FAstatus.ENABLED.name());
+        _userDetailsDao.persist(setup2FAstatus);
+
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         response.setId(userVO.getUuid());
         response.setUsername(userAccount.getUsername());
@@ -3314,6 +3332,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         user.setUser2faProvider(null);
         user.setUser2faEnabled(false);
         _userDao.update(userVO.getId(), user);
+        _userDetailsDao.removeDetail(userId, UserDetailVO.Setup2FADetail);
 
         UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
         response.setId(userVO.getUuid());

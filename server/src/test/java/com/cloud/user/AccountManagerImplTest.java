@@ -226,7 +226,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         CallContext.register(callingUser, callingAccount); // Calling account is user account i.e normal account
         Mockito.when(_listkeyscmd.getID()).thenReturn(1L);
         Mockito.when(accountManagerImpl.getActiveUser(1L)).thenReturn(userVoMock);
-        Mockito.when(accountManagerImpl.getUserAccountById(1L)).thenReturn(userAccountVO);
+        Mockito.when(userAccountDaoMock.findById(1L)).thenReturn(userAccountVO);
         Mockito.when(userAccountVO.getAccountId()).thenReturn(1L);
         Mockito.lenient().when(accountManagerImpl.getAccount(Mockito.anyLong())).thenReturn(accountMock); // Queried account - admin account
 
@@ -910,7 +910,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_accountService.getUserAccountById(1L)).thenReturn(userAccountVO);
         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(false);
 
-        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L, false);
+        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -923,7 +923,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(true);
         Mockito.when(userAccountVO.getUser2faProvider()).thenReturn(null);
 
-        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L, false);
+        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L);
     }
 
     @Test
@@ -943,7 +943,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(userTwoFactorAuthenticationProvidersMap.get("staticpin")).thenReturn(staticpinProvider);
         AccountManagerImpl.userTwoFactorAuthenticationProvidersMap = userTwoFactorAuthenticationProvidersMap;
 
-        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L, false);
+        accountManagerImpl.verifyUsingTwoFactorAuthenticationCode("352352", 1L, 1L);
     }
 
     @Test

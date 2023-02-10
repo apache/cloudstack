@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -118,6 +120,12 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Column(name = "key_for_2fa")
     private String keyFor2fa;
 
+    @Transient
+    Map<String, String> details;
+
+    public enum Setup2FAstatus {
+        ENABLED, VERIFIED
+    }
     public UserAccountVO() {
     }
 
@@ -351,4 +359,13 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         this.user2faProvider = user2faProvider;
     }
 
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    @Override
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
 }

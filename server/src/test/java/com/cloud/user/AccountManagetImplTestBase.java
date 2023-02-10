@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,6 +92,8 @@ public class AccountManagetImplTestBase {
     ResourceCountDao _resourceCountDao;
     @Mock
     UserDao userDaoMock;
+    @Mock
+    UserDetailsDao userDetailsDaoMock;
     @Mock
     InstanceGroupDao _vmGroupDao;
     @Mock

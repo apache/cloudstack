@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -80,5 +81,8 @@ public interface UserAccount extends InternalIdentity {
 
     public void setUser2faProvider(String user2faProvider);
 
+    public Map<String, String> getDetails();
+
+    public void setDetails(Map<String, String> details);
 
 }

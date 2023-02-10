@@ -146,7 +146,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId, Boolean setupPhase) {
+    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
 
     }
 

@@ -21,6 +21,7 @@ import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserAccountVO;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -66,21 +68,12 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
     @Parameter(name = ApiConstants.CODE_FOR_2FA, type = CommandType.STRING, description = "two factor authentication code", required = true)
     private String codeFor2fa;
 
-    @Parameter(name = ApiConstants.SETUP_PHASE, type = CommandType.BOOLEAN, description = "true if this verification is during 2FA setup phase," +
-            "if this is true and verification is failed then 2FA will be disabled")
-    private Boolean setupPhase = false;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getCodeFor2fa() {
         return codeFor2fa;
-    }
-
-
-    public Boolean getSetupPhase() {
-        return setupPhase;
     }
 
     @Override
@@ -108,17 +101,17 @@ public class ValidateUserTwoFactorAuthenticationCodeCmd extends BaseCmd implemen
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Code for two factor authentication is required");
         }
 
-        Boolean setupPhase = false;
-        if (params.containsKey(ApiConstants.SETUP_PHASE)) {
-            setupPhase = Boolean.parseBoolean(((String[])params.get(ApiConstants.SETUP_PHASE))[0]);
-        }
-
         final long currentUserId = (Long) session.getAttribute("userid");
         final UserAccount currentUserAccount = _accountService.getUserAccountById(currentUserId);
+        boolean setupPhase = false;
+        Map<String, String> userDetails = currentUserAccount.getDetails();
+        if (userDetails.containsKey(UserDetailVO.Setup2FADetail) && userDetails.get(UserDetailVO.Setup2FADetail).equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
+            setupPhase = true;
+        }
 
         String serializedResponse = null;
         try {
-            accountManager.verifyUsingTwoFactorAuthenticationCode(codeFor2FA, currentUserAccount.getDomainId(), currentUserId, setupPhase);
+            accountManager.verifyUsingTwoFactorAuthenticationCode(codeFor2FA, currentUserAccount.getDomainId(), currentUserId);
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
             return ApiResponseSerializer.toSerializedString(response, responseType);

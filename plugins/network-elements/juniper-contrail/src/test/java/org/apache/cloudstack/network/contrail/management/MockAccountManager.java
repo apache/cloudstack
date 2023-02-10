@@ -335,7 +335,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId, Boolean setupPhase) {
+    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
     }
 
     @Override
