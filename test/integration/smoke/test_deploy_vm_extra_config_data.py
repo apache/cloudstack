@@ -63,34 +63,27 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         # Create an account, network, and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
+
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
-
-        cls.cleanup = [
-            cls.account,
-            cls.service_offering
-        ]
+        cls._cleanup.append(cls.service_offering)
 
         cls.hosts_hugepages = cls.set_hosts_hugepages()
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(TestAddConfigtoDeployVM, cls).getClsTestClient().getApiClient()
-            cls.reset_hosts_hugepages()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestAddConfigtoDeployVM, cls).tearDownClass()
 
     @classmethod
     def set_hosts_hugepages(cls):
@@ -130,6 +123,10 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         updateConfigurationResponse = self.apiclient.updateConfiguration(updateConfigurationCmd)
         self.debug("updated the parameter %s with value %s" % (
             updateConfigurationResponse.name, updateConfigurationResponse.value))
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestAddConfigtoDeployVM, self).tearDown()
 
     # Ste Global Config value
     def add_global_config(self, name, value):
@@ -152,12 +149,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             return False
         return all(self.elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
 
-    def destroy_vm(self, vm_id):
-        cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
-        cmd.expunge = True
-        cmd.id = vm_id
-        return self.apiclient.destroyVirtualMachine(cmd)
-
     def deploy_vm(self, hypervisor, extra_config=None):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
         if extra_config is not None:
@@ -171,7 +162,9 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         cmd.zoneid = self.zone.id
         cmd.templateid = template.id
         cmd.serviceofferingid = self.service_offering.id
-        return self.apiclient.deployVirtualMachine(cmd)
+        vm = self.apiclient.deployVirtualMachine(cmd)
+        self.cleanup.append(vm)
+        return vm
 
     def list_vm(self):
         cmd = listVirtualMachines.listVirtualMachinesCmd()
@@ -245,8 +238,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                               "Exception was not thrown, check kvm global configuration")
         except Exception as e:
             logging.debug(e)
-        finally:
-            self.destroy_vm(self.list_vm().id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_02_deploy_vm_with_extraconfig_kvm(self):
@@ -316,7 +307,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                         'The element from tags from extra config do not match with those found in domain xml'
                     )
             finally:
-                self.destroy_vm(response.id)
                 self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
@@ -395,7 +385,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                         'The element from tags from extra config do not match with those found in domain xml'
                     )
             finally:
-                self.destroy_vm(vm_id)
                 self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
@@ -424,8 +413,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                               "Exception was not thrown, check VMWARE global configuration")
         except Exception as e:
             logging.debug(e)
-        finally:
-            self.destroy_vm(self.list_vm().id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_05_deploy_vm_with_extraconfig_vmware(self):
@@ -478,7 +465,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                         'Extra  configuration not found in instance vmx file'
                     )
             finally:
-                self.destroy_vm(response.id)
                 self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
@@ -511,8 +497,6 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
         except Exception as e:
             logging.debug(e)
-        finally:
-            self.destroy_vm(self.list_vm().id)
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_07_deploy_vm_with_extraconfig_xenserver(self):
@@ -564,5 +548,4 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
                         'Extra  configuration not found in VM param list'
                     )
             finally:
-                self.destroy_vm(response.id)
                 self.add_global_config(name, "")
