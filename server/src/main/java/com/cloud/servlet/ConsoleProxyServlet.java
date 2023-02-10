@@ -71,6 +71,8 @@ public class ConsoleProxyServlet extends HttpServlet {
     private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
 
+    private static final String SANITIZATION_REGEX = "[\n\r]";
+
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -155,9 +157,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             String cmd = req.getParameter("cmd");
             if (cmd == null || !isValidCmd(cmd)) {
                 if (cmd != null) {
-                    cmd = cmd.replaceAll("[\n\r]", "_");
+                    cmd = cmd.replaceAll(SANITIZATION_REGEX, "_");
+                    s_logger.debug(String.format("invalid console servlet command [%s].", cmd));
+                } else {
+                    s_logger.debug("Null console servlet command.");
                 }
-                s_logger.debug(String.format("invalid console servlet command [%s].", cmd));
+
                 sendResponse(resp, "");
                 return;
             }
@@ -166,9 +171,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             VirtualMachine vm = _entityMgr.findByUuid(VirtualMachine.class, vmIdString);
             if (vm == null) {
                 if (vmIdString != null) {
-                    vmIdString = vmIdString.replaceAll("[\n\r]", "_");
+                    vmIdString = vmIdString.replaceAll(SANITIZATION_REGEX, "_");
+                    s_logger.info(String.format("invalid console servlet command vm parameter[%s].", vmIdString));
+                } else {
+                    s_logger.info("Null console servlet command VM parameter.");
                 }
-                s_logger.info(String.format("invalid console servlet command vm parameter[%s].", vmIdString));
+
                 sendResponse(resp, "");
                 return;
             }
@@ -269,9 +277,12 @@ public class ConsoleProxyServlet extends HttpServlet {
         String sid = req.getParameter("sid");
         if (sid == null || !sid.equals(vm.getVncPassword())) {
             if(sid != null) {
-                sid = sid.replaceAll("[\n\r]", "_");
+                sid = sid.replaceAll(SANITIZATION_REGEX, "_");
+                s_logger.warn(String.format("sid [%s] in url does not match stored sid.", sid));
+            } else {
+                s_logger.warn("Null sid in URL.");
             }
-            s_logger.warn(String.format("sid [%s] in url does not match stored sid.", sid));
+
             sendResponse(resp, "failed");
             return;
         }
