@@ -1929,7 +1929,7 @@ class TestProjectUpdateName(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
-        
+
         # Cleanup created project at end of test
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
