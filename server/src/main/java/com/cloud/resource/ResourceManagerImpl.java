@@ -1892,11 +1892,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), false);
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getAnnotation(), false);
     }
 
     private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
-                            String url, List<String> hostTags, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+                            String url, List<String> hostTags, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -1931,18 +1931,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         final HostVO updatedHost = _hostDao.findById(hostId);
 
-        if (isUpdateHostAllocation) {
-            sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(host, allocationState, isUpdateFromHostHealthCheck);
-        }
+        sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(host, allocationState,
+                isUpdateFromHostHealthCheck, isUpdateHostAllocation, annotation);
 
         return updatedHost;
     }
 
     private void sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(HostVO host, String allocationState,
-                                                                          boolean isUpdateFromHostHealthCheck) {
+                                                                          boolean isUpdateFromHostHealthCheck,
+                                                                          boolean isUpdateHostAllocation, String annotation) {
         boolean isAutoEnableDisableKVMSettingEnabled = host.getHypervisorType() == HypervisorType.KVM &&
                 AgentManager.EnableKVMAutoEnableDisable.valueIn(host.getClusterId());
         if (!isAutoEnableDisableKVMSettingEnabled) {
+            if (StringUtils.isNotBlank(annotation)) {
+                annotationService.addAnnotation(annotation, AnnotationService.EntityType.HOST, host.getUuid(), true);
+            }
+            return;
+        }
+
+        if (!isUpdateHostAllocation) {
             return;
         }
 
@@ -1957,16 +1964,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(),
                     host.getPodId(), msg, msg);
         } else {
-            msg += String.format("is manually %s despite the setting '%s' is enabled for the cluster %s",
+            msg += String.format("is %s despite the setting '%s' is enabled for the cluster %s",
                     isEventEnable ? "enabled" : "disabled", AgentManager.EnableKVMAutoEnableDisable.key(),
                     host.getClusterId());
+            if (StringUtils.isNotBlank(annotation)) {
+                msg += String.format(", reason: %s", annotation);
+            }
         }
         annotationService.addAnnotation(msg, AnnotationService.EntityType.HOST, host.getUuid(), true);
     }
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, true);
+        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, true);
     }
 
     @Override
