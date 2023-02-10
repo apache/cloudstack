@@ -29,11 +29,24 @@
       :columns="columns"
       :pagination="false"
       style="margin-bottom: 24px; width: 100%">
-      <template #name="{ text, record }">
-        <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" v-focus="true" />
+      <template #name="{ text, record, index }">
+        <a-input
+          :disabled="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+          :value="text"
+          @change="e => onCellChange(record.key, 'name', e.target.value)"
+          v-focus="true">
+          <template #suffix>
+            <a-tooltip
+              v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+              :title="$t('message.no.support.tungsten.fabric')">
+              <warning-outlined style="color: #f5222d" />
+            </a-tooltip>
+          </template>
+        </a-input>
       </template>
-      <template #isolationMethod="{ text, record }">
+      <template #isolationMethod="{ text, record, index }">
         <a-select
+          :disabled="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
           style="width: 100%"
           :defaultValue="text"
           @change="value => onCellChange(record.key, 'isolationMethod', value)"
@@ -51,9 +64,18 @@
           <a-select-option value="L3VPN"> L3VPN </a-select-option>
           <a-select-option value="VSP"> VSP </a-select-option>
           <a-select-option value="VCS"> VCS </a-select-option>
+          <a-select-option value="TF"> TF </a-select-option>
+
+          <template #suffixIcon>
+            <a-tooltip
+              v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+              :title="$t('message.no.support.tungsten.fabric')">
+              <warning-outlined style="color: #f5222d" />
+            </a-tooltip>
+          </template>
         </a-select>
       </template>
-      <template #traffics="{ record }">
+      <template #traffics="{ record, index }">
         <div v-for="traffic in record.traffics" :key="traffic.type">
           <a-tag
             :color="trafficColors[traffic.type]"
@@ -64,7 +86,7 @@
             <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
         </div>
-        <div v-if="isShowAddTraffic(record.traffics)">
+        <div v-if="isShowAddTraffic(record.traffics, index)">
           <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
             <a-select
               :defaultValue="trafficLabelSelected"
@@ -76,9 +98,9 @@
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
-                v-for="(traffic, index) in availableTrafficToAdd"
+                v-for="(traffic, idx) in availableTrafficToAdd"
                 :value="traffic"
-                :key="index"
+                :key="idx"
                 :disabled="isDisabledTraffic(record.traffics, traffic)"
               >
                 {{ traffic.toUpperCase() }}
@@ -111,10 +133,10 @@
           </a-tag>
         </div>
       </template>
-      <template #actions="{ record }">
+      <template #actions="{ record, index }">
         <tooltip-button
           :tooltip="$t('label.delete')"
-          v-if="physicalNetworks.indexOf(record) > 0"
+          v-if="tungstenNetworkIndex === -1 ? index > 0 : tungstenNetworkIndex !== index"
           type="primary"
           :danger="true"
           icon="delete-outlined"
@@ -122,6 +144,7 @@
       </template>
       <template #footer v-if="isAdvancedZone">
         <a-button
+          :disabled="tungstenNetworkIndex > -1"
           @click="handleAddPhysicalNetwork">
           {{ $t('label.add.physical.network') }}
         </a-button>
@@ -331,6 +354,10 @@ export default {
       }
       return traffics
     },
+    tungstenNetworkIndex () {
+      const tungstenNetworkIndex = this.physicalNetworks.findIndex(network => network.isolationMethod === 'TF')
+      return tungstenNetworkIndex
+    },
     hypervisor () {
       return this.prefillContent.hypervisor || null
     }
@@ -420,12 +447,16 @@ export default {
       this.hasUnusedPhysicalNetwork = this.getHasUnusedPhysicalNetwork()
     },
     isValidSetup () {
-      const shouldHaveLabels = this.physicalNetworks.length > 1
+      let physicalNetworks = this.physicalNetworks
+      if (this.tungstenNetworkIndex > -1) {
+        physicalNetworks = [this.physicalNetworks[this.tungstenNetworkIndex]]
+      }
+      const shouldHaveLabels = physicalNetworks.length > 1
       let isValid = true
       this.requiredTrafficTypes.forEach(type => {
         if (!isValid) return false
         let foundType = false
-        this.physicalNetworks.forEach(net => {
+        physicalNetworks.forEach(net => {
           net.traffics.forEach(traffic => {
             if (!isValid) return false
             if (traffic.type === type) {
@@ -570,7 +601,10 @@ export default {
 
       return false
     },
-    isShowAddTraffic (traffics) {
+    isShowAddTraffic (traffics, index) {
+      if (this.tungstenNetworkIndex > -1 && this.tungstenNetworkIndex !== index) {
+        return false
+      }
       if (!this.availableTrafficToAdd || this.availableTrafficToAdd.length === 0) {
         return false
       }
@@ -616,6 +650,21 @@ export default {
   .traffic-select-item {
     :deep(.icon-button) {
       margin: 0 0 0 5px;
+    }
+  }
+
+  .disabled-traffic {
+    position: relative;
+
+    &::before {
+      content: ' ';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      cursor: not-allowed;
     }
   }
 </style>

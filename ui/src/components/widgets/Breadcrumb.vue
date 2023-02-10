@@ -19,11 +19,17 @@
   <a-breadcrumb class="breadcrumb">
     <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
       <router-link
-        v-if="item && item.name"
+        v-if="item && item.name && !tungstenPaths.includes(item.path)"
         :to="{ path: item.path === '' ? '/' : item.path }"
       >
         <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
         <span v-if="item.meta.title">{{ $t(item.meta.title) }}</span>
+      </router-link>
+      <router-link
+        v-else-if="tungstenPaths.includes(item.path)"
+        :to="{ path: item.path === '' ? '/' : item.path, query: { zoneid: $route.query.zoneid } }">
+        <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
+        {{ $t(item.meta.title) }}
       </router-link>
       <span v-else-if="$route.params.id">
         <label
@@ -75,7 +81,9 @@ export default {
   data () {
     return {
       name: '',
-      breadList: []
+      breadList: [],
+      tungstenPaths: ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy']
     }
   },
   created () {

@@ -139,7 +139,7 @@ export default {
         {
           name: 'network',
           title: 'label.network',
-          step: ['physicalNetwork', 'netscaler', 'pod', 'guestTraffic', 'storageTraffic', 'publicTraffic'],
+          step: ['physicalNetwork', 'tungsten', 'netscaler', 'pod', 'guestTraffic', 'storageTraffic', 'publicTraffic'],
           description: this.$t('message.network.description'),
           hint: this.$t('message.network.hint')
         },

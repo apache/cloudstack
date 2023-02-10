@@ -32,7 +32,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -109,6 +109,15 @@
         <span v-else-if="$route.path.startsWith('/alert')">
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+        </span>
+        <span v-else-if="$route.path.startsWith('/tungstenfabric')">
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+        </span>
+        <span v-else-if="isTungstenPath()">
+          <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: record.zoneid } }" v-if="record.uuid && record.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
         <span v-else>
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
@@ -516,6 +525,10 @@ export default {
     }
   },
   methods: {
+    isTungstenPath () {
+      return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
+    },
     createPathBasedOnVmType: createPathBasedOnVmType,
     quickViewEnabled () {
       return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
@@ -524,7 +537,8 @@ export default {
         '/template', '/iso',
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
-        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
+        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
+        '/tungstenfabric'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -791,6 +805,12 @@ export default {
       return host.state
     },
     getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      }
+      return name
+    },
+    getColumTitle (name) {
       if (typeof name === 'object') {
         name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
