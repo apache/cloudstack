@@ -19,8 +19,7 @@
     <a-form
       :ref="formRef"
       :model="form"
-      :rules="rules"
-      layout="vertical">
+      :rules="rules">
       <img
         v-if="$config.banner"
         :style="{
@@ -97,7 +96,7 @@
           <vue-qrious
             class="center-align"
             :value="totpUrl"
-            size="200"
+            size="150"
             @change="onDataUrlChange"
           />
           <div style="text-align: center"> <a @click="showConfiguredPin"> {{ $t('message.two.fa.view.setup.key') }}</a></div>
@@ -320,14 +319,8 @@ export default {
 
 <style scoped>
   .center {
-    position: fixed;
-    top: 42.5%;
-    left: 50%;
-    -webkit-transform: translate(-50%, -50%);
-
     background-color: transparent;
-    padding: 70px 50px 70px 50px;
-    z-index: 100;
+    padding: 80px 500px 70px 500px;
   }
   .center-align {
     display: block;
