@@ -84,6 +84,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestAddConfigtoDeployVM, cls).tearDownClass()
+        cls.reset_hosts_hugepages()
 
     @classmethod
     def set_hosts_hugepages(cls):
