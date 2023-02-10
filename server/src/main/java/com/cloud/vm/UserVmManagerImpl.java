@@ -1175,7 +1175,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVm forceRebootVirtualMachine(long vmId, long hostId, boolean enterSetup) {
         try {
             if (stopVirtualMachine(vmId, false) != null) {
-                Map<VirtualMachineProfile.Param,Object> params = new HashMap();
+                Map<VirtualMachineProfile.Param,Object> params = new HashMap<>();
                 if (enterSetup) {
                     params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
                 }
