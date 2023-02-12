@@ -45,7 +45,7 @@ public class UserDetailVO implements ResourceDetail {
     @Column(name = "display")
     private boolean display = true;
 
-    public static final String Setup2FADetail = "2FAsetupStatus";
+    public static final String Setup2FADetail = "2FASetupStatus";
 
     public UserDetailVO() {
     }

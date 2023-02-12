@@ -2724,10 +2724,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final String name) {
         if (StringUtils.isEmpty(name)) {
-            throw new CloudRuntimeException("Invalid two factor authentication provider name provided");
+            throw new CloudRuntimeException("Two factor authentication provider name is empty");
         }
         if (!userTwoFactorAuthenticationProvidersMap.containsKey(name.toLowerCase())) {
-            throw new CloudRuntimeException("Failed to find two factor authentication provider by the name: " + name);
+            throw new CloudRuntimeException(String.format("Failed to find two factor authentication provider by the name: %s.", name));
         }
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
@@ -3257,8 +3257,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
         if (userAccountId != null) {
             UserAccount userAccount = _accountService.getUserAccountById(userAccountId);
-            if (userAccount.getUser2faProvider() != null) {
-                return getUserTwoFactorAuthenticator(userAccount.getUser2faProvider());
+            String user2FAProvider = userAccount.getUser2faProvider();
+            if (user2FAProvider != null) {
+                return getUserTwoFactorAuthenticator(user2FAProvider);
             }
         }
         final String name = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
@@ -3287,13 +3288,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
         UserAccountVO userAccount = _userAccountDao.findById(userId);
         UserVO userVO = _userDao.findById(userId);
-
-        if (Boolean.FALSE.equals(enableUserTwoFactorAuthentication.valueIn(userAccount.getDomainId())) && Boolean.FALSE.equals(mandateUserTwoFactorAuthentication.valueIn(userAccount.getDomainId()))) {
+        Long domainId = userAccount.getDomainId();
+        if (Boolean.FALSE.equals(enableUserTwoFactorAuthentication.valueIn(domainId)) && Boolean.FALSE.equals(mandateUserTwoFactorAuthentication.valueIn(domainId))) {
             throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
         }
 
         if (StringUtils.isEmpty(providerName)) {
-            providerName = userTwoFactorAuthenticationDefaultProvider.valueIn(userAccount.getDomainId());
+            providerName = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
             s_logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
         }
 
@@ -3358,10 +3359,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final String name) {
         if (StringUtils.isEmpty(name)) {
-            throw new CloudRuntimeException("Invalid UserTwoFactorAuthenticator name provided");
+            throw new CloudRuntimeException("UserTwoFactorAuthenticator name provided is empty");
         }
         if (!userTwoFactorAuthenticationProvidersMap.containsKey(name.toLowerCase())) {
-            throw new CloudRuntimeException("Failed to find UserTwoFactorAuthenticator by the name: " + name);
+            throw new CloudRuntimeException(String.format("Failed to find UserTwoFactorAuthenticator by the name: %s.", name));
         }
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }

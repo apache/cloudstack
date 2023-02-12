@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = SetupUserTwoFactorAuthenticationCmd.APINAME, description = "Setup the 2fa for the user.", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User}, requestHasSensitiveInfo = false,
+@APICommand(name = SetupUserTwoFactorAuthenticationCmd.APINAME, description = "Setup the 2FA for the user.", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User}, requestHasSensitiveInfo = false,
         responseObject = UserTwoFactorAuthenticationSetupResponse.class, entityType = {}, since = "4.18.0")
 public class SetupUserTwoFactorAuthenticationCmd extends BaseCmd {
 
