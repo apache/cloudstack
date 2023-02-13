@@ -44,12 +44,15 @@
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticators"
+                  value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
         <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />
         <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
         <property name="services" value="#{apiCommandsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticationProviders" value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
     </bean>
 
     <bean id="passwordPolicies" class="com.cloud.user.PasswordPolicyImpl" />
@@ -58,6 +61,8 @@
         <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticators"
+                  value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="hostAllocators" value="#{hostAllocatorsRegistry.registered}" />

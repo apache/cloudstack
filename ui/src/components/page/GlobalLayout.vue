@@ -17,9 +17,7 @@
 
 <template>
   <a-layout class="layout" :class="[device]">
-
     <a-affix style="z-index: 200">
-
       <template v-if="isSideMenu()">
         <a-drawer
           v-if="isMobile()"

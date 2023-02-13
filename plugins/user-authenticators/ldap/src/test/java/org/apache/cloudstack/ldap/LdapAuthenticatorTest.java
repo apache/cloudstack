@@ -17,7 +17,6 @@
 package org.apache.cloudstack.ldap;
 
 
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.Account;
@@ -26,6 +25,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -119,7 +119,7 @@
           :maskClosable="false"
           :cancelText="$t('label.cancel')"
           style="top: 20px;"
-          @cancel="closeAction"
+          @cancel="cancelAction"
           :confirmLoading="actionLoading"
           :footer="null"
           centered
@@ -163,7 +163,7 @@
         :ok-button-props="getOkProps()"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
-        @cancel="closeAction"
+        @cancel="cancelAction"
         centered
       >
         <template #title>
@@ -1008,6 +1008,10 @@ export default {
       this.actionLoading = false
       this.showAction = false
       this.currentAction = {}
+    },
+    cancelAction () {
+      eventBus.emit('action-closing', { action: this.currentAction })
+      this.closeAction()
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
