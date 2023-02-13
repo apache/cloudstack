@@ -106,7 +106,7 @@ public class NetworkACLServiceImplTest {
     @Mock
     private UpdateNetworkACLListCmd updateNetworkACLListCmdMock;
 
-    private Long networkAclMockId = 1L;
+    private Long networkAclMockId = 5L;
     private Long networkOfferingMockId = 2L;
     private Long networkMockVpcMockId = 3L;
     private long networkAclListId = 1l;
@@ -1133,6 +1133,7 @@ public class NetworkACLServiceImplTest {
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
         Mockito.doReturn(networkAclMock).when(networkAclDaoMock).findById(networkAclMockId);
+        Mockito.when(networkAclMock.getId()).thenReturn(networkAclMockId);
 
         PowerMockito.mockStatic(CallContext.class);
         PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
