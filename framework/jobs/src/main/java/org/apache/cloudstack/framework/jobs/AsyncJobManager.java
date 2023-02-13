@@ -117,12 +117,12 @@ public interface AsyncJobManager extends Manager {
      *
      * @param wakupTopicsOnMessageBus topic on message bus to wakeup the wait
      * @param checkIntervalInMilliSeconds time to break out wait for checking predicate condition
-     * @param timeoutInMiliseconds time out to break out the whole wait process
+     * @param timeoutInMilliseconds time out to break out the whole wait process
      * @param predicate
      * @return true, predicate condition is satisfied
      *             false, wait is timed out
      */
-    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMiliseconds, Predicate predicate);
+    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate);
 
     AsyncJob queryJob(long jobId, boolean updatePollTime);
 

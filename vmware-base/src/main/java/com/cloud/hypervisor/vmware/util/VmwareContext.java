@@ -550,7 +550,7 @@ public class VmwareContext {
      * Url for the query
      *     https://vsphere-1.lab.vmops.com/folder/Fedora-clone-test?dcPath=cupertino&dsName=NFS+datastore
      *
-     * Returned conent from vSphere
+     * Returned content from vSphere
      *
         <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
         <html>
