@@ -212,7 +212,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
     @Test
     public void testGetAPIType() {
-        Assert.assertTrue(new SAML2LoginAPIAuthenticatorCmd().getAPIType() == APIAuthenticationType.loggerIN_API);
+        Assert.assertTrue(new SAML2LoginAPIAuthenticatorCmd().getAPIType() == APIAuthenticationType.LOGIN_API);
     }
 
     @Test

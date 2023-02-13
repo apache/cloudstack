@@ -3293,7 +3293,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (StringUtils.isEmpty(providerName)) {
             providerName = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
-            s_logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
+            logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
         }
 
         UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);

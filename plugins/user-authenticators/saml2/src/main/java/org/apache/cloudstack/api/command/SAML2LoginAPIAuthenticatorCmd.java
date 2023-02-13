@@ -351,7 +351,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Override
     public APIAuthenticationType getAPIType() {
-        return APIAuthenticationType.loggerIN_API;
+        return APIAuthenticationType.LOGIN_API;
     }
 
     @Override

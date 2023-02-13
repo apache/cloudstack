@@ -227,7 +227,7 @@ public class ApiServletTest {
         params.put(ApiConstants.COMMAND, new String[] { "logout" });
         Mockito.when(request.getParameterMap()).thenReturn(params);
 
-        Mockito.when(authenticator.getAPIType()).thenReturn(APIAuthenticationType.loggerOUT_API);
+        Mockito.when(authenticator.getAPIType()).thenReturn(APIAuthenticationType.LOGOUT_API);
 
         servlet.processRequestInContext(request, response);
 

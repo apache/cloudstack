@@ -64,7 +64,7 @@ public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuth
 
     @Override
     public APIAuthenticationType getAPIType() {
-        return APIAuthenticationType.loggerOUT_API;
+        return APIAuthenticationType.LOGOUT_API;
     }
 
     @Override

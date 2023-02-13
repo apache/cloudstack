@@ -154,7 +154,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
     @Override
     public APIAuthenticationType getAPIType() {
-        return APIAuthenticationType.loggerOUT_API;
+        return APIAuthenticationType.LOGOUT_API;
     }
 
     @Override
