@@ -45,29 +45,25 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
-        cls._cleanup = []
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
-        cls._cleanup.append(cls.account)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-        cls._cleanup.append(cls.service_offering)
+
+        cls._cleanup = [
+            cls.account,
+            cls.service_offering
+        ]
 
     @classmethod
     def tearDownClass(cls):
         super(TestVMDeploymentPlanner, cls).tearDownClass()
-
-    def setUp(self):
-        self.cleanup = []
-
-    def tearDown(self):
-        super(TestVMDeploymentPlanner, self).tearDown()
 
     def deploy_vm(self, destination_id):
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -80,9 +76,13 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.templateid = template.id
         cmd.serviceofferingid = self.service_offering.id
         cmd.hostid = destination_id
-        vm = self.apiclient.deployVirtualMachine(cmd)
-        self.cleanup.append(vm)
-        return vm
+        return self.apiclient.deployVirtualMachine(cmd)
+
+    def destroy_vm(self, vm_id):
+        cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
+        cmd.expunge = True
+        cmd.id = vm_id
+        return self.apiclient.destroyVirtualMachine(cmd)
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_01_deploy_vm_on_specific_host(self):
@@ -99,6 +99,8 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             target_id,
             vm.hostid,
             "VM instance was not deployed on target host ID")
+
+        self.destroy_vm(vm.id)
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_02_deploy_vm_on_specific_cluster(self):
@@ -123,7 +125,6 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.templateid = template.id
         cmd.clusterid = target_id
         vm = self.apiclient.deployVirtualMachine(cmd)
-        self.cleanup.append(vm)
 
         vm_host = Host.list(self.apiclient,
                             id=vm.hostid
@@ -134,6 +135,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             vm_host[0].clusterid,
             "VM was not deployed on the provided cluster"
         )
+        self.destroy_vm(vm.id)
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_03_deploy_vm_on_specific_pod(self):
@@ -160,7 +162,6 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.templateid = template.id
         cmd.podid = target_pod.id
         vm = self.apiclient.deployVirtualMachine(cmd)
-        self.cleanup.append(vm)
 
         vm_host = Host.list(self.apiclient,
                             id=vm.hostid
@@ -171,6 +172,7 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             vm_host[0].podid,
             "VM was not deployed on the target pod"
         )
+        self.destroy_vm(vm.id)
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_04_deploy_vm_on_host_override_pod_and_cluster(self):
@@ -201,13 +203,14 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.hostid = host.id
 
         vm = self.apiclient.deployVirtualMachine(cmd)
-        self.cleanup.append(vm)
 
         self.assertEqual(
             vm.hostid,
             host.id,
             "VM was not deployed on the target host ID"
         )
+
+        self.destroy_vm(vm.id)
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_05_deploy_vm_on_cluster_override_pod(self):
@@ -235,7 +238,6 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cmd.clusterid = clusters[0].id
 
         vm = self.apiclient.deployVirtualMachine(cmd)
-        self.cleanup.append(vm)
 
         vm_host = Host.list(self.apiclient,
                             id=vm.hostid
@@ -246,3 +248,5 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             clusters[0].id,
             "VM was not deployed on the target cluster"
         )
+
+        self.destroy_vm(vm.id)
