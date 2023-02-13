@@ -299,6 +299,7 @@ ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.3.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
+install -D utils/target/cloud-utils-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
 
 install -D packaging/centos7/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
@@ -552,6 +553,12 @@ if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
 fi
 
+mkdir -p /usr/local/libexec
+if [ ! -f "/usr/local/libexec/sanity-check-last-id" ]; then
+    echo 1 > /usr/local/libexec/sanity-check-last-id
+fi
+chown cloud:cloud /usr/local/libexec/sanity-check-last-id
+
 %posttrans usage
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
@@ -642,6 +649,7 @@ pip3 install --upgrade urllib3
 %attr(0644,root,root) %{python_sitearch}/__pycache__/*
 %attr(0644,root,root) %{python_sitearch}/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/%{name}-utils.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
@@ -689,6 +697,9 @@ pip3 install --upgrade urllib3
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
+* Fri Oct 14 2022 Daan Hoogland <daan.hoogland@gmail.com> 4.18.0
+- initialising sanity check pointer file
+
 * Thu Apr 30 2015 Rohit Yadav <bhaisaab@apache.org> 4.6.0
 - Remove awsapi package
 

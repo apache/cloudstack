@@ -228,7 +228,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test(expected = IllegalArgumentException.class)
     public void getInvalidUserFilterValues() throws NoSuchFieldException, IllegalAccessException {
-        setHiddenField(ldapListUsersCmd, "userFilter", "flase");
+        setHiddenField(ldapListUsersCmd, "userFilter", "false");
 // unused output:       LdapListUsersCmd.UserFilter userfilter =
                 ldapListUsersCmd.getUserFilter();
     }

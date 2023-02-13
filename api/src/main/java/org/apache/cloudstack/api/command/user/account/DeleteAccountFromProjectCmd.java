@@ -40,7 +40,6 @@ import com.cloud.projects.Project;
 public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountFromProjectCmd.class.getName());
 
-    private static final String s_name = "deleteaccountfromprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,11 +57,6 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

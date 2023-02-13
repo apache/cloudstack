@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.statistics')" key="stats">
+      <a-tab-pane :tab="$t('label.metrics')" key="stats">
         <StatsTab :resource="resource"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
@@ -63,7 +63,7 @@
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
-              :tooltip="$t('label.change.ip.addess')"
+              :tooltip="$t('label.change.ip.address')"
               icon="swap-outlined"
               :disabled="!('updateVmNicIp' in $store.getters.apis)"
               @onClick="onChangeIPAddress(record)" />

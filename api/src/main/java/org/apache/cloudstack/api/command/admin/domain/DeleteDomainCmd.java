@@ -41,7 +41,6 @@ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = 
         RoleType.Admin, RoleType.DomainAdmin })
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
-    private static final String s_name = "deletedomainresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -73,11 +72,6 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

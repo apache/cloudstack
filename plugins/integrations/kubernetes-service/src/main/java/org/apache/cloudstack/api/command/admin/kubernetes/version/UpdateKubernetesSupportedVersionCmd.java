@@ -36,7 +36,7 @@ import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = UpdateKubernetesSupportedVersionCmd.APINAME,
+@APICommand(name = "updateKubernetesSupportedVersion",
         description = "Update a supported Kubernetes version",
         responseObject = KubernetesSupportedVersionResponse.class,
         responseView = ResponseObject.ResponseView.Full,
@@ -44,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin})
 public class UpdateKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
     public static final Logger LOGGER = Logger.getLogger(UpdateKubernetesSupportedVersionCmd.class.getName());
-    public static final String APINAME = "updateKubernetesSupportedVersion";
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -72,11 +71,6 @@ public class UpdateKubernetesSupportedVersionCmd extends BaseCmd implements Admi
 
     public String getState() {
         return state;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

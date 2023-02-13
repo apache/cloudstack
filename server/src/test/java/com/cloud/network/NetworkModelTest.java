@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.junit.Before;
@@ -114,6 +115,8 @@ public class NetworkModelTest {
     private DomainDao domainDao;
     @Mock
     private ProjectDao projectDao;
+    @Mock
+    private AccountManager _accountMgr;
 
     private static final long ZONE_1_ID = 1L;
     private static final long ZONE_2_ID = 2L;
@@ -298,6 +301,21 @@ public class NetworkModelTest {
         AccountVO caller = mock(AccountVO.class);
         when(caller.getId()).thenReturn(accountId);
         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(network.getAccountId()).thenReturn(accountId);
+        when(accountDao.findById(accountId)).thenReturn(caller);
+        when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(List.of(network));
+        when(networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId())).thenReturn(mock(NetworkPermissionVO.class));
+        networkModel.checkNetworkPermissions(caller, network);
+    }
+
+    @Test
+    public void testCheckNetworkPermissionsForAdmin() {
+        long accountId = 1L;
+        AccountVO caller = mock(AccountVO.class);
+        when(caller.getId()).thenReturn(accountId);
+        when(caller.getType()).thenReturn(Account.Type.ADMIN);
         NetworkVO network = mock(NetworkVO.class);
         when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
         when(network.getAccountId()).thenReturn(accountId);

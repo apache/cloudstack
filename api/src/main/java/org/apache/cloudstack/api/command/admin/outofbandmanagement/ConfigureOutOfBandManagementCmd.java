@@ -40,11 +40,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 
-@APICommand(name = ConfigureOutOfBandManagementCmd.APINAME, description = "Configures a host's out-of-band management interface",
+@APICommand(name = "configureOutOfBandManagement", description = "Configures a host's out-of-band management interface",
         responseObject = OutOfBandManagementResponse.class, requestHasSensitiveInfo = true, responseHasSensitiveInfo = false,
         since = "4.9.0", authorized = {RoleType.Admin})
 public class ConfigureOutOfBandManagementCmd extends BaseCmd {
-    public static final String APINAME = "configureOutOfBandManagement";
 
     @Inject
     private OutOfBandManagementService outOfBandManagementService;
@@ -87,11 +86,6 @@ public class ConfigureOutOfBandManagementCmd extends BaseCmd {
         response.setId(host.getUuid());
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

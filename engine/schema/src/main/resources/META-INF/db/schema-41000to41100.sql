@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`ha_config` (
 
 DELETE from `cloud`.`configuration` where name='outofbandmanagement.sync.interval';
 
--- Annotations specifc changes following
+-- Annotations specific changes following
 CREATE TABLE IF NOT EXISTS `cloud`.`annotations` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) UNIQUE,

@@ -30,11 +30,10 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 
-@APICommand(name = CreateProjectRoleCmd.APINAME, description = "Creates a Project role", responseObject = ProjectRoleResponse.class,
+@APICommand(name = "createProjectRole", description = "Creates a Project role", responseObject = ProjectRoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User}, since = "4.15.0")
 public class CreateProjectRoleCmd extends ProjectRoleCmd {
-    public static final String APINAME = "createProjectRole";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,11 +63,6 @@ public class CreateProjectRoleCmd extends ProjectRoleCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create project role");
         }
         setupProjectRoleResponse(projectRole);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

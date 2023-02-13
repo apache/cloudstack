@@ -21,6 +21,8 @@ import java.sql.Date;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -33,8 +35,12 @@ public class ConfigKey<T> {
     public static final String CATEGORY_ADVANCED = "Advanced";
     public static final String CATEGORY_ALERT = "Alert";
 
-    public static enum Scope {
+    public enum Scope {
         Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain
+    }
+
+    public enum Kind {
+        CSV, Order, Select
     }
 
     private final String _category;
@@ -59,12 +65,36 @@ public class ConfigKey<T> {
         return _description;
     }
 
+    public String displayText() {
+        return _displayText;
+    }
+
     public Scope scope() {
         return _scope;
     }
 
     public boolean isDynamic() {
         return _isDynamic;
+    }
+
+    public Ternary<String, String, Long> group() {
+        return _group;
+    }
+
+    public Pair<String, Long> subGroup() {
+        return _subGroup;
+    }
+
+    public final String parent() {
+        return _parent;
+    }
+
+    public final Kind kind() {
+        return _kind;
+    }
+
+    public final String options() {
+        return _options;
     }
 
     @Override
@@ -76,8 +106,14 @@ public class ConfigKey<T> {
     private final String _name;
     private final String _defaultValue;
     private final String _description;
+    private final String _displayText;
     private final Scope _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final boolean _isDynamic;
+    private final String _parent;
+    private final Ternary<String, String, Long> _group; // Group name, description with precedence
+    private final Pair<String, Long> _subGroup; // SubGroup name with precedence
+    private final Kind _kind; // Kind such as order, csv, etc
+    private final String _options; // list of possible options in case of order, list, etc
     private final T _multiplier;
     T _value = null;
 
@@ -91,24 +127,56 @@ public class ConfigKey<T> {
         this(type, name, category, defaultValue, description, isDynamic, scope, null);
     }
 
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Scope scope, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, null, null, parent, null, null, null, null);
+    }
+
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
     }
 
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, parent, null, null, null, null);
+    }
+
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, null, null, null, null, null, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, null, parent, null, null, null, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier,
+                     String displayText, String parent, Ternary<String, String, Long> group, Pair<String, Long> subGroup) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, null, parent, null, null, null, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier,
+                     String displayText, String parent, Ternary<String, String, Long> group, Pair<String, Long> subGroup, Kind kind, String options) {
         _category = category;
         _type = type;
         _name = name;
         _defaultValue = defaultValue;
         _description = description;
+        _displayText = displayText;
         _scope = scope;
         _isDynamic = isDynamic;
         _multiplier = multiplier;
+        _parent = parent;
+        _group = group;
+        _subGroup = subGroup;
+        _kind = kind;
+        _options = options;
     }
 
     @Deprecated
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, parent, null, null);
     }
 
     public T multiplier() {

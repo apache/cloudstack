@@ -93,6 +93,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
@@ -147,6 +148,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
+    public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -230,6 +232,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
     @Inject
     private NetworkService _networkService;
+    @Inject
+    TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -1188,26 +1192,31 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         if (pNtwks.size() > 1) {
-            if (tag == null) {
-                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId +
-                    " and no tags are specified in order to make a choice");
-            }
-
-            Long pNtwkId = null;
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                if (pNtwk.getTags().contains(tag)) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
-                    pNtwkId = pNtwk.getId();
-                    break;
-                }
-            }
-            if (pNtwkId == null) {
-                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
-            }
-            return pNtwkId;
+            return getPhysicalNetworkId(zoneId, pNtwks, tag);
         } else {
             return pNtwks.get(0).getId();
         }
+    }
+
+    private Long getPhysicalNetworkId(long zoneId, List<PhysicalNetworkVO> pNtwks, String tag) {
+        Long pNtwkId = null;
+        for (PhysicalNetwork pNtwk : pNtwks) {
+            if (tag == null && pNtwk.getTags().isEmpty()) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
+                if (pNtwkId != null) {
+                    throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
+                }
+                pNtwkId = pNtwk.getId();
+            } else if (tag != null && pNtwk.getTags().contains(tag)) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
+                pNtwkId = pNtwk.getId();
+                break;
+            }
+        }
+        if (pNtwkId == null) {
+            throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
+        }
+        return pNtwkId;
     }
 
     @Override
@@ -1665,39 +1674,49 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public void checkNetworkPermissions(Account caller, Network network) {
-        // dahn 20140310: I was thinking of making this an assert but
-        //                as we hardly ever test with asserts I think
-        //                we better make sure at runtime.
-        if (network == null) {
-            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
-        }
-        // Perform account permission check
-        if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
-            AccountVO networkOwner = _accountDao.findById(network.getAccountId());
-            if (networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                    ", network does not have an owner");
-            if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
-                checkProjectNetworkPermissions(caller, networkOwner, network);
-            } else {
-                List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
-                NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
-                if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
-                }
+    public final void checkNetworkPermissions(Account caller, Network network) {
+        if (_accountMgr.isRootAdmin(caller.getAccountId()) && Boolean.TRUE.equals(AdminIsAllowedToDeployAnywhere.value())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("root admin is permitted to do stuff on every network");
             }
-
         } else {
-            if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
-                DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
-                if (callerDomain == null) {
-                    throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
-                }
-                throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
-                        callerDomain.getUuid());
+            if (network == null) {
+                throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
             }
+            s_logger.info(String.format("Checking permission for account %s (%s) on network %s (%s)", caller.getAccountName(), caller.getUuid(), network.getName(), network.getUuid()));
+            if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
+                checkAccountNetworkPermissions(caller, network);
+
+            } else {
+                checkDomainNetworkPermissions(caller, network);
+            }
+        }
+    }
+
+    private void checkAccountNetworkPermissions(Account caller, Network network) {
+        AccountVO networkOwner = _accountDao.findById(network.getAccountId());
+        if (networkOwner == null)
+            throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
+                ", network does not have an owner");
+        if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
+            checkProjectNetworkPermissions(caller, networkOwner, network);
+        } else {
+            List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
+            NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
+            if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));
+            }
+        }
+    }
+
+    private void checkDomainNetworkPermissions(Account caller, Network network) {
+        if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
+            DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+            if (callerDomain == null) {
+                throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
+            }
+            throw new PermissionDeniedException("Shared network id=" + ((NetworkVO) network).getUuid() + " is not available in domain id=" +
+                    callerDomain.getUuid());
         }
     }
 
@@ -1710,13 +1729,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
         if (projectAccountUser != null) {
             if (!_projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), networkOwner.getId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO)network).getUuid()));
             }
         } else {
             if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), networkOwner.getId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
-                        ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));
             }
         }
     }
@@ -2007,7 +2024,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             usedIps.add(NetUtils.ip2Long(ip));
         }
 
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps, -1);
 
         String gateway = network.getGateway();
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
@@ -2026,6 +2043,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         //Get ips used by load balancers
         List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
         ips.addAll(lbIps);
+        //Get ips used by tungsten
+        List<String> tfIps = tungstenGuestNetworkIpAddressDao.listGuestIpAddressByNetworkId(network.getId());
+        ips.addAll(tfIps);
         return ips;
     }
 
@@ -2168,6 +2188,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
+        if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
+            profile.setMtu(network.getPublicMtu());
+        }
+        if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
+            profile.setMtu(network.getPrivateMtu());
+        }
 //        guru.updateNicProfile(profile, network);
         return profile;
     }
@@ -2663,7 +2689,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MACIdentifier};
+        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere};
     }
 
     @Override

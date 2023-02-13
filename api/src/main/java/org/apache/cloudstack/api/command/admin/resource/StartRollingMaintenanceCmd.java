@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -47,7 +46,7 @@ import com.cloud.resource.RollingMaintenanceManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
-@APICommand(name = StartRollingMaintenanceCmd.APINAME, description = "Start rolling maintenance",
+@APICommand(name = "startRollingMaintenance", description = "Start rolling maintenance",
         responseObject = RollingMaintenanceResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
@@ -58,7 +57,6 @@ public class StartRollingMaintenanceCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(StartRollingMaintenanceCmd.class.getName());
 
-    public static final String APINAME = "startRollingMaintenance";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -140,11 +138,6 @@ public class StartRollingMaintenanceCmd extends BaseAsyncCmd {
         RollingMaintenanceResponse response = _responseGenerator.createRollingMaintenanceResponse(success, details, hostsUpdated, hostsSkipped);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

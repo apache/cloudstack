@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,7 +67,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -131,6 +132,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -182,6 +184,7 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
@@ -530,7 +533,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object type = null;
         String accountName = null;
         Object state = null;
-        Object keyword = null;
+        String keyword = null;
 
         Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive,
                 null);
@@ -559,7 +562,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object type = cmd.getAccountType();
         String accountName = cmd.getAccountName();
         Object state = cmd.getState();
-        Object keyword = cmd.getKeyword();
+        String keyword = cmd.getKeyword();
 
         Long domainId = cmd.getDomainId();
         boolean recursive = cmd.isRecursive();
@@ -572,7 +575,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<UserAccountJoinVO>, Integer> getUserListInternal(Account caller, List<Long> permittedAccounts, boolean listAll, Long id, Object username, Object type,
-            String accountName, Object state, Object keyword, Long domainId, boolean recursive, Filter searchFilter) {
+            String accountName, Object state, String keyword, Long domainId, boolean recursive, Filter searchFilter) {
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, recursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
@@ -616,7 +619,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ssc.addOr("email", Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", Op.LIKE, "%" + keyword + "%");
             ssc.addOr("accountName", Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountType", Op.LIKE, "%" + keyword + "%");
+            if (EnumUtils.isValidEnum(Account.Type.class, keyword.toUpperCase())) {
+                ssc.addOr("accountType", Op.EQ, EnumUtils.getEnum(Account.Type.class, keyword.toUpperCase()));
+            }
 
             sc.addAnd("username", Op.SC, ssc);
         }
@@ -972,6 +977,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    private Object getObjectPossibleMethodValue(Object obj, String methodName) {
+        Object result = null;
+
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            result = m.invoke(obj);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
+
+        return result;
+    }
+
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1037,16 +1053,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object isHaEnabled = cmd.getHaEnabled();
         Object autoScaleVmGroupId = cmd.getAutoScaleVmGroupId();
         Object pod = null;
-        Long clusterId = null;
+        Object clusterId = null;
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
-            if (cmd instanceof ListVMsCmdByAdmin) {
-                pod = ((ListVMsCmdByAdmin) cmd).getPodId();
-                clusterId = ((ListVMsCmdByAdmin) cmd).getClusterId();
-                hostId = ((ListVMsCmdByAdmin) cmd).getHostId();
-                storageId = ((ListVMsCmdByAdmin) cmd).getStorageId();
-            }
+            pod = getObjectPossibleMethodValue(cmd, "getPodId");
+            clusterId = getObjectPossibleMethodValue(cmd, "getClusterId");
+            hostId = getObjectPossibleMethodValue(cmd, "getHostId");
+            storageId = getObjectPossibleMethodValue(cmd, "getStorageId");
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
@@ -3024,6 +3038,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<DiskOfferingJoinVO> zoneSC = sb.create();
             zoneSC.setParameters("zoneId", String.valueOf(zoneId));
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+            }
         }
 
         DiskOffering currentDiskOffering = null;
@@ -3271,6 +3289,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchCriteria<ServiceOfferingJoinVO> zoneSC = sb.create();
             zoneSC.setParameters("zoneId", String.valueOf(zoneId));
             sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+            }
         }
 
         if (cpuNumber != null) {
@@ -4070,6 +4092,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
+            options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
+            options.put(VmDetailConstants.IOTHREADS, Arrays.asList("enabled"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {

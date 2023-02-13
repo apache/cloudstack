@@ -75,6 +75,7 @@ import {
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
+  FieldTimeOutlined,
   FileProtectOutlined,
   FilterOutlined,
   FilterTwoTone,
@@ -90,6 +91,7 @@ import {
   GithubOutlined,
   GlobalOutlined,
   GoldOutlined,
+  GoogleOutlined,
   HddOutlined,
   HomeOutlined,
   IdcardOutlined,
@@ -112,6 +114,7 @@ import {
   MinusCircleOutlined,
   MinusOutlined,
   MinusSquareOutlined,
+  MobileOutlined,
   MoreOutlined,
   NotificationOutlined,
   NumberOutlined,
@@ -138,6 +141,7 @@ import {
   SaveOutlined,
   ScheduleOutlined,
   ScissorOutlined,
+  ScanOutlined,
   SearchOutlined,
   SettingOutlined,
   ShareAltOutlined,
@@ -157,6 +161,7 @@ import {
   UsergroupDeleteOutlined,
   UserOutlined,
   UploadOutlined,
+  WarningOutlined,
   WifiOutlined,
   SolutionOutlined
 } from '@ant-design/icons-vue'
@@ -223,6 +228,7 @@ export default {
     app.component('ExclamationCircleOutlined', ExclamationCircleOutlined)
     app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EyeOutlined', EyeOutlined)
+    app.component('FieldTimeOutlined', FieldTimeOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FilterOutlined', FilterOutlined)
     app.component('FilterTwoTone', FilterTwoTone)
@@ -238,6 +244,7 @@ export default {
     app.component('GithubOutlined', GithubOutlined)
     app.component('GlobalOutlined', GlobalOutlined)
     app.component('GoldOutlined', GoldOutlined)
+    app.component('GoogleOutlined', GoogleOutlined)
     app.component('HddOutlined', HddOutlined)
     app.component('HomeOutlined', HomeOutlined)
     app.component('IdcardOutlined', IdcardOutlined)
@@ -260,6 +267,7 @@ export default {
     app.component('MinusCircleOutlined', MinusCircleOutlined)
     app.component('MinusOutlined', MinusOutlined)
     app.component('MinusSquareOutlined', MinusSquareOutlined)
+    app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
@@ -285,6 +293,7 @@ export default {
     app.component('SafetyOutlined', SafetyOutlined)
     app.component('SaveOutlined', SaveOutlined)
     app.component('ScheduleOutlined', ScheduleOutlined)
+    app.component('ScanOutlined', ScanOutlined)
     app.component('ScissorOutlined', ScissorOutlined)
     app.component('SearchOutlined', SearchOutlined)
     app.component('SettingOutlined', SettingOutlined)
@@ -305,6 +314,7 @@ export default {
     app.component('UsergroupDeleteOutlined', UsergroupDeleteOutlined)
     app.component('UserOutlined', UserOutlined)
     app.component('UploadOutlined', UploadOutlined)
+    app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)
     app.component('SolutionOutlined', SolutionOutlined)

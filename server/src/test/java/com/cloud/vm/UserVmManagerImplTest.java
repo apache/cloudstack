@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VolumeDao;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -23,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -51,6 +54,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.Backup;
@@ -70,12 +74,16 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
@@ -88,9 +96,11 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -138,6 +148,12 @@ public class UserVmManagerImplTest {
     private AccountManager accountManager;
 
     @Mock
+    private AccountService accountService;
+
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
     private UserVmDetailsDao userVmDetailVO;
 
     @Mock
@@ -176,7 +192,22 @@ public class UserVmManagerImplTest {
     @Mock
     UserDataDao userDataDao;
 
-    private long vmId = 1l;
+    @Mock
+    private VolumeVO volumeVOMock;
+
+    @Mock
+    private VolumeDao volumeDaoMock;
+
+    @Mock
+    AccountVO account;
+
+    @Mock
+    private ServiceOfferingVO serviceOffering;
+
+    private static final long vmId = 1l;
+    private static final long zoneId = 2L;
+    private static final long accountId = 3L;
+    private static final long serviceOfferingId = 10L;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
@@ -192,7 +223,7 @@ public class UserVmManagerImplTest {
 
         when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
 
-        Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
+        Mockito.when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
 
         Mockito.when(callerAccount.getType()).thenReturn(Account.Type.ADMIN);
         CallContext.register(callerUser, callerAccount);
@@ -223,14 +254,14 @@ public class UserVmManagerImplTest {
     @Test
     public void validateGuestOsIdForUpdateVirtualMachineCommandTestOsTypeFound() {
         Mockito.when(updateVmCommand.getOsTypeId()).thenReturn(1l);
-        Mockito.when(guestOSDao.findById(Mockito.eq(1l))).thenReturn(Mockito.mock(GuestOSVO.class));
+        Mockito.when(guestOSDao.findById(1l)).thenReturn(Mockito.mock(GuestOSVO.class));
 
         userVmManagerImpl.validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateInputsAndPermissionForUpdateVirtualMachineCommandTestVmNotFound() {
-        Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(null);
+        Mockito.when(userVmDao.findById(vmId)).thenReturn(null);
 
         userVmManagerImpl.validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
     }
@@ -895,5 +926,31 @@ public class UserVmManagerImplTest {
 
         Assert.assertEquals("testUserdata", userVmVO.getUserData());
         Assert.assertEquals(1L, (long)userVmVO.getUserDataId());
+    }
+
+    @Test
+    public void recoverRootVolumeTestDestroyState() {
+        Mockito.doReturn(Volume.State.Destroy).when(volumeVOMock).getState();
+
+        userVmManagerImpl.recoverRootVolume(volumeVOMock, vmId);
+
+        Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
+        Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void createVirtualMachineWithInactiveServiceOffering() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Inactive);
+
+        userVmManagerImpl.createVirtualMachine(deployVMCmd);
     }
 }

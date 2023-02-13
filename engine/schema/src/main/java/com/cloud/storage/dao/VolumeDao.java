@@ -148,4 +148,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
      * @return the list of volumes that uses that disk offering.
      */
     List<VolumeVO> findByDiskOfferingId(long diskOfferingId);
+    VolumeVO getInstanceRootVolume(long instanceId);
 }

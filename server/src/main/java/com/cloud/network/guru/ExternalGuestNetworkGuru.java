@@ -240,7 +240,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
         }
 
-        //Egress rules cidr is subset of guest nework cidr, we need to change
+        //Egress rules cidr is subset of guest network cidr, we need to change
         List <FirewallRuleVO> fwEgressRules = _fwRulesDao.listByNetworkPurposeTrafficType(config.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
 
         for (FirewallRuleVO rule: fwEgressRules) {

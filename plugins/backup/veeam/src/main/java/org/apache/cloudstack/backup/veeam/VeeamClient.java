@@ -200,7 +200,7 @@ public class VeeamClient {
         String url = apiURI.toString() + path;
         final HttpPost request = new HttpPost(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
-        request.setHeader("Content-type", "application/xml");
+        request.setHeader("content-type", "application/xml");
         if (StringUtils.isNotBlank(xml)) {
             request.setEntity(new StringEntity(xml));
         }
@@ -367,7 +367,7 @@ public class VeeamClient {
     protected String getRepositoryNameFromJob(String backupName) {
         final List<String> cmds = Arrays.asList(
                 String.format("$Job = Get-VBRJob -name \"%s\"", backupName),
-                "$Job.GetBackupTargetRepository() ^| select Name | Format-List"
+                "$Job.GetBackupTargetRepository() ^| select Name ^| Format-List"
         );
         Pair<Boolean, String> result = executePowerShellCommands(cmds);
         if (result == null || !result.first()) {

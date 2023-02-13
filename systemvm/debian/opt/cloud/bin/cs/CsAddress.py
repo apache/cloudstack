@@ -296,6 +296,7 @@ class CsDevice:
 
 
 class CsIP:
+    DEFAULT_MTU = '1500'
 
     def __init__(self, dev, config):
         self.dev = dev
@@ -319,6 +320,8 @@ class CsIP:
             try:
                 logging.info("Configuring address %s on device %s", self.ip(), self.dev)
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
+                CsHelper.execute(cmd)
+                cmd = "ifconfig %s mtu %s"  % (self.dev, self.mtu())
                 CsHelper.execute(cmd)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
@@ -389,6 +392,12 @@ class CsIP:
         if "public_ip" in self.address:
             return self.address['public_ip']
         return "unknown"
+
+    def mtu(self):
+        logging.info(self.address)
+        if "mtu" in self.address:
+            return self.address['mtu']
+        return CsIP.DEFAULT_MTU
 
     def setup_router_control(self):
         if self.config.is_vpc():

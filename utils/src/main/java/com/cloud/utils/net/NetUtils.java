@@ -32,6 +32,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.Iterator;
@@ -43,6 +44,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -75,6 +77,7 @@ public class NetUtils {
     public final static String TCP_PROTO = "tcp";
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
+    public static final String ICMP6_PROTO = "icmp6";
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
     public final static String SSL_PROTO = "ssl";
@@ -420,30 +423,49 @@ public class NetUtils {
         }
     }
 
-    public static String[] getNetworkParams(final NetworkInterface nic) {
+    public static String[] getNetworkParams(NetworkInterface nic) {
+        s_logger.debug(String.format("Retrieving network params of NIC [%s].", nic));
+
+        s_logger.trace(String.format("Retrieving all NIC [%s] addresses.", nic));
         List<InterfaceAddress> addrs = nic.getInterfaceAddresses();
-        if (addrs == null || addrs.size() == 0) {
+        if (CollectionUtils.isEmpty(addrs)) {
+            s_logger.debug(String.format("NIC [%s] has no addresses, returning null.", nic));
             return null;
         }
-        Collections.reverse(addrs); // reverse addresses because it has reverse order as "ip addr show"
+
+        String addrsToString = Arrays.toString(addrs.toArray());
+        s_logger.trace(String.format("Found [%s] as NIC [%s] addresses. Reversing the list order because it has reverse order in \"ip addr show\".",
+                addrsToString, nic));
+
+        Collections.reverse(addrs);
         InterfaceAddress addr = null;
-        for (final InterfaceAddress iaddr : addrs) {
-            final InetAddress inet = iaddr.getAddress();
+
+        s_logger.trace(String.format("Iterating through the NIC [%s] addresses [%s] to find a valid address.", nic, addrsToString));
+        for (InterfaceAddress iaddr : addrs) {
+            InetAddress inet = iaddr.getAddress();
+            s_logger.trace(String.format("Validating address [%s].", inet));
             if (!inet.isLinkLocalAddress() && !inet.isLoopbackAddress() && !inet.isMulticastAddress() && inet.getAddress().length == 4) {
                 addr = iaddr;
                 break;
             }
+            s_logger.trace(String.format("Address [%s] is link local [%s], loopback [%s], multicast [%s], or does not have 4 octets [%s]; therefore we will not retrieve its" +
+                    " interface params.", inet, inet.isLinkLocalAddress(), inet.isLoopbackAddress(), inet.isMulticastAddress(), inet.getAddress().length));
         }
         if (addr == null) {
+            s_logger.debug(String.format("Could not find a valid address in NIC [%s], returning null.", nic));
             return null;
         }
-        final String[] result = new String[3];
+
+        s_logger.debug(String.format("Retrieving params of address [%s] of NIC [%s].", addr, nic));
+
+        String[] result = new String[3];
         result[0] = addr.getAddress().getHostAddress();
+
         try {
             final byte[] mac = nic.getHardwareAddress();
             result[1] = byte2Mac(mac);
         } catch (final SocketException e) {
-            s_logger.debug("Caught exception when trying to get the mac address ", e);
+            s_logger.warn(String.format("Unable to get NIC's [%s] MAC address due to [%s].", nic, e.getMessage()), e);
         }
 
         result[2] = prefix2Netmask(addr.getNetworkPrefixLength());
@@ -617,7 +639,7 @@ public class NetUtils {
         return result;
     }
 
-    public static Set<Long> getAllIpsFromCidr(final String cidr, final long size, final Set<Long> usedIps) {
+    public static Set<Long> getAllIpsFromCidr(final String cidr, final long size, final Set<Long> usedIps, int maxIps) {
         assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         final Set<Long> result = new TreeSet<Long>();
         final long ip = ip2Long(cidr);
@@ -629,11 +651,9 @@ public class NetUtils {
 
         end++;
         end = (end << MAX_CIDR - size) - 2;
-        int maxIps = 255; // get 255 ips as maximum
-        while (start <= end && maxIps > 0) {
+        while (start <= end && (maxIps == -1 || result.size() < maxIps)) {
             if (!usedIps.contains(start)) {
                 result.add(start);
-                maxIps--;
             }
             start++;
         }
@@ -1725,6 +1745,29 @@ public class NetUtils {
             }
         }
         return false;
+    }
+
+    public static NetworkInterface getNetworkInterface(String nicName) {
+        s_logger.debug(String.format("Retrieving network interface [%s].", nicName));
+        nicName = StringUtils.trimToNull(nicName);
+
+        if (nicName == null) {
+            return null;
+        }
+
+        NetworkInterface nic;
+        try {
+            nic = NetworkInterface.getByName(nicName);
+            if (nic == null) {
+                s_logger.debug(String.format("Unable to get network interface for NIC [%s].", nicName));
+                return null;
+            }
+
+            return nic;
+        } catch (final SocketException e) {
+            s_logger.warn(String.format("Unable to get network interface for NIC [%s] due to [%s].", nicName, e.getMessage()), e);
+            return null;
+        }
     }
 
 }

@@ -74,7 +74,7 @@ When a new image needs to be added we create a 'distro' in cobbler and associate
 
 b. Puppet master - Cobbler reimages machines on-demand but it is upto puppet recipes to do configuration management within them. The configuration management is required for kvm hypervisors (kvm agent for eg:) and for the cloudstack management server which needs mysql, cloudstack, etc. The puppetmasterd daemon on the driver-vm is responsible for 'kicking' nodes to initiate configuration management on themselves when they come alive. 
 
-So the driver-vm is also the repository of all the puppet recipes for various modules that need to be configured for the test infrastructure to work. The modules are placed in /etc/puppet and bear the same structure as our github repo. When we need to affect a configuration change on any of our systems we only change the github repo and the systems in place are affected upon next run.
+So the driver-vm is also the repository of all the puppet recipes for various modules that need to be configured for the test infrastructure to work. The modules are placed in /etc/puppet and bear the same structure as our GitHub repo. When we need to affect a configuration change on any of our systems we only change the GitHub repo and the systems in place are affected upon next run.
 
 c. dnsmasq - DNS is controlled by cobbler but its configuration of hosts is set within dnsmasq.d/hosts. This is a simple 1-1 mapping of hostnames with IPs. For the most part this should be the single place where one needs to alter for replicating the test setup. Everywhere else only DNS names are/should-be used. open ports 53, 67 on server
 
@@ -107,7 +107,7 @@ Only the latest tests from git are run on the setup. This allows us to test in a
 control via github
 ==================
 
-there are two github repositories controlling the test infrastructure. 
+there are two GitHub repositories controlling the test infrastructure. 
 a. The puppet recipes at gh:acs-infra-test
 b. The gh:cloud-autodeploy repo that has the scripts to orchestrate the overall workflow
 

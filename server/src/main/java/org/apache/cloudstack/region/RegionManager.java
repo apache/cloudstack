@@ -84,7 +84,7 @@ public interface RegionManager {
 
     /**
      * Updates an account
-     * isPopagate falg is set to true if sent from peer Region
+     * isPopagate flag is set to true if sent from peer Region
      *
      * @param cmd
      *            - the parameter containing accountId or account nameand domainId

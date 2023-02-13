@@ -23,13 +23,25 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 public interface ConsoleAccessManager extends Manager, Configurable {
 
-    ConfigKey<Boolean> ConsoleProxyExtraSecurityValidationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "consoleproxy.extra.security.validation.enabled", "false",
-            "Enable/disable extra security validation for console proxy using an extra token.", true);
+    ConfigKey<Integer> ConsoleSessionCleanupRetentionHours = new ConfigKey<>("Advanced", Integer.class,
+            "console.session.cleanup.retention.hours",
+            "240",
+            "Determines the hours to keep removed console session records before expunging them",
+            false,
+            ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> ConsoleSessionCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
+            "console.session.cleanup.interval",
+            "180",
+            "Determines the interval (in hours) to wait between the console session cleanup tasks",
+            false,
+            ConfigKey.Scope.Global);
 
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 
     boolean isSessionAllowed(String sessionUuid);
 
     void removeSessions(String[] sessionUuids);
+
+    void acquireSession(String sessionUuid);
 }

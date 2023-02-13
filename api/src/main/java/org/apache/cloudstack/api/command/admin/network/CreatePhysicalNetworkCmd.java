@@ -42,7 +42,6 @@ import com.cloud.user.Account;
 public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePhysicalNetworkCmd.class.getName());
 
-    private static final String s_name = "createphysicalnetworkresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -118,11 +117,6 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
 
     public String getNetworkName() {
         return networkName;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

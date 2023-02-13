@@ -38,12 +38,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = DeleteBackupScheduleCmd.APINAME,
+@APICommand(name = "deleteBackupSchedule",
         description = "Deletes the backup schedule of a VM",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteBackupScheduleCmd  extends BaseCmd {
-    public static final String APINAME = "deleteBackupSchedule";
 
     @Inject
     private BackupManager backupManager;
@@ -85,11 +84,6 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -39,7 +39,6 @@ import com.cloud.user.Account;
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
-    private static final String s_name = "updatezoneresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -173,11 +172,6 @@ public class UpdateZoneCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

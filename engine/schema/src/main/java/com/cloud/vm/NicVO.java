@@ -30,12 +30,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.db.GenericDao;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Entity
 @Table(name = "nics")
@@ -126,6 +125,9 @@ public class NicVO implements Nic {
 
     @Column(name = "secondary_ip")
     boolean secondaryIp;
+
+    @Column(name = "mtu")
+    Integer mtu;
 
     @Transient
     transient String nsxLogicalSwitchUuid;
@@ -396,6 +398,15 @@ public class NicVO implements Nic {
 
     public void setNsxLogicalSwitchPortUuid(String nsxLogicalSwitchPortUuid) {
         this.nsxLogicalSwitchPortUuid = nsxLogicalSwitchPortUuid;
+    }
+
+    @Override
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
     }
 
     @Override

@@ -23,17 +23,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 
 import javax.inject.Inject;
 
-import com.cloud.upgrade.dao.Upgrade41510to41520;
-import com.cloud.upgrade.dao.Upgrade41600to41610;
-import com.cloud.upgrade.dao.Upgrade41610to41700;
-import com.cloud.upgrade.dao.Upgrade41700to41710;
-import com.cloud.upgrade.dao.Upgrade41710to41800;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -76,7 +73,13 @@ import com.cloud.upgrade.dao.Upgrade41300to41310;
 import com.cloud.upgrade.dao.Upgrade41310to41400;
 import com.cloud.upgrade.dao.Upgrade41400to41500;
 import com.cloud.upgrade.dao.Upgrade41500to41510;
+import com.cloud.upgrade.dao.Upgrade41510to41520;
 import com.cloud.upgrade.dao.Upgrade41520to41600;
+import com.cloud.upgrade.dao.Upgrade41600to41610;
+import com.cloud.upgrade.dao.Upgrade41610to41700;
+import com.cloud.upgrade.dao.Upgrade41700to41710;
+import com.cloud.upgrade.dao.Upgrade41710to41720;
+import com.cloud.upgrade.dao.Upgrade41720to41800;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -108,6 +111,7 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.SystemIntegrityChecker;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
@@ -210,7 +214,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.16.1.1", new Upgrade41610to41700())
                 .next("4.17.0.0", new Upgrade41700to41710())
                 .next("4.17.0.1", new Upgrade41700to41710())
-                .next("4.17.1.0", new Upgrade41710to41800())
+                .next("4.17.1.0", new Upgrade41710to41720())
+                .next("4.17.2.0", new Upgrade41720to41800())
                 .build();
     }
 
@@ -367,6 +372,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
 
             try {
+                initializeDatabaseEncryptors();
 
                 final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
                 final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
@@ -398,6 +404,40 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         } finally {
             lock.releaseRef();
+        }
+    }
+
+    private void initializeDatabaseEncryptors() {
+        TransactionLegacy txn = TransactionLegacy.open("initializeDatabaseEncryptors");
+        txn.start();
+        String errorMessage = "Unable to get the database connections";
+        try {
+            Connection conn = txn.getConnection();
+            errorMessage = "Unable to get the 'init' value from 'configuration' table in the 'cloud' database";
+            decryptInit(conn);
+            txn.commit();
+        } catch (CloudRuntimeException e) {
+            s_logger.error(e.getMessage());
+            errorMessage = String.format("Unable to initialize the database encryptors due to %s. " +
+                    "Please check if database encryption key and database encryptor version are correct.", errorMessage);
+            s_logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage, e);
+        } catch (SQLException e) {
+            s_logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
+        } finally {
+            txn.close();
+        }
+    }
+
+    private void decryptInit(Connection conn) throws SQLException {
+        String sql = "SELECT value from configuration WHERE name = 'init'";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet result = pstmt.executeQuery()) {
+            if (result.next()) {
+                String init = result.getString(1);
+                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+            }
         }
     }
 

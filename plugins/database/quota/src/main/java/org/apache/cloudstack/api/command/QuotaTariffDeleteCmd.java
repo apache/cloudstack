@@ -31,39 +31,25 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = QuotaTariffDeleteCmd.API_NAME, description = "Marks a quota tariff as removed.", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
-responseHasSensitiveInfo = false, since = "4.17.0.0", authorized = {RoleType.Admin})
+@APICommand(name = "quotaTariffDelete", description = "Marks a quota tariff as removed.", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
+responseHasSensitiveInfo = false, since = "4.18.0.0", authorized = {RoleType.Admin})
 public class QuotaTariffDeleteCmd extends BaseCmd {
-    public static final String API_NAME = "quotaTariffDelete";
     protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     QuotaResponseBuilder responseBuilder;
 
-    @Parameter(name = ApiConstants.UUID, type = BaseCmd.CommandType.STRING, required = true, entityType = QuotaTariffResponse.class,
-            description = "UUID of the quota tariff", validations = {ApiArgValidator.UuidString})
-    private String quotaTariffUuid;
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.STRING, required = true, entityType = QuotaTariffResponse.class,
+            description = "ID of the quota tariff", validations = {ApiArgValidator.UuidString})
+    private String id;
 
-    public String getQuotaTariffUuid() {
-        return quotaTariffUuid;
-    }
-
-    public void setQuotaTariffId(String quotaTariffUuid) {
-        this.quotaTariffUuid = quotaTariffUuid;
-    }
-
-    public QuotaTariffDeleteCmd() {
-        super();
-    }
-
-    @Override
-    public String getCommandName() {
-        return QuotaTariffDeleteCmd.API_NAME.toLowerCase() + RESPONSE_SUFFIX;
+    public String getId() {
+        return id;
     }
 
     @Override
     public void execute() {
-        boolean result = responseBuilder.deleteQuotaTariff(getQuotaTariffUuid());
+        boolean result = responseBuilder.deleteQuotaTariff(getId());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         setResponseObject(response);

@@ -79,7 +79,7 @@ export default {
       details: () => {
         var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
-          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy']
+          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -117,7 +117,8 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          args: ['considerlasthost'],
           show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
@@ -141,6 +142,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           args: (record, store) => {
             var fields = []
             fields.push('forced')
@@ -168,6 +170,7 @@ export default {
               value: (record) => { return record.id }
             }
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           successMethod: (obj, result) => {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
@@ -192,6 +195,7 @@ export default {
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
               (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -209,6 +213,7 @@ export default {
             return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
         },
         {
@@ -282,6 +287,7 @@ export default {
           dataView: true,
           popup: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
         {
@@ -298,6 +304,7 @@ export default {
             return args
           },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -333,6 +340,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard.vue')))
         },
@@ -344,6 +352,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
           popup: true
         },
@@ -693,7 +702,7 @@ export default {
         return fields
       },
       resourceType: 'SSHKeyPair',
-      details: ['id', 'name', 'fingerprint', 'account', 'domain'],
+      details: ['id', 'name', 'fingerprint', 'account', 'domain', 'project'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -725,10 +734,13 @@ export default {
           label: 'label.remove.ssh.key.pair',
           message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
-          args: ['name', 'account', 'domainid'],
+          args: ['name', 'account', 'domainid', 'projectid'],
           mapping: {
             name: {
               value: (record, params) => { return record.name }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -743,7 +755,10 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                name: data[0].name, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }
@@ -850,7 +865,7 @@ export default {
           args: ['name', 'description', 'type'],
           mapping: {
             type: {
-              options: ['host anti-affinity', 'host affinity']
+              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
             }
           }
         },

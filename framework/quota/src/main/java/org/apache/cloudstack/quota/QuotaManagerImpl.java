@@ -45,7 +45,6 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
@@ -94,9 +93,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     static final BigDecimal s_hoursInMonth = BigDecimal.valueOf(DateUtil.HOURS_IN_A_MONTH);
     static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
-
-    List<Integer> usageTypesToAvoidCalculation = Arrays.asList(UsageTypes.VM_DISK_IO_READ, UsageTypes.VM_DISK_IO_WRITE, UsageTypes.VM_DISK_BYTES_READ,
-            UsageTypes.VM_DISK_BYTES_WRITE);
 
     public QuotaManagerImpl() {
         super();
@@ -344,12 +340,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected boolean shouldCalculateUsageRecord(AccountVO accountVO, UsageVO usageRecord) {
-        if (usageTypesToAvoidCalculation.contains(usageRecord.getUsageType())) {
-            s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because the calculation of the types [%s] has not been implemented yet.",
-                    usageRecord, usageTypesToAvoidCalculation));
-            return false;
-        }
-
         if (Boolean.FALSE.equals(QuotaConfig.QuotaAccountEnabled.valueIn(accountVO.getAccountId()))) {
             s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because account [%s] has the quota plugin disabled.",
                     usageRecord, accountVO.reflectionToString()));
@@ -558,6 +548,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             case GB_MONTH:
                 BigDecimal gbInUse = BigDecimal.valueOf(usageRecord.getSize()).divide(GiB_DECIMAL, 8, RoundingMode.HALF_EVEN);
                 return rawUsage.multiply(costPerHour).multiply(gbInUse);
+
+            case BYTES:
+            case IOPS:
+                return rawUsage.multiply(aggregatedQuotaTariffsValue);
 
             default:
                 return BigDecimal.ZERO;
