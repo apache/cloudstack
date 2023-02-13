@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'apache/cloudstack'
     name: Sonar JaCoCo Coverage
     runs-on: ubuntu-22.04
     steps:

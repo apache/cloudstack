@@ -110,14 +110,16 @@
       </div>
     </div>
     <a-modal
+      v-if="showError"
       :visible="showError"
       :closable="true"
       :maskClosable="false"
       :title="`${$t('label.error')}!`"
+      :footer="null"
       @cancel="showError = false"
       centered
     >
-      <div v-ctrl-enter="showError = false">
+      <div v-ctrl-enter="() => showError = false">
         <span>{{ $t('message.required.add.least.ip') }}</span>
         <div :span="24" class="action-button">
           <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
@@ -260,6 +262,7 @@ export default {
     },
     handleSubmit () {
       if (this.isValidSetup()) {
+        this.showError = false
         if (this.isFixError) {
           this.$emit('submitLaunchZone')
           return

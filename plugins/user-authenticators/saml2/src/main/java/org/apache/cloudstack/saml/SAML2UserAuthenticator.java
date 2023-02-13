@@ -18,9 +18,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cxf.common.util.StringUtils;
 
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;

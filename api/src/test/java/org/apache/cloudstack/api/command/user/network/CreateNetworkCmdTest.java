@@ -100,10 +100,17 @@ public class CreateNetworkCmdTest extends TestCase {
         Assert.assertEquals(cmd.getNetworkName(), netName);
     }
 
-    public void testGetDisplayText() {
+    public void testGetDisplayTextWhenNotEmpty() {
         String description = "Isolated Network";
         ReflectionTestUtils.setField(cmd, "displayText", description);
         Assert.assertEquals(cmd.getDisplayText(), description);
+    }
+
+    public void testGetDisplayTextWhenEmpty() {
+        String description = null;
+        String netName = "net-isolated";
+        ReflectionTestUtils.setField(cmd, "name", netName);
+        Assert.assertEquals(cmd.getDisplayText(), netName);
     }
 
     public void testGetNetworkDomain() {
