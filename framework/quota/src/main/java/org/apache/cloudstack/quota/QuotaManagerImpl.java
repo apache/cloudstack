@@ -18,6 +18,9 @@ package org.apache.cloudstack.quota;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -89,10 +92,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
-
-    static final BigDecimal s_hoursInMonth = BigDecimal.valueOf(DateUtil.HOURS_IN_A_MONTH);
     static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
+
+    static BigDecimal hoursInCurrentMonth;
 
     public QuotaManagerImpl() {
         super();
@@ -269,6 +272,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         String accountsToString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(accounts, "id", "uuid", "accountName", "domainId");
 
         s_logger.info(String.format("Starting quota usage calculation for accounts [%s].", accountsToString));
+
+        setHoursInCurrentMonth();
 
         Map<Integer, Pair<List<QuotaTariffVO>, Boolean>> mapQuotaTariffsPerUsageType = createMapQuotaTariffsPerUsageType();
 
@@ -533,7 +538,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     protected BigDecimal getUsageValueAccordingToUsageUnitType(UsageVO usageRecord, BigDecimal aggregatedQuotaTariffsValue, String quotaUnit) {
         BigDecimal rawUsage = BigDecimal.valueOf(usageRecord.getRawUsage());
-        BigDecimal costPerHour = aggregatedQuotaTariffsValue.divide(s_hoursInMonth, 8, RoundingMode.HALF_EVEN);
+        BigDecimal costPerHour = aggregatedQuotaTariffsValue.divide(hoursInCurrentMonth, 8, RoundingMode.HALF_EVEN);
 
         switch (UsageUnitTypes.getByDescription(quotaUnit)) {
             case COMPUTE_MONTH:
@@ -556,6 +561,14 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             default:
                 return BigDecimal.ZERO;
         }
+    }
+
+    protected void setHoursInCurrentMonth() {
+        LocalDate currentDate = LocalDate.now();
+        Month currentMonth = currentDate.getMonth();
+        int hoursInMonth = YearMonth.of(currentDate.getYear(), currentMonth).lengthOfMonth() * 24;
+        hoursInCurrentMonth = new BigDecimal(hoursInMonth);
+        s_logger.debug(String.format("Considering [%s] as the total hours in the current month [%s] for the Quota calculation.", hoursInCurrentMonth, currentMonth));
     }
 
     @Override
