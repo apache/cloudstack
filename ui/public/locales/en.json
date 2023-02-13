@@ -2553,6 +2553,7 @@
 "message.error.invalid.autoscale.vmgroup.name": "Invalid AutoScale VM group name. It can contain the ASCII letters 'a' through 'z', 'A' through 'Z', the digits '0' through '9' and the hyphen ('-'), must be between 1 and 255 characters long.",
 "message.error.ip.range": "Please enter valid range.",
 "message.error.ipv4.address": "Please enter a valid IPv4 address.",
+"message.error.ipv4.dns1": "Please enter IpV4 DNS 1",
 "message.error.ipv4.dns2": "Please enter IpV4 DNS 2",
 "message.error.ipv6.address": "Please enter a valid IP v6 address.",
 "message.error.ipv6.gateway": "Please enter IpV6 Gateway",
