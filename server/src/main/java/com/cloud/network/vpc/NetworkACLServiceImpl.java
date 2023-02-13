@@ -106,7 +106,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
         if (vpcId != 0) {
             final Account caller = CallContext.current().getCallingAccount();
-            final Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
+            final Vpc vpc = _vpcDao.findById(vpcId);
             if (vpc == null) {
                 throw new InvalidParameterValueException(String.format("Unable to find VPC with ID [%s].", vpcId));
             }
