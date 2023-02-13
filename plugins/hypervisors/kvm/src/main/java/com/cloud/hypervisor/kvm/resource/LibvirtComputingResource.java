@@ -50,7 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
-import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -461,6 +461,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
     protected LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+
+    private boolean isTungstenEnabled = false;
 
     private static Gson gson = new Gson();
 
@@ -1396,6 +1398,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _migrateWait = intValue;
         }
 
+        if (params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()) != null) {
+            isTungstenEnabled = Boolean.parseBoolean(params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()));
+        }
+
         return true;
     }
 
@@ -1481,8 +1487,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 defaultVifDriverName = DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME;
             }
         }
-        tungstenVifDriver = getVifDriverClass(DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME, params);
         _defaultVifDriver = getVifDriverClass(defaultVifDriverName, params);
+        tungstenVifDriver = getVifDriverClass(DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME, params);
 
         // Load any per-traffic-type vif drivers
         for (final Map.Entry<String, Object> entry : params.entrySet()) {
@@ -1556,7 +1562,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
         vifDrivers.add(_defaultVifDriver);
-        if (TungstenService.isTungstenEnabled(Long.parseLong(_dcId))) {
+        if (isTungstenEnabled) {
             vifDrivers.add(tungstenVifDriver);
         }
         vifDrivers.addAll(_trafficTypeVifDrivers.values());
