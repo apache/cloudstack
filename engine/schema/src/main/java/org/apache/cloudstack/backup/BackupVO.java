@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.google.gson.Gson;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -30,9 +31,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
 import org.apache.commons.lang3.StringUtils;
-import com.google.gson.Gson;
 
 @Entity
 @Table(name = "backups")
@@ -203,7 +202,7 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public List<Backup.VolumeInfo> getBackupVolumeList() {
+    public List<VolumeInfo> getBackupVolumeList() {
         if (StringUtils.isEmpty(this.backupVolumes)) {
             return Collections.emptyList();
         }

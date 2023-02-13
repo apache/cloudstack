@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.google.gson.Gson;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.InternalIdentity;
@@ -45,8 +48,6 @@ import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
@@ -56,7 +57,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
@@ -179,11 +179,13 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups) {
+    public boolean removeVMFromBackupOffering(final VirtualMachine vm, boolean removeBackups) {
         final VeeamClient client = getClient(vm.getDataCenterId());
-        findVmwareDatacenterForVM(vm);
+        final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
+
         final String clonedJobName = vm.getBackupName();
         boolean result = false;
+
         if (removeBackups) {
             result = client.deleteJobAndBackup(clonedJobName);
         } else {
@@ -191,7 +193,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         }
 
         if (!result) {
-            LOG.warn(String.format("Failed to remove Veeam %s for job: [name: %s].", removeBackups? "job and backup" : "job", clonedJobName));
+            LOG.warn(String.format("Failed to remove Veeam %s for job: [name: %s].", removeBackups ? "job and backup" : "job", clonedJobName));
             throw new CloudRuntimeException("Failed to delete Veeam B&R job, an operation may be in progress. Please try again after some time.");
         }
         return true;
@@ -199,7 +201,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return false;
+        return true;
     }
 
     @Override
@@ -353,7 +355,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                     vmVolumes.add(volumeVO);
                 }
             }
-
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
                 list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(), vol.getDeviceId()));

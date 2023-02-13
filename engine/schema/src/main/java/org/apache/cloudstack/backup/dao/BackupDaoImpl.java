@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -41,6 +40,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
     public static final Logger LOGGER = Logger.getLogger(BackupDaoImpl.class.getName());
@@ -148,7 +148,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
             DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
             DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
-            BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+            BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
 
             BackupResponse response = new BackupResponse();
             response.setId(backup.getUuid());
@@ -160,7 +160,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             response.setSize(backup.getSize());
             response.setProtectedSize(backup.getProtectedSize());
             response.setStatus(backup.getStatus());
-            response.setVolumes(new Gson().toJson(backup.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class));
+            response.setVolumes(new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class));
             response.setBackupOfferingId(offering.getUuid());
             response.setBackupOffering(offering.getName());
             response.setAccountId(account.getUuid());

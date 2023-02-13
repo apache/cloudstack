@@ -2459,17 +2459,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return vm;
     }
 
-    protected void validateIfVmHasBackups(UserVmVO vm, boolean attach) {
-        if (vm.getBackupOfferingId() != null) {
-            String errorMsg = "Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
-                    + "set the global configuration 'backup.enable.attach.detach.of.volumes' to true.";
-            if (attach)
-                errorMsg = "Unable to attach volume, please specify a VM that does not have any backups or set the global configuration "
-                        + "'backup.enable.attach.detach.of.volumes' to true.";
-            throw new InvalidParameterValueException(errorMsg);
-        }
-    }
-
     /**
      * Check that the volume ID is valid
      * Check that the volume is a data volume
@@ -2516,7 +2505,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(), vol.getDeviceId()));
             }
             return GsonHelper.getGson().toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {

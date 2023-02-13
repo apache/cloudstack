@@ -76,7 +76,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -639,6 +638,7 @@ public class UserVmManagerImplTest {
         Mockito.when(userVmVoMock.getBackupOfferingId()).thenReturn(1l);
         Mockito.when(userVmVoMock.getDataCenterId()).thenReturn(2l);
         Mockito.when(userVmVoMock.getId()).thenReturn(2l);
+        Mockito.when(backupManager.getName()).thenReturn("veeam");
 
         List<Backup> backupsForVm = new ArrayList<>();
         backupsForVm.add(new BackupVO());

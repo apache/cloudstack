@@ -133,4 +133,16 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> findPoolsByStorageType(String storageType);
 
     List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
+
+    /**
+     * Find storage pool by path like. If clusterId is informed, try to find by path like in specified zone and cluster.
+     * If clusterId is not informed, try to find by path like in specified zone and with clusterId null.
+     */
+    StoragePoolVO findPoolByPathLike(String datastore, Long datacenterId, Long clusterId);
+
+    /**
+     * Find storage pool by name in specified datacenter. If clusterId is informed, try to find by name in specified zone and cluster.
+     * If clusterId is not informed, try to find by name in specified zone.
+     */
+    StoragePoolVO findPoolByName(String datastore, Long datacenterId, Long clusterId);
 }

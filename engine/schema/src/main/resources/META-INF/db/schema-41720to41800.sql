@@ -1521,52 +1521,17 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`)
 
 ALTER TABLE `cloud_usage`.`quota_usage` MODIFY COLUMN quota_used decimal(20,8) unsigned NOT NULL;
 
-ALTER TABLE `cloud`.`user` ADD COLUMN `is_user_2fa_enabled` tinyint NOT NULL DEFAULT 0;
-ALTER TABLE `cloud`.`user` ADD COLUMN `key_for_2fa` varchar(255) default NULL;
-ALTER TABLE `cloud`.`user` ADD COLUMN `user_2fa_provider` varchar(255) default NULL;
+ALTER TABLE `cloud`.`backups` ADD backup_volumes TEXT NULL COMMENT 'details of backedup volumes';
 
-DROP VIEW IF EXISTS `cloud`.`user_view`;
-CREATE VIEW `cloud`.`user_view` AS
-    select
-        user.id,
-        user.uuid,
-        user.username,
-        user.password,
-        user.firstname,
-        user.lastname,
-        user.email,
-        user.state,
-        user.api_key,
-        user.secret_key,
-        user.created,
-        user.removed,
-        user.timezone,
-        user.registration_token,
-        user.is_registered,
-        user.incorrect_login_attempts,
-        user.source,
-        user.default,
-        account.id account_id,
-        account.uuid account_uuid,
-        account.account_name account_name,
-        account.type account_type,
-        account.role_id account_role_id,
-        domain.id domain_id,
-        domain.uuid domain_uuid,
-        domain.name domain_name,
-        domain.path domain_path,
-        async_job.id job_id,
-        async_job.uuid job_uuid,
-        async_job.job_status job_status,
-        async_job.account_id job_account_id,
-        user.is_user_2fa_enabled is_user_2fa_enabled
-    from
-        `cloud`.`user`
-            inner join
-        `cloud`.`account` ON user.account_id = account.id
-            inner join
-        `cloud`.`domain` ON account.domain_id = domain.id
-            left join
-        `cloud`.`async_job` ON async_job.instance_id = user.id
-            and async_job.instance_type = 'User'
-            and async_job.job_status = 0;
+-- Populate column backup_volumes in table backups with a GSON
+-- formed by concatenating the UUID, type, size, path and deviceId
+-- of the volumes of VMs that have some backup offering.
+-- Required for the restore process of a backup using Veeam
+-- The Gson result can be in one of this formats:
+-- When VM has only ROOT disk: [{"uuid":"<uuid>","type":"<type>","size":<size>,"path":"<path>","deviceId":<deviceId>}]
+-- When VM has more tha one disk: [{"uuid":"<uuid>","type":"<type>","size":<size>,"path":"<path>","deviceId":<deviceId>}, {"uuid":"<uuid>","type":"<type>","size":<size>,"path":"<path>","deviceId":<deviceId>}, <>]
+UPDATE `cloud`.`backups` b INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.id SET b.backup_volumes = (SELECT CONCAT("[", GROUP_CONCAT( CONCAT("{\"uuid\":\"", v.uuid, "\",\"type\":\"", v.volume_type, "\",\"size\":", v.`size`, ",\"path\":\"", v.path, "\",\"deviceId\":", v.device_id, "}") SEPARATOR ","), "]") FROM `cloud`.`volumes` v WHERE v.instance_id = vm.id);
+
+ALTER TABLE `cloud`.`vm_instance` ADD backup_name varchar(255) NULL COMMENT 'backup job name when using Veeam provider';
+
+UPDATE `cloud`.`vm_instance` vm INNER JOIN `cloud`.`backup_offering` bo ON vm.backup_offering_id = bo.id SET vm.backup_name = CONCAT(vm.instance_name, "-CSBKP-", vm.uuid);

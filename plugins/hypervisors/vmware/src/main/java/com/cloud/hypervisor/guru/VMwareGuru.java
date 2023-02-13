@@ -157,7 +157,7 @@ import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
-    protected static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
+    protected static Logger s_logger = Logger.getLogger(VMwareGuru.class);
     private static final Gson GSON = GsonHelper.getGson();
 
 

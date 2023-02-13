@@ -87,6 +87,7 @@ import com.cloud.projects.Project;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -111,6 +112,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private static final Logger LOG = Logger.getLogger(BackupManagerImpl.class);
@@ -139,6 +141,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private HypervisorGuruManager hypervisorGuruManager;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
     @Inject
     private ApiDispatcher apiDispatcher;
     @Inject
@@ -249,6 +253,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupOfferingDao.remove(offering.getId());
     }
 
+    private String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+        List<Backup.VolumeInfo> list = new ArrayList<>();
+        for (VolumeVO vol : vmVolumes) {
+            list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(), vol.getDeviceId()));
+        }
+        return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, eventDescription = "assign VM to backup offering", async = true)
     public boolean assignVMToBackupOffering(Long vmId, Long offeringId) {
@@ -286,20 +298,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 try {
                     long vmId = vm.getId();
                     vm.setBackupOfferingId(offering.getId());
+                    vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vmId)));
 
                     if (vmInstanceDao.update(vmId, vm)) {
                         if (backupProvider.assignVMToBackupOffering(vm, offering)) {
                             vmInstanceDao.update(vmId, vm);
-
                             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vmId,
                                     "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
                             LOG.debug(String.format("VM [%s] successfully added to Backup Offering [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm,
                                     "uuid", "instanceName", "backupOfferingId", "backupVolumes"), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering,
                                     "uuid", "name", "externalId", "provider")));
                             return vm;
+                        } else {
+                            throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
                         }
-                    } else {
-                        throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
                     }
                 } catch (Exception e) {
                     String msg = String.format("Failed to assign VM [%s] to the Backup Offering [%s], using provider [name: %s, class: %s], due to: [%s].",
@@ -346,6 +358,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             vm.setBackupOfferingId(null);
             vm.setBackupExternalId(null);
+            vm.setBackupVolumes(null);
             result = backupProvider.removeVMFromBackupOffering(vm, forced);
             if (result && (backupProvider.willDeleteBackupsOnOfferingRemoval() || forced)) {
                 final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
@@ -644,7 +657,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
                     backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
-        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), backup.getBackupVolumeList(), backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
+        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), backupProvider.getName().equalsIgnoreCase("veeam") ?
+                        backup.getBackupVolumeList() : vmFromBackup.getBackupVolumeList(),
+                            backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
             throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s].", backedUpVolumeUuid, vm.getUuid()));
         }
         return true;

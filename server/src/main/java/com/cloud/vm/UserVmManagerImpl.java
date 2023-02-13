@@ -125,6 +125,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -370,7 +371,6 @@ import com.cloud.vm.dao.VmStatsDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -2403,7 +2403,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         }
         try {
-
             removeBackupOfferingBeforeDeleteVmIfNeeded(vm);
 
             autoScaleManager.removeVmFromVmGroup(vm.getId());
@@ -2463,11 +2462,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.debug(String.format("VM [%s] with backup offering [id: %s] does not have any backups. Trying to delete job.",
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId()));
             backupManager.removeVMFromBackupOffering(vm.getId(), true);
-        } else {
+        } else if (backupManager.getName().equalsIgnoreCase("veeam")){
             s_logger.debug(String.format("VM [uuid: %s, name: %s] has a Backup Offering [id: %s, external id: %s] with %s backups. "
-                    + "Trying to disable/remove only the job, but keeping the backups.", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                            + "Trying to disable/remove only the job, but keeping the backups.", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
                     vm.getBackupExternalId(), backupsForVm.size()));
             backupManager.removeVMFromBackupOffering(vm.getId(), false);
+        } else {
+            throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
+                            + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
+                            + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                    vm.getBackupExternalId(), backupsForVm.size()));
         }
     }
 
@@ -3302,7 +3306,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected void removeBackupOfferingIfNeededAndDetachVolumes(UserVmVO vm) {
         removeBackupOfferingBeforeDeleteVmIfNeeded(vm);
-
         List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
         allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
         detachVolumesFromVm(allVolumes);

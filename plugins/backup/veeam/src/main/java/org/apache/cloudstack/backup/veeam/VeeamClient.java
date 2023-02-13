@@ -489,7 +489,7 @@ public class VeeamClient {
     }
 
     private boolean enableJob(String clonedJobName) {
-        String action =  "if ($job) { Enable-VBRJob -Job $job } else { Write-Output \"Failed\" }";
+        String action = "if ($job) { Enable-VBRJob -Job $job } else { Write-Output \"Failed\" }";
         return checkJobAndDoAction(clonedJobName, action);
     }
 
@@ -516,6 +516,7 @@ public class VeeamClient {
                 LOG.debug(String.format("VM [name: %s] is already assigned to the Backup Job [%s].", vmwareInstanceName, jobId));
                 return true;
             }
+
             LOG.debug(String.format("Trying to add VM [name: %s] to job [%s].", vmwareInstanceName, jobId));
             final CreateObjectInJobSpec vmToBackupJob = new CreateObjectInJobSpec();
             vmToBackupJob.setObjName(vmwareInstanceName);
@@ -605,14 +606,14 @@ public class VeeamClient {
         String separator = ";";
         String action = String.join(separator,
                 "if ($job) {",
-                    "if ($job.Options.JobOptions.RunManually -eq $False) { ",
-                        "Disable-VBRJob -Job $job",
-                        "$repo = Get-VBRBackupRepository",
-                        "Sync-VBRBackupRepository -Repository $repo",
-                    "}",
-                 "} else {",
-                     "Write-Output \"Failed\"",
-                     "Exit 1",
+                "if ($job.Options.JobOptions.RunManually -eq $False) { ",
+                "Disable-VBRJob -Job $job",
+                "$repo = Get-VBRBackupRepository",
+                "Sync-VBRBackupRepository -Repository $repo",
+                "}",
+                "} else {",
+                "Write-Output \"Failed\"",
+                "Exit 1",
                 "}");
         return checkJobAndDoAction(jobName, action);
     }
@@ -713,18 +714,18 @@ public class VeeamClient {
         final List<String> cmds = Arrays.asList(
                 String.format("$backup = Get-VBRBackup -Name \"%s\"", backupName),
                 "if ($backup) {",
-                    String.format("$restorePoints = (Get-VBRRestorePoint -Backup:$backup -Name \"%s\" ^| Where-Object {$_.IsConsistent -eq $true})", vmInternalName),
-                    "if ($restorePoints) {",
-                        "ForEach ($restore in $restorePoints) {",
-                            "$restoreId = 'Id : ' + $restore.Id.Guid",
-                            "$creationTime = 'CreationTime : ' + $restore.CreationTime.ToString('MM/dd/yyyy HH:mm:ss')",
-                            "$type = 'Type : ' + $restore.Type",
-                            "$path = 'Path : '",
-                            "$paths = $restore.AuxData.Disks.Path ^| ForEach-Object { $path + $_ }",
-                            "Write-Output $restoreId $creationTime $type $paths `r`n",
-                        "}",
+                  String.format("$restorePoints = (Get-VBRRestorePoint -Backup:$backup -Name \"%s\" ^| Where-Object {$_.IsConsistent -eq $true})", vmInternalName),
+                  "if ($restorePoints) {",
+                    "ForEach ($restore in $restorePoints) {",
+                      "$restoreId = 'Id : ' + $restore.Id.Guid",
+                      "$creationTime = 'CreationTime : ' + $restore.CreationTime.ToString('MM/dd/yyyy HH:mm:ss')",
+                      "$type = 'Type : ' + $restore.Type",
+                      "$path = 'Path : '",
+                      "$paths = $restore.AuxData.Disks.Path ^| ForEach-Object { $path + $_ }",
+                      "Write-Output $restoreId $creationTime $type $paths `r`n",
                     "}",
-                 "}"
+                  "}",
+                "}"
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
         final List<Backup.RestorePoint> restorePoints = new ArrayList<>();

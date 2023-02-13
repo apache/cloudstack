@@ -58,6 +58,8 @@ public interface BackupProvider {
 
     /**
      * Removes a VM from a backup offering or policy
+     * @param vm
+     * @return
      */
     boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups);
 
