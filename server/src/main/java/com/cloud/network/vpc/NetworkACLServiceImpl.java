@@ -106,7 +106,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
         if (vpcId != 0) {
             final Account caller = CallContext.current().getCallingAccount();
-            final Vpc vpc = _vpcDao.findById(vpcId);
+            final Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
             if (vpc == null) {
                 throw new InvalidParameterValueException(String.format("Unable to find VPC with ID [%s].", vpcId));
             }
@@ -1141,14 +1141,13 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (nextRule == null && previousRule == null) {
             throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be invalid.");
         }
-        long ruleAclId = ruleBeingMoved.getAclId();
+        long aclId = ruleBeingMoved.getAclId();
 
-        if ((nextRule != null && nextRule.getAclId() != ruleAclId) || (previousRule != null && previousRule.getAclId() != ruleAclId)) {
+        if ((nextRule != null && nextRule.getAclId() != aclId) || (previousRule != null && previousRule.getAclId() != aclId)) {
             throw new InvalidParameterValueException("Cannot use ACL rules from differentiating ACLs. Rule being moved.");
         }
-        NetworkACLVO acl = _networkACLDao.findById(ruleAclId);
+        NetworkACLVO acl = _networkACLDao.findById(aclId);
         Account account = CallContext.current().getCallingAccount();
-        long aclId = acl.getId();
 
         if (aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY) {
             throw new InvalidParameterValueException("Default ACL rules cannot be moved.");

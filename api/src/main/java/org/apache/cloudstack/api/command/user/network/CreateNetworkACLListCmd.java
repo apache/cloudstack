@@ -121,12 +121,10 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     @Override
     public long getEntityOwnerId() {
         Account account;
-        Long vpcId = getVpcId();
-
-        if (isAclAttachedToVpc(vpcId)) {
-            Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
+        if (isAclAttachedToVpc(this.vpcId)) {
+            Vpc vpc = _entityMgr.findById(Vpc.class, this.vpcId);
             if (vpc == null) {
-                throw new InvalidParameterValueException(String.format("Invalid VPC ID [%s] provided.", vpcId));
+                throw new InvalidParameterValueException(String.format("Invalid VPC ID [%s] provided.", this.vpcId));
             }
             account = _accountService.getAccount(vpc.getAccountId());
         } else {
