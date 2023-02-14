@@ -1570,3 +1570,11 @@ CREATE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
+
+-- Change usage of VM_DISK_IO_WRITE to use right usage_type
+UPDATE
+  `cloud_usage`.`cloud_usage`
+SET
+  usage_type = 22
+WHERE
+  usage_display like '% io write';
