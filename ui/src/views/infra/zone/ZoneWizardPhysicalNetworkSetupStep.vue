@@ -355,8 +355,7 @@ export default {
       return traffics
     },
     tungstenNetworkIndex () {
-      const tungstenNetworkIndex = this.physicalNetworks.findIndex(network => network.isolationMethod === 'TF')
-      return tungstenNetworkIndex
+      return -1
     },
     hypervisor () {
       return this.prefillContent.hypervisor || null
