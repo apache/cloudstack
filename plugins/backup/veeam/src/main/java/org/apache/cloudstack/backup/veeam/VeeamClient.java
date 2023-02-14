@@ -732,7 +732,7 @@ public class VeeamClient {
     }
 
     public Pair<Boolean, String> restoreVolume(String volumeUuid, String vmUuid, String restorePointId, String host, String datastore, String diskType, String diskDeviceNode,
-            String diskName, long device, VirtualMachine vm) {
+            String diskName, long device, VirtualMachine vm, Boolean startVm) {
         datastore = removeDashesIfDatastoreNameIsUuid(datastore);
         if (diskType.equals("IDE")) {
             String veeamLink = "https://www.veeam.com/kb1100";
@@ -749,7 +749,7 @@ public class VeeamClient {
                     "if ($disk -and $ds -and $server -and $vm) { ",
                         String.format("$newdisk = Set-VBRViVirtualDevice -VirtualDevice $disk -VirtualDeviceNode %s -Type %s", device, diskType.equals("IDE") ? "SCSI" : diskType),
                         "$mapping = New-VBRViVirtualDeviceMappingRule -SourceVirtualDevice:$newdisk -Datastore:$ds",
-                        "$job = Start-VBRViVirtualDiskRestore -RestorePoint:$point -VirtualDeviceMapping:$mapping -TargetVM $vm -RunAsync",
+                        String.format("$job = Start-VBRViVirtualDiskRestore -RestorePoint:$point -VirtualDeviceMapping:$mapping -TargetVM $vm %s -RunAsync", startVm ? "-PowerOn" : ""),
                         "while (-not (Get-VBRRestoreSession -Id $job.Id).IsCompleted) { Start-Sleep -Seconds 10 }",
                         "Write-Output $disk.Name",
                     "} else { ",

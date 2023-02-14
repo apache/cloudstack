@@ -247,7 +247,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String host, String dataStore, VirtualMachine vm) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String host, String dataStore, VirtualMachine vm, Boolean startVm) {
         Pair<Boolean, String> result = new Pair<>(false, "");
         final Long zoneId = backup.getZoneId();
         final String restorePointId = backup.getExternalId();
@@ -265,7 +265,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         for (String name : fromJson.getDiskChain()) {
             String diskName = StringUtils.substringAfter(name, "/");
             try {
-                result = getClient(zoneId).restoreVolume(volumeUuid, vmVO.getUuid(), restorePointId, host, dataStore, type, virtualDeviceNode, diskName, newDeviceId, vm);
+                result = getClient(zoneId).restoreVolume(volumeUuid, vmVO.getUuid(), restorePointId, host, dataStore, type, virtualDeviceNode, diskName, newDeviceId, vm, startVm);
             } catch (Exception e) {
                 LOG.error(String.format("Failed to restore volume [%s] in VM [%s], with type [%s], node [%s] and disk name [%s], using target host [%s] and datastore [%s] due to [%s].",
                         volumeUuid, vmVO.getUuid(), type, virtualDeviceNode, diskName, host, dataStore, e.getMessage()), e);
