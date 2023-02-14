@@ -76,6 +76,19 @@ public class VirtualMachineDiskInfoBuilder {
         return null;
     }
 
+    public VirtualMachineDiskInfo getDiskInfoByBackingFileBaseName(String diskBackingFileBaseName, String dataStoreName, String busName) {
+        for (Map.Entry<String, List<String>> entry : disks.entrySet()) {
+            if (chainContains(entry.getValue(), diskBackingFileBaseName, dataStoreName) && entry.getKey().equals(busName)) {
+                VirtualMachineDiskInfo diskInfo = new VirtualMachineDiskInfo();
+                diskInfo.setDiskDeviceBusName(entry.getKey());
+                diskInfo.setDiskChain(entry.getValue().toArray(new String[1]));
+                return diskInfo;
+            }
+        }
+
+        return null;
+    }
+
     private List<String> getDiskChainContainer(String diskDeviceBusName) {
         assert (diskDeviceBusName != null);
         List<String> chain = disks.get(diskDeviceBusName);

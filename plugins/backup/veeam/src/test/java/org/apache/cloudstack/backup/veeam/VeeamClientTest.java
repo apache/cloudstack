@@ -29,6 +29,7 @@ import static org.mockito.Mockito.times;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
@@ -96,70 +97,24 @@ public class VeeamClientTest {
     }
 
     @Test
-    public void getRepositoryNameFromJobTestExceptionCmdWithoutResult() throws Exception {
-        String backupName = "TEST-BACKUP";
-        try {
-            Mockito.doReturn(null).when(mockClient).executePowerShellCommands(Mockito.anyList());
-            mockClient.getRepositoryNameFromJob(backupName);
-            fail();
-        } catch (Exception e) {
-            Assert.assertEquals(CloudRuntimeException.class, e.getClass());
-            Assert.assertEquals("Failed to get Repository Name from Job [name: TEST-BACKUP].", e.getMessage());
-        }
+    public void removeDashesIfDatastoreNameIsUuidTestValidUuid() {
+        String validUuid = UUID.randomUUID().toString();
+        String expected = validUuid.replace("-","");
+        String result = client.removeDashesIfDatastoreNameIsUuid(validUuid);
+        Assert.assertEquals(expected, result);
     }
 
     @Test
-    public void getRepositoryNameFromJobTestExceptionCmdWithFalseResult() {
-        String backupName = "TEST-BACKUP2";
-        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.FALSE, "");
-        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
-        try {
-            mockClient.getRepositoryNameFromJob(backupName);
-            fail();
-        } catch (Exception e) {
-            Assert.assertEquals(CloudRuntimeException.class, e.getClass());
-            Assert.assertEquals("Failed to get Repository Name from Job [name: TEST-BACKUP2].", e.getMessage());
-        }
+    public void removeDashesIfDatastoreNameIsUuidTestNameWithDashesButIsNotUuid() {
+        String datastore = UUID.randomUUID().toString() + "-test-extra-name";
+        String result = client.removeDashesIfDatastoreNameIsUuid(datastore);
+        Assert.assertEquals(datastore, result);
     }
 
     @Test
-    public void getRepositoryNameFromJobTestExceptionWhenResultIsInWrongFormat() {
-        String backupName = "TEST-BACKUP3";
-        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\nName:\n\nName-test");
-        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
-        try {
-            mockClient.getRepositoryNameFromJob(backupName);
-            fail();
-        } catch (Exception e) {
-            Assert.assertEquals(CloudRuntimeException.class, e.getClass());
-            Assert.assertEquals("Can't find any repository name for Job [name: TEST-BACKUP3].", e.getMessage());
-        }
-    }
-
-    @Test
-    public void getRepositoryNameFromJobTestSuccess() throws Exception {
-        String backupName = "TEST-BACKUP3";
-        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\n\nName : test");
-        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
-        String repositoryNameFromJob = mockClient.getRepositoryNameFromJob(backupName);
-        Assert.assertEquals("test", repositoryNameFromJob);
-    }
-
-    @Test
-    public void checkIfRestoreSessionFinishedTestTimeoutException() throws IOException {
-        try {
-            ReflectionTestUtils.setField(mockClient, "restoreTimeout", 10);
-            RestoreSession restoreSession = Mockito.mock(RestoreSession.class);
-            HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
-            Mockito.when(mockClient.get(Mockito.anyString())).thenReturn(httpResponse);
-            Mockito.when(mockClient.parseRestoreSessionResponse(httpResponse)).thenReturn(restoreSession);
-            Mockito.when(restoreSession.getResult()).thenReturn("No Success");
-            Mockito.when(mockClient.checkIfRestoreSessionFinished(Mockito.eq("RestoreTest"), Mockito.eq("any"))).thenCallRealMethod();
-            mockClient.checkIfRestoreSessionFinished("RestoreTest", "any");
-            fail();
-        } catch (Exception e) {
-            Assert.assertEquals("Related job type: RestoreTest was not successful", e.getMessage());
-        }
-        Mockito.verify(mockClient, times(10)).get(Mockito.anyString());
+    public void removeDashesIfDatastoreNameIsUuidTestNotUuidName() {
+        String name = "simple-datastore-name";
+        String result = client.removeDashesIfDatastoreNameIsUuid(name);
+        Assert.assertEquals(name, result);
     }
 }

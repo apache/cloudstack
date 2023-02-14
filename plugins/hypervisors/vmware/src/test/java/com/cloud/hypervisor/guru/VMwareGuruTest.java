@@ -16,22 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateVmToPoolCommand;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.util.ArrayList;
+import java.util.Date;
+
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.Backup.VolumeInfo;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +40,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import static org.junit.Assert.assertEquals;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.VMInstanceVO;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -148,5 +148,36 @@ public class VMwareGuruTest {
         String expected = String.format("[{\"uuid\":\"%s\",\"type\":\"ROOT\",\"size\":555,\"path\":\"/root/dir\"},{\"uuid\":\"%s\",\"type\":\"DATADISK\",\"size\":1111000,\"path\":\"/root/dir/data\"}]", rootUuid, dataUuid);
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void findRestoredVolumeTestNotFindRestoredVolume() throws Exception {
+        VirtualMachineMO vmInstanceVO = Mockito.mock(VirtualMachineMO.class);
+        VolumeInfo volumeInfo = Mockito.mock(Backup.VolumeInfo.class);
+        Mockito.when(volumeInfo.getSize()).thenReturn(52l);
+        Mockito.when(vmInstanceVO.getVirtualDisks()).thenReturn(new ArrayList<>());
+        try {
+            guru.findRestoredVolume(volumeInfo, vmInstanceVO, null, 0);
+        } catch (Exception e) {
+            assertEquals("Volume to restore could not be found", e.getMessage());
+        }
+    }
+
+    @Test
+    public void findRestoredVolumeTestFindRestoredVolume() throws Exception {
+        VolumeInfo volumeInfo = Mockito.mock(Backup.VolumeInfo.class);
+        VirtualMachineMO vmInstanceVO = Mockito.mock(VirtualMachineMO.class);
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        ArrayList<VirtualDisk> disks = new ArrayList<>();
+        disks.add(virtualDisk);
+        Mockito.when(volumeInfo.getSize()).thenReturn(52l);
+        Mockito.when(virtualDisk.getCapacityInBytes()).thenReturn(52l);
+        Mockito.when(info.getFileName()).thenReturn("test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(virtualDisk.getUnitNumber()).thenReturn(1);
+        Mockito.when(vmInstanceVO.getVirtualDisks()).thenReturn(disks);
+        VirtualDisk findRestoredVolume = guru.findRestoredVolume(volumeInfo, vmInstanceVO, "test", 1);
+        assertNotNull(findRestoredVolume);
     }
 }
