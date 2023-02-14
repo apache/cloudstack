@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 
+import com.cloud.utils.UuidUtils;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
@@ -702,7 +703,7 @@ public class VeeamClient {
     }
 
     protected String removeDashesIfDatastoreNameIsUuid(String datastore) {
-        if (!UuidUtils.validateUUID(datastore)) {
+        if (!UuidUtils.isUuid(datastore)) {
             return datastore;
         }
         LOG.trace(String.format("Removing the dash symbol of datastore name [%s] because this name is a valid UUID used by ACS. This happens because when a new NFS storage is created via ACS, "
@@ -718,8 +719,8 @@ public class VeeamClient {
         final List<String> cmds = Arrays.asList(
                 "$points = Get-VBRRestorePoint",
                 String.format("foreach($point in $points) { if ($point.Id -eq '%s') { break; } }", restorePointId),
-                String.format("$server = Get-VBRServer -Name \"%s\"", hostIp),
-                String.format("$ds = Find-VBRViDatastore -Server:$server -Name \"%s\"", datastoreId),
+                String.format("$server = Get-VBRServer -Name \"%s\"", host),
+                String.format("$ds = Find-VBRViDatastore -Server:$server -Name \"%s\"", datastore),
                 String.format("$job = Start-VBRRestoreVM -RestorePoint:$point -Server:$server -Datastore:$ds -VMName \"%s\" -RunAsync", restoreLocation),
                 "while (-not (Get-VBRRestoreSession -Id $job.Id).IsCompleted) { Start-Sleep -Seconds 10 }"
         );

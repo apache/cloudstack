@@ -24,25 +24,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
 import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.veeam.api.RestoreSession;
-import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 

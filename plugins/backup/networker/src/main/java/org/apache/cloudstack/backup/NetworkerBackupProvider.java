@@ -369,12 +369,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String host, String dataStore, VirtualMachine vm) {
         String networkerServer;
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
         VMInstanceVO backupSourceVm = vmInstanceDao.findById(backup.getVmId());
-        StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
-        HostVO hostVO = hostDao.findByIp(hostIp);
+        StoragePoolHostVO datastore = storagePoolHostDao.findByUuid(dataStore);
+        HostVO hostVO = hostDao.findByIp(host);
 
         final Long zoneId = backup.getZoneId();
         final String externalBackupId = backup.getExternalId();
@@ -437,7 +437,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         script.add("-n");
         script.add(restoredVolume.getUuid());
         script.add("-p");
-        script.add(dataStore.getLocalPath());
+        script.add(datastore.getLocalPath());
         script.add("-a");
         script.add(volume.getUuid());
 

@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.cloud.storage.dao.VolumeDao;
+import com.google.gson.Gson;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.InternalIdentity;
@@ -38,7 +40,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -49,7 +51,6 @@ import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
@@ -95,6 +96,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private BackupDao backupDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
+    @Inject
+    private VolumeDao volumeDao;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -365,31 +368,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 }
             }
         });
-    }
-
-    protected String createVolumeInfoFromVolumes(List<String> paths) {
-        List<VolumeVO> vmVolumes = new ArrayList<>();
-        try {
-            for (String diskName : paths) {
-                VolumeVO volumeVO = volumeDao.findByPath(diskName);
-                if (volumeVO != null) {
-                    vmVolumes.add(volumeVO);
-                }
-            }
-
-            List<Backup.VolumeInfo> list = new ArrayList<>();
-            for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(), vol.getDeviceId()));
-            }
-            return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
-        } catch (Exception e) {
-            if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
-                LOG.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
-            } else {
-                LOG.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
-            }
-            throw e;
-        }
     }
 
     @Override

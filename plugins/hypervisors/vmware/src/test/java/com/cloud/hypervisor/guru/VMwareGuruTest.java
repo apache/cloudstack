@@ -20,12 +20,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
-import java.util.Date;
 
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.MigrateVmToPoolCommand;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.Backup.VolumeInfo;
-import org.apache.cloudstack.backup.BackupVO;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,14 +53,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
-import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.VMInstanceVO;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,10 +143,10 @@ public class VMwareGuruTest {
     public void createVolumeInfoFromVolumesTestCorrectlyConvertOfVolumes() {
         List<VolumeVO> volumesToTest = new ArrayList<>();
 
-        VolumeVO root = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir", ProvisioningType.THIN, 555l, Volume.Type.ROOT);
+        VolumeVO root = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir", Storage.ProvisioningType.THIN, 555l, Volume.Type.ROOT);
         String rootUuid = root.getUuid();
 
-        VolumeVO data = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir/data", ProvisioningType.THIN, 1111000l, Volume.Type.DATADISK);
+        VolumeVO data = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir/data", Storage.ProvisioningType.THIN, 1111000l, Volume.Type.DATADISK);
         String dataUuid = data.getUuid();
 
         volumesToTest.add(root);
@@ -157,7 +165,7 @@ public class VMwareGuruTest {
         Mockito.when(volumeInfo.getSize()).thenReturn(52l);
         Mockito.when(vmInstanceVO.getVirtualDisks()).thenReturn(new ArrayList<>());
         try {
-            guru.findRestoredVolume(volumeInfo, vmInstanceVO, null, 0);
+            vMwareGuru.findRestoredVolume(volumeInfo, vmInstanceVO, null, 0);
         } catch (Exception e) {
             assertEquals("Volume to restore could not be found", e.getMessage());
         }
@@ -177,7 +185,7 @@ public class VMwareGuruTest {
         Mockito.when(virtualDisk.getBacking()).thenReturn(info);
         Mockito.when(virtualDisk.getUnitNumber()).thenReturn(1);
         Mockito.when(vmInstanceVO.getVirtualDisks()).thenReturn(disks);
-        VirtualDisk findRestoredVolume = guru.findRestoredVolume(volumeInfo, vmInstanceVO, "test", 1);
+        VirtualDisk findRestoredVolume = vMwareGuru.findRestoredVolume(volumeInfo, vmInstanceVO, "test", 1);
         assertNotNull(findRestoredVolume);
     }
 }
