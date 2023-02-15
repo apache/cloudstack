@@ -20,6 +20,8 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
@@ -49,6 +51,8 @@ public class CreateTungstenFabricPublicNetworkCmdTest {
     NetworkModel networkModel;
     @Mock
     TungstenService tungstenService;
+    @Mock
+    PhysicalNetworkDao physicalNetworkDao;
 
     CreateTungstenFabricPublicNetworkCmd createTungstenFabricPublicNetworkCmd;
 
@@ -59,6 +63,7 @@ public class CreateTungstenFabricPublicNetworkCmdTest {
         createTungstenFabricPublicNetworkCmd.tungstenService = tungstenService;
         createTungstenFabricPublicNetworkCmd.vlanDao = vlanDao;
         createTungstenFabricPublicNetworkCmd.networkModel = networkModel;
+        createTungstenFabricPublicNetworkCmd.physicalNetworkDao = physicalNetworkDao;
         Whitebox.setInternalState(createTungstenFabricPublicNetworkCmd, "zoneId", 1L);
     }
 
@@ -70,6 +75,9 @@ public class CreateTungstenFabricPublicNetworkCmdTest {
         List<VlanVO> pubVlanVOList = Arrays.asList(Mockito.mock(VlanVO.class));
         Mockito.when(networkModel.getSystemNetworkByZoneAndTrafficType(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.any())).thenReturn(publicNetwork);
+        PhysicalNetworkVO physicalNetwork = Mockito.mock(PhysicalNetworkVO.class);
+        Mockito.when(physicalNetwork.getIsolationMethods()).thenReturn(Arrays.asList("TF"));
+        Mockito.when(physicalNetworkDao.findById(ArgumentMatchers.anyLong())).thenReturn(physicalNetwork);
         Mockito.when(vlanDao.createSearchCriteria()).thenReturn(sc);
         Mockito.when(vlanDao.listVlansByNetworkId(ArgumentMatchers.anyLong())).thenReturn(pubVlanVOList);
 
