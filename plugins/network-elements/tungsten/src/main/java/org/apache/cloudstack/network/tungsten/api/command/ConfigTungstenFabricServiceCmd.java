@@ -28,8 +28,10 @@ import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -72,6 +74,8 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
     NetworkServiceMapDao networkServiceMapDao;
     @Inject
     PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
+    @Inject
+    PhysicalNetworkDao physicalNetworkDao;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
         , description = "the ID of zone")
@@ -105,17 +109,20 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
                     Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
-                    NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
-                        Network.Service.Connectivity, Network.Provider.Tungsten);
-                    networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                    PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findById(managementNetwork.getPhysicalNetworkId());
+                    if (physicalNetwork.getIsolationMethods().contains("TF")) {
+                        NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
+                                Network.Service.Connectivity, Network.Provider.Tungsten);
+                        networkServiceMapDao.persist(managementNetworkServiceMapVO);
 
-                    List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
-                    for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
-                        if (networkOffering.getTrafficType() == Networks.TrafficType.Management){
-                            NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
-                                new NetworkOfferingServiceMapVO(
-                                    networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
-                            networkOfferingServiceMapDao.persist(publicNetworkOfferingServiceMapVO);
+                        List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
+                        for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
+                            if (networkOffering.getTrafficType() == Networks.TrafficType.Management) {
+                                NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
+                                        new NetworkOfferingServiceMapVO(
+                                                networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
+                                networkOfferingServiceMapDao.persist(publicNetworkOfferingServiceMapVO);
+                            }
                         }
                     }
                 }
@@ -167,19 +174,29 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                 physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
 
                 Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-                NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
-                        Network.Service.Connectivity, Network.Provider.Tungsten);
-                networkServiceMapDao.persist(publicNetworkServiceMapVO);
+                PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findById(publicNetwork.getPhysicalNetworkId());
+                boolean isTungstenSupportedByPublicNetwork = false;
+                if (physicalNetwork.getIsolationMethods().contains("TF")) {
+                    isTungstenSupportedByPublicNetwork = true;
+                    NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
+                            Network.Service.Connectivity, Network.Provider.Tungsten);
+                    networkServiceMapDao.persist(publicNetworkServiceMapVO);
+                }
 
                 Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
-                NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
-                        Network.Service.Connectivity, Network.Provider.Tungsten);
-                networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                physicalNetwork = physicalNetworkDao.findById(publicNetwork.getPhysicalNetworkId());
+                boolean isTungstenSupportedByManagementNetwork = false;
+                if (physicalNetwork.getIsolationMethods().contains("TF")) {
+                    isTungstenSupportedByPublicNetwork = true;
+                    NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
+                            Network.Service.Connectivity, Network.Provider.Tungsten);
+                    networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                }
 
                 List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
                 for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
-                    if (networkOffering.getTrafficType() == Networks.TrafficType.Public
-                            || networkOffering.getTrafficType() == Networks.TrafficType.Management){
+                    if ((networkOffering.getTrafficType() == Networks.TrafficType.Public && isTungstenSupportedByPublicNetwork)
+                            || (networkOffering.getTrafficType() == Networks.TrafficType.Management && isTungstenSupportedByManagementNetwork)){
                         NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
                                 new NetworkOfferingServiceMapVO(
                                         networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
