@@ -97,6 +97,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
     protected SearchBuilder<VMInstanceVO> BackupSearch;
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
+    protected SearchBuilder<VMInstanceVO> InstanceNameAndStatesSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -307,6 +308,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
         LastHostAndStatesSearch.done();
 
+        InstanceNameAndStatesSearch = createSearchBuilder();
+        InstanceNameAndStatesSearch.and("instanceName", InstanceNameAndStatesSearch.entity().getInstanceName(), Op.EQ);
+        InstanceNameAndStatesSearch.and("states", InstanceNameAndStatesSearch.entity().getState(), Op.IN);
+        InstanceNameAndStatesSearch.done();
     }
 
     @Override
@@ -375,6 +380,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("zone", zoneId);
         sc.setParameters("type", type.toString());
         return listBy(sc);
+    }
+
+    @Override
+    public VMInstanceVO findVMInStatesAndWithInternalNameIncludingRemoved(String vmInternalName, State ... states) {
+        SearchCriteria<VMInstanceVO> sc = InstanceNameAndStatesSearch.create();
+        sc.setParameters("instanceName", vmInternalName);
+        sc.setParameters("states", (Object[]) states);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override
