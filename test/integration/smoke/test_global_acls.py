@@ -67,11 +67,11 @@ class TestGlobalACLs(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestGlobalACLs, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
+        cls.apiclient = cls.testClient.getApiClient()
 
         cls.services = Services().services
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         return
 
     @classmethod
@@ -79,7 +79,6 @@ class TestGlobalACLs(cloudstackTestCase):
         super(TestGlobalACLs, cls).tearDownClass()
 
     def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
         self.user_apiclient = self.testClient.getUserApiClient(self.services["user"]["username"],
                                                                self.services["domain"]["name"],
                                                                self.services["user"]["roletype"])
@@ -96,11 +95,7 @@ class TestGlobalACLs(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-            cleanup_resources(self.user_apiclient, self.cleanup)
-        except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+        super(TestGlobalACLs, cls).tearDown()
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_create_global_acl(self):
@@ -119,6 +114,7 @@ class TestGlobalACLs(cloudstackTestCase):
 
         self.debug("Creating ACL list as a root admin, should work.")
         acl = NetworkACLList.create(apiclient=self.admin_apiclient, services={}, name="acl", description="acl")
+        self.cleanup.append(acl)
         self.assertIsNotNone(acl, "A root admin user should be able to create a global ACL.")
 
         return
@@ -127,9 +123,9 @@ class TestGlobalACLs(cloudstackTestCase):
     def test_replace_acl_of_network(self):
         """ Test to replace ACL of a VPC as a normal user, domain admin and root admin users.
         """
-        # Create network offering
+        # Get network offering
         networkOffering = NetworkOffering.list(self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
-        self.assertTrue(networkOffering is not None and len(networkOffering) > 0, "No VPC based network offering")
+        self.assertTrue(networkOffering is not None and len(networkOffering) > 0, "No VPC network offering")
 
         # Getting VPC offering
         vpcOffering = VpcOffering.list(self.apiclient, name="Default VPC offering")
@@ -144,6 +140,7 @@ class TestGlobalACLs(cloudstackTestCase):
             zoneid=self.zone.id,
             domainid=self.domain.id
         )
+        self.cleanup.append(vpc)
         self.assertTrue(vpc is not None, "VPC creation failed")
 
         # Creating ACL list
@@ -162,6 +159,7 @@ class TestGlobalACLs(cloudstackTestCase):
             gateway="10.1.1.1",
             netmask="255.255.255.192"
         )
+        self.cleanup.append(network)
 
         # User should be able to replace ACL
         network.replaceACLList(apiclient=self.user_apiclient, aclid=acl.id)
@@ -178,6 +176,7 @@ class TestGlobalACLs(cloudstackTestCase):
         """
         # Creating ACL list
         acl = NetworkACLList.create(apiclient=self.admin_apiclient, services={}, name="acl", description="acl")
+        self.cleanup.append(acl)
 
         self.debug("Creating ACL rule as a user, should raise exception.")
         self.assertRaisesRegex(CloudstackAPIException, "Only Root Admins can create rules for a global ACL.",
@@ -186,7 +185,8 @@ class TestGlobalACLs(cloudstackTestCase):
         self.assertRaisesRegex(CloudstackAPIException, "Only Root Admins can create rules for a global ACL.",
                                NetworkACL.create, self.domain_admin_apiclient, services=self.services["rule"], aclid=acl.id)
         self.debug("Creating ACL rule as a root admin, should work.")
-        NetworkACL.create(self.admin_apiclient, services=self.services["rule"], aclid=acl.id)
+        acl_rule = NetworkACL.create(self.admin_apiclient, services=self.services["rule"], aclid=acl.id)
+        self.cleanup.append(acl_rule)
 
         return
 
@@ -195,7 +195,8 @@ class TestGlobalACLs(cloudstackTestCase):
         """ Test to delete ACL rule as a normal user, domain admin and root admin users.
         """
         # Creating ACL list
-        acl = NetworkACLList.create(apiclient=self.api_client, services={}, name="acl", description="acl")
+        acl = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl")
+        self.cleanup.append(acl)
 
         # Creating ACL rule
         acl_rule = NetworkACL.create(self.apiclient, services=self.services["rule"], aclid=acl.id)
@@ -206,7 +207,39 @@ class TestGlobalACLs(cloudstackTestCase):
         self.debug("Deleting ACL rule as a domain admin, should raise exception.")
         self.assertRaisesRegex(Exception, "Only Root Admin can delete global ACL rules.",
                                NetworkACL.delete, acl_rule, self.domain_admin_apiclient)
+
         self.debug("Deleting ACL rule as a root admin, should work.")
         NetworkACL.delete(acl_rule, self.admin_apiclient)
+
+        # Verify if the number of ACL rules is equal to four, i.e. the number of rules
+        # for the default ACLs `default_allow` (2 rules) and `default_deny` (2 rules) ACLs
+        number_of_acl_rules = acl_rule.list(apiclient=self.admin_apiclient)
+        self.assertEqual(len(number_of_acl_rules), 4)
+
+        return
+
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_delete_global_acl(self):
+        """ Test delete global ACL as a normal user, domain admin and root admin users.
+        """
+
+        # Creating ACL list. Not adding to cleanup as it will be deleted in this method
+        acl = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl")
+
+        self.debug("Deleting ACL list as a normal user, should raise exception.")
+        self.assertRaisesRegex(Exception, "Only Root Admin can delete global ACLs.",
+                               NetworkACLList.delete, acl, apiclient=self.user_apiclient)
+
+        self.debug("Deleting ACL list as a domain admin, should raise exception.")
+        self.assertRaisesRegex(Exception, "Only Root Admin can delete global ACLs.",
+                               NetworkACLList.delete, acl, apiclient=self.domain_admin_apiclient)
+
+        self.debug("Deleting ACL list as a root admin, should work.")
+        acl.delete(apiclient=self.admin_apiclient)
+
+        # Verify if number of ACLs is equal to two, i.e. the number of default ACLs `default_allow` and `default_deny`
+        number_of_acls = NetworkACLList.list(apiclient=self.admin_apiclient)
+        self.assertEqual(len(number_of_acls), 2)
 
         return
