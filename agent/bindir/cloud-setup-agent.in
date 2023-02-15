@@ -26,7 +26,7 @@ from cloudutils.configFileOps import  configFileOps
 from cloudutils.globalEnv import globalEnv
 from cloudutils.networkConfig import networkConfig
 from cloudutils.syscfg import sysConfigFactory
-from cloudutils.serviceConfig import configureLibvirtConfig
+from cloudutils.serviceConfig import configureLibvirtConfig, configure_libvirt_tls
 
 from optparse import OptionParser
 
@@ -80,7 +80,7 @@ def getUserInputs():
     network = input("Please choose which network used to create VM:[%s]"%defNic)
     if network == "":
         if defNic == "":
-            print("You need to specifiy one of Nic or bridge on your system")
+            print("You need to specify one of Nic or bridge on your system")
             exit(1)
         elif network == "":
             network = defNic
@@ -115,6 +115,7 @@ if __name__ == '__main__':
 
     if not options.auto and options.secure:
         configureLibvirtConfig(True)
+        configure_libvirt_tls(True)
         print("Libvirtd with TLS configured")
         sys.exit(0)
 

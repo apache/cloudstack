@@ -18,7 +18,9 @@ package org.apache.cloudstack.implicitplanner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -164,7 +166,7 @@ public class ImplicitPlannerTest {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
 
-        acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+        acct.setType(Account.Type.NORMAL);
         acct.setAccountName("user1");
         acct.setDomainId(domainId);
         acct.setId(accountId);
@@ -211,15 +213,7 @@ public class ImplicitPlannerTest {
         // Check cluster 2 and 3 are not in the cluster list.
         // Host 6 and 7 should also be in avoid list.
         assertFalse("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
-        boolean foundNeededCluster = false;
-        for (Long cluster : clusterList) {
-            if (cluster != 1) {
-                fail("Found a cluster that shouldn't have been present, cluster id : " + cluster);
-            } else {
-                foundNeededCluster = true;
-            }
-        }
-        assertTrue("Didn't find cluster 1 in the list. It should have been present", foundNeededCluster);
+        assertThat("Found cluster that shouldn't have been present, only cluster 1 should be present", clusterList, everyItem(equalTo(1L)));
 
         Set<Long> hostsInAvoidList = avoids.getHostsToAvoid();
         assertFalse("Host 5 shouldn't have be in the avoid list, but it is present", hostsInAvoidList.contains(5L));
@@ -248,15 +242,7 @@ public class ImplicitPlannerTest {
         // Check cluster 1 and 3 are not in the cluster list.
         // Host 5 and 7 should also be in avoid list.
         assertFalse("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
-        boolean foundNeededCluster = false;
-        for (Long cluster : clusterList) {
-            if (cluster != 2) {
-                fail("Found a cluster that shouldn't have been present, cluster id : " + cluster);
-            } else {
-                foundNeededCluster = true;
-            }
-        }
-        assertTrue("Didn't find cluster 2 in the list. It should have been present", foundNeededCluster);
+        assertThat("Found cluster that shouldn't have been present, only cluster 2 should be present", clusterList, everyItem(equalTo(2L)));
 
         Set<Long> hostsInAvoidList = avoids.getHostsToAvoid();
         assertFalse("Host 6 shouldn't have be in the avoid list, but it is present", hostsInAvoidList.contains(6L));
@@ -307,15 +293,7 @@ public class ImplicitPlannerTest {
         // Check cluster 1 and 2 are not in the cluster list.
         // Host 5 and 6 should also be in avoid list.
         assertFalse("Cluster list should not be null/empty", (clusterList == null || clusterList.isEmpty()));
-        boolean foundNeededCluster = false;
-        for (Long cluster : clusterList) {
-            if (cluster != 3) {
-                fail("Found a cluster that shouldn't have been present, cluster id : " + cluster);
-            } else {
-                foundNeededCluster = true;
-            }
-        }
-        assertTrue("Didn't find cluster 3 in the list. It should have been present", foundNeededCluster);
+        assertThat("Found cluster that shouldn't have been present, only cluster 3 should be present", clusterList, everyItem(equalTo(3L)));
 
         Set<Long> hostsInAvoidList = avoids.getHostsToAvoid();
         assertFalse("Host 7 shouldn't have be in the avoid list, but it is present", hostsInAvoidList.contains(7L));

@@ -40,7 +40,6 @@ import org.apache.log4j.Logger;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateSnapshotPolicyCmd.class.getName());
-    private static final String s_name = "updatesnapshotpolicyresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -74,12 +73,7 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 
@@ -92,7 +86,7 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
         }
         Volume volume = _responseGenerator.findVolumeById(policy.getVolumeId());
         if (volume == null) {
-            throw new InvalidParameterValueException("Snapshot policy's volume id doesnt exist");
+            throw new InvalidParameterValueException("Snapshot policy's volume id doesn't exist");
         }else{
             return volume.getAccountId();
         }

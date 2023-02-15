@@ -34,7 +34,6 @@ import com.cloud.network.RemoteAccessVpn;
 public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateRemoteAccessVpnCmd.class.getName());
 
-    private static final String s_name = "updateremoteaccessvpnresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -56,11 +55,6 @@ public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
 
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public Boolean getDisplay() {

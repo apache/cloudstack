@@ -31,6 +31,7 @@ public class VRScripts {
     public final static String VM_PASSWORD_CONFIG = "vm_password.json";
     public static final String FORWARDING_RULES_CONFIG = "forwarding_rules.json";
     public static final String FIREWALL_RULES_CONFIG = "firewall_rules.json";
+    public static final String IPV6_FIREWALL_RULES_CONFIG = "ipv6_firewall_rules.json";
     public static final String VPN_USER_LIST_CONFIG = "vpn_user_list.json";
     public static final String STATICNAT_RULES_CONFIG = "staticnat_rules.json";
     public static final String SITE_2_SITE_VPN_CONFIG = "site_2_site_vpn.json";
@@ -41,6 +42,7 @@ public class VRScripts {
     public static final String IP_ALIAS_CONFIG = "ip_aliases.json";
     public static final String LOAD_BALANCER_CONFIG = "load_balancer.json";
 
+    public static final String SYSTEM_VM_PATCHED = "patched.sh";
     public final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
     public final static Duration VR_SCRIPT_EXEC_TIMEOUT = Duration.standardMinutes(10);
     public final static Duration CONNECTION_TIMEOUT = Duration.standardMinutes(1);
@@ -75,6 +77,8 @@ public class VRScripts {
     public static final String DIAGNOSTICS = "diagnostics.py";
     public static final String RETRIEVE_DIAGNOSTICS = "get_diagnostics_files.py";
     public static final String VR_FILE_CLEANUP = "cleanup.sh";
+
+    public static final String VR_UPDATE_INTERFACE_CONFIG = "update_interface_config.sh";
 
     public static final String ROUTER_FILESYSTEM_WRITABLE_CHECK = "filesystem_writable_check.py";
 }

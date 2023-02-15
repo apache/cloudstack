@@ -5,16 +5,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" 
+"""
 Test cases relating to listSnapshot() relating to parameters - id,listall,isrecursive,account and domainid
 """
 # Import Local Modules
@@ -63,7 +63,7 @@ class TestSnapshotList(cloudstackTestCase):
             cls.default_apikey = cls.apiclient.connection.apiKey
             cls.default_secretkey = cls.apiclient.connection.securityKey
 
-            # Create domains 
+            # Create domains
             cls.domain_1 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain1"]
@@ -198,7 +198,7 @@ class TestSnapshotList(cloudstackTestCase):
             cls.user_d2a_apikey = user.apikey
             cls.user_d2a_secretkey = user.secretkey
 
-            # Create admin user account 
+            # Create admin user account
 
             cls.account_a = Account.create(
                 cls.apiclient,
@@ -562,7 +562,7 @@ class TestSnapshotList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ## Domain Admin - Test cases  without passing listall paramter
+    ## Domain Admin - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_as_domainadmin(self):
@@ -1308,7 +1308,7 @@ class TestSnapshotList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ## ROOT Admin - Test cases  without passing listall paramter
+    ## ROOT Admin - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_as_rootadmin(self):
@@ -1502,7 +1502,7 @@ class TestSnapshotList(cloudstackTestCase):
     def test_listSnapshot_as_rootadmin_domainid_listall_false_rec_true(self):
         """
         Test listing of Snapshots by passing domainid, listall="false" and isrecusrive="true" parameter as admin
-        Validate that it returns all the Snapshots in the subdoamin and domain passed
+        Validate that it returns all the Snapshots in the subdomain and domain passed
         """
 
         self.apiclient.connection.apiKey = self.user_a_apikey
@@ -2022,7 +2022,7 @@ class TestSnapshotList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ##  Regular User  - Test cases  without passing listall paramter
+    ##  Regular User  - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listSnapshot_as_regularuser(self):

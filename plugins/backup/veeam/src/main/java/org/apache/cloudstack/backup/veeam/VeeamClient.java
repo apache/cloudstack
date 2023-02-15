@@ -83,6 +83,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
+    private static final String FAILED_TO_DELETE = "Failed to delete";
 
     private final URI apiURI;
 
@@ -94,10 +95,13 @@ public class VeeamClient {
     private String veeamServerUsername;
     private String veeamServerPassword;
     private String veeamSessionId = null;
+    private int restoreTimeout;
     private final int veeamServerPort = 22;
 
-    public VeeamClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
+    public VeeamClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout,
+            final int restoreTimeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
         this.apiURI = new URI(url);
+        this.restoreTimeout = restoreTimeout;
 
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
@@ -173,7 +177,7 @@ public class VeeamClient {
         }
     }
 
-    private HttpResponse get(final String path) throws IOException {
+    protected HttpResponse get(final String path) throws IOException {
         String url = apiURI.toString() + path;
         final HttpGet request = new HttpGet(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
@@ -198,7 +202,7 @@ public class VeeamClient {
         String url = apiURI.toString() + path;
         final HttpPost request = new HttpPost(url);
         request.setHeader(SESSION_HEADER, veeamSessionId);
-        request.setHeader("Content-type", "application/xml");
+        request.setHeader("content-type", "application/xml");
         if (StringUtils.isNotBlank(xml)) {
             request.setEntity(new StringEntity(xml));
         }
@@ -274,7 +278,7 @@ public class VeeamClient {
         return objectMapper.readValue(response.getEntity().getContent(), Task.class);
     }
 
-    private RestoreSession parseRestoreSessionResponse(HttpResponse response) throws IOException {
+    protected RestoreSession parseRestoreSessionResponse(HttpResponse response) throws IOException {
         checkResponseOK(response);
         final ObjectMapper objectMapper = new XmlMapper();
         return objectMapper.readValue(response.getEntity().getContent(), RestoreSession.class);
@@ -297,18 +301,7 @@ public class VeeamClient {
                         String type = pair.second();
                         String path = url.replace(apiURI.toString(), "");
                         if (type.equals("RestoreSession")) {
-                            for (int j = 0; j < 120; j++) {
-                                HttpResponse relatedResponse = get(path);
-                                RestoreSession session = parseRestoreSessionResponse(relatedResponse);
-                                if (session.getResult().equals("Success")) {
-                                    return true;
-                                }
-                                try {
-                                    Thread.sleep(5000);
-                                } catch (InterruptedException ignored) {
-                                }
-                            }
-                            throw new CloudRuntimeException("Related job type: " + type + " was not successful");
+                            return checkIfRestoreSessionFinished(type, path);
                         }
                     }
                     return true;
@@ -322,6 +315,22 @@ public class VeeamClient {
             }
         }
         return false;
+    }
+
+    protected boolean checkIfRestoreSessionFinished(String type, String path) throws IOException {
+        for (int j = 0; j < this.restoreTimeout; j++) {
+            HttpResponse relatedResponse = get(path);
+            RestoreSession session = parseRestoreSessionResponse(relatedResponse);
+            if (session.getResult().equals("Success")) {
+                return true;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+                LOG.trace(String.format("Ignoring InterruptedException [%s] when waiting for restore session finishes.", ignored.getMessage()));
+            }
+        }
+        throw new CloudRuntimeException("Related job type: " + type + " was not successful");
     }
 
     private Pair<String, String> getRelatedLinkPair(List<Link> links) {
@@ -360,7 +369,7 @@ public class VeeamClient {
     protected String getRepositoryNameFromJob(String backupName) {
         final List<String> cmds = Arrays.asList(
                 String.format("$Job = Get-VBRJob -name \"%s\"", backupName),
-                "$Job.GetBackupTargetRepository() ^| select Name | Format-List"
+                "$Job.GetBackupTargetRepository() ^| select Name ^| Format-List"
         );
         Pair<Boolean, String> result = executePowerShellCommands(cmds);
         if (result == null || !result.first()) {
@@ -578,7 +587,7 @@ public class VeeamClient {
                 String.format("$job = Get-VBRJob -Name \"%s\"", jobName),
                 "if ($job) { Set-VBRJobSchedule -Job $job -Daily -At \"11:00\" -DailyKind Weekdays }"
         ));
-        return result.first() && !result.second().isEmpty() && !result.second().contains("Failed to delete");
+        return result.first() && !result.second().isEmpty() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public boolean deleteJobAndBackup(final String jobName) {
@@ -590,7 +599,22 @@ public class VeeamClient {
                 "$repo = Get-VBRBackupRepository",
                 "Sync-VBRBackupRepository -Repository $repo"
         ));
-        return result.first() && !result.second().contains("Failed to delete");
+        return result.first() && !result.second().contains(FAILED_TO_DELETE);
+    }
+
+    public boolean deleteBackup(final String restorePointId) {
+        LOG.debug(String.format("Trying to delete restore point [name: %s].", restorePointId));
+        Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
+                String.format("$restorePoint = Get-VBRRestorePoint ^| Where-Object { $_.Id -eq '%s' }", restorePointId),
+                "if ($restorePoint) { Remove-VBRRestorePoint -Oib $restorePoint -Confirm:$false",
+                    "$repo = Get-VBRBackupRepository",
+                    "Sync-VBRBackupRepository -Repository $repo",
+                "} else { ",
+                    " Write-Output \"Failed to delete\"",
+                    " Exit 1",
+                "}"
+        ));
+        return result.first() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {

@@ -40,6 +40,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -59,6 +60,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
@@ -1621,6 +1623,7 @@ public class HypervisorHostHelper {
         DatacenterMO dataCenterMo = new DatacenterMO(host.getContext(), host.getHyperHostDatacenter());
         setVMHardwareVersion(vmConfig, clusterMo, dataCenterMo);
 
+        s_logger.debug(LogUtils.logGsonWithoutException("Creating blank VM with configuration [%s].", vmConfig));
         if (host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where
@@ -1759,7 +1762,7 @@ public class HypervisorHostHelper {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting to config vm.");
+                    s_logger.debug("[ignored] interrupted while waiting to config vm.");
                 }
             }
         }
@@ -1832,7 +1835,7 @@ public class HypervisorHostHelper {
             return ovfString;
         }
         try {
-            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
             final Document doc = factory.newDocumentBuilder().parse(new ByteArrayInputStream(ovfString.getBytes()));
             final DocumentTraversal traversal = (DocumentTraversal) doc;
             final NodeIterator iterator = traversal.createNodeIterator(doc.getDocumentElement(), NodeFilter.SHOW_ELEMENT, null, true);
@@ -1851,7 +1854,7 @@ public class HypervisorHostHelper {
             final DOMSource domSource = new DOMSource(doc);
             final StringWriter writer = new StringWriter();
             final StreamResult result = new StreamResult(writer);
-            final TransformerFactory tf = TransformerFactory.newInstance();
+            final TransformerFactory tf = ParserUtils.getSaferTransformerFactory();
             final Transformer transformer = tf.newTransformer();
             transformer.transform(domSource, result);
             return writer.toString();
@@ -2127,7 +2130,7 @@ public class HypervisorHostHelper {
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
             // Reconfigure worker VM with datadisk
-            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1, null);
             deviceConfigSpec.setDevice(device);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
@@ -2302,7 +2305,7 @@ public class HypervisorHostHelper {
         String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
-            s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
+            s_logger.info(String.format("vSphere datastore base folder [%s] does not exist on datastore [%s]. We will create it.", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
             dsMo.makeDirectory(folderPath, mor);
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
             dsMo.makeDirectory(hiddenFolderPath, mor);
@@ -2338,5 +2341,16 @@ public class HypervisorHostHelper {
             }
         }
         return hardwareVersion;
+    }
+
+    public static VirtualMachineMO findVmOnHypervisorHostOrPeer(VmwareHypervisorHost hypervisorHost, String vmName) throws Exception {
+        VirtualMachineMO vmMo = hypervisorHost.findVmOnHyperHost(vmName);
+        if (vmMo == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Unable to find the VM on host %s, try within datacenter", hypervisorHost.getHyperHostName()));
+            }
+            vmMo = hypervisorHost.findVmOnPeerHyperHost(vmName);
+        }
+        return vmMo;
     }
 }

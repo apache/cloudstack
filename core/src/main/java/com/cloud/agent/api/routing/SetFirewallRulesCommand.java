@@ -55,7 +55,7 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
              */
             if (fwTO.revoked()) {
                 StringBuilder sb = new StringBuilder();
-                /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
+                /* This entry is added just to make sure at least there will one entry in the list to get the ipaddress */
                 sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:0:").append(fwTO.getId()).append(":");
                 String fwRuleEntry = sb.toString();
                 toAdd.add(fwRuleEntry);
@@ -110,10 +110,5 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
         result[0] = toAdd.toArray(new String[toAdd.size()]);
 
         return result;
-    }
-
-    @Override
-    public int getAnswersCount() {
-        return rules.length;
     }
 }

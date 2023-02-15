@@ -21,7 +21,7 @@
     <a-input-search
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-table
       :loading="loading"
@@ -46,7 +46,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -92,12 +92,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.affinity.groups'),
-          width: '40%'
+          width: '30%'
+        },
+        {
+          dataIndex: 'type',
+          title: this.$t('label.type'),
+          width: '30%'
         },
         {
           dataIndex: 'description',
           title: this.$t('label.description'),
-          width: '60%'
+          width: '40%'
         }
       ],
       selectedRowKeys: [],

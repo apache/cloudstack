@@ -5,16 +5,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" 
+"""
 
 Test cases relating to enabling/diabling of zone/pod/cluster/host
 
@@ -240,7 +240,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_16_enableZone(self):
         """
-        Enable Zone that is diabled
+        Enable Zone that is disabled
             Validate that listZones() returns the  allocationstate as "Enabled"
         """
         self.debug("Zone to be enabled: " + self.zone.id)
@@ -354,7 +354,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_26_enablePod(self):
         """
-        Enable Pod that is diabled
+        Enable Pod that is disabled
             Validate that listPods() returns the  allocationstate as "Enabled"
         """
         self.debug("Pod to be enabled: " + self.zone.id)
@@ -470,7 +470,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_36_enableCluster(self):
         """
-        Enable Cluster that is diabled
+        Enable Cluster that is disabled
             Validate that listClusters() returns the  allocationstate as "Enabled"
         """
         self.debug("Cluster to be enabled: " + self.cluster.id)
@@ -612,7 +612,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_47_enableHost(self):
         """
-        Enable Host that is diabled
+        Enable Host that is disabled
             Validate that listHosts() returns the  allocationstate as "Enabled"
         """
         self.debug("Host to be enabled: " + self.host.id)

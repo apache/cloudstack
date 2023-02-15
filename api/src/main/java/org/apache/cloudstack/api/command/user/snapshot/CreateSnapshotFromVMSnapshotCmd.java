@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.command.user.snapshot;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -44,7 +44,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotFromVMSnapshotCmd.class.getName());
-    private static final String s_name = "createsnapshotfromvmsnapshotresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -110,11 +109,6 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public static String getResultObjectName() {
         return ApiConstants.SNAPSHOT;
     }
@@ -129,7 +123,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
 
         Account account = _accountService.getAccount(vmsnapshot.getAccountId());
         //Can create templates for enabled projects/accounts only
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             Project project = _projectService.findByProjectAccountId(vmsnapshot.getAccountId());
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by account id=" + account.getUuid());
@@ -137,7 +131,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to the project id=" + project.getUuid() + " in state=" + project.getState() + " as it's no longer active");
             }
-        } else if (account.getState() == Account.State.disabled) {
+        } else if (account.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
 
@@ -155,8 +149,8 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Snapshot;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Snapshot;
     }
 
     @Override

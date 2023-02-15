@@ -22,18 +22,18 @@
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
             <breadcrumb :resource="resource">
-              <span slot="end">
+              <template #end>
                 <a-button
                   :loading="loading"
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
-                  icon="reload"
                   @click="fetchData({ irefresh: true })">
+                  <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
                   style="margin-left: 8px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
@@ -47,7 +47,7 @@
                   :checked="$store.getters.listAllProjects"
                   @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
-                  <template slot="title">
+                  <template #title>
                     {{ $t('label.filterby') }}
                   </template>
                   <a-select
@@ -55,38 +55,34 @@
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
-                    style="min-width: 100px; margin-left: 10px"
+                        ? 'all' : ['publicip'].includes($route.name)
+                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
+                        ? 'all' : ['volume'].includes($route.name)
+                        ? 'user' : 'self')"
+                    style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
-                    optionFilterProp="children"
+                    optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
-                    <a-icon slot="suffixIcon" type="filter" />
-                    <a-select-option v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)" key="all">
+                    <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
+                    <a-select-option
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      key="all"
+                      :label="$t('label.all')">
                       {{ $t('label.all') }}
                     </a-select-option>
-                    <a-select-option v-for="filter in filters" :key="filter">
+                    <a-select-option
+                      v-for="filter in filters"
+                      :key="filter"
+                      :label="$t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter)">
                       {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
-                      <a-icon type="clock-circle" v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
+                      <clock-circle-outlined v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
-                <a-dropdown style="margin-left: 8px" :trigger="['click']" v-if="!dataView && !$store.getters.metrics" v-model="customColumnsDropdownVisible">
-                  <a-button>
-                    {{ $t('label.columns') }} <a-icon type="down" style="color: rgba(0,0,0,.45)" />
-                  </a-button>
-                  <a-menu
-                    @click="() => { customColumnsDropdownVisible = true }"
-                    slot="overlay" >
-                    <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
-                      <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-                      {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
-                    </a-menu-item>
-                  </a-menu>
-                </a-dropdown>
-              </span>
+              </template>
             </breadcrumb>
           </a-col>
           <a-col
@@ -116,42 +112,44 @@
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
         <a-modal
           :visible="showAction"
           :closable="true"
           :maskClosable="false"
           :cancelText="$t('label.cancel')"
           style="top: 20px;"
-          @cancel="closeAction"
+          @cancel="cancelAction"
           :confirmLoading="actionLoading"
           :footer="null"
           centered
           width="auto"
         >
-          <span slot="title">
-            {{ $t(currentAction.label) }}
+          <template #title>
+            <span v-if="currentAction.label">{{ $t(currentAction.label) }}</span>
             <a
               v-if="currentAction.docHelp || $route.meta.docHelp"
               style="margin-left: 5px"
               :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
               target="_blank">
-              <a-icon type="question-circle-o"></a-icon>
+              <question-circle-outlined />
             </a>
-          </span>
-          <component
-            :is="currentAction.component"
-            :resource="resource"
-            :loading="loading"
-            :action="{currentAction}"
-            :selectedRowKeys="selectedRowKeys"
-            :selectedItems="selectedItems"
-            :chosenColumns="chosenColumns"
-            v-bind="{currentAction}"
-            @refresh-data="fetchData"
-            @poll-action="pollActionCompletion"
-            @close-action="closeAction"
-            @cancel-bulk-action="handleCancel"/>
+          </template>
+          <keep-alive>
+            <component
+              :is="currentAction.component"
+              :resource="resource"
+              :loading="loading"
+              :action="{currentAction}"
+              :selectedRowKeys="selectedRowKeys"
+              :selectedItems="selectedItems"
+              :chosenColumns="chosenColumns"
+              v-bind="{currentAction}"
+              @refresh-data="fetchData"
+              @poll-action="pollActionCompletion"
+              @close-action="closeAction"
+              @cancel-bulk-action="handleCancel"/>
+          </keep-alive>
         </a-modal>
       </keep-alive>
       <a-modal
@@ -165,38 +163,43 @@
         :ok-button-props="getOkProps()"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
-        @cancel="closeAction"
-        v-ctrl-enter="handleSubmit"
+        @cancel="cancelAction"
         centered
       >
-        <span slot="title">
-          {{ $t(currentAction.label) }}
+        <template #title>
+          <span v-if="currentAction.label">{{ $t(currentAction.label) }}</span>
           <a
             v-if="currentAction.docHelp || $route.meta.docHelp"
             style="margin-left: 5px"
             :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
             target="_blank">
-            <a-icon type="question-circle-o"></a-icon>
+            <question-circle-outlined />
           </a>
-        </span>
-        <a-spin :spinning="actionLoading">
+        </template>
+        <a-spin :spinning="actionLoading" v-ctrl-enter="handleSubmit">
           <span v-if="currentAction.message">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
-                v-if="['delete', 'poweroff'].includes(currentAction.icon)"
+                v-if="['delete-outlined', 'DeleteOutlined', 'poweroff-outlined', 'PoweroffOutlined'].includes(currentAction.icon)"
                 type="error">
-                <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
-                <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                <span slot="message" v-html="$t(currentAction.message)" />
+                <template #message>
+                  <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
+                  <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                  <span v-html="$t(currentAction.message)" />
+                </template>
               </a-alert>
               <a-alert v-else type="warning">
-                <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                <span slot="message" v-html="$t(currentAction.message)" />
+                <template #message>
+                  <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                  <span v-html="$t(currentAction.message)" />
+                </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
-                <span slot="message" v-html="$t(currentAction.message)" />
+                <template #message>
+                  <span v-html="$t(currentAction.message)" />
+                </template>
               </a-alert>
             </div>
             <div v-if="selectedRowKeys.length > 0">
@@ -215,39 +218,38 @@
             <br v-if="currentAction.paramFields.length > 0"/>
           </span>
           <a-form
-            :form="form"
-            @submit="handleSubmit"
-            layout="vertical" >
-            <a-form-item
-              v-for="(field, fieldIndex) in currentAction.paramFields"
-              :key="fieldIndex"
-              :v-bind="field.name"
-              v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
-            >
-              <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
+            @finish="handleSubmit"
+            layout="vertical">
+            <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
+              <a-form-item
+                :name="field.name"
+                :ref="field.name"
+                :v-bind="field.name"
+                v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
+              >
+                <template #label>
+                  <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                </template>
 
-              <span v-if="field.type==='boolean'">
                 <a-switch
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                  }]"
-                  v-model="formModel[field.name]"
+                  v-if="field.type==='boolean'"
+                  v-model:checked="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 />
-              </span>
-              <span v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options">
                 <a-select
+                  v-else-if="currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].options"
                   :loading="field.loading"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
                   <a-select-option key="" >{{ }}</a-select-option>
@@ -255,43 +257,35 @@
                     {{ opt }}
                   </a-select-option>
                 </a-select>
-              </span>
-              <span
-                v-else-if="field.name==='keypair' ||
-                  (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))">
                 <a-select
+                  v-else-if="field.name==='keypair' ||
+                    (field.name==='account' && !['addAccountToProject', 'createAccount'].includes(currentAction.api))"
                   showSearch
-                  optionFilterProp="children"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="">{{ }}</a-select-option>
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
-              </span>
-              <span
-                v-else-if="field.type==='uuid'">
                 <a-select
+                  v-else-if="field.type==='uuid'"
                   showSearch
-                  optionFilterProp="children"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  optionFilterProp="label"
+                  v-model:value="form[field.name]"
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 >
                   <a-select-option key="" label="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
@@ -306,104 +300,81 @@
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="global" style="margin-right: 5px" />
+                        <global-outlined v-else style="margin-right: 5px" />
                       </span>
                       <span v-if="(field.name.startsWith('project'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="project" style="margin-right: 5px" />
+                        <project-outlined v-else style="margin-right: 5px" />
                       </span>
                       <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="user" style="margin-right: 5px"/>
+                        <user-outlined v-else style="margin-right: 5px"/>
                       </span>
                       <span v-if="(field.name.startsWith('network'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="apartment" style="margin-right: 5px"/>
+                        <apartment-outlined v-else style="margin-right: 5px"/>
                       </span>
                       <span v-if="(field.name.startsWith('domain'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
-                        <a-icon v-else type="block" style="margin-right: 5px"/>
+                        <block-outlined v-else style="margin-right: 5px"/>
                       </span>
                       {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                     </div>
                   </a-select-option>
                 </a-select>
-              </span>
-              <span v-else-if="field.type==='list'">
                 <a-select
+                  v-else-if="field.type==='list'"
                   :loading="field.loading"
                   mode="multiple"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.select')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
                   <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
-              </span>
-              <span v-else-if="field.type==='long'">
                 <a-input-number
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-else-if="field.type==='long'"
+                  v-focus="fieldIndex === firstIndex"
                   style="width: 100%;"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
                 />
-              </span>
-              <span v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'">
                 <a-input-password
-                  v-decorator="[field.name, {
-                    rules: [
-                      {
-                        required: field.required,
-                        message: `${$t('message.error.required.input')}`
-                      },
-                      {
-                        validator: validateTwoPassword
-                      }
-                    ]
-                  }]"
+                  v-else-if="field.name==='password' || field.name==='currentpassword' || field.name==='confirmpassword'"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
                   @blur="($event) => handleConfirmBlur($event, field.name)"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 />
-              </span>
-              <span v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'">
                 <a-textarea
+                  v-else-if="field.name==='certificate' || field.name==='privatekey' || field.name==='certchain'"
                   rows="2"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                  }]"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description"
-                  :autoFocus="fieldIndex === firstIndex"
+                  v-focus="fieldIndex === firstIndex"
                 />
-              </span>
-              <span v-else>
                 <a-input
-                  :autoFocus="fieldIndex === firstIndex"
-                  v-decorator="[field.name, {
-                    rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                  }]"
+                  v-else
+                  v-focus="fieldIndex === firstIndex"
+                  v-model:value="form[field.name]"
                   :placeholder="field.description" />
-              </span>
-            </a-form-item>
+              </a-form-item>
+            </div>
 
             <div :span="24" class="action-button">
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -429,7 +400,10 @@
         :columns="columns"
         :items="items"
         :actions="actions"
+        :columnKeys="columnKeys"
+        :selectedColumns="selectedColumns"
         ref="listview"
+        @update-selected-columns="updateSelectedColumns"
         @selection-change="onRowSelectionChange"
         @refresh="this.fetchData"
         @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
@@ -446,7 +420,7 @@
         @showSizeChange="changePageSize"
         showSizeChanger
         showQuickJumper>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -461,6 +435,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
@@ -468,8 +443,6 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
-import ChartCard from '@/components/widgets/ChartCard'
-import Status from '@/components/widgets/Status'
 import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
@@ -483,10 +456,8 @@ export default {
   name: 'Resource',
   components: {
     Breadcrumb,
-    ChartCard,
     ResourceView,
     ListView,
-    Status,
     ActionButton,
     SearchView,
     BulkActionProgress,
@@ -538,38 +509,38 @@ export default {
       searchFilters: [],
       searchParams: {},
       actions: [],
-      formModel: {},
       confirmDirty: false,
       firstIndex: 0,
       modalWidth: '30vw',
       promises: []
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
-  beforeDestroy () {
-    eventBus.$off('vm-refresh-data')
-    eventBus.$off('async-job-complete')
-    eventBus.$off('exec-action')
+  beforeUnmount () {
+    eventBus.off('vm-refresh-data')
+    eventBus.off('async-job-complete')
+    eventBus.off('exec-action')
   },
   mounted () {
-    eventBus.$on('exec-action', (action, isGroupAction) => {
+    eventBus.on('exec-action', (args) => {
+      const { action, isGroupAction } = args
       this.execAction(action, isGroupAction)
     })
   },
   created () {
-    eventBus.$on('vm-refresh-data', () => {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
+    eventBus.on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
         this.fetchData()
       }
     })
-    eventBus.$on('refresh-icon', () => {
+    eventBus.on('refresh-icon', () => {
       if (this.$showIcon()) {
         this.fetchData()
       }
     })
-    eventBus.$on('async-job-complete', (action) => {
+    eventBus.on('async-job-complete', (action) => {
       if (this.$route.path.includes('/vm/')) {
         if (action && 'api' in action && ['destroyVirtualMachine'].includes(action.api)) {
           return
@@ -586,7 +557,8 @@ export default {
       }
       this.fetchData()
     })
-    eventBus.$on('update-bulk-job-status', (items, action) => {
+    eventBus.on('update-bulk-job-status', (args) => {
+      var { items, action } = args
       for (const item of items) {
         this.$store.getters.headerNotices.map(function (j) {
           if (j.jobid === item.jobid) {
@@ -596,11 +568,18 @@ export default {
       }
     })
 
-    eventBus.$on('update-resource-state', (selectedItems, resource, state, jobid) => {
+    eventBus.on('update-resource-state', (args) => {
+      var {
+        selectedItems,
+        resource,
+        state,
+        jobid
+      } = args
       if (selectedItems.length === 0) {
         return
       }
       var tempResource = []
+      this.selectedItems = selectedItems
       if (selectedItems && resource) {
         if (resource.includes(',')) {
           resource = resource.split(',')
@@ -612,14 +591,16 @@ export default {
           var objIndex = 0
           if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
             objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else if (this.$route.path.includes('/router')) {
+            objIndex = selectedItems.findIndex(obj => (obj.guestnetworkid === tempResource[r]))
           } else {
-            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r] || obj.name === tempResource[r]))
           }
           if (state && objIndex !== -1) {
-            selectedItems[objIndex].status = state
+            this.selectedItems[objIndex].status = state
           }
           if (jobid && objIndex !== -1) {
-            selectedItems[objIndex].jobid = jobid
+            this.selectedItems[objIndex].jobid = jobid
           }
         }
       }
@@ -727,7 +708,7 @@ export default {
         this.items = []
       }
       if (!this.routeName) {
-        this.routeName = this.$route.matched[this.$route.matched.length - 1].parent.name
+        this.routeName = this.$route.matched[this.$route.matched.length - 1].meta.name
       }
       this.apiName = ''
       this.actions = []
@@ -773,7 +754,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -825,7 +806,7 @@ export default {
       const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
-        let title = columnKey
+        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.field
@@ -840,7 +821,7 @@ export default {
         this.columns.push({
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          scopedSlots: { customRender: key },
+          slots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
         this.selectedColumns.push(key)
@@ -872,13 +853,33 @@ export default {
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listSSHKeyPairs'].includes(this.apiName)) {
-          delete params.id
-          params.name = this.$route.params.id
+          if (!this.$isValidUuid(params.id)) {
+            delete params.id
+            params.name = this.$route.params.id
+          }
+        }
+        if (['listPublicIpAddresses'].includes(this.apiName)) {
+          params.allocatedonly = false
         }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicy/')) {
+          params.policyuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicyset/')) {
+          params.applicationpolicysetuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstennetworkroutertable/')) {
+          params.tungstennetworkroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungsteninterfaceroutertable/')) {
+          params.tungsteninterfaceroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenfirewallpolicy/')) {
+          params.firewallpolicyuuid = this.$route.params.id
         }
       }
 
@@ -892,6 +893,15 @@ export default {
       if (this.$showIcon()) {
         params.showIcon = true
       }
+
+      if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',
+        'listClustersMetrics', 'listHostsMetrics', 'listStoragePoolsMetrics',
+        'listImageStores', 'listSystemVms', 'listManagementServers',
+        'listConfigurations', 'listHypervisorCapabilities',
+        'listAlerts', 'listNetworkOfferings', 'listVPCOfferings'].includes(this.apiName)) {
+        delete params.listall
+      }
+
       api(this.apiName, params).then(json => {
         var responseName
         var objectName
@@ -927,6 +937,18 @@ export default {
           })
         }
 
+        if (this.apiName === 'listAnnotations') {
+          this.columns.map(col => {
+            if (col.title === 'label.entityid') {
+              col.title = this.$t('label.annotation.entity')
+            } else if (col.title === 'label.entitytype') {
+              col.title = this.$t('label.annotation.entity.type')
+            } else if (col.title === 'label.adminsonly') {
+              col.title = this.$t('label.annotation.admins.only')
+            }
+          })
+        }
+
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -940,7 +962,7 @@ export default {
           }
         }
         if (this.items.length > 0) {
-          if (!this.showAction) {
+          if (!this.showAction || this.dataView) {
             this.resource = this.items[0]
             this.$emit('change-resource', this.resource)
           }
@@ -987,6 +1009,10 @@ export default {
       this.showAction = false
       this.currentAction = {}
     },
+    cancelAction () {
+      eventBus.emit('action-closing', { action: this.currentAction })
+      this.closeAction()
+    },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
       if (selection?.length > 0) {
@@ -1002,8 +1028,9 @@ export default {
     },
     execAction (action, isGroupAction) {
       const self = this
-      this.form = this.$form.createForm(this)
-      this.formModel = {}
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         const query = {}
         if (this.$route.path.startsWith('/vm')) {
@@ -1069,16 +1096,18 @@ export default {
       this.getFirstIndexFocus()
 
       this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
+        this.setRules(param)
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
           this.listUuidOpts(param)
         }
       }
       this.actionLoading = false
-      if (action.dataView && ['copy', 'edit', 'share-alt'].includes(action.icon)) {
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
         this.fillEditFormFieldValues()
       }
     },
@@ -1149,6 +1178,11 @@ export default {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
+            if (possibleApi === 'listBackupOfferings' && json[obj].backupoffering) {
+              json[obj].backupoffering.sort((a, b) => {
+                return a.name > b.name
+              })
+            }
             for (const res in json[obj]) {
               if (res === 'count') {
                 continue
@@ -1166,7 +1200,6 @@ export default {
             break
           }
         }
-        this.$forceUpdate()
       }).catch(function (error) {
         console.log(error)
         param.loading = false
@@ -1184,14 +1217,14 @@ export default {
           name: resourceName,
           successMethod: result => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
               const description = action.response(result.jobresult)
               if (description) {
                 this.$notification.info({
                   message: this.$t(action.label),
-                  description: (<span domPropsInnerHTML={description}></span>),
+                  description: (<span v-html={description}></span>),
                   duration: 0
                 })
               }
@@ -1203,7 +1236,7 @@ export default {
           },
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, resource, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'failed' })
             }
             resolve(true)
           },
@@ -1217,7 +1250,6 @@ export default {
       })
     },
     fillEditFormFieldValues () {
-      const form = this.form
       this.currentAction.paramFields.map(field => {
         let fieldValue = null
         let fieldName = null
@@ -1228,13 +1260,12 @@ export default {
         }
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
-          form.getFieldDecorator(field.name, { initialValue: fieldValue })
-          this.formModel[field.name] = fieldValue
+          this.form[field.name] = fieldValue
         }
       })
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.bulkColumns = []
@@ -1251,7 +1282,7 @@ export default {
           this.bulkColumns.splice(0, 0, {
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
-            scopedSlots: { customRender: 'status' },
+            slots: { customRender: 'status' },
             filters: [
               { text: 'In Progress', value: 'InProgress' },
               { text: 'Success', value: 'success' },
@@ -1262,29 +1293,30 @@ export default {
           this.modalInfo.title = this.currentAction.label
           this.modalInfo.docHelp = this.currentAction.docHelp
         }
-        this.form.validateFieldsAndScroll((err, values) => {
-          if (!err) {
-            this.actionLoading = true
-            const itemsNameMap = {}
-            this.items.map(x => {
-              itemsNameMap[x.id] = x.name || x.displaytext || x.id
-            })
-            const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
-            for (const params of paramsList) {
-              var resourceName = itemsNameMap[params.id || params.vmsnapshotid || params.username || params.name]
-              // Using a method for this since it's an async call and don't want wrong prarms to be passed
-              this.promises.push(this.callGroupApi(params, resourceName))
-            }
-            this.$message.info({
-              content: this.$t(this.currentAction.label),
-              key: this.currentAction.label,
-              duration: 3
-            })
-            Promise.all(this.promises).finally(() => {
-              this.actionLoading = false
-              this.fetchData()
-            })
+        this.formRef.value.validate().then(() => {
+          const values = toRaw(this.form)
+          this.actionLoading = true
+          const itemsNameMap = {}
+          this.items.map(x => {
+            itemsNameMap[x.id] = x.name || x.displaytext || x.id
+          })
+          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
+          for (const params of paramsList) {
+            var resourceName = itemsNameMap[params.id]
+            // Using a method for this since it's an async call and don't want wrong prarms to be passed
+            this.promises.push(this.callGroupApi(params, resourceName))
           }
+          this.$message.info({
+            content: this.$t(this.currentAction.label),
+            key: this.currentAction.label,
+            duration: 3
+          })
+          Promise.all(this.promises).finally(() => {
+            this.actionLoading = false
+            this.fetchData()
+          })
+        }).catch(error => {
+          this.formRef.value.scrollToField(error.errorFields[0].name)
         })
       } else {
         this.execSubmit(e)
@@ -1302,7 +1334,7 @@ export default {
           }
           if (this.selectedItems.length !== 0) {
             this.$notifyError(error)
-            eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+            eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: this.getDataIdentifier(params), state: 'failed' })
           }
         })
       })
@@ -1321,7 +1353,7 @@ export default {
               jobId = response[obj].jobid
             } else {
               if (this.selectedItems.length > 0) {
-                eventBus.$emit('update-resource-state', this.selectedItems, resource, 'success')
+                eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
                 if (resource) {
                   this.selectedItems.filter(item => item === resource)
                 }
@@ -1348,7 +1380,7 @@ export default {
           this.$store.dispatch('UpdateConfiguration')
         }
         if (jobId) {
-          eventBus.$emit('update-resource-state', this.selectedItems, resource, 'InProgress', jobId)
+          eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'InProgress', jobid: jobId })
           resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
         }
         resolve(false)
@@ -1356,15 +1388,27 @@ export default {
     },
     execSubmit (e) {
       e.preventDefault()
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         const action = this.currentAction
         if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
           params.id = this.resource.id
         }
+
+        if (['updateDiskOffering'].includes(action.api) && values.tags === this.resource.tags) {
+          delete values.tags
+        }
+
+        if (['updateServiceOffering'].includes(action.api)) {
+          if (values.hosttags === this.resource.hosttags) {
+            delete values.hosttags
+          }
+          if (values.storagetags === this.resource.storagetags) {
+            delete values.tags
+          }
+        }
+
         for (const key in values) {
           const input = values[key]
           for (const param of action.params) {
@@ -1383,6 +1427,17 @@ export default {
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
               params[key] = action.mapping[key].options[input]
+              if (['createAffinityGroup'].includes(action.api) && key === 'type') {
+                if (params[key] === 'host anti-affinity (Strict)') {
+                  params[key] = 'host anti-affinity'
+                } else if (params[key] === 'host affinity (Strict)') {
+                  params[key] = 'host affinity'
+                } else if (params[key] === 'host anti-affinity (Non-Strict)') {
+                  params[key] = 'non-strict host anti-affinity'
+                } else if (params[key] === 'host affinity (Non-Strict)') {
+                  params[key] = 'non-strict host affinity'
+                }
+              }
             } else if (param.type === 'list') {
               params[key] = input.map(e => { return param.opts[e].id }).reduce((str, name) => { return str + ',' + name })
             } else if (param.name === 'account' || param.name === 'keypair') {
@@ -1410,7 +1465,7 @@ export default {
               if (!action.mapping[key].value) {
                 continue
               }
-              params[key] = action.mapping[key].value(this.resource, params)
+              params[key] = action.mapping[key].value(this.resource, params, this.$route.query)
             }
           }
         }
@@ -1450,19 +1505,21 @@ export default {
           }
 
           console.log(error)
-          eventBus.$emit('update-resource-state', this.selectedItems, this.getDataIdentifier(params), 'failed')
+          eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: this.getDataIdentifier(params), state: 'failed' })
           this.$notifyError(error)
         }).finally(f => {
           this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     shouldNavigateBack (action) {
-      return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
+      return ((['delete-outlined', 'DeleteOutlined'].includes(action.icon) || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
     },
     getColumnKey (name) {
       if (typeof name === 'object') {
-        name = Object.keys(name)[0]
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
     },
@@ -1477,7 +1534,13 @@ export default {
       }
 
       this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
-
+      this.columns.push({
+        dataIndex: 'dropdownFilter',
+        slots: {
+          filterDropdown: 'filterDropdown',
+          filterIcon: 'filterIcon'
+        }
+      })
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
       }
@@ -1496,12 +1559,20 @@ export default {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
         query.isofilter = filter
+      } else if (this.$route.name === 'volume') {
+        if (filter === 'all') {
+          query.listsystemvms = true
+        } else {
+          delete query.listsystemvms
+        }
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
-          delete query.type
+          delete query.networkfilter
         } else {
-          query.type = filter
+          query.networkfilter = filter
         }
+      } else if (this.$route.name === 'publicip') {
+        query.state = filter
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
@@ -1511,10 +1582,16 @@ export default {
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
+      } else if (this.$route.name === 'guestvlans') {
+        if (filter === 'all') {
+          query.allocatedonly = 'false'
+        } else if (filter === 'allocatedonly') {
+          query.allocatedonly = 'true'
+        }
       }
       query.filter = filter
-      query.page = 1
-      query.pagesize = this.pageSize
+      query.page = '1'
+      query.pagesize = this.pageSize.toString()
       this.$router.push({ query })
     },
     onSearch (opts) {
@@ -1595,32 +1672,102 @@ export default {
       const value = e.target.value
       this.confirmDirty = this.confirmDirty || !!value
     },
-    validateTwoPassword (rule, value, callback) {
+    async validateTwoPassword (rule, value) {
       if (!value || value.length === 0) {
-        callback()
+        return Promise.resolve()
       } else if (rule.field === 'confirmpassword') {
-        const form = this.form
         const messageConfirm = this.$t('message.validate.equalto')
-        const passwordVal = form.getFieldValue('password')
+        const passwordVal = this.form.password
         if (passwordVal && passwordVal !== value) {
-          callback(messageConfirm)
+          return Promise.reject(messageConfirm)
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else if (rule.field === 'password') {
-        const form = this.form
-        const confirmPasswordVal = form.getFieldValue('confirmpassword')
+        const confirmPasswordVal = this.form.confirmpassword
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
-          callback()
+          return Promise.resolve()
         } else if (value && this.confirmDirty) {
-          form.validateFieldsAndScroll(['confirmpassword'], { force: true })
-          callback()
+          this.formRef.value.validateFields('confirmpassword')
+          return Promise.resolve()
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else {
-        callback()
+        return Promise.resolve()
       }
+    },
+    setRules (field) {
+      let rule = {}
+
+      if (!field || Object.keys(field).length === 0) {
+        return
+      }
+
+      if (!this.rules[field.name]) {
+        this.rules[field.name] = []
+      }
+
+      switch (true) {
+        case (field.type === 'boolean'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+        case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
+          console.log('op: ' + field)
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.name === 'keypair' || (field.name === 'account' && !['addAccountToProject', 'createAccount'].includes(this.currentAction.api))):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'uuid'):
+          console.log('uuid: ' + field)
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'list'):
+          console.log('list: ' + field)
+          rule.type = 'array'
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'long'):
+          console.log(field)
+          rule.type = 'number'
+          rule.required = field.required
+          rule.message = this.$t('message.validate.number')
+          this.rules[field.name].push(rule)
+          break
+        case (field.name === 'password' || field.name === 'currentpassword' || field.name === 'confirmpassword'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+
+          rule = {}
+          rule.validator = this.validateTwoPassword
+          this.rules[field.name].push(rule)
+          break
+        case (field.name === 'certificate' || field.name === 'privatekey' || field.name === 'certchain'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+        default:
+          console.log('hererere')
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+      }
+
+      rule = {}
     },
     setModalWidthByScreen () {
       const screenWidth = window.innerWidth
@@ -1648,7 +1795,7 @@ export default {
   vertical-align: text-bottom;
 }
 
-/deep/.ant-alert-message {
+:deep(.ant-alert-message) {
   display: flex;
   align-items: center;
 }

@@ -62,7 +62,7 @@ class NCC:
         url = "http://"+self.nccip+"/nitro/v1/config/managed_device/"
         payload = 'object={"params":{"action":"add_device"}, "managed_device":{"ip_address":"%s",\
                   "profile_name":"ns_nsroot_profile", "sync_operation":"false"}}' % self.nsip
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
         cmd_response = self.sendCmdToNS(url, payload, header=headers)
         if cmd_response == FAILED:
             raise Exception("Error:  %s" % self.__lastError)
@@ -74,7 +74,7 @@ class NCC:
         url = "http://"+self.nccip+"/nitro/v1/config/tag/"
         payload = 'object={"tag": {"entity_type": "managed_device", "entity_id": "%s",\
                   "tag_key": "zone", "tag_value": "%s"}}' % (self.nsip, cs_zone)
-        header = {'Content-Type':'application/x-www-form-urlencoded'}
+        header = {'content-type':'application/x-www-form-urlencoded'}
         cmd_response = self.sendCmdToNS(url, payload, header=header)
         if cmd_response == FAILED:
             raise Exception("Error:  %s" % self.__lastError)
@@ -151,7 +151,7 @@ class NCC:
         }
         res = self.sendCmdToNCC(url, payload)
         return res
-   
+
     def addDevicetoServicePackage(self, devicegroup_id, device_ip):
         url = "http://"+self.nccip+"/admin/v1/devicegroups/"+devicegroup_id+"/devices"
         payload = {"devices":[{"ref":device_ip }]}
@@ -207,7 +207,7 @@ class NCC:
             return res
         except Exception as e:
             self.__lastError = e
-            # self.logger.exception("sendGetRequestToNCC : Exception Occured: %s" %
+            # self.logger.exception("sendGetRequestToNCC : Exception Occurred: %s" %
             #                       str(self.__lastError))
             return FAILED
 
@@ -217,7 +217,7 @@ class NCC:
             return res
         except Exception as e:
             self.__lastError = e
-            # self.logger.exception("sendPostRequstToNCC: Exception Occured: %s" %
+            # self.logger.exception("sendPostRequstToNCC: Exception Occurred: %s" %
             #                       str(self.__lastError))
             return FAILED
 
@@ -227,7 +227,7 @@ class NCC:
             return res
          except Exception as e:
             self.__lastError = e
-            # self.logger.exception("sendPostRequstToNCC: Exception Occured: %s" %
+            # self.logger.exception("sendPostRequstToNCC: Exception Occurred: %s" %
             #                       str(self.__lastError))
             return FAILED
 
@@ -237,7 +237,7 @@ class NCC:
             return res
          except Exception as e:
             self.__lastError = e
-            # self.logger.exception("sendPostRequstToNCC: Exception Occured: %s" %
+            # self.logger.exception("sendPostRequstToNCC: Exception Occurred: %s" %
             #                       str(self.__lastError))
             return FAILED
 
@@ -263,7 +263,7 @@ class NCC:
             return res
         except Exception as e:
             self.__lastError = e
-            # self.logger.exception("sendPostRequstToNCC: Exception Occured: %s" %
+            # self.logger.exception("sendPostRequstToNCC: Exception Occurred: %s" %
             #                       str(self.__lastError))
             return FAILED
 
@@ -273,7 +273,7 @@ class NCC:
             return res
         except Exception as e:
             self.__lastError = e
-            # self.logger.exception("sendGetRequestToNCC : Exception Occured: %s" %
+            # self.logger.exception("sendGetRequestToNCC : Exception Occurred: %s" %
             #                       str(self.__lastError))
             return FAILED
 

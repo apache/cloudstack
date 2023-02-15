@@ -41,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -95,6 +96,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
+    private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
+
     @Inject
     DiskOfferingDao diskOfferingDao;
     @Inject
@@ -121,6 +124,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     TemplateManager templateManager;
     @Inject
     TemplateDataFactory templateDataFactory;
+    @Inject
+    VolumeDataFactory volFactory;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -138,10 +143,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         }
 
         CreateObjectCommand cmd = new CreateObjectCommand(volume.getTO());
-        EndPoint ep = epSelector.select(volume);
+        boolean encryptionRequired = anyVolumeRequiresEncryption(volume);
+        EndPoint ep = epSelector.select(volume, encryptionRequired);
         Answer answer = null;
         if (ep == null) {
-            String errMsg = "No remote endpoint to send CreateObjectCommand, check if host or ssvm is down?";
+            String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
             s_logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
@@ -200,9 +206,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 } else {
                     result.setAnswer(answer);
                 }
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("failed to create volume", e);
-                errMsg = e.toString();
             } catch (Exception e) {
                 s_logger.debug("failed to create volume", e);
                 errMsg = e.toString();
@@ -260,6 +263,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        s_logger.debug(String.format("Copying volume %s(%s) to %s(%s)", srcdata.getId(), srcdata.getType(), destData.getId(), destData.getType()));
+        boolean encryptionRequired = anyVolumeRequiresEncryption(srcdata, destData);
         DataStore store = destData.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {
             if ((srcdata.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.TEMPLATE)) {
@@ -280,13 +285,14 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 DataObject srcData = templateDataFactory.getTemplate(srcdata.getId(), imageStore);
 
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, true);
-                EndPoint ep = epSelector.select(srcData, destData);
+                EndPoint ep = epSelector.select(srcData, destData, encryptionRequired);
                 Answer answer = null;
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send CopyCommand, check if host or ssvm is down?";
+                    String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                     s_logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
+                    s_logger.debug(String.format("Sending copy command to endpoint %s, where encryption support is %s", ep.getHostAddr(), encryptionRequired ? "required" : "not required"));
                     answer = ep.sendMessage(cmd);
                 }
                 CopyCommandResult result = new CopyCommandResult("", answer);
@@ -294,10 +300,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             } else if (srcdata.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 SnapshotObjectTO srcTO = (SnapshotObjectTO) srcdata.getTO();
                 CopyCommand cmd = new CopyCommand(srcTO, destData.getTO(), StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value(), true);
-                EndPoint ep = epSelector.select(srcdata, destData);
+                EndPoint ep = epSelector.select(srcdata, destData, encryptionRequired);
                 CopyCmdAnswer answer = null;
                 if (ep == null) {
-                    String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+                    String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                     s_logger.error(errMsg);
                     answer = new CopyCmdAnswer(errMsg);
                 } else {
@@ -342,6 +348,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
+        s_logger.debug("Taking snapshot of "+ snapshot);
         try {
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
             Object payload = snapshot.getPayload();
@@ -350,9 +357,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
             }
 
+            boolean encryptionRequired = anyVolumeRequiresEncryption(snapshot);
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-            EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT);
+            EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT, encryptionRequired);
             Answer answer = null;
+
+            s_logger.debug("Taking snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
 
             if (ep == null) {
                 String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
@@ -379,12 +389,21 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
-        SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
-        RevertSnapshotCommand cmd = new RevertSnapshotCommand(snapshotTO);
+        SnapshotObjectTO dataOnPrimaryStorage = null;
+        if (snapshotOnPrimaryStore != null) {
+            dataOnPrimaryStorage = (SnapshotObjectTO)snapshotOnPrimaryStore.getTO();
+        }
+        RevertSnapshotCommand cmd = new RevertSnapshotCommand((SnapshotObjectTO)snapshot.getTO(), dataOnPrimaryStorage);
 
         CommandResult result = new CommandResult();
         try {
-            EndPoint ep = epSelector.select(snapshotOnPrimaryStore);
+            EndPoint ep = null;
+            if (snapshotOnPrimaryStore != null) {
+                ep = epSelector.select(snapshotOnPrimaryStore);
+            } else {
+                VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+                ep = epSelector.select(volumeInfo);
+            }
             if ( ep == null ){
                 String errMsg = "No remote endpoint to send RevertSnapshotCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);
@@ -407,16 +426,22 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         VolumeObject vol = (VolumeObject) data;
         StoragePool pool = (StoragePool) data.getDataStore();
         ResizeVolumePayload resizeParameter = (ResizeVolumePayload) vol.getpayload();
+        boolean encryptionRequired = anyVolumeRequiresEncryption(vol);
+        long [] endpointsToRunResize = resizeParameter.hosts;
 
-        ResizeVolumeCommand resizeCmd =
-                new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(), resizeParameter.newSize, resizeParameter.shrinkOk,
-                        resizeParameter.instanceName, vol.getChainInfo());
+        // if hosts are provided, they are where the VM last ran. We can use that.
+        if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
+            EndPoint ep = epSelector.select(data, encryptionRequired);
+            endpointsToRunResize = new long[] {ep.getId()};
+        }
+        ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
+                resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName, vol.getChainInfo(), vol.getPassphrase(), vol.getEncryptFormat());
         if (pool.getParent() != 0) {
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
         CreateCmdResult result = new CreateCmdResult(null, null);
         try {
-            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, resizeParameter.hosts, resizeCmd);
+            ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
             if (answer != null && answer.getResult()) {
                 long finalSize = answer.getNewSize();
                 s_logger.debug("Resize: volume started at size: " + toHumanReadableSize(vol.getSize()) + " and ended at size: " + toHumanReadableSize(finalSize));
@@ -435,6 +460,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         } catch (Exception e) {
             s_logger.debug("sending resize command failed", e);
             result.setResult(e.toString());
+        } finally {
+            resizeCmd.clearPassphrase();
         }
 
         callback.complete(result);
@@ -491,5 +518,38 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
         return true;
+    }
+
+    @Override
+    public boolean isVmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVmInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean isVmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
+    }
+
+    /**
+     * Does any object require encryption support?
+     */
+    private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
+        for (DataObject o : objects) {
+            // this fails code smell for returning true twice, but it is more readable than combining all tests into one statement
+            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
+                return true;
+            } else if (o instanceof SnapshotInfo && ((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

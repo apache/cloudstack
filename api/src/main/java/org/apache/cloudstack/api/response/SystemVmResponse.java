@@ -90,6 +90,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "the hostname for the system VM")
     private String hostName;
 
+    @SerializedName(ApiConstants.HOST_CONTROL_STATE)
+    @Param(description = "the control state of the host for the system VM")
+    private String hostControlState;
+
     @SerializedName("hypervisor")
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
@@ -281,6 +285,14 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public String getHostControlState() {
+        return hostControlState;
+    }
+
+    public void setHostControlState(String hostControlState) {
+        this.hostControlState = hostControlState;
     }
 
     public String getHypervisor() {

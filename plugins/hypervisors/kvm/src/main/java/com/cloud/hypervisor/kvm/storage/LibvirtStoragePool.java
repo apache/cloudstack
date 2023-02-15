@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 import org.libvirt.StoragePool;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -110,15 +112,15 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name,
-            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         return this._storageAdaptor
-                .createPhysicalDisk(name, this, format, provisioningType, size);
+                .createPhysicalDisk(name, this, format, provisioningType, size, passphrase);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         return this._storageAdaptor.createPhysicalDisk(name, this,
-                this.getDefaultFormat(), provisioningType, size);
+                this.getDefaultFormat(), provisioningType, size, passphrase);
     }
 
     @Override
@@ -269,7 +271,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean createFolder(String path) {
-        return this._storageAdaptor.createFolder(this.uuid, path);
+        return this._storageAdaptor.createFolder(this.uuid, path, this.type == StoragePoolType.Filesystem ? this.localPath : null);
     }
 
     @Override
@@ -278,5 +280,15 @@ public class LibvirtStoragePool implements KVMStoragePool {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("path", getLocalPath()).toString();
     }
 }

@@ -40,6 +40,14 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.encryptionsupported">
+        <div>
+          <strong>{{ $t('label.volume.encryption.support') }}</strong>
+          <div>
+            {{ host.encryptionsupported }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>
@@ -126,11 +134,14 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource) {
-        this.host = this.resource
-        if (this.resource.id && newItem && newItem.id !== oldItem.id) {
-          this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource) {
+          this.host = this.resource
+          if (this.resource.id && newItem && newItem.id !== oldItem.id) {
+            this.fetchData()
+          }
         }
       }
     }

@@ -115,6 +115,10 @@ import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.Condition;
+import com.cloud.network.as.Counter;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
@@ -961,7 +965,7 @@ public class NetscalerResource implements ServerResource {
                 try {
                     Thread.sleep(10000);
                 } catch (final InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting for netscaler to be 'up'.");
+                    s_logger.debug("[ignored] interrupted while waiting for netscaler to be 'up'.");
                 }
                 final ns refreshNsObj = new ns();
                 refreshNsObj.set_id(newVpx.get_id());
@@ -2838,7 +2842,7 @@ public class NetscalerResource implements ServerResource {
         if (!isAutoScaleSupportedInNetScaler()) {
             throw new ExecutionException("AutoScale not supported in this version of NetScaler");
         }
-        if (loadBalancer.isRevoked() || vmGroupTO.getState().equals("revoke")) {
+        if (loadBalancer.isRevoked() || vmGroupTO.getState().equals(AutoScaleVmGroup.State.REVOKE)) {
             removeAutoScaleConfig(loadBalancer);
         } else {
             createAutoScaleConfig(loadBalancer);
@@ -2895,10 +2899,10 @@ public class NetscalerResource implements ServerResource {
         }
 
         // Create the autoscale config
-        if (!loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("disabled")) {
+        if (!loadBalancerTO.getAutoScaleVmGroupTO().getState().equals(AutoScaleVmGroup.State.DISABLED)) {
             // on restart of network, there might be vmgrps in disabled state, no need to create autoscale config for them
             enableAutoScaleConfig(loadBalancerTO, false);
-        } else if (loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("disabled")) {
+        } else if (loadBalancerTO.getAutoScaleVmGroupTO().getState().equals(AutoScaleVmGroup.State.DISABLED)) {
             disableAutoScaleConfig(loadBalancerTO, false);
         }
 
@@ -2913,7 +2917,7 @@ public class NetscalerResource implements ServerResource {
         final String nsVirtualServerName = generateNSVirtualServerName(srcIp, srcPort);
         final String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
 
-        if (loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals("enabled")) {
+        if (loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals(AutoScaleVmGroup.State.ENABLED)) {
             disableAutoScaleConfig(loadBalancerTO, false);
         }
 
@@ -2963,7 +2967,6 @@ public class NetscalerResource implements ServerResource {
         final AutoScaleVmProfileTO profileTO = vmGroupTO.getProfile();
         final List<AutoScalePolicyTO> policies = vmGroupTO.getPolicies();
         final int interval = vmGroupTO.getInterval();
-        profileTO.getCounterParamList();
         String snmpCommunity = null;
         int snmpPort = DEFAULT_SNMP_PORT;
         long cur_prirotiy = 1;
@@ -3084,7 +3087,7 @@ public class NetscalerResource implements ServerResource {
 
             final com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction scaleDownAction =
                     new com.citrix.netscaler.nitro.resource.config.autoscale.autoscaleaction();
-            final Integer destroyVmGracePeriod = profileTO.getDestroyVmGraceperiod();
+            final Integer expungeVmGracePeriod = profileTO.getExpungeVmGracePeriod();
             try {
                 scaleDownAction.set_name(scaleDownActionName);
                 scaleDownAction.set_type("SCALE_DOWN"); // TODO: will this be called de-provision?
@@ -3094,7 +3097,7 @@ public class NetscalerResource implements ServerResource {
                 scaleDownAction.set_quiettime(scaleDownQuietTime);
                 final String scaleDownParameters = "command=destroyVirtualMachine" + "&" + "lbruleid=" + loadBalancerTO.getUuid();
                 scaleDownAction.set_parameters(scaleDownParameters);
-                scaleDownAction.set_vmdestroygraceperiod(destroyVmGracePeriod);
+                scaleDownAction.set_vmdestroygraceperiod(expungeVmGracePeriod);
                 autoscaleaction.add(_netscalerService, scaleDownAction);
             } catch (final Exception e) {
                 // Ignore Exception on cleanup
@@ -3124,13 +3127,13 @@ public class NetscalerResource implements ServerResource {
                 for (final ConditionTO conditionTO : conditions) {
                     final CounterTO counterTO = conditionTO.getCounter();
                     String counterName = counterTO.getName();
-                    final String operator = conditionTO.getRelationalOperator();
+                    final Condition.Operator operator = conditionTO.getRelationalOperator();
                     final long threshold = conditionTO.getThreshold();
 
                     final StringBuilder conditionExpression = new StringBuilder();
                     try(Formatter formatter = new Formatter(conditionExpression, Locale.US);) {
 
-                        if (counterTO.getSource().equals("snmp")) {
+                        if (counterTO.getSource().equals(Counter.Source.SNMP)) {
                             counterName = generateSnmpMetricName(counterName);
                             if (snmpMetrics.size() == 0) {
                                 // Create Metric Table
@@ -3230,7 +3233,7 @@ public class NetscalerResource implements ServerResource {
                             final int counterIndex = snmpMetrics.get(counterName); // TODO: temporary fix. later on counter name
                             // will be added as a param to SNMP_TABLE.
                             formatter.format("SYS.VSERVER(\"%s\").SNMP_TABLE(%d).AVERAGE_VALUE.%s(%d)", nsVirtualServerName, counterIndex, operator, threshold);
-                        } else if (counterTO.getSource().equals("netscaler")) {
+                        } else if (counterTO.getSource().equals(Counter.Source.NETSCALER)) {
                             //SYS.VSERVER("abcd").RESPTIME.GT(10)
                             formatter.format("SYS.VSERVER(\"%s\").%s.%s(%d)", nsVirtualServerName, counterTO.getValue(), operator, threshold);
                         }
@@ -3307,7 +3310,7 @@ public class NetscalerResource implements ServerResource {
                 final List<ConditionTO> conditions = autoScalePolicyTO.getConditions();
                 for (final ConditionTO conditionTO : conditions) {
                     final CounterTO counterTO = conditionTO.getCounter();
-                    if (counterTO.getSource().equals("snmp")) {
+                    if (counterTO.getSource().equals(Counter.Source.SNMP)) {
                         isSnmp = true;
                         break;
                     }
@@ -3511,18 +3514,18 @@ public class NetscalerResource implements ServerResource {
     }
 
     private boolean isScaleUpPolicy(final AutoScalePolicyTO autoScalePolicyTO) {
-        return autoScalePolicyTO.getAction().equals("scaleup");
+        return autoScalePolicyTO.getAction().equals(AutoScalePolicy.Action.SCALEUP);
     }
 
     private boolean isScaleDownPolicy(final AutoScalePolicyTO autoScalePolicyTO) {
-        return autoScalePolicyTO.getAction().equals("scaledown");
+        return autoScalePolicyTO.getAction().equals(AutoScalePolicy.Action.SCALEDOWN);
     }
 
     private void saveConfiguration() throws ExecutionException {
         try {
             apiCallResult = nsconfig.save(_netscalerService);
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Error occured while saving configuration changes to Netscaler device due to " + apiCallResult.message);
+                throw new ExecutionException("Error occurred while saving configuration changes to Netscaler device due to " + apiCallResult.message);
             }
         } catch (final nitro_exception e) {
             throw new ExecutionException("Failed to save configuration changes to Netscaler device due to " + e.getMessage());
@@ -3560,7 +3563,7 @@ public class NetscalerResource implements ServerResource {
                 }
             }
         } catch (final Exception e) {
-            s_logger.error("Failed to get bytes sent and recived statistics due to " + e);
+            s_logger.error("Failed to get bytes sent and received statistics due to " + e);
             throw new ExecutionException(e.getMessage());
         }
 
@@ -3616,7 +3619,7 @@ public class NetscalerResource implements ServerResource {
 
     private String generateAutoScaleServiceGroupName(final LoadBalancerTO lbTO) {
         /*
-         *  ServiceGroup name in NetScaler wont support long names. Providing special name.
+         *  ServiceGroup name in NetScaler won't support long names. Providing special name.
          *  Need for introducing uuid because every vmgroup creation should be distinguished.
          *  Ex. (1) create a vm group, delete a vmgroup, create a vmgroup on same lb ip and port
          *  This will reuse all vms from the original vm group in step (1)

@@ -15,10 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { flushPromises } from '@vue/test-utils'
+
 import mockAxios from '../../../mock/mockAxios'
-import ActionButton from '@/components/view/ActionButton'
 import common from '../../../common'
 import mockData from '../../../mockData/ActionButton.mock.json'
+import ActionButton from '@/components/view/ActionButton'
 
 jest.mock('axios', () => mockAxios)
 
@@ -28,7 +30,7 @@ const state = {
     apis: mockData.apis
   }
 }
-router = common.createMockRouter(mockData.routes)
+
 store = common.createMockStore(state)
 i18n = common.createMockI18n('en', mockData.messages)
 
@@ -52,199 +54,197 @@ describe('Components > View > ActionButton.vue', () => {
   })
 
   describe('Template', () => {
-    it('Button action is show', () => {
-      const expected = '<i aria-label="icon: plus" class="anticon anticon-plus">'
+    it('The action button is displayed', () => {
       const wrapper = factory()
 
-      wrapper.vm.$nextTick(() => {
-        const received = wrapper.html()
-
-        expect(received).not.toContain(expected)
-      })
+      const expected = '<i aria-label="icon: plus" class="anticon anticon-plus">'
+      const received = wrapper.html()
+      expect(received).not.toContain(expected)
     })
 
-    it('Normal button action is show', () => {
-      const expected = '<i aria-label="icon: plus" class="anticon anticon-plus">'
-      const propsData = {
-        actions: [
-          {
+    it('The normal action button is displayed', () => {
+      const wrapper = factory({
+        props: {
+          actions: [{
             label: 'label.action',
             api: 'test-api-case-1',
             showBadge: false,
-            icon: 'plus',
+            icon: 'plus-outlined',
             dataView: false,
             listView: true
-          }
-        ],
-        dataView: false,
-        listView: true
-      }
-
-      const wrapper = factory({ props: propsData })
-
-      wrapper.vm.$nextTick(() => {
-        const received = wrapper.html()
-
-        expect(received).toContain(expected)
+          }],
+          dataView: false,
+          listView: true
+        }
       })
+
+      const expected = '<span role="img" aria-label="plus" class="anticon anticon-plus">'
+      const received = wrapper.html()
+      expect(received).toContain(expected)
     })
 
-    it('Badge button action is show', (done) => {
-      const expected = '<span class="button-action-badge ant-badge">'
-      const propsData = {
-        actions: [
-          {
-            label: 'label.action',
-            api: 'test-api-case-2',
-            showBadge: true,
-            icon: 'plus',
-            dataView: true
-          }
-        ],
-        dataView: true
-      }
-      const dataMock = {
+    it('The action button badge  is displayed', (done) => {
+      mockAxios.mockImplementation(() => Promise.resolve({
         testapinameresponse: {
           count: 0,
           testapiname: []
         }
-      }
-
-      mockAxios.mockImplementation(() => Promise.resolve(dataMock))
-
-      const wrapper = factory({ props: propsData })
-
-      wrapper.vm.$nextTick(() => {
-        const wrapperHtml = wrapper.html()
-        const received = common.decodeHtml(wrapperHtml)
-
-        expect(received).toContain(expected)
-
-        done()
+      }))
+      const wrapper = factory({
+        props: {
+          actions: [
+            {
+              label: 'label.action',
+              api: 'test-api-case-2',
+              showBadge: true,
+              icon: 'plus-outlined',
+              dataView: true
+            }
+          ],
+          dataView: true
+        }
       })
+
+      const wrapperHtml = wrapper.html()
+      const received = common.decodeHtml(wrapperHtml)
+      const expected = '<span class="ant-badge button-action-badge" disabled="false">'
+
+      expect(received).toContain(expected)
+
+      done()
     })
   })
 
   describe('Method', () => {
     describe('handleShowBadge()', () => {
-      it('check the api is called and returned is not null', (done) => {
+      it('API should be called and return not empty', async (done) => {
         const postData = new URLSearchParams()
+        mockAxios.mockResolvedValue({ testapinameresponse: { count: 2 } })
+        const wrapper = factory({
+          props: {
+            actions: [
+              {
+                label: 'label.action',
+                api: 'test-api-case-3',
+                showBadge: true,
+                icon: 'plus-outlined',
+                dataView: true
+              }
+            ],
+            dataView: true
+          }
+        })
         const expected = { 'test-api-case-3': { badgeNum: 2 } }
-        const dataMock = { testapinameresponse: { count: 2 } }
-        const propsData = {
-          actions: [
-            {
-              label: 'label.action',
-              api: 'test-api-case-3',
-              showBadge: true,
-              icon: 'plus',
-              dataView: true
-            }
-          ],
-          dataView: true
-        }
 
-        mockAxios.mockResolvedValue(dataMock)
-
-        const wrapper = factory({ props: propsData })
-
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            data: postData,
-            method: 'GET',
-            params: {
-              command: 'test-api-case-3',
-              response: 'json'
-            },
-            url: '/'
-          })
-          expect(wrapper.vm.actionBadge).toEqual(expected)
-
-          done()
+        await flushPromises()
+        expect(mockAxios).toHaveBeenCalledTimes(1)
+        expect(mockAxios).toHaveBeenCalledWith({
+          data: postData,
+          method: 'GET',
+          params: {
+            command: 'test-api-case-3',
+            response: 'json'
+          },
+          url: '/'
         })
+        expect(wrapper.vm.actionBadge).toEqual(expected)
+
+        done()
       })
 
-      it('check the api is called returned is null', (done) => {
+      it('API should be called and return empty', async (done) => {
         const postData = new URLSearchParams()
+        mockAxios.mockResolvedValue({ data: [] })
+        const wrapper = factory({
+          props: {
+            actions: [
+              {
+                label: 'label.action',
+                api: 'test-api-case-4',
+                showBadge: true,
+                icon: 'plus-outlined',
+                dataView: true
+              }
+            ],
+            dataView: true
+          }
+        })
         const expected = { 'test-api-case-4': { badgeNum: 0 } }
-        const dataMock = { data: [] }
-        const propsData = {
-          actions: [
-            {
-              label: 'label.action',
-              api: 'test-api-case-4',
-              showBadge: true,
-              icon: 'plus',
-              dataView: true
-            }
-          ],
-          dataView: true
-        }
 
-        mockAxios.mockResolvedValue(dataMock)
-
-        const wrapper = factory({ props: propsData })
-
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            data: postData,
-            method: 'GET',
-            params: {
-              command: 'test-api-case-4',
-              response: 'json'
-            },
-            url: '/'
-          })
-          expect(wrapper.vm.actionBadge).toEqual(expected)
-
-          done()
+        await flushPromises()
+        expect(mockAxios).toHaveBeenCalledTimes(1)
+        expect(mockAxios).toHaveBeenCalledWith({
+          data: postData,
+          method: 'GET',
+          params: {
+            command: 'test-api-case-4',
+            response: 'json'
+          },
+          url: '/'
         })
+        expect(wrapper.vm.actionBadge).toEqual(expected)
+
+        done()
       })
 
-      it('check the api is called and throws error', (done) => {
+      it('API should be called and throw eror', async (done) => {
         const postData = new URLSearchParams()
-        const propsData = {
-          actions: [
-            {
-              label: 'label.action',
-              api: 'test-api-case-5',
-              showBadge: true,
-              icon: 'plus',
-              dataView: true
-            }
-          ],
-          dataView: true
-        }
-        const errorMessage = 'errMethodMessage'
-
-        mockAxios.mockImplementationOnce(() => Promise.reject(errorMessage))
-
-        const wrapper = factory({ props: propsData })
-
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            data: postData,
-            method: 'GET',
-            params: {
-              command: 'test-api-case-5',
-              response: 'json'
-            },
-            url: '/'
-          })
-          expect(wrapper.vm.actionBadge).toEqual({})
-
-          done()
+        mockAxios.mockRejectedValue('errMethodMessage')
+        const wrapper = factory({
+          props: {
+            actions: [
+              {
+                label: 'label.action',
+                api: 'test-api-case-5',
+                showBadge: true,
+                icon: 'plus-outlined',
+                dataView: true
+              }
+            ],
+            dataView: true
+          }
         })
+
+        await flushPromises()
+        expect(mockAxios).toHaveBeenCalledTimes(1)
+        expect(mockAxios).toHaveBeenCalledWith({
+          data: postData,
+          method: 'GET',
+          params: {
+            command: 'test-api-case-5',
+            response: 'json'
+          },
+          url: '/'
+        })
+        expect(wrapper.vm.actionBadge).toEqual({})
+
+        done()
       })
     })
 
     describe('execAction()', () => {
       it('check emitted events are executed', async () => {
+        router = common.createMockRouter()
+        const wrapper = factory({
+          router,
+          props: {
+            actions: [
+              {
+                icon: 'plus-outlined',
+                label: 'label.action',
+                api: 'test-api-case-6',
+                showBadge: false,
+                dataView: true
+              }
+            ],
+            dataView: true,
+            resource: {
+              id: 'test-resource-id'
+            }
+          }
+        })
         const expected = {
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.action',
           api: 'test-api-case-6',
           showBadge: false,
@@ -253,26 +253,9 @@ describe('Components > View > ActionButton.vue', () => {
             id: 'test-resource-id'
           }
         }
-        const propsData = {
-          actions: [
-            {
-              icon: 'plus',
-              label: 'label.action',
-              api: 'test-api-case-6',
-              showBadge: false,
-              dataView: true
-            }
-          ],
-          dataView: true,
-          resource: {
-            id: 'test-resource-id'
-          }
-        }
-
-        const wrapper = factory({ props: propsData })
 
         await wrapper.find('button').trigger('click')
-        await wrapper.vm.$nextTick()
+        await flushPromises()
 
         expect(wrapper.emitted()['exec-action'][0]).toEqual([expected])
       })
@@ -281,7 +264,7 @@ describe('Components > View > ActionButton.vue', () => {
 
   describe('Watcher', () => {
     describe('handleShowBadge()', () => {
-      it('check handleShowBadge() is not called with empty resource', async () => {
+      it('The handleShowBadge() is not called with an empty resource', async () => {
         const wrapper = factory({
           props: {
             resource: {
@@ -289,15 +272,14 @@ describe('Components > View > ActionButton.vue', () => {
             }
           }
         })
+        wrapper.vm.hasOwnProperty = () => Object.hasOwnProperty
         const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
-        wrapper.setProps({
-          resource: null
-        })
-        await wrapper.vm.$nextTick()
+        await wrapper.setProps({ resource: null })
+
         expect(handleShowBadge).not.toBeCalled()
       })
 
-      it('check handleShowBadge() is not called with resource containing id null', async () => {
+      it('The handleShowBadge() is not called with a resource have containing id null', async () => {
         const wrapper = factory({
           props: {
             resource: {
@@ -305,16 +287,14 @@ describe('Components > View > ActionButton.vue', () => {
             }
           }
         })
-
+        wrapper.vm.hasOwnProperty = () => Object.hasOwnProperty
         const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
-        wrapper.setProps({
-          resource: { id: null }
-        })
-        await wrapper.vm.$nextTick()
+        await wrapper.setProps({ resource: { id: null } })
+
         expect(handleShowBadge).not.toBeCalled()
       })
 
-      it('check handleShowBadge() is not called with changed resource data', async () => {
+      it('The handleShowBadge() should be called with changed resource data', async () => {
         const wrapper = factory({
           props: {
             resource: {
@@ -322,14 +302,14 @@ describe('Components > View > ActionButton.vue', () => {
             }
           }
         })
-
-        wrapper.setProps({
+        wrapper.vm.hasOwnProperty = () => Object.hasOwnProperty
+        const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
+        await wrapper.setProps({
           resource: {
             id: 'test-resource-id-2'
           }
         })
-        const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
-        await wrapper.vm.$nextTick()
+
         expect(handleShowBadge).toHaveBeenCalledTimes(1)
       })
     })

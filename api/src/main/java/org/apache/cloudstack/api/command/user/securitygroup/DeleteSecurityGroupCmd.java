@@ -40,7 +40,6 @@ import com.cloud.network.security.SecurityGroup;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
-    private static final String s_name = "deletesecuritygroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -94,7 +93,7 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
         }
 
         if (id == null) {
-            throw new InvalidParameterValueException("Either id or name parameter is requred by deleteSecurityGroup command");
+            throw new InvalidParameterValueException("Either id or name parameter is required by deleteSecurityGroup command");
         }
 
         return id;
@@ -103,11 +102,6 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

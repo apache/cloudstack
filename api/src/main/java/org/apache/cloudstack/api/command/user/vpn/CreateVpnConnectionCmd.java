@@ -43,7 +43,6 @@ import com.cloud.network.vpc.Vpc;
 public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnConnectionCmd.class.getName());
 
-    private static final String s_name = "createvpnconnectionresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -104,11 +103,6 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

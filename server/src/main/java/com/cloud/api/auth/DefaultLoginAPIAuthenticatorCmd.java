@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.auth;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.domain.Domain;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -47,7 +49,6 @@ import java.net.InetAddress;
 public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
     public static final Logger s_logger = Logger.getLogger(DefaultLoginAPIAuthenticatorCmd.class.getName());
-    private static final String s_name = "loginresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,7 +80,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         return password;
     }
 
-    public String getDomain() {
+    public String getDomainName() {
         return domain;
     }
 
@@ -92,13 +93,8 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override
@@ -141,19 +137,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         }
 
         String domain = null;
-        if (domainName != null) {
-            domain = domainName[0];
-            auditTrailSb.append(" domain=" + domain);
-            if (domain != null) {
-                // ensure domain starts with '/' and ends with '/'
-                if (!domain.endsWith("/")) {
-                    domain += '/';
-                }
-                if (!domain.startsWith("/")) {
-                    domain = "/" + domain;
-                }
-            }
-        }
+        domain = getDomainName(auditTrailSb, domainName, domain);
 
         String serializedResponse = null;
         if (username != null) {
@@ -172,20 +156,38 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                 return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
                         responseType);
             } catch (final CloudAuthenticationException ex) {
+                ApiServlet.invalidateHttpSession(session, "fall through to API key,");
                 // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)
-                try {
-                    session.invalidate();
-                } catch (final IllegalStateException ise) {
+                String msg = String.format("%s", ex.getMessage() != null ?
+                        ex.getMessage() :
+                        "failed to authenticate user, check if username/password are correct");
+                auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + msg);
+                serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), msg, params, responseType);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(msg);
                 }
-                auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + ex.getMessage() != null ? ex.getMessage()
-                        : "failed to authenticate user, check if username/password are correct");
-                serializedResponse =
-                        _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), ex.getMessage() != null ? ex.getMessage()
-                                : "failed to authenticate user, check if username/password are correct", params, responseType);
             }
         }
         // We should not reach here and if we do we throw an exception
         throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
+    }
+
+    @Nullable
+    private String getDomainName(StringBuilder auditTrailSb, String[] domainName, String domain) {
+        if (domainName != null) {
+            domain = domainName[0];
+            auditTrailSb.append(" domain=" + domain);
+            if (domain != null) {
+                // ensure domain starts with '/' and ends with '/'
+                if (!domain.endsWith("/")) {
+                    domain += '/';
+                }
+                if (!domain.startsWith("/")) {
+                    domain = "/" + domain;
+                }
+            }
+        }
+        return domain;
     }
 
     @Override

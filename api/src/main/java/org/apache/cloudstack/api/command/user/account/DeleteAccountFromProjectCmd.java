@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.account;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +40,6 @@ import com.cloud.projects.Project;
 public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountFromProjectCmd.class.getName());
 
-    private static final String s_name = "deleteaccountfromprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -57,11 +57,6 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -111,5 +106,15 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Removing account " + accountName + " from project: " + projectId;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return projectId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 }

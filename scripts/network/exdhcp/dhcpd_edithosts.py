@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ def lock():
 			if count > sleep_max:
 				print "Can not get file lock at %s, time expired" % file_lock
 				return False
-	
+
 	try:
 		f = open(file_lock, "w")
 		f.close()
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 	if len(sys.argv) < 7:
 		print usage
 		sys.exit(1)
-	
+
 	mac = sys.argv[1]
 	ip = sys.argv[2]
 	hostname = sys.argv[3]
@@ -120,4 +120,3 @@ if __name__ == "__main__":
 
 	ret = insert_host_entry(mac, ip, hostname, dns, gateway, next_server)
 	sys.exit(ret)
-

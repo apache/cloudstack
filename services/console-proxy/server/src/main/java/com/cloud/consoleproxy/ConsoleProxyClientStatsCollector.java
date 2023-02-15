@@ -18,8 +18,10 @@ package com.cloud.consoleproxy;
 
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -31,11 +33,17 @@ import com.google.gson.GsonBuilder;
 public class ConsoleProxyClientStatsCollector {
 
     ArrayList<ConsoleProxyConnection> connections;
+    ArrayList<String> removedSessions;
 
     public ConsoleProxyClientStatsCollector() {
     }
 
-    public ConsoleProxyClientStatsCollector(Hashtable<String, ConsoleProxyClient> connMap) {
+    public void setRemovedSessions(List<String> removed) {
+        removedSessions = new ArrayList<>();
+        removedSessions.addAll(removed);
+    }
+
+    public ConsoleProxyClientStatsCollector(Map<String, ConsoleProxyClient> connMap) {
         setConnections(connMap);
     }
 
@@ -49,13 +57,14 @@ public class ConsoleProxyClientStatsCollector {
         gson.toJson(this, os);
     }
 
-    private void setConnections(Hashtable<String, ConsoleProxyClient> connMap) {
+    private void setConnections(Map<String, ConsoleProxyClient> connMap) {
 
         ArrayList<ConsoleProxyConnection> conns = new ArrayList<ConsoleProxyConnection>();
-        Enumeration<String> e = connMap.keys();
-        while (e.hasMoreElements()) {
+        Set<String> e = connMap.keySet();
+        Iterator<String> iterator = e.iterator();
+        while (iterator.hasNext()) {
             synchronized (connMap) {
-                String key = e.nextElement();
+                String key = iterator.next();
                 ConsoleProxyClient client = connMap.get(key);
 
                 ConsoleProxyConnection conn = new ConsoleProxyConnection();
@@ -67,6 +76,7 @@ public class ConsoleProxyClientStatsCollector {
                 conn.tag = client.getClientTag();
                 conn.createTime = client.getClientCreateTime();
                 conn.lastUsedTime = client.getClientLastFrontEndActivityTime();
+                conn.setSessionUuid(client.getSessionUuid());
                 conns.add(conn);
             }
         }
@@ -81,6 +91,15 @@ public class ConsoleProxyClientStatsCollector {
         public String tag;
         public long createTime;
         public long lastUsedTime;
+        protected String sessionUuid;
+
+        public String getSessionUuid() {
+            return sessionUuid;
+        }
+
+        public void setSessionUuid(String sessionUuid) {
+            this.sessionUuid = sessionUuid;
+        }
 
         public ConsoleProxyConnection() {
         }

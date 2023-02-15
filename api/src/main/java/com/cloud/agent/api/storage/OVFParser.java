@@ -16,6 +16,16 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -24,14 +34,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Map;
 
 public class OVFParser {
     private static final Logger s_logger = Logger.getLogger(OVFParser.class);
@@ -47,7 +49,7 @@ public class OVFParser {
 
     public OVFParser() {
         try {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory documentBuilderFactory = ParserUtils.getSaferDocumentBuilderFactory();
             documentBuilderFactory.setNamespaceAware(true);
             documentBuilder = documentBuilderFactory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
@@ -103,7 +105,7 @@ public class OVFParser {
             Node value = childNodes.item(i);
             // Also match if the child's name has a suffix:
             // Example: <rasd:AllocationUnits>
-            if (value != null && (value.getNodeName().equals(childNodeName)) || value.getNodeName().endsWith(":" + childNodeName)) {
+            if (value != null && (value.getNodeName().equals(childNodeName) || value.getNodeName().endsWith(":" + childNodeName))) {
                 return value.getTextContent();
             }
         }

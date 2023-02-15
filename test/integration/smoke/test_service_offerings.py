@@ -19,7 +19,7 @@
 # Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (changeServiceForVirtualMachine,
+from marvin.cloudstackAPI import (scaleVirtualMachine,
                                   updateServiceOffering)
 from marvin.lib.utils import (isAlmostEqual,
                               cleanup_resources,
@@ -70,7 +70,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "smoke",
             "basic",
             "eip",
-            "sg"],
+            "sg", "diskencrypt"],
         required_hardware="false")
     def test_01_create_service_offering(self):
         """Test to create service offering"""
@@ -130,6 +130,11 @@ class TestCreateServiceOffering(cloudstackTestCase):
             list_service_response[0].name,
             self.services["service_offerings"]["tiny"]["name"],
             "Check name in createServiceOffering"
+        )
+        self.assertEqual(
+            list_service_response[0].encryptroot,
+            False,
+            "Ensure encrypt is false by default"
         )
         return
 
@@ -302,6 +307,53 @@ class TestCreateServiceOffering(cloudstackTestCase):
                 self.services["service_offerings"]["tiny"],
                 cacheMode="invalid_cache_mode_type"
             )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg",
+            "diskencrypt"],
+        required_hardware="false")
+    def test_05_create_service_offering_with_root_encryption_type(self):
+        """Test to create service offering with root encryption"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"],
+            name="tiny-encrypted-root",
+            encryptRoot=True
+        )
+        self.cleanup.append(service_offering)
+
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
+
+        list_service_response = list_service_offering(
+            self.apiclient,
+            id=service_offering.id
+        )
+
+        self.assertNotEqual(
+            len(list_service_response),
+            0,
+            "Check Service offering is created"
+        )
+
+        self.assertEqual(
+            list_service_response[0].encryptroot,
+            True,
+            "Check encrypt root is true"
+        )
         return
 
 
@@ -546,10 +598,10 @@ class TestServiceOfferings(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id
         cmd.serviceofferingid = self.small_offering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % self.medium_virtual_machine.id)
         self.medium_virtual_machine.start(self.apiclient)
@@ -695,12 +747,12 @@ class TestServiceOfferings(cloudstackTestCase):
             offering_data,
         )
         self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessTrue2)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.virtual_machine_with_diskoffering_strictness_true.id
         cmd.serviceofferingid = self.serviceOfferingWithDiskOfferingStrictnessTrue2.id
 
         with self.assertRaises(Exception) as e:
-            self.apiclient.changeServiceForVirtualMachine(cmd)
+            self.apiclient.scaleVirtualMachine(cmd)
             self.debug("Upgrade VM with new service offering having different disk offering operation failed as expected with exception: %s" %
                        e.exception)
         return
@@ -800,10 +852,10 @@ class TestServiceOfferings(cloudstackTestCase):
             offering_data,
         )
         self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse2)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.virtual_machine_with_diskoffering_strictness_false.id
         cmd.serviceofferingid = self.serviceOfferingWithDiskOfferingStrictnessFalse2.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         list_vm_response = VirtualMachine.list(
             self.apiclient,

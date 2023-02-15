@@ -24,9 +24,12 @@ import java.net.InetAddress;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.log4j.Logger;
 
@@ -150,7 +153,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId,
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, Account.Type accountType, Long roleId,
                                          Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source) {
         // TODO Auto-generated method stub
         return null;
@@ -327,6 +330,20 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
+        return null;
+    }
+
+    @Override
+    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
+    }
+
+    @Override
+    public UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd) {
+        return null;
+    }
+
+    @Override
     public boolean deleteUserAccount(long arg0) {
         // TODO Auto-generated method stub
         return false;
@@ -404,7 +421,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Account createAccount(String accountName, short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
+    public Account createAccount(String accountName, Account.Type accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
         final AccountVO account = new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid);
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -462,6 +479,16 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public Map<String, String> getKeys(Long userId) {
+        return null;
+    }
+
+    @Override
+    public List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders() {
+        return null;
+    }
+
+    @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
         return null;
     }
 

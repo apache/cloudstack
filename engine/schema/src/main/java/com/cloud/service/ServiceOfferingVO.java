@@ -35,6 +35,7 @@ import javax.persistence.EnumType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "service_offering")
@@ -327,7 +328,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public boolean isCustomCpuSpeedSupported() {
-        return isCustomized() && getDetail("minCPU") != null;
+        return isCustomized() && speed == null;
     }
 
     @Override
@@ -424,7 +425,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     @Override
     public String toString() {
-        return String.format("Service offering {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", getId(), getName(), getUuid());
+        return String.format("Service offering %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid"));
     }
 
     public boolean isDynamicScalingEnabled() {

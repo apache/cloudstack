@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -33,6 +34,7 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 
 public interface AccountService {
 
@@ -42,8 +44,8 @@ public interface AccountService {
      */
     UserAccount createUserAccount(CreateAccountCmd accountCmd);
 
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId, Long domainId,
-            String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, Account.Type accountType,
+                                  Long roleId, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source);
 
     /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses
@@ -57,7 +59,8 @@ public interface AccountService {
 
     User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, User.Source source);
+    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
+                    User.Source source);
 
     boolean isAdmin(Long accountId);
 
@@ -123,4 +126,18 @@ public interface AccountService {
     public Map<String, String> getKeys(GetUserKeysCmd cmd);
 
     public Map<String, String> getKeys(Long userId);
+
+    /**
+     * Lists user two-factor authentication provider plugins
+     * @return list of providers
+     */
+    List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders();
+
+    /**
+     * Finds user two factor authenticator provider by domain ID
+     * @param domainId domain id
+     * @return backup provider
+     */
+    UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final Long domainId);
+
 }

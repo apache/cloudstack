@@ -85,7 +85,7 @@ public class UpdateLoadBalancerTest {
 
         updateLbRuleCmd = new UpdateLoadBalancerRuleCmd();
 
-        AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
+        AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
     }
@@ -93,7 +93,7 @@ public class UpdateLoadBalancerTest {
     @Test
     public void testValidateRuleBeforeUpdateLB() throws ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
 
-        LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null);
+        LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null, null);
 
         when(lbDao.findById(isNull())).thenReturn(lb);
         when(netModel.getPublicIpAddress(anyLong())).thenReturn(Mockito.mock(PublicIpAddress.class));
@@ -111,7 +111,7 @@ public class UpdateLoadBalancerTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testRuleNotValidated() throws ResourceAllocationException, ResourceUnavailableException, InsufficientCapacityException {
 
-        LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null);
+        LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null, null);
 
         when(lbDao.findById(anyLong())).thenReturn(lb);
         when(netModel.getPublicIpAddress(anyLong())).thenReturn(Mockito.mock(PublicIpAddress.class));

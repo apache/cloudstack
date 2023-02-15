@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import com.cloud.kubernetes.cluster.KubernetesCluster;
-import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
-import com.cloud.kubernetes.cluster.KubernetesClusterService;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.security.InvalidParameterException;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -41,10 +41,12 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.security.InvalidParameterException;
+import com.cloud.kubernetes.cluster.KubernetesCluster;
+import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = CreateKubernetesClusterCmd.APINAME,
+@APICommand(name = "createKubernetesCluster",
         description = "Creates a Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseView.Restricted,
@@ -54,7 +56,6 @@ import java.security.InvalidParameterException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public static final Logger LOGGER = Logger.getLogger(CreateKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "createKubernetesCluster";
     private static final Long DEFAULT_NODE_ROOT_DISK_SIZE = 8L;
 
     @Inject
@@ -235,11 +236,6 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
-    }
-
     public static String getResultObjectName() {
         return "kubernetescluster";
     }
@@ -275,8 +271,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.VirtualMachine;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

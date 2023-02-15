@@ -17,20 +17,35 @@
 
 package org.apache.cloudstack.api;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VmMetricsResponse;
 
-import javax.inject.Inject;
-import java.util.List;
-
+/**
+ * API supported for backward compatibility. Use the {@link ListVMsUsageHistoryCmd} API instead. <br>
+ * The reasons for this are: <br>
+ * <ul>
+ *     <li>While API {@link ListVMsMetricsCmd} allows ACS users to get only the most recent stats data
+ *     from VMs or their cumulative data, the {@link ListVMsUsageHistoryCmd} API allows getting historical
+ *     data by filtering by specific VMs and periods.</li>
+ *     <li>{@link ListVMsMetricsCmd} just extends the {@link ListVMsCmd} API, so it inherits all of
+ *     its parameters, even if some of them are not suitable/useful for the API purpose.</li>
+ *     <li>{@link ListVMsMetricsCmd} returns all VM information just like the {@link ListVMsCmd} API,
+ *     although most of it is not suitable/useful for the API purpose.</li>
+ * </ul>
+ */
 @APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
-        since = "4.9.3", authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListVMsMetricsCmd extends ListVMsCmd {
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Restricted,
+        since = "4.9.3", authorized = {RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class ListVMsMetricsCmd extends ListVMsCmd implements UserCmd {
     public static final String APINAME = "listVirtualMachinesMetrics";
 
     @Inject

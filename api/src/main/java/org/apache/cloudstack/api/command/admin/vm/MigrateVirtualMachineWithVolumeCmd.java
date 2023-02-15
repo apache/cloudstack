@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
@@ -52,7 +54,6 @@ import com.cloud.vm.VirtualMachine;
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
-    private static final String s_name = "migratevirtualmachinewithvolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -114,11 +115,6 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
         if (userVm != null) {
@@ -139,22 +135,29 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return virtualMachineId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
+    @Override
     public void execute() {
         if (hostId == null && MapUtils.isEmpty(migrateVolumeTo)) {
-            throw new InvalidParameterValueException(String.format("Either %s or %s  must be passed for migrating the VM", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO));
+            throw new InvalidParameterValueException(String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO));
         }
 
-        UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
-        if (userVm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
+        VirtualMachine virtualMachine = _userVmService.getVm(getVirtualMachineId());
+        if (!VirtualMachine.State.Running.equals(virtualMachine.getState()) && hostId != null) {
+            throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to the new host.", virtualMachine));
         }
 
-        if (!VirtualMachine.State.Running.equals(userVm.getState()) && hostId != null) {
-            throw new InvalidParameterValueException(String.format("VM ID: %s is not in Running state to migrate it to new host", userVm.getUuid()));
-        }
-
-        if (!VirtualMachine.State.Stopped.equals(userVm.getState()) && hostId == null) {
-            throw new InvalidParameterValueException(String.format("VM ID: %s is not in Stopped state to migrate, use %s parameter to migrate it to a new host", userVm.getUuid(), ApiConstants.HOST_ID));
+        if (!VirtualMachine.State.Stopped.equals(virtualMachine.getState()) && hostId == null) {
+            throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.",
+                    virtualMachine, ApiConstants.HOST_ID));
         }
 
         try {
@@ -163,16 +166,15 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                 Host destinationHost = _resourceService.getHost(getHostId());
                 // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
                 if (destinationHost == null) {
-                    throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id =" + getHostId());
+                    s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+                    throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
                 }
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
             } else if (MapUtils.isNotEmpty(migrateVolumeTo)) {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), getVolumeToPool());
             }
             if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
+                setResponseBasedOnVmType(virtualMachine, migratedVm);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }
@@ -183,5 +185,17 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
+    }
+
+    private void setResponseBasedOnVmType(VirtualMachine virtualMachine, VirtualMachine migratedVm) {
+        if (VirtualMachine.Type.User.equals(virtualMachine.getType())) {
+            UserVmResponse userVmResponse = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm) migratedVm).get(0);
+            userVmResponse.setResponseName(getCommandName());
+            setResponseObject(userVmResponse);
+            return;
+        }
+        SystemVmResponse systemVmResponse = _responseGenerator.createSystemVmResponse(migratedVm);
+        systemVmResponse.setResponseName(getCommandName());
+        setResponseObject(systemVmResponse);
     }
 }

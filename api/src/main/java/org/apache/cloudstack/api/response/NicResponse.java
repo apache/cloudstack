@@ -134,6 +134,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "IP addresses associated with NIC found for unmanaged VM", since="4.14.0")
     private List<String> ipAddresses;
 
+    @SerializedName(ApiConstants.MTU)
+    @Param(description = "MTU configured on the NIC", since="4.18.0")
+    private Integer mtu;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -209,6 +213,14 @@ public class NicResponse extends BaseResponse {
     public void setExtraDhcpOptions(List<NicExtraDhcpOptionResponse> extraDhcpOptions) {
         this.extraDhcpOptions = extraDhcpOptions;
     }
+
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "Id of the vpc to which the nic belongs")
+    private String vpcId;
+
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "name of the vpc to which the nic belongs")
+    private String vpcName;
 
     @Override
     public int hashCode() {
@@ -363,5 +375,29 @@ public class NicResponse extends BaseResponse {
 
     public void setIpAddresses(List<String> ipAddresses) {
         this.ipAddresses = ipAddresses;
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
+    }
+
+    public String getVpcId() {
+        return vpcId;
     }
 }

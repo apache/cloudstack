@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
@@ -105,6 +106,15 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "external_entity", length = 65535)
     private String externalEntity;
 
+    @Column(name = "is_user_2fa_enabled")
+    private boolean user2faEnabled;
+
+    @Column(name = "user_2fa_provider")
+    private String user2faProvider;
+
+    @Column(name = "key_for_2fa")
+    private String keyFor2fa;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -122,7 +132,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.lastname = lastName;
         this.email = email;
         this.timezone = timezone;
-        this.state = State.enabled;
+        this.state = State.ENABLED;
         this.uuid = uuid;
         this.source = source;
     }
@@ -283,7 +293,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        return new StringBuilder("User[").append(id).append("-").append(username).append("]").toString();
+        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "username", "uuid"));
     }
 
     @Override
@@ -315,4 +325,29 @@ public class UserVO implements User, Identity, InternalIdentity {
     public void setExternalEntity(String externalEntity) {
         this.externalEntity = externalEntity;
     }
+
+    public boolean isUser2faEnabled() {
+        return user2faEnabled;
+    }
+
+    public void setUser2faEnabled(boolean user2faEnabled) {
+        this.user2faEnabled = user2faEnabled;
+    }
+
+    public String getKeyFor2fa() {
+        return keyFor2fa;
+    }
+
+    public void setKeyFor2fa(String keyFor2fa) {
+        this.keyFor2fa = keyFor2fa;
+    }
+
+    public String getUser2faProvider() {
+        return user2faProvider;
+    }
+
+    public void setUser2faProvider(String user2faProvider) {
+        this.user2faProvider = user2faProvider;
+    }
+
 }

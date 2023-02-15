@@ -25,9 +25,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.fsm.StateMachine2;
-
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -39,6 +36,7 @@ import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupC
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.log4j.Logger;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -62,6 +60,7 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -128,8 +127,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         AffinityGroupProcessor processor = typeProcessorMap.get(affinityGroupType);
 
-        if(processor == null){
-            throw new InvalidParameterValueException("Unable to create affinity group, invalid affinity group type" + affinityGroupType);
+        if (processor == null) {
+            throw new InvalidParameterValueException(String.format("Unable to create affinity group, invalid affinity group type: %s. " +
+                    "Valid values are %s", affinityGroupType, String.join(",", typeProcessorMap.keySet())));
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -163,6 +163,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Created affinity group =" + affinityGroupName);
         }
+        CallContext.current().putContextParameter(AffinityGroup.class, group.getUuid());
 
         return group;
     }
@@ -341,7 +342,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         for (AffinityGroupProcessor processor : _affinityProcessors) {
             if (processor.isAdminControlledGroup()) {
-                continue; // we dont list the type if this group can be
+                continue; // we don't list the type if this group can be
                 // created only as an admin/system operation.
             }
             types.add(processor.getType());

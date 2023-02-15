@@ -17,13 +17,15 @@
 
 package com.cloud.network;
 
-import com.google.common.collect.ImmutableMap;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -35,13 +37,15 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.framework.config.ConfigKey;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * The NetworkModel presents a read-only view into the Network data such as L2 networks,
@@ -67,18 +71,29 @@ public interface NetworkModel {
     String PUBLIC_KEYS_FILE = "public-keys";
     String CLOUD_IDENTIFIER_FILE = "cloud-identifier";
     String HYPERVISOR_HOST_NAME_FILE = "hypervisor-host-name";
+    String CLOUD_DOMAIN_FILE = "cloud-domain";
+    String CLOUD_DOMAIN_ID_FILE = "cloud-domain-id";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
-    ImmutableMap<String, String> openStackFileMapping = ImmutableMap.of(
-            AVAILABILITY_ZONE_FILE, "availability_zone",
-            LOCAL_HOSTNAME_FILE, "hostname",
-            VM_ID_FILE, "uuid",
-            PUBLIC_HOSTNAME_FILE, "name"
-    );
+    ImmutableMap<String, String> openStackFileMapping = ImmutableMap.<String, String>builder()
+            .put(AVAILABILITY_ZONE_FILE, "availability_zone")
+            .put(LOCAL_HOSTNAME_FILE, "hostname")
+            .put(VM_ID_FILE, "uuid")
+            .put(PUBLIC_HOSTNAME_FILE, "name")
+            .put(CLOUD_DOMAIN_FILE, CLOUD_DOMAIN_FILE)
+            .put(CLOUD_DOMAIN_ID_FILE, CLOUD_DOMAIN_ID_FILE)
+            .put(HYPERVISOR_HOST_NAME_FILE, HYPERVISOR_HOST_NAME_FILE)
+            .build();
 
-    static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",
+    List<String> metadataFileNames = new ArrayList<>(Arrays.asList(SERVICE_OFFERING_FILE, AVAILABILITY_ZONE_FILE, LOCAL_HOSTNAME_FILE, LOCAL_IPV4_FILE, PUBLIC_HOSTNAME_FILE, PUBLIC_IPV4_FILE,
+            INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, HYPERVISOR_HOST_NAME_FILE));
+
+    static final ConfigKey<Integer> MACIdentifier = new ConfigKey<>("Advanced",Integer.class, "mac.identifier", "0",
             "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
+
+    static final ConfigKey<Boolean> AdminIsAllowedToDeployAnywhere = new ConfigKey<>("Advanced",Boolean.class, "admin.is.allowed.to.deploy.anywhere", "false",
+            "This will determine if the root admin is allowed to deploy in networks in subdomains.", true, ConfigKey.Scope.Global);
 
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
@@ -194,6 +209,10 @@ public interface NetworkModel {
     Provider getDefaultUniqueProviderForService(String serviceName);
 
     void checkNetworkPermissions(Account owner, Network network);
+
+    void checkNetworkOperatePermissions(Account owner, Network network);
+
+    void checkRouterPermissions(Account owner, VirtualRouter router);
 
     String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType);
 
@@ -313,9 +332,17 @@ public interface NetworkModel {
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
 
-    List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                   String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname);
 
     String getValidNetworkCidr(Network guestNetwork);
+
+    Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone);
+
+    Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone);
+
+    void verifyIp4DnsPair(final String ip4Dns1, final String ip4Dns2);
+
+    void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
 
 }

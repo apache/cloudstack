@@ -28,6 +28,7 @@ setup_k8s_node() {
 
     # set default ssh port and restart sshd service
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
+    systemctl restart ssh
 
     # Prevent root login
     > /root/.ssh/authorized_keys
@@ -39,7 +40,6 @@ setup_k8s_node() {
     log_it "Swap disabled"
 
     log_it "Setting up interfaces"
-    setup_common eth0
     setup_system_rfc1918_internal
 
     log_it "Setting up entry in hosts"

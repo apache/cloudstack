@@ -58,7 +58,7 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
     private boolean bootable = true;
     private Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.XenServer;
     private boolean dynamicallyScalable = true;
-    private short accountType = Account.ACCOUNT_TYPE_NORMAL;
+    private Account.Type accountType = Account.Type.NORMAL;
     private String accountName = "system";
     private String domainUuid = "abcde1234567890";
     private String domainName = "ROOT";

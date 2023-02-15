@@ -44,7 +44,6 @@ import java.util.Map;
 @APICommand(name = "listIdps", description = "Returns list of discovered SAML Identity Providers", responseObject = IdpResponse.class, entityType = {})
 public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
     public static final Logger s_logger = Logger.getLogger(ListIdpsCmd.class.getName());
-    private static final String s_name = "listidpsresponse";
 
     @Inject
     ApiServerService _apiServer;
@@ -56,13 +55,8 @@ public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override

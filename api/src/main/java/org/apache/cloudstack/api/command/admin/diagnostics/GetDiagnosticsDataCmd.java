@@ -23,7 +23,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -43,7 +43,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = GetDiagnosticsDataCmd.APINAME,
+@APICommand(name = "getDiagnosticsData",
         responseObject = GetDiagnosticsDataResponse.class,
         entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
@@ -52,7 +52,6 @@ import com.cloud.vm.VirtualMachine;
         since = "4.14.0.0",
         authorized = {RoleType.Admin})
 public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
-    public static final String APINAME = "getDiagnosticsData";
 
     @Inject
     private DiagnosticsService diagnosticsService;
@@ -89,11 +88,6 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Implementation //////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -150,8 +144,22 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.SystemVm;
+    public Long getApiResourceId() {
+        return getId();
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+
+        VirtualMachine.Type vmType = _entityMgr.findById(VirtualMachine.class, getId()).getType();
+        switch (vmType) {
+            case ConsoleProxy:
+                return ApiCommandResourceType.ConsoleProxy;
+            case SecondaryStorageVm:
+                return ApiCommandResourceType.SystemVm;
+            case DomainRouter:
+                return ApiCommandResourceType.DomainRouter;
+        }
+        return null;
+    }
 }

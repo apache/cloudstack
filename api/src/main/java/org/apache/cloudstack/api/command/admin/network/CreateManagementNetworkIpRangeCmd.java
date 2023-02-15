@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = CreateManagementNetworkIpRangeCmd.APINAME,
+@APICommand(name = "createManagementNetworkIpRange",
         description = "Creates a Management network IP range.",
         responseObject = PodResponse.class,
         since = "4.11.0.0",
@@ -46,7 +46,6 @@ import com.cloud.user.Account;
 public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateManagementNetworkIpRangeCmd.class);
 
-    public static final String APINAME = "createManagementNetworkIpRange";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -89,7 +88,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.VLAN,
             type = CommandType.STRING,
-            description = "Optional. The vlan id the ip range sits on, default to Null when it is not specificed which means you network is not on any Vlan")
+            description = "Optional. The vlan id the ip range sits on, default to Null when it is not specified which means your network is not on any Vlan")
     private String vlan;
 
     /////////////////////////////////////////////////////
@@ -148,11 +147,6 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Pod IP Range.");
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

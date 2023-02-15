@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -111,7 +114,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 // TODO(Salvatore-orlando): This code should go
                 for (final NicTO nic : vmSpec.getNics()) {
                     if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vswitch) {
-                        final HashMap<String, String> args = citrixResourceBase.parseDefaultOvsRuleComamnd(BroadcastDomainType.getValue(nic.getBroadcastUri()));
+                        final HashMap<String, String> args = citrixResourceBase.parseDefaultOvsRuleCommand(BroadcastDomainType.getValue(nic.getBroadcastUri()));
                         final OvsSetTagAndFlowCommand flowCmd = new OvsSetTagAndFlowCommand(args.get("vmName"), args.get("tag"), args.get("vlans"), args.get("seqno"),
                                 Long.parseLong(args.get("vmId")));
 
@@ -179,6 +182,35 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
             }
 
             state = VmPowerState.RUNNING;
+
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
+                String controlIp = null;
+                for (final NicTO nic : vmSpec.getNics()) {
+                    if (nic.getType() == Networks.TrafficType.Control) {
+                        controlIp = nic.getIp();
+                        break;
+                    }
+                }
+
+                String result2 = citrixResourceBase.connect(conn, vmName, controlIp, 1000);
+                if (StringUtils.isEmpty(result2)) {
+                    s_logger.info(String.format("Connected to SystemVM: %s", vmName));
+                }
+
+                try {
+                    citrixResourceBase.copyPatchFilesToVR(controlIp, VRScripts.CONFIG_CACHE_LOCATION);
+                    VirtualRoutingResource vrResource = citrixResourceBase.getVirtualRoutingResource();
+                    if (!vrResource.isSystemVMSetup(vmName, controlIp)) {
+                        String errMsg = "Failed to patch systemVM";
+                        s_logger.error(errMsg);
+                        return new StartAnswer(command, errMsg);
+                    }
+                } catch (Exception e) {
+                    String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
+                    s_logger.error(errMsg, e);
+                    return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
+                }
+            }
 
             final StartAnswer startAnswer = new StartAnswer(command);
 

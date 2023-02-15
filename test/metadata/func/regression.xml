@@ -2472,7 +2472,7 @@ under the License.
 <!-- ADD TEST CASES FOR IP FORWARDING HERE!!! -->
 	
 	
-	<!-- Test case #16 - rebootVirtualMachine command; verfiy that machine is in Running state after it's rebooted -->
+	<!-- Test case #16 - rebootVirtualMachine command; verify that machine is in Running state after it's rebooted -->
 	<command>
 		<name>rebootVirtualMachine</name>
 		<testcase>16</testcase>

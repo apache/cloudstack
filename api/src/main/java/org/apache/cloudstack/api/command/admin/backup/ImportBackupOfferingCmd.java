@@ -41,12 +41,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ImportBackupOfferingCmd.APINAME,
+@APICommand(name = "importBackupOffering",
         description = "Imports a backup offering using a backup provider",
         responseObject = BackupOfferingResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin})
 public class ImportBackupOfferingCmd extends BaseAsyncCmd {
-    public static final String APINAME = "importBackupOffering";
 
     @Inject
     private BackupManager backupManager;
@@ -121,11 +120,6 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override

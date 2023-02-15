@@ -89,6 +89,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "the hostname for the router")
     private String hostName;
 
+    @SerializedName(ApiConstants.HOST_CONTROL_STATE)
+    @Param(description = "the control state of the host for the router")
+    private String hostControlState;
+
     @SerializedName("hypervisor")
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
@@ -233,6 +237,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "Last executed health check result for the router", responseObject = RouterHealthCheckResultResponse.class, since = "4.14")
     List<RouterHealthCheckResultResponse> healthCheckResults;
 
+    @SerializedName("softwareversion")
+    @Param(description = "the version of the code / software in the router")
+    private String softwareVersion;
+
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
@@ -296,6 +304,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public void setHostControlState(String hostControlState) {
+        this.hostControlState = hostControlState;
     }
 
     public String getHypervisor() {
@@ -489,5 +501,13 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setHealthCheckResults(List<RouterHealthCheckResultResponse> healthCheckResults) {
         this.healthCheckResults = healthCheckResults;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
+    }
+
+    public void setSoftwareVersion(String softwareVersion) {
+        this.softwareVersion = softwareVersion;
     }
 }

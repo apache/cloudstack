@@ -24,7 +24,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -82,6 +82,13 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
                since = "3.0.1")
     private Long hostId;
 
+    @Parameter(name = ApiConstants.CONSIDER_LAST_HOST,
+            type = CommandType.BOOLEAN,
+            description = "True by default, CloudStack will firstly try to start the VM on the last host where it run on before stopping, if destination host is not specified. " +
+                    "If false, CloudStack will not consider the last host and start the VM by normal process.",
+            since = "4.18.0")
+    private Boolean considerLastHost;
+
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
@@ -110,6 +117,10 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
 
     public Boolean getBootIntoSetup() {
         return bootIntoSetup;
+    }
+
+    public Boolean getConsiderLastHost() {
+        return considerLastHost;
     }
 
     // ///////////////////////////////////////////////////
@@ -151,12 +162,12 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.VirtualMachine;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 

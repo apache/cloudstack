@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -31,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 
-@APICommand(name = MigrateSecondaryStorageDataCmd.APINAME,
+@APICommand(name = "migrateSecondaryStorageData",
         description = "migrates data objects from one secondary storage to destination image store(s)",
         responseObject = MigrationResponse.class,
         requestHasSensitiveInfo = false,
@@ -42,7 +43,6 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
 
     public static final Logger LOGGER = Logger.getLogger(MigrateSecondaryStorageDataCmd.class.getName());
 
-    public static final String APINAME = "migrateSecondaryStorageData";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -104,12 +104,17 @@ public class MigrateSecondaryStorageDataCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccountId();
     }
 
     @Override
-    public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccountId();
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.ImageStore;
     }
 }

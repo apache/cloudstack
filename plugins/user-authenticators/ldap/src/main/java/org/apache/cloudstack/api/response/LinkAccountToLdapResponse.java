@@ -39,7 +39,7 @@ public class LinkAccountToLdapResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "Type of the account to auto import")
-    private short accountType;
+    private int accountType;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "Domain Admin accountId that is created")
@@ -50,7 +50,7 @@ public class LinkAccountToLdapResponse extends BaseResponse {
     private String accountName;
 
 
-    public LinkAccountToLdapResponse(String domainId, String type, String ldapDomain, short accountType, String adminId, String accountName) {
+    public LinkAccountToLdapResponse(String domainId, String type, String ldapDomain, int accountType, String adminId, String accountName) {
         this.domainId = domainId;
         this.type = type;
         this.ldapDomain = ldapDomain;
@@ -71,7 +71,7 @@ public class LinkAccountToLdapResponse extends BaseResponse {
         return type;
     }
 
-    public short getAccountType() {
+    public Integer getAccountType() {
         return accountType;
     }
 

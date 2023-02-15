@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.17.0.0-SNAPSHOT</version>
+        <version>4.18.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -56,14 +56,6 @@
             <artifactId>vmware-vim25</artifactId>
             <version>${cs.vmware.api.version}</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis-jaxrpc</artifactId>
         </dependency>
         <dependency>
             <groupId>wsdl4j</groupId>

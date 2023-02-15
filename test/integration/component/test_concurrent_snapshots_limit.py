@@ -83,7 +83,7 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        self.exceptionOccured = False
+        self.exceptionOccurred = False
 
         if not self.supportedHypervisor:
             self.skipTest("Snapshot not supported on %s" % self.hypervisor)
@@ -95,8 +95,8 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
                 volumeid
             )
         except Exception as e:
-            self.debug("Exception occured: %s" % e)
-            self.exceptionOccured = True
+            self.debug("Exception occurred: %s" % e)
+            self.exceptionOccurred = True
 
     def tearDown(self):
         try:
@@ -293,7 +293,7 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
         for thread in threads:
             thread.join()
 
-        self.assertTrue(self.exceptionOccured, "Concurrent snapshots\
+        self.assertTrue(self.exceptionOccurred, "Concurrent snapshots\
                 more than concurrent.snapshots.threshold.perhost\
                 value successfully created")
         return

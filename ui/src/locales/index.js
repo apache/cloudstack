@@ -15,24 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-import VueI18n from 'vue-i18n'
+import { createI18n } from 'vue-i18n'
+import { vueProps } from '@/vue-app'
 
 const loadedLanguage = []
 const messages = {}
 
-Vue.use(VueI18n)
-
-export const i18n = new VueI18n({
-  locale: Vue.ls ? Vue.ls.get('LOCALE') || 'en' : 'en',
+export const i18n = createI18n({
+  locale: 'en',
   fallbackLocale: 'en',
   silentTranslationWarn: true,
-  messages: messages
+  messages: messages,
+  silentFallbackWarn: true,
+  warnHtmlInMessage: 'off'
 })
 
 export function loadLanguageAsync (lang) {
   if (!lang) {
-    lang = Vue.ls ? Vue.ls.get('LOCALE') || 'en' : 'en'
+    const locale = vueProps.$localStorage.get('LOCALE')
+    lang = (!locale || typeof locale === 'object') ? 'en' : locale
   }
   if (loadedLanguage.includes(lang)) {
     return Promise.resolve(setLanguage(lang))
@@ -45,10 +46,10 @@ export function loadLanguageAsync (lang) {
 
 function setLanguage (lang, message) {
   if (i18n) {
-    i18n.locale = lang
+    i18n.global.locale = lang
 
     if (message && Object.keys(message).length > 0) {
-      i18n.setLocaleMessage(lang, message)
+      i18n.global.setLocaleMessage(lang, message)
     }
   }
 

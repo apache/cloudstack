@@ -231,8 +231,8 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public boolean destroy(String caller, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-        return manager.destroyVirtualMachine(this.vmEntityVO, caller, expunge);
+    public boolean destroy(boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        return manager.destroyVirtualMachine(this.vmEntityVO, expunge);
     }
 
     @Override
@@ -266,7 +266,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public void disconnectFrom(NetworkEntity netowrk, short nicId) {
+    public void disconnectFrom(NetworkEntity network, short nicId) {
         // TODO Auto-generated method stub
 
     }

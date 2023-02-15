@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -44,7 +44,6 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreateGlobalLoadBalancerRuleCmd.class.getName());
 
-    private static final String s_name = "creategloballoadbalancerruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -141,11 +140,6 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
         GlobalLoadBalancerRule rule = _entityMgr.findById(GlobalLoadBalancerRule.class, getEntityId());
         if (rule != null) {
@@ -182,8 +176,8 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.GlobalLoadBalancerRule;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.GlobalLoadBalancerRule;
     }
 
     @Override

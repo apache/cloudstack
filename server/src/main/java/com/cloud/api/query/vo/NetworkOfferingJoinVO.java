@@ -148,8 +148,14 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "supports_public_access")
     private boolean supportsPublicAccess = false;
 
+    @Column(name = "supports_vm_autoscaling")
+    boolean supportsVmAutoScaling = false;
+
     @Column(name = "for_vpc")
     private boolean forVpc;
+
+    @Column(name = "for_tungsten")
+    boolean forTungsten;
 
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
@@ -174,6 +180,9 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
 
     @Column(name = "zone_name")
     private String zoneName = null;
+
+    @Column(name = "internet_protocol")
+    private String internetProtocol = null;
 
     public NetworkOfferingJoinVO() {
     }
@@ -333,6 +342,11 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         return forVpc;
     }
 
+    @Override
+    public boolean isForTungsten() {
+        return forTungsten;
+    }
+
     public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }
 
     public String getServicePackage() {
@@ -395,4 +409,12 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         this.zoneName = zoneName;
     }
 
+    public String getInternetProtocol() {
+        return internetProtocol;
+    }
+
+    @Override
+    public boolean isSupportsVmAutoScaling() {
+        return supportsVmAutoScaling;
+    }
 }

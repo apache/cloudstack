@@ -42,13 +42,13 @@ def replaceVersion(fname, version):
 
 def runSetupScript(args):
     """Invoke setup.py with the provided arguments"""
-    cmd = ['python', setupScript] + args
+    cmd = ['python3', setupScript] + args
     exitCode = subprocess.call(cmd)
     return exitCode
 
 
 if __name__ == "__main__":
-    version = sys.argv[1]
+    version = sys.argv[1].replace("-SNAPSHOT", "")
     remainingArgs = sys.argv[2:]
     replaceVersion(setupScript, version)
     runSetupScript(remainingArgs)

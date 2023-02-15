@@ -27,7 +27,7 @@ under the License.
 		internal dns and CIDR are given
 	-->
 	<!--
-		Test case 13: It doesnt contain user_data, size, network_group_list
+		Test case 13: It doesn't contain user_data, size, network_group_list
 	-->
 
 	<!-- Test case #3 - createUser command -->
@@ -2366,7 +2366,7 @@ under the License.
 	</command>
 
 	<!--
-		Test case #16 - rebootVirtualMachine command; verfiy that machine is
+		Test case #16 - rebootVirtualMachine command; verify that machine is
 		in Running state after it's rebooted
 	-->
 	<command>

@@ -67,6 +67,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
     List<IPAddressVO> listByPhysicalNetworkId(long physicalNetworkId);
 
+    IPAddressVO findByIpAndNetworkIdAndDcId(long networkId, long dcId, String ipAddress);
+
     List<IPAddressVO> listByAssociatedVpc(long vpcId, Boolean isSourceNat);
 
     long countFreePublicIPs();
@@ -92,4 +94,10 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     List<IPAddressVO> listByAssociatedVmId(long vmId);
 
     IPAddressVO findByVmIdAndNetworkId(long networkId, long vmId);
+
+    IPAddressVO findByAccountIdAndZoneIdAndStateAndIpAddress(long accountId, long dcId, State state, String ipAddress);
+
+    List<IPAddressVO> listByDcIdAndAssociatedNetwork(long dcId);
+
+    List<IPAddressVO> listByNetworkId(long networkId);
 }

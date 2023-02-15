@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class DedicateZoneCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateZoneCmd.class.getName());
 
-    private static final String s_name = "dedicatezoneresponse";
     @Inject
     public DedicatedService dedicatedService;
 
@@ -84,11 +83,6 @@ public class DedicateZoneCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -15,15 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'zone',
   title: 'label.zones',
-  icon: 'global',
+  icon: 'global-outlined',
   permission: ['listZonesMetrics'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'networktype', 'clusters']
+    const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
     const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
@@ -31,15 +32,21 @@ export default {
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
   related: [{
     name: 'pod',
     title: 'label.pods',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }, {
     name: 'cluster',
     title: 'label.clusters',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }, {
     name: 'host',
     title: 'label.hosts',
@@ -51,41 +58,50 @@ export default {
   }, {
     name: 'imagestore',
     title: 'label.secondary.storage',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }],
   resourceType: 'Zone',
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'physical.network',
-    component: () => import('@/views/infra/zone/PhysicalNetworksTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
   }, {
     name: 'system.vms',
-    component: () => import('@/views/infra/zone/SystemVmsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
+    show: (record) => { return record.isEdge !== true }
   }, {
     name: 'resources',
-    component: () => import('@/views/infra/Resources.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Resources.vue')))
   }, {
     name: 'settings',
-    component: () => import('@/components/view/SettingsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Zone',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
-    component: () => import('@/components/view/AnnotationsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   }],
   actions: [
     {
       api: 'createZone',
-      icon: 'plus',
+      icon: 'plus-outlined',
       label: 'label.add.zone',
       docHelp: 'installguide/configuration.html#adding-a-zone',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/zone/ZoneWizard.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/ZoneWizard.vue')))
     },
     {
       api: 'updateZone',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.action.edit.zone',
       dataView: true,
       args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
@@ -93,7 +109,7 @@ export default {
     },
     {
       api: 'updateZone',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.action.edit.zone',
       dataView: true,
       args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'domain', 'localstorageenabled'],
@@ -101,7 +117,7 @@ export default {
     },
     {
       api: 'updateZone',
-      icon: 'pause-circle',
+      icon: 'pause-circle-outlined',
       label: 'label.action.disable.zone',
       message: 'message.action.disable.zone',
       docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
@@ -111,7 +127,7 @@ export default {
     },
     {
       api: 'updateZone',
-      icon: 'play-circle',
+      icon: 'play-circle-outlined',
       label: 'label.action.enable.zone',
       message: 'message.action.enable.zone',
       docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
@@ -121,7 +137,7 @@ export default {
     },
     {
       api: 'enableOutOfBandManagementForZone',
-      icon: 'plus-circle',
+      icon: 'plus-circle-outlined',
       label: 'label.outofbandmanagement.enable',
       message: 'label.outofbandmanagement.enable',
       dataView: true,
@@ -137,7 +153,7 @@ export default {
     },
     {
       api: 'disableOutOfBandManagementForZone',
-      icon: 'minus-circle',
+      icon: 'minus-circle-outlined',
       label: 'label.outofbandmanagement.disable',
       message: 'label.outofbandmanagement.disable',
       dataView: true,
@@ -153,7 +169,7 @@ export default {
     },
     {
       api: 'enableHAForZone',
-      icon: 'eye',
+      icon: 'eye-outlined',
       label: 'label.ha.enable',
       message: 'label.ha.enable',
       dataView: true,
@@ -169,7 +185,7 @@ export default {
     },
     {
       api: 'disableHAForZone',
-      icon: 'eye-invisible',
+      icon: 'eye-invisible-outlined',
       label: 'label.ha.disable',
       message: 'label.ha.disable',
       dataView: true,
@@ -185,7 +201,7 @@ export default {
     },
     {
       api: 'addVmwareDc',
-      icon: 'block',
+      icon: 'block-outlined',
       label: 'label.add.vmware.datacenter',
       dataView: true,
       show: record => !record.vmwaredc,
@@ -198,7 +214,7 @@ export default {
     },
     {
       api: 'updateVmwareDc',
-      icon: 'block',
+      icon: 'block-outlined',
       label: 'label.update.vmware.datacenter',
       message: 'message.restart.mgmt.server',
       additionalMessage: 'message.restart.mgmt.server',
@@ -213,7 +229,7 @@ export default {
     },
     {
       api: 'removeVmwareDc',
-      icon: 'minus-square',
+      icon: 'minus-square-outlined',
       label: 'label.remove.vmware.datacenter',
       message: 'message.confirm.remove.vmware.datacenter',
       dataView: true,
@@ -227,7 +243,7 @@ export default {
     },
     {
       api: 'startRollingMaintenance',
-      icon: 'setting',
+      icon: 'setting-outlined',
       label: 'label.start.rolling.maintenance',
       message: 'label.start.rolling.maintenance',
       dataView: true,
@@ -240,7 +256,7 @@ export default {
     },
     {
       api: 'deleteZone',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.delete.zone',
       message: 'message.action.delete.zone',
       dataView: true

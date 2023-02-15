@@ -43,7 +43,6 @@ public class LDAPRemoveCmd extends BaseCmd {
     @Inject
     private LdapManager _ldapManager;
 
-    private static final String s_name = "ldapremoveresponse";
 
     @Override
     public void execute() {
@@ -63,11 +62,6 @@ public class LDAPRemoveCmd extends BaseCmd {
             _ldapManager.deleteConfiguration(config.getHostname(), 0, null);
         }
         return true;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

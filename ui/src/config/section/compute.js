@@ -15,21 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 import store from '@/store'
 
 export default {
   name: 'compute',
   title: 'label.compute',
-  icon: 'cloud',
+  icon: 'cloud-outlined',
   children: [
     {
       name: 'vm',
       title: 'label.instances',
-      icon: 'desktop',
+      icon: 'desktop-outlined',
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
+      params: () => {
+        var params = {}
+        if (store.getters.metrics) {
+          params = { state: 'running' }
+        }
+        return params
+      },
       filters: () => {
         const filters = ['running', 'stopped']
         if (!(store.getters.project && store.getters.project.id)) {
@@ -42,11 +50,13 @@ export default {
         const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
           {
             memoryused: (record) => {
-              return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
+              if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
+                return '-'
+              }
+              return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
           },
-          'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
-        ]
+          'memorytotal', 'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)
@@ -65,15 +75,25 @@ export default {
         }
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
-      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
+      details: () => {
+        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
+          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
+          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
+        const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
+        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
+          return fields
+        }
+        fields.push('securitygroup')
+        return fields
+      },
       tabs: [{
-        component: () => import('@/views/compute/InstanceTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceTab.vue')))
       }],
       actions: [
         {
           api: 'deployVirtualMachine',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.vm.add',
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
@@ -81,29 +101,30 @@ export default {
         },
         {
           api: 'updateVirtualMachine',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.action.edit.instance',
           docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
           dataView: true,
           popup: true,
-          component: () => import('@/views/compute/EditVM.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/EditVM.vue')))
         },
         {
           api: 'startVirtualMachine',
-          icon: 'caret-right',
+          icon: 'caret-right-outlined',
           label: 'label.action.start.instance',
           message: 'message.action.start.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          args: ['considerlasthost'],
           show: (record) => { return ['Stopped'].includes(record.state) },
-          component: () => import('@/views/compute/StartVirtualMachine.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
         {
           api: 'stopVirtualMachine',
-          icon: 'poweroff',
+          icon: 'poweroff-outlined',
           label: 'label.action.stop.instance',
           message: 'message.action.stop.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
@@ -115,12 +136,13 @@ export default {
         },
         {
           api: 'rebootVirtualMachine',
-          icon: 'reload',
+          icon: 'reload-outlined',
           label: 'label.action.reboot.instance',
           message: 'message.action.reboot.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           args: (record, store) => {
             var fields = []
             fields.push('forced')
@@ -137,7 +159,7 @@ export default {
         },
         {
           api: 'restoreVirtualMachine',
-          icon: 'sync',
+          icon: 'sync-outlined',
           label: 'label.reinstall.vm',
           message: 'message.reinstall.vm',
           dataView: true,
@@ -148,6 +170,7 @@ export default {
               value: (record) => { return record.id }
             }
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           successMethod: (obj, result) => {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
@@ -162,7 +185,7 @@ export default {
         },
         {
           api: 'createVMSnapshot',
-          icon: 'camera',
+          icon: 'camera-outlined',
           label: 'label.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
@@ -172,6 +195,7 @@ export default {
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
               (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -189,11 +213,12 @@ export default {
             return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
           },
-          component: () => import('@/views/compute/CreateSnapshotWizard.vue')
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
         },
         {
           api: 'assignVirtualMachineToBackupOffering',
-          icon: 'folder-add',
+          icon: 'folder-add-outlined',
           label: 'label.backup.offering.assign',
           message: 'label.backup.offering.assign',
           docHelp: 'adminguide/virtual_machines.html#backup-offerings',
@@ -208,7 +233,7 @@ export default {
         },
         {
           api: 'createBackup',
-          icon: 'cloud-upload',
+          icon: 'cloud-upload-outlined',
           label: 'label.create.backup',
           message: 'message.backup.create',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
@@ -223,13 +248,13 @@ export default {
         },
         {
           api: 'createBackupSchedule',
-          icon: 'schedule',
+          icon: 'schedule-outlined',
           label: 'Configure Backup Schedule',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           popup: true,
           show: (record) => { return record.backupofferingid },
-          component: () => import('@/views/compute/BackupScheduleWizard.vue'),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/BackupScheduleWizard.vue'))),
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -241,7 +266,7 @@ export default {
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',
-          icon: 'scissor',
+          icon: 'scissor-outlined',
           label: 'label.backup.offering.remove',
           message: 'label.backup.offering.remove',
           docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
@@ -256,17 +281,18 @@ export default {
         },
         {
           api: 'attachIso',
-          icon: 'paper-clip',
+          icon: 'paper-clip-outlined',
           label: 'label.action.attach.iso',
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
-          component: () => import('@/views/compute/AttachIso.vue')
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
         {
           api: 'detachIso',
-          icon: 'link',
+          icon: 'link-outlined',
           label: 'label.action.detach.iso',
           message: 'message.detach.iso.confirm',
           dataView: true,
@@ -278,6 +304,7 @@ export default {
             return args
           },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -286,50 +313,52 @@ export default {
         },
         {
           api: 'updateVMAffinityGroup',
-          icon: 'swap',
+          icon: 'swap-outlined',
           label: 'label.change.affinity',
           docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
           dataView: true,
           args: ['affinitygroupids'],
           show: (record) => { return ['Stopped'].includes(record.state) },
-          component: () => import('@/views/compute/ChangeAffinity'),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeAffinity'))),
           popup: true
         },
         {
           api: 'scaleVirtualMachine',
-          icon: 'arrows-alt',
+          icon: 'arrows-alt-outlined',
           label: 'label.scale.vm',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC') },
           disabled: (record) => { return record.state === 'Running' && !record.isdynamicallyscalable },
           popup: true,
-          component: () => import('@/views/compute/ScaleVM.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleVM.vue')))
         },
         {
           api: 'migrateVirtualMachine',
-          icon: 'drag',
+          icon: 'drag-outlined',
           label: 'label.migrate.instance.to.host',
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           popup: true,
-          component: () => import('@/views/compute/MigrateWizard')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard.vue')))
         },
         {
           api: 'migrateVirtualMachine',
-          icon: 'drag',
+          icon: 'drag-outlined',
           label: 'label.migrate.instance.to.ps',
           message: 'message.migrate.instance.to.ps',
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
-          component: () => import('@/views/compute/MigrateVMStorage'),
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
           popup: true
         },
         {
           api: 'resetPasswordForVirtualMachine',
-          icon: 'key',
+          icon: 'key-outlined',
           label: 'label.action.reset.password',
           message: 'message.action.instance.reset.password',
           dataView: true,
@@ -338,49 +367,38 @@ export default {
         },
         {
           api: 'resetSSHKeyForVirtualMachine',
-          icon: 'lock',
+          icon: 'lock-outlined',
           label: 'label.reset.ssh.key.pair',
           message: 'message.desc.reset.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#resetting-ssh-keys',
           dataView: true,
-          args: ['keypair', 'account', 'domainid'],
           show: (record) => { return ['Stopped'].includes(record.state) },
-          mapping: {
-            keypair: {
-              api: 'listSSHKeyPairs',
-              params: (record) => { return { account: record.account, domainid: record.domainid } }
-            },
-            account: {
-              value: (record) => { return record.account }
-            },
-            domainid: {
-              value: (record) => { return record.domainid }
-            }
-          },
-          successMethod: (obj, result) => {
-            const vm = result.jobresult.virtualmachine || {}
-            if (result.jobstatus === 1 && vm.password) {
-              const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
-                message: `${obj.$t('label.reset.ssh.key.pair.on.vm')}: ` + name,
-                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
-                duration: 0
-              })
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetSshKeyPair')))
+        },
+        {
+          api: 'resetUserDataForVirtualMachine',
+          icon: 'solution-outlined',
+          label: 'label.reset.userdata.on.vm',
+          message: 'message.desc.reset.userdata',
+          docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetUserData')))
         },
         {
           api: 'assignVirtualMachine',
-          icon: 'user-add',
+          icon: 'user-add-outlined',
           label: 'label.assign.instance.another',
           dataView: true,
-          component: () => import('@/views/compute/AssignInstance'),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AssignInstance'))),
           popup: true,
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'recoverVirtualMachine',
-          icon: 'medicine-box',
+          icon: 'medicine-box-outlined',
           label: 'label.recover.vm',
           message: 'message.recover.vm',
           dataView: true,
@@ -388,7 +406,7 @@ export default {
         },
         {
           api: 'unmanageVirtualMachine',
-          icon: 'disconnect',
+          icon: 'disconnect-outlined',
           label: 'label.action.unmanage.virtualmachine',
           message: 'message.action.unmanage.virtualmachine',
           dataView: true,
@@ -396,7 +414,7 @@ export default {
         },
         {
           api: 'expungeVirtualMachine',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.expunge.instance',
           message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
@@ -405,7 +423,7 @@ export default {
         },
         {
           api: 'destroyVirtualMachine',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.destroy.instance',
           message: 'message.action.destroy.instance',
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
@@ -418,14 +436,14 @@ export default {
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
           show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) },
-          component: () => import('@/views/compute/DestroyVM.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DestroyVM.vue')))
         }
       ]
     },
     {
       name: 'kubernetes',
       title: 'label.kubernetes',
-      icon: kubernetes,
+      icon: shallowRef(kubernetes),
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: (store) => {
@@ -439,25 +457,25 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'created'],
       tabs: [{
         name: 'k8s',
-        component: () => import('@/views/compute/KubernetesServiceTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
       }],
       resourceType: 'KubernetesCluster',
       actions: [
         {
           api: 'createKubernetesCluster',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.kubernetes.cluster.create',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#creating-a-new-kubernetes-cluster',
           listView: true,
           popup: true,
-          component: () => import('@/views/compute/CreateKubernetesCluster.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateKubernetesCluster.vue')))
         },
         {
           api: 'startKubernetesCluster',
-          icon: 'caret-right',
+          icon: 'caret-right-outlined',
           label: 'label.kubernetes.cluster.start',
           message: 'message.kubernetes.cluster.start',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#starting-a-stopped-kubernetes-cluster',
@@ -469,7 +487,7 @@ export default {
         },
         {
           api: 'stopKubernetesCluster',
-          icon: 'poweroff',
+          icon: 'poweroff-outlined',
           label: 'label.kubernetes.cluster.stop',
           message: 'message.kubernetes.cluster.stop',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#stopping-kubernetes-cluster',
@@ -481,29 +499,29 @@ export default {
         },
         {
           api: 'scaleKubernetesCluster',
-          icon: 'swap',
+          icon: 'swap-outlined',
           label: 'label.kubernetes.cluster.scale',
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
           dataView: true,
           show: (record) => { return ['Created', 'Running'].includes(record.state) },
           popup: true,
-          component: () => import('@/views/compute/ScaleKubernetesCluster.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
         },
         {
           api: 'upgradeKubernetesCluster',
-          icon: 'plus-circle',
+          icon: 'plus-circle-outlined',
           label: 'label.kubernetes.cluster.upgrade',
           message: 'message.kubernetes.cluster.upgrade',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#upgrading-kubernetes-cluster',
           dataView: true,
           show: (record) => { return ['Created', 'Running'].includes(record.state) },
           popup: true,
-          component: () => import('@/views/compute/UpgradeKubernetesCluster.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
         },
         {
           api: 'deleteKubernetesCluster',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.kubernetes.cluster.delete',
           message: 'message.kubernetes.cluster.delete',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#deleting-kubernetes-cluster',
@@ -516,9 +534,113 @@ export default {
       ]
     },
     {
+      name: 'autoscalevmgroup',
+      title: 'label.autoscale.vm.groups',
+      icon: 'ordered-list-outlined',
+      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      resourceType: 'AutoScaleVmGroup',
+      permission: ['listAutoScaleVmGroups'],
+      columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'state'],
+      details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'autoscalevmgroupid'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'autoscale.vm.profile',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleVmProfile.vue')))
+        },
+        {
+          name: 'loadbalancerrule',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleLoadBalancing.vue')))
+        },
+        {
+          name: 'scaleup.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleUpPolicyTab.vue')))
+        },
+        {
+          name: 'scaledown.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'createAutoScaleVmGroup',
+          icon: 'plus-outlined',
+          label: 'label.new.autoscale.vmgroup',
+          listView: true,
+          component: () => import('@/views/compute/CreateAutoScaleVmGroup.vue')
+        },
+        {
+          api: 'enableAutoScaleVmGroup',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.autoscale.vmgroup',
+          message: 'message.confirm.enable.autoscale.vmgroup',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return record.state === 'DISABLED' }
+        },
+        {
+          api: 'disableAutoScaleVmGroup',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.autoscale.vmgroup',
+          message: 'message.confirm.disable.autoscale.vmgroup',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['ENABLED', 'SCALING'].includes(record.state) }
+        },
+        {
+          api: 'updateAutoScaleVmGroup',
+          icon: 'edit-outlined',
+          label: 'label.update.autoscale.vmgroup',
+          dataView: true,
+          args: (record, store) => {
+            var args = ['name']
+            if (record.state === 'DISABLED') {
+              args.push('maxmembers')
+              args.push('minmembers')
+              args.push('interval')
+            }
+            return args
+          }
+        },
+        {
+          api: 'deleteAutoScaleVmGroup',
+          icon: 'delete-outlined',
+          label: 'label.delete.autoscale.vmgroup',
+          message: 'message.action.delete.autoscale.vmgroup',
+          dataView: true,
+          args: ['cleanup'],
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup || null } }) }
+        }
+      ]
+    },
+    {
       name: 'vmgroup',
       title: 'label.instance.groups',
-      icon: 'gold',
+      icon: 'gold-outlined',
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
@@ -532,31 +654,31 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [
         {
           api: 'createInstanceGroup',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.new.instance.group',
           listView: true,
           args: ['name']
         },
         {
           api: 'updateInstanceGroup',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.update.instance.group',
           dataView: true,
           args: ['name']
         },
         {
           api: 'deleteInstanceGroup',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.instance.group',
           message: 'message.action.delete.instance.group',
           dataView: true,
@@ -569,7 +691,7 @@ export default {
     {
       name: 'ssh',
       title: 'label.ssh.key.pairs',
-      icon: 'key',
+      icon: 'key-outlined',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
       columns: () => {
@@ -580,7 +702,7 @@ export default {
         return fields
       },
       resourceType: 'SSHKeyPair',
-      details: ['id', 'name', 'fingerprint', 'account', 'domain'],
+      details: ['id', 'name', 'fingerprint', 'account', 'domain', 'project'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -589,33 +711,36 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [
         {
           api: 'createSSHKeyPair',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.create.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
           listView: true,
           popup: true,
-          component: () => import('@/views/compute/CreateSSHKeyPair.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSSHKeyPair.vue')))
         },
         {
           api: 'deleteSSHKeyPair',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.remove.ssh.key.pair',
           message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
-          args: ['name', 'account', 'domainid'],
+          args: ['name', 'account', 'domainid', 'projectid'],
           mapping: {
             name: {
               value: (record, params) => { return record.name }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -628,9 +753,83 @@ export default {
           popup: true,
           groupMap: (selection, values, record) => {
             return selection.map(x => {
-              const data = record.filter(y => { return y.name === x })
+              const data = record.filter(y => { return y.id === x })
               return {
-                name: x, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
+              }
+            })
+          }
+        }
+      ]
+    },
+    {
+      name: 'userdata',
+      title: 'label.user.data',
+      icon: 'solution-outlined',
+      docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
+      permission: ['listUserData'],
+      columns: () => {
+        var fields = ['name', 'id']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
+        return fields
+      },
+      resourceType: 'UserData',
+      details: ['id', 'name', 'userdata', 'account', 'domain', 'params'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'userdata'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'registerUserData',
+          icon: 'plus-outlined',
+          label: 'label.register.user.data',
+          docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
+        },
+        {
+          api: 'deleteUserData',
+          icon: 'delete-outlined',
+          label: 'label.remove.user.data',
+          message: 'message.please.confirm.remove.user.data',
+          dataView: true,
+          args: ['id', 'account', 'domainid'],
+          mapping: {
+            id: {
+              value: (record, params) => { return record.id }
+            },
+            account: {
+              value: (record, params) => { return record.account }
+            },
+            domainid: {
+              value: (record, params) => { return record.domainid }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x, account: data[0].account, domainid: data[0].domainid
               }
             })
           }
@@ -640,7 +839,7 @@ export default {
     {
       name: 'affinitygroup',
       title: 'label.affinity.groups',
-      icon: 'swap',
+      icon: 'swap-outlined',
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
       columns: () => {
@@ -659,20 +858,20 @@ export default {
       actions: [
         {
           api: 'createAffinityGroup',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#creating-a-new-affinity-group',
           listView: true,
           args: ['name', 'description', 'type'],
           mapping: {
             type: {
-              options: ['host anti-affinity', 'host affinity']
+              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
             }
           }
         },
         {
           api: 'deleteAffinityGroup',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#delete-an-affinity-group',
           message: 'message.delete.affinity.group',

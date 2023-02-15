@@ -764,10 +764,10 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.skip = False
-        
+
         if cls.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
-                cls.skip = True 
+                cls.skip = True
                 return
 
         cls.domain = get_domain(cls.api_client)
@@ -1681,7 +1681,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
         self.assertEqual(
             isinstance(hosts, list),
             True,
-            "CS should have atleast one host Up and Running"
+            "CS should have at least one host Up and Running"
         )
 
         host = hosts[0]
@@ -1701,7 +1701,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
         except Exception as e:
             self.fail("Deploy VM failed with exception: %s" % e)
 
-        self.debug("Cheking the state of deployed VM")
+        self.debug("Checking the state of deployed VM")
         vms = VirtualMachine.list(
             self.apiclient,
             id=vm.id,

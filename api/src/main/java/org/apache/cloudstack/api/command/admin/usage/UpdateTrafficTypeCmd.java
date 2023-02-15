@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.usage;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -36,7 +36,6 @@ import com.cloud.user.Account;
 public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTrafficTypeCmd.class.getName());
 
-    private static final String s_name = "updatetraffictyperesponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -103,11 +102,6 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -135,7 +129,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.TrafficType;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.TrafficType;
     }
 }

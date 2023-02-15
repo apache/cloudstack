@@ -28,35 +28,33 @@
       :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid"
       :pagination="false"
       :scroll="scrollable">
-      <template slot="name" slot-scope="text, record">
+      <template #name="{text, record}">
         <span v-if="record.role==='VIRTUAL_ROUTER'">
           <router-link :to="{ path: '/router' + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
           <label v-else>{{ text }}</label>
         </span>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="hostname" slot-scope="text, record">
+      <template #hostname="{text, record}">
         <span v-if="record.role==='VIRTUAL_ROUTER'">
           <router-link :to="{ path: '/host' + '/' + record.hostid }" v-if="record.hostid">{{ text }}</router-link>
           <label v-else>{{ text }}</label>
         </span>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="zonename" slot-scope="text, record">
+      <template #zonename="{text, record}">
         <span v-if="record.role==='VIRTUAL_ROUTER'">
           <router-link :to="{ path: '/zone' + '/' + record.zoneid }" v-if="record.zoneid">{{ text }}</router-link>
           <label v-else>{{ text }}</label>
         </span>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="action" slot-scope="text, record">
+      <template #action="{record}">
         <a-tooltip placement="top">
-          <template slot="title">
+          <template #title>
             <span v-if="resource.name==='BigSwitchBcf'">{{ $t('label.delete.bigswitchbcf') }}</span>
             <span v-else-if="resource.name==='BrocadeVcs'">{{ $t('label.delete.brocadevcs') }}</span>
             <span v-else-if="resource.name==='NiciraNvp'">{{ $t('label.delete.niciranvp') }}</span>
-            <span v-else-if="resource.name==='F5BigIp'">{{ $t('label.delete.f5') }}</span>
-            <span v-else-if="resource.name==='JuniperSRX'">{{ $t('label.delete.srx') }}</span>
             <span v-else-if="resource.name==='Netscaler'">{{ $t('label.delete.netscaler') }}</span>
             <span v-else-if="resource.name==='Opendaylight'">{{ $t('label.delete.opendaylight.device') }}</span>
             <span v-else-if="resource.name==='PaloAlto'">{{ $t('label.delete.pa') }}</span>
@@ -70,27 +68,28 @@
           <tooltip-button
             v-if="resource.name==='Ovs'"
             :tooltip="$t('label.configure')"
-            icon="setting"
+            icon="setting-outlined"
             size="small"
             :loading="actionLoading"
-            @click="onConfigureOvs(record)"/>
+            @onClick="onConfigureOvs(record)"/>
           <tooltip-button
             v-else
             :tooltip="$t('label.delete')"
-            type="danger"
-            icon="close"
+            type="primary"
+            :danger="true"
+            icon="close-outlined"
             size="small"
             :loading="actionLoading"
-            @click="onDelete(record)"/>
+            @onClick="onDelete(record)"/>
         </a-tooltip>
       </template>
-      <template slot="lbdevicestate" slot-scope="text">
+      <template #lbdevicestate="{text}">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template slot="status" slot-scope="text">
+      <template #status="{text}">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template slot="state" slot-scope="text">
+      <template #state="{text}">
         <status :text="text ? text : ''" displayText />
       </template>
     </a-table>
@@ -106,7 +105,7 @@
       @showSizeChange="changePageSize"
       showSizeChanger
       showQuickJumper>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -230,13 +229,6 @@ export default {
           apiName = 'deleteBrocadeVcsDevice'
           confirmation = 'message.confirm.delete.brocadevcs'
           params.vcsdeviceid = record.vcsdeviceid
-          break
-        case 'JuniperSRX':
-          label = 'label.delete.srx'
-          name = record.ipaddress
-          apiName = 'deleteSrxFirewall'
-          confirmation = 'message.confirm.delete.srx'
-          params.fwdeviceid = record.fwdeviceid
           break
         case 'Netscaler':
           label = 'label.delete.netscaler'

@@ -151,6 +151,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             _routerDao.addRouterToGuestNetwork(router, network);
 
             final NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
+            if (network.getVpcId() != null) {
+                VpcVO vpc = _vpcDao.findById(network.getVpcId());
+                guestNic.setMtu(vpc.getPublicMtu());
+            }
+
             // 2) setup guest network
             if (guestNic != null) {
                 result = setupVpcGuestNetwork(network, router, true, guestNic);
@@ -175,7 +180,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     s_logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
                 }
             } else {
-                s_logger.debug("Succesfully added router " + router + " to guest network " + network);
+                s_logger.debug("Successfully added router " + router + " to guest network " + network);
             }
         }
 
@@ -252,6 +257,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
                 String defaultDns1 = null;
                 String defaultDns2 = null;
+                String defaultIp6Dns1 = null;
+                String defaultIp6Dns2 = null;
                 // remove public and guest nics as we will plug them later
                 final Iterator<NicProfile> it = profile.getNics().iterator();
                 while (it.hasNext()) {
@@ -261,6 +268,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         if (nic.getTrafficType() == TrafficType.Public) {
                             defaultDns1 = nic.getIPv4Dns1();
                             defaultDns2 = nic.getIPv4Dns2();
+                            defaultIp6Dns1 = nic.getIPv6Dns1();
+                            defaultIp6Dns2 = nic.getIPv6Dns2();
                         }
                         s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
                         it.remove();
@@ -271,10 +280,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 final StringBuilder buf = profile.getBootArgsBuilder();
                 final Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
                 buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
-
+                buf.append(" publicMtu=").append(vpc.getPublicMtu());
                 buf.append(" dns1=").append(defaultDns1);
                 if (defaultDns2 != null) {
                     buf.append(" dns2=").append(defaultDns2);
+                }
+                if (defaultIp6Dns1 != null) {
+                    buf.append(" ip6dns1=").append(defaultIp6Dns1);
+                }
+                if (defaultIp6Dns2 != null) {
+                    buf.append(" ip6dns2=").append(defaultIp6Dns2);
                 }
             }
         }

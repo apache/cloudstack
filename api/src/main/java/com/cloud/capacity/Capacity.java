@@ -30,6 +30,7 @@ public interface Capacity extends InternalIdentity, Identity {
     public static final short CAPACITY_TYPE_VLAN = 7;
     public static final short CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8;
     public static final short CAPACITY_TYPE_LOCAL_STORAGE = 9;
+    public static final short CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = 10;
     public static final short CAPACITY_TYPE_GPU = 19;
 
     public static final short CAPACITY_TYPE_CPU_CORE = 90;

@@ -72,6 +72,7 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -100,6 +101,8 @@ public class NetworkACLManagerTest extends TestCase {
     @Inject
     NetworkDao _networkDao;
     @Inject
+    NetworkOfferingDao networkOfferingDao;
+    @Inject
     ConfigurationManager _configMgr;
     @Inject
     EntityManager _entityMgr;
@@ -119,7 +122,7 @@ public class NetworkACLManagerTest extends TestCase {
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        final Account account = new AccountVO("testaccount", 1, "testdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "testdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         final UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, account);
@@ -144,6 +147,7 @@ public class NetworkACLManagerTest extends TestCase {
     public void testApplyACL() throws Exception {
         final NetworkVO network = Mockito.mock(NetworkVO.class);
         Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
+        Mockito.when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
         Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class))).thenReturn(true);
         Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(true);
         assertTrue(_aclMgr.applyACLToNetwork(1L));
@@ -175,6 +179,7 @@ public class NetworkACLManagerTest extends TestCase {
         when(ntwkSrvcDao.canProviderSupportServiceInNetwork(anyLong(), eq(Network.Service.NetworkACL), nullable(Network.Provider.class))).thenReturn(true);
         Mockito.when(_networkDao.listByAclId(anyLong())).thenReturn(networks);
         Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
+        Mockito.when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
         Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), any(Network.Service.class), any(Network.Provider.class))).thenReturn(true);
         Mockito.when(_networkAclElements.get(0).getProvider()).thenReturn(Mockito.mock(Network.Provider.class));
         Mockito.when(_networkAclElements.get(0).applyNetworkACLs(any(Network.class), anyList())).thenReturn(applyNetworkACLs);
@@ -245,7 +250,7 @@ public class NetworkACLManagerTest extends TestCase {
 
         Mockito.verify(aclItem, Mockito.times(4)).getState();
 
-        assertTrue("Operation should be successfull!", result);
+        assertTrue("Operation should be successful!", result);
     }
 
     @Configuration
@@ -296,6 +301,11 @@ public class NetworkACLManagerTest extends TestCase {
         @Bean
         public NetworkDao networkDao() {
             return Mockito.mock(NetworkDao.class);
+        }
+
+        @Bean
+        public NetworkOfferingDao networkOfferingDao() {
+            return Mockito.mock(NetworkOfferingDao.class);
         }
 
         @Bean

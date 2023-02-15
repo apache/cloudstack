@@ -150,6 +150,12 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
+        } else if (purpose == Purpose.Ipv6Firewall) {
+
+            _commandSetupHelper.createApplyIpv6FirewallRulesCommands(rules, router, cmds, network.getId());
+
+            return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+
         }
         s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
 
@@ -248,7 +254,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = userdata.getNicVo();
 
         final Commands commands = new Commands(Command.OnError.Stop);
-        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, null, commands);
+        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }

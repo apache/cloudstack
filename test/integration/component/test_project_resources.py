@@ -289,21 +289,21 @@ class TestOfferings(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -691,7 +691,7 @@ class TestTemplates(cloudstackTestCase):
 
 
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
@@ -779,7 +779,7 @@ class TestTemplates(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 

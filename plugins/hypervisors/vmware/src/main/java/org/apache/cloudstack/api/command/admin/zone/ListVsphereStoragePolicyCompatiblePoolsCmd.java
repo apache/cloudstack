@@ -36,12 +36,11 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = ListVsphereStoragePolicyCompatiblePoolsCmd.APINAME, description = "List storage pools compatible with a vSphere storage policy",
+@APICommand(name = "listVsphereStoragePolicyCompatiblePools", description = "List storage pools compatible with a vSphere storage policy",
         responseObject = StoragePoolResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class ListVsphereStoragePolicyCompatiblePoolsCmd extends BaseListCmd {
-    public static final String APINAME = "listVsphereStoragePolicyCompatiblePools";
 
     @Inject
     public VmwareDatacenterService vmwareDatacenterService;
@@ -75,11 +74,6 @@ public class ListVsphereStoragePolicyCompatiblePoolsCmd extends BaseListCmd {
         response.setResponses(poolResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -25,6 +25,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
@@ -70,8 +71,8 @@ public class Upgrade481to490 implements DbUpgrade {
              final ResultSet selectResultSet = selectStatement.executeQuery()) {
             while (selectResultSet.next()) {
                 final Long accountId = selectResultSet.getLong(1);
-                final Short accountType = selectResultSet.getShort(2);
-                final Long roleId = RoleType.getByAccountType(accountType).getId();
+                final Integer accountType = selectResultSet.getInt(2);
+                final Long roleId = RoleType.getByAccountType(Account.Type.getFromValue(accountType)).getId();
                 if (roleId < 1L || roleId > 4L) {
                     s_logger.warn("Skipping role ID migration due to invalid role_id resolved for account id=" + accountId);
                     continue;

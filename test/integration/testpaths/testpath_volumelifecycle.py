@@ -471,7 +471,7 @@ class TestPathVolume(cloudstackTestCase):
                     self.cluster_volume.id), "volume does not exist %s" %
                 self.cluster_volume.id)
             self.debug(
-                "volume id %s got created successfuly" %
+                "volume id %s got created successfully" %
                 list_cluster_volume[0].id)
             self.virtual_machine_zone_4.attach_volume(self.userapiclient,
                                                       self.cluster_volume
@@ -634,7 +634,7 @@ class TestPathVolume(cloudstackTestCase):
             self.template_from_vm1_root_disk.delete(self.userapiclient
                                                     )
             self.debug(
-                "Template id: %s got deleted successfuly" %
+                "Template id: %s got deleted successfully" %
                 self.template_from_vm1_root_disk.id)
         except Exception as e:
             raise Exception("Template deletion failed with error %s" % e)
@@ -690,7 +690,7 @@ class TestPathVolume(cloudstackTestCase):
             list_volume[0].id, str(
                 self.migrate_volume.id), "volume does not exist %s" %
             self.migrate_volume.id)
-        self.debug("volume id %s got created successfuly" % list_volume[0].id)
+        self.debug("volume id %s got created successfully" % list_volume[0].id)
 
         self.virtual_machine_1.attach_volume(self.userapiclient,
                                              self.migrate_volume
@@ -720,7 +720,7 @@ class TestPathVolume(cloudstackTestCase):
             list_volume[0].id, str(
                 self.migrate_volume.id), "volume does not exist %s" %
             self.migrate_volume.id)
-        self.debug("volume id %s got created successfuly" % list_volume[0].id)
+        self.debug("volume id %s got created successfully" % list_volume[0].id)
         list_pool = StoragePool.list(self.apiclient,
                                      id=list_volume[0].storageid
                                      )
@@ -995,7 +995,7 @@ class TestPathVolume(cloudstackTestCase):
                                                  )
             self.fail("Volume got attached to a destroyed vm ")
         except Exception:
-            self.debug("Volume cant not be attached to a destroyed vm ")
+            self.debug("Volume can't not be attached to a destroyed vm ")
 
         # 11.Upload the volume  by providing the URL of the downloaded
         # volume, but specify a wrong format (not supported by the hypervisor)

@@ -14,22 +14,26 @@
       "label.cpuused": "label.cpuused",
       "label.memoryallocated": "label.memoryallocated",
       "label.memused": "label.memused",
-      "label.cluster": "label.cluster",
-      "label.pod": "label.pod",
-      "label.storage.migration.required": "label.storage.migration.required",
       "label.select": "label.select",
       "label.search": "label.search",
-      "label.ok": "label.ok",
       "label.total": "label.total",
       "label.items": "label.items",
       "label.page": "label.page",
-      "label.no": "label.no",
-      "label.migrating": "label.migrating",
+      "label.ok": "label.ok",
+      "label.cluster": "label.cluster",
+      "label.pod": "label.pod",
+      "label.storage.migration.required": "label.storage.migration.required",
       "message.request.failed": "message.request.failed",
+      "label.migrating": "label.migrating",
       "message.success.migrating": "message.success.migrating",
-      "message.migrating.processing": "message.migrating.processing",
       "message.migrating.failed": "message.migrating.failed",
-      "error.fetching.async.job.result": "error.fetching.async.job.result"
+      "message.migrating.processing": "message.migrating.processing",
+      "error.fetching.async.job.result": "error.fetching.async.job.result",
+      "label.hostid": "label.hostid",
+      "message.migrate.instance.to.host": "message.migrate.instance.to.host",
+      "label.cancel": "label.cancel",
+      "label.migrate.with.storage": "label.migrate.with.storage",
+      "message.migrate.with.storage": "message.migrate.with.storage"
     },
     "de": {
       "name": "name-de",
@@ -39,28 +43,63 @@
       "select": "select-de",
       "ok": "ok-de",
       "message.load.host.failed": "Failed to load hosts",
-      "message.migrating.vm.to.host.failed": "Failed to migrate VM to host",
-      "label.name": "label.name",
-      "label.suitability": "label.suitability",
-      "label.cpuused": "label.cpuused",
-      "label.memoryallocated": "label.memoryallocated",
-      "label.memused": "label.memused",
-      "label.cluster": "label.cluster",
-      "label.pod": "label.pod",
-      "label.storage.migration.required": "label.storage.migration.required",
-      "label.select": "label.select",
-      "label.search": "label.search",
-      "label.ok": "label.ok",
-      "label.total": "label.total",
-      "label.items": "label.items",
-      "label.page": "label.page",
-      "label.no": "label.no",
-      "label.migrating": "label.migrating",
-      "message.request.failed": "message.request.failed",
-      "message.success.migrating": "message.success.migrating",
-      "message.migrating.processing": "message.migrating.processing",
-      "message.migrating.failed": "message.migrating.failed",
-      "error.fetching.async.job.result": "error.fetching.async.job.result"
+      "message.migrating.vm.to.host.failed": "Failed to migrate VM to host"
     }
-  }
+  },
+  "routes": [
+    {
+      "name": "testRouter1",
+      "path": "/test-router-1",
+      "meta": {
+        "name": "vm",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter2",
+      "path": "/test-router-2",
+      "meta": {
+        "name": "vm",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter3",
+      "path": "/test-router-3",
+      "meta": {
+        "name": "test-router-3",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter4",
+      "path": "/test-router-4",
+      "meta": {
+        "name": "vm",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter5",
+      "path": "/test-router-5",
+      "meta": {
+        "name": "vm",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter6",
+      "path": "/test-router-6",
+      "meta": {
+        "name": "vm",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    }
+  ]
 }

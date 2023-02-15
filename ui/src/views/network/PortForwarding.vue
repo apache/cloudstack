@@ -23,8 +23,8 @@
           <div class="form__label">{{ $t('label.privateport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
-              autoFocus
-              v-model="newRule.privateport"
+              v-focus="true"
+              v-model:value="newRule.privateport"
               :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
             <a-input
@@ -34,7 +34,7 @@
               style="width: 30px; border-left: 0; border-right: 0; pointer-events: none; text-align:
               center; margin-right: 0;"></a-input>
             <a-input
-              v-model="newRule.privateendport"
+              v-model:value="newRule.privateendport"
               :placeholder="$t('label.end')"
               style="border-left: 0; width: 60px; text-align: right; margin-right: 0;"></a-input>
           </a-input-group>
@@ -43,7 +43,7 @@
           <div class="form__label">{{ $t('label.publicport') }}</div>
           <a-input-group class="form__item__input-container" compact>
             <a-input
-              v-model="newRule.publicport"
+              v-model:value="newRule.publicport"
               :placeholder="$t('label.start')"
               style="border-right: 0; width: 60px; margin-right: 0;"></a-input>
             <a-input
@@ -53,7 +53,7 @@
               style="width: 30px; border-left: 0; border-right: 0; pointer-events: none;
               text-align: center; margin-right: 0;"></a-input>
             <a-input
-              v-model="newRule.publicendport"
+              v-model:value="newRule.publicendport"
               :placeholder="$t('label.end')"
               style="border-left: 0; width: 60px; text-align: right; margin-right: 0;"></a-input>
           </a-input-group>
@@ -61,12 +61,12 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select
-            v-model="newRule.protocol"
+            v-model:value="newRule.protocol"
             style="width: 100%;"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
@@ -82,10 +82,11 @@
     <a-divider/>
     <a-button
       v-if="(('deletePortForwardingRule' in $store.getters.apis) && this.selectedItems.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      danger
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t('label.action.bulk.delete.portforward.rules') }}
     </a-button>
     <a-table
@@ -97,31 +98,32 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template slot="privateport" slot-scope="record">
+      <template #privateport="{record}">
         {{ record.privateport }} - {{ record.privateendport }}
       </template>
-      <template slot="publicport" slot-scope="record">
+      <template #publicport="{record}">
         {{ record.publicport }} - {{ record.publicendport }}
       </template>
-      <template slot="protocol" slot-scope="record">
+      <template #protocol="{record}">
         {{ getCapitalise(record.protocol) }}
       </template>
-      <template slot="vm" slot-scope="record">
-        <div><a-icon type="desktop"/>
+      <template #vm="{record}">
+        <div><desktop-outlined/>
           <router-link
             :to="{ path: '/vm/' + record.virtualmachineid }">
             {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{record}">
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.remove.rule')"
-            type="danger"
-            icon="delete"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
             buttonClass="rule-action"
             :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
-            @click="deleteRule(record)" />
+            @onClick="deleteRule(record)" />
         </div>
       </template>
     </a-table>
@@ -136,48 +138,54 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
       :title="$t('label.edit.tags')"
-      v-model="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :closable="true"
       :maskClosable="false"
       :afterClose="closeModal"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
+      @cancel="tagsModalVisible = false">
       <span v-show="tagsModalLoading" class="tags-modal-loading">
-        <a-icon type="loading"></a-icon>
+        <loading-outlined />
       </span>
 
-      <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        class="add-tags"
+        @finish="handleAddTag"
+        v-ctrl-enter="handleAddTag"
+       >
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-form-item>
+          <a-form-item name="key" ref="key">
             <a-input
-              autoFocus
-              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+              v-focus="true"
+              v-model:value="form.key" />
           </a-form-item>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-form-item>
-            <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+          <a-form-item name="value" ref="value">
+            <a-input v-model:value="form.value" />
           </a-form-item>
         </div>
 
-        <a-button type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+        <a-button style="margin-bottom: 5px;" type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="true" @close="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>
@@ -190,25 +198,24 @@
       :title="$t('label.add.vm')"
       :maskClosable="false"
       :closable="true"
-      v-model="addVmModalVisible"
+      :visible="addVmModalVisible"
       class="vm-modal"
       width="60vw"
       :footer="null"
-      v-ctrl-enter="addRule"
-    >
-      <div>
+      @cancel="closeModal">
+      <div v-ctrl-enter="addRule">
         <span
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
-            v-model="selectedTier"
+            :v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="tier in tiers.data"
@@ -219,10 +226,10 @@
           </a-select>
         </span>
         <a-input-search
-          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+          v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
-          v-model="searchQuery"
+          v-model:value="searchQuery"
           allowClear
           @search="onSearch" />
         <a-table
@@ -234,39 +241,41 @@
           :pagination="false"
           :rowKey="record => record.id"
           :scroll="{ y: 300 }">
-          <div slot="name" slot-scope="text, record">
+          <template #name="{text, record}">
             <span>
               {{ text }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading"></loading-outlined>
             <a-select
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"
-              v-model="newRule.vmguestip"
+              v-model:value="newRule.vmguestip"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
-          </div>
+          </template>
 
-          <div slot="state" slot-scope="text">
+          <template #state="{text}">
             <status :text="text ? text : ''" displayText></status>
-          </div>
+          </template>
 
-          <div slot="action" slot-scope="text, record" style="text-align: center">
-            <a-radio-group
-              class="radio-group"
-              :key="record.id"
-              v-model="checked"
-              @change="($event) => checked = $event.target.value">
-              <a-radio :value="record.id" @change="e => fetchNics(e)" />
-            </a-radio-group>
-          </div>
+          <template #action="{record}">
+            <div style="text-align: center">
+              <a-radio-group
+                class="radio-group"
+                :key="record.id"
+                v-model:value="checked"
+                @change="($event) => checked = $event.target.value">
+                <a-radio :value="record.id" @change="e => fetchNics(e)" />
+              </a-radio-group>
+            </div>
+          </template>
         </a-table>
         <a-pagination
           class="pagination"
@@ -279,7 +288,7 @@
           @change="handleChangeVmPage"
           @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -310,6 +319,7 @@
 </template>
 
 <script>
+import { reactive, ref, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -370,15 +380,15 @@ export default {
       columns: [
         {
           title: this.$t('label.privateport'),
-          scopedSlots: { customRender: 'privateport' }
+          slots: { customRender: 'privateport' }
         },
         {
           title: this.$t('label.publicport'),
-          scopedSlots: { customRender: 'publicport' }
+          slots: { customRender: 'publicport' }
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.state'),
@@ -386,11 +396,11 @@ export default {
         },
         {
           title: this.$t('label.vm'),
-          scopedSlots: { customRender: 'vm' }
+          slots: { customRender: 'vm' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ],
       tiers: {
@@ -401,13 +411,13 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' },
+          slots: { customRender: 'name' },
           width: 210
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.displayname'),
@@ -429,15 +439,14 @@ export default {
         {
           title: this.$t('label.select'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' },
+          slots: { customRender: 'action' },
           width: 80
         }
       ],
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null,
-      newTagsForm: this.$form.createForm(this)
+      searchQuery: null
     }
   },
   computed: {
@@ -446,18 +455,30 @@ export default {
     }
   },
   created () {
+    console.log(this.resource)
+    this.initForm()
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.resource = newItem
-      this.fetchData()
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
+      })
+    },
     fetchData () {
       this.fetchListTiers()
       this.fetchPFRules()
@@ -478,7 +499,6 @@ export default {
         if (this.tiers.data && this.tiers.data.length > 0) {
           this.selectedTier = this.tiers.data[0].id
         }
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.tiers.loading = false })
@@ -520,7 +540,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -532,7 +552,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -554,7 +574,7 @@ export default {
       this.loading = true
       api('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.portforwarding.rule'),
           description: rule.id,
@@ -562,14 +582,14 @@ export default {
           successMessage: this.$t('message.success.remove.port.forward'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'success' })
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.remove.port.forward.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'failed' })
             }
             this.fetchData()
           },
@@ -628,7 +648,9 @@ export default {
       this.newRule.virtualmachineid = null
     },
     resetTagInputs () {
-      this.newTagsForm.resetFields()
+      if (this.formRef.value) {
+        this.formRef.value.resetFields()
+      }
     },
     closeModal () {
       this.selectedRule = null
@@ -643,11 +665,11 @@ export default {
       this.resetTagInputs()
     },
     openTagsModal (id) {
+      this.initForm()
       this.tagsModalLoading = true
       this.selectedRule = id
       this.tagsModalVisible = true
       this.tags = []
-      this.resetTagInputs()
       api('listTags', {
         resourceId: id,
         resourceType: 'PortForwardingRule',
@@ -665,11 +687,9 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          this.tagsModalLoading = false
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.tagsModalLoading = false
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -698,6 +718,8 @@ export default {
             }
           })
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteTag (tag) {

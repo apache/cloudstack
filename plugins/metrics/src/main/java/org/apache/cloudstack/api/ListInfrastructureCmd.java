@@ -24,19 +24,13 @@ import org.apache.cloudstack.response.InfrastructureResponse;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListInfrastructureCmd.APINAME, description = "Lists infrastructure", responseObject = InfrastructureResponse.class,
+@APICommand(name = "listInfrastructure", description = "Lists infrastructure", responseObject = InfrastructureResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin})
 public class ListInfrastructureCmd extends BaseCmd {
-    public static final String APINAME = "listInfrastructure";
 
     @Inject
     private MetricsService metricsService;
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

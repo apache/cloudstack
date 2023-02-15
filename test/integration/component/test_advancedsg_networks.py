@@ -578,7 +578,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                                                     domainid=self.parent_domain.id,networkofferingid=self.shared_network_offering_sg.id,
                                                     zoneid=self.zone.id,subdomainaccess=True)
         except Exception as e:
-            self.fail("Exception whle creating domain wide shared network: %s" % e)
+            self.fail("Exception while creating domain wide shared network: %s" % e)
 
         self.debug("Created shared network: %s" % self.shared_network_sg.id)
 
@@ -1403,7 +1403,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                   domainid=account_1.domainid,networkids=[shared_network_account_1.id,],
                                   serviceofferingid=self.service_offering.id)
 
-            self.fail("Vm creation succeded, should have failed")
+            self.fail("Vm creation succeeded, should have failed")
         except Exception as e:
             self.debug("VM creation failed as expected with exception: %s" % e)
 
@@ -1513,7 +1513,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                   templateid=self.template.id,domainid=domain_1.id,
                                   networkids=[shared_network_domain_1.id,],
                                   serviceofferingid=self.service_offering.id)
-            self.fail("Vm creation succeded, should have failed")
+            self.fail("Vm creation succeeded, should have failed")
         except Exception as e:
             self.debug("VM creation failed as expected with exception: %s" % e)
 
@@ -1577,7 +1577,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                        domainid=domain.id,networkids=[shared_network.id,],
                                        serviceofferingid=self.service_offering.id)
             self.cleanup_vms.append(vm)
-            self.fail("Vm creation succeded, should have failed")
+            self.fail("Vm creation succeeded, should have failed")
         except Exception as e:
             self.debug("VM creation failed as expected with exception: %s" % e)
 
@@ -1722,7 +1722,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                        templateid=self.template.id, networkids=[shared_network_1.id, shared_network_2.id],
                                        serviceofferingid=self.service_offering.id)
             self.cleanup_vms.append(vm)
-            self.fail("Vm creation should have failed, it succeded, created vm %s" % vm.id)
+            self.fail("Vm creation should have failed, it succeeded, created vm %s" % vm.id)
         except Exception as e:
             self.debug("VM creation failed as expected with exception: %s" % e)
 
@@ -1836,7 +1836,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                        templateid=self.template.id,networkids=[shared_network.id,],
                                        serviceofferingid=self.service_offering.id)
             self.cleanup_vms.append(vm)
-            self.fail("Vm creation succeded, should have failed")
+            self.fail("Vm creation succeeded, should have failed")
         except Exception as e:
             self.debug("VM creation failed as expected with exception: %s" % e)
 

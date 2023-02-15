@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.nat;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -41,7 +42,6 @@ import com.cloud.uservm.UserVm;
 public class EnableStaticNatCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableStaticNatCmd.class.getName());
 
-    private static final String s_name = "enablestaticnatresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -113,11 +113,6 @@ public class EnableStaticNatCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
         if (userVm != null) {
@@ -144,4 +139,13 @@ public class EnableStaticNatCmd extends BaseCmd {
         }
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getVirtualMachineId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
 }

@@ -15,39 +15,48 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 export default {
   name: 'quota',
   title: 'label.quota',
-  icon: 'pie-chart',
+  icon: 'pie-chart-outlined',
   docHelp: 'plugins/quota.html',
   permission: ['quotaSummary'],
   children: [
     {
       name: 'quotasummary',
-      title: 'label.summary',
-      icon: 'bars',
+      title: 'label.quota.summary',
+      icon: 'bars-outlined',
       permission: ['quotaSummary'],
-      columns: ['account', 'domain', 'state', 'currency', 'balance', 'quota'],
+      columns: ['account',
+        {
+          state: (record) => record.state.toLowerCase()
+        },
+        {
+          quotastate: (record) => record.quotaenabled ? 'Enabled' : 'Disabled'
+        }, 'domain', 'currency', 'balance'
+      ],
+      columnNames: ['account', 'accountstate', 'quotastate', 'domain', 'currency', 'currentbalance'],
       details: ['account', 'domain', 'state', 'currency', 'balance', 'quota', 'startdate', 'enddate'],
-      component: () => import('@/views/plugins/quota/QuotaSummary.vue'),
+      component: shallowRef(() => import('@/views/plugins/quota/QuotaSummary.vue')),
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'quota.statement.quota',
-          component: () => import('@/views/plugins/quota/QuotaUsage.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaUsage.vue')))
         },
         {
           name: 'quota.statement.balance',
-          component: () => import('@/views/plugins/quota/QuotaBalance.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/QuotaBalance.vue')))
         }
       ],
       actions: [
         {
           api: 'quotaCredits',
-          icon: 'plus',
+          icon: 'plus-outlined',
           docHelp: 'plugins/quota.html#quota-credits',
           label: 'label.quota.add.credits',
           dataView: true,
@@ -66,23 +75,23 @@ export default {
     {
       name: 'quotatariff',
       title: 'label.quota.tariff',
-      icon: 'credit-card',
+      icon: 'credit-card-outlined',
       docHelp: 'plugins/quota.html#quota-tariff',
       permission: ['quotaTariffList'],
       columns: ['usageName', 'description', 'usageUnit', 'tariffValue', 'tariffActions'],
       details: ['usageName', 'description', 'usageUnit', 'tariffValue'],
-      component: () => import('@/views/plugins/quota/QuotaTariff.vue')
+      component: shallowRef(() => import('@/views/plugins/quota/QuotaTariff.vue'))
     },
     {
       name: 'quotaemailtemplate',
       title: 'label.templatetype',
-      icon: 'mail',
+      icon: 'mail-outlined',
       permission: ['quotaEmailTemplateList'],
       columns: ['templatetype', 'templatesubject', 'templatebody'],
       details: ['templatetype', 'templatesubject', 'templatebody'],
       tabs: [{
         name: 'details',
-        component: () => import('@/views/plugins/quota/EmailTemplateDetails.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/EmailTemplateDetails.vue')))
       }]
     }
   ]

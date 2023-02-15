@@ -20,10 +20,15 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -39,6 +44,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.Snaps
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -47,12 +54,21 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.verification.VerificationMode;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor;
@@ -86,15 +102,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.verification.VerificationMode;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GlobalLock.class)
@@ -149,6 +156,8 @@ public class SnapshotManagerTest {
     SnapshotDataStoreVO snapshotStoreMock;
     @Mock
     SnapshotService snapshotSrv;
+    @Mock
+    SnapshotHelper snapshotHelperMock;
 
     @Mock
     GlobalLock globalLockMock;
@@ -167,6 +176,8 @@ public class SnapshotManagerTest {
 
     @Mock
     TaggedResourceService taggedResourceServiceMock;
+    @Mock
+    DataCenterDao dataCenterDao;
 
     SnapshotPolicyVO snapshotPolicyVoInstance;
 
@@ -199,9 +210,11 @@ public class SnapshotManagerTest {
         _snapshotMgr._resourceMgr = _resourceMgr;
         _snapshotMgr._vmSnapshotDao = _vmSnapshotDao;
         _snapshotMgr._snapshotStoreDao = snapshotStoreDao;
+        _snapshotMgr.snapshotHelper = snapshotHelperMock;
         _snapshotMgr._snapshotPolicyDao = snapshotPolicyDaoMock;
         _snapshotMgr._snapSchedMgr = snapshotSchedulerMock;
         _snapshotMgr.taggedResourceService = taggedResourceServiceMock;
+        _snapshotMgr.dataCenterDao = dataCenterDao;
 
         when(_snapshotDao.findById(anyLong())).thenReturn(snapshotMock);
         when(snapshotMock.getVolumeId()).thenReturn(TEST_VOLUME_ID);
@@ -226,7 +239,7 @@ public class SnapshotManagerTest {
         doNothing().when(_snapshotMgr._resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class));
         doNothing().when(_snapshotMgr._resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
 
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(_accountMgr.getAccount(anyLong())).thenReturn(account);
@@ -331,6 +344,7 @@ public class SnapshotManagerTest {
         when(vmMock.getState()).thenReturn(State.Stopped);
         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
         when(volumeMock.getFormat()).thenReturn(ImageFormat.VHD);
+        doReturn(DataStoreRole.Image).when(snapshotHelperMock).getDataStoreRole(Mockito.any());
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNull(snapshot);
     }
@@ -344,6 +358,7 @@ public class SnapshotManagerTest {
         when(volumeMock.getFormat()).thenReturn(ImageFormat.QCOW2);
         when (snapshotStrategy.revertSnapshot(Mockito.any(SnapshotInfo.class))).thenReturn(true);
         when(_volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+        doReturn(DataStoreRole.Image).when(snapshotHelperMock).getDataStoreRole(Mockito.any());
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNotNull(snapshot);
     }
@@ -525,5 +540,39 @@ public class SnapshotManagerTest {
         Mockito.verify(_snapshotMgr, timesVerification).updateSnapshotPolicy(Mockito.any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
           Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
         Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(Mockito.any(), Mockito.any());
+    }
+
+    private void mockForBackupSnapshotToSecondaryZoneTest(final Boolean configValue, final DataCenter.Type dcType) {
+        try {
+            Field f = ConfigKey.class.getDeclaredField("_value");
+            f.setAccessible(true);
+            f.set(SnapshotInfo.BackupSnapshotAfterTakingSnapshot, configValue);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            Assert.fail(String.format("Failed to override config: %s", e.getMessage()));
+        }
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dc.getType()).thenReturn(dcType);
+        Mockito.when(dataCenterDao.findById(1L)).thenReturn(dc);
+    }
+    @Test
+    public void testIsBackupSnapshotToSecondaryForCoreZoneNullConfig() {
+        mockForBackupSnapshotToSecondaryZoneTest(null, DataCenter.Type.Core);
+        Assert.assertTrue(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
+    }
+    @Test
+    public void testIsBackupSnapshotToSecondaryForCoreZoneEnabledConfig() {
+        mockForBackupSnapshotToSecondaryZoneTest(true, DataCenter.Type.Core);
+        Assert.assertTrue(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
+    }
+    @Test
+    public void testIsBackupSnapshotToSecondaryForCoreZoneDisabledConfig() {
+        mockForBackupSnapshotToSecondaryZoneTest(false, DataCenter.Type.Core);
+        Assert.assertFalse(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
+    }
+
+    @Test
+    public void testIsBackupSnapshotToSecondaryForEdgeZone() {
+        mockForBackupSnapshotToSecondaryZoneTest(true, DataCenter.Type.Edge);
+        Assert.assertFalse(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
     }
 }

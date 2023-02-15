@@ -31,12 +31,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "updateLoadBalancer", description = "Updates a load balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0",
+@APICommand(name = "updateLoadBalancer", description = "Updates an internal load balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateApplicationLoadBalancerCmd.class.getName());
 
-    private static final String s_name = "updateloadbalancerresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -50,11 +49,6 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public Long getId() {
         return id;
     }

@@ -21,12 +21,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.Storage;
@@ -35,7 +35,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType=StoragePoolType.Iscsi)
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
@@ -44,7 +43,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
         IscsiAdmStoragePool storagePool = new IscsiAdmStoragePool(uuid, host, port, storagePoolType, this);
 
         MapStorageUuidToStoragePool.put(uuid, storagePool);
@@ -75,7 +74,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     // called from LibvirtComputingResource.execute(CreateCommand)
     // does not apply for iScsiAdmStorageAdaptor
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 
@@ -331,12 +330,6 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
-        // Unsupported pool types
-        if (poolType != null && poolType.equalsIgnoreCase(StoragePoolType.PowerFlex.toString())) {
-            return false;
-        }
-
         String host = volumeToDisconnect.get(DiskTO.STORAGE_HOST);
         String port = volumeToDisconnect.get(DiskTO.STORAGE_PORT);
         String path = volumeToDisconnect.get(DiskTO.IQN);
@@ -390,7 +383,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, PhysicalDiskFormat format,
             ProvisioningType provisioningType, long size,
-            KVMStoragePool destPool, int timeout) {
+            KVMStoragePool destPool, int timeout, byte[] passphrase) {
         throw new UnsupportedOperationException("Creating a disk from a template is not yet supported for this configuration.");
     }
 
@@ -400,8 +393,12 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk srcDisk, String destVolumeUuid, KVMStoragePool destPool, int timeout) {
-        QemuImg q = new QemuImg(timeout);
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
+    }
+
+    @Override
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk srcDisk, String destVolumeUuid, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] destPassphrase, ProvisioningType provisioningType) {
 
         QemuImgFile srcFile;
 
@@ -420,6 +417,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
 
         try {
+            QemuImg q = new QemuImg(timeout);
             q.convert(srcFile, destFile);
         } catch (QemuImgException | LibvirtException ex) {
             String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
@@ -434,22 +432,22 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        throw new UnsupportedOperationException("Creating a disk from a snapshot is not supported in this configuration.");
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool) {
         return true;
     }
 
     @Override
     public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         return null;
     }
 

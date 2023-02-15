@@ -118,6 +118,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the host for the virtual machine")
     private String hostName;
 
+    @SerializedName(ApiConstants.HOST_CONTROL_STATE)
+    @Param(description = "the control state of the host for the virtual machine")
+    private String hostControlState;
+
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private String templateId;
@@ -175,11 +179,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "the number of cpu this virtual machine is running with")
+    @Param(description = "the number of vCPUs this virtual machine is using")
     private Integer cpuNumber;
 
     @SerializedName(ApiConstants.CPU_SPEED)
-    @Param(description = "the speed of each cpu")
+    @Param(description = "the speed of each vCPU")
     private Integer cpuSpeed;
 
     @SerializedName(ApiConstants.MEMORY)
@@ -187,7 +191,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Integer memory;
 
     @SerializedName(ApiConstants.VGPU)
-    @Param(description = "the vgpu type used by the virtual machine", since = "4.4")
+    @Param(description = "the vGPU type used by the virtual machine", since = "4.4")
     private String vgpu;
 
     @SerializedName("cpuused")
@@ -195,39 +199,39 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String cpuUsed;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the vm")
+    @Param(description = "the incoming network traffic on the VM in KiB")
     private Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host")
+    @Param(description = "the outgoing network traffic on the host in KiB")
     private Long networkKbsWrite;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the read (bytes) of disk on the vm")
+    @Param(description = "the VM's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the write (bytes) of disk on the vm")
+    @Param(description = "the VM's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName("memorykbs")
-    @Param(description = "the memory used by the vm")
+    @Param(description = "the memory used by the VM in KiB")
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory that's free in vm or zero if it can not be calculated")
+    @Param(description = "the internal memory (KiB) that's free in VM or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")
-    @Param(description = "the target memory in vm")
+    @Param(description = "the target memory in VM (KiB)")
     private Long memoryTargetKBs;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the read (io) of disk on the vm")
+    @Param(description = "the read (IO) of disk on the VM")
     private Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the write (io) of disk on the vm")
+    @Param(description = "the write (IO) of disk on the VM")
     private Long diskIOWrite;
 
     @SerializedName("guestosid")
@@ -280,9 +284,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "List of read-only Vm details as comma separated string.", since = "4.16.0")
     private String readOnlyDetails;
 
-    @SerializedName(ApiConstants.SSH_KEYPAIR)
-    @Param(description = "ssh key-pair")
-    private String keyPairName;
+    @SerializedName(ApiConstants.SSH_KEYPAIRS)
+    @Param(description = "ssh key-pairs")
+    private String keyPairNames;
 
     @SerializedName("affinitygroup")
     @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
@@ -329,15 +333,39 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Long bytesSent;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
-    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0")
     ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_ID)
+    @Param(description = "ID of AutoScale VM group", since = "4.18.0")
+    String autoScaleVmGroupId;
+
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_NAME)
+    @Param(description = "Name of AutoScale VM group", since = "4.18.0")
+    String autoScaleVmGroupName;
+
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
+    private String userData;
+
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.0")
+    private String userDataId;
+
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.0")
+    private String userDataName;
+
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
+    private String userDataPolicy;
+
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0")
+    private String userDataDetails;
+
     public UserVmResponse() {
-        securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
+        securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
-        tags = new LinkedHashSet<ResourceTagResponse>();
-        tagIds = new LinkedHashSet<Long>();
-        affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
+        tags = new LinkedHashSet<>();
+        tagIds = new LinkedHashSet<>();
+        affinityGroupList = new LinkedHashSet<>();
     }
 
     public void setHypervisor(String hypervisor) {
@@ -435,6 +463,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getHostName() {
         return hostName;
+    }
+
+    public String getHostControlState() {
+        return hostControlState;
     }
 
     public String getTemplateId() {
@@ -588,8 +620,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return instanceName;
     }
 
-    public String getKeyPairName() {
-        return keyPairName;
+    public String getKeyPairNames() {
+        return keyPairNames;
     }
 
     public Set<AffinityGroupResponse> getAffinityGroupList() {
@@ -602,6 +634,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getServiceState() {
         return serviceState;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public void setIsDynamicallyScalable(Boolean isDynamicallyScalable) {
@@ -673,6 +709,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public void setHostControlState(String hostControlState) {
+        this.hostControlState = hostControlState;
     }
 
     public void setTemplateId(String templateId) {
@@ -848,8 +888,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.tags = tags;
     }
 
-    public void setKeyPairName(String keyPairName) {
-        this.keyPairName = keyPairName;
+    public void setKeyPairNames(String keyPairNames) {
+        this.keyPairNames = keyPairNames;
     }
 
     public void setAffinityGroupList(Set<AffinityGroupResponse> affinityGroups) {
@@ -952,4 +992,57 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
     }
+
+    public void setAutoScaleVmGroupId(String autoScaleVmGroupId) {
+        this.autoScaleVmGroupId = autoScaleVmGroupId;
+    }
+
+    public void setAutoScaleVmGroupName(String autoScaleVmGroupName) {
+        this.autoScaleVmGroupName = autoScaleVmGroupName;
+    }
+
+    public String getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    public String getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(String userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public void setUserDataName(String userDataName) {
+        this.userDataName = userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public void setUserDataPolicy(String userDataPolicy) {
+        this.userDataPolicy = userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
+    }
+
 }

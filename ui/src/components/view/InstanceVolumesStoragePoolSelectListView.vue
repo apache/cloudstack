@@ -26,15 +26,15 @@
       :dataSource="volumes"
       :pagination="false"
       :rowKey="record => record.id">
-      <div slot="size" slot-scope="record">
+      <template #size="{ record }">
         <span v-if="record.size">
           {{ $bytesToHumanReadableSize(record.size) }}
         </span>
-      </div>
-      <template slot="selectedstorage" slot-scope="record">
+      </template>
+      <template #selectedstorage="{ record }">
         <span>{{ record.selectedstoragename || '' }}</span>
       </template>
-      <template slot="select" slot-scope="record">
+      <template #select="{ record }">
         <div style="display: flex; justify-content: flex-end;"><a-button @click="openVolumeStoragePoolSelector(record)">{{ record.selectedstorageid ? $t('label.change') : $t('label.select') }}</a-button></div>
       </template>
     </a-table>
@@ -95,15 +95,15 @@ export default {
         },
         {
           title: this.$t('label.size'),
-          scopedSlots: { customRender: 'size' }
+          slots: { customRender: 'size' }
         },
         {
           title: this.$t('label.storage'),
-          scopedSlots: { customRender: 'selectedstorage' }
+          slots: { customRender: 'selectedstorage' }
         },
         {
           title: '',
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ],
       selectedVolumeForStoragePoolSelection: {},
@@ -112,7 +112,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = {}
     if (this.$route.meta.name === 'vm') {
       this.apiConfig = this.$store.getters.apis.migrateVirtualMachineWithVolume || {}

@@ -98,6 +98,9 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "zone_name")
     private String zoneName = null;
 
+    @Column(name = "internet_protocol")
+    private String internetProtocol = null;
+
     public VpcOfferingJoinVO() {
     }
 
@@ -195,6 +198,10 @@ public class VpcOfferingJoinVO implements VpcOffering {
 
     public String getZoneName() {
         return zoneName;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
     }
 
     @Override

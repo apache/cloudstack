@@ -80,7 +80,7 @@ public class Sequence extends Tag {
 
                 // If tag is required, then throw exception
                 if (!tags[i].optional) {
-                    throw new RuntimeException("[" + this + "] ERROR: Required tag is missed: " + tags[i] + ". Unexected tag type: " + typeAndFlags + ". Data: " + buf
+                    throw new RuntimeException("[" + this + "] ERROR: Required tag is missed: " + tags[i] + ". Unexpected tag type: " + typeAndFlags + ". Data: " + buf
                             + ".");
                 } else {
                     // One or more tags are omitted, so skip them
@@ -91,7 +91,7 @@ public class Sequence extends Tag {
                     }
 
                     if (i >= tags.length || !tags[i].isTypeValid(typeAndFlags)) {
-                        throw new RuntimeException("[" + this + "] ERROR: No more tags to read or skip, but some data still left in buffer. Unexected tag type: "
+                        throw new RuntimeException("[" + this + "] ERROR: No more tags to read or skip, but some data still left in buffer. Unexpected tag type: "
                                 + typeAndFlags + ". Data: " + buf + ".");
                     }
                 }

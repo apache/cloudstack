@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
@@ -38,7 +37,6 @@ import javax.inject.Inject;
 @APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists balance and quota usage for all accounts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaSummaryCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(QuotaSummaryCmd.class);
-    private static final String s_name = "quotasummaryresponse";
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
     private String accountName;
@@ -60,7 +58,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     public void execute() {
         Account caller = CallContext.current().getCallingAccount();
         Pair<List<QuotaSummaryResponse>, Integer> responses;
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) { //admin account
+        if (caller.getType() == Account.Type.ADMIN) {
             if (getAccountName() != null && getDomainId() != null)
                 responses = _responseBuilder.createQuotaSummaryResponse(getAccountName(), getDomainId());
             else
@@ -88,11 +86,6 @@ public class QuotaSummaryCmd extends BaseListCmd {
 
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public Boolean isListAll() {

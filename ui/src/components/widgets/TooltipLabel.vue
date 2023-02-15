@@ -17,9 +17,14 @@
 
 <template>
   <span>
-    {{ title }}
+    <b v-if="bold">
+      {{ title }}
+    </b>
+    <span v-else>
+      {{ title }}
+    </span>
     <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">
-      <a-icon type="info-circle" class="tooltip-icon" />
+      <info-circle-outlined class="tooltip-icon" />
     </a-tooltip>
   </span>
 </template>
@@ -40,7 +45,8 @@ export default {
     tooltipPlacement: {
       type: String,
       default: 'top'
-    }
+    },
+    bold: Boolean
   }
 }
 </script>

@@ -29,11 +29,14 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -66,7 +69,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -169,8 +173,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "host_uuid")
     private String hostUuid;
 
-    @Column(name = "host_name", nullable = false)
+    @Column(name = "host_name")
     private String hostName;
+
+    @Column(name = "host_status")
+    private Status hostStatus;
+
+    @Column(name = "host_resource_state")
+    private ResourceState hostResourceState;
 
     @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
@@ -353,8 +363,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "project_name")
     private String projectName;
 
-    @Column(name = "keypair_name")
-    private String keypairName;
+    @Column(name = "keypair_names")
+    private String keypairNames;
 
     @Column(name = "job_id")
     private Long jobId;
@@ -377,6 +387,30 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "affinity_group_description")
     private String affinityGroupDescription;
 
+    @Column(name = "autoscale_vmgroup_id")
+    private long autoScaleVmGroupId;
+
+    @Column(name = "autoscale_vmgroup_uuid")
+    private String autoScaleVmGroupUuid;
+
+    @Column(name = "autoscale_vmgroup_name")
+    private String autoScaleVmGroupName;
+
+    @Column(name = "user_data_id")
+    private Long userDataId;
+
+    @Column(name = "user_data_uuid")
+    private String userDataUuid;
+
+    @Column(name = "user_data_name")
+    private String userDataName;
+
+    @Column(name = "user_data_policy")
+    private String userDataPolicy;
+
+    @Column(name = "user_data_details")
+    private String userDataDetails;
+
     transient String password;
 
     @Transient
@@ -390,6 +424,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
 
     public UserVmJoinVO() {
+        // Empty constructor
     }
 
     @Override
@@ -445,7 +480,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -503,10 +538,6 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getInstanceName() {
         return instanceName;
-    }
-
-    public long getGuestOSId() {
-        return guestOsId;
     }
 
     public String getGuestOsUuid() {
@@ -579,6 +610,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getHostName() {
         return hostName;
+    }
+
+    public Status getHostStatus() {
+        return hostStatus;
+    }
+
+    public ResourceState getHostResourceState() {
+        return hostResourceState;
     }
 
     public long getTemplateId() {
@@ -779,8 +818,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return projectName;
     }
 
-    public String getKeypairName() {
-        return keypairName;
+    public String getKeypairNames() {
+        return keypairNames;
     }
 
     public boolean isLimitCpuUse() {
@@ -791,7 +830,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return poolUuid;
     }
 
-    public String getVolume_uuid() {
+    public String getVolumeUuid() {
         return volumeUuid;
     }
 
@@ -865,6 +904,18 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return affinityGroupDescription;
     }
 
+    public long getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupUuid() {
+        return autoScaleVmGroupUuid;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
+    }
+
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
     }
@@ -873,6 +924,26 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public String getUserDataUUid() {
+        return userDataUuid;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
     }
 
 }

@@ -55,6 +55,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     protected boolean framebufferResized = false;
     protected int resizedFramebufferWidth;
     protected int resizedFramebufferHeight;
+    protected String sessionUuid;
 
     public ConsoleProxyClientBase() {
         tracker = new TileTracker();
@@ -230,7 +231,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] Console proxy was interupted while waiting for viewer to become ready.");
+                s_logger.debug("[ignored] Console proxy was interrupted while waiting for viewer to become ready.");
             }
         }
         return false;
@@ -343,7 +344,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
                 try {
                     tileDirtyEvent.wait(3000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] Console proxy ajax update was interupted while waiting for viewer to become ready.");
+                    s_logger.debug("[ignored] Console proxy ajax update was interrupted while waiting for viewer to become ready.");
                 }
             }
         }
@@ -421,5 +422,10 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         this.clientParam = clientParam;
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(ConsoleProxy.getEncryptorPassword());
         this.clientToken = encryptor.encryptObject(ConsoleProxyClientParam.class, clientParam);
+    }
+
+    @Override
+    public String getSessionUuid() {
+        return sessionUuid;
     }
 }

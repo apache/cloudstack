@@ -185,7 +185,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
                 self.services["service_offering"])
             self.cleanup_co.append(serviceOffering)
             self.fail(
-                "Compute Offering creation succeded, it should have failed")
+                "Compute Offering creation succeeded, it should have failed")
         except Exception:
             self.debug("Compute Offering Creation failed as expected")
         return
@@ -207,7 +207,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
                 self.services["service_offering"])
             self.cleanup_co.append(serviceOffering)
             self.fail(
-                "Compute Offering creation succeded, it should have failed")
+                "Compute Offering creation succeeded, it should have failed")
         except Exception:
             self.debug("Compute Offering Creation failed as expected")
         return
@@ -229,7 +229,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
                 self.services["service_offering"])
             self.cleanup_co.append(serviceOffering)
             self.fail(
-                "Compute Offering creation succeded, it should have failed")
+                "Compute Offering creation succeeded, it should have failed")
         except Exception:
             self.debug("Compute Offering Creation failed as expected")
         return
@@ -360,7 +360,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
                 serviceofferingid=serviceOffering.id,
                 accountid=self.account.name,
                 domainid=self.account.domainid)
-            self.fail("VM creation succeded, it should have failed")
+            self.fail("VM creation succeeded, it should have failed")
         except Exception as e:
             self.debug("vm creation failed as expected with error: %s" % e)
 
@@ -389,7 +389,7 @@ class TestDynamicServiceOffering(cloudstackTestCase):
                 customcpunumber=2,
                 accountid=self.account.name,
                 domainid=self.account.domainid)
-            self.fail("VM deployment should have failed, it succeded")
+            self.fail("VM deployment should have failed, it succeeded")
         except Exception as e:
             self.debug("vm creation failed as expected: %s" % e)
         return
@@ -622,7 +622,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 apiclient,
                 serviceOfferingId=serviceOffering_static_2.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -792,7 +792,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 apiclient,
                 serviceOfferingId=serviceOffering_static.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -877,7 +877,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 customcpuspeed=512,
                 custommemory=256)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         # Scale VM with dynamic service offering proving custom value
         # only for cpu number
@@ -1058,7 +1058,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 customcpunumber=4)
             self.fail(
                 "Changing service offering with incomplete data should\
-                 have failed, it succeded")
+                 have failed, it succeeded")
         except Exception as e:
             self.debug(
                 "Failure while changing service offering as expected: %s" %
@@ -1242,7 +1242,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 serviceOfferingId=serviceOffering_dynamic_1.id,
                 customcpunumber=4)
             self.fail(
-                "Changing service offering should have failed, it succeded")
+                "Changing service offering should have failed, it succeeded")
         except Exception as e:
             self.debug("Failure while changing service offering: %s" % e)
 
@@ -1443,7 +1443,7 @@ class TestAccountLimits(cloudstackTestCase):
                 customcpuspeed=512,
                 custommemory=256)
             self.fail("Scaling virtual machine with cpu number more than \
-                    allowed limit (of account) succeded, should have failed")
+                    allowed limit (of account) succeeded, should have failed")
         except Exception as e:
             self.debug(
                 "Failure while changing service offering as expected: %s" %
@@ -1581,7 +1581,7 @@ class TestAccountLimits(cloudstackTestCase):
                 customcpuspeed=512,
                 custommemory=512)
             self.fail("Scaling virtual machine with cpu number more than \
-                    allowed limit (of account) succeded, should have failed")
+                    allowed limit (of account) succeeded, should have failed")
         except Exception as e:
             self.debug(
                 "Failure while changing service offering as expected: %s" %
@@ -1746,7 +1746,7 @@ class TestAffinityGroup(cloudstackTestCase):
                     custommemory=128,
                     affinitygroupnames=[
                         affinityGroup.name])
-                self.fail("vm creation should have failed, it succeded")
+                self.fail("vm creation should have failed, it succeeded")
             except Exception as e:
                 self.debug("vm creation failed as expected with error: %s" % e)
 

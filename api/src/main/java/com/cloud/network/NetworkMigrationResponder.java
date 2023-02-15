@@ -43,7 +43,7 @@ public interface NetworkMigrationResponder {
      * Cancel for migration preparation.
      *
      * This method will be called per nic when the entire vm migration
-     * process failed and need to release the resouces that was
+     * process failed and need to release the resources that was
      * allocated at the migration preparation.
      * @param nic destination nic
      * @param network destination network

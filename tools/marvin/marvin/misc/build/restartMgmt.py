@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_option("-c", "--config", action="store", default="xen.cfg",
                       dest="config", help="the path where the server configurations is stored")
     (options, args) = parser.parse_args()
-    
+
     if options.config is None:
         raise
 
@@ -50,4 +50,3 @@ if __name__ == '__main__':
             timeout = timeout - 1
     if tn is None:
         raise socket.error("Unable to reach API port")
-

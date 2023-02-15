@@ -35,12 +35,12 @@ public interface StorageAdaptor {
     // it with info from local disk, and return it
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool);
 
-    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type);
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details);
 
     public boolean deleteStoragePool(String uuid);
 
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
-            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size);
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
     // given disk path (per database) and pool, prepare disk on host
     public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details);
@@ -58,15 +58,14 @@ public interface StorageAdaptor {
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size,
-            KVMStoragePool destPool, int timeout);
+            KVMStoragePool destPool, int timeout, byte[] passphrase);
 
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk, String name, PhysicalDiskFormat format, long size, KVMStoragePool destPool);
 
     public List<KVMPhysicalDisk> listPhysicalDisks(String storagePoolUuid, KVMStoragePool pool);
 
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout);
-
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout);
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] dstPassphrase, Storage.ProvisioningType provisioningType);
 
     public boolean refresh(KVMStoragePool pool);
 
@@ -74,13 +73,15 @@ public interface StorageAdaptor {
 
     public boolean createFolder(String uuid, String path);
 
+    public boolean createFolder(String uuid, String path, String localPath);
+
     /**
      * Creates disk using template backing.
      * Precondition: Template is on destPool
      */
     KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template,
                                                   String name, PhysicalDiskFormat format, long size,
-                                                  KVMStoragePool destPool, int timeout);
+                                                  KVMStoragePool destPool, int timeout, byte[] passphrase);
 
     /**
      * Create physical disk on Primary Storage from direct download template on the host (in temporary location)

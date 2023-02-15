@@ -34,7 +34,6 @@ import com.cloud.user.Account;
 public class DeleteImageStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteImageStoreCmd.class.getName());
 
-    private static final String s_name = "deleteimagestoreresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -54,11 +53,6 @@ public class DeleteImageStoreCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

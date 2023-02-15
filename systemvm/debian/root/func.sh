@@ -118,7 +118,7 @@ unlock_exit() {
     exit $1
 }
 
-# calcuate the ip & network mask
+# calculate the ip & network mask
 rangecalc(){
     local IFS='.'
     local -a oct mask ip

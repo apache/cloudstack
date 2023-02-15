@@ -67,7 +67,7 @@ public static void setUp() throws ConfigurationException {
 
         // Standard responses
         AccountVO acct = new AccountVO(s_acctIdSeq);
-        acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+        acct.setType(Account.Type.NORMAL);
         acct.setAccountName("demo");
         s_testAccount = acct;
 
@@ -112,15 +112,25 @@ public static void setUp() throws ConfigurationException {
     public void canDoReasonableNumberOfApiAccessPerSecond() throws Exception {
         int allowedRequests = 200;
         s_limitService.setMaxAllowed(allowedRequests);
-        s_limitService.setTimeToLive(1);
+        s_limitService.setTimeToLive(5);
+        long startTime = System.nanoTime();
 
         User key = createFakeUser();
 
         for (int i = 0; i < allowedRequests; i++) {
-            assertTrue("We should allow " + allowedRequests + " requests per second, but failed at request " + i, isUnderLimit(key));
+            assertTrue(String.format("We should allow %d requests per second, but failed at request %d.", allowedRequests, i), isUnderLimit(key));
         }
+        // we cannot really say more about this test
+        boolean underLimit =  isUnderLimit(key);
+        long endTime = System.nanoTime();
+        System.out.println("time elapsed " + (endTime - startTime)/1000/1000 + " ms");
+        int issued = s_limitService.getIssued(key.getAccountId());
+        int timeToLive = s_limitService.getTimeToLive();
 
-        assertFalse("We should block >" + allowedRequests + " requests per second", isUnderLimit(key));
+        // this assertion is really invalid as we don´t know if we exceeded the time to live for the amount of api calls (for sure)
+        // so only fail if timeToLive is not exeeded and we didn´t get the requested number of calls
+        assertFalse(String.format("We should block >%d requests per %d seconds (managed %d, time elapsed %d ns)",
+                s_limitService.getMaxAllowed(), timeToLive, issued, endTime - startTime), ((endTime - startTime)/1000000000 < timeToLive) && underLimit);
     }
 
     @Test

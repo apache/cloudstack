@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -37,11 +38,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = DeleteUserFromProjectCmd.APINAME, description = "Deletes user from the project", responseObject = SuccessResponse.class, since = "4.15.0",
+@APICommand(name = "deleteUserFromProject", description = "Deletes user from the project", responseObject = SuccessResponse.class, since = "4.15.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(DeleteUserFromProjectCmd.class.getName());
-    public static final String APINAME = "deleteUserFromProject";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,11 +85,6 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
 
     @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Project project = _projectService.getProject(projectId);
         if (project == null) {
@@ -101,6 +96,16 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
     @Override
     public List<Long> getEntityOwnerIds() {
         return _projectService.getProjectOwners(projectId);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return projectId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 
     @Override

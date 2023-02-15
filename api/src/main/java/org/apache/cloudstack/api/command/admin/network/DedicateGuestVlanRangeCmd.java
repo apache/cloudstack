@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.user.Account;
 
 @APICommand(name = "dedicateGuestVlanRange", description = "Dedicates a guest vlan range to an account", responseObject = GuestVlanRangeResponse.class,
@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 public class DedicateGuestVlanRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DedicateGuestVlanRangeCmd.class.getName());
 
-    private static final String s_name = "dedicateguestvlanrangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -95,18 +94,13 @@ public class DedicateGuestVlanRangeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
-        GuestVlan result = _networkService.dedicateGuestVlanRange(this);
+        GuestVlanRange result = _networkService.dedicateGuestVlanRange(this);
         if (result != null) {
             GuestVlanRangeResponse response = _responseGenerator.createDedicatedGuestVlanRangeResponse(result);
             response.setResponseName(getCommandName());

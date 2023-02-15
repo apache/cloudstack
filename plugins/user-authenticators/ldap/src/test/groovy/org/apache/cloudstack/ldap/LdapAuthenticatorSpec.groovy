@@ -16,7 +16,6 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import com.cloud.server.auth.UserAuthenticator
 import com.cloud.user.Account
 import com.cloud.user.AccountManager
 import com.cloud.user.User
@@ -24,6 +23,7 @@ import com.cloud.user.UserAccount
 import com.cloud.user.UserAccountVO
 import com.cloud.user.dao.UserAccountDao
 import com.cloud.utils.Pair
+import org.apache.cloudstack.auth.UserAuthenticator
 import org.apache.cloudstack.ldap.LdapAuthenticator
 import org.apache.cloudstack.ldap.LdapManager
 import org.apache.cloudstack.ldap.LdapTrustMapVO
@@ -204,7 +204,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         UserAccount userAccount = Mock(UserAccount)
         userAccountDao.getUserAccount(username, domainId) >> userAccount
         userAccount.getId() >> 1
-        userAccount.getState() >> Account.State.disabled.toString()
+        userAccount.getState() >> Account.State.DISABLED.toString()
         ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
         ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
         ldapManager.canAuthenticate(_, _, _) >> true

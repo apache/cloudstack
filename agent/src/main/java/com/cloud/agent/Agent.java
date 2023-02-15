@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -100,7 +101,7 @@ import com.cloud.utils.script.Script;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
-    private static final Logger s_logger = Logger.getLogger(Agent.class.getName());
+    protected static Logger s_logger = Logger.getLogger(Agent.class);
 
     public enum ExitStatus {
         Normal(0), // Normal status = 0.
@@ -179,7 +180,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         _id = value != null ? Long.parseLong(value) : null;
         s_logger.info("id is " + (_id != null ? _id : ""));
 
-        final Map<String, Object> params = PropertiesUtil.toMap(_shell.getProperties());
+        final Map<String, Object> params = new HashMap<>();
 
         // merge with properties from command line to let resource access command line parameters
         for (final Map.Entry<String, Object> cmdLineProp : _shell.getCmdLineProperties().entrySet()) {
@@ -303,6 +304,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
         _shell.updateConnectedHost();
         scavengeOldAgentObjects();
+
     }
 
     public void stop(final String reason, final String detail) {
@@ -457,7 +459,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send reques: " + request.toString());
+                s_logger.warn("Unable to send request: " + request.toString());
             }
         }
     }
@@ -467,7 +469,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         try {
             addr = InetAddress.getLocalHost();
         } catch (final UnknownHostException e) {
-            s_logger.warn("unknow host? ", e);
+            s_logger.warn("unknown host? ", e);
             throw new CloudRuntimeException("Cannot get local IP address");
         }
 
@@ -568,7 +570,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             return;
         }
 
-        s_logger.info("Proccess agent startup answer, agent id = " + startup.getHostId());
+        s_logger.info("Process agent startup answer, agent id = " + startup.getHostId());
 
         setId(startup.getHostId());
         _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.
@@ -763,8 +765,10 @@ public class Agent implements HandlerFactory, IAgentControl {
             throw new CloudRuntimeException("Unable to save received agent client and ca certificates", e);
         }
 
+        String ksPassphrase = _shell.getPersistentProperty(null, KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
         Script script = new Script(_keystoreCertImportPath, 300000, s_logger);
         script.add(agentFile.getAbsolutePath());
+        script.add(ksPassphrase);
         script.add(keyStoreFile);
         script.add(KeyStoreUtils.AGENT_MODE);
         script.add(certFile);
@@ -952,7 +956,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to post agent control reques: " + request.toString());
+                s_logger.warn("Unable to post agent control request: " + request.toString());
                 throw new AgentControlChannelException("Unable to post agent control request due to " + e.getMessage());
             }
         } else {

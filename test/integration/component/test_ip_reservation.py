@@ -1162,11 +1162,11 @@ class TestFailureScnarios(cloudstackTestCase):
 
         response = verifyNetworkState(self.apiclient, isolated_persistent_network.id,\
                         "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         guest_vm_cidr = subnet +".0/29"
 

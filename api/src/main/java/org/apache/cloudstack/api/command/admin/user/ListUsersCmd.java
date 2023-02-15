@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
@@ -35,16 +36,15 @@ import java.util.List;
 public class ListUsersCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
-    private static final String s_name = "listusersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
-               type = CommandType.LONG,
+               type = CommandType.INTEGER,
                description = "List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
-    private Long accountType;
+    private Integer accountType;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, description = "List user by ID.")
     private Long id;
@@ -63,8 +63,8 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getAccountType() {
-        return accountType;
+    public Account.Type getAccountType() {
+        return Account.Type.getFromValue(accountType);
     }
 
     public Long getId() {
@@ -86,11 +86,6 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

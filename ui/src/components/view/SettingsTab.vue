@@ -20,23 +20,23 @@
     <a-input-search
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8;"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
 
     <a-list size="large" class="list" :loading="loading || tabLoading">
       <a-list-item :key="index" v-for="(item, index) in items" class="item">
         <a-list-item-meta>
-          <span slot="title" style="word-break: break-all">{{ item.name }}</span>
-          <span slot="description" style="word-break: break-all">{{ item.description }}</span>
+          <template #title style="word-break: break-all">{{ item.name }}</template>
+          <template #description style="word-break: break-all">{{ item.description }}</template>
         </a-list-item-meta>
 
         <div class="item__content">
           <a-input
-            :autoFocus="editableValueKey === index"
+            v-focus="editableValueKey === index"
             v-if="editableValueKey === index"
             class="editable-value value"
             :defaultValue="item.value"
-            v-model="editableValue"
+            v-model:value="editableValue"
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateData(item)">
           </a-input>
@@ -45,32 +45,32 @@
           </span>
         </div>
 
-        <div slot="actions" class="action">
+        <template #actions class="action">
           <tooltip-button
             :tooltip="$t('label.edit')"
             :disabled="!('updateConfiguration' in $store.getters.apis)"
             v-if="editableValueKey !== index"
-            icon="edit"
-            @click="setEditableSetting(item, index)" />
+            icon="edit-outlined"
+            @onClick="setEditableSetting(item, index)" />
           <tooltip-button
             :tooltip="$t('label.cancel')"
-            @click="editableValueKey = null"
+            @onClick="editableValueKey = null"
             v-if="editableValueKey === index"
-            iconType="close-circle"
+            iconType="CloseCircleTwoTone"
             iconTwoToneColor="#f5222d" />
           <tooltip-button
             :tooltip="$t('label.ok')"
-            @click="updateData(item)"
+            @onClick="updateData(item)"
             v-if="editableValueKey === index"
-            iconType="check-circle"
+            iconType="CheckCircleTwoTone"
             iconTwoToneColor="#52c41a" />
           <tooltip-button
             :tooltip="$t('label.reset.config.value')"
-            @click="resetConfig(item)"
+            @onClick="resetConfig(item)"
             v-if="editableValueKey !== index"
-            icon="reload"
+            icon="reload-outlined"
             :disabled="!('updateConfiguration' in $store.getters.apis)" />
-        </div>
+        </template>
       </a-list-item>
     </a-list>
   </div>
@@ -102,7 +102,17 @@ export default {
       editableValueKey: null,
       editableValue: '',
       tabLoading: false,
-      filter: ''
+      filter: '',
+      warningMessages: {
+        'vr.private.interface.max.mtu': {
+          scope: 'zone',
+          warning: this.$t('message.warn.zone.mtu.update')
+        },
+        'vr.public.interface.max.mtu': {
+          scope: 'zone',
+          warning: this.$t('message.warn.zone.mtu.update')
+        }
+      }
     }
   },
   created () {
@@ -131,19 +141,18 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem.id) return
-      this.resource = newItem
-      this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem.id) return
+        this.fetchData()
+      }
     }
   },
   methods: {
     fetchData (callback) {
       this.tabLoading = true
-      const params = {
-        [this.scopeKey]: this.resource.id,
-        listAll: true
-      }
+      const params = { [this.scopeKey]: this.resource.id }
       if (this.filter) {
         params.keyword = this.filter
       }
@@ -166,7 +175,7 @@ export default {
         value: this.editableValue
       }).then(() => {
         const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.update.to')} ${this.editableValue}`
-        this.$message.success(message)
+        this.handleSuccessMessage(item.name, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
@@ -196,7 +205,7 @@ export default {
         name: item.name
       }).then(() => {
         const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
-        this.$message.success(message)
+        this.handleSuccessMessage(item.name, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.reset.config'))
@@ -210,6 +219,14 @@ export default {
           this.editableValueKey = null
         })
       })
+    },
+    handleSuccessMessage (name, scope, message) {
+      var obj = this.warningMessages[name]
+      if (obj && obj.scope === scope) {
+        this.$warning({ title: message, content: obj.warning })
+      } else {
+        this.$message.success(message)
+      }
     }
   }
 }
@@ -239,7 +256,7 @@ export default {
 
     &__content {
       width: 100%;
-      display: flex;
+      display: block;
       word-break: break-all;
 
       @media (min-width: 760px) {

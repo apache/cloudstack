@@ -80,7 +80,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     "Check for default cent OS template readiness ")
 
         cls.service_offering = ServiceOffering.create(
-            cls.apiclient, 
+            cls.apiclient,
             cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
@@ -222,11 +222,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def gettemplatelimts(self):
 
-        totalresoucelist=Account.list(
+        totalresourcelist=Account.list(
                                       self.apiclient,
                                       id=self.account.id
                                       )
-        totaltemplates=totalresoucelist[0].templatetotal
+        totaltemplates=totalresourcelist[0].templatetotal
 
         return(totaltemplates)
 
@@ -255,19 +255,19 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.ostypeid=self.test_template.ostypeid
         #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
-        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+        getuploadparamsresponse=self.apiclient.getUploadParamsForTemplate(cmd)
 
-        signt=getuploadparamsresponce.signature
-        posturl=getuploadparamsresponce.postURL
-        metadata=getuploadparamsresponce.metadata
-        expiredata=getuploadparamsresponce.expires
+        signt=getuploadparamsresponse.signature
+        posturl=getuploadparamsresponse.postURL
+        metadata=getuploadparamsresponse.metadata
+        expiredata=getuploadparamsresponse.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -276,21 +276,21 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        #headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print(results.status_code)
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_template(self.apiclient, getuploadparamsresponce.id)
+        self.validate_uploaded_template(self.apiclient, getuploadparamsresponse.id)
 
-        return(getuploadparamsresponce)
+        return(getuploadparamsresponse)
 
     def browse_upload_template_with_out_zoneid(self):
 
@@ -305,7 +305,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         success= False
         try:
-            getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+            getuploadparamsresponse=self.apiclient.getUploadParamsForTemplate(cmd)
         except Exception as ex:
             if "Invalid Parameter" in str(ex):
                 success = True
@@ -330,7 +330,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         success= False
         try:
-            getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+            getuploadparamsresponse=self.apiclient.getUploadParamsForTemplate(cmd)
         except Exception as ex:
             if "Invalid Parameter" in str(ex):
                 success = True
@@ -354,36 +354,36 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.projectid=projectid
         #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
-        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+        getuploadparamsresponse=self.apiclient.getUploadParamsForTemplate(cmd)
 
-        signt=getuploadparamsresponce.signature
-        posturl=getuploadparamsresponce.postURL
-        metadata=getuploadparamsresponce.metadata
-        expiredata=getuploadparamsresponce.expires
+        signt=getuploadparamsresponse.signature
+        posturl=getuploadparamsresponse.postURL
+        metadata=getuploadparamsresponse.metadata
+        expiredata=getuploadparamsresponse.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print(results.status_code)
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_template(self.apiclient, getuploadparamsresponce.id)
+        self.validate_uploaded_template(self.apiclient, getuploadparamsresponse.id)
 
-        return(getuploadparamsresponce)
+        return(getuploadparamsresponse)
 
     def browse_upload_template_multiplezones(self,lzones):
 
@@ -398,19 +398,19 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.ostypeid=self.test_template.ostypeid
         #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
-        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+        getuploadparamsresponse=self.apiclient.getUploadParamsForTemplate(cmd)
 
-        signt=getuploadparamsresponce.signature
-        posturl=getuploadparamsresponce.postURL
-        metadata=getuploadparamsresponce.metadata
-        expiredata=getuploadparamsresponce.expires
+        signt=getuploadparamsresponse.signature
+        posturl=getuploadparamsresponse.postURL
+        metadata=getuploadparamsresponse.metadata
+        expiredata=getuploadparamsresponse.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -419,22 +419,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        #headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
         print(results.status_code)
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
         for z1 in lzones:
-            self.validate_uploaded_template(self.apiclient, getuploadparamsresponce.id)
+            self.validate_uploaded_template(self.apiclient, getuploadparamsresponse.id)
 
-        return(getuploadparamsresponce)
+        return(getuploadparamsresponse)
 
     def uploadtemplate(self):
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
@@ -447,19 +447,19 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.hypervisor=self.test_template.hypervisor
         cmd.ostypeid=self.test_template.ostypeid
         #cmd.type="template"
-        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+        getuploadparamsresponse=self.apiclient.getUploadParamsForTemplate(cmd)
 
-        signt=getuploadparamsresponce.signature
-        posturl=getuploadparamsresponce.postURL
-        metadata=getuploadparamsresponce.metadata
-        expiredata=getuploadparamsresponce.expires
+        signt=getuploadparamsresponse.signature
+        posturl=getuploadparamsresponse.postURL
+        metadata=getuploadparamsresponse.metadata
+        expiredata=getuploadparamsresponse.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
         with open(uploadfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in r.iter_content(chunk_size=1024):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -468,20 +468,20 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        #headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
         time.sleep(60)
 
         print(results.status_code)
-        if results.status_code !=200: 
+        if results.status_code !=200:
             self.fail("Upload is not fine")
 
-        return(getuploadparamsresponce)
+        return(getuploadparamsresponse)
 
     def multiple_browse_upload_template(self):
 
@@ -959,7 +959,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                         )
 
         list_zones_response = list_zones(self.apiclient)
-        
+
         self.assertEqual(
                             isinstance(list_zones_response, list),
                             True,
@@ -1014,13 +1014,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
             iprange = ipranges_response[0]
-            
+
             #Fetch corresponding Physical Network of SSVM's Zone
             listphyntwk = PhysicalNetwork.list(
                             self.apiclient,
                             zoneid=ssvm.zoneid
                             )
-            
+
             # Execute the following assertion in all zones except EIP-ELB Zones
             if not (self.zone.networktype.lower() == 'basic' and isinstance(NetScaler.list(self.apiclient,physicalnetworkid=listphyntwk[0].id), list) is True):
                 self.assertEqual(
@@ -1082,7 +1082,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd = stopSystemVm.stopSystemVmCmd()
         cmd.id = ssvm.id
         self.apiclient.stopSystemVm(cmd)
-        
+
         timeout = self.testdata["timeout"]
         while True:
             list_ssvm_response = list_ssvms(
@@ -1094,10 +1094,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     break
             if timeout == 0:
                 raise Exception("List SSVM call failed!")
-            
+
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
-        
+
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
                             True,
@@ -1124,13 +1124,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                         state='Running',
                                         zoneid=self.zone.id
                                         )
-    
+
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         ssvm_response = list_ssvm_response[0]
 
         hosts = list_hosts(
@@ -1164,7 +1164,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     break
             if timeout == 0:
                 raise Exception("List SSVM call failed!")
-            
+
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
 
@@ -1227,7 +1227,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     break
             if timeout == 0:
                 raise Exception("List SSVM call failed!")
-            
+
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
 
@@ -1257,7 +1257,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                         True,
                         "Check whether SSVM has public IP field"
                         )
-        
+
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
@@ -1510,10 +1510,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
     @attr(tags = ["TODO"], required_hardware="true")
     def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
         """
-        Test SSVM_Life_Cycle_With_Browser_template_TPath 
+        Test SSVM_Life_Cycle_With_Browser_template_TPath
         """
         try:
-            
+
             self.debug("========================= Test 11: Stop and Start SSVM and Perform Browser based volume validations ========================= ")
 
             self.stop_ssvm()
@@ -1638,7 +1638,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             afteruploadtemplatelimit=self.gettemplatelimts()
 
             if int(afteruploadtemplatelimit)!=(int(initialtemplatelimit)+1):
-                self.fail("Volume Resouce Count is not updated")
+                self.fail("Volume Resource Count is not updated")
 
             self.delete_template(browseup_template1)
 
@@ -1669,7 +1669,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             afteruploadsecondarystoragelimit=self.getstoragelimits(11)
 
             if afteruploadsecondarystoragelimit!=(initialsecondarystoragelimit+tmpldetails[0].size):
-                self.fail("Secondary Storage Resouce Count is not updated")
+                self.fail("Secondary Storage Resource Count is not updated")
 
             self.delete_template(browseup_template1)
 

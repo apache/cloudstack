@@ -79,7 +79,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         encryptData(conn);
         // drop keys
         dropKeysIfExist(conn);
-        //update templete ID for system Vms
+        //update template ID for system Vms
         //updateSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         // update domain network ref
         updateDomainNetworkRef(conn);
@@ -286,7 +286,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         pstmt3.close();
 
                         // add the reference to this physical network for the default public network entries in vlan / user_ip_address tables
-                        // add first physicalNetworkId to op_dc_vnet_alloc for this zone - just a placeholder since direct networking dont need this
+                        // add first physicalNetworkId to op_dc_vnet_alloc for this zone - just a placeholder since direct networking don't need this
                         if (isFirstPhysicalNtwk) {
                             s_logger.debug("Adding PhysicalNetwork to default Public network entries in vlan and user_ip_address");
                             pstmt3 = conn.prepareStatement("SELECT id FROM `cloud`.`networks` where traffic_type = 'Public' and data_center_id = " + zoneId);

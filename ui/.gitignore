@@ -21,6 +21,8 @@ coverage
 /dist
 
 # local env files
+.env
+.env.lab
 .env.local
 .env.*.local
 

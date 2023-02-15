@@ -296,11 +296,11 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             self.apiclient,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             networkVlan,
@@ -336,11 +336,11 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             self.apiclient,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             network_vlan,
@@ -363,11 +363,11 @@ class TestL2PersistentNetworks(cloudstackTestCase):
             network.id,
             "implemented")
         logger.debug(response)
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             network_vlan,

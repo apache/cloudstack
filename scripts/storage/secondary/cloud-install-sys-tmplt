@@ -29,7 +29,7 @@ failed() {
   local returnval=$1
   local returnmsg=$2
   
-  # check for an message, if there is no one dont print anything
+  # check for an message, if there is no one don't print anything
   if [[ -z $returnmsg ]]; then
     :
   else
@@ -55,7 +55,7 @@ dbHost="localhost"
 dbUser="root"
 dbPassword=
 dbPort=3306
-jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.3.jar'
+jarfile='/usr/share/cloudstack-common/lib/cloudstack-utils.jar'
 
 # check if first parameter is not a dash (-) then print the usage block
 if [[ ! $@ =~ ^\-.+ ]]; then
@@ -149,7 +149,7 @@ if [[ -f /etc/cloudstack/management/db.properties ]]; then
   if [[ "$encType" == "file" || "$encType" == "web" ]]; then
     encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
     if [[ ! $encPassword == "" ]]; then
-      dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+      dbPassword=(`java -classpath $jarfile com.cloud.utils.crypt.EncryptionCLI -d -i "$encPassword" -p "$msKey"`)
       if [[ ! $dbPassword ]]; then
         failed 2 "Failed to decrypt DB password from db.properties"
       fi

@@ -40,7 +40,7 @@ public class ConsoleProxyHttpHandlerHelper {
                 map.put(name, value);
             } else {
                 if (s_logger.isDebugEnabled())
-                    s_logger.debug("Invalid paramemter in URL found. param: " + param);
+                    s_logger.debug("Invalid parameter in URL found. param: " + param);
             }
         }
 
@@ -51,7 +51,6 @@ public class ConsoleProxyHttpHandlerHelper {
 
             ConsoleProxyClientParam param = encryptor.decryptObject(ConsoleProxyClientParam.class, map.get("token"));
 
-            // make sure we get information from token only
             guardUserInput(map);
             if (param != null) {
                 if (param.getClientHostAddress() != null) {
@@ -71,6 +70,14 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("tag", param.getClientTag());
                 } else {
                     s_logger.error("decode token. tag info is not found!");
+                }
+                if (param.getClientDisplayName() != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("decode token. displayname: " + param.getClientDisplayName());
+                    }
+                    map.put("displayname", param.getClientDisplayName());
+                } else {
+                    s_logger.error("decode token. displayname info is not found!");
                 }
                 if (param.getClientHostPassword() != null) {
                     map.put("sid", param.getClientHostPassword());
@@ -96,12 +103,23 @@ public class ConsoleProxyHttpHandlerHelper {
                 if (param.getWebsocketUrl() != null) {
                     map.put("websocketUrl", param.getWebsocketUrl());
                 }
+                if (param.getSessionUuid() != null) {
+                    map.put("sessionUuid", param.getSessionUuid());
+                }
+                if (param.getExtraSecurityToken() != null) {
+                    map.put("extraSecurityToken", param.getExtraSecurityToken());
+                }
             } else {
                 s_logger.error("Unable to decode token");
             }
         } else {
             // we no longer accept information from parameter other than token
             guardUserInput(map);
+        }
+
+        if (map.containsKey("extra")) {
+            s_logger.debug(String.format("Found extra parameter: %s for client security validation check " +
+                    "on the VNC server", map.get("extra")));
         }
 
         return map;

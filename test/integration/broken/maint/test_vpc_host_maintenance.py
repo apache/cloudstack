@@ -456,7 +456,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
         Host.update(self.apiclient, id=self.hosts[0].id, hosttags="hosttag1,hosttag2")
         Host.update(self.apiclient, id=self.hosts[1].id, hosttags="hosttag1,hosttag2")
-        
+
         self.validate_vm_deployment()
         self.debug("Stop the host on which the VPC virtual router is running")
         try:
@@ -477,11 +477,11 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                          True,
                          "List routers shall return a valid VPCVR for account"
                          )
-        
+
         router = routers[0]
-                    
+
         try:
-            
+
             timeout = self.services["timeout"]
             self.debug("Timeout Value %d : " % timeout)
             while True:
@@ -490,7 +490,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                     id = router.id,
                     state = "Running"
                 )
-                
+
                 if list_router_response is not None:
                     break
                 elif timeout == 0:
@@ -499,12 +499,12 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                 time.sleep(self.services["sleep"])
                 timeout = timeout - 1
                 self.debug("Waiting for %d seconds - %d tries left" % (self.services["sleep"],timeout))
-            
+
             self.debug("Verified that the Router is in Running State")
-            
+
         except Exception as e:
             self.fail("Failed to find the Router in Running state %s " % e)
-                
+
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
@@ -537,7 +537,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         # 1. Successfully cancel the Maintenance mode on the host.
         # 2. Migrate the VMs back successfully onto the host.
         # 3. Check that the network connectivity exists with the migrated VMs.
-        
+
         try:
             timeout = self.services["timeout"]
             while True:
@@ -545,7 +545,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                     self.apiclient,
                     id=self.vpcvr.hostid,
                     resourcestate="Maintenance")
-                
+
                 if list_host_response is not None:
                     break
                 elif timeout == 0:
@@ -553,9 +553,9 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
                 time.sleep(self.services["sleep"])
                 timeout = timeout - 1
-            
+
             self.debug("Verified that the Host is in Maintenance State")
-            
+
         except:
             self.fail("Failed to find the Host in maintenance state")
 
@@ -569,7 +569,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                     self.apiclient,
                     id=self.vpcvr.hostid,
                     state="Up")
-                
+
                 if list_host_response is not None:
                     break
                 elif timeout == 0:
@@ -577,9 +577,9 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
                 time.sleep(self.services["sleep"])
                 timeout = timeout - 1
-            
+
             self.debug("Verified that the Host is in Up State after Canceling Maintenance Mode")
-            
+
         except Exception as e:
             self.fail("Failed to cancel maintenance mode on host: %s" % e)
 
@@ -626,13 +626,13 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         #    effected due to reconnection.
 
         try:
-            timeout = self.services["timeout"]        
+            timeout = self.services["timeout"]
             while True:
                 list_host_response = Host.list(
                     self.apiclient,
                     id=self.vpcvr.hostid,
                     resourcestate="Enabled")
-                
+
                 if list_host_response is not None:
                     break
                 elif timeout == 0:
@@ -640,9 +640,9 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
                 time.sleep(self.services["sleep"])
                 timeout = timeout - 1
-            
+
             self.debug("Verified that the Host is in Up State")
-            
+
         except:
             self.fail("Failed to find the Host in Up State")
 

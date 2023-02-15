@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.user;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -38,7 +39,6 @@ requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
-    private static final String s_name = "updateuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,6 +78,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "Unique username")
     private String username;
+
+    @Parameter(name = ApiConstants.MANDATE_2FA, type = CommandType.BOOLEAN, description = "Provide true to mandate the user to use two factor authentication has to be enabled." +
+            "This parameter is only used to mandate 2FA, not to disable 2FA", since = "4.18.0.0")
+    private Boolean mandate2FA;
 
     @Inject
     private RegionService _regionService;
@@ -126,14 +130,13 @@ public class UpdateUserCmd extends BaseCmd {
         return username;
     }
 
+    public Boolean getMandate2FA() {
+        return mandate2FA;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -173,5 +176,15 @@ public class UpdateUserCmd extends BaseCmd {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.User;
     }
 }

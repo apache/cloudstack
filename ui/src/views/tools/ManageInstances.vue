@@ -24,10 +24,10 @@
           <a-button
             style="margin-left: 12px; margin-top: 4px"
             :loading="viewLoading"
-            icon="reload"
             size="small"
             shape="round"
             @click="fetchData()" >
+            <template #icon><reload-outlined /></template>
             {{ $t('label.refresh') }}
           </a-button>
         </a-col>
@@ -41,25 +41,28 @@
           <br />
           <a-form
             style="min-width: 170px"
-            :form="form"
-            layout="vertical">
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
+            layout="vertical"
+           >
             <a-col :md="24" :lg="8">
-              <a-form-item :label="this.$t('label.zoneid')">
+              <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
                 <a-select
-                  v-decorator="['zoneid', {}]"
+                  v-model:value="form.zoneid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
-                  autoFocus
+                  v-focus="true"
                 >
                   <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
                     <span>
                       <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                      <a-icon v-else style="margin-right: 5px" type="global" />
+                      <global-outlined v-else style="margin-right: 5px" />
                       {{ zoneitem.label }}
                     </span>
                   </a-select-option>
@@ -68,11 +71,13 @@
             </a-col>
             <a-col :md="24" :lg="8">
               <a-form-item
-                :label="this.$t('label.podid')">
+                name="podid"
+                ref="podid"
+                :label="$t('label.podid')">
                 <a-select
-                  v-decorator="['podid']"
+                  v-model:value="form.podid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="filterOption"
                   :options="podSelectOptions"
                   :loading="optionLoading.pods"
@@ -82,11 +87,13 @@
             </a-col>
             <a-col :md="24" :lg="8">
               <a-form-item
-                :label="this.$t('label.clusterid')">
+                name="clusterid"
+                ref="clusterid"
+                :label="$t('label.clusterid')">
                 <a-select
-                  v-decorator="['clusterid']"
+                  v-model:value="form.clusterid"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="filterOption"
                   :options="clusterSelectOptions"
                   :loading="optionLoading.clusters"
@@ -99,18 +106,18 @@
           <a-row :gutter="12">
             <a-col :md="24" :lg="12">
               <a-card class="instances-card">
-                <span slot="title">
+                <template #title>
                   {{ $t('label.unmanaged.instances') }}
                   <a-tooltip :title="$t('message.instances.unmanaged')">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <info-circle-outlined />
                   </a-tooltip>
                   <a-button
                     style="margin-left: 12px; margin-top: 4px"
                     :loading="unmanagedInstancesLoading"
-                    icon="reload"
                     size="small"
                     shape="round"
                     @click="fetchUnmanagedInstances()" >
+                    <template #icon><reload-outlined /></template>
                   </a-button>
                   <span style="float: right; width: 50%">
                     <search-view
@@ -120,7 +127,7 @@
                       @search="searchUnmanagedInstances"
                     />
                   </span>
-                </span>
+                </template>
                 <a-table
                   class="instances-card-table"
                   :loading="unmanagedInstancesLoading"
@@ -132,7 +139,7 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
-                  <template slot="state" slot-scope="text">
+                  <template #state="{text}">
                     <status :text="text ? text : ''" displayText />
                   </template>
                 </a-table>
@@ -146,7 +153,7 @@
                     :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.unmanaged-1)*pageSize.unmanaged))}-${Math.min(page.unmanaged*pageSize.unmanaged, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
                     @change="fetchUnmanagedInstances"
                     showQuickJumper>
-                    <template slot="buildOptionText" slot-scope="props">
+                    <template #buildOptionText="props">
                       <span>{{ props.value }} / {{ $t('label.page') }}</span>
                     </template>
                   </a-pagination>
@@ -155,8 +162,8 @@
                       :loading="importUnmanagedInstanceLoading"
                       :disabled="!(('importUnmanagedInstance' in $store.getters.apis) && unmanagedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
-                      icon="import"
                       @click="onManageInstanceAction">
+                      <template #icon><import-outlined /></template>
                       {{ $t('label.import.instance') }}
                     </a-button>
                   </div>
@@ -165,18 +172,18 @@
             </a-col>
             <a-col :md="24" :lg="12">
               <a-card class="instances-card">
-                <span slot="title">
+                <template #title>
                   {{ $t('label.managed.instances') }}
                   <a-tooltip :title="$t('message.instances.managed')">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
+                    <info-circle-outlined />
                   </a-tooltip>
                   <a-button
                     style="margin-left: 12px; margin-top: 4px"
                     :loading="managedInstancesLoading"
-                    icon="reload"
                     size="small"
                     shape="round"
                     @click="fetchManagedInstances()" >
+                    <template #icon><reload-outlined /></template>
                   </a-button>
                   <span style="float: right; width: 50%">
                     <search-view
@@ -186,7 +193,7 @@
                       @search="searchManagedInstances"
                     />
                   </span>
-                </span>
+                </template>
                 <a-table
                   class="instances-card-table"
                   :loading="managedInstancesLoading"
@@ -198,10 +205,10 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
-                  <a slot="name" slot-scope="text, record" href="javascript:;">
+                  <template #name="{text, record}" href="javascript:;">
                     <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
-                  </a>
-                  <template slot="state" slot-scope="text">
+                  </template>
+                  <template #state="{text}">
                     <status :text="text ? text : ''" displayText />
                   </template>
                 </a-table>
@@ -215,7 +222,7 @@
                     :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page.managed-1)*pageSize.managed))}-${Math.min(page.managed*pageSize.managed, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
                     @change="fetchManagedInstances"
                     showQuickJumper>
-                    <template slot="buildOptionText" slot-scope="props">
+                    <template #buildOptionText="props">
                       <span>{{ props.value }} / {{ $t('label.page') }}</span>
                     </template>
                   </a-pagination>
@@ -223,8 +230,8 @@
                     <a-button
                       :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
-                      icon="disconnect"
                       @click="onUnmanageInstanceAction">
+                      <template #icon><disconnect-outlined /></template>
                       {{ managedInstancesSelectedRowKeys.length > 1 ? $t('label.action.unmanage.instances') : $t('label.action.unmanage.instance') }}
                     </a-button>
                   </div>
@@ -235,6 +242,7 @@
         </a-card>
 
         <a-modal
+          v-if="showUnmanageForm"
           :visible="showUnmanageForm"
           :title="$t('label.import.instance')"
           :closable="true"
@@ -261,6 +269,7 @@
 </template>
 
 <script>
+import { ref, reactive } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -288,7 +297,7 @@ export default {
       {
         title: this.$t('label.state'),
         dataIndex: 'powerstate',
-        scopedSlots: { customRender: 'state' }
+        slots: { customRender: 'state' }
       },
       {
         title: this.$t('label.hostname'),
@@ -304,7 +313,7 @@ export default {
         title: this.$t('label.name'),
         dataIndex: 'name',
         width: 100,
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.instancename'),
@@ -313,7 +322,7 @@ export default {
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
-        scopedSlots: { customRender: 'state' }
+        slots: { customRender: 'state' }
       },
       {
         title: this.$t('label.hostname'),
@@ -375,12 +384,10 @@ export default {
       query: {}
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
     this.page.unmanaged = parseInt(this.$route.query.unmanagedpage || 1)
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
+    this.initForm()
     this.fetchData()
   },
   computed: {
@@ -482,6 +489,11 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.unmanagedInstances = []
       this.managedInstances = []
@@ -493,7 +505,7 @@ export default {
     },
     filterOption (input, option) {
       return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     fetchOptions (param, name, exclude) {
@@ -506,7 +518,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -515,7 +527,6 @@ export default {
           if (Object.keys(responseItem).length === 0) {
             this.rowCount[name] = 0
             this.options[name] = []
-            this.$forceUpdate()
             return
           }
           if (!responseKey.includes('response')) {
@@ -528,8 +539,6 @@ export default {
             }
             param.opts = response
             this.options[name] = response
-
-            this.$forceUpdate()
           })
           this.handleFetchOptionsSuccess(name, param)
         })
@@ -557,18 +566,14 @@ export default {
           paramid = (this.options[name])[0].id
         }
         if (paramid) {
-          this.form.getFieldDecorator([param.field], { initialValue: paramid })
+          this.form[param.field] = paramid
           if (name === 'zones') {
             this.onSelectZoneId(paramid)
           } else if (name === 'pods') {
-            this.form.setFieldsValue({
-              podid: paramid
-            })
+            this.form.podid = paramid
             this.onSelectPodId(paramid)
           } else if (name === 'clusters') {
-            this.form.setFieldsValue({
-              clusterid: paramid
-            })
+            this.form.clusterid = paramid
             this.onSelectClusterId(paramid)
           }
         }
@@ -600,19 +605,15 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.resetLists()
-      this.form.setFieldsValue({
-        clusterid: undefined,
-        podid: undefined
-      })
+      this.form.clusterid = undefined
+      this.form.podid = undefined
       this.updateQuery('zoneid', value)
       this.fetchOptions(this.params.pods, 'pods')
     },
     onSelectPodId (value) {
       this.podId = value
       this.resetLists()
-      this.form.setFieldsValue({
-        clusterid: undefined
-      })
+      this.form.clusterid = undefined
       this.updateQuery('podid', value)
       this.fetchOptions(this.params.clusters, 'clusters', value)
     },
@@ -728,7 +729,6 @@ export default {
     closeImportUnmanagedInstanceForm () {
       this.selectedUnmanagedInstance = {}
       this.showUnmanageForm = false
-      this.$refs.importModal.$forceUpdate()
     },
     onUnmanageInstanceAction () {
       const self = this
@@ -781,25 +781,11 @@ export default {
 }
 </script>
 
-<style scoped>
-/deep/ .ant-table-thead {
-  background-color: #f9f9f9;
-}
-
-/deep/ .ant-table-small > .ant-table-content > .ant-table-body {
-  margin: 0;
-}
-
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-</style>
-
 <style scoped lang="less">
+  :deep(.ant-table-small) > .ant-table-content > .ant-table-body {
+    margin: 0;
+  }
+
   .importform {
     width: 80vw;
   }

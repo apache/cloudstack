@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.16.1
+CLOUDSTACK_RELEASE=4.18.0
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -50,11 +50,10 @@ function configure_cacerts() {
   CDIR=$(pwd)
   cd /tmp
   # Add LetsEncrypt ca-cert
-  wget https://letsencrypt.org/certs/lets-encrypt-r3.der
   wget https://letsencrypt.org/certs/isrgrootx1.der
-
-  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityr3 -file lets-encrypt-r3.der
+  wget https://letsencrypt.org/certs/lets-encrypt-r3.der
   keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx1 -file isrgrootx1.der
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityr3 -file lets-encrypt-r3.der
   rm -f lets-encrypt-r3.der isrgrootx1.der
   cd $CDIR
 }
@@ -71,6 +70,7 @@ function install_cloud_scripts() {
   chmod -x /etc/systemd/system/* || true
 
   systemctl daemon-reload
+  systemctl enable cloud-preinit
   systemctl enable cloud-early-config
   systemctl enable cloud-postinit
 }

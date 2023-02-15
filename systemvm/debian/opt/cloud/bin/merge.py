@@ -112,6 +112,8 @@ class updateDataBag:
             dbag = self.process_network_acl(self.db.getDataBag())
         elif self.qFile.type == 'firewallrules':
             dbag = self.process_firewallrules(self.db.getDataBag())
+        elif self.qFile.type == 'ipv6firewallrules':
+            dbag = self.process_ipv6firewallrules(self.db.getDataBag())
         elif self.qFile.type == 'loadbalancer':
             dbag = self.process_loadbalancer(self.db.getDataBag())
         elif self.qFile.type == 'monitorservice':
@@ -153,6 +155,7 @@ class updateDataBag:
         dp['gateway'] = d['router_guest_gateway']
         dp['nic_dev_id'] = d['device'][3:]
         dp['nw_type'] = 'guest'
+        dp['mtu'] = str(d['mtu'])
         qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
@@ -175,6 +178,9 @@ class updateDataBag:
         return cs_network_acl.merge(dbag, self.qFile.data)
 
     def process_firewallrules(self, dbag):
+        return cs_firewallrules.merge(dbag, self.qFile.data)
+
+    def process_ipv6firewallrules(self, dbag):
         return cs_firewallrules.merge(dbag, self.qFile.data)
 
     def process_loadbalancer(self, dbag):

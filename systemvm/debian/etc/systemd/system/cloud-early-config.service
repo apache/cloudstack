@@ -2,11 +2,8 @@
 Description=CloudStack post-boot patching service using cmdline
 DefaultDependencies=no
 
-Before=network-pre.target
-Wants=network-pre.target
-
-Requires=local-fs.target
-After=local-fs.target
+Requires=local-fs.target cloud-preinit.service
+After=local-fs.target cloud-preinit.service
 
 [Install]
 WantedBy=multi-user.target

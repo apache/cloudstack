@@ -50,7 +50,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
-    private static final String s_name = "createnetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -92,6 +91,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "guest type of the network offering: Shared or Isolated")
     private String guestIptype;
 
+    @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
+            type = CommandType.STRING,
+            description = "The internet protocol of network offering. Options are ipv4 and dualstack. Default is ipv4. dualstack will create a network offering that supports both IPv4 and IPv6",
+            since = "4.17.0")
+    private String internetProtocol;
+
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
@@ -120,6 +125,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
+
+    @Parameter(name = ApiConstants.FOR_TUNGSTEN,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
+    private Boolean forTungsten;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
@@ -195,10 +205,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return networkRate;
     }
 
-    public static String getName() {
-        return s_name;
-    }
-
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
@@ -209,6 +215,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public String getGuestIpType() {
         return guestIptype;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
     }
 
     public Boolean getSpecifyIpRanges() {
@@ -228,6 +238,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public Boolean getForTungsten() {
+        return forTungsten;
     }
 
     public Boolean getEgressDefaultPolicy() {
@@ -352,11 +366,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

@@ -19,6 +19,7 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Tag,
                              Account,
@@ -292,7 +293,7 @@ class TestResourceTags(cloudstackTestCase):
                            tag['resid'],
                            tag['restype'],
                            {concrete_tag['key']: concrete_tag['value']})
-                
+
         return
 
     @attr(tags=["advanced"], required_hardware="false")
@@ -880,7 +881,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope5'
         tag_value = 'test_05_vm_tag'
-        
+
         self.debug("Creating a tag for user VM")
         tag = Tag.create(
             self.apiclient,
@@ -1068,21 +1069,7 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create  a tag on ISO using createTags API
         # 2. Delete above created tag using deleteTags API
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.debug("ISO created with ID: %s" % iso.id)
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+        iso = self.create_iso()
 
         self.debug("Creating a tag for the ISO")
         tag = Tag.create(
@@ -1165,7 +1152,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope8'
         tag_value = 'test_08_volume_tag'
-        
+
         if self.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(self.apiclient, storagetype='rbd'):
                 self.skipTest("RBD storage type is required for data volumes for LXC")
@@ -1366,7 +1353,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope10'
         tag_value = 'test_10_network_tag'
-        
+
         self.debug("Fetching the network details for account: %s" %
                    self.account.name)
         networks = Network.list(
@@ -1465,7 +1452,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope11'
         tag_value = 'test_11_migrate_tagged_vm_del'
-        
+
         if self.hypervisor.lower() in ['lxc']:
             self.skipTest("vm migrate feature is not supported on %s" % self.hypervisor.lower())
 
@@ -1578,7 +1565,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope13'
         tag_value = 'test_13_tag_case_insensitive'
-        
+
         self.debug("Creating a tag for user VM")
         tag_1 = Tag.create(
             self.apiclient,
@@ -1612,7 +1599,7 @@ class TestResourceTags(cloudstackTestCase):
             Tag.create(self.apiclient,
                        resourceIds=self.vm_1.id,
                        resourceType='UserVm',
-                       tags={tag_key.upper(): tag_value.uppper()})
+                       tags={tag_key.upper(): tag_value.upper()})
         except Exception as e:
             pass
         else:
@@ -1656,7 +1643,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope14'
         tag_value = 'test_14_special_char_mutiple_tags'
-        
+
         self.debug("Creating a tag for user VM")
         tag = Tag.create(
             self.apiclient,
@@ -1729,7 +1716,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope15'
         tag_value = 'test_15_project_tag'
-                        
+
         # Create project as a domain admin
         project = Project.create(
             self.apiclient,
@@ -1824,9 +1811,9 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope16'
         tag_value = 'test_16_query_tags_other_account'
-        
+
         self.debug("Creating user accounts..")
-        
+
         user_account = Account.create(
             self.apiclient,
             self.services["user"],
@@ -1841,21 +1828,7 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.cleanup.append(other_user_account)
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=user_account.name,
-            domainid=user_account.domainid
-        )
-        self.debug("ISO created with ID: %s" % iso.id)
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+        iso = self.create_iso()
 
         self.debug("Creating a tag for the ISO")
         tag = Tag.create(
@@ -1910,7 +1883,7 @@ class TestResourceTags(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("Failed to delete the tag - %s" % e)
-                        
+
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
@@ -1925,7 +1898,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope17'
         tag_value = 'test_17_query_tags_admin_account'
-        
+
         self.debug("Creating user accounts..")
 
         user_account = Account.create(
@@ -1935,20 +1908,8 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.cleanup.append(user_account)
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=user_account.name,
-            domainid=user_account.domainid
-        )
+        iso = self.create_iso()
 
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
         Tag.create(self.apiclient,
                    resourceIds=iso.id,
                    resourceType='ISO',
@@ -2000,7 +1961,7 @@ class TestResourceTags(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("Failed to delete the tag - %s" % e)
-        
+
         return
 
     @attr(tags=["advanced", "basic", "simulator"], required_hardware="false")
@@ -2013,7 +1974,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope18'
         tag_value = 'test_18_invalid_list_parameters'
-        
+
         self.debug("Creating a tag for user VM")
         tag = Tag.create(
             self.apiclient,
@@ -2060,8 +2021,8 @@ class TestResourceTags(cloudstackTestCase):
         # 2. Add same tag.
 
         tag_key = 'scope19'
-        tag_value = 'test_19_delete_add_same_tag'        
-        
+        tag_value = 'test_19_delete_add_same_tag'
+
         self.debug("Creating a tag for user VM")
         tag = Tag.create(
             self.apiclient,
@@ -2165,9 +2126,9 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope20'
         tag_value = 'test_20_create_tags_multiple_resources'
-                        
+
         self.debug("Creating volume for account: %s " % self.account.name)
-        
+
         volume = Volume.create(
             self.apiclient,
             self.services["volume"],
@@ -2272,8 +2233,8 @@ class TestResourceTags(cloudstackTestCase):
         "Test creation of tag on stopped vm."
 
         tag_key = 'scope21'
-        tag_value = 'test_21_create_tag_stopped_vm'        
-        
+        tag_value = 'test_21_create_tag_stopped_vm'
+
         try:
             self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
             # Stop virtual machine
@@ -2317,7 +2278,7 @@ class TestResourceTags(cloudstackTestCase):
                 tags={tag_key: tag_value}
             )
         except Exception as e:
-            self.fail("Exception occured - %s" % e)
+            self.fail("Exception occurred - %s" % e)
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
@@ -2326,7 +2287,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope22'
         tag_value = 'test_22_create_tag_destroyed_vm'
-        
+
         self.debug("Destroying instance: %s" % self.vm_1.name)
         self.vm_1.delete(self.apiclient, expunge=False)
 
@@ -2481,7 +2442,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key = 'scope24'
         tag_value = 'test_24_public_ip_tag'
-                
+
         self.debug("Creating a sub-domain under: %s" % self.domain.name)
         self.child_domain = Domain.create(
             self.apiclient,
@@ -2652,7 +2613,7 @@ class TestResourceTags(cloudstackTestCase):
         received_tag_map = {}
         for t in received_tags:
             received_tag_map[t.key] = t.value
-        
+
         self.assertEqual(
             set_tags,
             received_tag_map,
@@ -2680,7 +2641,7 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should return empty list response when tags are removed."
         )
         return
-    
+
     @attr(tags=["advanced","basic"], required_hardware="false")
     def test_25_admin_account_tags(self):
         '''Test create, list, delete tag for admin account from admin account'''
@@ -2689,7 +2650,7 @@ class TestResourceTags(cloudstackTestCase):
         self.__test_account_tags(self.apiclient, admin_account[0])
         return
 
-    @attr(tags=["advanced","basic"], required_hardware="false")    
+    @attr(tags=["advanced","basic"], required_hardware="false")
     def test_26_domain_admin_account_tags(self):
         child_domain = Domain.create(
             self.apiclient,
@@ -2725,7 +2686,7 @@ class TestResourceTags(cloudstackTestCase):
         regular_account_api_client = self.testClient.getUserApiClient(UserName=regular_account.name, DomainName=self.domain.name)
         self.__test_account_tags(regular_account_api_client, regular_account)
         return
-    
+
     @attr(tags=["advanced","basic"], required_hardware="false")
     def test_28_admin_access_domain_admin_account_tags(self):
         '''Test create, list, delete tag for domain admin account from admin account'''
@@ -2783,7 +2744,7 @@ class TestResourceTags(cloudstackTestCase):
         )
         # Cleanup the resources created at end of test
         self.cleanup.append(regular_account)
-                                
+
         # Cleanup the resources created at end of test
         self.cleanup.append(child_domain_admin)
         self.cleanup.append(child_domain)
@@ -2804,14 +2765,14 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key_admin = 'scope31_admin'
         tag_value_admin = 'test_31_user_cant_remove_update_admin_tags'
-                       
+
         regular_account = Account.create(
             self.apiclient,
             self.services["account"],
             admin=False
         )
         self.cleanup.append(regular_account)
-        
+
         regular_account_api_client = self.testClient.getUserApiClient(UserName=regular_account.name, DomainName=self.domain.name)
 
         def create_admin_tag():
@@ -2820,7 +2781,7 @@ class TestResourceTags(cloudstackTestCase):
                 resourceIds=regular_account.id,
                 resourceType='Account',
                 tags={ tag_key_admin: tag_value_admin})
-            
+
 
         def create_user_tag():
             return Tag.create(
@@ -2828,7 +2789,7 @@ class TestResourceTags(cloudstackTestCase):
                 resourceIds=regular_account.id,
                 resourceType='Account',
                 tags={ tag_key_user: tag_value_user})
-            
+
         create_admin_tag()
         create_user_tag()
 
@@ -2845,7 +2806,7 @@ class TestResourceTags(cloudstackTestCase):
         def tags_to_map(tags):
             m = {}
             for t in tags:
-                m[t.key] = t.value                            
+                m[t.key] = t.value
             return m
 
         # admin requests user account tags and gets None (without listall)
@@ -2870,7 +2831,7 @@ class TestResourceTags(cloudstackTestCase):
             tags_to_map(received_tags_user),
             {tag_key_admin: tag_value_admin, tag_key_user: tag_value_user},
             "List (with listAll=false) tags should return information for user tags"
-        )       
+        )
 
         # user requests own account tags and receives all (with listall)
         received_tags_user_listall = list_tags(regular_account_api_client, True)
@@ -2879,11 +2840,11 @@ class TestResourceTags(cloudstackTestCase):
             {tag_key_admin: tag_value_admin, tag_key_user: tag_value_user},
             "List (with listAll=false) tags should return information for user tags"
         )
-       
+
         #
         # Delete test expressions
         #
-        
+
         def delete_tags(apiclient, tags):
             Tag.delete(
                 apiclient,
@@ -2891,12 +2852,12 @@ class TestResourceTags(cloudstackTestCase):
                 resourceType='Account',
                 tags=tags)
 
-        # user tries to delete admin tag on own account and succeeds 
+        # user tries to delete admin tag on own account and succeeds
         try:
             delete_tags(regular_account_api_client, {tag_key_admin: tag_value_admin})
         except Exception as e:
             self.fail("Regular user is not able to delete administrator tag on own account - %s" % e)
-                        
+
         # user tries to delete user tag and succeeds
         try:
             delete_tags(regular_account_api_client, {tag_key_user: tag_value_user})
@@ -2906,15 +2867,15 @@ class TestResourceTags(cloudstackTestCase):
         # recover tag to run admin tests
         create_user_tag()
         create_admin_tag()
-                
+
         # admin tries to delete tags and succeeds
         try:
             delete_tags(self.apiclient, {tag_key_admin: tag_value_admin, tag_key_user: tag_value_user})
         except Exception as e:
-            self.fail("Administrator is not able to delete a tag - %s" % e)        
+            self.fail("Administrator is not able to delete a tag - %s" % e)
 
         return
-            
+
     @attr(tags=["advanced","basic"], required_hardware="false")
     def test_32_user_a_doesnt_have_access_to_user_b_tags(self):
         '''Test resource security between regular accounts A and B'''
@@ -2924,7 +2885,7 @@ class TestResourceTags(cloudstackTestCase):
 
         tag_key_user2 = 'scope32_user2'
         tag_value_user2 = 'test_32_user_a_doesnt_have_access_to_user_b_tags-user2'
-                
+
         regular_account1 = Account.create(
             self.apiclient,
             self.services["account"],
@@ -2975,7 +2936,7 @@ class TestResourceTags(cloudstackTestCase):
         except Exception as e:
             pass
         else:
-            self.fail("User1 has access to delete tags of User2.")                    
+            self.fail("User1 has access to delete tags of User2.")
 
         try:
             Tag.create(
@@ -2987,7 +2948,7 @@ class TestResourceTags(cloudstackTestCase):
             pass
         else:
             self.fail("User1 has access to create tags for User2.")
-                                
+
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
@@ -3074,3 +3035,24 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should return empty response"
         )
         return
+
+    def create_iso(self):
+        try:
+            iso = Iso.create(
+                self.apiclient,
+                self.services["iso"],
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        except:
+            raise unittest.SkipTest("Cannot register ISO for tagging")
+        self.cleanup.append(iso)
+        self.debug("ISO created with ID: %s" % iso.id)
+
+        list_iso_response = Iso.list(self.apiclient,
+                                     id=iso.id)
+
+        if not isinstance(list_iso_response, list):
+            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+
+        return iso

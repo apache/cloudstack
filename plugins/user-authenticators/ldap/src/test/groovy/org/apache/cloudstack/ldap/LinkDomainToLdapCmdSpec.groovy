@@ -128,7 +128,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         result.getAdminId() == null
     }
 
-    def "test with valid params and with admin who doesnt exist in cloudstack"() {
+    def "test with valid params and with admin who doesn't exist in cloudstack"() {
         def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
@@ -143,7 +143,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         _accountService.getActiveAccountByName(username, domainId) >> null
         UserAccount userAccount = Mock(UserAccount)
         userAccount.getAccountId() >> 24
-        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
+        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.Type.DOMAIN_ADMIN, domainId,
                 username, null, _, _, User.Source.LDAP) >> userAccount
 
         linkDomainToLdapCmd.admin = username
@@ -163,7 +163,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         result.getAdminId() == String.valueOf(accountId)
     }
 
-    def "test when admin doesnt exist in ldap"() {
+    def "test when admin doesn't exist in ldap"() {
         def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
@@ -209,7 +209,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         _accountService.getActiveAccountByName(username, domainId) >> null
         UserAccount userAccount = Mock(UserAccount)
         userAccount.getAccountId() >> 24
-        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
+        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.Type.DOMAIN_ADMIN, domainId,
                 username, null, _, _, User.Source.LDAP) >> { throw new RuntimeException("created failed from mock") }
 
         linkDomainToLdapCmd.admin = username

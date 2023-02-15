@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -35,7 +36,6 @@ import com.cloud.user.Account;
 public class UpdateClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
-    private static final String s_name = "updateclusterresponse";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long id;
@@ -71,11 +71,6 @@ public class UpdateClusterCmd extends BaseCmd {
         return hypervisor;
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public String getClusterType() {
         return clusterType;
     }
@@ -103,6 +98,16 @@ public class UpdateClusterCmd extends BaseCmd {
 
     public void setManagedstate(String managedstate) {
         this.managedState = managedstate;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Cluster;
     }
 
     @Override

@@ -21,7 +21,7 @@
       <a-radio-group
         class="setting-group"
         name="themeGroup"
-        v-model="layoutMode"
+        v-model:value="layoutMode"
         @change="switchLayoutMode">
         <setting-item
           view-type="radio-group"
@@ -58,7 +58,7 @@
               <a-input
                 :disabled="layoutMode === 'dark'"
                 type="color"
-                v-model="navBgColorPick"
+                v-model:value="navBgColorPick"
                 @blur="(e) => updateSetting('@navigation-background-color', e.target.value)" />
             </div>
           </div>
@@ -70,7 +70,7 @@
               <a-input
                 :disabled="layoutMode === 'dark'"
                 type="color"
-                v-model="navBgColorPick"
+                v-model:value="navTextColorPick"
                 @blur="(e) => updateSetting('@navigation-text-color', e.target.value)" />
             </div>
           </div>
@@ -89,7 +89,7 @@
             <div class="color-picker" :style="{ backgroundColor: projectNavBgColorPick }">
               <a-input
                 type="color"
-                v-model="projectNavBgColorPick"
+                v-model:value="projectNavBgColorPick"
                 @blur="(e) => updateSetting('@project-nav-background-color', e.target.value)" />
             </div>
           </div>
@@ -100,7 +100,7 @@
             <div class="color-picker" :style="{ backgroundColor: projectNavTextColorPick }">
               <a-input
                 type="color"
-                v-model="projectNavTextColorPick"
+                v-model:value="projectNavTextColorPick"
                 @blur="(e) => updateSetting('@project-nav-text-color', e.target.value)" />
             </div>
           </div>
@@ -113,12 +113,16 @@
       <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
         class="setting-action-btn"
-        icon="copy"
-        @click="saveSetting">{{ $t('label.save.setting') }}</a-button>
+        @click="downloadSetting">
+        <template #icon><download-outlined /></template>
+        {{ $t('label.download.setting') }}
+      </a-button>
       <a-button
         class="setting-action-btn"
-        icon="undo"
-        @click="resetSetting">{{ $t('label.reset.to.default') }}</a-button>
+        @click="resetSetting">
+        <template #icon><undo-outlined /></template>
+        {{ $t('label.reset.to.default') }}
+      </a-button>
     </div>
   </div>
 </template>
@@ -139,12 +143,12 @@ export default {
   },
   data () {
     return {
-      layoutMode: 'light',
-      colorPick: this.$store.getters.themeSetting['@primary-color'] || this.$config.theme['@primary-color'],
-      navBgColorPick: this.$store.getters.themeSetting['@navigation-background-color'] || this.$config.theme['@navigation-background-color'],
-      navTextColorPick: this.$store.getters.themeSetting['@navigation-text-color'] || this.$config.theme['@navigation-text-color'],
-      projectNavBgColorPick: this.$store.getters.themeSetting['@project-nav-background-color'] || this.$config.theme['@project-nav-background-color'],
-      projectNavTextColorPick: this.$store.getters.themeSetting['@project-nav-text-color'] || this.$config.theme['@project-nav-text-color'],
+      layoutMode: this.$config.theme['@layout-mode'] || 'light',
+      colorPick: this.$config.theme['@primary-color'],
+      navBgColorPick: this.$config.theme['@navigation-background-color'],
+      navTextColorPick: this.$config.theme['@navigation-text-color'],
+      projectNavBgColorPick: this.$config.theme['@project-nav-background-color'],
+      projectNavTextColorPick: this.$config.theme['@project-nav-text-color'],
       uiSettings: {},
       originalSetting: {}
     }
@@ -158,12 +162,12 @@ export default {
         {
           name: 'light',
           type: 'image-checkbox',
-          component: () => import('@/assets/icons/light.svg?inline')
+          icon: 'light'
         },
         {
           name: 'dark',
           type: 'image-checkbox',
-          component: () => import('@/assets/icons/dark.svg?inline')
+          icon: 'dark'
         }
       ]
       return arrStyle
@@ -225,14 +229,12 @@ export default {
   methods: {
     fetchData () {
       this.originalSetting = Object.assign({}, this.$config.theme)
-      this.layoutMode = 'light'
-      if (this.$store.getters.darkMode) {
-        this.layoutMode = 'dark'
-      }
+      this.layoutMode = this.$config.theme['@layout-mode'] || 'light'
       this.uiSettings = this.$config.theme
     },
     switchLayoutMode () {
       this.$store.dispatch('SetDarkMode', (this.layoutMode === 'dark'))
+      this.updateSetting('@layout-mode', this.layoutMode)
     },
     switchColor (e) {
       this.colorPick = e.target.value
@@ -248,15 +250,11 @@ export default {
     onClose () {
       this.parentToggleSetting(false)
     },
-    saveSetting () {
-      const loading = this.$message.loading(this.$t('label.save.setting'), 0)
-      this.$store.dispatch('SetThemeSetting', this.uiSettings)
-      setTimeout(() => {
-        loading()
-        this.$message.success(this.$t('label.success'))
-      }, 1000)
+    downloadSetting () {
+      this.downloadObjectAsJson(this.uiSettings)
     },
     resetSetting () {
+      this.uiSettings = {}
       this.layoutMode = 'light'
       this.colorPick = this.originalSetting['@primary-color']
       this.navBgColorPick = this.originalSetting['@navigation-background-color']
@@ -264,78 +262,20 @@ export default {
       this.projectNavBgColorPick = this.originalSetting['@project-nav-background-color']
       this.projectNavTextColorPick = this.originalSetting['@project-nav-text-color']
 
-      this.$store.dispatch('SetThemeSetting', {})
       this.switchLayoutMode()
 
       this.$config.theme = this.originalSetting
       window.less.modifyVars(this.$config.theme)
       this.$message.success(this.$t('label.success'))
     },
-    formatConfig (obj, dep) {
-      dep = dep || 1
-      const LN = '\n'
-      const TAB = '  '
-      let indent = ''
-      for (let i = 0; i < dep; i++) {
-        indent += TAB
-      }
-      let isArray = false
-      let arrayLastIsObj = false
-      let str = ''
-      let prefix = '{'
-      let subfix = '}'
-
-      if (Array.isArray(obj)) {
-        isArray = true
-        prefix = '['
-        subfix = ']'
-        str = obj.map((item, index) => {
-          let format = ''
-          if (typeof item === 'function') {
-            //
-          } else if (typeof item === 'object') {
-            arrayLastIsObj = true
-            format = `${LN}${indent}${this.formatConfig(item, dep + 1)},`
-          } else if ((typeof item === 'number' && !isNaN(item)) || typeof item === 'boolean') {
-            format = `${item},`
-          } else if (typeof item === 'string') {
-            format = `'${item}',`
-          }
-          if (index === obj.length - 1) {
-            format = format.substring(0, format.length - 1)
-          } else {
-            arrayLastIsObj = false
-          }
-          return format
-        }).join('')
-      } else if (typeof obj !== 'function' && typeof obj === 'object') {
-        str = Object.keys(obj).map((key, index, keys) => {
-          const val = obj[key]
-          let format = ''
-          if (typeof val === 'function') {
-            //
-          } else if (typeof val === 'object') {
-            format = `${LN}${indent}${key}: ${this.formatConfig(val, dep + 1)},`
-          } else if ((typeof val === 'number' && !isNaN(val)) || typeof val === 'boolean') {
-            format = `${LN}${indent}${key}: ${val},`
-          } else if (typeof val === 'string') {
-            format = `${LN}${indent}${key}: '${val}',`
-          }
-          if (index === keys.length - 1) {
-            format = format.substring(0, format.length - 1)
-          }
-          return format
-        }).join('')
-      }
-      const len = TAB.length
-      if (indent.length >= len) {
-        indent = indent.substring(0, indent.length - len)
-      }
-      if (!isArray || arrayLastIsObj) {
-        subfix = LN + indent + subfix
-      }
-
-      return `${prefix}${str}${subfix}`
+    downloadObjectAsJson (exportObj) {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportObj, null, 2))
+      const downloadAnchorNode = document.createElement('a')
+      downloadAnchorNode.setAttribute('href', dataStr)
+      downloadAnchorNode.setAttribute('download', 'theme.json')
+      document.body.appendChild(downloadAnchorNode)
+      downloadAnchorNode.click()
+      downloadAnchorNode.remove()
     }
   }
 }
@@ -394,8 +334,15 @@ export default {
   padding: 0 24px;
 
   &-alert {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
     margin: 20px 0 8px;
     word-break: break-word;
+    position: relative;
+
+    :deep(.ant-alert-icon) {
+    }
   }
 
   &-btn {

@@ -26,23 +26,23 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <span slot="name" slot-scope="text, record">
+      <template #name="{record}">
         <span>{{ record.displaytext || record.name }}</span>
         <div v-if="record.meta">
-          <template v-for="meta in record.meta">
+          <div v-for="meta in record.meta" :key="meta.key">
             <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
-          </template>
+          </div>
         </div>
-      </span>
-      <span slot="network" slot-scope="text, record">
+      </template>
+      <template #network="{record}">
         <a-select
           v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
           :defaultValue="validNetworks[record.id][0].id"
           @change="val => handleNetworkChange(record, val)"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="network in validNetworks[record.id]" :key="network.id">
             {{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}
@@ -51,8 +51,8 @@
         <span v-else>
           {{ $t('label.no.matching.network') }}
         </span>
-      </span>
-      <span slot="ipaddress" slot-scope="text, record">
+      </template>
+      <template #ipaddress="{record}">
         <check-box-input-pair
           layout="vertical"
           :resourceKey="record.id"
@@ -61,7 +61,7 @@
           :reversed="true"
           :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
           @handle-checkinputpair-change="setIpAddress" />
-      </span>
+      </template>
     </a-table>
   </div>
 </template>
@@ -104,17 +104,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.nic'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           dataIndex: 'network',
           title: this.$t('label.network'),
-          scopedSlots: { customRender: 'network' }
+          slots: { customRender: 'network' }
         },
         {
           dataIndex: 'ipaddress',
           title: this.$t('label.ipaddress'),
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         }
       ],
       loading: false,
@@ -156,13 +156,14 @@ export default {
     }
   },
   watch: {
-    items (newData, oldData) {
-      this.items = newData
-      this.selectedRowKeys = []
-      this.fetchNetworks()
+    items: {
+      deep: true,
+      handler () {
+        this.selectedRowKeys = []
+        this.fetchNetworks()
+      }
     },
-    zoneId (newData) {
-      this.zoneId = newData
+    zoneId () {
       this.fetchNetworks()
     }
   },
@@ -192,7 +193,7 @@ export default {
       for (const item of this.items) {
         this.validNetworks[item.id] = this.networks
         if (this.filterUnimplementedNetworks) {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x.state === 'Implemented')
+          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && x.type === 'Shared')))
         }
         if (this.filterMatchKey) {
           this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])

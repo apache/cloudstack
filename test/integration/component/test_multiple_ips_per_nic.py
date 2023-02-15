@@ -183,7 +183,7 @@ def createNetworkRules(
                 network.id,
                 vmguestip=vmguestip)
     except Exception as e:
-        self.debug("Exception occured while creating network rules: %s" % e)
+        self.debug("Exception occurred while creating network rules: %s" % e)
         return FAIL
     return PASS
 
@@ -340,7 +340,7 @@ class TestBasicOperations(cloudstackTestCase):
                 self.apiclient, id=(
                     virtual_machine.nic[0].id + random_gen()))
             self.fail(
-                "Adding secondary IP with wrong NIC id succeded, it shoud have failed")
+                "Adding secondary IP with wrong NIC id succeeded, it shoud have failed")
         except Exception as e:
             self.debug("Failed while adding secondary IP to wrong NIC")
 
@@ -350,7 +350,7 @@ class TestBasicOperations(cloudstackTestCase):
                 id=virtual_machine.nic[0].id,
                 ipaddress="255.255.255.300")
             self.fail(
-                "Adding secondary IP with wrong ipaddress succeded, it should have failed")
+                "Adding secondary IP with wrong ipaddress succeeded, it should have failed")
         except Exception as e:
             self.debug(
                 "Failed while adding wrong secondary IP to NIC of VM %s: %s" %

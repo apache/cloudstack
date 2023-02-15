@@ -18,12 +18,37 @@ package org.apache.cloudstack.annotation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import com.cloud.user.dao.UserDataDao;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
+import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
+import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
+import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibilityCmd;
+import org.apache.cloudstack.api.response.AnnotationResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -39,6 +64,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -62,31 +88,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.command.admin.annotation.AddAnnotationCmd;
-import org.apache.cloudstack.api.command.admin.annotation.ListAnnotationsCmd;
-import org.apache.cloudstack.api.command.admin.annotation.RemoveAnnotationCmd;
-import org.apache.cloudstack.api.command.admin.annotation.UpdateAnnotationVisibilityCmd;
-import org.apache.cloudstack.api.response.AnnotationResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 /**
  * @since 4.11
@@ -146,9 +153,46 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     private DiskOfferingDao diskOfferingDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private AutoScaleVmGroupDao autoScaleVmGroupDao;
+    @Inject
+    private UserDataDao userDataDao;
+    @Inject
+    EntityManager entityManager;
 
     private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
     private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+    public static final Map<EntityType, ApiCommandResourceType> s_typeMap = new HashMap<>();
+
+    static {
+        s_typeMap.put(EntityType.VM, ApiCommandResourceType.VirtualMachine);
+        s_typeMap.put(EntityType.VOLUME, ApiCommandResourceType.Volume);
+        s_typeMap.put(EntityType.SNAPSHOT, ApiCommandResourceType.Snapshot);
+        s_typeMap.put(EntityType.VM_SNAPSHOT, ApiCommandResourceType.VmSnapshot);
+        s_typeMap.put(EntityType.INSTANCE_GROUP, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.SSH_KEYPAIR, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.USER_DATA, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.NETWORK, ApiCommandResourceType.Network);
+        s_typeMap.put(EntityType.VPC, ApiCommandResourceType.Vpc);
+        s_typeMap.put(EntityType.PUBLIC_IP_ADDRESS, ApiCommandResourceType.IpAddress);
+        s_typeMap.put(EntityType.VPN_CUSTOMER_GATEWAY, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.TEMPLATE, ApiCommandResourceType.Template);
+        s_typeMap.put(EntityType.ISO, ApiCommandResourceType.Iso);
+        s_typeMap.put(EntityType.KUBERNETES_CLUSTER, ApiCommandResourceType.None);
+        s_typeMap.put(EntityType.SERVICE_OFFERING, ApiCommandResourceType.ServiceOffering);
+        s_typeMap.put(EntityType.DISK_OFFERING, ApiCommandResourceType.DiskOffering);
+        s_typeMap.put(EntityType.NETWORK_OFFERING, ApiCommandResourceType.NetworkOffering);
+        s_typeMap.put(EntityType.ZONE, ApiCommandResourceType.Zone);
+        s_typeMap.put(EntityType.POD, ApiCommandResourceType.Pod);
+        s_typeMap.put(EntityType.CLUSTER, ApiCommandResourceType.Cluster);
+        s_typeMap.put(EntityType.HOST, ApiCommandResourceType.Host);
+        s_typeMap.put(EntityType.DOMAIN, ApiCommandResourceType.Domain);
+        s_typeMap.put(EntityType.PRIMARY_STORAGE, ApiCommandResourceType.StoragePool);
+        s_typeMap.put(EntityType.SECONDARY_STORAGE, ApiCommandResourceType.ImageStore);
+        s_typeMap.put(EntityType.VR, ApiCommandResourceType.DomainRouter);
+        s_typeMap.put(EntityType.SYSTEM_VM, ApiCommandResourceType.SystemVm);
+        s_typeMap.put(EntityType.AUTOSCALE_VM_GROUP, ApiCommandResourceType.AutoScaleVmGroup);
+    }
 
     public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
         return kubernetesClusterHelpers;
@@ -188,6 +232,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         String userUuid = userVO.getUuid();
         checkAnnotationPermissions(type, userVO);
         isEntityOwnedByTheUser(type.name(), uuid, userVO);
+        updateResourceDetailsInContext(uuid, type);
 
         AnnotationVO annotation = new AnnotationVO(text, type, uuid, adminsOnly);
         annotation.setUserUuid(userUuid);
@@ -210,6 +255,17 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         }
     }
 
+    private void updateResourceDetailsInContext(String resourceUuid, EntityType resourceType) {
+        ApiCommandResourceType type = s_typeMap.get(resourceType);
+        if (type != null && !ApiCommandResourceType.None.equals(type)) {
+            CallContext.current().setEventResourceType(type);
+            Object obj = entityManager.findByUuid(type.getAssociatedClass(), resourceUuid);
+            if (obj != null) {
+                CallContext.current().setEventResourceId(((InternalIdentity)obj).getId());
+            }
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ANNOTATION_REMOVE, eventDescription = "removing an annotation on an entity")
     public AnnotationResponse removeAnnotation(RemoveAnnotationCmd removeAnnotationCmd) {
@@ -222,6 +278,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("Removing annotation uuid: %s - type: %s", uuid, annotation.getEntityType().name()));
         }
+        updateResourceDetailsInContext(annotation.getEntityUuid(), annotation.getEntityType());
         annotationDao.remove(annotation.getId());
 
         return createAnnotationResponse(annotation);
@@ -458,6 +515,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 return instanceGroupDao.findByUuid(entityUuid);
             case SSH_KEYPAIR:
                 return sshKeyPairDao.findByUuid(entityUuid);
+            case USER_DATA:
+                return userDataDao.findByUuid(entityUuid);
             case NETWORK:
                 return networkDao.findByUuid(entityUuid);
             case VPC:
@@ -471,6 +530,8 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
                 return templateDao.findByUuid(entityUuid);
             case KUBERNETES_CLUSTER:
                 return kubernetesClusterHelpers.get(0).findByUuid(entityUuid);
+            case AUTOSCALE_VM_GROUP:
+                return autoScaleVmGroupDao.findByUuid(entityUuid);
             default:
                 throw new CloudRuntimeException("Invalid entity type " + type);
         }

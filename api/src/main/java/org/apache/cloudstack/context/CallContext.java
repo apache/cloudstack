@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
@@ -56,6 +57,8 @@ public class CallContext {
     private String eventDetails;
     private String eventType;
     private boolean isEventDisplayEnabled = true; // default to true unless specifically set
+    private Long eventResourceId;
+    private ApiCommandResourceType eventResourceType;
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
@@ -220,6 +223,20 @@ public class CallContext {
         return register(user, account);
     }
 
+    /**
+     * Register child CallContext.
+     * @param parent - parent CallContext
+     * @param eventResourceType - command resource type
+     * @return Call context
+     * @throws CloudAuthenticationException
+     */
+    public static CallContext register(CallContext parent, ApiCommandResourceType eventResourceType) throws CloudAuthenticationException {
+        CallContext callContext = register(parent.getCallingUserId(), parent.getCallingAccountId());
+        callContext.setStartEventId(parent.getStartEventId());
+        callContext.setEventResourceType(eventResourceType);
+        return callContext;
+    }
+
     public static CallContext register(long callingUserId, long callingAccountId) throws CloudAuthenticationException {
         Account account = s_entityMgr.findById(Account.class, callingAccountId);
         if (account == null) {
@@ -325,6 +342,22 @@ public class CallContext {
 
     public void setEventDescription(String eventDescription) {
         this.eventDescription = eventDescription;
+    }
+
+    public Long getEventResourceId() {
+        return eventResourceId;
+    }
+
+    public void setEventResourceId(Long eventResourceId) {
+        this.eventResourceId = eventResourceId;
+    }
+
+    public ApiCommandResourceType getEventResourceType() {
+        return eventResourceType;
+    }
+
+    public void setEventResourceType(ApiCommandResourceType eventResourceType) {
+        this.eventResourceType = eventResourceType;
     }
 
     public Project getProject() {

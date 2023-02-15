@@ -112,7 +112,7 @@ class TestMigrationMaintainedPool(cloudstackTestCase):
                             0,
                             "Check list Storage pools response"
                         )
-            # Check if there are atleast two storage pools , else skip the test
+            # Check if there are at least two storage pools , else skip the test
             if len(storage_pools_response) < 2 :
                 self.skipTest("Atleast two storage pools are need to test Storage migration")
 
@@ -149,7 +149,7 @@ class TestMigrationMaintainedPool(cloudstackTestCase):
             self.assertNotEqual(
                         len(pools),
                         0,
-                        "Check if atleast one pool is suitable for migration"
+                        "Check if at least one pool is suitable for migration"
                         )
             pool = pools[0]
             self.debug("Migrating Volume-ID: %s to Pool: %s which is in Maintenance mode" % (volume.id, pool.id))

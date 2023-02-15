@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.vm;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -47,7 +48,6 @@ import com.cloud.vm.VirtualMachine;
 public class AssignVMCmd extends BaseCmd  {
     public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
-    private static final String s_name = "assignvirtualmachineresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -120,11 +120,6 @@ public class AssignVMCmd extends BaseCmd  {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public void execute() {
         try {
             UserVm userVm = _userVmService.moveVMToUser(this);
@@ -160,4 +155,13 @@ public class AssignVMCmd extends BaseCmd  {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getVmId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
 }

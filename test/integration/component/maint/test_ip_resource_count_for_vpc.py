@@ -125,7 +125,7 @@ class Services:
                 # Max networks allowed as per hypervisor
                 # Xenserver -> 5, VMWare -> 9
             },
- 
+
             "virtual_machine": {
                 "displayname": "Test VM",
                 "username": "root",
@@ -264,7 +264,7 @@ class TestIPResourceCountVPC(cloudstackTestCase):
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
 
-        responce=self.apiclient.updateResourceCount(cmd)
+        response=self.apiclient.updateResourceCount(cmd)
 
     def acquire_publicip(self, network, vpc):
         self.debug("Associating public IP for network: %s" % network.name)
@@ -279,7 +279,7 @@ class TestIPResourceCountVPC(cloudstackTestCase):
         return public_ip
 
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
-    def test_01_ip_resouce_count_vpc_network(self):
+    def test_01_ip_resource_count_vpc_network(self):
         """ Test IP count in VPC networks
         """
         self.debug("Creating a VPC offering..")
@@ -349,5 +349,3 @@ class TestIPResourceCountVPC(cloudstackTestCase):
         account_list = Account.list(self.apiclient, id=self.account.id)
         totalip = account_list[0].iptotal
         self.assertTrue(totalip - totalip_1 == 3, "publicip count is 3")
-
-

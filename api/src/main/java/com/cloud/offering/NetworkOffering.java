@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.offering;
 
+import java.util.Date;
+
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
-
-import java.util.Date;
 
 /**
  * Describes network offering
@@ -40,7 +40,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType
+        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
@@ -48,8 +48,10 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String SystemManagementNetwork = "System-Management-Network";
     public final static String SystemStorageNetwork = "System-Storage-Network";
     public final static String SystemPrivateGatewayNetworkOffering = "System-Private-Gateway-Network-Offering";
+    public final static String SystemPrivateGatewayNetworkOfferingWithoutVlan = "System-Private-Gateway-Network-Offering-Without-Vlan";
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public static final String DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE = "DefaultTungstenSharedNetworkOfferingWithSGService";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
@@ -85,6 +87,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     Integer getMulticastRateMbps();
 
     boolean isForVpc();
+
+    boolean isForTungsten();
 
     TrafficType getTrafficType();
 
@@ -141,6 +145,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isSupportingStrechedL2();
 
     boolean isSupportingPublicAccess();
+
+    boolean isSupportsVmAutoScaling();
 
     String getServicePackage();
 

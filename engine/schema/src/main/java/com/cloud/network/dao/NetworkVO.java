@@ -30,6 +30,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -38,6 +39,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.log4j.Logger;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.
@@ -46,6 +48,7 @@ import com.cloud.utils.net.NetUtils;
 @Entity
 @Table(name = "networks")
 public class NetworkVO implements Network {
+    static final Logger s_logger = Logger.getLogger(NetworkVO.class);
     @Id
     @TableGenerator(name = "networks_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "networks_seq", allocationSize = 1)
     @Column(name = "id")
@@ -106,9 +109,6 @@ public class NetworkVO implements Network {
     @Column(name = "redundant")
     boolean redundant;
 
-    @Column(name = "dns1")
-    String dns1;
-
     @Column(name = "domain_id")
     long domainId;
 
@@ -125,8 +125,17 @@ public class NetworkVO implements Network {
     @Column(name = "guru_data", length = 1024)
     String guruData;
 
+    @Column(name = "dns1")
+    String dns1;
+
     @Column(name = "dns2")
     String dns2;
+
+    @Column(name = "ip6Dns1")
+    String ip6Dns1;
+
+    @Column(name = "ip6Dns2")
+    String ip6Dns2;
 
     @Column(name = "network_domain")
     String networkDomain;
@@ -189,6 +198,12 @@ public class NetworkVO implements Network {
 
     @Transient
     PVlanType pVlanType;
+
+    @Column(name = "public_mtu")
+    Integer publicMtu;
+
+    @Column(name = "private_mtu")
+    Integer privateMtu;
 
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
@@ -255,7 +270,21 @@ public class NetworkVO implements Network {
         uuid = UUID.randomUUID().toString();
         ip6Gateway = that.getIp6Gateway();
         ip6Cidr = that.getIp6Cidr();
+        if (StringUtils.isNotBlank(that.getDns1())) {
+            this.dns1 = that.getDns1();
+        }
+        if (StringUtils.isNotBlank(that.getDns2())) {
+            this.dns2 = that.getDns2();
+        }
+        if (StringUtils.isNotBlank(that.getIp6Dns1())) {
+            this.ip6Dns1 = that.getIp6Dns1();
+        }
+        if (StringUtils.isNotBlank(that.getIp6Dns2())) {
+            this.ip6Dns2 = that.getIp6Dns2();
+        }
         this.externalId = externalId;
+        this.publicMtu = that.getPublicMtu();
+        this.privateMtu = that.getPrivateMtu();
     }
 
     /**
@@ -471,6 +500,7 @@ public class NetworkVO implements Network {
         return dataCenterId;
     }
 
+    @Override
     public String getDns1() {
         return dns1;
     }
@@ -479,12 +509,31 @@ public class NetworkVO implements Network {
         dns1 = dns;
     }
 
+    @Override
     public String getDns2() {
         return dns2;
     }
 
     public void setDns2(String dns) {
         dns2 = dns;
+    }
+
+    @Override
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
+
+    @Override
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
+
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
     }
 
     @Override
@@ -549,9 +598,7 @@ public class NetworkVO implements Network {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("Ntwk[");
-        buf.append(id).append("|").append(trafficType).append("|").append(networkOfferingId).append("]");
-        return buf.toString();
+        return String.format("Network {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\", \"networkofferingid\": %d}", id, name, uuid, networkOfferingId);
     }
 
     @Override
@@ -693,5 +740,21 @@ public class NetworkVO implements Network {
 
     public void setRouterIpv6(String routerIpv6) {
         this.routerIpv6 = routerIpv6;
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu;
+    }
+
+    public void setPrivateMtu(Integer privateMtu) {
+        this.privateMtu = privateMtu;
     }
 }

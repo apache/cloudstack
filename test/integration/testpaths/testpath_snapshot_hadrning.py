@@ -448,7 +448,7 @@ class TestSnapshotsHardning(cloudstackTestCase):
         """snapshot hardning
             1. Take VM snapshot then migrate the VM to another host
                 and again take volume snapshot and check its integrity
-            2. Verify that snapshot gets created successfuly while VM
+            2. Verify that snapshot gets created successfully while VM
                 is getting Migrated to another host
             3. Verify that snapshot should succeed after vm's are HA-ed
                 to different host and also check its integrity
@@ -460,10 +460,10 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 is still in progress start the VM and check
                 the integrity of the snapshot
             6. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Stop the VM Verify that the VM stops
+                in progress Stop the VM Verify that the VM stops
                 successfully and check integrity of snapshot
             7. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Reboot the VM
+                in progress Reboot the VM
                 Verify that the VM reboot successfully and
                 check integrity of snapshot
             8. Initiate ROOT volume snapshot and while snapshot is
@@ -860,7 +860,7 @@ class TestSnapshotsHardning(cloudstackTestCase):
             1. Take VM snapshot then migrate the VM to another
                 host and again take
                 volume snapshot and check its intigrity
-            2. Verify that snapshot gets created successfuly
+            2. Verify that snapshot gets created successfully
                 while VM is getting
                 Migrated to another host
             3. Verify that snapshot should succeed after vm's are
@@ -875,15 +875,15 @@ class TestSnapshotsHardning(cloudstackTestCase):
                 while snapshot is still in progress
                 start the VM and check the integrity of the snapshot
             6. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Stop the VM
+                in progress Stop the VM
                 Verify that the VM stops successfully and
                 check integrity of snapshot
             7. Initiate ROOT volume snapshot and while snapshot is
-                in pregress Reboot the VM
+                in progress Reboot the VM
                 Verify that the VM reboot successfully and
                 check integrity of snapshot
             8. Initiate ROOT volume snapshot and while snapshot is
-                in pregress create snapshot of the same volume
+                in progress create snapshot of the same volume
                 and check integrity of both the snapshots
             9. Initiate snapshot of DATA volume and while snapshot
                 is in progress detach the volume
@@ -1440,8 +1440,8 @@ class TestHardening(cloudstackTestCase):
             # which indicate two Storage Pools exist.
             assert (len(clusterid_tag_mapping)) >= 2 and\
                 (len(tags) for tags in clusterid_tag_mapping.values(
-                )) >= 2, "There must be atleast two Clusters and\
-                each must have atleast two cluster wide storage pools in\
+                )) >= 2, "There must be at least two Clusters and\
+                each must have at least two cluster wide storage pools in\
                 Up state in the setup"
 
         except Exception as e:

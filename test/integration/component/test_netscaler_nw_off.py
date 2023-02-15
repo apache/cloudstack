@@ -260,7 +260,7 @@ class TestAddMultipleNetScaler(cloudstackTestCase):
         self.assertEqual(
             isinstance(physical_networks, list),
             True,
-            "There should be atleast one physical network for advanced zone"
+            "There should be at least one physical network for advanced zone"
             )
         physical_network = physical_networks[0]
         self.debug("Adding netscaler device: %s" %
@@ -435,7 +435,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
         self.assertEqual(
                 isinstance(physical_networks, list),
                 True,
-                "There should be atleast one physical network for advanced zone"
+                "There should be at least one physical network for advanced zone"
                 )
         self.debug("Adding netscaler device: %s" %
                                     self.services["netscaler_1"]["ipaddress"])
@@ -478,7 +478,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
         self.assertEqual(
                 isinstance(physical_networks, list),
                 True,
-                "There should be atleast one physical network for advanced zone"
+                "There should be at least one physical network for advanced zone"
                 )
         physical_network = physical_networks[0]
 
@@ -984,7 +984,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     @attr(configuration = "network.gc")
     @attr(tags = ["advancedns"])
     def test_04_delete_account_after_capacity_full(self):
-        """Test delete and add resouces after netscaler device capacity is full
+        """Test delete and add resources after netscaler device capacity is full
         """
 
 

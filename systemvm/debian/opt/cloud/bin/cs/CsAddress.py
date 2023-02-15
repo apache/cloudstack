@@ -135,6 +135,15 @@ class CsInterface:
     def get_ip(self):
         return self.get_attr("public_ip")
 
+    def get_ip6(self):
+        if not self.config.is_vpc():
+            return self.config.cmdline().get_dev_ip6prelen(self.get_device())
+        if self.is_public():
+            return self.config.guestnetwork().get_router_ip6prelen()
+        elif self.is_guest():
+            return self.config.guestnetwork().get_dev_ip6prelen(self.get_device())
+        return self.get_attr("public_ip6")
+
     def get_network(self):
         return self.get_attr("network")
 
@@ -147,6 +156,19 @@ class CsInterface:
         else:
             return self.config.cmdline().get_guest_gw()
 
+    def get_gateway6(self):
+        if self.config.is_vpc():
+            if self.is_public():
+                return self.config.guestnetwork().get_router_ip6gateway()
+            elif self.is_guest():
+                return self.config.guestnetwork().get_dev_ip6gateway(self.get_device())
+        else:
+            if self.is_public():
+                return self.config.cmdline().get_ip6gateway()
+            elif self.is_guest():
+                return self.config.cmdline().get_guest_ip6gateway()
+        return self.get_attr("gateway6")
+
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)
         net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
@@ -155,9 +177,23 @@ class CsInterface:
     def get_gateway_cidr(self):
         return "%s/%s" % (self.get_gateway(), self.get_size())
 
+    def get_gateway6_cidr(self):
+        gw6 = self.get_gateway6()
+        cidr6_size = self.get_cidr6_size()
+        if not gw6 or not cidr6_size or gw6 == "ERROR" or cidr6_size == "ERROR":
+            return False
+        return "%s/%s" % (self.get_gateway6(), self.get_cidr6_size())
+
     def get_size(self):
         """ Return the network size in bits (24, 16, 8 etc) """
         return self.get_attr("size")
+
+    def get_cidr6_size(self):
+        if self.config.is_vpc() and self.is_guest():
+            return self.config.guestnetwork().get_dev_ip6cidr(self.get_device())
+        elif not self.config.is_vpc() and self.is_guest():
+            return self.config.cmdline().get_guest_ip6cidr_size()
+        return self.get_attr("size6")
 
     def get_device(self):
         return self.get_attr("device")
@@ -260,6 +296,7 @@ class CsDevice:
 
 
 class CsIP:
+    DEFAULT_MTU = '1500'
 
     def __init__(self, dev, config):
         self.dev = dev
@@ -283,6 +320,8 @@ class CsIP:
             try:
                 logging.info("Configuring address %s on device %s", self.ip(), self.dev)
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
+                CsHelper.execute(cmd)
+                cmd = "ifconfig %s mtu %s"  % (self.dev, self.mtu())
                 CsHelper.execute(cmd)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
@@ -328,6 +367,9 @@ class CsIP:
             if(self.cl.get_gateway()):
                 route.add_defaultroute(self.cl.get_gateway())
 
+        if self.config.is_router() and self.cl.get_ip6gateway():
+            route.add_defaultroute_v6(self.cl.get_ip6gateway())
+
     def set_mark(self):
         cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
             (self.getDevice(), self.dnum)
@@ -350,6 +392,12 @@ class CsIP:
         if "public_ip" in self.address:
             return self.address['public_ip']
         return "unknown"
+
+    def mtu(self):
+        logging.info(self.address)
+        if "mtu" in self.address:
+            return self.address['mtu']
+        return CsIP.DEFAULT_MTU
 
     def setup_router_control(self):
         if self.config.is_vpc():
@@ -384,13 +432,27 @@ class CsIP:
                             "-d %s/32 -j FIREWALL_%s" % (self.address['public_ip'], self.address['public_ip'])])
             self.fw.append(["mangle", "front",
                             "-A FIREWALL_%s " % self.address['public_ip'] +
-                            "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
+                            "-m state --state RELATED,ESTABLISHED -j RETURN"])
             self.fw.append(["mangle", "",
                             "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-I VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
+            self.fw.append(
+                ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "front", "-A INPUT -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "front", "-A OUTPUT -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i eth0 -o %s" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i %s -o eth0" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -o %s ! -i eth0 -p tcp" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i %s ! -o eth0 -p tcp" % (self.dev, self.dev)])
             self.fw.append(["nat", "",
                             "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
             self.fw.append(["mangle", "",
@@ -498,7 +560,7 @@ class CsIP:
                     if not inf.startswith("eth"):
                         continue
                     for address in addresses:
-                        if "nw_type" in address and address["nw_type"] == "guest":
+                        if "nw_type" in address and address["nw_type"] == "guest" and address["add"]:
                             self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
                                             (address["network"], self.address["network"], self.dev)])
                             self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
@@ -517,18 +579,17 @@ class CsIP:
             self.fw.append(
                 ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
             self.fw.append(
-                ["", "front", "-A NETWORK_STATS_%s -s %s -o %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+                ["", "front", "-A INPUT -j NETWORK_STATS_%s" % self.dev])
             self.fw.append(
-                ["", "front", "-A NETWORK_STATS_%s -d %s -i %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
-
-        self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
-        self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
-        self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
-
-        self.fw.append(["", "", "-A NETWORK_STATS -i eth0 -o eth2 -p tcp"])
-        self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
-        self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
-        self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
+                ["", "front", "-A OUTPUT -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -s %s -o %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -d %s -i %s" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s ! -s %s -o %s -p tcp" % (self.dev, self.cl.get_vpccidr(), self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s ! -d %s -i %s -p tcp" % (self.dev, self.cl.get_vpccidr(), self.dev)])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -570,6 +631,9 @@ class CsIP:
                         for address in addresses:
                             if "nw_type" in address and address["nw_type"] == "guest":
                                 route.add_network_route(self.dev, str(address["network"]))
+
+                if self.get_type() in ["public"]:
+                    CsRule(self.dev).addRule("from " + str(self.address["network"]))
 
                 route.add_network_route(self.dev, str(self.address["network"]))
 

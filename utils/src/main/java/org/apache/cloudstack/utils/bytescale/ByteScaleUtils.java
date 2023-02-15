@@ -15,13 +15,14 @@
 package org.apache.cloudstack.utils.bytescale;
 
 /**
- * This class provides a facility to convert bytes through his scales (b, Kib, Kb, Mib, Mb...).
+ * This class provides a facility to convert bytes through the scales (B, KiB, KB, MiB, MB...).
  *
  */
 public class ByteScaleUtils {
 
     public static final long KiB = 1024;
     public static final long MiB = KiB * 1024;
+    public static final long GiB = MiB * 1024;
 
     private ByteScaleUtils() {}
 
@@ -29,19 +30,39 @@ public class ByteScaleUtils {
      * Converts mebibytes to bytes.
      *
      * @param mib The value to convert to bytes (eq: 1, 2, 3, ..., 42,...).
-     * @return The parameter multiplied by 1048576 (1024 * 1024, 1 MiB).
+     * @return The parameter multiplied by 2²⁰ (1048576 | 1024 * 1024 | 1 mebibyte).
      */
-    public static long mibToBytes(long mib) {
+    public static long mebibytesToBytes(long mib) {
         return mib * MiB;
     }
 
     /**
-     * Converts bytes to kibibytes.
+     * Converts bytes to kibibyte.
      *
-     * @param b The value in bytes to convert to kibibytes.
-     * @return The parameter divided by 1024 (1 KiB).
+     * @param bytes The value in bytes to convert to kibibyte.
+     * @return The parameter divided by 2¹⁰ (1024 | 1 kibibyte).
      */
-    public static long bytesToKib(long b) {
-        return b / KiB;
+    public static long bytesToKibibytes(long bytes) {
+        return bytes / KiB;
+    }
+
+    /**
+     * Converts bytes to mebibytes.
+     *
+     * @param bytes The value in bytes to convert to mebibytes.
+     * @return The parameter divided by 2²⁰ (1048576 | 1024 * 1024 | 1 mebibyte).
+     */
+    public static long bytesToMebibytes(long bytes) {
+        return bytes / MiB;
+    }
+
+    /**
+     * Converts bytes to gibibytes.
+     *
+     * @param b The value in bytes to convert to gibibytes.
+     * @return The parameter divided by 1024 * 1024 * 1024 (1 GiB).
+     */
+    public static long bytesToGibibytes(long b) {
+        return b / GiB;
     }
 }

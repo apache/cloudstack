@@ -19,10 +19,16 @@
   <a-breadcrumb class="breadcrumb">
     <a-breadcrumb-item v-for="(item, index) in breadList" :key="index">
       <router-link
-        v-if="item && item.name"
+        v-if="item && item.name && !tungstenPaths.includes(item.path)"
         :to="{ path: item.path === '' ? '/' : item.path }"
       >
-        <a-icon v-if="index == 0" :type="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
+        <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
+        <span v-if="item.meta.title">{{ $t(item.meta.title) }}</span>
+      </router-link>
+      <router-link
+        v-else-if="tungstenPaths.includes(item.path)"
+        :to="{ path: item.path === '' ? '/' : item.path, query: { zoneid: $route.query.zoneid } }">
+        <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
         {{ $t(item.meta.title) }}
       </router-link>
       <span v-else-if="$route.params.id">
@@ -34,15 +40,15 @@
           </span>
         </label>
         <label v-else>
-          {{ resource.displayname || resource.displaytext || resource.name || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
+          {{ resource.displayname || resource.name || resource.displaytext || resource.hostname || resource.username || resource.ipaddress || $route.params.id }}
         </label>
       </span>
       <span v-else>
         {{ $t(item.meta.title) }}
       </span>
-      <span v-if="index === (breadList.length - 1)" style="margin-left: 5px">
+      <span v-if="index === (breadList.length - 1)" style="margin-left: 8px">
         <a-tooltip placement="bottom">
-          <template slot="title">
+          <template #title>
             {{ $t('label.open.documentation') }}
           </template>
           <a
@@ -50,7 +56,7 @@
             style="margin-right: 12px"
             :href="$config.docBase + '/' + $route.meta.docHelp"
             target="_blank">
-            <a-icon type="question-circle-o"></a-icon>
+            <QuestionCircleOutlined />
           </a>
         </a-tooltip>
         <slot name="end">
@@ -75,14 +81,16 @@ export default {
   data () {
     return {
       name: '',
-      breadList: []
+      breadList: [],
+      tungstenPaths: ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy']
     }
   },
   created () {
     this.getBreadcrumb()
   },
   watch: {
-    $route () {
+    '$route.fullPath' () {
       this.getBreadcrumb()
     }
   },
@@ -90,8 +98,9 @@ export default {
     getBreadcrumb () {
       this.name = this.$route.name
       this.breadList = []
-      this.$route.matched.forEach((item) => {
-        if (item && item.parent && item.parent.name !== 'index' && !item.path.endsWith(':id')) {
+      this.$route.matched.forEach((item, idx) => {
+        const parent = this.$route.matched[idx - 1]
+        if (item && parent && parent.name !== 'index' && !item.path.endsWith(':id')) {
           this.breadList.pop()
         }
         this.breadList.push(item)
