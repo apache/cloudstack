@@ -77,7 +77,7 @@ public class CreateTungstenFabricPublicNetworkCmdTest {
                 ArgumentMatchers.any())).thenReturn(publicNetwork);
         PhysicalNetworkVO physicalNetwork = Mockito.mock(PhysicalNetworkVO.class);
         Mockito.when(physicalNetwork.getIsolationMethods()).thenReturn(Arrays.asList("TF"));
-        Mockito.when(physicalNetworkDao.findById(ArgumentMatchers.anyLong())).thenReturn(physicalNetwork);
+        Mockito.when(physicalNetworkDao.listByZoneAndTrafficType(ArgumentMatchers.anyLong(), ArgumentMatchers.any())).thenReturn(Arrays.asList(physicalNetwork));
         Mockito.when(vlanDao.createSearchCriteria()).thenReturn(sc);
         Mockito.when(vlanDao.listVlansByNetworkId(ArgumentMatchers.anyLong())).thenReturn(pubVlanVOList);
 

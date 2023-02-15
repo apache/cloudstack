@@ -109,20 +109,24 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
                     Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
-                    PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findById(managementNetwork.getPhysicalNetworkId());
-                    if (physicalNetwork.getIsolationMethods().contains("TF")) {
-                        NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
-                                Network.Service.Connectivity, Network.Provider.Tungsten);
-                        networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                    List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
+                    if (physicalNetworks.isEmpty() || !physicalNetworks.get(0).getIsolationMethods().contains("TF")) {
+                        SuccessResponse response = new SuccessResponse(getCommandName());
+                        response.setDisplayText("Tungsten-Fabric service is not configured as the isolation method is not TF");
+                        setResponseObject(response);
+                        return;
+                    }
+                    NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
+                            Network.Service.Connectivity, Network.Provider.Tungsten);
+                    networkServiceMapDao.persist(managementNetworkServiceMapVO);
 
-                        List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
-                        for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
-                            if (networkOffering.getTrafficType() == Networks.TrafficType.Management) {
-                                NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
-                                        new NetworkOfferingServiceMapVO(
-                                                networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
-                                networkOfferingServiceMapDao.persist(publicNetworkOfferingServiceMapVO);
-                            }
+                    List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
+                    for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
+                        if (networkOffering.getTrafficType() == Networks.TrafficType.Management) {
+                            NetworkOfferingServiceMapVO publicNetworkOfferingServiceMapVO =
+                                    new NetworkOfferingServiceMapVO(
+                                            networkOffering.getId(), Network.Service.Connectivity, Network.Provider.Tungsten);
+                            networkOfferingServiceMapDao.persist(publicNetworkOfferingServiceMapVO);
                         }
                     }
                 }
@@ -173,21 +177,21 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                 physicalNetworkServiceProvider.setState(PhysicalNetworkServiceProvider.State.Enabled);
                 physicalNetworkServiceProviderDao.persist(physicalNetworkServiceProvider);
 
-                Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-                PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findById(publicNetwork.getPhysicalNetworkId());
                 boolean isTungstenSupportedByPublicNetwork = false;
-                if (physicalNetwork.getIsolationMethods().contains("TF")) {
+                List<PhysicalNetworkVO> publicPhysicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
+                if (!publicPhysicalNetworks.isEmpty() && publicPhysicalNetworks.get(0).getIsolationMethods().contains("TF")) {
+                    Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
                     isTungstenSupportedByPublicNetwork = true;
                     NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
                             Network.Service.Connectivity, Network.Provider.Tungsten);
                     networkServiceMapDao.persist(publicNetworkServiceMapVO);
                 }
 
-                Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
-                physicalNetwork = physicalNetworkDao.findById(publicNetwork.getPhysicalNetworkId());
                 boolean isTungstenSupportedByManagementNetwork = false;
-                if (physicalNetwork.getIsolationMethods().contains("TF")) {
-                    isTungstenSupportedByPublicNetwork = true;
+                List<PhysicalNetworkVO> mgmtPhysicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
+                if (!mgmtPhysicalNetworks.isEmpty() && mgmtPhysicalNetworks.get(0).getIsolationMethods().contains("TF")) {
+                    isTungstenSupportedByManagementNetwork = true;
+                    Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
                     NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
                             Network.Service.Connectivity, Network.Provider.Tungsten);
                     networkServiceMapDao.persist(managementNetworkServiceMapVO);

@@ -78,13 +78,13 @@ public class CreateTungstenFabricPublicNetworkCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
         ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
-        PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findById(publicNetwork.getPhysicalNetworkId());
-        if (!physicalNetwork.getIsolationMethods().contains("TF")) {
+        List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
+        if (physicalNetworks.isEmpty() || !physicalNetworks.get(0).getIsolationMethods().contains("TF")) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setDisplayText("Tungsten-Fabric public network is not created as the isolation method is not TF");
             setResponseObject(response);
         }
+        Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
         SearchCriteria<VlanVO> sc = vlanDao.createSearchCriteria();
         sc.setParameters("network_id", publicNetwork.getId());
         List<VlanVO> pubVlanVOList = vlanDao.listVlansByNetworkId(publicNetwork.getId());

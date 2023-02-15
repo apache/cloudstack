@@ -2054,9 +2054,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (final NetworkElement element : networkElements) {
             if (providersToImplement.contains(element.getProvider())) {
-                if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
-                            + network.getPhysicalNetworkId());
+                Long physicalNetworkId = _networkModel.getPhysicalNetworkId(network);
+                if (!_networkModel.isProviderEnabledInPhysicalNetwork(physicalNetworkId, element.getProvider().getName())) {
+                    throw new CloudRuntimeException(String.format("Service provider %s either doesn't exist or is not enabled with physical network (id: %s) of network (id: %s)",
+                            element.getProvider().getName(), physicalNetworkId, network.getId()));
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
