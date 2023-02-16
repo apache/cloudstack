@@ -200,6 +200,7 @@ class TestGlobalACLs(cloudstackTestCase):
 
         # Creating ACL rule
         acl_rule = NetworkACL.create(self.apiclient, services=self.services["rule"], aclid=acl.id)
+        self.cleanup.append(acl_rule)
 
         self.debug("Deleting ACL rule as a user, should raise exception.")
         self.assertRaisesRegex(Exception, "Only Root Admin can delete global ACL rules.",
@@ -210,6 +211,7 @@ class TestGlobalACLs(cloudstackTestCase):
 
         self.debug("Deleting ACL rule as a root admin, should work.")
         NetworkACL.delete(acl_rule, self.admin_apiclient)
+        self.cleanup.remove(acl_rule)
 
         # Verify if the number of ACL rules is equal to four, i.e. the number of rules
         # for the default ACLs `default_allow` (2 rules) and `default_deny` (2 rules) ACLs
@@ -226,6 +228,7 @@ class TestGlobalACLs(cloudstackTestCase):
 
         # Creating ACL list. Not adding to cleanup as it will be deleted in this method
         acl = NetworkACLList.create(apiclient=self.apiclient, services={}, name="acl", description="acl")
+        self.cleanup.append(acl)
 
         self.debug("Deleting ACL list as a normal user, should raise exception.")
         self.assertRaisesRegex(Exception, "Only Root Admin can delete global ACLs.",
@@ -237,6 +240,7 @@ class TestGlobalACLs(cloudstackTestCase):
 
         self.debug("Deleting ACL list as a root admin, should work.")
         acl.delete(apiclient=self.admin_apiclient)
+        self.cleanup.remove(acl)
 
         # Verify if number of ACLs is equal to two, i.e. the number of default ACLs `default_allow` and `default_deny`
         number_of_acls = NetworkACLList.list(apiclient=self.admin_apiclient)
