@@ -1022,7 +1022,22 @@ export default {
           }
         }
         this.stepData.stepMove.push('tungsten')
+        await this.enableTungstenInZone()
         await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async enableTungstenInZone () {
+      const configParams = {}
+      configParams.name = 'tungsten.plugin.enable'
+      configParams.value = true
+      configParams.zoneid = this.stepData.zoneReturned.id
+
+      try {
+        await this.updateConfiguration(configParams)
       } catch (e) {
         this.messageError = e
         this.processStatus = STATUS_FAILED
