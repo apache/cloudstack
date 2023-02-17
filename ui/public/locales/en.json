@@ -108,6 +108,7 @@
 "label.action.edit.domain": "Edit domain",
 "label.action.edit.instance": "Edit instance",
 "label.action.edit.iso": "Edit ISO",
+"label.action.edit.template": "Edit template",
 "label.action.edit.zone": "Edit zone",
 "label.action.enable.two.factor.authentication": "Enabled Two factor authentication",
 "label.action.verify.two.factor.authentication": "Verified Two factor authentication",
