@@ -138,7 +138,11 @@
         <module>user-authenticators/plain-text</module>
         <module>user-authenticators/saml2</module>
         <module>user-authenticators/sha256salted</module>
-   </modules>
+
+        <module>user-two-factor-authenticators/totp</module>
+        <module>user-two-factor-authenticators/static-pin</module>
+
+    </modules>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -159,6 +163,16 @@
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-config</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.taimos</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

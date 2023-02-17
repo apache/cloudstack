@@ -25,7 +25,6 @@ import com.cloud.network.element.TungstenProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.vm.VMInstanceVO;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddressGroupResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricApplicationPolicySetResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallPolicyResponse;
@@ -41,13 +40,6 @@ import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import java.util.List;
 
 public interface TungstenService {
-
-    static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<Boolean>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
-    "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
-
-    static Boolean isTungstenEnabled(long zoneId) {
-        return TUNGSTEN_ENABLED.valueIn(zoneId);
-    }
 
     String getTungstenProjectFqn(Network network);
 

@@ -590,7 +590,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         vlan: [{ required: true, message: this.$t('message.please.enter.value') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],

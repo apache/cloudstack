@@ -42,9 +42,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listConfigurations", description = "Lists all configurations.", responseObject = ConfigurationResponse.class,
+@APICommand(name = ListCfgsByCmd.APINAME, description = "Lists all configurations.", responseObject = ConfigurationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCfgsByCmd extends BaseListCmd {
+
+    public static final String APINAME = "listConfigurations";
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 
 

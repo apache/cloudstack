@@ -522,7 +522,8 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None, userdataid=None, userdatadetails=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
+               userdataid=None, userdatadetails=None, extraconfig=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -677,6 +678,9 @@ class VirtualMachine:
 
         if boottype:
             cmd.boottype = boottype
+
+        if extraconfig:
+            cmd.extraconfig = extraconfig
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 

@@ -63,6 +63,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -314,6 +315,13 @@ public class VirtualMachineManagerImplTest {
         String[] newDOStorageTags = {"z","x","y"};
         when(mockCurrentDiskOffering.getTagsArray()).thenReturn(oldDOStorageTags);
         when(diskOfferingMock.getTagsArray()).thenReturn(newDOStorageTags);
+
+        virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckIfCanUpgradeFail() {
+        when(serviceOfferingMock.getState()).thenReturn(ServiceOffering.State.Inactive);
 
         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
     }

@@ -4648,6 +4648,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
-                PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled};
+                PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
+                TUNGSTEN_ENABLED };
     }
 }

@@ -21,8 +21,8 @@ import java.nio.charset.Charset;
 public interface RfbConstants {
 
     public static final String RFB_PROTOCOL_VERSION_MAJOR = "RFB 003.";
-    // public static final String VNC_PROTOCOL_VERSION_MINOR = "003";
     public static final String VNC_PROTOCOL_VERSION_MINOR = "008";
+    public static final String VNC_PROTOCOL_VERSION_MINOR_TUNNEL = "003";
     public static final String RFB_PROTOCOL_VERSION = RFB_PROTOCOL_VERSION_MAJOR + VNC_PROTOCOL_VERSION_MINOR;
 
     /**

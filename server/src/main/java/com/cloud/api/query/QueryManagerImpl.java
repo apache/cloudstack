@@ -132,6 +132,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -532,7 +533,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object type = null;
         String accountName = null;
         Object state = null;
-        Object keyword = null;
+        String keyword = null;
 
         Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive,
                 null);
@@ -561,7 +562,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object type = cmd.getAccountType();
         String accountName = cmd.getAccountName();
         Object state = cmd.getState();
-        Object keyword = cmd.getKeyword();
+        String keyword = cmd.getKeyword();
 
         Long domainId = cmd.getDomainId();
         boolean recursive = cmd.isRecursive();
@@ -574,7 +575,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<UserAccountJoinVO>, Integer> getUserListInternal(Account caller, List<Long> permittedAccounts, boolean listAll, Long id, Object username, Object type,
-            String accountName, Object state, Object keyword, Long domainId, boolean recursive, Filter searchFilter) {
+            String accountName, Object state, String keyword, Long domainId, boolean recursive, Filter searchFilter) {
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, recursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
@@ -618,7 +619,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ssc.addOr("email", Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", Op.LIKE, "%" + keyword + "%");
             ssc.addOr("accountName", Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountType", Op.LIKE, "%" + keyword + "%");
+            if (EnumUtils.isValidEnum(Account.Type.class, keyword.toUpperCase())) {
+                ssc.addOr("accountType", Op.EQ, EnumUtils.getEnum(Account.Type.class, keyword.toUpperCase()));
+            }
 
             sc.addAnd("username", Op.SC, ssc);
         }
