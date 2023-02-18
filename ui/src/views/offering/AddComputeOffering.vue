@@ -683,6 +683,7 @@ export default {
     this.initForm()
     this.fetchData()
     this.isPublic = isAdmin()
+    this.form.ispublic = this.isPublic
   },
   methods: {
     initForm () {
@@ -764,7 +765,6 @@ export default {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
       } else if (this.isDomainAdmin()) {
-        this.form.ispublic = false
         this.checkIfDomainAdminIsAllowedToInformTag()
         if (this.isDomainAdminAllowedToInformTags) {
           this.fetchStorageTagData()
