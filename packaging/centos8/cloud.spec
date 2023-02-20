@@ -391,10 +391,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 python_dir=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 if [ ! -z $python_dir ];then
-  mkdir -p $python_dir/cloudutils $python_dir/__pycache__
-  cp -f %{_datadir}/%{name}-common/python-site/cloudutils/* $python_dir/cloudutils/
-  cp -f %{_datadir}/%{name}-common/python-site/__pycache__/* $python_dir/__pycache__/
-  cp -f %{_datadir}/%{name}-common/python-site/cloud_utils.py $python_dir/
+  cp -f -r /usr/share/cloudstack-common/python-site/* $python_dir/
 fi
 
 %preun management
@@ -477,7 +474,8 @@ if [ -d "%{_sysconfdir}/cloud" ] ; then
     mv %{_sysconfdir}/cloud %{_sysconfdir}/cloud.rpmsave
 fi
 
-%post agent
+%posttrans agent
+
 if [ "$1" == "2" ] ; then
     echo "Running %{_bindir}/%{name}-agent-upgrade to update bridge name for upgrade from CloudStack 4.0.x (and before) to CloudStack 4.1 (and later)"
     %{_bindir}/%{name}-agent-upgrade
@@ -502,7 +500,6 @@ fi
 
 systemctl daemon-reload
 
-%posttrans agent
 # Print help message
 if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
     sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
