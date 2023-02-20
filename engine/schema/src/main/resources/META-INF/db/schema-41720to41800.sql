@@ -638,7 +638,7 @@ WHERE ntwk_offering_service_map.service = 'Lb'
     AND (SELECT COUNT(id) AS count FROM `network_offering_view` WHERE supports_vm_autoscaling = 1) = 0;
 
 -- UserData as first class resource (PR #6202)
-CREATE TABLE `cloud`.`user_data` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_data` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'UUID of the user data',
   `name` varchar(256) NOT NULL COMMENT 'name of the user data',
@@ -652,13 +652,13 @@ CREATE TABLE `cloud`.`user_data` (
   CONSTRAINT `uc_userdata__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data' AFTER `user_data`;
-ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_details` mediumtext DEFAULT NULL COMMENT 'value of the comma-separated list of parameters' AFTER `user_data_id`;
-ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__user_data_id` FOREIGN KEY `fk_user_vm__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data" AFTER `user_data`');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.user_vm', 'user_data', 'id');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_details', 'mediumtext DEFAULT NULL COMMENT "value of the comma-separated list of parameters" AFTER `user_data_id`');
 
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data';
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_link_policy` varchar(255) DEFAULT NULL COMMENT 'user data link policy with template';
-ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `fk_vm_template__user_data_id` FOREIGN KEY `fk_vm_template__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data"');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.vm_template', 'user_data', 'id');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_link_policy', 'varchar(255) DEFAULT NULL COMMENT "user data link policy with template"');
 
 -- Added userdata details to template
 DROP VIEW IF EXISTS `cloud`.`template_view`;
