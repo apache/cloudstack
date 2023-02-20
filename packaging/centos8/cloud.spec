@@ -387,12 +387,15 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
-%pre common
+%posttrans common
 
 python_dir=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
-mkdir -p %{_datadir}/%{name}-common
-rm -f %{_datadir}/%{name}-common/python-site || true
-ln -s $python_dir %{_datadir}/%{name}-common/python-site
+if [ ! -z $python_dir ];then
+  mkdir -p $python_dir/cloudutils $python_dir/__pycache__
+  cp -f %{_datadir}/%{name}-common/python-site/cloudutils/* $python_dir/cloudutils/
+  cp -f %{_datadir}/%{name}-common/python-site/__pycache__/* $python_dir/__pycache__/
+  cp -f %{_datadir}/%{name}-common/python-site/cloud_utils.py $python_dir/
+fi
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
@@ -592,7 +595,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
-#%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
 %{_datadir}/%{name}-management/setup/wheel/*.whl
 
 %files agent
