@@ -391,10 +391,11 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 python_dir=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 if [ ! -z $python_dir ];then
-  mkdir -p $python_dir/cloudutils $python_dir/__pycache__
+  mkdir -p $python_dir/cloudutils
   cp -f %{_datadir}/%{name}-common/python-site/cloudutils/* $python_dir/cloudutils/
-  cp -f %{_datadir}/%{name}-common/python-site/__pycache__/* $python_dir/__pycache__/
   cp -f %{_datadir}/%{name}-common/python-site/cloud_utils.py $python_dir/
+  python3 -m py_compile $python_dir/cloud_utils.py
+  python3 -m compileall $python_dir/cloudutils
 fi
 
 %preun management
