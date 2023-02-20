@@ -95,7 +95,7 @@ class TestGlobalACLs(cloudstackTestCase):
         return
 
     def tearDown(self):
-        super(TestGlobalACLs, cls).tearDown()
+        super(TestGlobalACLs, self).tearDown()
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_create_global_acl(self):
