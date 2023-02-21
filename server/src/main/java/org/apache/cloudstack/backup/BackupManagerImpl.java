@@ -622,6 +622,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (!backupProvider.restoreVMFromBackup(vm, backup)) {
                 throw new CloudRuntimeException(String.format("Error restoring %s from backup [%s].", vm, backupDetailsInMessage));
             }
+        // The restore process is executed by a backup provider outside of ACS, I am using the catch-all (Exception) to
+        // ensure that no provider-side exception is missed. Therefore, we have a proper handling of exceptions, and rollbacks if needed.
         } catch (Exception e) {
             LOG.error(String.format("Failed to restore backup [%s] due to: [%s].", backupDetailsInMessage, e.getMessage()), e);
             updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
