@@ -394,7 +394,6 @@ export default {
       this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         vpcid: [{ required: true, message: this.$t('message.error.select') }]
@@ -430,7 +429,7 @@ export default {
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
-          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true && zone.type !== 'Edge') {
             this.zones.push(zone)
           }
         }

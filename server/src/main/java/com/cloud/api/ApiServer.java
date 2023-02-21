@@ -160,6 +160,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -1069,6 +1070,18 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.SESSIONKEY.equalsIgnoreCase(attrName)) {
                     response.setSessionKey(attrObj.toString());
                 }
+                if (ApiConstants.IS_2FA_ENABLED.equalsIgnoreCase(attrName)) {
+                    response.set2FAenabled(attrObj.toString());
+                }
+                if (ApiConstants.IS_2FA_VERIFIED.equalsIgnoreCase(attrName)) {
+                    response.set2FAverfied(attrObj.toString());
+                }
+                if (ApiConstants.PROVIDER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setProviderFor2FA(attrObj.toString());
+                }
+                if (ApiConstants.ISSUER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setIssuerFor2FA(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1131,6 +1144,20 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezone", timezone);
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
+
+            boolean is2faEnabled = false;
+            if (userAcct.isUser2faEnabled() || (Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())))) {
+                is2faEnabled = true;
+            }
+            String issuerFor2FA = AccountManagerImpl.userTwoFactorAuthenticationIssuer.valueIn(userAcct.getDomainId());
+            session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(is2faEnabled));
+            if (!is2faEnabled) {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
+            } else {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
+            }
+            session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
+            session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back

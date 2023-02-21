@@ -37,6 +37,11 @@ export default {
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
+    name: 'metrics',
+    resourceType: 'DomainRouter',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+    show: () => { return store.getters.features.instancesstatsuseronly === false }
+  }, {
     name: 'nics',
     component: shallowRef(defineAsyncComponent(() => import('@/views/network/NicsTable.vue')))
   }, {

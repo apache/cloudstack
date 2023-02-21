@@ -771,6 +771,12 @@ select:active {
 #noVNC_status.noVNC_status_warn::before {
   content: url("../images/warning.svg") " ";
 }
+#noVNC_status.noVNC_status_tls_success {
+  background: rgba(6, 199, 38, 0.9);
+}
+#noVNC_status.noVNC_status_tls_success::before {
+  content: url("../images/connect.svg") " ";
+}
 
 /* ----------------------------------------
  * Connect Dialog

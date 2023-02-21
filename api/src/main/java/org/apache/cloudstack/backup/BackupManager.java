@@ -44,12 +44,17 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone);
+            "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key());
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
             "backup.framework.sync.interval",
             "300",
-            "The backup and recovery background sync task polling interval in seconds.", true);
+            "The backup and recovery background sync task polling interval in seconds.", true, BackupFrameworkEnabled.key());
+
+    ConfigKey<Boolean> BackupEnableAttachDetachVolumes = new ConfigKey<>("Advanced", Boolean.class,
+            "backup.enable.attach.detach.of.volumes",
+            "false",
+            "Enable volume attach/detach operations for VMs that are assigned to Backup Offerings.", true);
 
     /**
      * List backup provider offerings

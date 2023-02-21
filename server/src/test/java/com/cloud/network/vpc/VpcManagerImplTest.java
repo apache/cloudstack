@@ -41,6 +41,7 @@ import java.util.UUID;
 
 
 import com.cloud.alert.AlertManager;
+import com.cloud.network.NetworkService;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.context.CallContext;
@@ -146,6 +147,8 @@ public class VpcManagerImplTest {
     NicDao nicDao;
     @Mock
     AlertManager alertManager;
+    @Mock
+    NetworkService networkServiceMock;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -196,6 +199,7 @@ public class VpcManagerImplTest {
         manager._resourceLimitMgr = resourceLimitService;
         manager._vpcOffDao = vpcOfferingDao;
         manager._dcDao = dataCenterDao;
+        manager._ntwkSvc = networkServiceMock;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
     }
@@ -418,6 +422,7 @@ public class VpcManagerImplTest {
     public void testDisabledConfigCreateIpv6VpcOffering() {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        Mockito.doNothing().when(networkServiceMock).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(Mockito.any());
         manager.createVpcOffering(cmd);
     }
 

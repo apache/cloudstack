@@ -26,7 +26,7 @@ export default {
   hidden: true,
   permission: ['listUsers'],
   columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account'],
-  details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'account', 'domain', 'created'],
+  details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {
       name: 'details',
@@ -105,6 +105,38 @@ export default {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ConfigureSamlSsoAuth.vue')))
+    },
+    {
+      api: 'setupUserTwoFactorAuthentication',
+      icon: 'scan-outlined',
+      label: 'label.action.setup.2FA.user.auth',
+      dataView: true,
+      popup: true,
+      show: (record, store) => {
+        return (record.is2faenabled === false && record.id === store.userInfo.id)
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
+    },
+    {
+      api: 'setupUserTwoFactorAuthentication',
+      icon: 'scan-outlined',
+      label: 'label.action.disable.2FA.user.auth',
+      message: (record) => { return record.is2famandated === true ? 'message.action.about.mandate.and.disable.2FA.user.auth' : 'message.action.disable.2FA.user.auth' },
+      dataView: true,
+      groupAction: true,
+      popup: true,
+      args: ['enable', 'userid'],
+      mapping: {
+        enable: {
+          value: (record) => { return false }
+        },
+        userid: {
+          value: (record) => { return record.id }
+        }
+      },
+      show: (record, store) => {
+        return (record.is2faenabled === true) && (record.id === store.userInfo.id || ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype))
+      }
     },
     {
       api: 'deleteUser',
