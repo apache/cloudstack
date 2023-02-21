@@ -608,7 +608,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
     public boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId, final Boolean startVm) throws Exception {
-        if (Strings.isNullOrEmpty(backedUpVolumeUuid)) {
+        if (StringUtils.isEmpty(backedUpVolumeUuid)) {
             throw new CloudRuntimeException("Invalid volume ID passed");
         }
         final BackupVO backup = backupDao.findById(backupId);
