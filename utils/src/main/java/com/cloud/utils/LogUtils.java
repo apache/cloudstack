@@ -94,7 +94,7 @@ public class LogUtils {
             } catch (Exception e) {
                 Object errObj = ObjectUtils.defaultIfNull(object, "null");
                 LOGGER.trace(String.format("Failed to log object [%s] using GSON.", errObj.getClass().getSimpleName()));
-                gsons.add(errObj.toString());
+                gsons.add("error decoding " + errObj);
             }
         }
         try {
