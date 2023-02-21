@@ -173,7 +173,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return new Pair<>(result, count);
     }
 
-    private QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
+    protected QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
         Calendar[] period = _statement.getCurrentStatementTime();
 
         if (account != null) {
