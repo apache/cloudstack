@@ -1577,4 +1577,4 @@ UPDATE
 SET
   usage_type = 22
 WHERE
-  usage_display like '% io write';
+  usage_type = 24 AND usage_display like '% io write';
