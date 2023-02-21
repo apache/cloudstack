@@ -123,15 +123,6 @@ public class GuestOsMapper {
         if (shouldAddingGuestOsHypervisorMappingBeSkipped(mapping, guestOsId)) {
             return;
         }
-        if (guestOSDao.findById(guestOsId) == null) {
-            LOG.debug(String.format("Skipping adding guest OS hypervisor mapping - %s as guest OS ID: %d not preset", mapping, guestOsId));
-            return;
-        }
-        GuestOSHypervisorVO existingMapping = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOsId, mapping.getHypervisorType(), mapping.getHypervisorVersion());
-        if (existingMapping != null) {
-            LOG.debug(String.format("Skipping adding guest OS hypervisor mapping - %s for guest OS ID: %d as a mapping already exist", mapping, guestOsId));
-            return;
-        }
 
         LOG.debug("Adding guest OS hypervisor mapping - " + mapping.toString());
         GuestOSHypervisorVO guestOsMapping = new GuestOSHypervisorVO();
