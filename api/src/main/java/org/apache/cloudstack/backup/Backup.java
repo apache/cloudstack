@@ -20,7 +20,7 @@ package org.apache.cloudstack.backup;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.storage.Volume;
 
@@ -149,7 +149,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
         @Override
         public String toString() {
-            return StringUtils.join(":", uuid, path, type, size, deviceId);
+            return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "path", "type", "size", "deviceId");
         }
     }
 

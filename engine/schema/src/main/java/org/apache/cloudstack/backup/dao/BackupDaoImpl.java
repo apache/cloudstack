@@ -44,7 +44,7 @@ import org.apache.log4j.Logger;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
     public static final Logger LOGGER = Logger.getLogger(BackupDaoImpl.class.getName());
-
+    private static final Gson GSON = new Gson();
     @Inject
     AccountDao accountDao;
 
@@ -160,7 +160,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             response.setSize(backup.getSize());
             response.setProtectedSize(backup.getProtectedSize());
             response.setStatus(backup.getStatus());
-            response.setVolumes(new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class));
+            response.setVolumes(GSON.toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class));
             response.setBackupOfferingId(offering.getUuid());
             response.setBackupOffering(offering.getName());
             response.setAccountId(account.getUuid());

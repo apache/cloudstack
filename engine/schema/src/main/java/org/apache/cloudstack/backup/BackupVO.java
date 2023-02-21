@@ -36,6 +36,8 @@ import org.apache.commons.lang3.StringUtils;
 @Entity
 @Table(name = "backups")
 public class BackupVO implements Backup {
+    private static final Gson GSON = new Gson();
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -206,7 +208,7 @@ public class BackupVO implements Backup {
         if (StringUtils.isEmpty(this.backupVolumes)) {
             return Collections.emptyList();
         }
-        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+        return Arrays.asList(GSON.fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
     }
 
     public void setBackupVolumes(String backupVolumes) {
