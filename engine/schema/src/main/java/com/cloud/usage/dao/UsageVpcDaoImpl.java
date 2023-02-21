@@ -52,7 +52,7 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
                 update(vo.getId(), vo);
             }
         } catch (final Exception e) {
-            LOGGER.error(String.format("Error updating backup metrics due to [%s].", e.getMessage()), e);
+            LOGGER.error(String.format("Error updating usage of VPC due to [%s].", e.getMessage()), e);
             txn.rollback();
         } finally {
             txn.close();
@@ -121,7 +121,7 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
             }
         } catch (Exception e) {
             txn.rollback();
-            LOGGER.warn("Error getting VM backup usage records", e);
+            LOGGER.warn("Error getting VPC usage records", e);
         } finally {
             txn.close();
         }
