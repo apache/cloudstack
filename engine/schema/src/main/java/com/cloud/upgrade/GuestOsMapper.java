@@ -103,8 +103,24 @@ public class GuestOsMapper {
         return (guestOS != null);
     }
 
-    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+    private boolean shouldAddingGuestOsHypervisorMappingBeSkipped(GuestOSHypervisorMapping mapping, long guestOsId) {
         if (!isValidGuestOSHypervisorMapping(mapping)) {
+            return true;
+        }
+        if (guestOSDao.findById(guestOsId) == null) {
+            LOG.debug(String.format("Skipping adding guest OS hypervisor mapping - %s as guest OS ID: %d not present", mapping, guestOsId));
+            return true;
+        }
+        GuestOSHypervisorVO existingMapping = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOsId, mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        if (existingMapping != null) {
+            LOG.debug(String.format("Skipping adding guest OS hypervisor mapping - %s for guest OS ID: %d as a mapping already exist", mapping, guestOsId));
+            return true;
+        }
+        return false;
+    }
+
+    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+        if (shouldAddingGuestOsHypervisorMappingBeSkipped(mapping, guestOsId)) {
             return;
         }
         if (guestOSDao.findById(guestOsId) == null) {
