@@ -4229,7 +4229,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     continue;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                s_logger.info(String.format("STATS_LOG getVm****Stat @ %s: Disk: %s---------------%s", new Date(), disk.getDiskLabel(), gson.toJson(blockStats)));
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;
                 bytes_rd += blockStats.rd_bytes;
