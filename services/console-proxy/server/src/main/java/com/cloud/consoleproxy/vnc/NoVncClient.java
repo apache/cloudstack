@@ -155,7 +155,8 @@ public class NoVncClient {
         }
 
         // Proxy that we support RFB 3.3 only
-        return RfbConstants.RFB_PROTOCOL_VERSION + "\n";
+        return String.format("%s%s\n", RfbConstants.RFB_PROTOCOL_VERSION_MAJOR,
+                RfbConstants.VNC_PROTOCOL_VERSION_MINOR_TUNNEL);
     }
 
     /**
