@@ -16,15 +16,15 @@
 // under the License.
 package com.cloud.upgrade;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
 import javax.inject.Inject;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.storage.GuestOSHypervisorMapping;
 import com.cloud.storage.GuestOSHypervisorVO;
@@ -104,7 +104,16 @@ public class GuestOsMapper {
     }
 
     public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
-        if(!isValidGuestOSHypervisorMapping(mapping)) {
+        if (!isValidGuestOSHypervisorMapping(mapping)) {
+            return;
+        }
+        if (guestOSDao.findById(guestOsId) == null) {
+            LOG.debug(String.format("Skipping adding guest OS hypervisor mapping - %s as guest OS ID: %d not preset", mapping, guestOsId));
+            return;
+        }
+        GuestOSHypervisorVO existingMapping = guestOSHypervisorDao.findByOsIdAndHypervisor(guestOsId, mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        if (existingMapping != null) {
+            LOG.debug(String.format("Skipping adding guest OS hypervisor mapping - %s for guest OS ID: %d as a mapping already exist", mapping, guestOsId));
             return;
         }
 
