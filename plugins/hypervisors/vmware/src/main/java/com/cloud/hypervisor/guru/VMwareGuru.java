@@ -674,10 +674,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     serviceOfferingId, null, null, null, vmInternalName);
             vmInstanceVO.setDataCenterId(zoneId);
             vm = userVmDao.persist(vmInstanceVO);
-            if (vm != null) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
-                        vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-            }
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
+                    vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
         } else {
             s_logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName [%s], and with state [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName, vm.getState()));
             if (vm.getRemoved() != null) {
