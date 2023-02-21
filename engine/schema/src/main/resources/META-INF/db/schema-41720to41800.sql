@@ -1570,3 +1570,7 @@ CREATE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
+
+-- Remove snapshot references if primary storage pool has been removed, see github issue #7093
+DELETE FROM `cloud`.`snapshot_store_ref`
+WHERE store_role = "Primary" AND store_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
