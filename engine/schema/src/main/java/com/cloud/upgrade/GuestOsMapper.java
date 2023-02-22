@@ -102,8 +102,11 @@ public class GuestOsMapper {
         guestOS = guestOSDao.persist(guestOS);
         return (guestOS != null);
     }
+    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long category, String displayName) {
+        addGuestOsHypervisorMapping(mapping, getGuestOsId(category, displayName));
+    }
 
-    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+    private void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
         if(!isValidGuestOSHypervisorMapping(mapping)) {
             return;
         }
