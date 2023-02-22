@@ -170,11 +170,7 @@ class TestRouterResources(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRouterResources, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
