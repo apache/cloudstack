@@ -35,6 +35,10 @@ public class Pair<T, U> implements Serializable {
         this.u = u;
     }
 
+    public static <T, U> Pair<T, U> of(T t, U u) {
+        return new Pair<>(t, u);
+    }
+
     public T first() {
         return t;
     }

@@ -29,6 +29,12 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -162,6 +168,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VpcDao _vpcDao;
     @Inject
     private VlanDao _vlanDao;
+
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -680,7 +689,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Account caller = CallContext.current().getCallingAccount();
 
         if (max == null) {
-            max = new Long(Resource.RESOURCE_UNLIMITED);
+            max = Long.valueOf(Resource.RESOURCE_UNLIMITED);
         } else if (max.longValue() < Resource.RESOURCE_UNLIMITED) {
             throw new InvalidParameterValueException("Please specify either '-1' for an infinite limit, or a limit that is at least '0'.");
         }
@@ -967,7 +976,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     public long countCpusForAccount(long accountId) {
-        long cputotal = 0;
+        long cputotal = 0L;
+        Account owner = _accountDao.findById(accountId);
+        DomainVO domain = _domainDao.findById(owner.getDomainId());
         // user vms
         SearchBuilder<UserVmJoinVO> userVmSearch = _userVmJoinDao.createSearchBuilder();
         userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
@@ -979,19 +990,66 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
         else
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging);
         sc1.setParameters("displayVm", 1);
         List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
         for (UserVmJoinVO vm : userVms) {
-            cputotal += Long.valueOf(vm.getCpu());
+            cputotal += vm.getCpu();
         }
-        return cputotal;
+        ServiceOffering defaultRouterOffering = null;
+        String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+
+        GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
+        cpuSearch.select("sum", Func.SUM, cpuSearch.entity().getCpu());
+        cpuSearch.select("count", Func.COUNT, (Object[])null);
+        SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
+        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
+        join1.and("type", join1.entity().getType(), Op.IN);
+        join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
+        cpuSearch.join("offerings", join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        cpuSearch.done();
+
+        SearchCriteria<SumCount> sc = cpuSearch.create();
+        sc.setJoinParameters("offerings", "accountId", accountId);
+        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.DomainRouter); // domain routers
+
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRunningVMsonly.value())) {
+            sc.setJoinParameters("offerings", "state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
+        } else {
+            sc.setJoinParameters("offerings", "state", State.Destroyed, State.Error, State.Expunging);
+        }
+        sc.setJoinParameters("offerings", "displayVm", 1);
+        List<SumCount> cpus = serviceOfferingDao.customSearch(sc, null);
+        if (cpus != null) {
+            // Calculate the VR CPU resource count depending on the global setting
+            if (VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId())) {
+                cputotal += cpus.get(0).sum;
+
+                // Get the diff of current router offering with default offering
+                if (VirtualMachineManager.ResourceCountRoutersType.valueIn(domain.getId())
+                        .equalsIgnoreCase(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES)) {
+                    cputotal = cputotal - cpus.get(0).count * defaultRouterOffering.getCpu();
+                }
+            }
+            return cputotal;
+        } else {
+            return cputotal;
+        }
     }
 
     public long calculateMemoryForAccount(long accountId) {
-        long ramtotal = 0;
+        long ramtotal = 0L;
+        Account owner = _accountDao.findById(accountId);
+        DomainVO domain = _domainDao.findById(owner.getDomainId());
         // user vms
         SearchBuilder<UserVmJoinVO> userVmSearch = _userVmJoinDao.createSearchBuilder();
         userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
@@ -1003,15 +1061,58 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         SearchCriteria<UserVmJoinVO> sc1 = userVmSearch.create();
         sc1.setParameters("accountId", accountId);
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value())
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging, State.Stopped});
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
         else
-            sc1.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+            sc1.setParameters("state", State.Destroyed, State.Error, State.Expunging);
         sc1.setParameters("displayVm", 1);
         List<UserVmJoinVO> userVms = _userVmJoinDao.search(sc1,null);
         for (UserVmJoinVO vm : userVms) {
-            ramtotal += Long.valueOf(vm.getRamSize());
+            ramtotal += vm.getRamSize();
         }
-        return ramtotal;
+        ServiceOffering defaultRouterOffering = null;
+        String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+        GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
+        memorySearch.select("sum", Func.SUM, memorySearch.entity().getRamSize());
+        memorySearch.select("count", Func.COUNT, (Object[])null);
+        SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
+        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
+        join1.and("type", join1.entity().getType(), Op.IN);
+        join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
+        memorySearch.join("offerings", join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        memorySearch.done();
+
+        SearchCriteria<SumCount> sc = memorySearch.create();
+        sc.setJoinParameters("offerings", "accountId", accountId);
+        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.DomainRouter); // domain routers
+        sc.setJoinParameters("offerings", "displayVm", 1);
+
+        if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRunningVMsonly.value())) {
+            sc.setJoinParameters("offerings", "state", State.Destroyed, State.Error, State.Expunging, State.Stopped);
+        } else {
+            sc.setJoinParameters("offerings", "state", State.Destroyed, State.Error, State.Expunging);
+        }
+        sc.setJoinParameters("offerings", "displayVm", 1);
+        List<SumCount> memory = serviceOfferingDao.customSearch(sc, null);
+        if (memory != null) {
+            // Calculate VR memory count depending on global setting
+            if (VirtualMachineManager.ResourceCountRouters.valueIn(domain.getId())) {
+                ramtotal += memory.get(0).sum;
+                if (VirtualMachineManager.ResourceCountRoutersType.valueIn(domain.getId())
+                        .equalsIgnoreCase(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES)) {
+                    ramtotal = ramtotal - memory.get(0).count * defaultRouterOffering.getRamSize();
+                }
+            }
+            return ramtotal;
+        } else {
+            return ramtotal;
+        }
     }
 
     public long calculateSecondaryStorageForAccount(long accountId) {
@@ -1046,7 +1147,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         List<VlanVO> dedicatedVlans = _vlanDao.listDedicatedVlans(accountId);
         for (VlanVO dedicatedVlan : dedicatedVlans) {
             List<IPAddressVO> ips = _ipAddressDao.listByVlanId(dedicatedVlan.getId());
-            dedicatedCount += new Long(ips.size());
+            dedicatedCount += Long.valueOf(ips.size());
         }
         allocatedCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
         if (dedicatedCount > allocatedCount) {

@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -293,6 +294,7 @@ import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
 
@@ -458,6 +460,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
+    private Set<String> resourceCountRoutersTypeValues;
     public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
@@ -517,6 +520,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
         overProvisioningFactorsForValidation();
+        populateConfigValuesForRouterResourceCountValidation();
         initMessageBusListener();
         return true;
     }
@@ -580,6 +584,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
     }
 
+    private void populateConfigValuesForRouterResourceCountValidation() {
+        resourceCountRoutersTypeValues = new HashSet<>();
+        resourceCountRoutersTypeValues.add(VirtualMachineManager.COUNT_ALL_VR_RESOURCES);
+        resourceCountRoutersTypeValues.add(VirtualMachineManager.COUNT_DELTA_VR_RESOURCES);
+    }
+
     private void initMessageBusListener() {
         messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
             @Override
@@ -618,12 +628,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (localCidrs != null && localCidrs.length > 0) {
                 s_logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not configured originally. Set it default to "
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, 0L, "Management network CIDR is not configured originally. Set it default to "
                         + localCidrs[0], "");
                 _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
             } else {
                 s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, 0L,
                         "Management network CIDR is not properly configured and we are not able to find a default setting", "");
             }
         }
@@ -1148,6 +1158,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return errMsg;
         }
 
+        isValueForUpdateCfgCmdDeltaOrAll(name, value);
+
         if (value == null) {
             if (type.equals(Boolean.class)) {
                 return "Please enter either 'true' or 'false'.";
@@ -1252,6 +1264,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return validateIfIntValueIsInRange(name, value, range[0]);
         }
         return String.format("Invalid value for configuration [%s].", name);
+    }
+
+    private void isValueForUpdateCfgCmdDeltaOrAll(String name, String value) {
+        if (VirtualMachineManager.ResourceCountRoutersType.key().equalsIgnoreCase(name)
+                && (!resourceCountRoutersTypeValues.contains(value) || isBlank(value))) {
+            final String msg = "Possible values are: delta or all.";
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
     }
 
     /**
@@ -4900,7 +4921,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 ip.isSourceNat(), vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
                     }
                     // increment resource count for dedicated public ip's
-                    _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
+                    _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, Long.valueOf(ips.size()));
                 } else if (domain != null && !forSystemVms) {
                     // This VLAN is domain-wide, so create a DomainVlanMapVO entry
                     final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
@@ -5251,7 +5272,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } finally {
                 _vlanDao.releaseFromLockTable(vlanDbId);
                 if (resourceCountToBeDecrement > 0) {  //Making sure to decrement the count of only success operations above. For any reaason if disassociation fails then this number will vary from original range length.
-                    _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(resourceCountToBeDecrement));
+                    _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, Long.valueOf(resourceCountToBeDecrement));
                 }
             }
         } else {   // !isAccountSpecific
@@ -5405,7 +5426,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // increment resource count for dedicated public ip's
         if (vlanOwner != null) {
-            _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
+            _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, Long.valueOf(ips.size()));
         }
 
         return vlan;
@@ -5497,7 +5518,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
             // decrement resource count for dedicated public ip's
-            _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, new Long(ips.size()));
+            _resourceLimitMgr.decrementResourceCount(acctVln.get(0).getAccountId(), ResourceType.public_ip, Long.valueOf(ips.size()));
             success = true;
         } else if (isDomainSpecific && _domainVlanMapDao.remove(domainVlan.get(0).getId())) {
             s_logger.debug("Remove the vlan from domain_vlan_map successfully.");
@@ -5666,7 +5687,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Object> newCidrPair = new ArrayList<Object>();
         newCidrPair.add(0, getCidrAddress(cidr));
         newCidrPair.add(1, (long)getCidrSize(cidr));
-        currentPodCidrSubnets.put(new Long(-1), newCidrPair);
+        currentPodCidrSubnets.put(Long.valueOf(-1), newCidrPair);
 
         final DataCenterVO dcVo = _zoneDao.findById(dcId);
         final String guestNetworkCidr = dcVo.getGuestNetworkCidr();
@@ -5766,7 +5787,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private String getPodName(final long podId) {
-        return _podDao.findById(new Long(podId)).getName();
+        return _podDao.findById(Long.valueOf(podId)).getName();
     }
 
     private boolean validZone(final String zoneName) {
@@ -5778,7 +5799,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private String getZoneName(final long zoneId) {
-        final DataCenterVO zone = _zoneDao.findById(new Long(zoneId));
+        final DataCenterVO zone = _zoneDao.findById(Long.valueOf(zoneId));
         if (zone != null) {
             return zone.getName();
         } else {

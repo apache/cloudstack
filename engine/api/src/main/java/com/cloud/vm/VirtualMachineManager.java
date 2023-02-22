@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -83,9 +84,20 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
+    ConfigKey<Boolean> ResourceCountRouters = new ConfigKey<>("Advanced", Boolean.class, "resource.count.routers",
+            "false","Count the CPU and memory resource count of virtual routers towards domain resource calculation",
+            true, ConfigKey.Scope.Domain);
+
+    ConfigKey<String> ResourceCountRoutersType = new ConfigKey<>("Advanced", String.class, "resource.count.routers.type", "all",
+            "Possible values are all and delta. If value is all then entire VR cpu and ram are counted else diff " +
+                    "between current VR offering and default VR offering is considered", true, ConfigKey.Scope.Domain);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
+
+    static final String COUNT_ALL_VR_RESOURCES = "all";
+    static final String COUNT_DELTA_VR_RESOURCES = "delta";
 
     /**
      * Allocates a new virtual machine instance in the CloudStack DB.  This
@@ -97,8 +109,7 @@ public interface VirtualMachineManager extends Manager {
      *        define this VM but it must be unique for all of CloudStack.
      * @param template The template this VM is based on.
      * @param serviceOffering The service offering that specifies the offering this VM should provide.
-     * @param defaultNetwork The default network for the VM.
-     * @param rootDiskOffering For created VMs not based on templates, root disk offering specifies the root disk.
+     * @param rootDiskOfferingInfo For created VMs not based on templates, root disk offering specifies the root disk.
      * @param dataDiskOfferings Data disks to attach to the VM.
      * @param auxiliaryNetworks additional networks to attach the VMs to.
      * @param plan How to deploy the VM.
@@ -173,9 +184,9 @@ public interface VirtualMachineManager extends Manager {
     void checkIfCanUpgrade(VirtualMachine vmInstance, ServiceOffering newServiceOffering);
 
     /**
-     * @param vmId
-     * @param serviceOfferingId
-     * @return
+     * @param vmId the vm id
+     * @param newServiceOffering the new service offering
+     * @return true if the vm db was upgraded, false otherwise
      */
     boolean upgradeVmDb(long vmId, ServiceOffering newServiceOffering, ServiceOffering currentServiceOffering);
 
@@ -219,9 +230,8 @@ public interface VirtualMachineManager extends Manager {
     NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
 
     /**
-     * @param profile
-     * @param hvGuru
-     * @return
+     * @param profile the vm profile
+     * @return the vmTO
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
@@ -285,4 +295,7 @@ public interface VirtualMachineManager extends Manager {
 
     HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
 
+    void incrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) throws CloudRuntimeException;
+
+    void decrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) throws CloudRuntimeException;
 }
