@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -42,6 +43,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
@@ -71,6 +73,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
@@ -127,6 +130,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private HostDao hostDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
+    @Inject
+    private VolumeService volumeService;
 
     public ScaleIOPrimaryDataStoreDriver() {
 
@@ -768,10 +773,23 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
             final String destStoragePoolId = destStoragePool.getPath();
+            //CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());
+            //String destVolumePath = createAnswer.getData().getPath();
+            final String destVolumeId = UUID.randomUUID().toString();
+            final String destScaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, srcData.getId(),
+                    srcData.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+            String destVolumePath = String.format("%s:%s", destVolumeId, destScaleIOVolumeName);
+
+            VolumeObjectTO destVolTO = (VolumeObjectTO) destData.getTO();
+            destVolTO.setPath(destVolumePath);
+
+            Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData);
+            Map<String, String> destDetails = getVolumeDetails((VolumeInfo) destData);
 
             String value = configDao.getValue(Config.MigrateWait.key());
             int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
-            MigrateVolumeCommand migrateVolumeCommand = new MigrateVolumeCommand(srcData.getId(), srcVolumePath, destStoragePool, ((VolumeInfo) srcData).getAttachedVmName(), ((VolumeInfo) srcData).getVolumeType(), waitInterval);
+            MigrateVolumeCommand migrateVolumeCommand = new MigrateVolumeCommand(srcData.getTO(), destVolTO,
+                    srcDetails, destDetails, waitInterval);
 
             long hostId = 0;
             VMInstanceVO instance = vmInstanceDao.findVMByInstanceName(((VolumeInfo) srcData).getAttachedVmName());
@@ -860,6 +878,52 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
+    private Map<String, String> getVolumeDetails(VolumeInfo volumeInfo) {
+        long storagePoolId = volumeInfo.getPoolId();
+        StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
+
+        if (!storagePoolVO.isManaged()) {
+            return null;
+        }
+
+        Map<String, String> volumeDetails = new HashMap<>();
+
+        VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
+
+        volumeDetails.put(DiskTO.STORAGE_HOST, storagePoolVO.getHostAddress());
+        volumeDetails.put(DiskTO.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
+        volumeDetails.put(DiskTO.IQN, volumeVO.get_iScsiName());
+        volumeDetails.put(DiskTO.PROTOCOL_TYPE, (volumeVO.getPoolType() != null) ? volumeVO.getPoolType().toString() : null);
+        volumeDetails.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(storagePoolVO.getId())));
+
+        volumeDetails.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeVO.getSize()));
+        volumeDetails.put(DiskTO.SCSI_NAA_DEVICE_ID, getVolumeProperty(volumeInfo.getId(), DiskTO.SCSI_NAA_DEVICE_ID));
+
+        ChapInfo chapInfo = volumeService.getChapInfo(volumeInfo, volumeInfo.getDataStore());
+
+        if (chapInfo != null) {
+            volumeDetails.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
+            volumeDetails.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
+            volumeDetails.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
+            volumeDetails.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
+        }
+
+        String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        volumeDetails.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
+
+        return volumeDetails;
+    }
+
+    private String getVolumeProperty(long volumeId, String property) {
+        VolumeDetailVO volumeDetails = volumeDetailsDao.findDetail(volumeId, property);
+
+        if (volumeDetails != null) {
+            return volumeDetails.getValue();
+        }
+
+        return null;
+    }
+
     private Answer migrateVolume(DataObject srcData, DataObject destData) {
         // Volume migration within same PowerFlex/ScaleIO cluster (with same System ID)
         DataStore srcStore = srcData.getDataStore();
@@ -875,6 +939,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
             final String destStoragePoolId = destStoragePool.getPath();
             int migrationTimeout = StorageManager.KvmStorageOfflineMigrationWait.value();
+            LOGGER.info("HARI source volume " + srcVolumeId);
+            LOGGER.info("HARI destination volume " + destStoragePoolId);
             boolean migrateStatus = client.migrateVolume(srcVolumeId, destStoragePoolId, migrationTimeout);
             if (migrateStatus) {
                 String newVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, destData.getId(),
