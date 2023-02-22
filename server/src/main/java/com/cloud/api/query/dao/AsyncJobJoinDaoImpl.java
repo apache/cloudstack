@@ -60,6 +60,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
         jobResponse.setJobProcStatus(job.getProcessStatus());
+        jobResponse.setMsid(job.getExecutingMsid());
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());

@@ -36,6 +36,57 @@ export default {
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'pending.jobs',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue')))
+    }
+  ],
+  actions: [
+    {
+      api: 'prepareForShutdown',
+      icon: 'exclamation-circle-outlined',
+      label: 'label.prepare.for.shutdown',
+      message: 'message.prepare.for.shutdown',
+      docHelp: 'installguide/configuration.html#adding-a-zone',
+      dataView: true,
+      popup: true,
+      show: (record, store) => { return record.state === 'Up' },
+      mapping: {
+        managementserverid: {
+          value: (record, params) => { return record.id }
+        }
+      }
+    },
+    {
+      api: 'triggerShutdown',
+      icon: 'poweroff-outlined',
+      label: 'label.trigger.shutdown',
+      message: 'message.trigger.shutdown',
+      docHelp: 'installguide/configuration.html#adding-a-zone',
+      dataView: true,
+      popup: true,
+      show: (record, store) => { return record.state === 'Up' },
+      mapping: {
+        managementserverid: {
+          value: (record, params) => { return record.id }
+        }
+      }
+    },
+    {
+      api: 'cancelShutdown',
+      icon: 'close-circle-outlined',
+      label: 'label.cancel.shutdown',
+      message: 'message.cancel.shutdown',
+      docHelp: 'installguide/configuration.html#adding-a-zone',
+      dataView: true,
+      popup: true,
+      show: (record, store) => { return ['PreparingToShutDown', 'ReadyToShutDown', 'ShuttingDown'].includes(record.state) },
+      mapping: {
+        managementserverid: {
+          value: (record, params) => { return record.id }
+        }
+      }
     }
   ]
 }

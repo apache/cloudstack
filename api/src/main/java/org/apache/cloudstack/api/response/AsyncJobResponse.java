@@ -71,6 +71,10 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "the unique ID of the instance/entity object related to the job")
     private String jobInstanceId;
 
+    @SerializedName("managementserverid")
+    @Param(description = "the msid of the management server on which the job is running")
+    private Long msid;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the created date of the job")
     private Date created;
@@ -126,5 +130,9 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setRemoved(final Date removed) {
         this.removed = removed;
+    }
+
+    public void setMsid(Long msid) {
+        this.msid = msid;
     }
 }
