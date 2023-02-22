@@ -1701,7 +1701,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
             checkProjectNetworkPermissions(caller, networkOwner, network);
         } else {
-            List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
+            List<NetworkVO> networkMap = _networksDao.listBy(networkOwner.getId(), network.getId());
             NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
             if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
                 throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));

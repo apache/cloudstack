@@ -1476,7 +1476,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         //     - if shared network in Advanced zone
         //     - and it belongs to the system
         if (network.getAccountId() != owner.getId()) {
-            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
+            if (zone.getNetworkType() != NetworkType.Basic &&
+                    !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared || network.getVpcId() == ipToAssoc.getVpcId()))  {
                 throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
             }
         }

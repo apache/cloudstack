@@ -2793,11 +2793,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // check permissions
-        _accountMgr.checkAccess(caller, null, true, owner, vpc);
+        _accountMgr.checkAccess(caller, null, false, owner, vpc);
 
         s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
-        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(owner.getId(), vpcId) == null;
+        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId) == null;
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {

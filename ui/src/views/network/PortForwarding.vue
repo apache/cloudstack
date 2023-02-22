@@ -490,8 +490,6 @@ export default {
       this.selectedTier = null
       this.tiers.loading = true
       api('listNetworks', {
-        account: this.resource.account,
-        domainid: this.resource.domainid,
         supportedservices: 'PortForwarding',
         vpcid: this.resource.vpcid
       }).then(json => {
@@ -795,9 +793,7 @@ export default {
         keyword: this.searchQuery,
         page: this.vmPage,
         pagesize: this.vmPageSize,
-        networkid: networkId,
-        account: this.resource.account,
-        domainid: this.resource.domainid
+        networkid: networkId
       }).then(response => {
         this.vmCount = response.listvirtualmachinesresponse.count || 0
         this.vms = response.listvirtualmachinesresponse.virtualmachine
