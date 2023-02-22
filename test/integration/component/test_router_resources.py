@@ -84,11 +84,16 @@ class TestRouterResources(cloudstackTestCase):
             cls.services["service_offerings"]["big"]
         )
 
+        cls._cleanup.append(cls.service_offering)
+
         # Create new domain1
         cls.domain1 = Domain.create(
             cls.apiclient,
             services=cls.services["acl"]["domain1"],
-            parentdomainid=cls.domain.id)
+            parentdomainid=cls.domain.id
+        )
+
+        cls._cleanup.append(cls.domain1)
 
         # Create account1
         cls.account1 = Account.create(
@@ -97,11 +102,16 @@ class TestRouterResources(cloudstackTestCase):
             domainid=cls.domain1.id
         )
 
+        cls._cleanup.append(cls.account1)
+
         # Create Network Offering with all the services
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["isolated_network_offering"]
         )
+
+        cls._cleanup.append(cls.network_offering)
+
         # Enable Network offering
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
@@ -114,6 +124,8 @@ class TestRouterResources(cloudstackTestCase):
             zoneid=cls.zone.id
         )
 
+        cls._cleanup.append(cls.network)
+
         virtualmachine = VirtualMachine.create(
             cls.apiclient,
             services=cls.services["virtual_machine_userdata"],
@@ -124,6 +136,8 @@ class TestRouterResources(cloudstackTestCase):
             templateid=cls.template.id,
             zoneid=cls.zone.id
         )
+
+        cls._cleanup.append(virtualmachine)
 
         vms = list_virtual_machines(
             cls.apiclient,
@@ -159,14 +173,8 @@ class TestRouterResources(cloudstackTestCase):
         cls.default_vr_cpu = list_service_response[0].cpunumber
         cls.default_vr_ram = list_service_response[0].memory
 
-        cls._cleanup.append(virtualmachine)
-        cls._cleanup.append(cls.network)
-
         # Disable Network offering
         cls.network_offering.update(cls.apiclient, state='Disabled')
-        cls._cleanup.append(cls.network_offering)
-        cls._cleanup.append(cls.account1)
-        cls._cleanup.append(cls.domain1)
 
     @classmethod
     def tearDownClass(cls):
