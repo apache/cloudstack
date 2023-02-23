@@ -152,7 +152,8 @@ public class SAMLUtils {
             if (spMetadata.getKeyPair() != null) {
                 privateKey = spMetadata.getKeyPair().getPrivate();
             }
-            redirectUrl = idpMetadata.getSsoUrl() + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest), privateKey, signatureAlgorithm);
+            String appendOperator = idpMetadata.getSsoUrl().contains("?") ? "&" : "?";
+            redirectUrl = idpMetadata.getSsoUrl() + appendOperator + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest), privateKey, signatureAlgorithm);
         } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
         }
@@ -285,7 +286,7 @@ public class SAMLUtils {
             resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
         }
         resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
-        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
+        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
     }
 
     /**
