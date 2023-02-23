@@ -105,7 +105,7 @@ public class GuestOsMapper {
     public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long category, String displayName) {
         long guestOsId =  getGuestOsId(category, displayName);
         if (guestOsId == 0) {
-            LOG.warn(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
+            LOG.error(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
         } else {
             addGuestOsHypervisorMapping(mapping, guestOsId);
         }
