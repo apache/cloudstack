@@ -123,6 +123,7 @@
                         :filterOption="filterOption"
                         :options="hostSelectOptions"
                         :loading="loading.hosts"
+                        @change="onSelectHostId"
                       ></a-select>
                     </a-form-item>
                   </div>
@@ -1005,7 +1006,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1018,7 +1019,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1031,7 +1032,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -2130,14 +2131,26 @@ export default {
     },
     onSelectPodId (value) {
       this.podId = value
+      if (this.podId === null) {
+        this.form.podid = undefined
+      }
 
       this.fetchOptions(this.params.clusters, 'clusters')
       this.fetchOptions(this.params.hosts, 'hosts')
     },
     onSelectClusterId (value) {
       this.clusterId = value
+      if (this.clusterId === null) {
+        this.form.clusterid = undefined
+      }
 
       this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectHostId (value) {
+      this.hostId = value
+      if (this.hostId === null) {
+        this.form.hostid = undefined
+      }
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
