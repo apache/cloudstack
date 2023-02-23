@@ -287,7 +287,7 @@ html {
   cursor: pointer;
   border-radius: 5px;
   background-color: rgb(83, 99, 122);
-  background-image: url("../images/handle_bg.svg");
+  background-image: url("../images/handle_bg.png");
   background-repeat: no-repeat;
   background-position: right;
   box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5);
@@ -295,7 +295,7 @@ html {
 #noVNC_control_bar_handle:after {
   content: "";
   transition: transform 0.5s ease-in-out;
-  background: url("../images/handle.svg");
+  background: url("../images/handle.png");
   position: absolute;
   top: 22px; /* (50px-6px)/2 */
   right: 5px;
@@ -514,7 +514,7 @@ html {
   cursor: pointer;
 }
 .noVNC_expander::before {
-  content: url("../images/expander.svg");
+  content: url("../images/expander.png");
   display: inline-block;
   margin-right: 5px;
   transition: 0.2s ease-in-out;
@@ -689,25 +689,25 @@ html {
   background: rgba(128,128,128,0.9);
 }
 #noVNC_status.noVNC_status_normal::before {
-  content: url("../images/info.svg") " ";
+  content: url("../images/info.png") " ";
 }
 #noVNC_status.noVNC_status_error {
   background: rgba(200,55,55,0.9);
 }
 #noVNC_status.noVNC_status_error::before {
-  content: url("../images/error.svg") " ";
+  content: url("../images/error.png") " ";
 }
 #noVNC_status.noVNC_status_warn {
   background: rgba(180,180,30,0.9);
 }
 #noVNC_status.noVNC_status_warn::before {
-  content: url("../images/warning.svg") " ";
+  content: url("../images/warning.png") " ";
 }
 #noVNC_status.noVNC_status_tls_success {
   background: rgba(6, 199, 38, 0.9);
 }
 #noVNC_status.noVNC_status_tls_success::before {
-  content: url("../images/connect.svg") " ";
+  content: url("../images/connect.png") " ";
 }
 
 /* ----------------------------------------
