@@ -147,12 +147,10 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             };
 
             return new MigrateVolumeAnswer(command, true, null, destPath);
-        } catch (LibvirtException e) {
+        } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
             LOGGER.warn(msg, e);
             return new MigrateVolumeAnswer(command, false, msg, null);
-        } catch (InternalErrorException e) {
-            throw new RuntimeException(e);
         } finally {
             if (dm != null) {
                 try {
