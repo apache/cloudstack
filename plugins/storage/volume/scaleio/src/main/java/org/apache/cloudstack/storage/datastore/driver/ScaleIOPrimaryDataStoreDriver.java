@@ -775,7 +775,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final String destStoragePoolId = destStoragePool.getPath();
             //CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());
             //String destVolumePath = createAnswer.getData().getPath();
-            final String destVolumeId = UUID.randomUUID().toString();
+            final String destVolumeId = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
             final String destScaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, srcData.getId(),
                     srcData.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
             String destVolumePath = String.format("%s:%s", destVolumeId, destScaleIOVolumeName);
