@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger
         .getLogger(ConfigureOvsElementCmd.class.getName());
-    private static final String s_name = "configureovselementresponse";
     @Inject
     private List<VirtualRouterElementService> _service;
 
@@ -80,11 +79,6 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "boolean";

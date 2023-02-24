@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 
-    private static final String s_name = "liststoragepoolsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,11 +104,6 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

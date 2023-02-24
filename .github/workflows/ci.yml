@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
@@ -75,6 +75,7 @@ jobs:
                   smoke/test_list_ids_parameter
                   smoke/test_loadbalance
                   smoke/test_login
+                  smoke/test_2fa
                   smoke/test_metrics_api
                   smoke/test_migration
                   smoke/test_multipleips_per_nic

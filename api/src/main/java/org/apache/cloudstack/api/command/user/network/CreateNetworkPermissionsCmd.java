@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 
 import java.util.List;
 
-@APICommand(name = CreateNetworkPermissionsCmd.APINAME, description = "Updates network permissions.",
+@APICommand(name = "createNetworkPermissions", description = "Updates network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -45,7 +45,6 @@ import java.util.List;
 public class CreateNetworkPermissionsCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(CreateNetworkPermissionsCmd.class.getName());
 
-    public static final String APINAME = "createNetworkPermissions";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -98,11 +97,6 @@ public class CreateNetworkPermissionsCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

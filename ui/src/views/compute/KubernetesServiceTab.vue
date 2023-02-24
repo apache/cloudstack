@@ -123,7 +123,8 @@
                 :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
               >
                 <a-button
-                  type="danger"
+                  danger
+                  type="primary"
                   shape="circle"
                   :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
                   <template #icon><delete-outlined /></template>
@@ -199,7 +200,7 @@ export default {
       vmColumns: [],
       networkLoading: false,
       network: {},
-      publicIpAddress: {},
+      publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
       annotations: []

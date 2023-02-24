@@ -39,7 +39,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = UploadTemplateDirectDownloadCertificateCmd.APINAME,
+@APICommand(name = "uploadTemplateDirectDownloadCertificate",
         description = "Upload a certificate for HTTPS direct template download on KVM hosts",
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.11.0",
@@ -50,7 +50,6 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     DirectDownloadManager directDownloadManager;
 
     private static final Logger LOG = Logger.getLogger(UploadTemplateDirectDownloadCertificateCmd.class);
-    public static final String APINAME = "uploadTemplateDirectDownloadCertificate";
 
     @Parameter(name = ApiConstants.CERTIFICATE, type = BaseCmd.CommandType.STRING, required = true, length = 65535,
             description = "SSL certificate")
@@ -107,11 +106,6 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

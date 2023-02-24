@@ -51,6 +51,7 @@ db.cloud.trustStorePassword=
 # Encryption Settings
 db.cloud.encryption.type=none
 db.cloud.encrypt.secret=
+db.cloud.encryptor.version=
 
 # usage database settings
 db.usage.username=@DBUSER@

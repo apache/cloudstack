@@ -153,7 +153,7 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
-            <a-form-item v-if="isAdmin()" name="hosttags" ref="hosttags">
+            <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="hosttags" ref="hosttags">
               <template #label>
                 <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
               </template>
@@ -508,7 +508,7 @@
                 </a-form-item>
               </a-col>
               <a-col :md="12" :lg="12">
-                <a-form-item v-if="isAdmin()" name="storagetags" ref="storagetags">
+                <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="storagetags" ref="storagetags">
                   <template #label>
                     <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
                   </template>
@@ -522,7 +522,7 @@
                     }"
                     :loading="storageTagLoading"
                     :placeholder="apiParams.tags.description"
-                    v-if="isAdmin()">
+                    v-if="isAdmin() || isDomainAdminAllowedToInformTags">
                     <a-select-option v-for="opt in storageTags" :key="opt">
                       {{ opt }}
                     </a-select-option>
@@ -566,7 +566,7 @@
               </a-form-item>
             </a-form-item>
           </span>
-          <a-form-item>
+          <a-form-item name="diskofferingstrictness" ref="diskofferingstrictness">
             <template #label>
               <tooltip-label :title="$t('label.diskofferingstrictness')" :tooltip="apiParams.diskofferingstrictness.description"/>
             </template>
@@ -590,6 +590,7 @@ import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import store from '@/store'
 
 export default {
   name: 'AddServiceOffering',
@@ -662,7 +663,8 @@ export default {
       diskOfferingLoading: false,
       diskOfferings: [],
       selectedDiskOfferingId: '',
-      qosType: ''
+      qosType: '',
+      isDomainAdminAllowedToInformTags: false
     }
   },
   beforeCreate () {
@@ -681,6 +683,7 @@ export default {
     this.initForm()
     this.fetchData()
     this.isPublic = isAdmin()
+    this.form.ispublic = this.isPublic
   },
   methods: {
     initForm () {
@@ -761,6 +764,11 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
+      } else if (this.isDomainAdmin()) {
+        this.checkIfDomainAdminIsAllowedToInformTag()
+        if (this.isDomainAdminAllowedToInformTags) {
+          this.fetchStorageTagData()
+        }
       }
       this.fetchDiskOfferings()
     },
@@ -791,6 +799,15 @@ export default {
     },
     isAdmin () {
       return isAdmin()
+    },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    checkIfDomainAdminIsAllowedToInformTag () {
+      const params = { id: store.getters.userInfo.accountid }
+      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+        this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
+      })
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0

@@ -508,7 +508,7 @@ public class AgentProperties{
     public static final Property<String> VM_WATCHDOG_MODEL = new Property<>("vm.watchdog.model", "i6300esb");
 
     /**
-     * Action to take when the Guest/Instance is no longer notifiying the Watchdog timer.<br>
+     * Action to take when the Guest/Instance is no longer notifying the Watchdog timer.<br>
      * Possible values: none | reset | poweroff <br>
      * Data type: String.<br>
      * Default value: <code>none</code>
@@ -560,13 +560,6 @@ public class AgentProperties{
      * Default value: <code>0</code>
      */
     public static final Property<Integer> HOST_CPU_MANUAL_SPEED_MHZ = new Property<>("host.cpu.manual.speed.mhz", 0);
-
-    /**
-     * Enable manually IO driver on KVM's VM. <br>
-     * Data type: Boolean.<br>
-     * Default value: <code>null</code>
-     */
-    public static final Property<Boolean> ENABLE_IO_URING = new Property<>("enable.io.uring", null, Boolean.class);
 
     /**
      * Defines the location for Hypervisor scripts.<br>
@@ -720,6 +713,13 @@ public class AgentProperties{
      * Default value: <code>0</code>
      */
     public static final Property<Integer> VM_MEMBALLOON_STATS_PERIOD = new Property<>("vm.memballoon.stats.period", 0);
+
+    /**
+     * The number of iothreads
+     * Data type: Integer.<br>
+     * Default value: <code>1</code>
+     */
+    public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     public static class Property <T>{
         private String name;

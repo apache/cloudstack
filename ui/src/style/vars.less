@@ -132,6 +132,22 @@ a {
   color: @primary-color;
 }
 
+.custom-icon path {
+  fill: @navigation-text-color;
+}
+
+.ant-menu-light {
+  .ant-menu-item:hover > a,
+  .ant-menu-submenu-title:hover > a,
+  .ant-menu-submenu-title:hover,
+  .ant-menu-item:hover,
+  .ant-menu-submenu-title:hover {
+    .custom-icon path {
+      fill: @primary-color;
+    }
+  }
+}
+
 .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
   background-color: @primary-color-light;
 }
@@ -260,6 +276,7 @@ a {
 
     .custom-icon path {
       color: @primary-color;
+      fill: @primary-color;
     }
   }
 
@@ -292,6 +309,7 @@ a {
 
   .custom-icon path {
     color: @primary-color;
+    fill: @primary-color;
   }
 }
 
@@ -398,6 +416,10 @@ a {
 
 .dark-row {
   background-color: #f9f9f9;
+}
+
+.child-row {
+  background-color: #f5f5f5;
 }
 
 .tag-disabled-input, .btn-add-tag {

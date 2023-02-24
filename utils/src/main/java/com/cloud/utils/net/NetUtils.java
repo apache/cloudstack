@@ -77,6 +77,7 @@ public class NetUtils {
     public final static String TCP_PROTO = "tcp";
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
+    public static final String ICMP6_PROTO = "icmp6";
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
     public final static String SSL_PROTO = "ssl";
@@ -638,7 +639,7 @@ public class NetUtils {
         return result;
     }
 
-    public static Set<Long> getAllIpsFromCidr(final String cidr, final long size, final Set<Long> usedIps) {
+    public static Set<Long> getAllIpsFromCidr(final String cidr, final long size, final Set<Long> usedIps, int maxIps) {
         assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         final Set<Long> result = new TreeSet<Long>();
         final long ip = ip2Long(cidr);
@@ -650,11 +651,9 @@ public class NetUtils {
 
         end++;
         end = (end << MAX_CIDR - size) - 2;
-        int maxIps = 255; // get 255 ips as maximum
-        while (start <= end && maxIps > 0) {
+        while (start <= end && (maxIps == -1 || result.size() < maxIps)) {
             if (!usedIps.contains(start)) {
                 result.add(start);
-                maxIps--;
             }
             start++;
         }

@@ -39,7 +39,6 @@ import com.cloud.utils.net.Ip;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
-    private static final String s_name = "updateportforwardingruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -102,11 +101,6 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
 
 
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

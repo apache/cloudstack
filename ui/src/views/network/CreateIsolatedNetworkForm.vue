@@ -104,6 +104,38 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-row :gutter="12" v-if="setMTU">
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input-number
+                style="width: 100%;"
+                v-model:value="form.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"
+                  @change="updateMtu(true)"/>
+                <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input-number
+                style="width: 100%;"
+                v-model:value="form.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"
+                  @change="updateMtu(false)"/>
+                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu"></div>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item
             ref="vlan"
             name="vlan"
@@ -316,7 +348,13 @@ export default {
       vpcs: [],
       vpcLoading: false,
       selectedVpc: {},
-      accountVisible: isAdminOrDomainAdmin()
+      accountVisible: isAdminOrDomainAdmin(),
+      privateMtuMax: 1500,
+      publicMtuMax: 1500,
+      minMTU: 68,
+      errorPublicMtu: '',
+      errorPrivateMtu: '',
+      setMTU: false
     }
   },
   watch: {
@@ -356,7 +394,6 @@ export default {
       this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         vpcid: [{ required: true, message: this.$t('message.error.select') }]
@@ -365,6 +402,9 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      this.allowSettingMTU()
+    },
+    allowSettingMTU () {
     },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
@@ -389,7 +429,7 @@ export default {
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
-          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true && zone.type !== 'Edge') {
             this.zones.push(zone)
           }
         }
@@ -402,6 +442,9 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      this.setMTU = zone?.allowuserspecifyvrmtu || false
+      this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
+      this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {
@@ -519,6 +562,12 @@ export default {
             params[field] = values[field]
           }
         }
+        if (this.isValidTextValueForKey(values, 'publicmtu')) {
+          params.publicmtu = values.publicmtu
+        }
+        if (this.isValidTextValueForKey(values, 'privatemtu')) {
+          params.privatemtu = values.privatemtu
+        }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
           if (this.isValidTextValueForKey(values, 'account')) {
@@ -540,6 +589,29 @@ export default {
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
+    },
+    updateMtu (isPublic) {
+      if (isPublic) {
+        if (this.form.publicmtu > this.publicMtuMax) {
+          this.errorPublicMtu = this.$t('message.error.mtu.public.max.exceed')
+          this.form.publicmtu = this.publicMtuMax
+        } else if (this.form.publicmtu < this.minMTU) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.publicmtu = this.minMTU
+        } else {
+          this.errorPublicMtu = ''
+        }
+      } else {
+        if (this.form.privatemtu > this.privateMtuMax) {
+          this.errorPrivateMtu = this.$t('message.error.mtu.private.max.exceed')
+          this.form.privatemtu = this.privateMtuMax
+        } else if (this.form.privatemtu < this.minMTU) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.privatemtu = this.minMTU
+        } else {
+          this.errorPrivateMtu = ''
+        }
+      }
     },
     showInput () {
       this.inputVisible = true

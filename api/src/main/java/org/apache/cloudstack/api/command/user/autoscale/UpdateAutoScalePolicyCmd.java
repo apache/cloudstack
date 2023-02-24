@@ -43,7 +43,6 @@ import com.cloud.user.Account;
 public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScalePolicyCmd.class.getName());
 
-    private static final String s_name = "updateautoscalepolicyresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -113,11 +112,6 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     public List<Long> getConditionIds() {
         return conditionIds;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

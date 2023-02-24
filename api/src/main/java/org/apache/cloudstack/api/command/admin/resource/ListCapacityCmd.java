@@ -43,7 +43,6 @@ public class ListCapacityCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
-    private static final String s_name = "listcapacityresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -113,11 +112,6 @@ public class ListCapacityCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

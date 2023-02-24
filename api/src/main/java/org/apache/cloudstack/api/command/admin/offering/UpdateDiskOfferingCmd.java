@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,7 +40,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
-    private static final String s_name = "updatediskofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -83,7 +81,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TAGS,
             type = CommandType.STRING,
             description = "comma-separated list of tags for the disk offering, tags should match with existing storage pool tags",
-            authorized = {RoleType.Admin},
             since = "4.15")
     private String tags;
 
@@ -269,11 +266,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -59,7 +59,7 @@ class TestSharedNetwork(cloudstackTestCase):
         cls.acldata = cls.testdata["acl"]
         cls.domain_1 = None
         cls.domain_2 = None
-        cls._cleanup = []
+        cls.cleanup = []
 
 
         try:
@@ -90,7 +90,6 @@ class TestSharedNetwork(cloudstackTestCase):
                                        cls.apiclient,
                                        cls.acldata["domain1"]
                                        )
-            cls._cleanup.append(cls.domain_1)
             cls.domain_11 = Domain.create(
                                        cls.apiclient,
                                        cls.acldata["domain11"],
@@ -110,7 +109,6 @@ class TestSharedNetwork(cloudstackTestCase):
                                        cls.apiclient,
                                        cls.acldata["domain2"]
                                        )
-            cls._cleanup.append(cls.domain_2)
             # Create  1 admin account and 2 user accounts for doamin_1
             cls.account_d1 = Account.create(
                                 cls.apiclient,
@@ -251,7 +249,6 @@ class TestSharedNetwork(cloudstackTestCase):
                                 cls.acldata["accountROOTA"],
                                 admin=False,
                                 )
-            cls._cleanup.append(cls.account_roota)
 
             user = cls.generateKeysForUser(cls.apiclient,cls.account_roota)
             cls.user_roota_apikey = user.apikey
@@ -262,7 +259,6 @@ class TestSharedNetwork(cloudstackTestCase):
                                 cls.acldata["accountROOTA"],
                                 admin=True,
                                 )
-            cls._cleanup.append(cls.account_root)
 
             user = cls.generateKeysForUser(cls.apiclient,cls.account_root)
             cls.user_root_apikey = user.apikey
@@ -273,7 +269,6 @@ class TestSharedNetwork(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.acldata["service_offering"]["small"]
                                     )
-            cls._cleanup.append(cls.service_offering)
 
             cls.acldata['mode'] = cls.zone.networktype
             cls.template = get_template(cls.apiclient, cls.zone.id, cls.acldata["ostype"])
@@ -286,6 +281,13 @@ class TestSharedNetwork(cloudstackTestCase):
             cls.acldata["network_domain_with_no_subdomain_access"]["vlan"]="3002"
             cls.acldata["network_domain_with_subdomain_access"]["vlan"]="3003"
             cls.acldata["network_account"]["vlan"]="3004"
+
+            cls.shared_network_all = Network.create(
+                             cls.apiclient,
+                             cls.acldata["network_all"],
+                             networkofferingid=cls.shared_network_offering_id,
+                             zoneid=cls.zone.id
+                             )
 
             cls.shared_network_domain_d11 =  Network.create(
                              cls.apiclient,
@@ -316,11 +318,18 @@ class TestSharedNetwork(cloudstackTestCase):
             cls.vmdata = {"name": "test",
                           "displayname" : "test"
                           }
+            cls.cleanup = [
+                            cls.account_root,
+                            cls.account_roota,
+                            cls.shared_network_all,
+                            cls.service_offering,
+                            ]
         except Exception as e:
             raise Exception("Failed to create the setup required to execute the test cases: %s" % e)
 
     @classmethod
     def tearDownClass(cls):
+        cls.apiclient = super(TestSharedNetwork, cls).getClsTestClient().getApiClient()
         cls.apiclient.connection.apiKey = cls.default_apikey
         cls.apiclient.connection.securityKey = cls.default_secretkey
         cls.apiclient = super(TestSharedNetwork, cls).tearDownClass()
@@ -685,7 +694,6 @@ class TestSharedNetwork(cloudstackTestCase):
                 self.debug ("When a regular user from ROOT domain deploys a VM in a shared network with scope=domain with no subdomain access %s" %e)
                 if not CloudstackAclException.verifyMsginException(e,CloudstackAclException.NOT_AVAILABLE_IN_DOMAIN):
                     self.fail("Error message validation failed when ROOT domain's user tries to deploy VM in a shared network with scope=domain with no subdomain access")
-
 
 
     @attr("simulator_only",tags=["advanced"],required_hardware="false")

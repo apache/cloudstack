@@ -38,6 +38,7 @@ import org.junit.runners.JUnit4;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
+import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
@@ -123,6 +124,7 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchastrator.routerDao = mock(DomainRouterDao.class);
         testOrchastrator.routerNetworkDao = mock(RouterNetworkDao.class);
         testOrchastrator._vpcMgr = mock(VpcManager.class);
+        testOrchastrator.routerJoinDao = mock(DomainRouterJoinDao.class);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
 
         Map<Network.Capability, String> capabilities = new HashMap<Network.Capability, String>();

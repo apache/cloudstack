@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: RAT License Check
+name: License Check
 
 on: [push, pull_request]
 
@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11

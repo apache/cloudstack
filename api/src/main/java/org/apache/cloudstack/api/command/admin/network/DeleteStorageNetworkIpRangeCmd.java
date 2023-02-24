@@ -39,7 +39,6 @@ import com.cloud.user.Account;
 public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteStorageNetworkIpRangeCmd.class);
 
-    private static final String s_name = "deletestoragenetworkiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -81,11 +80,6 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             s_logger.warn("Failed to delete storage network ip range " + getId(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

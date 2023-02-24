@@ -37,7 +37,6 @@ import java.util.List;
 public class ListResourceIconCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceIconCmd.class.getName());
 
-    private static final String s_name = "listresourceiconresponse";
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -72,11 +71,6 @@ public class ListResourceIconCmd extends BaseCmd {
         ListResponse<ResourceIconResponse> response = _queryService.listResourceIcons(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

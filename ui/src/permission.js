@@ -59,7 +59,33 @@ router.beforeEach((to, from, next) => {
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
       NProgress.done()
+    } else if (to.path === '/verify2FA' || to.path === '/setup2FA') {
+      const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
+      const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' }) || store.getters.twoFaProvider
+      if ((store.getters.twoFaEnabled && !store.getters.loginFlag) || (isSAML === true && twoFaEnabled === true)) {
+        console.log('Do Two-factor authentication')
+        store.commit('SET_2FA_PROVIDER', twoFaProvider)
+        next()
+      } else {
+        next({ path: '/dashboard' })
+        NProgress.done()
+      }
     } else {
+      const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
+      const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' })
+      if (isSAML === true && !store.getters.loginFlag && to.path !== '/dashboard') {
+        if (twoFaEnabled === true && twoFaProvider !== '' && twoFaProvider !== undefined) {
+          next({ path: '/verify2FA' })
+          return
+        }
+        if (twoFaEnabled === true && (twoFaProvider === '' || twoFaProvider === undefined)) {
+          next({ path: '/setup2FA' })
+          return
+        }
+        store.commit('SET_LOGIN_FLAG', true)
+      }
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {
@@ -85,17 +111,19 @@ router.beforeEach((to, from, next) => {
             let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
-            notification.error({
-              top: '65px',
-              message: 'Error',
-              description: i18n.global.t('message.error.discovering.feature'),
-              duration: 0,
-              onClose: () => {
-                let countNotify = store.getters.countNotify
-                countNotify > 0 ? countNotify-- : countNotify = 0
-                store.commit('SET_COUNT_NOTIFY', countNotify)
-              }
-            })
+            if (to.path === '/user/login') {
+              notification.error({
+                top: '65px',
+                message: 'Error',
+                description: i18n.global.t('message.error.discovering.feature'),
+                duration: 0,
+                onClose: () => {
+                  let countNotify = store.getters.countNotify
+                  countNotify > 0 ? countNotify-- : countNotify = 0
+                  store.commit('SET_COUNT_NOTIFY', countNotify)
+                }
+              })
+            }
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })
             })
