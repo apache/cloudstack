@@ -87,6 +87,7 @@ import com.cloud.vm.VirtualMachine;
 
 public class EventTypes {
 
+    public static final String EVENT_VMSCHEDULE_CREATE = "VM.SCHEDULE";
     //map of Event and corresponding entity for which Event is applicable
     private static Map<String, Object> entityEventDetails = null;
 

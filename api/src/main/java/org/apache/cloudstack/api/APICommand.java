@@ -19,7 +19,6 @@ package org.apache.cloudstack.api;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 
@@ -50,4 +49,5 @@ public @interface APICommand {
     RoleType[] authorized() default {};
 
     Class<?>[] entityType() default {};
+
 }

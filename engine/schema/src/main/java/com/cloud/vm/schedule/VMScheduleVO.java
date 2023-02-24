@@ -1,0 +1,135 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package com.cloud.vm.schedule;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
+import javax.persistence.GenerationType;
+import java.util.UUID;
+
+@Entity
+@Table(name = "vm_schedule")
+public class VMScheduleVO implements VMSchedule {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "uuid")
+    private String uuid;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "vm_id")
+    long vmId;
+
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    State state = State.Disabled;
+
+    @Column(name = "action")
+    @Enumerated(value = EnumType.STRING)
+    private Action action;
+
+    @Column(name = "period")
+    private String period;
+
+    @Column(name = "timezone")
+    private String timezone;
+
+    @Column(name = "tag")
+    private String tag;
+
+    protected VMScheduleVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public VMScheduleVO(String name, long vmId, State state, Action action, String period, String timezone, String tag) {
+        this.uuid = UUID.randomUUID().toString();
+        this.name = name;
+        this.vmId = vmId;
+        this.state = state;
+        this.action = action;
+        this.period = period;
+        this.timezone = timezone;
+        this.tag = tag;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public long getVmId() {
+        return vmId;
+    }
+
+    public void setVmId(long vmId) {
+        this.vmId = vmId;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public Action getAction() {
+        return action;
+    }
+
+    public void setAction(Action action) {
+        this.action = action;
+    }
+
+    public String getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(String period) {
+        this.period = period;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+}
