@@ -86,7 +86,7 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
 
     public <T, K> GenericSearchBuilder<T, K> createGenericSearchBuilder(Class<T> entityType, Class<K> resultType) {
         GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
-        return dao.createSearchBuilder((Class<K>)resultType.getClass());
+        return dao.createSearchBuilder((Class<K>)resultType);
     }
 
     @Override
