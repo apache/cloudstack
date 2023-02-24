@@ -363,13 +363,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         SecStorageVMSetupCommand setupCmd = new SecStorageVMSetupCommand();
         if (_allowedInternalSites != null) {
-            List<String> allowedCidrs = new ArrayList<>();
-            String[] cidrs = _allowedInternalSites.split(",");
-            for (String cidr : cidrs) {
-                if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
-                    allowedCidrs.add(cidr);
-                }
-            }
+            List<String> allowedCidrs = getAllowedInternalSiteCidrs();
             setupCmd.setAllowedInternalSites(allowedCidrs.toArray(new String[allowedCidrs.size()]));
         }
         String copyPasswd = _configDao.getValue("secstorage.copy.password");
@@ -388,6 +382,20 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
             return false;
         }
+    }
+
+    private List<String> getAllowedInternalSiteCidrs() {
+        List<String> allowedCidrs = new ArrayList<>();
+        if (_allowedInternalSites == null) {
+            return allowedCidrs;
+        }
+        String[] cidrs = _allowedInternalSites.split(",");
+        for (String cidr : cidrs) {
+            if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
+                allowedCidrs.add(cidr);
+            }
+        }
+        return allowedCidrs;
     }
 
     @Override
@@ -413,6 +421,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         String copyPort = _useSSlCopy ? "443" : Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
         SecStorageFirewallCfgCommand thiscpc = new SecStorageFirewallCfgCommand(true);
         thiscpc.addPortConfig(thisSecStorageVm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
+
+        List<String> allowedCidrs = getAllowedInternalSiteCidrs();
+        addPortConfigForPrivateIpToCommand(thiscpc, allowedCidrs, thisSecStorageVm.getPrivateIpAddress(), thisSecStorageVm.getPublicIpAddress(), copyPort);
 
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
@@ -443,6 +454,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 continue;
             }
             allSSVMIpList.addPortConfig(ssvm.getPublicIpAddress(), copyPort, true, TemplateConstants.DEFAULT_TMPLT_COPY_INTF);
+            addPortConfigForPrivateIpToCommand(allSSVMIpList, allowedCidrs, ssvm.getPrivateIpAddress(), ssvm.getPublicIpAddress(), copyPort);
         }
 
         hostName = thisSecStorageVm.getHostName();
@@ -461,6 +473,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         return true;
 
+    }
+
+    private void addPortConfigForPrivateIpToCommand(SecStorageFirewallCfgCommand command, List<String> allowedCidrs,
+                                                    String privateIpAddress, String publicIpAddress, String copyPort) {
+        for (String allowCidr : allowedCidrs) {
+            if (NetUtils.isIpWithInCidrRange(publicIpAddress, allowCidr)) {
+                command.addPortConfig(privateIpAddress, copyPort, true, TemplateConstants.TMPLT_COPY_INTF_PRIVATE);
+                break;
+            }
+        }
     }
 
     protected boolean isSecondaryStorageVmRequired(long dcId) {
