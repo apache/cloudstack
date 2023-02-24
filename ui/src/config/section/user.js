@@ -144,14 +144,8 @@ export default {
       label: 'label.action.delete.user',
       message: 'message.delete.user',
       dataView: true,
-      show: (record, store) => {
-        // Don't allow users to delete their account
-        if (record.id !== 'undefined' && store.userInfo.id === record.id) {
-          return false
-        }
-
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1)
+      disabled: (record, store) => {
+        return record.id !== 'undefined' && store.userInfo.id === record.id
       }
     }
   ]
