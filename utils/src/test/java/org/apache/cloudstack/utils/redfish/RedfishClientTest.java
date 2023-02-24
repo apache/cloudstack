@@ -87,7 +87,7 @@ public class RedfishClientTest {
     public void buildRequestUrlTestHttpsGetSystemId() {
         RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, true, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetSystemId, systemId);
-        String expected = String.format("https://%s/redfish/v1/Systems/", oobAddress, systemId);
+        String expected = String.format("https://%s/redfish/v1/Systems/", oobAddress);
         Assert.assertEquals(expected, result);
     }
 
@@ -95,7 +95,7 @@ public class RedfishClientTest {
     public void buildRequestUrlTestGetSystemId() {
         RedfishClient redfishclient = new RedfishClient(USERNAME, PASSWORD, false, false, REDFISHT_REQUEST_RETRIES);
         String result = redfishclient.buildRequestUrl(oobAddress, RedfishClient.RedfishCmdType.GetSystemId, systemId);
-        String expected = String.format("http://%s/redfish/v1/Systems/", oobAddress, systemId);
+        String expected = String.format("http://%s/redfish/v1/Systems/", oobAddress);
         Assert.assertEquals(expected, result);
     }
 

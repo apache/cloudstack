@@ -716,6 +716,7 @@ public class NetUtilsTest {
         NetUtils.isIpv4("2001:db8:300::/64");
     }
 
+    @Test
     public void testAllIpsOfDefaultNic() {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
         if (defaultHostIp != null) {
