@@ -174,7 +174,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return new Pair<>(result, count);
     }
 
-    private QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
+    protected QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
         Calendar[] period = _statement.getCurrentStatementTime();
 
         if (account != null) {
@@ -193,6 +193,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setStartDate(period[0].getTime());
             qr.setEndDate(period[1].getTime());
             qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+            qr.setQuotaEnabled(QuotaConfig.QuotaAccountEnabled.valueIn(account.getId()));
             qr.setObjectName("summary");
             return qr;
         } else {
