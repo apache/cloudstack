@@ -1598,6 +1598,9 @@ export default {
       this.fetchVirtualMachines()
     },
     fetchLBTungstenFabricHealthMonitor () {
+      if (!('listTungstenFabricLBHealthMonitor' in this.$store.getters.apis)) {
+        return
+      }
       this.tungstenHealthMonitors = []
       this.loading = true
       this.lbRules.forEach(rule => {
