@@ -48,30 +48,26 @@ export default {
       icon: 'exclamation-circle-outlined',
       label: 'label.prepare.for.shutdown',
       message: 'message.prepare.for.shutdown',
+      // TODO : Add docs
       docHelp: 'installguide/configuration.html#adding-a-zone',
       dataView: true,
       popup: true,
+      confirmationText: 'SHUTDOWN',
       show: (record, store) => { return record.state === 'Up' },
-      mapping: {
-        managementserverid: {
-          value: (record, params) => { return record.id }
-        }
-      }
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Confirmation.vue')))
     },
     {
       api: 'triggerShutdown',
       icon: 'poweroff-outlined',
       label: 'label.trigger.shutdown',
       message: 'message.trigger.shutdown',
+      // TODO : Add docs
       docHelp: 'installguide/configuration.html#adding-a-zone',
       dataView: true,
       popup: true,
+      confirmationText: 'SHUTDOWN',
       show: (record, store) => { return record.state === 'Up' },
-      mapping: {
-        managementserverid: {
-          value: (record, params) => { return record.id }
-        }
-      }
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Confirmation.vue')))
     },
     {
       api: 'cancelShutdown',

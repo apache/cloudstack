@@ -21,24 +21,24 @@
       <div class="shutdownHeader" v-html="$t('message.shutdown.triggered')"/>
     </a-affix>
     <a-layout class="layout" :class="[device]">
-    <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
-      <template v-if="isSideMenu()">
-        <a-drawer
-          v-if="isMobile()"
-          :wrapClassName="'drawer-sider ' + navTheme"
-          :closable="false"
-          :visible="collapsed"
-          placement="left"
-          @close="() => this.collapsed = false"
-        >
-          <side-menu
-            :menus="menus"
-            :theme="navTheme"
-            :collapsed="false"
-            :collapsible="true"
-            mode="inline"
-            @menuSelect="menuSelect"></side-menu>
-        </a-drawer>
+      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
+        <template v-if="isSideMenu()">
+          <a-drawer
+            v-if="isMobile()"
+            :wrapClassName="'drawer-sider ' + navTheme"
+            :closable="false"
+            :visible="collapsed"
+            placement="left"
+            @close="() => this.collapsed = false"
+          >
+            <side-menu
+              :menus="menus"
+              :theme="navTheme"
+              :collapsed="false"
+              :collapsible="true"
+              mode="inline"
+              @menuSelect="menuSelect"></side-menu>
+          </a-drawer>
           <side-menu
             v-else
             mode="inline"
