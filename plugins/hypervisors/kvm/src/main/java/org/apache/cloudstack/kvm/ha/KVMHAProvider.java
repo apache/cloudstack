@@ -54,7 +54,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean isEligible(final Host host) {
-       if (outOfBandManagementService.isOutOfBandManagementEnabled(host)){
+       if (outOfBandManagementService.isOutOfBandManagementEnabled(host)) {
             return !isInMaintenanceMode(host) && !isDisabled(host) &&
                     hostActivityChecker.getNeighbors(host).length > 0 &&
                     (Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType()) ||
@@ -76,12 +76,12 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     @Override
     public boolean recover(Host r) throws HARecoveryException {
         try {
-            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
+            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)) {
                 final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
-                if(oobm.getPowerState() == PowerState.Off){
+                if (oobm.getPowerState() == PowerState.Off) {
                     LOG.warn("OOBM recover operation failed for the host " + r.getName() + " already OFF");
                     return false;
-                }else{
+                } else {
                     final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
                     return resp.getSuccess();
                 }
@@ -89,7 +89,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 LOG.warn("OOBM recover operation failed for the host " + r.getName());
                 return false;
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName(), e);
         }
@@ -98,9 +98,9 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     @Override
     public boolean fence(Host r) throws HAFenceException {
         try {
-            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
+            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)) {
                 final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
-                if (oobm.getPowerState() == PowerState.Unknown){
+                if (oobm.getPowerState() == PowerState.Unknown) {
                     return true;
                 } else {
                     final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
@@ -110,7 +110,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 LOG.warn("OOBM fence operation failed for this host " + r.getName());
                 return false;
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HAFenceException("OOBM service is not configured or enabled for this host " + r.getName() , e);
         }

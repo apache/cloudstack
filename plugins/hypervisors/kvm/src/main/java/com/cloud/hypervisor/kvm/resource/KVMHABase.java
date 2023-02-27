@@ -43,14 +43,14 @@ public class KVMHABase {
     }
 
     public static class NfsStoragePool {
-        String _poolUUID;
+        String _poolUuid;
         String _poolIp;
         String _poolMountSourcePath;
         String _mountDestPath;
         PoolType _type;
 
-        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
-            _poolUUID = poolUUID;
+        public NfsStoragePool(String poolUuid, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
+            _poolUuid = poolUuid;
             _poolIp = poolIp;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
@@ -59,7 +59,7 @@ public class KVMHABase {
     }
 
     public static class RbdStoragePool {
-        String _poolUUID;
+        String _poolUuid;
         String _monHost;
         String _poolMountSourcePath;
         String _mountDestPath;
@@ -68,8 +68,8 @@ public class KVMHABase {
         String _poolAuthSecret;
         String _poolSourceHost;
 
-        public RbdStoragePool(String poolUUID, String monHost, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthUserName, String poolAuthSecret, String poolSourceHost) {
-            _poolUUID = poolUUID;
+        public RbdStoragePool(String poolUuid, String monHost, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthUserName, String poolAuthSecret, String poolSourceHost) {
+            _poolUuid = poolUuid;
             _monHost = monHost;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
@@ -128,7 +128,7 @@ public class KVMHABase {
         StoragePool pool = null;
         String poolName = null;
         try {
-            pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool._poolUUID);
+            pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool._poolUuid);
             if (pool != null) {
                 StoragePoolInfo spi = pool.getInfo();
                 if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {

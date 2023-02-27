@@ -146,7 +146,7 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>templateConfig.sh</argument>
-                                <armument>${project.version}</armument>
+                                <argument>${project.version}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -186,6 +186,30 @@
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-vmware-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-vmware</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
                             <execution>
                                 <id>download-vmware-template</id>
                                 <goals>
