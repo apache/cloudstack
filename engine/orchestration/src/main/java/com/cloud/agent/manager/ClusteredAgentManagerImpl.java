@@ -1388,18 +1388,30 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         private String handleShutdownManagementServerHostCommand(BaseShutdownManagementServerHostCommand cmd) {
             if (cmd instanceof PrepareForShutdownManagementServerHostCommand) {
                 s_logger.debug("Received BaseShutdownManagementServerHostCommand - preparing to shut down");
-                shutdownManager.prepareForShutdown();
-                return "Successfully prepared for shutdown";
+                try {
+                    shutdownManager.prepareForShutdown();
+                    return "Successfully prepared for shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
             }
             if (cmd instanceof TriggerShutdownManagementServerHostCommand) {
                 s_logger.debug("Received TriggerShutdownManagementServerHostCommand - triggering a shut down");
-                shutdownManager.triggerShutdown();
-                return "Successfully triggered shutdown";
+                try {
+                    shutdownManager.triggerShutdown();
+                    return "Successfully triggered shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
             }
             if (cmd instanceof CancelShutdownManagementServerHostCommand) {
                 s_logger.debug("Received CancelShutdownManagementServerHostCommand - cancelling shut down");
-                shutdownManager.cancelShutdown();
-                return "Successfully cancelled shutdown";
+                try {
+                    shutdownManager.cancelShutdown();
+                    return "Successfully prepared for shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
             }
             throw new CloudRuntimeException("Unknown BaseShutdownManagementServerHostCommand command received : " + cmd);
         }

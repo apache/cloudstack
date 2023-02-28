@@ -161,6 +161,9 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
         cmds[0] = new PrepareForShutdownManagementServerHostCommand(msHost.getMsid());
         String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
         logger.info("PrepareForShutdownCmd result : " + result);
+        if (!result.contains("Success")) {
+            throw new CloudRuntimeException(result);
+        }
 
         msHost.setState(State.PreparingToShutDown);
         msHostDao.persist(msHost);
@@ -175,6 +178,9 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
         cmds[0] = new TriggerShutdownManagementServerHostCommand(msHost.getMsid());
         String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
         logger.info("TriggerShutdownCmd result : " + result);
+        if (!result.contains("Success")) {
+            throw new CloudRuntimeException(result);
+        }
 
         msHost.setState(State.ShuttingDown);
         msHostDao.persist(msHost);
@@ -189,6 +195,9 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
         cmds[0] = new CancelShutdownManagementServerHostCommand(msHost.getMsid());
         String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
         logger.info("CancelShutdownCmd result : " + result);
+        if (!result.contains("Success")) {
+            throw new CloudRuntimeException(result);
+        }
 
         msHost.setState(State.Up);
         msHostDao.persist(msHost);
