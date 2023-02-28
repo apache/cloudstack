@@ -1569,7 +1569,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         NetworkOffering.Availability.Required, null, Network.GuestType.Isolated, true,
                         true, false, false, false, false,
                         false, false, false, true, true, false,
-                        false, true, false, false, false);
+                        false, true, false, false);
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);
         defaultKubernetesServiceNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultKubernetesServiceNetworkOffering = networkOfferingDao.persistDefaultNetworkOffering(defaultKubernetesServiceNetworkOffering);

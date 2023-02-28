@@ -101,9 +101,6 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "internet_protocol")
     private String internetProtocol = null;
 
-    @Column(name = "specify_source_nat_address_allowed")
-    boolean specifySourceNatAllowed = false;
-
     public VpcOfferingJoinVO() {
     }
 
@@ -205,14 +202,6 @@ public class VpcOfferingJoinVO implements VpcOffering {
 
     public String getInternetProtocol() {
         return internetProtocol;
-    }
-
-    public boolean isSpecifySourceNatAllowed() {
-        return specifySourceNatAllowed;
-    }
-
-    public void setSpecifySourceNatAllowed(boolean specifySourceNatAllowed) {
-        this.specifySourceNatAllowed = specifySourceNatAllowed;
     }
 
     @Override

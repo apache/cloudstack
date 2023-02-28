@@ -107,7 +107,6 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
             }
             networkOfferingResponse.setInternetProtocol(protocol);
         }
-        networkOfferingResponse.setSpecifySourceNatAllowed(offering.isSpecifySourceNatAllowed());
         networkOfferingResponse.setObjectName("networkoffering");
 
         return networkOfferingResponse;

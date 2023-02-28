@@ -6209,10 +6209,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     void validateSourceNatServiceCapablities(final Map<Capability, String> sourceNatServiceCapabilityMap) {
-        if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && (sourceNatServiceCapabilityMap.size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap))) {
+        if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && (sourceNatServiceCapabilityMap.size() > 2 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap))) {
             throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
                     + ", " + Capability.RedundantRouter
-                    + " and " + Capability.SpecifySourceNatIp
                     + " capabilities can be sepcified for source nat service");
         }
     }
@@ -6221,14 +6220,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         for (final Entry<Capability ,String> srcNatPair : sourceNatServiceCapabilityMap.entrySet()) {
             final Capability capability = srcNatPair.getKey();
             final String value = srcNatPair.getValue();
-            if (capability == Capability.SupportedSourceNatTypes) {
+            if (Capability.SupportedSourceNatTypes.equals(capability)) {
                 List<String> snatTypes = Arrays.asList(PERACCOUNT, PERZONE);
                 if (! snatTypes.contains(value) || ( value.contains(PERACCOUNT) && value.contains(PERZONE))) {
                     throw new InvalidParameterValueException("Either peraccount or perzone source NAT type can be specified for "
                             + Capability.SupportedSourceNatTypes.getName());
                 }
-            } else if (Arrays.asList(Capability.RedundantRouter, Capability.SpecifySourceNatIp).contains(capability)) {
-                if (! Arrays.asList("true", "false").contains(value)) {
+            } else if (Capability.RedundantRouter.equals(capability)) {
+                if (! Arrays.asList("true", "false").contains(value.toLowerCase())) {
                     throw new InvalidParameterValueException("Unknown specified value for " + capability.getName());
                 }
             } else {
@@ -6354,7 +6353,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean elasticLb = false;
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
-        boolean specifySourceNatAllowed = false;
         boolean elasticIp = false;
         boolean associatePublicIp = false;
         boolean inline = false;
@@ -6424,12 +6422,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
                     redundantRouter = param.contains("true");
                 }
-
-                param = sourceNatServiceCapabilityMap.get(Capability.SpecifySourceNatIp);
-                if (param != null) {
-                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SpecifySourceNatIp, param);
-                    specifySourceNatAllowed = param.contains("true");
-                }
             }
 
             final Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
@@ -6469,7 +6461,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final NetworkOfferingVO offeringFinal = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability,
                 tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb,
-                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess, specifySourceNatAllowed);
+                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess);
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);

@@ -117,9 +117,6 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="ipSelectionAllowed" ref="specifySourceNatAllowed" :label="$t('label.selectsnatipallowed')" v-if="sourceNatServiceChecked">
-          <a-switch v-model:checked="form.selectsnatipallowed" />
-        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -478,22 +475,14 @@ export default {
               serviceCapabilityIndex++
             }
           }
+          if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+            serviceCapabilityIndex++
+          }
           if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
             params.serviceofferingid = values.serviceofferingid
-          }
-          if (supportedServices.includes('SourceNat')) {
-            if (values.redundantrouter === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.selectsnatipallowed === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SpecifySourceNatAllowed'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
           }
         } else {
           params.supportedservices = ''

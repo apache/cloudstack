@@ -73,6 +73,4 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Date getRemoved();
 
     Date getCreated();
-
-    boolean isSpecifySourceNatAllowed();
 }

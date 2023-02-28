@@ -86,10 +86,6 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "the internet protocol of the vpc offering")
     private String internetProtocol;
 
-    @SerializedName(ApiConstants.IS_SELECTION_OF_SOURCE_NAT_ALLOWED)
-    @Param(description = "Are users allowed to select a primarey SNAT public address", since = "4.18")
-    boolean specifySourceNatAllowed;
-
     public void setId(String id) {
         this.id = id;
     }
@@ -164,9 +160,5 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setInternetProtocol(String internetProtocol) {
         this.internetProtocol = internetProtocol;
-    }
-
-    public void setSpecifySourceNatAllowed(boolean specifySourceNatAllowed) {
-        this.specifySourceNatAllowed = specifySourceNatAllowed;
     }
 }

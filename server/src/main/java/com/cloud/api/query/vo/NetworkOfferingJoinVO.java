@@ -184,9 +184,6 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "internet_protocol")
     private String internetProtocol = null;
 
-    @Column(name = "specify_source_nat_address_allowed")
-    boolean specifySourceNatAllowed = false;
-
     public NetworkOfferingJoinVO() {
     }
 
@@ -350,10 +347,6 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         return forTungsten;
     }
 
-    public boolean isSpecifySourceNatAllowed() {
-        return specifySourceNatAllowed;
-    }
-
     public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }
 
     public String getServicePackage() {
@@ -423,9 +416,5 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Override
     public boolean isSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
-    }
-
-    public void setSpecifySourceNatAllowed(boolean specifySourceNatAllowed) {
-        this.specifySourceNatAllowed = specifySourceNatAllowed;
     }
 }

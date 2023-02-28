@@ -291,6 +291,7 @@
               </a-col>
             </a-row>
           </div>
+          <!-- TODO; change to isSourceNatEnabled -->
           <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.selectsnatipallowed" name="routerip" ref="routerip">
             <template #label>
               <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>

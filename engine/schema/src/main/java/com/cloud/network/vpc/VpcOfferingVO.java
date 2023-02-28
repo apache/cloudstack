@@ -79,9 +79,6 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "sort_key")
     int sortKey;
 
-    @Column(name = "specify_source_nat_address_allowed")
-    boolean specifySourceNatAllowed = false;
-
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -97,13 +94,12 @@ public class VpcOfferingVO implements VpcOffering {
 
     public VpcOfferingVO(final String name, final String displayText, final boolean isDefault, final Long serviceOfferingId,
                          final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                         final boolean redundantRouter, final boolean specifySourceNatAllowed) {
+                         final boolean redundantRouter) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
         this.supportsDistributedRouter = supportsDistributedRouter;
         this.offersRegionLevelVPC = offersRegionLevelVPC;
         this.redundantRouter = redundantRouter;
-        this.specifySourceNatAllowed = specifySourceNatAllowed;
     }
 
     public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,
@@ -206,14 +202,6 @@ public class VpcOfferingVO implements VpcOffering {
 
     public int getSortKey() {
         return sortKey;
-    }
-
-    public boolean isSpecifySourceNatAllowed() {
-        return specifySourceNatAllowed;
-    }
-
-    public void setSpecifySourceNatAllowed(boolean specifySourceNatAllowed) {
-        this.specifySourceNatAllowed = specifySourceNatAllowed;
     }
 
 }

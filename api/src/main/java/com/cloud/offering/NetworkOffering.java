@@ -151,6 +151,4 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     String getServicePackage();
 
     Date getCreated();
-
-    boolean isSpecifySourceNatAllowed();
 }

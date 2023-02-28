@@ -109,7 +109,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols,
                 Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods, Capability.ElasticLb, Capability.LbSchemes);
         public static final Service UserData = new Service("UserData");
-        public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter, Capability.SpecifySourceNatIp);
+        public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
         public static final Service StaticNat = new Service("StaticNat", Capability.ElasticIp);
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
@@ -270,7 +270,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
-        public static final Capability SpecifySourceNatIp = new Capability("SpecifySourceNatAllowed");
         public static final Capability ElasticIp = new Capability("ElasticIp");
         public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");

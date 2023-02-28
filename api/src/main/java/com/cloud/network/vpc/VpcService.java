@@ -143,9 +143,9 @@ public interface VpcService {
     /**
      * Restarts the VPC. VPC gets shutdown and started as a part of it
      *
-     * @param id
-     * @param cleanUp
-     * @param makeredundant
+     * @param networkId the network to restart
+     * @param cleanup throw away the existing VR and rebuild a new one?
+     * @param makeRedundant create two VRs for this network
      * @return success or not
      * @throws InsufficientCapacityException when there is no suitable deployment plan possible
      */
