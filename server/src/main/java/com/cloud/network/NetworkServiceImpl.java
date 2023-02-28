@@ -3118,7 +3118,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (servicesNotInNewOffering != null && !servicesNotInNewOffering.isEmpty()) {
                 _networkMgr.cleanupConfigForServicesInNetwork(servicesNotInNewOffering, network);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) { // old pokemon catch that used to catch throwable
             s_logger.debug("failed to cleanup config related to unused services error:" + e.getMessage());
         }
 
