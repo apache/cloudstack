@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.schedule.VMSchedule;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -167,6 +168,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupSchedule;
@@ -771,6 +773,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
         vmSnapshotResponse.setObjectName("vmsnapshot");
         return vmSnapshotResponse;
+    }
+
+    @Override
+    public VMScheduleResponse createVMScheduleResponse(VMSchedule vmSchedule) {
+        VMScheduleResponse vmScheduleResponse = new VMScheduleResponse();
+        vmScheduleResponse.setId(vmSchedule.getUuid());
+        vmScheduleResponse.setDescription(vmSchedule.getDescription());
+        vmScheduleResponse.setState(vmSchedule.getState());
+        vmScheduleResponse.setPeriod(vmSchedule.getPeriod());
+        vmScheduleResponse.setAction(vmSchedule.getAction());
+        vmScheduleResponse.setTimezone(vmSchedule.getTimezone());
+        vmScheduleResponse.setTag(vmSchedule.getTag());
+        UserVm vm = ApiDBUtils.findUserVmById(vmSchedule.getVmId());
+        if (vm != null) {
+            vmScheduleResponse.setVirtualMachineId(vm.getUuid());
+        }
+        vmScheduleResponse.setObjectName("vmschedule");
+        return vmScheduleResponse;
     }
 
     @Override

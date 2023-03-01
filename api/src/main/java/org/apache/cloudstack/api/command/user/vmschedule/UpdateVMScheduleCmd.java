@@ -25,12 +25,12 @@ import org.apache.log4j.Logger;
 @APICommand(name = UpdateVMScheduleCmd.APINAME,
         description = "Lists Schedules for a VM",
         responseObject = VMScheduleResponse.class,
-        since = "4.18.0",
+        since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateVMScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "updateVMSchedule";
-    public static final Logger s_logger = Logger.getLogger(UpdateVMScheduleCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UpdateVMScheduleCmd.class);
 
     @Override
     public void execute() {

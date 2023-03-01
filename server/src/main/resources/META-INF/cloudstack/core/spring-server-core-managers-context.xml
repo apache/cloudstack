@@ -76,6 +76,8 @@
 
     <bean id="storageManagerImpl" class="com.cloud.storage.StorageManagerImpl" />
 
+    <bean id="VMScheduleManager" class="com.cloud.vm.schedule.VMScheduleManagerImpl" />
+
     <bean id="resourceManagerImpl" class="com.cloud.resource.ResourceManagerImpl">
         <property name="discoverers"
             value="#{resourceDiscoverersRegistry.registered}" />

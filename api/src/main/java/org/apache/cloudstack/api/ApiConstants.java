@@ -1020,6 +1020,11 @@ public class ApiConstants {
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
     public static final String LIST_APIS = "listApis";
+    public static final String VM_SCHEDULE_DESCRIPTION = "description";
+    public static final String VM_SCHEDULE_ACTION = "action";
+    public static final String VM_SCHEDULE_PERIOD = "period";
+    public static final String VM_SCHEDULE_TAG = "tag";
+    public static final String VM_SCHEDULE_TIMEZONE = "timezone";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

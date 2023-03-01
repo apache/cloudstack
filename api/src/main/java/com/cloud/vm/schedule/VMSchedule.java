@@ -28,4 +28,20 @@ public interface VMSchedule extends Identity, InternalIdentity {
         start, stop, forcestop, reboot
     }
 
+    public String getUuid();
+
+    public String getDescription();
+
+    public String getPeriod();
+
+    public String getAction();
+
+    public State getState();
+
+    public String getTimezone();
+
+    public String getTag();
+
+    public Long getVmId();
+
 }

@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.schedule.VMScheduleManager;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -184,6 +185,8 @@ public abstract class BaseCmd {
     public NetworkUsageService _networkUsageService;
     @Inject
     public VMSnapshotService _vmSnapshotService;
+    @Inject
+    public VMScheduleManager vmScheduleManager;
     @Inject
     public DataStoreProviderApiService dataStoreProviderApiService;
     @Inject

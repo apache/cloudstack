@@ -18,4 +18,7 @@ package com.cloud.vm.schedule;
 
 public interface VMScheduleManager {
 
+     VMSchedule findVMSchedule(Long id);
+
+     VMSchedule createVMSchedule(Long vmId, String description, String action, String period, String tag, String timezone);
 }

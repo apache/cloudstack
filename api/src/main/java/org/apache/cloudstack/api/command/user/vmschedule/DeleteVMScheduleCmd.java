@@ -22,15 +22,15 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = CreateVMScheduleCmd.APINAME,
+@APICommand(name = DeleteVMScheduleCmd.APINAME,
         description = "Deletes VM Schedule",
         responseObject = SuccessResponse.class,
-        since = "4.18.0",
+        since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteVMScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "deleteVMSchedule";
-    public static final Logger s_logger = Logger.getLogger(CreateVMScheduleCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CreateVMScheduleCmd.class);
 
     @Override
     public void execute() {

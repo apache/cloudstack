@@ -25,12 +25,12 @@ import org.apache.log4j.Logger;
 @APICommand(name = ListVMScheduleCmd.APINAME,
         description = "Lists Schedules for a VM",
         responseObject = VMScheduleResponse.class,
-        since = "4.18.0",
+        since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMScheduleCmd extends BaseListCmd {
     public static final String APINAME = "listVMSchedules";
-    public static final Logger s_logger = Logger.getLogger(ListVMScheduleCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVMScheduleCmd.class);
 
     @Override
     public void execute() {

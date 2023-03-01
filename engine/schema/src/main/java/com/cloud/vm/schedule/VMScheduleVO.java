@@ -37,19 +37,19 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "vm_id")
-    long vmId;
+    private Long vmId;
 
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    State state = State.Disabled;
+    private State state = State.Disabled;
 
     @Column(name = "action")
     @Enumerated(value = EnumType.STRING)
-    private Action action;
+    private String action;
 
     @Column(name = "period")
     private String period;
@@ -60,15 +60,14 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "tag")
     private String tag;
 
-    protected VMScheduleVO() {
+    public VMScheduleVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VMScheduleVO(String name, long vmId, State state, Action action, String period, String timezone, String tag) {
+    public VMScheduleVO(long vmId, String description, String action, String period, String tag, String timezone) {
         this.uuid = UUID.randomUUID().toString();
-        this.name = name;
         this.vmId = vmId;
-        this.state = state;
+        this.description = description;
         this.action = action;
         this.period = period;
         this.timezone = timezone;
@@ -85,15 +84,24 @@ public class VMScheduleVO implements VMSchedule {
         return id;
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public String getTag() {
+        return tag;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
-    public long getVmId() {
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Long getVmId() {
         return vmId;
     }
 
@@ -109,11 +117,11 @@ public class VMScheduleVO implements VMSchedule {
         this.state = state;
     }
 
-    public Action getAction() {
+    public String getAction() {
         return action;
     }
 
-    public void setAction(Action action) {
+    public void setAction(String action) {
         this.action = action;
     }
 

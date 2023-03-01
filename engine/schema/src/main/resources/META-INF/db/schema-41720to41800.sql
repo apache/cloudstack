@@ -1576,13 +1576,14 @@ CREATE VIEW `cloud`.`user_view` AS
 CREATE TABLE IF NOT EXISTS `cloud`.`vm_schedule` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) UNIQUE COMMENT 'UUID for the VM Schedule',
-  `name` varchar(255) COMMENT 'name of VM Schedule',
+  `description` varchar(255) COMMENT 'description of VM Schedule',
   `action` varchar(40) NOT NULL COMMENT 'action Scheduled on VM',
   `period` varchar(255) NOT NULL COMMENT 'period Scheduled on VM',
   `timezone` varchar(40)  COMMENT 'timezone of VM',
+  `state` varchar(40) NOT NULL COMMENT 'state of VM',
   `tag` varchar(40)  COMMENT 'Tag Value of VM Schedule',
   `vm_id` bigint(20) unsigned NOT NULL COMMENT 'virtual machine id',
-  FOREIGN KEY (vm_id) REFERENCES `cloud`.`vm_instance`(`id`),
+  INDEX(`vm_id`),
   PRIMARY KEY (`id`),
   KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
