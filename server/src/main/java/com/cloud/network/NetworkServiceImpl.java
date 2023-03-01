@@ -80,6 +80,8 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -1298,6 +1300,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    private void validateSharedNetworkRouterIPs(String gateway, String startIP, String endIP, String netmask, String routerIPv4, String routerIPv6, String startIPv6, String endIPv6, String ip6Cidr, NetworkOffering ntwkOff) {
+        if (ntwkOff.getGuestType() == GuestType.Shared) {
+            validateSharedNetworkRouterIPv4(routerIPv4, startIP, endIP, gateway, netmask);
+            validateSharedNetworkRouterIPv6(routerIPv6, startIPv6, endIPv6, ip6Cidr);
+
+        }
+    }
+
     private void validateSharedNetworkRouterIPv4(String routerIp, String startIp, String endIp, String gateway, String netmask) {
         if (StringUtils.isNotBlank(routerIp)) {
             if (startIp != null && endIp == null) {
@@ -1370,30 +1380,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String endIP = cmd.getEndIp();
         String netmask = cmd.getNetmask();
         String networkDomain = cmd.getNetworkDomain();
-        String vlanId = null;
-        boolean bypassVlanOverlapCheck = false;
-        boolean hideIpAddressUsage = false;
-        if (cmd instanceof CreateNetworkCmdByAdmin) {
-            vlanId = ((CreateNetworkCmdByAdmin)cmd).getVlan();
-            bypassVlanOverlapCheck = ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck();
-            hideIpAddressUsage = ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
-        }
+
+        boolean adminCalledUs = cmd instanceof CreateNetworkCmdByAdmin;
+        String vlanId = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getVlan() : null;
+        boolean bypassVlanOverlapCheck = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck() : false;
+        boolean hideIpAddressUsage = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage() : false;
+        String routerIPv4 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIp() : null;
+        String routerIPv6 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6() : null;
 
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
         Account caller = CallContext.current().getCallingAccount();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
-        Long zoneId = cmd.getZoneId();
-        String aclTypeStr = cmd.getAclType();
         Long domainId = cmd.getDomainId();
-        boolean isDomainSpecific = false;
         Boolean subdomainAccess = cmd.getSubdomainAccess();
         Long vpcId = cmd.getVpcId();
         String startIPv6 = cmd.getStartIpv6();
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
-        Boolean displayNetwork = cmd.getDisplayNetwork();
+        Boolean displayNetwork = cmd.getDisplayNetwork() == null ? true : cmd.getDisplayNetwork() ;
         Long aclId = cmd.getAclId();
         String isolatedPvlan = cmd.getIsolatedPvlan();
         String externalId = cmd.getExternalId();
@@ -1406,127 +1412,31 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
 
-        // Validate network offering
-        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
-        if (ntwkOff == null || ntwkOff.isSystemOnly()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
-            if (ntwkOff != null) {
-                ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
-            }
-            throw ex;
-        }
+        // Validate network offering id
+        NetworkOffering ntwkOff = getAndValidateNetworkOffering(networkOfferingId);
 
-        Account owner = null;
-        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
-            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
-        } else {
-            s_logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
-            owner = caller;
-        }
+        Account owner = getOwningAccount(cmd, caller);
 
-        // validate physical network and zone
-        // Check if physical network exists
-        PhysicalNetwork pNtwk = null;
-        if (physicalNetworkId != null) {
-            pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
-            if (pNtwk == null) {
-                throw new InvalidParameterValueException("Unable to find a physical network having the specified physical network id");
-            }
-        }
+        PhysicalNetwork pNtwk = getAndValidatePhysicalNetwork(physicalNetworkId);
 
-        if (zoneId == null) {
-            zoneId = pNtwk.getDataCenterId();
-        }
-
-        if (displayNetwork == null) {
-            displayNetwork = true;
-        }
-
-        DataCenter zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Specified zone id was not found");
-        }
+        DataCenter zone = getAndValidateZone(cmd, pNtwk);
 
         _accountMgr.checkAccess(owner, ntwkOff, zone);
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-            // See DataCenterVO.java
-            PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
-            ex.addProxyObject(zone.getUuid(), "zoneId");
-            throw ex;
-        }
+        validateZoneAvailability(caller, zone);
 
-        // Only domain and account ACL types are supported in Acton.
-        ACLType aclType = null;
-        if (aclTypeStr != null) {
-            if (aclTypeStr.equalsIgnoreCase(ACLType.Account.toString())) {
-                aclType = ACLType.Account;
-            } else if (aclTypeStr.equalsIgnoreCase(ACLType.Domain.toString())) {
-                aclType = ACLType.Domain;
-            } else {
-                throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
-            }
-            // In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
-            if (ntwkOff.getGuestType() == GuestType.Isolated) {
-                if (aclType != ACLType.Account) {
-                    throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + Network.GuestType.Isolated);
-                }
-            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
-                if (!(aclType == ACLType.Domain || aclType == ACLType.Account)) {
-                    throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " or " + ACLType.Account + " for network of type " + Network.GuestType.Shared);
-                }
-            }
-        } else {
-            if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
-                aclType = ACLType.Account;
-            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
-                if (_accountMgr.isRootAdmin(caller.getId())) {
-                    aclType = ACLType.Domain;
-                } else if (_accountMgr.isNormalUser(caller.getId())) {
-                    aclType = ACLType.Account;
-                } else {
-                    throw new InvalidParameterValueException("AclType must be specified for shared network created by domain admin");
-                }
-            }
-        }
+        ACLType aclType = getAclType(caller, cmd.getAclType(), ntwkOff);
 
-        if (ntwkOff.getGuestType() == GuestType.L2 && (!StringUtils.isAllBlank(cmd.getRouterIPv4(), cmd.getRouterIPv6()))) {
-            throw new InvalidParameterValueException("Router IP cannot be specified for level 2 networks");
+        if (ntwkOff.getGuestType() != GuestType.Shared && (!StringUtils.isAllBlank(routerIPv4, routerIPv6))) {
+            throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)
-                && (!StringUtils.isAllBlank(cmd.getRouterIPv4(), cmd.getRouterIPv6()))) {
+                && (!StringUtils.isAllBlank(routerIPv4, routerIPv6))) {
             throw new InvalidParameterValueException("Virtual Router is not a supported provider for the Shared network, hence router ip should not be provided");
         }
 
-        // Check if the network is domain specific
-        if (aclType == ACLType.Domain) {
-            // only Admin can create domain with aclType=Domain
-            if (!_accountMgr.isAdmin(caller.getId())) {
-                throw new PermissionDeniedException("Only admin can create networks with aclType=Domain");
-            }
-
-            // only shared networks can be Domain specific
-            if (ntwkOff.getGuestType() != GuestType.Shared) {
-                throw new InvalidParameterValueException("Only " + GuestType.Shared + " networks can have aclType=" + ACLType.Domain);
-            }
-
-            if (domainId != null) {
-                if (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Shared) {
-                    throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest type " + Network.GuestType.Shared);
-                }
-
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find domain by specified id");
-                }
-                _accountMgr.checkAccess(caller, domain);
-            }
-            isDomainSpecific = true;
-
-        } else if (subdomainAccess != null) {
-            throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
-        }
+        boolean isDomainSpecific = isDomainSpecificNetworkRequested(caller, domainId, subdomainAccess, ntwkOff, aclType);
 
         if (aclType == ACLType.Domain) {
             owner = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -1628,14 +1538,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        if (ntwkOff.getGuestType() == GuestType.Shared) {
-            validateSharedNetworkRouterIPv4(cmd.getRouterIPv4(), startIP, endIP, gateway, netmask);
-            validateSharedNetworkRouterIPv6(cmd.getRouterIPv6(), startIPv6, endIPv6, ip6Cidr);
+        validateSharedNetworkRouterIPs(gateway, startIP, endIP, netmask, routerIPv4, routerIPv6, startIPv6, endIPv6, ip6Cidr, ntwkOff);
 
-        } else if (ntwkOff.getGuestType() == GuestType.Isolated) {
-            validateIsolatedNetworkRouterIPv4(cmd.getRouterIPv4());
-            validateIsolatedNetworkRouterIPv6(cmd.getRouterIPv6());
-        }
         Pair<String, String> ip6GatewayCidr = null;
         if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {
             ipv6 = _networkOfferingDao.isIpv6Supported(ntwkOff.getId());
@@ -1707,7 +1611,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (cidr != null && providersConfiguredForExternalNetworking(ntwkProviders)) {
             if (ntwkOff.getGuestType() == GuestType.Shared && (zone.getNetworkType() == NetworkType.Advanced) && isSharedNetworkOfferingWithServices(networkOfferingId)) {
                 // validate if CIDR specified overlaps with any of the CIDR's allocated for isolated networks and shared networks in the zone
-                checkSharedNetworkCidrOverlap(zoneId, pNtwk.getId(), cidr);
+                checkSharedNetworkCidrOverlap(zone.getId(), pNtwk.getId(), cidr);
             } else {
                 // if the guest network is for the VPC, if any External Provider are supported in VPC
                 // cidr will not be null as it is generated from the super cidr of vpc.
@@ -1735,7 +1639,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), "networkOfferingId");
         }
 
-        Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zoneId);
+        Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
         mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu, privateMtu);
 
         Network associatedNetwork = null;
@@ -1754,9 +1658,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
-        Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
+        Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, cmd.getRouterIPv4(), cmd.getRouterIPv6(), associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
+                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
+
+        // retrieve, acquire and associate the correct ip adresses
+        arrangeForRouterSourcenatIp(cmd, network);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
@@ -1771,6 +1678,147 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    private void arrangeForRouterSourcenatIp(CreateNetworkCmd cmd, Network network) {
+        // list the network with the given IP
+        // associate the ip to the network by its (uu)id
+        // (mark as sourceNat?
+
+    }
+
+    @Nullable
+    private ACLType getAclType(Account caller, String aclTypeStr, NetworkOffering ntwkOff) {
+        // Only domain and account ACL types are supported in Acton.
+        ACLType aclType = null;
+        if (aclTypeStr != null) {
+            if (aclTypeStr.equalsIgnoreCase(ACLType.Account.toString())) {
+                aclType = ACLType.Account;
+            } else if (aclTypeStr.equalsIgnoreCase(ACLType.Domain.toString())) {
+                aclType = ACLType.Domain;
+            } else {
+                throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
+            }
+            // In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
+            if (ntwkOff.getGuestType() == GuestType.Isolated) {
+                if (aclType != ACLType.Account) {
+                    throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + GuestType.Isolated);
+                }
+            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
+                if (!(aclType == ACLType.Domain || aclType == ACLType.Account)) {
+                    throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " or " + ACLType.Account + " for network of type " + GuestType.Shared);
+                }
+            }
+        } else {
+            if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
+                aclType = ACLType.Account;
+            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
+                if (_accountMgr.isRootAdmin(caller.getId())) {
+                    aclType = ACLType.Domain;
+                } else if (_accountMgr.isNormalUser(caller.getId())) {
+                    aclType = ACLType.Account;
+                } else {
+                    throw new InvalidParameterValueException("AclType must be specified for shared network created by domain admin");
+                }
+            }
+        }
+        return aclType;
+    }
+
+    private void validateZoneAvailability(Account caller, DataCenter zone) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+            // See DataCenterVO.java
+            PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
+            ex.addProxyObject(zone.getUuid(), "zoneId");
+            throw ex;
+        }
+    }
+
+    private boolean isDomainSpecificNetworkRequested(Account caller, Long domainId, Boolean subdomainAccess, NetworkOffering ntwkOff, ACLType aclType) {
+        boolean isDomainSpecific = false;
+        // Check if the network is domain specific
+        if (aclType == ACLType.Domain) {
+            // only Admin can create domain with aclType=Domain
+            if (!_accountMgr.isAdmin(caller.getId())) {
+                throw new PermissionDeniedException("Only admin can create networks with aclType=Domain");
+            }
+
+            // only shared networks can be Domain specific
+            if (ntwkOff.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("Only " + GuestType.Shared + " networks can have aclType=" + ACLType.Domain);
+            }
+
+            if (domainId != null) {
+                if (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != GuestType.Shared) {
+                    throw new InvalidParameterValueException("Domain level networks are supported just for traffic type " + TrafficType.Guest + " and guest type " + GuestType.Shared);
+                }
+
+                DomainVO domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find domain by specified id");
+                }
+                _accountMgr.checkAccess(caller, domain);
+            }
+            isDomainSpecific = true;
+
+        } else if (subdomainAccess != null) {
+            throw new InvalidParameterValueException("Parameter subDomainAccess can be specified only with aclType=Domain");
+        }
+        return isDomainSpecific;
+    }
+
+    @NotNull
+    private DataCenter getAndValidateZone(CreateNetworkCmd cmd, PhysicalNetwork pNtwk) {
+        Long zoneId = (cmd.getZoneId() == null) ? pNtwk.getDataCenterId() : cmd.getZoneId();
+        DataCenter zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Specified zone id was not found");
+        }
+        return zone;
+    }
+
+    /**
+     // validate physical network and zone
+     // Check if physical network exists
+     *
+     * @param physicalNetworkId the id of the required physical network
+     * @return the data object for the physical network
+     */
+    @Nullable
+    private PhysicalNetwork getAndValidatePhysicalNetwork(Long physicalNetworkId) {
+        PhysicalNetwork pNtwk = null;
+        if (physicalNetworkId != null) {
+            pNtwk = getPhysicalNetwork(physicalNetworkId);
+            if (pNtwk == null) {
+                throw new InvalidParameterValueException("Unable to find a physical network having the specified physical network id");
+            }
+        }
+        return pNtwk;
+    }
+
+    private Account getOwningAccount(CreateNetworkCmd cmd, Account caller) {
+        Account owner = null;
+        Long domainId = cmd.getDomainId();
+        if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
+            owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
+        } else {
+            s_logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
+            owner = caller;
+        }
+        return owner;
+    }
+
+    @NotNull
+    private NetworkOffering getAndValidateNetworkOffering(Long networkOfferingId) {
+        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
+        if (ntwkOff == null || ntwkOff.isSystemOnly()) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
+            if (ntwkOff != null) {
+                ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
+            }
+            throw ex;
+        }
+        return ntwkOff;
     }
 
     protected void mtuCheckForVpcNetwork(Long vpcId, Pair<Integer, Integer> interfaceMTUs, Integer publicMtu, Integer privateMtu) {
@@ -1887,7 +1935,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateNetworkOfferingForNonRootAdminUser(NetworkOfferingVO ntwkOff) {
+    private void validateNetworkOfferingForNonRootAdminUser(NetworkOffering ntwkOff) {
         if (ntwkOff.getTrafficType() != TrafficType.Guest) {
             throw new InvalidParameterValueException("This user can only create a Guest network");
         }
@@ -1949,7 +1997,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private Network commitNetwork(final Long networkOfferingId, final String gateway, final String startIP, final String endIP, final String netmask, final String networkDomain, final String vlanIdFinal,
                                   final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
-                                  final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
+                                  final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
                                   final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs) throws InsufficientCapacityException, ResourceAllocationException {
         try {

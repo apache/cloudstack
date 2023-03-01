@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -114,13 +113,11 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the VPC", since = "4.18.0")
     private String ip6Dns2;
 
-    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the router of the network", since = "4.18",
-            validations = {ApiArgValidator.NotNullOrEmpty})
-    private String routerIp;
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router.", since = "4.19")
+    private String sourceNatIp;
 
-    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to the router of the network", since = "4.18",
-            validations = {ApiArgValidator.NotNullOrEmpty})
-    private String routerIpv6;
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router.", since = "4.19")
+    private String sourceNatIpUuid;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////

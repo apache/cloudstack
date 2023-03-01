@@ -291,22 +291,13 @@
               </a-col>
             </a-row>
           </div>
-          <!-- TODO; change to isSourceNatEnabled -->
-          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.selectsnatipallowed" name="routerip" ref="routerip">
+          <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat" name="sourcenatipaddress" ref="sourcenatipaddress">
             <template #label>
-              <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
+              <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress.description"/>
             </template>
             <a-input
-              v-model:value="form.routerip"
-              :placeholder="apiParams.routerip.description"/>
-          </a-form-item>
-          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.selectsnatipallowed" name="routeripv6" ref="routeripv6">
-            <template #label>
-              <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
-            </template>
-            <a-input
-              v-model:value="form.routeripv6"
-              :placeholder="apiParams.routeripv6.description"/>
+              v-model:value="form.sourcenatipaddress"
+              :placeholder="apiParams.sourcenatipaddress.description"/>
           </a-form-item>
           <a-form-item
             ref="networkdomain"
@@ -434,6 +425,14 @@ export default {
         const services = this.selectedNetworkOffering?.service || []
         const dnsServices = services.filter(service => service.name === 'Dns')
         return dnsServices && dnsServices.length === 1
+      }
+      return false
+    },
+    selectedNetworkOfferingSupportsSourceNat () {
+      if (this.selectedNetworkOffering) {
+        const services = this.selectedNetworkOffering?.service || []
+        const sourcenatService = services.filter(service => service.name === 'SourceNat')
+        return sourcenatService && sourcenatService.length === 1
       }
       return false
     }
@@ -635,7 +634,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'routerip', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]

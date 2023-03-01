@@ -352,6 +352,7 @@ public class NetworkServiceImplTest {
         ReflectionTestUtils.setField(createNetworkCmd, "privateMtu", privateMtu);
         ReflectionTestUtils.setField(createNetworkCmd, "physicalNetworkId", null);
         Mockito.when(offering.isSystemOnly()).thenReturn(false);
+        Mockito.when(dc.getId()).thenReturn(1L);
         Mockito.when(dc.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Map<String, String> networkProvidersMap = new HashMap<String, String>();
         Mockito.when(networkManager.finalizeServicesAndProvidersForNetwork(ArgumentMatchers.any(NetworkOffering.class), anyLong())).thenReturn(networkProvidersMap);
@@ -409,6 +410,7 @@ public class NetworkServiceImplTest {
         ReflectionTestUtils.setField(createNetworkCmd, "privateMtu", privateMtu);
         ReflectionTestUtils.setField(createNetworkCmd, "physicalNetworkId", null);
         ReflectionTestUtils.setField(createNetworkCmd, "vpcId", 1L);
+        Mockito.when(dc.getId()).thenReturn(1L);
         Mockito.when(configMgr.isOfferingForVpc(offering)).thenReturn(true);
         Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpc);
 
