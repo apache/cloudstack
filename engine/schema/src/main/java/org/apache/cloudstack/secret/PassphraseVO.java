@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.secret;
 
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import javax.persistence.Column;
@@ -41,7 +40,6 @@ public class PassphraseVO {
     private Long id;
 
     @Column(name = "passphrase")
-    @Encrypt
     private byte[] passphrase;
 
     public PassphraseVO() {
