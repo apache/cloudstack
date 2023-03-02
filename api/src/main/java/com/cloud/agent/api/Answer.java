@@ -57,7 +57,7 @@ public class Answer extends Command {
     }
 
     public static UnsupportedAnswer createUnsupportedVersionAnswer(final Command cmd) {
-        return new UnsupportedAnswer(cmd, "Unsuppored Version.");
+        return new UnsupportedAnswer(cmd, "Unsupported Version.");
     }
 
     @Override

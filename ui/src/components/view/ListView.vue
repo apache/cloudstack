@@ -30,9 +30,9 @@
     <template #customFilterDropdown>
       <div style="padding: 8px" class="filter-dropdown">
         <a-menu>
-          <a-menu-item v-for="(col, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(col)">
-            <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(col))"/>
-            {{ $t('label.' + String(getColumnKey(col)).toLowerCase()) }}
+          <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
+            <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
+            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -104,6 +104,15 @@
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
           </span>
+          <span v-else-if="$route.path.startsWith('/tungstenfabric')">
+            <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+          </span>
+          <span v-else-if="isTungstenPath()">
+            <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: record.zoneid } }" v-if="record.uuid && record.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
+            <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
+            <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+          </span>
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
@@ -157,13 +166,14 @@
         <span>{{ ipV6Address(text, record) }}</span>
       </template>
       <template v-if="column.key === 'publicip'">
-        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        <router-link v-if="['/autoscalevmgroup'].includes($route.path)" :to="{ path: '/publicip' + '/' + record.publicipid }">{{ text }}</router-link>
+        <router-link v-else :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'traffictype'">
         {{ text }}
       </template>
       <template v-if="column.key === 'vmname'">
-        <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
+        <router-link :to="{ path: createPathBasedOnVmType(record.vmtype, record.virtualmachineid) }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'virtualmachinename'">
         <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
@@ -188,6 +198,9 @@
         <status :text="text ? text : ''" displayText />
       </template>
       <template v-if="column.key === 'agentstate'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
       </template>
       <template v-if="column.key === 'vlan'">
@@ -415,6 +428,7 @@ import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import { createPathBasedOnVmType } from '@/utils/plugins'
 
 export default {
   name: 'ListView',
@@ -509,18 +523,24 @@ export default {
     }
   },
   methods: {
+    isTungstenPath () {
+      return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
+    },
+    createPathBasedOnVmType: createPathBasedOnVmType,
     quickViewEnabled () {
-      return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
+      return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
-        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
+        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
+        '/tungstenfabric'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
-      return ['vm', 'alert', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot',
+      return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
         'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
@@ -730,6 +750,7 @@ export default {
         case 'VR' : return 'Virtual Router'
         case 'SYSTEM_VM' : return 'System VM'
         case 'KUBERNETES_CLUSTER': return 'Kubernetes Cluster'
+        case 'AUTOSCALE_VM_GROUP': return 'AutoScale VM group'
         default: return record.entitytype.toLowerCase().replace('_', '')
       }
     },
@@ -760,6 +781,7 @@ export default {
         case 'VR' : return 'router'
         case 'SYSTEM_VM' : return 'systemvm'
         case 'KUBERNETES_CLUSTER': return 'kubernetes'
+        case 'AUTOSCALE_VM_GROUP': return 'autoscalevmgroup'
         default: return entitytype.toLowerCase().replace('_', '')
       }
     },
@@ -781,6 +803,12 @@ export default {
       return host.state
     },
     getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      }
+      return name
+    },
+    getColumTitle (name) {
       if (typeof name === 'object') {
         name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }

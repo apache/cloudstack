@@ -38,11 +38,10 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
 
-@APICommand(name = UpdateProjectRolePermissionCmd.APINAME, description = "Updates a project role permission and/or order", responseObject = SuccessResponse.class,
+@APICommand(name = "updateProjectRolePermission", description = "Updates a project role permission and/or order", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class UpdateProjectRolePermissionCmd extends BaseCmd {
-    public static final String APINAME = "updateProjectRolePermission";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -149,11 +148,6 @@ public class UpdateProjectRolePermissionCmd extends BaseCmd {
             rolePermissionsOrder.add(rolePermission);
         }
         return projRoleService.updateProjectRolePermission(projectId, projectRole, rolePermissionsOrder);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override

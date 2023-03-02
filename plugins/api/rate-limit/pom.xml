@@ -34,7 +34,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <forkMode>always</forkMode>
-                    <argLine>-Xmx2048m -XX:MaxPermSize=1024m</argLine>
+                    <argLine>@{argLine} -Xmx2048m -XX:MaxPermSize=1024m</argLine>
                     <excludes>
                         <exclude>org/apache/cloudstack/ratelimit/integration/*</exclude>
                     </excludes>

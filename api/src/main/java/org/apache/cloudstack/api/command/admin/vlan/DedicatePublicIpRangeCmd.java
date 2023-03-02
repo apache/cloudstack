@@ -38,7 +38,6 @@ import com.cloud.user.Account;
 public class DedicatePublicIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DedicatePublicIpRangeCmd.class.getName());
 
-    private static final String s_name = "dedicatepubliciprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -83,11 +82,6 @@ public class DedicatePublicIpRangeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

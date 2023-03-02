@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class ExtractIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
-    private static final String s_name = "extractisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,11 +86,6 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public String getEventType() {
         return EventTypes.EVENT_ISO_EXTRACT;
     }
@@ -110,10 +104,6 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "extracting ISO: " + getId() + " from zone: " + getZoneId();
-    }
-
-    public static String getStaticName() {
-        return s_name;
     }
 
     @Override

@@ -163,6 +163,7 @@ export default {
     }
   },
   created () {
+    this.fetchData()
     this.initForm()
     this.apiParams = this.$getApiParams('createVlanIpRange')
   },

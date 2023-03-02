@@ -137,7 +137,7 @@
               <a-form-item v-if="form.samlEnable" :label="$t('label.samlentity')" ref="samlEntity" name="samlEntity">
                 <a-select
                   v-model:value="form.samlEntity"
-                  :placeholder="$t('label.choose.saml.indentity')"
+                  :placeholder="$t('label.choose.saml.identity')"
                   :loading="loading"
                   showSearch
                   optionFilterProp="label"

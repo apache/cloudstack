@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -65,7 +64,6 @@ import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -589,6 +587,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find backup offering of the VM backup");
         }
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (!backupProvider.restoreVMFromBackup(vm, backup)) {
             throw new CloudRuntimeException("Error restoring VM from backup ID " + backup.getId());
@@ -621,7 +620,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = findVmById(vmId);
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
-        if (vm.getBackupOfferingId() != null) {
+        if (vm.getBackupOfferingId() != null && !BackupEnableAttachDetachVolumes.value()) {
             throw new CloudRuntimeException("The selected VM has backups, cannot restore and attach volume to the VM.");
         }
 
@@ -691,7 +690,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_DELETE, eventDescription = "deleting VM backup", async = true)
-    public boolean deleteBackup(final Long backupId) {
+    public boolean deleteBackup(final Long backupId, final Boolean forced) {
         final BackupVO backup = backupDao.findByIdIncludingRemoved(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
@@ -703,19 +702,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-        final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
+        final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
-            throw new CloudRuntimeException("VM backup offering ID " + vm.getBackupOfferingId() + " does not exist");
-        }
-        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vmId);
-        if (CollectionUtils.isNotEmpty(backupsForVm)) {
-            backupsForVm = backupsForVm.stream().filter(vmBackup -> vmBackup.getId() != backupId).collect(Collectors.toList());
-            if (backupsForVm.size() <= 0 && vm.getRemoved() != null) {
-                removeVMFromBackupOffering(vmId, true);
-            }
+            throw new CloudRuntimeException(String.format("Backup offering with ID [%s] does not exist.", backup.getBackupOfferingId()));
         }
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        boolean result = backupProvider.deleteBackup(backup);
+        boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
             return backupDao.remove(backup.getId());
         }
@@ -850,7 +842,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return new ConfigKey[]{
                 BackupFrameworkEnabled,
                 BackupProviderPlugin,
-                BackupSyncPollingInterval
+                BackupSyncPollingInterval,
+                BackupEnableAttachDetachVolumes
         };
     }
 

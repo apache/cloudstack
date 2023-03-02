@@ -225,4 +225,8 @@ public class AccountVO implements Account {
     public String getName() {
         return accountName;
     }
+
+    public String reflectionToString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "accountName", "domainId");
+    }
 }

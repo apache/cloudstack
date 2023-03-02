@@ -157,6 +157,7 @@ const UI = {
             }
         }
 
+        UI.initSetting('extra', window.location.extra)
         /* Populate the controls if defaults are provided in the URL */
         UI.initSetting('host', window.location.hostname);
         UI.initSetting('port', port);
@@ -454,6 +455,9 @@ const UI = {
         if (typeof statusType === 'undefined') {
             statusType = 'normal';
         }
+        if (UI.getSetting('encrypt')) {
+            statusType = 'encrypted';
+        }
 
         // Don't overwrite more severe visible statuses and never
         // errors. Only shows the first error.
@@ -470,15 +474,23 @@ const UI = {
         clearTimeout(UI.statusTimeout);
 
         switch (statusType) {
+            case 'encrypted':
+                statusElem.classList.remove("noVNC_status_warn");
+                statusElem.classList.remove("noVNC_status_normal");
+                statusElem.classList.remove("noVNC_status_error");
+                statusElem.classList.add("noVNC_status_tls_success");
+                break;
             case 'error':
                 statusElem.classList.remove("noVNC_status_warn");
                 statusElem.classList.remove("noVNC_status_normal");
+                statusElem.classList.remove("noVNC_status_tls_success");
                 statusElem.classList.add("noVNC_status_error");
                 break;
             case 'warning':
             case 'warn':
                 statusElem.classList.remove("noVNC_status_error");
                 statusElem.classList.remove("noVNC_status_normal");
+                statusElem.classList.remove("noVNC_status_tls_success");
                 statusElem.classList.add("noVNC_status_warn");
                 break;
             case 'normal':
@@ -486,6 +498,7 @@ const UI = {
             default:
                 statusElem.classList.remove("noVNC_status_error");
                 statusElem.classList.remove("noVNC_status_warn");
+                statusElem.classList.remove("noVNC_status_tls_success");
                 statusElem.classList.add("noVNC_status_normal");
                 break;
         }
@@ -493,9 +506,9 @@ const UI = {
         statusElem.textContent = text;
         statusElem.classList.add("noVNC_open");
 
-        // If no time was specified, show the status for 1.5 seconds
+        // If no time was specified, show the status for 4 seconds
         if (typeof time === 'undefined') {
-            time = 1500;
+            time = 4000;
         }
 
         // Error messages do not timeout
@@ -997,7 +1010,8 @@ const UI = {
         const host = UI.getSetting('host');
         const port = UI.getSetting('port');
         const path = UI.getSetting('path');
-        const token = UI.getSetting('token')
+        const token = UI.getSetting('token');
+        const extra = UI.getSetting('extra');
 
         if (typeof password === 'undefined') {
             password = WebUtil.getConfigVar('password');
@@ -1030,6 +1044,10 @@ const UI = {
         }
         url += '/' + path;
         url += '?token=' + token;
+
+        if (extra) {
+            url += '&extra=' + extra
+        }
 
         UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
                          { shared: UI.getSetting('shared'),
@@ -1095,9 +1113,9 @@ const UI = {
 
         let msg;
         if (UI.getSetting('encrypt')) {
-            msg = _("Connected");
+            msg = _("Connected (encrypted) to ") + UI.desktopName;
         } else {
-            msg = _("Connected")
+            msg = _("Connected (unencrypted) to ") + UI.desktopName;
         }
         UI.showStatus(msg);
         UI.updateVisualState('connected');
@@ -1116,14 +1134,13 @@ const UI = {
         UI.connected = false;
 
         UI.rfb = undefined;
-
         if (!e.detail.clean) {
             UI.updateVisualState('disconnected');
             if (wasConnected) {
                 UI.showStatus(_("Something went wrong, connection is closed"),
                               'error');
             } else {
-                UI.showStatus(_("Failed to connect to server"), 'error');
+                UI.showStatus(_("Failed to connect to server / access token has expired"), 'error');
             }
         } else if (UI.getSetting('reconnect', false) === true && !UI.inhibitReconnect) {
             UI.updateVisualState('reconnecting');
@@ -1657,6 +1674,10 @@ const UI = {
         UI.desktopName = e.detail.name;
         // Display the desktop name in the document title
         document.title = e.detail.name + " - " + PAGE_TITLE;
+        if (e.detail.name.includes('(TLS backend)')) {
+            UI.forceSetting('encrypt', true);
+            UI.enableSetting('encrypt');
+        }
     },
 
     bell(e) {

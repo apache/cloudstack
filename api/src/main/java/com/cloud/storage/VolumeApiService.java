@@ -21,6 +21,7 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -119,6 +120,8 @@ public interface VolumeApiService {
      */
     String extractVolume(ExtractVolumeCmd cmd);
 
+    Volume assignVolumeToAccount(AssignVolumeCmd cmd) throws ResourceAllocationException;
+
     boolean isDisplayResourceEnabled(Long id);
 
     void updateDisplay(Volume volume, Boolean displayVolume);
@@ -162,7 +165,11 @@ public interface VolumeApiService {
 
     Volume recoverVolume(long volumeId);
 
+    void validateCustomDiskOfferingSizeRange(Long sizeInGB);
+
     boolean validateVolumeSizeInBytes(long size);
 
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
+
+    void publishVolumeCreationUsageEvent(Volume volume);
 }

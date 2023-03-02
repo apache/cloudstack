@@ -89,6 +89,10 @@ export default {
       type: String,
       default: () => ''
     },
+    autoscale: {
+      type: Boolean,
+      default: () => false
+    },
     minimumCpunumber: {
       type: Number,
       default: 0
@@ -171,6 +175,9 @@ export default {
         if (this.selectedTemplate && this.selectedTemplate.hypervisor === 'VMware' && this.selectedTemplate.deployasis && item.rootdisksize) {
           disabled = true
         }
+        if (this.autoscale && item.iscustomized) {
+          disabled = true
+        }
         return {
           key: item.id,
           name: item.name,
@@ -185,11 +192,11 @@ export default {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys || [],
         onChange: this.onSelectRow,
-        getCheckboxProps: (record) => ({
-          props: {
+        getCheckboxProps: (record) => {
+          return {
             disabled: record.disabled
           }
-        })
+        }
       }
     }
   },

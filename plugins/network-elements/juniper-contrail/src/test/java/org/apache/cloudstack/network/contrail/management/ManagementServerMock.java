@@ -240,7 +240,7 @@ public class ManagementServerMock {
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
-                    1, small.getId(), null, name);
+                    1, small.getId(), null, null, null, name);
         vm.setState(com.cloud.vm.VirtualMachine.State.Running);
         vm.setHostId(_hostId);
         vm.setDataCenterId(network.getDataCenterId());
@@ -387,7 +387,7 @@ public class ManagementServerMock {
             ConfigurationManager mgr = (ConfigurationManager)_configService;
             _zone =
                 mgr.createZone(User.UID_SYSTEM, "default", "8.8.8.8", null, "8.8.4.4", null, null /* cidr */, "ROOT", Domain.ROOT_DOMAIN, NetworkType.Advanced, null,
-                    null /* networkDomain */, false, false, null, null);
+                    null /* networkDomain */, false, false, null, null, false);
         }
     }
 

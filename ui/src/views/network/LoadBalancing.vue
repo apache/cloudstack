@@ -36,6 +36,10 @@
         </div>
       </div>
       <div class="form">
+        <div class="form__item" ref="newCidrList">
+          <tooltip-label :title="$t('label.cidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
+          <a-input v-model:value="newRule.cidrlist"></a-input>
+        </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select
@@ -66,8 +70,29 @@
           </a-select>
         </div>
         <div class="form__item">
+          <div class="form__label">{{ $t('label.autoscale') }}</div>
+          <a-select
+            v-model:value="newRule.autoscale"
+            defaultValue="no"
+            style="min-width: 100px"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="yes">{{ $t('label.yes') }}</a-select-option>
+            <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
+          </a-select>
+        </div>
+        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no' || ('vpcid' in this.resource && !('associatednetworkid' in this.resource))">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
+            {{ $t('label.add') }}
+          </a-button>
+        </div>
+        <div class="form__item" v-else-if="newRule.autoscale === 'yes'">
+          <div class="form__label" style="white-space: nowrap;">{{ $t('label.add') }}</div>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleAddNewRule">
             {{ $t('label.add') }}
           </a-button>
         </div>
@@ -94,6 +119,9 @@
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'cidrlist'">
+          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+        </template>
         <template v-if="column.key === 'algorithm'">
           {{ returnAlgorithmName(record.algorithm) }}
         </template>
@@ -103,6 +131,21 @@
         <template v-if="column.key === 'stickiness'">
           <a-button @click="() => openStickinessModal(record.id)">
             {{ returnStickinessLabel(record.id) }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'autoscale'">
+          <div>
+            <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
+              <a-button>{{ $t('label.view') }}</a-button>
+            </router-link>
+            <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { networkid: record.networkid, lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
+              <a-button>{{ $t('label.new') }}</a-button>
+            </router-link>
+          </div>
+        </template>
+        <template v-if="column.key === 'healthmonitor'">
+          <a-button @click="() => openHealthMonitorModal(record.id)">
+            {{ returnHealthMonitorLabel(record.id) }}
           </a-button>
         </template>
         <template v-if="column.key === 'add'">
@@ -144,7 +187,8 @@
               </div>
               <div>{{ ip }}</div>
               <tooltip-button
-                :tooltip="$t('label.action.delete.load.balancer')"
+                :disabled='record.autoscalevmgroup'
+                :tooltip="$t('label.remove.vm.from.lb')"
                 type="primary"
                 :danger="true"
                 icon="delete-outlined"
@@ -455,7 +499,7 @@
             </template>
 
             <template v-if="column.key === 'action'" style="text-align: center" :text="text">
-              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale"/>
             </template>
           </template>
         </a-table>
@@ -480,6 +524,84 @@
           <a-button :disabled="newRule.virtualmachineid === []" type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
+    </a-modal>
+
+    <a-modal
+      v-if="healthMonitorModal"
+      :title="$t('label.configure.health.monitor')"
+      :visible="healthMonitorModal"
+      :footer="null"
+      :maskClosable="false"
+      :closable="true"
+      @cancel="closeMonitorModal">
+      <a-form
+        :ref="monitorRef"
+        :model="monitorForm"
+        :rules="monitorRules"
+        layout="vertical"
+        @finish="handleConfigHealthMonitor"
+        v-ctrl-enter="handleConfigHealthMonitor">
+        <a-form-item name="type" ref="type" :label="$t('label.monitor.type')">
+          <a-select
+            v-focus="true"
+            v-model:value="monitorForm.type"
+            @change="(value) => { healthMonitorParams.type = value }"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
+            <a-select-option value="PING">PING</a-select-option>
+            <a-select-option value="TCP">TCP</a-select-option>
+            <a-select-option value="HTTP">HTTP</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="retry" ref="retry" :label="$t('label.monitor.retry')">
+          <a-input v-model:value="monitorForm.retry" />
+        </a-form-item>
+        <a-form-item name="timeout" ref="timeout" :label="$t('label.monitor.timeout')">
+          <a-input v-model:value="monitorForm.timeout" />
+        </a-form-item>
+        <a-form-item name="interval" ref="interval" :label="$t('label.monitor.interval')">
+          <a-input v-model:value="monitorForm.interval" />
+        </a-form-item>
+        <a-form-item
+          name="httpmethodtype"
+          ref="httpmethodtype"
+          :label="$t('label.monitor.http.method')"
+          v-if="healthMonitorParams.type === 'HTTP'">
+          <a-select
+            v-focus="true"
+            v-model:value="monitorForm.httpmethodtype"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
+            <a-select-option value="GET">GET</a-select-option>
+            <a-select-option value="HEAD">HEAD</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item
+          name="expectedcode"
+          ref="expectedcode"
+          :label="$t('label.monitor.expected.code')"
+          v-if="healthMonitorParams.type === 'HTTP'">
+          <a-input v-model:value="monitorForm.expectedcode" />
+        </a-form-item>
+        <a-form-item
+          name="urlpath"
+          ref="urlpath"
+          :label="$t('label.monitor.url')"
+          v-if="healthMonitorParams.type === 'HTTP'">
+          <a-input v-model:value="monitorForm.urlpath" />
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button :loading="healthMonitorLoading" @click="closeMonitorModal">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="healthMonitorLoading" type="primary" @click="handleConfigHealthMonitor">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
     </a-modal>
 
     <bulk-action-view
@@ -509,6 +631,7 @@ import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'LoadBalancing',
@@ -516,7 +639,8 @@ export default {
   components: {
     Status,
     TooltipButton,
-    BulkActionView
+    BulkActionView,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -563,7 +687,8 @@ export default {
         publicport: '',
         protocol: 'tcp',
         virtualmachineid: [],
-        vmguestip: []
+        vmguestip: [],
+        cidrlist: ''
       },
       addVmModalVisible: false,
       addVmModalLoading: false,
@@ -591,6 +716,10 @@ export default {
           title: this.$t('label.algorithm')
         },
         {
+          key: 'cidrlist',
+          title: this.$t('label.cidrlist')
+        },
+        {
           key: 'protocol',
           title: this.$t('label.protocol')
         },
@@ -605,6 +734,11 @@ export default {
         {
           key: 'add',
           title: this.$t('label.add.vms')
+        },
+        {
+          key: 'autoscale',
+          title: this.$t('label.autoscale'),
+          slots: { customRender: 'autoscale' }
         },
         {
           key: 'actions',
@@ -649,7 +783,19 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null
+      searchQuery: null,
+      tungstenHealthMonitors: [],
+      healthMonitorModal: false,
+      healthMonitorParams: {
+        type: 'PING',
+        retry: 3,
+        timeout: 5,
+        interval: 5,
+        httpmethodtype: 'GET',
+        expectedcode: undefined,
+        urlpath: '/'
+      },
+      healthMonitorLoading: false
     }
   },
   computed: {
@@ -657,8 +803,12 @@ export default {
       return this.selectedRowKeys.length > 0
     }
   },
+  beforeCreate () {
+    this.createLoadBalancerRuleParams = this.$getApiParams('createLoadBalancerRule')
+  },
   created () {
     this.initForm()
+    this.initMonitorForm()
     this.fetchData()
   },
   watch: {
@@ -678,6 +828,25 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
+    initMonitorForm () {
+      this.monitorRef = ref()
+      this.monitorForm = reactive({
+        type: this.healthMonitorParams.type,
+        retry: this.healthMonitorParams.retry,
+        timeout: this.healthMonitorParams.timeout,
+        interval: this.healthMonitorParams.interval,
+        httpmethodtype: this.healthMonitorParams.httpmethodtype,
+        expectedcode: this.healthMonitorParams.expectedcode,
+        urlpath: this.healthMonitorParams.urlpath
+      })
+      this.monitorRules = reactive({
+        retry: [{ required: true, message: this.$t('message.error.required.input') }],
+        timeout: [{ required: true, message: this.$t('message.error.required.input') }],
+        interval: [{ required: true, message: this.$t('message.error.required.input') }],
+        expectedcode: [{ required: true, message: this.$t('message.error.required.input') }],
+        urlpath: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.fetchListTiers()
       this.fetchLBRules()
@@ -693,6 +862,12 @@ export default {
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
         this.selectedTier = this.tiers.data?.[0]?.id ? this.tiers.data[0].id : null
+        if (this.tiers.data?.[0]?.broadcasturi === 'tf://tf') {
+          this.columns.splice(8, 0, {
+            title: this.$t('label.action.health.monitor'),
+            slots: { customRender: 'healthmonitor' }
+          })
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.tiers.loading = false })
@@ -716,6 +891,8 @@ export default {
             this.fetchLBRuleInstances()
           }, 100)
           this.fetchLBStickinessPolicies()
+          this.fetchLBTungstenFabricHealthMonitor()
+          this.fetchAutoScaleVMgroups()
           return
         }
         this.loading = false
@@ -744,11 +921,25 @@ export default {
       this.loading = true
       this.lbRules.forEach(rule => {
         api('listLBStickinessPolicies', {
+          listAll: true,
           lbruleid: rule.id
         }).then(response => {
           this.stickinessPolicies.push(...response.listlbstickinesspoliciesresponse.stickinesspolicies)
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    fetchAutoScaleVMgroups () {
+      this.loading = true
+      this.lbRules.forEach(rule => {
+        api('listAutoScaleVmGroups', {
+          listAll: true,
+          lbruleid: rule.id
+        }).then(response => {
+          rule.autoscalevmgroup = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]
         }).finally(() => {
           this.loading = false
         })
@@ -880,7 +1071,9 @@ export default {
     },
     openStickinessModal (id) {
       this.initForm()
-      this.rules = { name: [{ required: true, message: this.$t('message.error.specify.sticky.name') }] }
+      this.rules = {
+        methodname: [{ required: true, message: this.$t('message.error.specify.stickiness.method') }]
+      }
       this.stickinessModalVisible = true
       this.selectedRule = id
       const match = this.stickinessPolicies.find(policy => policy.lbruleid === id)
@@ -982,6 +1175,14 @@ export default {
           return
         }
 
+        if (values.name === null || values.name === undefined || values.name === '') {
+          this.$notification.error({
+            message: this.$t('label.error'),
+            description: this.$t('message.error.specify.sticky.name')
+          })
+          return
+        }
+
         values.nocache = this.form.nocache
         values.indirect = this.form.indirect
         values.postonly = this.form.postonly
@@ -1007,11 +1208,14 @@ export default {
         this.handleAddStickinessPolicy(data, values)
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.stickinessModalLoading = false
       })
     },
     handleStickinessMethodSelectChange (e) {
       if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
+      this.form.methodname = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
@@ -1156,7 +1360,7 @@ export default {
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resouce: rule.id, state: 'failed' })
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'failed' })
             }
             if (this.selectedRowKeys.length === 0) {
               this.parentToggleLoading()
@@ -1180,8 +1384,7 @@ export default {
         this.loading = false
       })
     },
-    handleOpenAddVMModal () {
-      if (this.addVmModalLoading) return
+    checkNewRule () {
       if (!this.selectedRule) {
         if (!this.newRule.name) {
           this.$refs.newRuleName.classList.add('error')
@@ -1198,7 +1401,14 @@ export default {
         } else {
           this.$refs.newRulePrivatePort.classList.remove('error')
         }
-        if (!this.newRule.name || !this.newRule.publicport || !this.newRule.privateport) return
+        if (!this.newRule.name || !this.newRule.publicport || !this.newRule.privateport) return false
+      }
+      return true
+    },
+    handleOpenAddVMModal () {
+      if (this.addVmModalLoading) return
+      if (!this.checkNewRule()) {
+        return
       }
       this.addVmModalVisible = true
       this.fetchVirtualMachines()
@@ -1224,7 +1434,7 @@ export default {
           newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
         }
         this.nics[index] = newItem
-        this.newRule.vmguestip[index] = this.nics[index][0]
+        this.newRule.vmguestip[index] = [this.nics[index][0]]
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -1265,6 +1475,7 @@ export default {
     handleAssignToLBRule (data) {
       const vmIDIpMap = {}
 
+      let selectedVmCount = 0
       let count = 0
       let innerCount = 0
       this.newRule.vmguestip.forEach(ip => {
@@ -1279,8 +1490,16 @@ export default {
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
           innerCount++
         }
+        if (this.newRule.virtualmachineid[count]) {
+          selectedVmCount++
+        }
         count++
       })
+
+      if (selectedVmCount === 0) {
+        this.fetchData()
+        return
+      }
 
       this.loading = true
       api('assignToLoadBalancerRule', {
@@ -1289,7 +1508,7 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
-          successMessage: this.$t('message.success.asign.vm'),
+          successMessage: this.$t('message.success.assign.vm'),
           successMethod: () => {
             this.parentToggleLoading()
             this.fetchData()
@@ -1319,6 +1538,9 @@ export default {
       if (this.selectedRule) {
         this.handleAssignToLBRule(this.selectedRule.id)
         return
+      } else if (!this.checkNewRule()) {
+        this.loading = false
+        return
       }
 
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
@@ -1330,7 +1552,8 @@ export default {
         name: this.newRule.name,
         privateport: this.newRule.privateport,
         protocol: this.newRule.protocol,
-        publicport: this.newRule.publicport
+        publicport: this.newRule.publicport,
+        cidrlist: this.newRule.cidrlist
       }).then(response => {
         this.addVmModalVisible = false
         this.handleAssignToLBRule(response.createloadbalancerruleresponse.id)
@@ -1381,6 +1604,117 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
+    },
+    fetchLBTungstenFabricHealthMonitor () {
+      if (!('listTungstenFabricLBHealthMonitor' in this.$store.getters.apis)) {
+        return
+      }
+      this.tungstenHealthMonitors = []
+      this.loading = true
+      this.lbRules.forEach(rule => {
+        api('listTungstenFabricLBHealthMonitor', {
+          listAll: true,
+          lbruleid: rule.id
+        }).then(response => {
+          const healthmonitor = response?.listtungstenfabriclbhealthmonitorresponse?.healthmonitor || []
+          if (healthmonitor.length > 0) {
+            healthmonitor[0].lbruleid = rule.id
+            this.tungstenHealthMonitors.push(...healthmonitor)
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    returnHealthMonitorLabel (id) {
+      const match = this.tungstenHealthMonitors.filter(item => item.lbruleid === id)
+      if (match.length > 0) {
+        return match[0].type
+      }
+      return this.$t('label.configure')
+    },
+    openHealthMonitorModal (id) {
+      const match = this.tungstenHealthMonitors.filter(item => item.lbruleid === id)
+      this.healthMonitorParams.lbruleid = id
+      if (match.length > 0) {
+        this.healthMonitorParams.type = match[0].type
+        this.healthMonitorParams.retry = match[0].retry
+        this.healthMonitorParams.timeout = match[0].timeout
+        this.healthMonitorParams.interval = match[0].interval
+        this.healthMonitorParams.httpmethodtype = match[0].httpmethod
+        this.healthMonitorParams.expectedcode = match[0].expectedcode
+        this.healthMonitorParams.urlpath = match[0].urlpath
+      }
+      this.initMonitorForm()
+      this.healthMonitorModal = true
+    },
+    closeMonitorModal () {
+      this.healthMonitorModal = false
+      this.healthMonitorParams = {
+        type: 'PING',
+        retry: 3,
+        timeout: 5,
+        interval: 5,
+        httpmethodtype: 'GET',
+        expectedcode: undefined,
+        urlpath: '/'
+      }
+    },
+    handleConfigHealthMonitor () {
+      if (this.healthMonitorLoading) return
+
+      this.monitorRef.value.validate().then(() => {
+        const values = toRaw(this.monitorForm)
+
+        this.healthMonitorParams.type = values.type
+        this.healthMonitorParams.retry = values.retry
+        this.healthMonitorParams.timeout = values.timeout
+        this.healthMonitorParams.interval = values.interval
+        if (values.type === 'HTTP') {
+          this.healthMonitorParams.httpmethodtype = values.httpmethodtype
+          this.healthMonitorParams.expectedcode = values.expectedcode
+          this.healthMonitorParams.urlpath = values.urlpath
+        }
+
+        this.healthMonitorLoading = true
+        api('updateTungstenFabricLBHealthMonitor', this.healthMonitorParams).then(json => {
+          const jobId = json?.updatetungstenfabriclbhealthmonitorresponse?.jobid
+          this.$pollJob({
+            jobId: jobId,
+            successMessage: this.$t('message.success.config.health.monitor'),
+            successMethod: () => {
+              this.parentToggleLoading()
+              this.fetchData()
+              this.closeMonitorModal()
+              this.healthMonitorLoading = false
+            },
+            errorMessage: this.$t('message.config.health.monitor.failed'),
+            errorMethod: () => {
+              this.parentToggleLoading()
+              this.fetchData()
+              this.closeMonitorModal()
+              this.healthMonitorLoading = false
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentToggleLoading()
+              this.fetchData()
+              this.closeMonitorModal()
+              this.healthMonitorLoading = false
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.healthMonitorLoading = false
+        })
+      }).catch((error) => {
+        this.monitorRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.healthMonitorLoading = false
+      })
     }
   }
 }

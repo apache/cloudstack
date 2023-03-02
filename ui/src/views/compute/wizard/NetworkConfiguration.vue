@@ -52,20 +52,22 @@
             </a-input>
           </a-form-item>
         </template>
-        <template v-if="column.key === 'macAddress'">
-          <a-form-item style="display: block" :name="'macAddress' + record.id">
-            <a-input
-              style="width: 150px;"
-              :placeholder="$t('label.macaddress')"
-              v-model:value="form[`macAddress` + record.id]"
-              @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)">
-              <template #suffix>
-                <a-tooltip :title="$t('label.macaddress.example')">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
-            </a-input>
-          </a-form-item>
+        <template  v-if="!this.autoscale">
+          <template v-if="column.key === 'macAddress'">
+            <a-form-item style="display: block" :name="'macAddress' + record.id">
+              <a-input
+                style="width: 150px;"
+                :placeholder="$t('label.macaddress')"
+                v-model:value="form[`macAddress` + record.id]"
+                @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)">
+                <template #suffix>
+                  <a-tooltip :title="$t('label.macaddress.example')">
+                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </template>
+              </a-input>
+            </a-form-item>
+          </template>
         </template>
       </template>
     </a-table>
@@ -84,6 +86,10 @@ export default {
     value: {
       type: String,
       default: ''
+    },
+    autoscale: {
+      type: Boolean,
+      default: () => false
     },
     preFillContent: {
       type: Object,
@@ -170,12 +176,20 @@ export default {
       const rules = {}
 
       this.dataItems.forEach(record => {
-        rules['ipAddress' + record.id] = [{
+        const ipAddressKey = 'ipAddress' + record.id
+        const macAddressKey = 'macAddress' + record.id
+        rules[ipAddressKey] = [{
           validator: this.validatorIpAddress,
           cidr: record.cidr,
           networkType: record.type
         }]
-        rules['macAddress' + record.id] = [{ validator: this.validatorMacAddress }]
+        if (record.ipAddress) {
+          form[ipAddressKey] = record.ipAddress
+        }
+        rules[macAddressKey] = [{ validator: this.validatorMacAddress }]
+        if (record.macAddress) {
+          form[macAddressKey] = record.macAddress
+        }
       })
       this.form = reactive(form)
       this.rules = reactive(rules)
@@ -199,7 +213,7 @@ export default {
 
         this.networks.filter((item, index) => {
           if (item.key === key) {
-            this.networks[index].name = value
+            this.networks[index][name] = value
           }
         })
         this.$emit('update-network-config', this.networks)

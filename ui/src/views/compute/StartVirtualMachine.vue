@@ -97,6 +97,13 @@
           <a-switch v-model:checked="form.bootintosetup" />
         </a-form-item>
 
+        <a-form-item name="considerlasthost" ref="considerlasthost">
+          <template #label>
+            <tooltip-label :title="$t('label.considerlasthost')" :tooltip="apiParams.considerlasthost.description"/>
+          </template>
+          <a-switch v-model:checked="form.considerlasthost" />
+        </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -147,7 +154,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        considerlasthost: true
+      })
       this.rules = reactive({})
     },
     fetchPods () {

@@ -1055,7 +1055,7 @@ test_data = {
                     "value": "test"
                 },
                 {
-                    "key": "usefull.property",
+                    "key": "useful.property",
                     "value": "True"
                 }
             ],

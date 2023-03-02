@@ -37,12 +37,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@APICommand(name = ListRolePermissionsCmd.APINAME, description = "Lists role permissions", responseObject = RolePermissionResponse.class,
+@APICommand(name = "listRolePermissions", description = "Lists role permissions", responseObject = RolePermissionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
 public class ListRolePermissionsCmd extends BaseCmd {
-    public static final String APINAME = "listRolePermissions";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +62,6 @@ public class ListRolePermissionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

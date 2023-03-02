@@ -513,7 +513,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
         self.assertEqual(
             list_vm_response[0].state,

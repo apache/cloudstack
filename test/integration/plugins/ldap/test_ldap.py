@@ -231,7 +231,7 @@ class TestLDAP(cloudstackTestCase):
         some ldap accounts are linked and present with the same uid
         some ldap accounts are not yet linked but present at other locations in cloudstack
 
-        NOTE 1: if this test is run last only the explicitely imported test user from test_03_sync
+        NOTE 1: if this test is run last only the explicitly imported test user from test_03_sync
          is in the system. The accounts from test_01_manual and test_02_import should have been cleared
          by the test tearDown(). We can not depend on test_03_sync having run so the test must avoid
          depending on it either being available or not.

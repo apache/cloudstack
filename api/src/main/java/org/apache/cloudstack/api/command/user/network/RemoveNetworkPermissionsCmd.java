@@ -35,7 +35,7 @@ import com.cloud.user.Account;
 
 import java.util.List;
 
-@APICommand(name = RemoveNetworkPermissionsCmd.APINAME, description = "Removes network permissions.",
+@APICommand(name = "removeNetworkPermissions", description = "Removes network permissions.",
         responseObject = SuccessResponse.class,
         entityType = {Network.class},
         requestHasSensitiveInfo = false,
@@ -45,7 +45,6 @@ import java.util.List;
 public class RemoveNetworkPermissionsCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(RemoveNetworkPermissionsCmd.class.getName());
 
-    public static final String APINAME = "removeNetworkPermissions";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -97,11 +96,6 @@ public class RemoveNetworkPermissionsCmd extends BaseCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

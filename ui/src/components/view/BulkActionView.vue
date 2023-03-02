@@ -84,6 +84,9 @@
               {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
             </template>
           </template>
+          <template #cidrlist="{record}">
+            <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+          </template>
         </a-table>
         <a-divider />
         <br/>
@@ -151,12 +154,6 @@ export default {
       default: () => {}
     }
   },
-  filters: {
-    capitalise: val => {
-      if (val === 'all') return 'All'
-      return val.toUpperCase()
-    }
-  },
   inject: ['parentFetchData'],
   data () {
     return {
@@ -166,6 +163,10 @@ export default {
     }
   },
   methods: {
+    capitalise (val) {
+      if (val === 'all') return 'All'
+      return val.toUpperCase()
+    },
     handleCancel () {
       this.$emit('handle-cancel')
     },

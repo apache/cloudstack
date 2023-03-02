@@ -22,7 +22,7 @@
       :placeholder="$t('label.search')"
       v-model:value="filter"
       @search="handleSearch" />
-    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8">
+    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8" v-if="showCreateButton">
       {{ $t('label.create.network') }}
     </a-button>
     <a-table
@@ -102,6 +102,7 @@
 <script>
 import _ from 'lodash'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import store from '@/store'
 import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -133,6 +134,10 @@ export default {
       type: String,
       default: () => ''
     },
+    autoscale: {
+      type: Boolean,
+      default: () => false
+    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -148,6 +153,7 @@ export default {
         loading: false,
         opts: []
       },
+      showCreateButton: false,
       showCreateForm: false,
       oldZoneId: null,
       options: {
@@ -193,17 +199,31 @@ export default {
           key: 'type',
           dataIndex: 'type',
           title: this.$t('label.guestiptype'),
-          width: '30%'
+          width: '15%'
         },
-        vpcCol
+        vpcCol,
+        {
+          key: 'supportsvmautoscaling',
+          dataIndex: 'supportsvmautoscaling',
+          title: this.$t('label.supportsvmautoscaling'),
+          width: '25%'
+        }
       ]
     },
     rowSelection () {
-      return {
-        type: 'checkbox',
-        selectedRowKeys: this.selectedRowKeys,
-        onChange: (rows) => {
-          this.$emit('select-network-item', rows)
+      if (this.autoscale) {
+        return {
+          type: 'radio',
+          selectedRowKeys: this.selectedRowKeys,
+          onChange: this.onSelectRow
+        }
+      } else {
+        return {
+          type: 'checkbox',
+          selectedRowKeys: this.selectedRowKeys,
+          onChange: (rows) => {
+            this.$emit('select-network-item', rows)
+          }
         }
       }
     },
@@ -213,6 +233,7 @@ export default {
         return {
           ...network,
           ...{
+            supportsvmautoscaling: network.supportsvmautoscaling ? 'Yes' : 'No',
             vpcName: _.get(vpc, 'displaytext')
           }
         }
@@ -226,6 +247,13 @@ export default {
       }
     },
     loading () {
+      api('listZones', { id: this.zoneId }).then(json => {
+        const zoneResponse = json.listzonesresponse.zone || []
+        this.showCreateButton = false
+        if (zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
+          this.showCreateButton = true
+        }
+      })
       if (!this.loading) {
         if (this.preFillContent.networkids) {
           this.selectedRowKeys = this.preFillContent.networkids
@@ -336,6 +364,10 @@ export default {
       this.options.page = page
       this.options.pageSize = pageSize
       this.$emit('handle-search-filter', this.options)
+    },
+    onSelectRow (value) {
+      this.selectedRowKeys = value
+      this.$emit('select-network-item', value[0])
     },
     listNetworkOfferings () {
       return new Promise((resolve, reject) => {

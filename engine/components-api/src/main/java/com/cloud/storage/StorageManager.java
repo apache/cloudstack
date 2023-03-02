@@ -45,22 +45,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
-    ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<>(Integer.class,
-            "storage.cleanup.interval",
-            "Advanced",
-            "86400",
-            "The interval (in seconds) to wait before running the storage cleanup thread.",
-            false,
-            ConfigKey.Scope.Global,
-            null);
-    ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<>(Integer.class,
-            "storage.cleanup.delay",
-            "Advanced",
-            "86400",
-            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.",
-            false,
-            ConfigKey.Scope.Global,
-            null);
     ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<>(Boolean.class,
             "storage.cleanup.enabled",
             "Advanced",
@@ -69,6 +53,24 @@ public interface StorageManager extends StorageService {
             false,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<>(Integer.class,
+            "storage.cleanup.interval",
+            "Advanced",
+            "86400",
+            "The interval (in seconds) to wait before running the storage cleanup thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            StorageCleanupEnabled.key());
+    ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<>(Integer.class,
+            "storage.cleanup.delay",
+            "Advanced",
+            "86400",
+            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            StorageCleanupEnabled.key());
     ConfigKey<Boolean> TemplateCleanupEnabled = new ConfigKey<>(Boolean.class,
             "storage.template.cleanup.enabled",
             "Storage",
@@ -76,7 +78,8 @@ public interface StorageManager extends StorageService {
             "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
             false,
             ConfigKey.Scope.Global,
-            null);
+            null,
+            StorageCleanupEnabled.key());
     ConfigKey<Integer> KvmStorageOfflineMigrationWait = new ConfigKey<>(Integer.class,
             "kvm.storage.offline.migration.wait",
             "Storage",
@@ -137,6 +140,15 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.StoragePool,
             null);
 
+    ConfigKey<String> STORAGE_POOL_IO_POLICY = new ConfigKey<>(String.class,
+            "kvm.storage.pool.io.policy",
+            "Storage",
+            null,
+            "IO driver policy - 'threads', 'native' or 'io_uring'. If the IO policy is set for a specific storage and enabled in the VM settings this option will override be overridden from the VM's setting",
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
     ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
 
@@ -147,7 +159,7 @@ public interface StorageManager extends StorageService {
             "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
 
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
-            "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
+            "Maximum wait time (in minutes) for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
             "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",

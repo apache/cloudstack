@@ -44,11 +44,16 @@ import com.cloud.user.Account;
 public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmGroupCmd.class.getName());
 
-    private static final String s_name = "updateautoscalevmgroupresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the autoscale vmgroup",
+            since = "4.18.0")
+    private String name;
 
     @Parameter(name = ApiConstants.MIN_MEMBERS,
                type = CommandType.INTEGER,
@@ -60,7 +65,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
                description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private Integer maxMembers;
 
-    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency at which the conditions have to be evaluated")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency in which the performance counters to be collected")
     private Integer interval;
 
     @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
@@ -113,6 +118,10 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public Integer getMinMembers() {
         return minMembers;
     }
@@ -145,11 +154,6 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
     @Override
     public String getEventDescription() {
         return "Updating AutoScale Vm Group. Vm Group Id: " + getId();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

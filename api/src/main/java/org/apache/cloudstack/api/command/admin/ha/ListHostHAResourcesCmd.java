@@ -42,11 +42,10 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = ListHostHAResourcesCmd.APINAME, description = "Lists host HA resources", responseObject = HostHAResponse.class,
+@APICommand(name = "listHostHAResources", description = "Lists host HA resources", responseObject = HostHAResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11", authorized = {RoleType.Admin})
 public final class ListHostHAResourcesCmd extends BaseCmd {
-    public static final String APINAME = "listHostHAResources";
 
     @Inject
     private HAConfigManager haConfigManager;
@@ -70,11 +69,6 @@ public final class ListHostHAResourcesCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

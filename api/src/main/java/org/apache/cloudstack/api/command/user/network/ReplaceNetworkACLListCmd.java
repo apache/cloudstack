@@ -38,7 +38,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReplaceNetworkACLListCmd.class.getName());
-    private static final String s_name = "replacenetworkacllistresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,11 +71,6 @@ public class ReplaceNetworkACLListCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_ACL_REPLACE;

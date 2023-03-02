@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="PlainTextUserAuthenticator" class="com.cloud.server.auth.PlainTextUserAuthenticator">
+    <bean id="PlainTextUserAuthenticator" class="org.apache.cloudstack.auth.PlainTextUserAuthenticator">
         <property name="name" value="PLAINTEXT" />
     </bean>
 

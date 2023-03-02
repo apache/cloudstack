@@ -292,7 +292,7 @@ export default {
           {
             validator: async (rule, value) => {
               if (value && (isNaN(value) || value < 8)) {
-                return Promise.reject(this.$t('messgae.validate.min').replace('{0}', '8GB'))
+                return Promise.reject(this.$t('message.validate.min').replace('{0}', '8GB'))
               }
               return Promise.resolve()
             }
@@ -343,6 +343,7 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false

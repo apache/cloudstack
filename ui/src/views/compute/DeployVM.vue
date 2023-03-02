@@ -123,6 +123,7 @@
                         :filterOption="filterOption"
                         :options="hostSelectOptions"
                         :loading="loading.hosts"
+                        @change="onSelectHostId"
                       ></a-select>
                     </a-form-item>
                   </div>
@@ -468,7 +469,7 @@
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
-                            v-model:cheked="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:checked="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                           />
                         </span>
@@ -551,7 +552,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item :label="$t('label.dynamicscalingenabled')" name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -563,10 +564,120 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')" name="userdata" ref="userdata">
-                      <a-textarea
-                        v-model:value="form.userdata">
-                      </a-textarea>
+                    <a-form-item :label="$t('label.userdata')">
+                      <a-card>
+                        <div v-if="this.template && this.template.userdataid">
+                          <a-text type="primary">
+                              Userdata "{{ $t(this.template.userdataname) }}" is linked with template "{{ $t(this.template.name) }}" with override policy "{{ $t(this.template.userdatapolicy) }}"
+                          </a-text><br/><br/>
+                          <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
+                            <a-text type="primary" v-if="this.template && this.template.userdataid && templateUserDataParams.length > 0">
+                                Enter the values for the variables in userdata
+                            </a-text>
+                            <a-input-group>
+                              <a-table
+                                size="small"
+                                style="overflow-y: auto"
+                                :columns="userDataParamCols"
+                                :dataSource="templateUserDataParams"
+                                :pagination="false"
+                                :rowKey="record => record.key">
+                                <template #value="{ record }">
+                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                </template>
+                              </a-table>
+                            </a-input-group>
+                          </div>
+                        </div>
+                        <div v-if="this.iso && this.iso.userdataid">
+                          <a-text type="primary">
+                              Userdata "{{ $t(this.iso.userdataname) }}" is linked with ISO "{{ $t(this.iso.name) }}" with override policy "{{ $t(this.iso.userdatapolicy) }}"
+                          </a-text><br/><br/>
+                          <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
+                            <a-text type="primary" v-if="this.iso && this.iso.userdataid && templateUserDataParams.length > 0">
+                                Enter the values for the variables in userdata
+                            </a-text>
+                            <a-input-group>
+                              <a-table
+                                size="small"
+                                style="overflow-y: auto"
+                                :columns="userDataParamCols"
+                                :dataSource="templateUserDataParams"
+                                :pagination="false"
+                                :rowKey="record => record.key">
+                                <template #value="{ record }">
+                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                </template>
+                              </a-table>
+                            </a-input-group>
+                          </div>
+                        </div><br/><br/>
+                        <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
+                          <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
+                            {{ $t('label.userdata.do.override') }}
+                            <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
+                          </span>
+                          <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
+                            {{ $t('label.userdata.do.append') }}
+                            <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
+                          </span>
+                          <a-step
+                            :status="zoneSelected ? 'process' : 'wait'">
+                            <template #description>
+                              <div v-if="doUserdataOverride || doUserdataAppend || !userdataDefaultOverridePolicy" style="margin-top: 15px">
+                                <a-card
+                                  :tabList="userdataTabList"
+                                  :activeTabKey="userdataTabKey"
+                                  @tabChange="key => onUserdataTabChange(key, 'userdataTabKey')">
+                                  <div v-if="userdataTabKey === 'userdataregistered'">
+                                    <a-step
+                                      v-if="isUserAllowedToListUserDatas"
+                                      :status="zoneSelected ? 'process' : 'wait'">
+                                      <template #description>
+                                        <div v-if="zoneSelected">
+                                          <user-data-selection
+                                            :items="options.userDatas"
+                                            :row-count="rowCount.userDatas"
+                                            :zoneId="zoneId"
+                                            :disabled="template.userdatapolicy === 'DENYOVERRIDE'"
+                                            :loading="loading.userDatas"
+                                            :preFillContent="dataPreFill"
+                                            @select-user-data-item="($event) => updateUserData($event)"
+                                            @handle-search-filter="($event) => handleSearchFilter('userData', $event)"
+                                          />
+                                          <div v-if="userDataParams.length > 0">
+                                            <a-input-group>
+                                              <a-table
+                                                size="small"
+                                                style="overflow-y: auto"
+                                                :columns="userDataParamCols"
+                                                :dataSource="userDataParams"
+                                                :pagination="false"
+                                                :rowKey="record => record.key">
+                                                <template #value="{ record }">
+                                                  <a-input v-model:value="userDataValues[record.key]" />
+                                                </template>
+                                              </a-table>
+                                            </a-input-group>
+                                          </div>
+                                        </div>
+                                      </template>
+                                    </a-step>
+                                  </div>
+                                  <div v-else>
+                                    <a-form-item name="userdata" ref="userdata" >
+                                      <a-textarea
+                                        placeholder="Userdata"
+                                        v-model:value="form.userdata">
+                                      </a-textarea>
+                                    </a-form-item>
+                                  </div>
+                                </a-card>
+                              </div>
+                            </template>
+                          </a-step>
+                        </div>
+                      </a-card>
                     </a-form-item>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
@@ -578,6 +689,30 @@
                         :preFillContent="dataPreFill"
                         @select-affinity-group-item="($event) => updateAffinityGroups($event)"
                         @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
+                    </a-form-item>
+                    <a-form-item name="iothreadsenabled" ref="iothreadsenabled" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.iothreadsenabled')" :tooltip="$t('label.iothreadsenabled.tooltip')"/>
+                      </template>
+                      <a-form-item name="iothreadsenabled" ref="iothreadsenabled">
+                        <a-switch
+                          v-model:checked="form.iothreadsenabled"
+                          :checked="iothreadsenabled"
+                          @change="val => { iothreadsenabled = val }"/>
+                      </a-form-item>
+                    </a-form-item>
+                    <a-form-item name="iodriverpolicy" ref="iodriverpolicy" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.iodriverpolicy')" :tooltip="$t('label.iodriverpolicy.tooltip')"/>
+                      </template>
+                      <a-select
+                        v-model:value="form.iodriverpolicy"
+                        optionFilterProp="label"
+                        :filterOption="filterOption">
+                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id">
+                          {{ iodriverpolicy.description }}
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                   </div>
                 </template>
@@ -697,14 +832,17 @@ import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
+import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
+import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'Wizard',
   components: {
     SshKeyPairSelection,
+    UserDataSelection,
     NetworkConfiguration,
     NetworkSelection,
     AffinityGroupSelection,
@@ -738,6 +876,10 @@ export default {
       zoneSelected: false,
       dynamicscalingenabled: true,
       templateKey: 0,
+      showRegisteredUserdata: true,
+      doUserdataOverride: false,
+      doUserdataAppend: false,
+      userdataDefaultOverridePolicy: 'ALLOWOVERRIDE',
       vm: {
         name: null,
         zoneid: null,
@@ -767,6 +909,7 @@ export default {
         affinityGroups: [],
         networks: [],
         sshKeyPairs: [],
+        UserDatas: [],
         pods: [],
         clusters: [],
         hosts: [],
@@ -774,6 +917,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
+        ioPolicyTypes: [],
         dynamicScalingVmConfig: false
       },
       rowCount: {},
@@ -787,6 +931,7 @@ export default {
         affinityGroups: false,
         networks: false,
         sshKeyPairs: false,
+        userDatas: false,
         zones: false,
         pods: false,
         clusters: false,
@@ -812,6 +957,32 @@ export default {
       zone: {},
       sshKeyPairs: [],
       sshKeyPair: {},
+      userData: {},
+      userDataParams: [],
+      userDataParamCols: [
+        {
+          title: this.$t('label.key'),
+          dataIndex: 'key'
+        },
+        {
+          title: this.$t('label.value'),
+          dataIndex: 'value',
+          slots: { customRender: 'value' }
+        }
+      ],
+      userDataValues: {},
+      templateUserDataCols: [
+        {
+          title: this.$t('label.userdata'),
+          dataIndex: 'userdata'
+        },
+        {
+          title: this.$t('label.userdatapolicy'),
+          dataIndex: 'userdataoverridepolicy'
+        }
+      ],
+      templateUserDataParams: [],
+      templateUserDataValues: {},
       overrideDiskOffering: {},
       templateFilter: [
         'featured',
@@ -830,6 +1001,7 @@ export default {
       networkConfig: [],
       dataNetworkCreated: [],
       tabKey: 'templateid',
+      userdataTabKey: 'userdataregistered',
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
@@ -925,6 +1097,15 @@ export default {
             listall: false
           }
         },
+        userDatas: {
+          list: 'listUserData',
+          options: {
+            page: 1,
+            pageSize: 10,
+            keyword: undefined,
+            listall: false
+          }
+        },
         networks: {
           list: 'listNetworks',
           options: {
@@ -1005,7 +1186,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1018,7 +1199,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1031,7 +1212,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1081,11 +1262,27 @@ export default {
 
       return tabList
     },
+    userdataTabList () {
+      let tabList = []
+      tabList = [{
+        key: 'userdataregistered',
+        tab: this.$t('label.userdata.registered')
+      },
+      {
+        key: 'userdatatext',
+        tab: this.$t('label.userdata.text')
+      }]
+
+      return tabList
+    },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     },
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
+    },
+    isUserAllowedToListUserDatas () {
+      return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
@@ -1166,12 +1363,9 @@ export default {
         }
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
-        this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         if (this.zone) {
@@ -1201,6 +1395,8 @@ export default {
           this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
         } else if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
+        } else {
+          this.vm.disksizetotalgb = null
         }
 
         if (this.diskSize) {
@@ -1272,6 +1468,8 @@ export default {
   template (oldValue, newValue) {
     if (oldValue && newValue && oldValue.id !== newValue.id) {
       this.dynamicscalingenabled = this.isDynamicallyScalable()
+      this.doUserdataOverride = false
+      this.doUserdataAppend = false
     }
   },
   created () {
@@ -1472,8 +1670,9 @@ export default {
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
+      this.fetchIoPolicyTypes()
       nextTick().then(() => {
-        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
+        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy'].forEach(this.fillValue)
         this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
         this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.instanceConfig = toRaw(this.form)
@@ -1516,6 +1715,14 @@ export default {
         )
       }
       this.options.bootModes = bootModes
+    },
+    fetchIoPolicyTypes () {
+      this.options.ioPolicyTypes = [
+        { id: 'native', description: 'native' },
+        { id: 'threads', description: 'threads' },
+        { id: 'io_uring', description: 'io_uring' },
+        { id: 'storage_specific', description: 'storage_specific' }
+      ]
     },
     fetchInstaceGroups () {
       this.options.instanceGroups = []
@@ -1585,6 +1792,8 @@ export default {
           this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
           this.fetchBootModes(this.defaultBootType)
           this.defaultBootMode = this.template?.details?.UEFI
+          this.updateTemplateLinkedUserData(this.template.userdataid)
+          this.userdataDefaultOverridePolicy = this.template.userdatapolicy
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1596,6 +1805,8 @@ export default {
         this.resetFromTemplateConfiguration()
         this.form.isoid = value
         this.form.templateid = null
+        this.updateTemplateLinkedUserData(this.iso.userdataid)
+        this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -1642,6 +1853,56 @@ export default {
     updateSshKeyPairs (names) {
       this.form.keypairs = names
       this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
+    },
+    updateUserData (id) {
+      if (id === '0') {
+        this.form.userdataid = undefined
+        return
+      }
+      this.form.userdataid = id
+      this.userDataParams = []
+      api('listUserData', { id: id }).then(json => {
+        const resp = json?.listuserdataresponse?.userdata || []
+        if (resp) {
+          var params = resp[0].params
+          if (params) {
+            var dataParams = params.split(',')
+          }
+          var that = this
+          dataParams.forEach(function (val, index) {
+            that.userDataParams.push({
+              id: index,
+              key: val
+            })
+          })
+        }
+      })
+    },
+    updateTemplateLinkedUserData (id) {
+      if (id === '0') {
+        return
+      }
+      this.templateUserDataParams = []
+
+      api('listUserData', { id: id }).then(json => {
+        const resp = json?.listuserdataresponse?.userdata || []
+        if (resp) {
+          var params = resp[0].params
+          if (params) {
+            var dataParams = params.split(',')
+          }
+          var that = this
+          that.templateUserDataParams = []
+          if (dataParams) {
+            dataParams.forEach(function (val, index) {
+              that.templateUserDataParams.push({
+                id: index,
+                key: val
+              })
+            })
+          }
+        }
+      })
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
@@ -1707,12 +1968,15 @@ export default {
           deployVmData.bootmode = values.bootmode
         }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
+        deployVmData.iothreadsenabled = values.iothreadsenabled
+        deployVmData.iodriverpolicy = values.iodriverpolicy
         if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+          deployVmData.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
           deployVmData.templateid = values.templateid
+          values.hypervisor = null
         } else {
           deployVmData.templateid = values.isoid
         }
@@ -1829,6 +2093,7 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
+        deployVmData.userdataid = values.userdataid
 
         if (values.name) {
           deployVmData.name = values.name
@@ -1857,7 +2122,25 @@ export default {
         deployVmData = Object.fromEntries(
           Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
 
-        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
+        var idx = 0
+        if (this.templateUserDataValues) {
+          for (const [key, value] of Object.entries(this.templateUserDataValues)) {
+            deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
+            idx++
+          }
+        }
+        if (this.userDataValues) {
+          for (const [key, value] of Object.entries(this.userDataValues)) {
+            deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
+            idx++
+          }
+        }
+
+        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
+        const args = httpMethod === 'POST' ? {} : deployVmData
+        const data = httpMethod === 'POST' ? deployVmData : {}
+
+        api('deployVirtualMachine', args, httpMethod, data).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -2129,14 +2412,26 @@ export default {
     },
     onSelectPodId (value) {
       this.podId = value
+      if (this.podId === null) {
+        this.form.podid = undefined
+      }
 
       this.fetchOptions(this.params.clusters, 'clusters')
       this.fetchOptions(this.params.hosts, 'hosts')
     },
     onSelectClusterId (value) {
       this.clusterId = value
+      if (this.clusterId === null) {
+        this.form.clusterid = undefined
+      }
 
       this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectHostId (value) {
+      this.hostId = value
+      if (this.hostId === null) {
+        this.form.hostid = undefined
+      }
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
@@ -2148,13 +2443,9 @@ export default {
         this.fetchAllIsos()
       }
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
+    onUserdataTabChange (key, type) {
+      this[type] = key
+      this.userDataParams = []
     },
     fetchTemplateNics (template) {
       var nics = []
@@ -2349,6 +2640,19 @@ export default {
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection
+    },
+    getSelectedNetworksWithExistingConfig (networks) {
+      for (var i in this.networks) {
+        var n = this.networks[i]
+        for (var c of this.networkConfig) {
+          if (n.id === c.key) {
+            n = { ...n, ...c }
+            networks[i] = n
+            break
+          }
+        }
+      }
+      return networks
     }
   }
 }

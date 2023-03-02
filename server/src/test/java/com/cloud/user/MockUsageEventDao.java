@@ -318,4 +318,9 @@ public class MockUsageEventDao implements UsageEventDao{
     public void saveDetails(long eventId, Map<String, String> details) {
 
     }
+
+    @Override
+    public Pair<List<UsageEventVO>, Integer> searchAndCount(SearchCriteria<UsageEventVO> sc, Filter filter, boolean includeRemoved) {
+        return null;
+    }
 }

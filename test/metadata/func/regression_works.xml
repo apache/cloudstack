@@ -3112,7 +3112,7 @@ under the License.
 	</command>
 
 	<!--
-		Test case #16 - rebootVirtualMachine command; verfiy that machine is
+		Test case #16 - rebootVirtualMachine command; verify that machine is
 		in Running state after it's rebooted
 	-->
 	<command>

@@ -37,7 +37,6 @@ import com.cloud.utils.Pair;
 public class ListGuestOsMappingCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListGuestOsMappingCmd.class.getName());
 
-    private static final String s_name = "listguestosmappingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,11 +77,6 @@ public class ListGuestOsMappingCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

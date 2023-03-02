@@ -263,7 +263,7 @@ public class PodZoneConfig {
             return genReturnList("true", "Successfully added VLAN.");
 
         } else {
-            return genReturnList("false", "That operation is not suppored.");
+            return genReturnList("false", "That operation is not supported.");
         }
 
         /*

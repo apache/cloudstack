@@ -135,11 +135,11 @@
     "testApiNameCase5": {
       "params": [
         {
-          "name": "column2",
+          "name": "column1",
           "type": "string"
         },
         {
-          "name": "column1",
+          "name": "column2",
           "type": "string"
         },
         {

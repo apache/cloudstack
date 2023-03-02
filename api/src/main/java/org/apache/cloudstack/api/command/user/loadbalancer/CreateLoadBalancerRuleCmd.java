@@ -54,7 +54,6 @@ import com.cloud.utils.net.NetUtils;
 public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements LoadBalancer */{
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
-    private static final String s_name = "createloadbalancerruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -95,7 +94,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     private Integer publicPort;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for"
-        + " source/end public port is automatically created; if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when LB"
+        + " source/end public port is automatically created; if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when LB"
         + " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
@@ -262,11 +261,6 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {

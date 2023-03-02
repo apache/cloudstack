@@ -234,13 +234,6 @@ export default {
           confirmation = 'message.confirm.delete.brocadevcs'
           params.vcsdeviceid = record.vcsdeviceid
           break
-        case 'JuniperSRX':
-          label = 'label.delete.srx'
-          name = record.ipaddress
-          apiName = 'deleteSrxFirewall'
-          confirmation = 'message.confirm.delete.srx'
-          params.fwdeviceid = record.fwdeviceid
-          break
         case 'Netscaler':
           label = 'label.delete.netscaler'
           name = record.ipaddress

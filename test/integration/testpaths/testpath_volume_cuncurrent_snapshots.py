@@ -285,9 +285,9 @@ class TestConcurrentSnapshots(cloudstackTestCase):
                     4. Verify backup_snap_id was non null in "snapshots"table
             2. Perform step 1 for all the 4 VM's.
             3. Verify that VM gets migrated when snapshot
-                is in pregress for the VM.
+                is in progress for the VM.
             4. Verify that snapshots get created when
-                VM's are stoped in between snapshot creation.
+                VM's are stopped in between snapshot creation.
             5. Perform live Migration then stop all the
                 VM's after that verify that snapshot creation success .
             6. Verify success of snapshots creation in case:

@@ -41,7 +41,6 @@ import com.cloud.vm.VirtualMachine;
 public class ListSystemVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSystemVMsCmd.class.getName());
 
-    private static final String s_name = "listsystemvmsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -116,11 +115,6 @@ public class ListSystemVMsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

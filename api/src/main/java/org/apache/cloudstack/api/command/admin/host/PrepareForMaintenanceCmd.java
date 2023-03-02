@@ -37,7 +37,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
 
-    private static final String s_name = "preparehostformaintenanceresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -57,11 +56,6 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "host";

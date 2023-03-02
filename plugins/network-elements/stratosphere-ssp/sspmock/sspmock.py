@@ -30,7 +30,7 @@ def login():
 	assert "password" in request.form
         request.environ["beaker.session"]["login"] = True
 	res = make_response("", 200)
-	res.headers["Content-type"] = "application/json"
+	res.headers["content-type"] = "application/json"
 	return res
 
 @app.route("/ssp.v1/tenant-networks", methods=["POST",])
@@ -41,7 +41,7 @@ def create_tenant_network():
 	obj["uuid"] = str(uuid.uuid1())
 	tenant_networks.append(obj)
 	res = make_response(json.dumps(obj), 201)
-	res.headers["Content-type"] = "application/json"
+	res.headers["content-type"] = "application/json"
 	return res
 
 @app.route("/ssp.v1/tenant-networks/<tenant_net_uuid>", methods=["DELETE",])
@@ -62,7 +62,7 @@ def create_tenant_port():
 	obj["uuid"] = str(uuid.uuid1())
 	tenant_ports.append(obj)
 	res = make_response(json.dumps(obj), 201)
-	res.headers["Content-type"] = "application/json"
+	res.headers["content-type"] = "application/json"
 	return res
 
 @app.route("/ssp.v1/tenant-ports/<tenant_port_uuid>", methods=["DELETE",])
@@ -87,7 +87,7 @@ def update_tenant_port(tenant_port_uuid):
 			tenant_ports.remove(port)
 			tenant_ports.append(obj)
 			res = make_response(json.dumps(obj), 200)
-			res.headers["Content-type"] = "application/json"
+			res.headers["content-type"] = "application/json"
 			return res
 	return make_response("", 404)
 

@@ -43,7 +43,7 @@
           v-if="resource && resource.hypervisor === 'VMware'"
           ref="forced"
           name="forced">
-          <a-switch v-model:checked="form.forced" :auto-focus="true" />
+          <a-switch v-model:checked="form.forced" v-focus="true" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">

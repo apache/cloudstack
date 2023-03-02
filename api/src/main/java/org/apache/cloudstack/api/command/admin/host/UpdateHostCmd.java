@@ -36,7 +36,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
-    private static final String s_name = "updatehostresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -103,11 +102,6 @@ public class UpdateHostCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "updatehost";

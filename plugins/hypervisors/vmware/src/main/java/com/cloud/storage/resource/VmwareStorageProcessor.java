@@ -50,8 +50,8 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
-import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -97,6 +97,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -2128,7 +2129,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
 
-                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId);
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
                 chainInfo = _gson.toJson(diskInfo);
@@ -2409,7 +2410,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
-
+        s_logger.debug(LogUtils.logGsonWithoutException("Executing CreateObjectCommand cmd: [%s].", cmd));
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
         DataStoreTO primaryStore = volume.getDataStore();
         String vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
@@ -2421,7 +2422,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
             if (morDatastore == null) {
-                throw new Exception("Unable to find datastore in vSphere");
+                throw new CloudRuntimeException(String.format("Unable to find datastore [%s] in vSphere.", primaryStore.getUuid()));
             }
 
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
@@ -2439,13 +2440,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 newVol.setPath(file.getFileBaseName());
                 newVol.setSize(volume.getSize());
             } catch (Exception e) {
-                s_logger.debug("Create disk using vStorageObject manager failed due to exception " + e.getMessage() + ", retying using worker VM");
+                s_logger.error(String.format("Create disk using vStorageObject manager failed due to [%s], retrying using worker VM.", e.getMessage()), e);
                 String dummyVmName = hostService.getWorkerName(context, cmd, 0, dsMo);
                 try {
-                    s_logger.info("Create worker VM " + dummyVmName);
+                    s_logger.info(String.format("Creating worker VM [%s].", dummyVmName));
                     vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
                     if (vmMo == null) {
-                        throw new Exception("Unable to create a dummy VM for volume creation");
+                        throw new CloudRuntimeException("Unable to create a dummy VM for volume creation.");
                     }
 
                     synchronized (this) {
@@ -2454,9 +2455,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
                         catch (Exception e1) {
-                            s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e1.getMessage());
+                            s_logger.error(String.format("Deleting file [%s] due to [%s].", volumeDatastorePath, e1.getMessage()), e1);
                             VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                            throw new CloudRuntimeException("Unable to create volume due to: " + e1.getMessage());
+                            throw new CloudRuntimeException(String.format("Unable to create volume due to [%s].", e1.getMessage()));
                         }
                     }
 
@@ -2465,7 +2466,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     newVol.setSize(volume.getSize());
                     return new CreateObjectAnswer(newVol);
                 } finally {
-                    s_logger.info("Destroy dummy VM after volume creation");
+                    s_logger.info("Destroying dummy VM after volume creation.");
                     if (vmMo != null) {
                         vmMo.detachAllDisksAndDestroy();
                     }

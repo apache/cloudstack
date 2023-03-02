@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.statistics')" key="stats">
+      <a-tab-pane :tab="$t('label.metrics')" key="stats">
         <StatsTab :resource="resource"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
@@ -33,33 +33,8 @@
         <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
         <barcode-outlined /> {{ vm.isoid }}
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.volumes')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
-        <a-table
-          class="table"
-          size="small"
-          :columns="volumeColumns"
-          :dataSource="volumes"
-          :rowKey="item => item.id"
-          :pagination="false"
-        >
-          <template #bodyCell="{ column, text, record }">
-            <template v-if="column.key === 'name'">
-              <hdd-outlined />
-              <router-link :to="{ path: '/volume/' + record.id }">
-                {{ text }}
-              </router-link>
-              <a-tag v-if="record.provisioningtype">
-                {{ record.provisioningtype }}
-              </a-tag>
-            </template>
-            <template v-if="column.key === 'state'">
-              <status :text="text ? text : ''" />{{ text }}
-            </template>
-            <template v-if="column.key === 'size'">
-              {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
-            </template>
-          </template>
-        </a-table>
+      <a-tab-pane :tab="$t('label.volumes')" key="volumes">
+        <volumes-tab :resource="vm" :items="volumes" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <a-button
@@ -88,7 +63,7 @@
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
-              :tooltip="$t('label.change.ip.addess')"
+              :tooltip="$t('label.change.ip.address')"
               icon="swap-outlined"
               :disabled="!('updateVmNicIp' in $store.getters.apis)"
               @onClick="onChangeIPAddress(record)" />
@@ -310,7 +285,6 @@
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
-import Status from '@/components/widgets/Status'
 import DetailsTab from '@/components/view/DetailsTab'
 import StatsTab from '@/components/view/StatsTab'
 import EventsTab from '@/components/view/EventsTab'
@@ -320,6 +294,7 @@ import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import VolumesTab from '@/components/view/VolumesTab.vue'
 
 export default {
   name: 'InstanceTab',
@@ -330,11 +305,11 @@ export default {
     EventsTab,
     DetailSettings,
     NicsTable,
-    Status,
     ListResourceTable,
     TooltipButton,
     ResourceIcon,
-    AnnotationsTab
+    AnnotationsTab,
+    VolumesTab
   },
   mixins: [mixinDevice],
   props: {
@@ -351,7 +326,6 @@ export default {
   data () {
     return {
       vm: {},
-      volumes: [],
       totalStorage: 0,
       currentTab: 'details',
       showAddNetworkModal: false,
@@ -369,27 +343,6 @@ export default {
       secondaryIPs: [],
       selectedNicId: '',
       newSecondaryIp: '',
-      volumeColumns: [
-        {
-          key: 'name',
-          title: this.$t('label.name'),
-          dataIndex: 'name'
-        },
-        {
-          key: 'state',
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        },
-        {
-          title: this.$t('label.type'),
-          dataIndex: 'type'
-        },
-        {
-          key: 'size',
-          title: this.$t('label.size'),
-          dataIndex: 'size'
-        }
-      ],
       editNicResource: {},
       listIps: {
         loading: false,
@@ -445,18 +398,10 @@ export default {
       )
     },
     fetchData () {
-      this.volumes = []
       this.annotations = []
       if (!this.vm || !this.vm.id) {
         return
       }
-      api('listVolumes', { listall: true, virtualmachineid: this.vm.id }).then(json => {
-        this.volumes = json.listvolumesresponse.volume
-        if (this.volumes) {
-          this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
-        }
-        this.dataResource.volumes = this.volumes
-      })
       api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation

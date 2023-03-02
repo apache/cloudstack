@@ -43,7 +43,6 @@ import com.cloud.network.RemoteAccessVpn;
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateRemoteAccessVpnCmd.class.getName());
 
-    private static final String s_name = "createremoteaccessvpnresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -74,7 +73,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL,
                type = CommandType.BOOLEAN,
-               description = "if true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+               description = "if true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitly. Has value true by default")
     private Boolean openFirewall;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
@@ -116,11 +115,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

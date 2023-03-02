@@ -266,7 +266,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
         vlanid: [{ required: true, message: this.$t('message.please.enter.value') }]
@@ -302,7 +301,7 @@ export default {
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
-          if (zone.networktype === 'Advanced') {
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
             this.zones.push(zone)
           }
         }

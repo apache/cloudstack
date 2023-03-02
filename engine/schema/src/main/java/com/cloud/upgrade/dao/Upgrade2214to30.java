@@ -79,7 +79,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         encryptData(conn);
         // drop keys
         dropKeysIfExist(conn);
-        //update templete ID for system Vms
+        //update template ID for system Vms
         //updateSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         // update domain network ref
         updateDomainNetworkRef(conn);

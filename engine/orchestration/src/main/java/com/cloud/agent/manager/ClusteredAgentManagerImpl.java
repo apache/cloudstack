@@ -136,7 +136,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     protected final ConfigKey<Boolean> EnableLB = new ConfigKey<Boolean>(Boolean.class, "agent.lb.enabled", "Advanced", "false", "Enable agent load balancing between management server nodes", true);
     protected final ConfigKey<Double> ConnectedAgentThreshold = new ConfigKey<Double>(Double.class, "agent.load.threshold", "Advanced", "0.7",
-            "What percentage of the agents can be held by one management server before load balancing happens", true);
+            "What percentage of the agents can be held by one management server before load balancing happens", true, EnableLB.key());
     protected final ConfigKey<Integer> LoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", "16", "How many agents to connect to in each round", true);
     protected final ConfigKey<Integer> ScanInterval = new ConfigKey<Integer>(Integer.class, "direct.agent.scan.interval", "Advanced", "90", "Interval between scans to load agents", false,
             ConfigKey.Scope.Global, 1000);
@@ -716,11 +716,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
             } catch (final ClassNotFoundException e) {
-                final String message = String.format("ClassNotFoundException occurred when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("ClassNotFoundException occurred when executing tasks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } catch (final UnsupportedVersionException e) {
-                final String message = String.format("UnsupportedVersionException occurred when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("UnsupportedVersionException occurred when executing tasks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } finally {
@@ -1275,7 +1275,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 cmds = _gson.fromJson(pdu.getJsonPackage(), Command[].class);
             } catch (final Throwable e) {
                 assert false;
-                s_logger.error("Excection in gson decoding : ", e);
+                s_logger.error("Exception in gson decoding : ", e);
             }
 
             if (cmds.length == 1 && cmds[0] instanceof ChangeAgentCommand) { // intercepted

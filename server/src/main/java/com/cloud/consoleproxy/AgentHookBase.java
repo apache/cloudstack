@@ -21,6 +21,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Date;
 
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManagerImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
@@ -68,14 +70,17 @@ public abstract class AgentHookBase implements AgentHook {
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
     KeysManager _keysMgr;
+    ConsoleAccessManager consoleAccessManager;
 
-    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+    protected AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
+                         AgentManager agentMgr, KeysManager keysMgr, ConsoleAccessManager consoleAccessMgr) {
         _instanceDao = instanceDao;
         _hostDao = hostDao;
         _agentMgr = agentMgr;
         _configDao = cfgDao;
         _ksMgr = ksMgr;
         _keysMgr = keysMgr;
+        consoleAccessManager = consoleAccessMgr;
     }
 
     @Override
@@ -83,6 +88,8 @@ public abstract class AgentHookBase implements AgentHook {
         Long vmId = null;
 
         String ticketInUrl = cmd.getTicket();
+        String sessionUuid = cmd.getSessionUuid();
+
         if (ticketInUrl == null) {
             s_logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: " + cmd.getVmId());
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
@@ -93,16 +100,23 @@ public abstract class AgentHookBase implements AgentHook {
         }
 
         if (!cmd.isReauthenticating()) {
-            String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+            String ticket = ConsoleAccessManagerImpl.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), sessionUuid);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
             }
 
+            if (!consoleAccessManager.isSessionAllowed(sessionUuid)) {
+                s_logger.error(String.format("Session [%s] has been already used or does not exist.", sessionUuid));
+                return new ConsoleAccessAuthenticationAnswer(cmd, false);
+            }
+
+            s_logger.debug(String.format("Acquiring session [%s] as it was just used.", sessionUuid));
+            consoleAccessManager.acquireSession(sessionUuid);
+
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();
                 // considering of minute round-up
-                String minuteEarlyTicket =
-                    ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
+                String minuteEarlyTicket = ConsoleAccessManagerImpl.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000), sessionUuid);
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " +

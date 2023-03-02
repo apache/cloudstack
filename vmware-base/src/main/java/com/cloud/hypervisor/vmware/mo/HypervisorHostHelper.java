@@ -60,6 +60,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
@@ -1622,6 +1623,7 @@ public class HypervisorHostHelper {
         DatacenterMO dataCenterMo = new DatacenterMO(host.getContext(), host.getHyperHostDatacenter());
         setVMHardwareVersion(vmConfig, clusterMo, dataCenterMo);
 
+        s_logger.debug(LogUtils.logGsonWithoutException("Creating blank VM with configuration [%s].", vmConfig));
         if (host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where
@@ -2128,7 +2130,7 @@ public class HypervisorHostHelper {
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
             // Reconfigure worker VM with datadisk
-            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1, null);
             deviceConfigSpec.setDevice(device);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
@@ -2303,7 +2305,7 @@ public class HypervisorHostHelper {
         String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
-            s_logger.info(String.format("vSphere datastore base folder: %s does not exist, now creating on datastore: %s", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
+            s_logger.info(String.format("vSphere datastore base folder [%s] does not exist on datastore [%s]. We will create it.", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
             dsMo.makeDirectory(folderPath, mor);
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
             dsMo.makeDirectory(hiddenFolderPath, mor);

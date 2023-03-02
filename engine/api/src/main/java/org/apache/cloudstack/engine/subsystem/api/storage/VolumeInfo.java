@@ -93,5 +93,7 @@ public interface VolumeInfo extends DataObject, Volume {
 
     public String getvSphereStoragePolicyId();
 
+    public byte[] getPassphrase();
+
     Volume getVolume();
 }

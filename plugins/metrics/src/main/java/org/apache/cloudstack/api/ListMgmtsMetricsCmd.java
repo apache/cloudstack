@@ -27,22 +27,16 @@ import org.apache.cloudstack.response.ManagementServerMetricsResponse;
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = ListMgmtsMetricsCmd.APINAME, description = "Lists Management Server metrics", responseObject = ManagementServerMetricsResponse.class,
+@APICommand(name = "listManagementServersMetrics", description = "Lists Management Server metrics", responseObject = ManagementServerMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.17.0", authorized = {RoleType.Admin})
 public class ListMgmtsMetricsCmd  extends ListMgmtsCmd {
-    public static final String APINAME = "listManagementServersMetrics";
 
     @Parameter(name = MetricConstants.SYSTEM, type = CommandType.BOOLEAN, entityType = ManagementServerMetricsResponse.class, description = "include system level stats")
     private boolean system;
 
     @Inject
     private MetricsService metricsService;
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

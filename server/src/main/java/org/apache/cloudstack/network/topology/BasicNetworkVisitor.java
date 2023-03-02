@@ -254,7 +254,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = userdata.getNicVo();
 
         final Commands commands = new Commands(Command.OnError.Stop);
-        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, null, commands);
+        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
