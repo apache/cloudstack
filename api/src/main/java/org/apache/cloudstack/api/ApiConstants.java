@@ -1025,6 +1025,11 @@ public class ApiConstants {
     public static final String VM_SCHEDULE_PERIOD = "period";
     public static final String VM_SCHEDULE_TAG = "tag";
     public static final String VM_SCHEDULE_TIMEZONE = "timezone";
+    public static final String VM_SCHEDULE_ID = "vmscheduleid";
+
+    public static final String VM_SCHEDULE_IDS = "vmscheduleids";
+
+
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

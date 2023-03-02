@@ -57,7 +57,7 @@ public class VMScheduleResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "Id of Virtual Machine")
-    private String virtualMachineId;
+    private Long virtualMachineId;
 
     public String getId() {
         return id;
@@ -115,11 +115,11 @@ public class VMScheduleResponse extends BaseResponse {
         this.tag = tag;
     }
 
-    public String getVirtualMachineId() {
+    public Long getVirtualMachineId() {
         return virtualMachineId;
     }
 
-    public void setVirtualMachineId(String virtualMachineId) {
+    public void setVirtualMachineId(Long virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
     }
 }

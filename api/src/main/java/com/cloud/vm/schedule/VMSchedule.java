@@ -38,6 +38,8 @@ public interface VMSchedule extends Identity, InternalIdentity {
 
     public State getState();
 
+    public void setState(State state);
+
     public String getTimezone();
 
     public String getTag();
