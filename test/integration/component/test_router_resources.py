@@ -704,6 +704,7 @@ class TestRouterResources(cloudstackTestCase):
             offering_data,
             domainid=self.domain1.id
         )
+        self.cleanup.append(network_offering)
 
         # Step 5
         routers = list_routers(
