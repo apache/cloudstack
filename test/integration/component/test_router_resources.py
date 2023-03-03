@@ -423,11 +423,12 @@ class TestRouterResources(cloudstackTestCase):
             'issystem': 'true',
             'systemvmtype': 'domainrouter'
         }
-        self.new_network_offering = ServiceOffering.create(
+        network_offering = self.new_network_offering = ServiceOffering.create(
             self.apiclient,
             offering_data,
             domainid=self.domain1.id
         )
+        self.cleanup.append(network_offering)
 
         routers = list_routers(
             self.apiclient,
