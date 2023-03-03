@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmschedule;
 
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.vm.schedule.VMSchedule;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -23,8 +26,9 @@ import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.log4j.Logger;
 
 @APICommand(name = UpdateVMScheduleCmd.APINAME,
-        description = "Lists Schedules for a VM",
+        description = "Update Schedule for a VM",
         responseObject = VMScheduleResponse.class,
+        entityType = {VMSchedule.class},
         since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
@@ -39,18 +43,18 @@ public class UpdateVMScheduleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
 
     @Override
     public String getEventType() {
-        return null;
+        return EventTypes.EVENT_VMSCHEDULE_ENABLE;
     }
 
 
     @Override
     public String getEventDescription() {
-        return null;
+        return "Deleting vm schedule";
     }
 }

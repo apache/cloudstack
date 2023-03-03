@@ -17,8 +17,29 @@
 package com.cloud.vm.schedule.dao;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.schedule.VMScheduleVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
+import org.apache.log4j.Logger;
+
+import java.util.List;
 
 public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao{
+    private static final Logger s_logger = Logger.getLogger(VMSnapshotDaoImpl.class);
 
+    private final SearchBuilder<VMScheduleVO> ScheduleSearch;
+
+    protected VMScheduleDaoImpl() {
+        ScheduleSearch = createSearchBuilder();
+        ScheduleSearch.and("vm_id", ScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        ScheduleSearch.done();
+    }
+
+    @Override
+    public List<VMScheduleVO> findByVm(Long vmId) {
+        SearchCriteria<VMScheduleVO> sc = ScheduleSearch.create();
+        sc.setParameters("vm_id", vmId);
+        return listBy(sc, null);
+    }
 }

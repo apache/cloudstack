@@ -17,6 +17,7 @@
 
 package com.cloud.vm.schedule;
 
+
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -24,6 +25,10 @@ import com.cloud.utils.ListUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.schedule.dao.VMScheduleDao;
 import org.apache.cloudstack.api.command.user.vmschedule.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vmschedule.ListVMScheduleCmd;
@@ -31,14 +36,21 @@ import org.apache.cloudstack.api.command.user.vmschedule.UpdateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vmschedule.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vmschedule.EnableVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vmschedule.DisableVMScheduleCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.poll.BackgroundPollManager;
+import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleManager, Configurable, PluggableService {
@@ -46,6 +58,25 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     @Inject
     private VMScheduleDao vmScheduleDao;
+
+    @Inject
+    private VirtualMachineManager vmManager;
+
+    @Inject
+    private BackgroundPollManager backgroundPollManager;
+
+    @Inject
+    private AsyncJobManager asyncJobManager;
+
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+
+    private static final ConfigKey<Boolean> EnableVMScheduler = new ConfigKey<>("Advanced", Boolean.class,
+            "gc.enable", "true",
+            "Enable the  background task to perform scheduled action on VM.", false);
+    private static final ConfigKey<Integer> VMSchedulerInterval = new ConfigKey<>("Advanced", Integer.class,
+            "gc.interval", "2",
+            "The interval at which background tasks runs in seconds", false, EnableVMScheduler.key());
 
     @Override
     public boolean start() {
@@ -64,7 +95,18 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[0];
+        return new ConfigKey<?>[] {
+                EnableVMScheduler,
+                VMSchedulerInterval
+        };
+    }
+
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        if (EnableVMScheduler.value()) {
+            backgroundPollManager.submitTask(new VMScheduleManagerImpl.VMScheduleBackgroundTask(this));
+        }
+        return true;
     }
 
     @Override
@@ -160,6 +202,41 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         boolean updateResult = vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
 
         return updateResult;
+    }
+
+    public static final class VMScheduleBackgroundTask extends ManagedContextRunnable implements BackgroundPollTask {
+        private VMScheduleManagerImpl serviceImpl;
+
+        public VMScheduleBackgroundTask(VMScheduleManagerImpl serviceImpl) {
+            this.serviceImpl = serviceImpl;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("VM Scheduler GC task is running...");
+                }
+
+                Long accountId=CallContext.current().getCallingAccountId();
+                List<VMInstanceVO> vmInstanceVOList = serviceImpl.vmInstanceDao.listByAccountId(accountId);
+                for (final VMInstanceVO vmInstance : vmInstanceVOList) {
+                    if (vmInstance.getState() == VirtualMachine.State.Stopped) {
+                        serviceImpl.vmManager.start(vmInstance.getUuid(), null, null, null);
+                    }
+                }
+
+            } catch (final Throwable t) {
+                s_logger.error("Error trying to run VM Scheduler GC task", t);
+            }
+        }
+
+        @Override
+        public Long getDelay() {
+            // In Milliseconds
+            return VMSchedulerInterval.value() * 1000L;
+        }
+
     }
 
 }
