@@ -33,7 +33,7 @@ public class CryptSetupTest {
         file.close();
 
         String filePath = path.toAbsolutePath().toString();
-        PassphraseVO passphrase = new PassphraseVO();
+        PassphraseVO passphrase = new PassphraseVO(true);
 
         cryptSetup.luksFormat(passphrase.getPassphrase(), CryptSetup.LuksType.LUKS, filePath);
 
