@@ -27,11 +27,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.routing.UpdateNetworkCommand;
-import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -60,6 +55,7 @@ import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
+import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
@@ -78,6 +74,8 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -105,6 +103,7 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -120,6 +119,7 @@ import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -1269,10 +1269,8 @@ public class CommandSetupHelper {
             String[] keyValuePairs = userDataDetails.split(",");
             for(String pair : keyValuePairs)
             {
-                String[] entry = pair.split("=");
-                String key = entry[0].trim();
-                String value = entry[1].trim();
-                cmd.addVmData("metadata", key, value);
+                final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
+                cmd.addVmData("metadata", keyValue.first(), keyValue.second());
             }
         }
     }
