@@ -23,8 +23,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -42,12 +40,14 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
@@ -204,11 +204,9 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
      */
     private Long getOneMatchingPoolIdFromRefs(List<VMTemplateStoragePoolVO> existingRefs, List<StoragePoolVO> pools) {
         if (pools.isEmpty()) {
-            throw new CloudRuntimeException("No storage pools found");
+            return null;
         }
-        if (existingRefs.isEmpty()) {
-            return pools.get(0).getId();
-        } else {
+        if (!existingRefs.isEmpty()) {
             for (VMTemplateStoragePoolVO ref : existingRefs) {
                 for (StoragePoolVO p : pools) {
                     if (ref.getPoolId() == p.getId()) {
@@ -217,13 +215,13 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
                 }
             }
         }
-        return null;
+        return pools.get(0).getId();
     }
 
     /**
-     * Retrieve storage pools with scope = cluster or zone matching clusterId or dataCenterId depending on their scope
+     * Retrieve storage pools with scope = cluster or zone or local matching clusterId or dataCenterId or hostId depending on their scope
      */
-    private List<StoragePoolVO> getStoragePoolsFromClusterOrZone(Long clusterId, long dataCenterId, Hypervisor.HypervisorType hypervisorType) {
+    private List<StoragePoolVO> getStoragePoolsFromClusterOrZoneOrLocal(Long clusterId, long dataCenterId, Hypervisor.HypervisorType hypervisorType, long hostId) {
         List<StoragePoolVO> pools = new ArrayList<>();
         if (clusterId != null) {
             List<StoragePoolVO> clusterPools = primaryDataStoreDao.listPoolsByCluster(clusterId);
@@ -231,6 +229,8 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         }
         List<StoragePoolVO> zonePools = primaryDataStoreDao.findZoneWideStoragePoolsByHypervisor(dataCenterId, hypervisorType);
         pools.addAll(zonePools);
+        List<StoragePoolVO> localPools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
+        pools.addAll(localPools);
         return pools;
     }
 
@@ -244,7 +244,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         if (poolId == null) {
             //Get ISO from existing pool ref
             HostVO host = hostDao.findById(hostId);
-            List<StoragePoolVO> pools = getStoragePoolsFromClusterOrZone(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType());
+            List<StoragePoolVO> pools = getStoragePoolsFromClusterOrZoneOrLocal(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), hostId);
             List<VMTemplateStoragePoolVO> existingRefs = templatePoolDao.listByTemplateId(templateId);
             pool = getOneMatchingPoolIdFromRefs(existingRefs, pools);
         }
