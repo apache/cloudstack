@@ -30,15 +30,12 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
@@ -50,6 +47,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -58,6 +57,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -318,6 +319,35 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
+    protected Host getVmwareHostFromVolumeToDelete(VolumeInfo volume) {
+        VirtualMachine vm = volume.getAttachedVM();
+        if (vm == null) {
+            return null;
+        }
+        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        if (hostId == null) {
+            return null;
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            return null;
+        }
+        if (volume.getDataStore() instanceof PrimaryDataStore) {
+            PrimaryDataStore dataStore = (PrimaryDataStore)volume.getDataStore();
+            if (dataStore.getScope() == null) {
+                return null;
+            }
+            if (ScopeType.HOST.equals(dataStore.getScope().getScopeType()) && !host.getStorageIpAddress().equals(dataStore.getHostAddress())) {
+                return null;
+            }
+            if (ScopeType.CLUSTER.equals(dataStore.getScope().getScopeType()) && !host.getClusterId().equals(dataStore.getClusterId())) {
+                return null;
+            }
+        }
+        s_logger.debug(String.format("Selected host %s for deleting volume ID: %d", host, volume.getId()));
+        return host;
+    }
+
     @Override
     public List<EndPoint> findAllEndpointsForScope(DataStore store) {
         Long dcId = null;
@@ -436,13 +466,10 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         } else if (action == StorageAction.DELETEVOLUME) {
             VolumeInfo volume = (VolumeInfo)object;
-            if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
-                if (vm != null) {
-                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-                    if (hostId != null) {
-                        return getEndPointFromHostId(hostId);
-                    }
+            if (Hypervisor.HypervisorType.VMware.equals(volume.getHypervisorType()))  {
+                Host host = getVmwareHostFromVolumeToDelete(volume);
+                if (host != null) {
+                    return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
                 }
             }
         }
