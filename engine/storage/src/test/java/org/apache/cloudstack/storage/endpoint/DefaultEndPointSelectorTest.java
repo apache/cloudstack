@@ -30,7 +30,9 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.ScopeType;
 import com.cloud.vm.VirtualMachine;
 
@@ -63,6 +65,15 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfo.getAttachedVM()).thenReturn(virtualMachine);
         Mockito.when(hostDao.findById(hostId)).thenReturn(null);
         Assert.assertNull(defaultEndPointSelector.getVmwareHostFromVolumeToDelete(volumeInfo));
+
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Disabled);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(hostVO);
+        Assert.assertNull(defaultEndPointSelector.getVmwareHostFromVolumeToDelete(volumeInfo));
+
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.when(hostVO.getState()).thenReturn(Status.Down);
+        Assert.assertNull(defaultEndPointSelector.getVmwareHostFromVolumeToDelete(volumeInfo));
     }
 
     @Test
@@ -72,7 +83,10 @@ public class DefaultEndPointSelectorTest {
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
         Mockito.when(virtualMachine.getHostId()).thenReturn(hostId);
         Mockito.when(volumeInfo.getAttachedVM()).thenReturn(virtualMachine);
-        Mockito.when(hostDao.findById(hostId)).thenReturn(Mockito.mock(HostVO.class));
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.when(hostVO.getState()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(hostVO);
         Mockito.when(volumeInfo.getDataStore()).thenReturn(Mockito.mock(ImageStoreInfo.class));
         Assert.assertNotNull(defaultEndPointSelector.getVmwareHostFromVolumeToDelete(volumeInfo));
     }
@@ -84,7 +98,10 @@ public class DefaultEndPointSelectorTest {
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
         Mockito.when(virtualMachine.getHostId()).thenReturn(hostId);
         Mockito.when(volumeInfo.getAttachedVM()).thenReturn(virtualMachine);
-        Mockito.when(hostDao.findById(hostId)).thenReturn(Mockito.mock(HostVO.class));
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.when(hostVO.getState()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(hostVO);
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
         Mockito.when(store.getScope()).thenReturn(null);
         Mockito.when(volumeInfo.getDataStore()).thenReturn(store);
@@ -98,7 +115,10 @@ public class DefaultEndPointSelectorTest {
         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
         Mockito.when(virtualMachine.getHostId()).thenReturn(hostId);
         Mockito.when(volumeInfo.getAttachedVM()).thenReturn(virtualMachine);
-        Mockito.when(hostDao.findById(hostId)).thenReturn(Mockito.mock(HostVO.class));
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.when(hostVO.getState()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(hostVO);
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
         Scope scope = Mockito.mock(Scope.class);
         Mockito.when(scope.getScopeType()).thenReturn(ScopeType.ZONE);
@@ -116,6 +136,8 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(virtualMachine.getHostId()).thenReturn(hostId);
         Mockito.when(volumeInfo.getAttachedVM()).thenReturn(virtualMachine);
         HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.when(hostVO.getState()).thenReturn(Status.Up);
         Mockito.when(hostVO.getClusterId()).thenReturn(clusterId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(hostVO);
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
@@ -139,6 +161,8 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(virtualMachine.getHostId()).thenReturn(hostId);
         Mockito.when(volumeInfo.getAttachedVM()).thenReturn(virtualMachine);
         HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getResourceState()).thenReturn(ResourceState.Enabled);
+        Mockito.when(hostVO.getState()).thenReturn(Status.Up);
         Mockito.when(hostVO.getStorageIpAddress()).thenReturn(storageIp);
         Mockito.when(hostDao.findById(hostId)).thenReturn(hostVO);
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);

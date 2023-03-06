@@ -54,6 +54,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
@@ -329,7 +330,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
         HostVO host = hostDao.findById(hostId);
-        if (host == null) {
+        if (host == null || !ResourceState.Enabled.equals(host.getResourceState()) || !Status.Up.equals(host.getState())) {
             return null;
         }
         if (volume.getDataStore() instanceof PrimaryDataStore) {
