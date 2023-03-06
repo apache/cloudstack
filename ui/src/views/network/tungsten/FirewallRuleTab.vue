@@ -98,7 +98,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.action.description">
               <a-select-option value="pass">PASS</a-select-option>
@@ -114,11 +114,14 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="serviceGroup.loading"
               :placeholder="apiParams.servicegroupuuid.description">
-              <a-select-option v-for="group in serviceGroup.opts" :key="group.uuid">
+              <a-select-option
+                v-for="group in serviceGroup.opts"
+                :key="group.uuid"
+                :label="group.name || group.description || group.displaytext">
                 {{ group.name || group.description || group.displaytext }}
               </a-select-option>
             </a-select>
@@ -142,11 +145,14 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="srcTag.loading"
               :placeholder="apiParams.srctaguuid.description">
-              <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid">
+              <a-select-option
+                v-for="tag in srcTag.opts"
+                :key="tag.uuid"
+                :label="tag.name || tag.description || tag.displaytext">
                 {{ tag.name || tag.description || tag.displaytext }}
               </a-select-option>
             </a-select>
@@ -160,11 +166,14 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="srcAddress.loading"
               :placeholder="apiParams.srcaddressgroupuuid.description">
-              <a-select-option v-for="address in srcAddress.opts" :key="address.uuid">
+              <a-select-option
+                v-for="address in srcAddress.opts"
+                :key="address.uuid"
+                :label="address.name || address.description || address.displaytext">
                 {{ address.name || address.description || address.displaytext }}
               </a-select-option>
             </a-select>
@@ -178,11 +187,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networks.loading"
               :placeholder="apiParams.srcnetworkuuid.description">
-              <a-select-option v-for="network in networks.opts" :key="network.uuid">
+              <a-select-option v-for="network in networks.opts" :key="network.uuid" :label="network.name || network.description || network.displaytext">
                 {{ network.name || network.description || network.displaytext }}
               </a-select-option>
             </a-select>
@@ -196,7 +205,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.direction.description">
               <a-select-option value="oneway">ONE WAY</a-select-option>
@@ -222,11 +231,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="srcTag.loading"
               :placeholder="apiParams.desttaguuid.description">
-              <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid">
+              <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid" :label="tag.name || tag.description || tag.displaytext">
                 {{ tag.name || tag.description || tag.displaytext }}
               </a-select-option>
             </a-select>
@@ -240,11 +249,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="srcAddress.loading"
               :placeholder="apiParams.destaddressgroupuuid.description">
-              <a-select-option v-for="address in srcAddress.opts" :key="address.uuid">
+              <a-select-option v-for="address in srcAddress.opts" :key="address.uuid" :label="address.name || address.description || address.displaytext">
                 {{ address.name || address.description || address.displaytext }}
               </a-select-option>
             </a-select>
@@ -258,11 +267,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networks.loading"
               :placeholder="apiParams.destnetworkuuid.description">
-              <a-select-option v-for="network in networks.opts" :key="network.uuid">
+              <a-select-option v-for="network in networks.opts" :key="network.uuid" :label="network.name || network.description || network.displaytext">
                 {{ network.name || network.description || network.displaytext }}
               </a-select-option>
             </a-select>
@@ -276,11 +285,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="tagType.loading"
               :placeholder="apiParams.tagtypeuuid.description">
-              <a-select-option v-for="tag in tagType.opts" :key="tag.uuid">
+              <a-select-option v-for="tag in tagType.opts" :key="tag.uuid" :label="tag.name || tag.description || tag.displaytext">
                 {{ tag.name || tag.description || tag.displaytext }}
               </a-select-option>
             </a-select>

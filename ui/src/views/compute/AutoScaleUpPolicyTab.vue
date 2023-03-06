@@ -36,12 +36,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
           <a-select-option
             v-for="(scalepolicy, index) in this.policies"
             :value="scalepolicy.id"
-            :key="index">
+            :key="index"
+            :label="scalepolicy.displaytext || scalepolicy.name">
             {{ scalepolicy.name || scalepolicy.id }}
           </a-select-option>
         </a-select>
@@ -147,11 +148,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
             v-model:value="newCondition.counterid">
-            <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+            <a-select-option
+              v-for="(counter, index) in countersList"
+              :value="counter.id"
+              :key="index"
+              :label="counter.name">>
               {{ counter.name }}
             </a-select-option>
           </a-select>
@@ -167,7 +172,7 @@
             style="width: 100%;"
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
           </a-select>
@@ -218,7 +223,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
           </a-select>
@@ -277,10 +282,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="newPolicy.counterid">
-            <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+            <a-select-option
+              v-for="(counter, index) in countersList"
+              :value="counter.id"
+              :key="index"
+              :label="counter.name">
               {{ counter.name }}
             </a-select-option>
           </a-select>
@@ -295,7 +304,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
           </a-select>

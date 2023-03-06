@@ -89,11 +89,11 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               v-model:value="form.taguuid"
               :placeholder="apiParams.taguuid.description">
-              <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid">{{ opt.name }}</a-select-option>
+              <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid" :label="opt.name">{{ opt.name }}</a-select-option>
             </a-select>
           </a-form-item>
 

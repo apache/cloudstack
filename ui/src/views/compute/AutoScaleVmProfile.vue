@@ -35,11 +35,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
             v-model:value="autoscaleuserid">
-            <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+            <a-select-option
+              v-for="(user, index) in usersList"
+              :value="user.id"
+              :key="index"
+              :label="user.username">
               {{ user.username }}
             </a-select-option>
           </a-select>
@@ -92,7 +96,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
             v-model:value="newParam.name">
@@ -166,11 +170,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
             v-focus="true"
             v-model:value="autoscaleuserid">
-            <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+            <a-select-option
+              v-for="(user, index) in usersList"
+              :value="user.id"
+              :key="index"
+              :label="user.username">
               {{ user.username }}
             </a-select-option>
           </a-select>
@@ -194,11 +202,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
             v-focus="true"
             v-model:value="templateid">
-            <a-select-option v-for="(template, index) in templatesList" :value="template.id" :key="index">
+            <a-select-option
+              v-for="(template, index) in templatesList"
+              :value="template.id"
+              :key="index"
+              :label="template.name">
               {{ template.name }}
             </a-select-option>
           </a-select>
@@ -214,11 +226,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
             v-focus="true"
             v-model:value="serviceofferingid">
-            <a-select-option v-for="(offering, index) in serviceOfferingsList" :value="offering.id" :key="index">
+            <a-select-option
+              v-for="(offering, index) in serviceOfferingsList"
+              :value="offering.id"
+              :key="index"
+              :label="offering.name">
               {{ offering.name }}
             </a-select-option>
           </a-select>

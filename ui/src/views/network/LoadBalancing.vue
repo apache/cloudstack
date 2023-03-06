@@ -78,7 +78,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="yes">{{ $t('label.yes') }}</a-select-option>
             <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
@@ -549,7 +549,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option value="PING">PING</a-select-option>
             <a-select-option value="TCP">TCP</a-select-option>
@@ -576,7 +576,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option value="GET">GET</a-select-option>
             <a-select-option value="HEAD">HEAD</a-select-option>

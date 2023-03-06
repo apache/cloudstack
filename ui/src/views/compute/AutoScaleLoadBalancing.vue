@@ -169,12 +169,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
-            <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
-            <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
-            <a-select-option value="none">{{ $t('label.none') }}</a-select-option>
+            <a-select-option value="LbCookie" :label="$t('label.lb.cookie')">{{ $t('label.lb.cookie') }}</a-select-option>
+            <a-select-option value="AppCookie" :label="$t('label.lb.cookie')">{{ $t('label.app.cookie') }}</a-select-option>
+            <a-select-option value="SourceBased" :label="$t('label.lb.cookie')">{{ $t('label.source.based') }}</a-select-option>
+            <a-select-option value="none" :label="$t('label.lb.cookie')">{{ $t('label.none') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item
@@ -263,7 +263,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
@@ -277,7 +277,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
