@@ -1476,7 +1476,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean listBySupportedServices = supportedServicesStr != null && !supportedServicesStr.isEmpty() && !vpcs.isEmpty();
 
         if (listBySupportedServices) {
-            final List<VpcVO> supportedVpcs = new ArrayList<VpcVO>();
+            final List<Vpc> supportedVpcs = new ArrayList<>();
             Service[] supportedServices = null;
 
             if (listBySupportedServices) {
@@ -1501,14 +1501,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             final List<? extends Vpc> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, supportedVpcs.size());
+                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<>(wPagination, supportedVpcs.size());
                 return listWPagination;
             }
-            return new Pair<List<? extends Vpc>, Integer>(supportedVpcs, supportedVpcs.size());
+            return new Pair<>(supportedVpcs, supportedVpcs.size());
         } else {
             final List<? extends Vpc> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, vpcs.size());
+                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<>(wPagination, vpcs.size());
                 return listWPagination;
             }
             return new Pair<List<? extends Vpc>, Integer>(vpcs, vpcs.size());

@@ -90,31 +90,10 @@ public interface VpcService {
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call
-     *
-     * @param id
-     * @param vpcName
-     * @param displayText
-     * @param supportedServicesStr
-     * @param cidr
-     * @param state TODO
-     * @param accountName
-     * @param domainId
-     * @param keyword
-     * @param startIndex
-     * @param pageSizeVal
-     * @param zoneId TODO
-     * @param isRecursive TODO
-     * @param listAll TODO
-     * @param restartRequired TODO
-     * @param tags TODO
-     * @param projectId TODO
-     * @param display TODO
-     * @param vpc
-     * @return
      */
     Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
-            String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
-            Map<String, String> tags, Long projectId, Boolean display);
+                                                String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
+                                                Map<String, String> tags, Long projectId, Boolean display);
 
     /**
      * Starts VPC which includes starting VPC provider and applying all the networking rules on the backend
@@ -183,7 +162,7 @@ public interface VpcService {
     /**
      * Deletes VPC private gateway
      *
-     * @param id
+     * @param gatewayId
      * @return
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException

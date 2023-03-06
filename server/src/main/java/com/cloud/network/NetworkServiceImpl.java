@@ -1346,18 +1346,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateIsolatedNetworkRouterIPv4(String routerIPv4) {
-        if (StringUtils.isNotBlank(routerIPv4)) {
-            isIPv4AddressValid(routerIPv4);
-        }
-    }
-
-    private void validateIsolatedNetworkRouterIPv6(String routerIPv6) {
-        if (StringUtils.isNotBlank(routerIPv6)) {
-            isIPv6AddressValid(routerIPv6);
-        }
-    }
-
     private void isIPv4AddressValid(String routerIp) {
         if (!NetUtils.isValidIp4(routerIp)) {
             throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
@@ -1383,8 +1371,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         boolean adminCalledUs = cmd instanceof CreateNetworkCmdByAdmin;
         String vlanId = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getVlan() : null;
-        boolean bypassVlanOverlapCheck = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck() : false;
-        boolean hideIpAddressUsage = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage() : false;
+        boolean bypassVlanOverlapCheck = adminCalledUs && ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck();
+        boolean hideIpAddressUsage = adminCalledUs && ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
         String routerIPv4 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIp() : null;
         String routerIPv6 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6() : null;
 
@@ -1399,7 +1387,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String endIPv6 = cmd.getEndIpv6();
         String ip6Gateway = cmd.getIp6Gateway();
         String ip6Cidr = cmd.getIp6Cidr();
-        Boolean displayNetwork = cmd.getDisplayNetwork() == null ? true : cmd.getDisplayNetwork() ;
+        boolean displayNetwork = ! Boolean.FALSE.equals(cmd.getDisplayNetwork());
         Long aclId = cmd.getAclId();
         String isolatedPvlan = cmd.getIsolatedPvlan();
         String externalId = cmd.getExternalId();
@@ -1663,7 +1651,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
 
         // retrieve, acquire and associate the correct ip adresses
-        arrangeForRouterSourcenatIp(cmd, network);
+        arrangeForRouterSourceNatIp(owner, cmd, network);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
@@ -1680,11 +1668,78 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
-    private void arrangeForRouterSourcenatIp(CreateNetworkCmd cmd, Network network) {
-        // list the network with the given IP
-        // associate the ip to the network by its (uu)id
-        // (mark as sourceNat?
+    private void arrangeForRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
+        String sourceNatIp = cmd.getSourceNatIP();
+        if (sourceNatIp == null) {
+            return; // nothing to try
+        }
+        IpAddress ip = allocateIP(owner, cmd.getZoneId(), network.getId(), null, sourceNatIp);
+        try {
+            associateIPToNetwork(ip.getId(), network.getId());
+        } catch (ResourceUnavailableException e) {
+            String msg = String.format("can´t use %s as sourcenat IP address for network %s/%s as it is un available", sourceNatIp, network.getName(), network.getUuid());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg,e);
+        }
+    }
 
+    /**
+     *
+     * @param owner
+     * @param cmd
+     * @param network
+     * @return if the sourceNat is changes, and consequently restart is needed
+     * @throws InsufficientAddressCapacityException
+     * @throws ResourceAllocationException
+     */
+    private boolean arrangeForRouterSourceNatIp(Account owner, UpdateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
+        String sourceNatIp = cmd.getSourceNatIP();
+        if (sourceNatIp == null) {
+            return false; // nothing to try
+        }
+        // check if the address is already aqcuired for this network
+        IPAddressVO requestedIp = _ipAddressDao.findByIp(cmd.getSourceNatIP());
+        if (requestedIp.getNetworkId() == null || ! requestedIp.getNetworkId().equals(network.getId())) {
+            return false; // ip not associated with this network
+        }
+        // check if it is the current source NAT address
+        if (requestedIp.isSourceNat()) {
+            return false; // already sourcenat
+        }
+
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+        if (! userIps.isEmpty()) {
+            try {
+                updateSourceNat(requestedIp, userIps);
+            } catch (Exception e) { // pokemon execption from transaction
+                String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
+                        requestedIp.getAddress().addr(), network.getName(), network.getUuid(), e.getLocalizedMessage());
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg, e);
+            }
+        }
+        return true;
+    }
+
+    private void updateSourceNat(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
+        // TODO start a transaction to set the new sourcenat ip
+        Transaction.execute(new TransactionCallbackWithException<IpAddress, Exception>() {
+            @Override
+            public IpAddress doInTransaction(TransactionStatus status) throws Exception {
+                // update all other IPs to not be sourcenat, should be at most one
+                for(
+                        IPAddressVO oldIpAddress :userIps)
+
+                {
+                    oldIpAddress.setSourceNat(false);
+                    _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+                }
+                requestedIp.setSourceNat(true);
+                _ipAddressDao.update(requestedIp.getId(),requestedIp);
+                return requestedIp;
+            };
+        }
+        );
     }
 
     @Nullable
@@ -1692,34 +1747,42 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // Only domain and account ACL types are supported in Acton.
         ACLType aclType = null;
         if (aclTypeStr != null) {
-            if (aclTypeStr.equalsIgnoreCase(ACLType.Account.toString())) {
-                aclType = ACLType.Account;
-            } else if (aclTypeStr.equalsIgnoreCase(ACLType.Domain.toString())) {
-                aclType = ACLType.Domain;
-            } else {
-                throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
-            }
-            // In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
-            if (ntwkOff.getGuestType() == GuestType.Isolated) {
-                if (aclType != ACLType.Account) {
-                    throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + GuestType.Isolated);
-                }
-            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
-                if (!(aclType == ACLType.Domain || aclType == ACLType.Account)) {
-                    throw new InvalidParameterValueException("AclType should be " + ACLType.Domain + " or " + ACLType.Account + " for network of type " + GuestType.Shared);
-                }
-            }
+            aclType = getAclType(aclTypeStr, ntwkOff);
         } else {
-            if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
+            aclType = getAclType(caller, ntwkOff, aclType);
+        }
+        return aclType;
+    }
+
+    @NotNull
+    private static ACLType getAclType(String aclTypeStr, NetworkOffering ntwkOff) {
+        ACLType aclType;
+        if (aclTypeStr.equalsIgnoreCase(ACLType.Account.toString())) {
+            aclType = ACLType.Account;
+        } else if (aclTypeStr.equalsIgnoreCase(ACLType.Domain.toString())) {
+            aclType = ACLType.Domain;
+        } else {
+            throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
+        }
+        // In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
+        if (ntwkOff.getGuestType() == GuestType.Isolated) {
+            if (aclType != ACLType.Account) {
+                throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + GuestType.Isolated);
+            }
+        }
+        return aclType;
+    }
+
+    private ACLType getAclType(Account caller, NetworkOffering ntwkOff, ACLType aclType) {
+        if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
+            aclType = ACLType.Account;
+        } else if (ntwkOff.getGuestType() == GuestType.Shared) {
+            if (_accountMgr.isRootAdmin(caller.getId())) {
+                aclType = ACLType.Domain;
+            } else if (_accountMgr.isNormalUser(caller.getId())) {
                 aclType = ACLType.Account;
-            } else if (ntwkOff.getGuestType() == GuestType.Shared) {
-                if (_accountMgr.isRootAdmin(caller.getId())) {
-                    aclType = ACLType.Domain;
-                } else if (_accountMgr.isNormalUser(caller.getId())) {
-                    aclType = ACLType.Account;
-                } else {
-                    throw new InvalidParameterValueException("AclType must be specified for shared network created by domain admin");
-                }
+            } else {
+                throw new InvalidParameterValueException("AclType must be specified for shared network created by domain admin");
             }
         }
         return aclType;
@@ -1784,7 +1847,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      * @param physicalNetworkId the id of the required physical network
      * @return the data object for the physical network
      */
-    @Nullable
+    @NotNull
     private PhysicalNetwork getAndValidatePhysicalNetwork(Long physicalNetworkId) {
         PhysicalNetwork pNtwk = null;
         if (physicalNetworkId != null) {
@@ -1792,6 +1855,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (pNtwk == null) {
                 throw new InvalidParameterValueException("Unable to find a physical network having the specified physical network id");
             }
+        } else {
+            throw new CloudRuntimeException("cannot create Guestnetwork without physical network.");
         }
         return pNtwk;
     }
@@ -2838,6 +2903,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
+        String sourceNatIP = cmd.getSourceNatIP();
 
         boolean restartNetwork = false;
 

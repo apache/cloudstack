@@ -183,11 +183,13 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
     private String ip6Dns2;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router.", since = "4.19")
-    private String sourceNatIp;
-
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router.", since = "4.19")
-    private String sourceNatIpUuid;
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP,
+            type = CommandType.STRING,
+            description = "IPV4 address to be assigned to the piublic interface of the network router. This is a hint." +
+                    " If an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented," +
+                    " even if so requested.",
+            since = "4.19")
+    private String sourceNatIP;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -270,6 +272,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getTungstenVirtualRouterUuid() {
         return tungstenVirtualRouterUuid;
+    }
+
+    public String getSourceNatIP() {
+        return sourceNatIP;
     }
 
     @Override
