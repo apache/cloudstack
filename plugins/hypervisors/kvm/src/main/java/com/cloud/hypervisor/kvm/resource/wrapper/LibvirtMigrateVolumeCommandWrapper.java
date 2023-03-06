@@ -48,6 +48,7 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
 import org.libvirt.TypedParameter;
+import org.libvirt.TypedUlongParameter;
 import org.libvirt.LibvirtException;
 import org.libvirt.event.BlockJobListener;
 import org.libvirt.event.BlockJobStatus;
@@ -59,8 +60,6 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
 
     @Override
     public Answer execute(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        LOGGER.info("I'm here HARIIIII");
-
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
         PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
 
@@ -75,76 +74,82 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
     }
 
     private MigrateVolumeAnswer migrateVolumeInternal (final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+
+        // Source Details
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
-        PrimaryDataStoreTO srcPrimaryDataStore = (PrimaryDataStoreTO)srcVolumeObjectTO.getDataStore();
-        final String vmName = srcVolumeObjectTO.getVmName();
-        LOGGER.info("HARI VM name: "+ vmName);
-
-        VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
-        PrimaryDataStoreTO destPrimaryDataStore = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
-
         String srcPath = srcVolumeObjectTO.getPath();
-        String destPath = destVolumeObjectTO.getPath();
-
-        Map<String, String> destDetails = command.getDestDetails();
-
         final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumeObjectTO.getPath());
+        final String vmName = srcVolumeObjectTO.getVmName();
+        Map<String, String> srcDetails = command.getSrcDetails();
+        final String srcSystemId = srcDetails.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+
+        final String diskFileName = ScaleIOUtil.DISK_NAME_PREFIX + srcSystemId + "-" + srcVolumeId;
+        final String srcFilePath = ScaleIOUtil.DISK_PATH + File.separator + diskFileName;
+
         LOGGER.info("HARI Source volume ID: "+ srcVolumeId);
+        LOGGER.info("HARI source volume PATH: "+ srcFilePath);
+        LOGGER.info("HARI source system ID: "+ srcSystemId);
 
+        // Destination Details
+        VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
+        String destPath = destVolumeObjectTO.getPath();
         final String destVolumeId = ScaleIOUtil.getVolumePath(destVolumeObjectTO.getPath());
-        LOGGER.info("HARI destination volume ID: "+ destVolumeId);
-
+        Map<String, String> destDetails = command.getDestDetails();
         final String destSystemId = destDetails.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-        LOGGER.info("HARI destination system ID: "+ destSystemId);
-
 
         final String destDiskFileName = ScaleIOUtil.DISK_NAME_PREFIX + destSystemId + "-" + destVolumeId;
         final String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + destDiskFileName;
+
+        LOGGER.info("HARI destination volume ID: "+ destVolumeId);
+        LOGGER.info("HARI destination system ID: "+ destSystemId);
 
         Domain dm = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
             Connect conn = libvirtUtilitiesHelper.getConnection();
             dm = libvirtComputingResource.getDomain(conn, vmName);
-
             if (dm == null) {
-                return new MigrateVolumeAnswer(command, false,
-                        "Migrate volume failed due to can not find vm: " + vmName, null);
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to can not find vm: " + vmName, null);
             }
 
             DomainInfo.DomainState domainState = dm.getInfo().state ;
             if (domainState != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
-                return new MigrateVolumeAnswer(command, false,
-                        "Migrate volume failed due to VM is not running: " + vmName + " with domainState = " + domainState, null);
+                return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to VM is not running: " + vmName + " with domainState = " + domainState, null);
             }
 
-            final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-            final String domXml = dm.getXMLDesc(0);
-            parser.parseDomainXML(domXml);
-            LOGGER.info(String.format("VM [%s] with XML configuration [%s] will be migrated to host.", vmName, domXml));
+            LibvirtVMDef.DiskDef diskdef = generateDestinationDiskDefinition(dm, srcVolumeId, srcPath, diskFilePath);
 
-            List<LibvirtVMDef.DiskDef> disks = parser.getDisks();
-            LibvirtVMDef.DiskDef diskdef = null;
-            for (final LibvirtVMDef.DiskDef disk : disks) {
-                final String file = disk.getDiskPath();
-                LOGGER.info("HARIIII : " + file);
-                if (file != null && file.contains(srcVolumeId)) {
-                    diskdef = disk;
-                    break;
-                }
-            }
-            if (diskdef == null) {
-                throw new InternalErrorException("disk: " + srcPath + " is not attached before");
-            }
-            diskdef.setDiskPath(diskFilePath);
-            LOGGER.info("HARIIII Destination xml : " + diskdef.toString());
-            dm.blockCopy(srcPath, diskdef.toString(), new TypedParameter[]{}, 0);
+            TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
+            TypedParameter[] parameters = new TypedParameter[1];
+            parameters[0] = parameter;
+            LOGGER.info("Krishna  source disk label: " + diskdef.getDiskLabel());
+
+            Domain finalDm = dm;
+            final Boolean[] copyStatus = {true};
+            dm.blockCopy(diskdef.getDiskLabel(), diskdef.toString(), parameters, Domain.BlockCopyFlags.REUSE_EXT);
             BlockJobListener listener = new BlockJobListener() {
                 @Override
                 public void onEvent(Domain domain, String diskPath, BlockJobType type, BlockJobStatus status) {
-
+                    if (type == BlockJobType.COPY && status == BlockJobStatus.READY) {
+                        try {
+                            finalDm.blockJobAbort(diskFilePath, 0);
+                            copyStatus[0] = false;
+                        } catch (LibvirtException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
                 }
             };
+            dm.addBlockJobListener(listener);
+            while (copyStatus[0]) {
+                LOGGER.info("Waiting for the block copy to complete");
+            }
+
+            if (copyStatus[0]) {
+                String msg = "Migrate volume failed due to timeout";
+                LOGGER.warn(msg);
+                return new MigrateVolumeAnswer(command, false, msg, null);
+            }
 
             return new MigrateVolumeAnswer(command, true, null, destPath);
         } catch (Exception e) {
@@ -161,6 +166,31 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             }
         }
     }
+
+    private LibvirtVMDef.DiskDef generateDestinationDiskDefinition(Domain dm, String srcVolumeId, String srcPath, String diskFilePath) throws InternalErrorException, LibvirtException {
+        final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+        final String domXml = dm.getXMLDesc(0);
+        parser.parseDomainXML(domXml);
+
+        List<LibvirtVMDef.DiskDef> disks = parser.getDisks();
+        LibvirtVMDef.DiskDef diskdef = null;
+        for (final LibvirtVMDef.DiskDef disk : disks) {
+            final String file = disk.getDiskPath();
+            LOGGER.info("HARIIII disk: " + file);
+            if (file != null && file.contains(srcVolumeId)) {
+                diskdef = disk;
+                break;
+            }
+        }
+        if (diskdef == null) {
+            throw new InternalErrorException("disk: " + srcPath + " is not attached before");
+        }
+        diskdef.setDiskPath(diskFilePath);
+        LOGGER.info("HARIIII Destination xml : " + diskdef.toString());
+
+        return diskdef;
+    }
+
     private MigrateVolumeAnswer migrateRegularVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         KVMStoragePoolManager storagePoolManager = libvirtComputingResource.getStoragePoolMgr();
 
