@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.datastore.driver;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -773,18 +772,17 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
             final String destStoragePoolId = destStoragePool.getPath();
-            //CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());
-            //String destVolumePath = createAnswer.getData().getPath();
-            final String destVolumeId = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
-            final String destScaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, srcData.getId(),
-                    srcData.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-            String destVolumePath = String.format("%s:%s", destVolumeId, destScaleIOVolumeName);
+            CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());
+            String destVolumePath = createAnswer.getData().getPath();
+            //final String destVolumeId = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
+            //final String destScaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, srcData.getId(), srcData.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+            //String destVolumePath = String.format("%s:%s", destVolumeId, destScaleIOVolumeName);
 
             VolumeObjectTO destVolTO = (VolumeObjectTO) destData.getTO();
             destVolTO.setPath(destVolumePath);
 
-            Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData);
-            Map<String, String> destDetails = getVolumeDetails((VolumeInfo) destData);
+            Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData, srcStore);
+            Map<String, String> destDetails = getVolumeDetails((VolumeInfo) destData, destStore);
 
             String value = configDao.getValue(Config.MigrateWait.key());
             int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
@@ -804,6 +802,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 throw new CloudRuntimeException("Found no hosts to run resize command on");
             }
             EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+            grantAccess(destData, ep, destData.getDataStore());
 
             answer = ep.sendMessage(migrateVolumeCommand);
             boolean migrateStatus = answer.getResult();
@@ -878,8 +877,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    private Map<String, String> getVolumeDetails(VolumeInfo volumeInfo) {
-        long storagePoolId = volumeInfo.getPoolId();
+    private Map<String, String> getVolumeDetails(VolumeInfo volumeInfo, DataStore dataStore) {
+        long storagePoolId = dataStore.getId();
         StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
         if (!storagePoolVO.isManaged()) {
@@ -899,7 +898,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         volumeDetails.put(DiskTO.VOLUME_SIZE, String.valueOf(volumeVO.getSize()));
         volumeDetails.put(DiskTO.SCSI_NAA_DEVICE_ID, getVolumeProperty(volumeInfo.getId(), DiskTO.SCSI_NAA_DEVICE_ID));
 
-        ChapInfo chapInfo = volumeService.getChapInfo(volumeInfo, volumeInfo.getDataStore());
+        ChapInfo chapInfo = volumeService.getChapInfo(volumeInfo, dataStore);
 
         if (chapInfo != null) {
             volumeDetails.put(DiskTO.CHAP_INITIATOR_USERNAME, chapInfo.getInitiatorUsername());
