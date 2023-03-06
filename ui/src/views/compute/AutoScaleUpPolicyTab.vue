@@ -110,28 +110,24 @@
       :dataSource="policy.conditions"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #name="{ record }">
-        {{ record.name }}
-      </template>
-      <template #relationaloperator="{ record }">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'relationaloperator'">
         {{ getOperator(record.relationaloperator) }}
-      </template>
-      <template #threshold="{ record }">
-        {{ record.threshold }}
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
-          icon="edit-outlined"
-          @onClick="() => openUpdateConditionModal(record)" />
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.edit')"
+            :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
+            icon="edit-outlined"
+            @onClick="() => openUpdateConditionModal(record)" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
+        </template>
       </template>
     </a-table>
 
@@ -170,7 +166,7 @@
           <a-select
             v-model:value="newCondition.relationaloperator"
             style="width: 100%;"
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
@@ -221,7 +217,7 @@
           <a-select
             v-model:value="updateConditionDetails.relationaloperator"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
@@ -302,7 +298,7 @@
           <a-select
             v-model:value="newPolicy.relationaloperator"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
@@ -386,15 +382,15 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          slots: { customRender: 'relationaloperator' }
+          key: 'relationaloperator'
         },
         {
           title: this.$t('label.threshold'),
-          slots: { customRender: 'threshold' }
+          dataIndex: 'threshold'
         },
         {
           title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions'
         }
       ]
     }

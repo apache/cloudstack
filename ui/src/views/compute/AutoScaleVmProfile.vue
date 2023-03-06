@@ -94,7 +94,7 @@
           <a-select
             style="width: 100%"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
@@ -130,13 +130,8 @@
       :dataSource="allParams"
       :pagination="false"
       :rowKey="record => record.name">
-      <template #name="{ record }">
-        {{ record.name }}
-      </template>
-      <template #threshold="{ record }">
-        {{ record.threshold }}
-      </template>
-      <template #actions="{ record }">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'actions'">
         <a-popconfirm
           :title="$t('label.delete') + '?'"
           @confirm="deleteParam(record.name)"
@@ -150,6 +145,7 @@
             :danger="true"
             icon="delete-outlined" />
         </a-popconfirm>
+        </template>
       </template>
     </a-table>
 
@@ -308,7 +304,7 @@ export default {
         },
         {
           title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions'
         }
       ]
     }

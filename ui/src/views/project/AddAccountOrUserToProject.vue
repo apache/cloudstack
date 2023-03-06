@@ -70,7 +70,7 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addAccountToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
@@ -143,7 +143,7 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addUserToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >

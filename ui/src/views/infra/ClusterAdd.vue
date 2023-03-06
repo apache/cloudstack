@@ -49,7 +49,7 @@
           v-model:value="hypervisor"
           @change="resetAllFields"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >

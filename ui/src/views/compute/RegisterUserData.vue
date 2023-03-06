@@ -51,9 +51,9 @@
             mode="tags"
             v-model:value="form.params"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.params.description">
             <a-select-option v-for="opt in params" :key="opt">

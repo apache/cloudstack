@@ -47,7 +47,7 @@
         style="width: 100%"
         @change="handleChangeAccount"
         showSearch
-        optionFilterProp="label"
+        optionFilterProp="value"
         :filterOption="(input, option) => {
           return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >

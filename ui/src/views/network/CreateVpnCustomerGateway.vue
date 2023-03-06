@@ -62,7 +62,7 @@
         <a-select
           v-model:value="form.ikeEncryption"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
@@ -75,7 +75,7 @@
         <a-select
           v-model:value="form.ikeHash"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
@@ -91,7 +91,7 @@
         <a-select
           v-model:value="form.ikeversion"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
@@ -123,7 +123,7 @@
         <a-select
           v-model:value="form.espEncryption"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
@@ -136,7 +136,7 @@
         <a-select
           v-model:value="form.espHash"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >

@@ -38,7 +38,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.label.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
@@ -59,7 +59,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.label.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="clustersLoading"
               :placeholder="apiParams.clusterid.description"

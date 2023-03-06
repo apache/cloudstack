@@ -76,7 +76,7 @@
             defaultValue="no"
             style="min-width: 100px"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
@@ -547,7 +547,7 @@
             v-model:value="monitorForm.type"
             @change="(value) => { healthMonitorParams.type = value }"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
@@ -574,7 +574,7 @@
             v-focus="true"
             v-model:value="monitorForm.httpmethodtype"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
@@ -737,8 +737,7 @@ export default {
         },
         {
           key: 'autoscale',
-          title: this.$t('label.autoscale'),
-          slots: { customRender: 'autoscale' }
+          title: this.$t('label.autoscale')
         },
         {
           key: 'actions',
@@ -865,7 +864,7 @@ export default {
         if (this.tiers.data?.[0]?.broadcasturi === 'tf://tf') {
           this.columns.splice(8, 0, {
             title: this.$t('label.action.health.monitor'),
-            slots: { customRender: 'healthmonitor' }
+            key: 'healthmonitor'
           })
         }
       }).catch(error => {

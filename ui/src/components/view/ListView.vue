@@ -21,7 +21,7 @@
     :loading="loading"
     :columns="isOrderUpdatable() ? columns : columns.filter(x => x.dataIndex !== 'order')"
     :dataSource="items"
-    :rowKey="(record, index) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+    :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
     :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
@@ -38,33 +38,6 @@
       </div>
     </template>
     <template #bodyCell="{ column, text, record }">
-      <!--
-      <div #expandedRowRender="{ resource }">
-        <info-card :resource="resource style="margin-left: 0px; width: 50%">
-          <div #actions style="padding-top: 12px">
-            <a-tooltip
-              v-for="(action, actionIndex) in $route.meta.actions"
-              :key="actionIndex"
-              placement="bottom">
-              <template #title>
-                {{ $t(action.label) }}
-              </template>
-              <a-button
-                v-if="action.api in $store.getters.apis && action.dataView &&
-                  ('show' in action ? action.show(resource, $store.getters.userInfo) : true)"
-                :icon="action.icon"
-                :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-                shape="circle"
-                style="margin-right: 5px; margin-top: 12px"
-                @click="$parent.execAction(action)"
-              >
-              </a-button>
-            </a-tooltip>
-          </div>
-        </info-card>
-      </div>
-      -->
-
       <template v-if="column.key === 'name'">
         <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">

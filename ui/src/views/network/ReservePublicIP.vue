@@ -35,7 +35,7 @@
           v-model:value="selectedAccountType"
           v-focus="true"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }">
@@ -71,7 +71,7 @@
             @change="changeAccount"
             v-model:value="selectedAccount"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >

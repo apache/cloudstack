@@ -50,7 +50,7 @@
             <a-select
               v-model:value="form.hypervisor"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
@@ -148,7 +148,7 @@
           <a-select
             v-model:value="form.protocol"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
@@ -218,7 +218,7 @@
               v-model:value="form.provider"
               @change="updateProviderAndProtocol"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"

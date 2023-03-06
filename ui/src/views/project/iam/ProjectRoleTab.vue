@@ -157,6 +157,7 @@ export default {
         width: '35%'
       },
       {
+        key: 'description',
         title: this.$t('label.description'),
         dataIndex: 'description'
       },

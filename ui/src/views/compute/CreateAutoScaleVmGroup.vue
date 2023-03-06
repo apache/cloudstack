@@ -152,7 +152,7 @@
                         }"
                         @change="onSelectTemplateConfigurationId"
                       >
-                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id">
+                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id" :label="opt.name || opt.description">
                           {{ opt.name || opt.description }}
                         </a-select-option>
                       </a-select>
@@ -420,11 +420,11 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="label"
+                            optionFilterProp="value"
                             v-model:value="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -539,7 +539,7 @@
                       <a-select
                         v-model:value="newScaleUpCondition.relationaloperator"
                         style="width: 100%;"
-                        optionFilterProp="label"
+                        optionFilterProp="value"
                         :filterOption="(input, option) => {
                           return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }" >
@@ -573,20 +573,16 @@
                       :dataSource="scaleUpConditions"
                       :pagination="false"
                       :rowKey="record => record.counterid">
-                      <template #countername="{ record }">
-                        {{ record.countername }}
-                      </template>
-                      <template #relationaloperator="{ record }">
-                        {{ getOperator(record.relationaloperator) }}
-                      </template>
-                      <template #threshold="{ record }">
-                        {{ record.threshold }}
-                      </template>
-                      <template #actions="{ record }">
+                      <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'relationaloperator'">
+                          {{ getOperator(record.relationaloperator) }}
+                        </template>
+                        <template v-if="column.key === 'actions'">
                           <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleUpCondition(record.counterid)">
                             <template #icon><delete-outlined /></template>
                             {{ $t('label.delete') }}
                           </a-button>
+                        </template>
                       </template>
                     </a-table>
                   </div>
@@ -684,7 +680,7 @@
                       <a-select
                         v-model:value="newScaleDownCondition.relationaloperator"
                         style="width: 100%;"
-                        optionFilterProp="label"
+                        optionFilterProp="value"
                         :filterOption="(input, option) => {
                           return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }" >
@@ -718,20 +714,16 @@
                       :dataSource="scaleDownConditions"
                       :pagination="false"
                       :rowKey="record => record.counterid">
-                      <template #countername="{ record }">
-                        {{ record.countername }}
-                      </template>
-                      <template #relationaloperator="{ record }">
-                        {{ getOperator(record.relationaloperator) }}
-                      </template>
-                      <template #threshold="{ record }">
-                        {{ record.threshold }}
-                      </template>
-                      <template #actions="{ record }">
-                        <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleDownCondition(record.counterid)">
-                          <template #icon><delete-outlined /></template>
-                          {{ $t('label.delete') }}
-                        </a-button>
+                      <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'relationaloperator'">
+                          {{ getOperator(record.relationaloperator) }}
+                        </template>
+                        <template v-if="column.key === 'actions'">
+                          <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleDownCondition(record.counterid)">
+                            <template #icon><delete-outlined /></template>
+                            {{ $t('label.delete') }}
+                          </a-button>
+                        </template>
                       </template>
                     </a-table>
                   </div>
@@ -1093,15 +1085,15 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          slots: { customRender: 'relationaloperator' }
+          key: 'relationaloperator'
         },
         {
           title: this.$t('label.threshold'),
-          slots: { customRender: 'threshold' }
+          dataIndex: 'threshold'
         },
         {
           title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions'
         }
       ],
       scaleDownPolicies: [],
@@ -1121,15 +1113,15 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          slots: { customRender: 'relationaloperator' }
+          key: 'relationaloperator'
         },
         {
           title: this.$t('label.threshold'),
-          slots: { customRender: 'threshold' }
+          dataIndex: 'threshold'
         },
         {
           title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions'
         }
       ],
       usersList: [],

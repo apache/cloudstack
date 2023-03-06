@@ -34,20 +34,22 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
-        <template #actions="{ record }">
-          <a-popconfirm
-            :title="$t('message.confirm.remove.firewall.rule')"
-            @confirm="removeFirewallRule(record.uuid)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')">
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.remove.firewall.rule')"
-              danger
-              type="primary"
-              icon="delete-outlined"
-              :loading="deleteLoading" />
-          </a-popconfirm>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'actions'">
+            <a-popconfirm
+              :title="$t('message.confirm.remove.firewall.rule')"
+              @confirm="removeFirewallRule(record.uuid)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')">
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.remove.firewall.rule')"
+                danger
+                type="primary"
+                icon="delete-outlined"
+                :loading="deleteLoading" />
+            </a-popconfirm>
+          </template>
         </template>
       </a-table>
       <div style="display: block; text-align: right; margin-top: 10px;">
@@ -96,7 +98,7 @@
             <a-select
               v-model:value="form.action"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
@@ -203,7 +205,7 @@
             <a-select
               v-model:value="form.direction"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
@@ -366,7 +368,7 @@ export default {
         dataIndex: 'tagtype'
       }, {
         title: this.$t('label.actions'),
-        slots: { customRender: 'actions' },
+        key: 'actions',
         width: 80
       }],
       dataSource: [],

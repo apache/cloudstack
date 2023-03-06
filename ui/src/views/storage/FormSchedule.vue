@@ -100,7 +100,7 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
-                  optionFilterProp="label"
+                  optionFilterProp="value"
                   :filterOption="(input, option) => {
                     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >

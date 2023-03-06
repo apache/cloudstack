@@ -81,9 +81,9 @@
           <template v-if="column.key === 'vm'">
             <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
           </template>
-        </template>
-        <template #cidrlist="{ record }">
-          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+          <template v-if="column.key === 'cidrlist'">
+            <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+          </template>
         </template>
       </a-table>
       <br/>

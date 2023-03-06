@@ -32,28 +32,30 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template #sourceport="{ record }">
-        <span>{{ record.srcstartport + ':' + record.srcendport }}</span>
-      </template>
-      <template #destport="{ record }">
-        <span>{{ record.deststartport + ':' + record.destendport }}</span>
-      </template>
-      <template #ruleAction="{ record }">
-        <a-popconfirm
-          v-if="'removeTungstenFabricPolicyRule' in $store.getters.apis"
-          placement="topRight"
-          :title="$t('message.delete.tungsten.policy.rule')"
-          :ok-text="$t('label.yes')"
-          :cancel-text="$t('label.no')"
-          :loading="deleteLoading"
-          @confirm="deleteRule(record)"
-        >
-          <tooltip-button
-            :tooltip="$t('label.delete.rule')"
-            danger
-            type="primary"
-            icon="delete-outlined" />
-        </a-popconfirm>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'sourceport'">
+          <span>{{ record.srcstartport + ':' + record.srcendport }}</span>
+        </template>
+        <template v-if="column.key === 'destport'">
+          <span>{{ record.deststartport + ':' + record.destendport }}</span>
+        </template>
+        <template v-if="column.key === 'ruleAction'">
+          <a-popconfirm
+            v-if="'removeTungstenFabricPolicyRule' in $store.getters.apis"
+            placement="topRight"
+            :title="$t('message.delete.tungsten.policy.rule')"
+            :ok-text="$t('label.yes')"
+            :cancel-text="$t('label.no')"
+            :loading="deleteLoading"
+            @confirm="deleteRule(record)"
+          >
+            <tooltip-button
+              :tooltip="$t('label.delete.rule')"
+              danger
+              type="primary"
+              icon="delete-outlined" />
+          </a-popconfirm>
+        </template>
       </template>
     </a-table>
 
@@ -249,41 +251,41 @@ export default {
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
-          slots: { customRender: 'action' }
+          key: 'action'
         },
         {
           title: this.$t('label.direction'),
           dataIndex: 'direction',
-          slots: { customRender: 'direction' }
+          key: 'direction'
         },
         {
           title: this.$t('label.protocol'),
           dataIndex: 'protocol',
-          slots: { customRender: 'protocol' }
+          key: 'protocol'
         },
         {
           title: this.$t('label.srcnetwork'),
           dataIndex: 'srcnetwork',
-          slots: { customRender: 'srcnetwork' }
+          key: 'srcnetwork'
         },
         {
           title: this.$t('label.sourceport'),
           dataIndex: 'sourceport',
-          slots: { customRender: 'sourceport' }
+          key: 'sourceport'
         },
         {
           title: this.$t('label.destnetwork'),
           dataIndex: 'destnetwork',
-          slots: { customRender: 'destnetwork' }
+          key: 'destnetwork'
         },
         {
           title: this.$t('label.destport'),
           dataIndex: 'destport',
-          slots: { customRender: 'destport' }
+          key: 'destport'
         },
         {
           dataIndex: 'ruleAction',
-          slots: { customRender: 'ruleAction' },
+          key: 'ruleAction',
           width: 50
         }
       ]

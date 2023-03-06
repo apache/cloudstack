@@ -33,7 +33,7 @@
             v-model:value="form.provider"
             @change="val => { form.provider = val }"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >

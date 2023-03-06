@@ -29,7 +29,7 @@
         @change="fetchData"
         v-focus="true"
         showSearch
-        optionFilterProp="label"
+        optionFilterProp="value"
         :filterOption="(input, option) => {
           return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >
@@ -50,7 +50,7 @@
           :defaultValue="$t('label.account')"
           @change="fetchData"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
             return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }">

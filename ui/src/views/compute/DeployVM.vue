@@ -483,7 +483,7 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="label"
+                            optionFilterProp="value"
                             v-model:value="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
@@ -582,8 +582,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -605,8 +607,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -654,8 +658,10 @@
                                                 :dataSource="userDataParams"
                                                 :pagination="false"
                                                 :rowKey="record => record.key">
-                                                <template #value="{ record }">
-                                                  <a-input v-model:value="userDataValues[record.key]" />
+                                                <template #bodyCell="{ column, record }">
+                                                  <template v-if="column.key === 'value'">
+                                                    <a-input v-model:value="userDataValues[record.key]" />
+                                                  </template>
                                                 </template>
                                               </a-table>
                                             </a-input-group>
@@ -709,7 +715,7 @@
                         v-model:value="form.iodriverpolicy"
                         optionFilterProp="label"
                         :filterOption="filterOption">
-                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id">
+                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id" :label="iodriverpolicy.description">
                           {{ iodriverpolicy.description }}
                         </a-select-option>
                       </a-select>
@@ -967,7 +973,7 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
@@ -1885,8 +1891,8 @@ export default {
       this.templateUserDataParams = []
 
       api('listUserData', { id: id }).then(json => {
-        const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        const resp = json.listuserdataresponse.userdata || []
+        if (resp.length > 0) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')

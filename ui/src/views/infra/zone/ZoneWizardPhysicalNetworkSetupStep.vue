@@ -52,7 +52,7 @@
             :defaultValue="text"
             @change="value => onCellChange(record.key, 'isolationMethod', value)"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
@@ -94,7 +94,7 @@
                 @change="val => { trafficLabelSelected = val }"
                 style="min-width: 120px;"
                 showSearch
-                optionFilterProp="label"
+                optionFilterProp="value"
                 :filterOption="(input, option) => {
                   return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >

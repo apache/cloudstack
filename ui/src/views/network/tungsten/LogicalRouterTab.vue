@@ -112,7 +112,7 @@ export default {
       }, {
         title: this.$t('label.action'),
         dataIndex: 'action',
-        slots: { customRender: 'action' },
+        key: 'action',
         width: 80
       }],
       dataSource: [],
