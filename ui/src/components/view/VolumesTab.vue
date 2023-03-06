@@ -24,7 +24,7 @@
     :rowKey="item => item.id"
     :pagination="false"
   >
-    <template #bodyCell="{ column, record }">
+    <template #bodyCell="{ column, text, record }">
       <template v-if="column.key === 'name'">
         <hdd-outlined style="margin-right: 5px"/>
         <router-link :to="{ path: '/volume/' + record.id }" style="margin-right: 5px">

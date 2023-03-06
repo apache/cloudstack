@@ -25,7 +25,7 @@
       :pagination="false"
       :rowKey="(record, idx) => record.id || record.name || idx + '-' + Math.random()"
       :scroll="{ y: 350 }">
-      <template #bodyCell="{ column, record }">
+      <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'name'">
         <router-link v-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricApplicationPolicySet'" :to="{ path: '/tungstenpolicyset/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>

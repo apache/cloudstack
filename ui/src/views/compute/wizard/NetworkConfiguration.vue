@@ -34,25 +34,25 @@
           <div>{{ text }}</div>
           <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
         </template>
-        <template v-if="column.key === 'ipAddress'">
-          <a-form-item
-            style="display: block"
-            v-if="record.type !== 'L2'"
-            :name="'ipAddress' + record.id">
-            <a-input
-              style="width: 150px;"
-              v-model:value="form['ipAddress' + record.id]"
-              :placeholder="record.cidr"
-              @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)">
-              <template #suffix>
-                <a-tooltip :title="getIpRangeDescription(record)">
-                  <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-                </a-tooltip>
-              </template>
-            </a-input>
-          </a-form-item>
-        </template>
         <template  v-if="!this.autoscale">
+          <template v-if="column.key === 'ipAddress'">
+            <a-form-item
+              style="display: block"
+              v-if="record.type !== 'L2'"
+              :name="'ipAddress' + record.id">
+              <a-input
+                style="width: 150px;"
+                v-model:value="form['ipAddress' + record.id]"
+                :placeholder="record.cidr"
+                @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)">
+                <template #suffix>
+                  <a-tooltip :title="getIpRangeDescription(record)">
+                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </template>
+              </a-input>
+            </a-form-item>
+          </template>
           <template v-if="column.key === 'macAddress'">
             <a-form-item style="display: block" :name="'macAddress' + record.id">
               <a-input
