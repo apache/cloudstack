@@ -404,10 +404,8 @@ public interface UserVmService {
     /**
      * Creates a vm group.
      *
-     * @param name
-     *            - name of the group
-     * @param accountId
-     *            - accountId
+     * @param cmd
+     *            - the command specifying domain id, account name, group name, and project id
      */
     InstanceGroup createVmGroup(CreateVMGroupCmd cmd);
 
@@ -438,16 +436,10 @@ public interface UserVmService {
 
     /**
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds.
-     * Only Root
-     * Admin can migrate a VM.
+     * Only Root Admin can migrate a VM.
      *
-     * @param destinationStorage
-     *            TODO
-     * @param Long
-     *            vmId
-     *            vmId of The VM to migrate
-     * @param Host
-     *            destinationHost to migrate the VM
+     * @param vmId the id of the VM to be migrated
+     * @param destinationHost destinationHost to migrate the VM
      *
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
@@ -466,14 +458,9 @@ public interface UserVmService {
      * Migrate the given VM with its volumes to the destination host. The API returns the migrated VM if it succeeds.
      * Only root admin can migrate a VM.
      *
-     * @param destinationStorage
-     *            TODO
-     * @param Long
-     *            vmId of The VM to migrate
-     * @param Host
-     *            destinationHost to migrate the VM
-     * @param Map
-     *            A map of volume to which pool it should be migrated
+     * @param vmId of The VM to migrate
+     * @param destinationHost destination host to migrate the VM
+     * @param volumeToPool A map of volume to which pool it should be migrated
      *
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
@@ -507,7 +494,7 @@ public interface UserVmService {
     /**
      * Finds and returns an encrypted password for a VM.
      *
-     * @param  userVmId
+     * @param  vmId
      * @return Base64 encoded userdata
      */
     String getVmUserData(long vmId);
