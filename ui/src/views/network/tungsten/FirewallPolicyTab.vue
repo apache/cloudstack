@@ -41,7 +41,7 @@
           <template v-if="column.key === 'firewallrule'">
             <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
           </template>
-          <template v-if="column.key === 'action'">
+          <template v-if="column.key === 'actions'">
             <a-popconfirm
               :title="$t('label.confirm.delete.tungsten.firewall.policy')"
               @confirm="removeFirewallRule(record.uuid)"
@@ -154,8 +154,8 @@ export default {
         dataIndex: 'firewallrule',
         key: 'firewallrule'
       }, {
-        title: this.$t('label.action'),
-        key: 'action',
+        title: this.$t('label.actions'),
+        key: 'actions',
         width: 80
       }],
       dataSource: [],

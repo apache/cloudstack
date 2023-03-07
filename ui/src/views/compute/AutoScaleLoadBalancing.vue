@@ -372,7 +372,7 @@ export default {
           key: 'stickiness'
         },
         {
-          title: this.$t('label.action'),
+          title: this.$t('label.actions'),
           key: 'actions'
         }
       ],
@@ -406,8 +406,8 @@ export default {
         },
         {
           title: this.$t('label.select'),
-          dataIndex: 'action',
-          key: 'action',
+          dataIndex: 'actions',
+          key: 'actions',
           width: 80
         }
       ],

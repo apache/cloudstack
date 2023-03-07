@@ -193,7 +193,7 @@ export default {
         },
         {
           key: 'actions',
-          title: this.$t('label.action')
+          title: this.$t('label.actions')
         }
       ]
     }

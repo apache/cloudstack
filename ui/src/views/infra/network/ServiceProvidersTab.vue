@@ -359,7 +359,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'action']
+              columns: ['hostname', 'actions']
             }
           ]
         },
@@ -418,7 +418,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'action']
+              columns: ['hostname', 'actions']
             }
           ]
         },
@@ -499,7 +499,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'insideportprofile', 'action']
+              columns: ['hostname', 'insideportprofile', 'actions']
             }
           ]
         },
@@ -590,7 +590,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['ipaddress', 'lbdevicestate', 'action']
+              columns: ['ipaddress', 'lbdevicestate', 'actions']
             }
           ]
         },
@@ -740,7 +740,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['ipaddress', 'lbdevicestate', 'action']
+              columns: ['ipaddress', 'lbdevicestate', 'actions']
             }
           ]
         },
@@ -799,7 +799,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'transportzoneuuid', 'l3gatewayserviceuuid', 'l2gatewayserviceuuid', 'action']
+              columns: ['hostname', 'transportzoneuuid', 'l3gatewayserviceuuid', 'l2gatewayserviceuuid', 'actions']
             }
           ]
         },
@@ -858,7 +858,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['name', 'url', 'username', 'action']
+              columns: ['name', 'url', 'username', 'actions']
             }
           ]
         },
@@ -874,7 +874,7 @@ export default {
                   value: (record) => { return record.id }
                 }
               },
-              columns: ['account', 'domain', 'enabled', 'project', 'action']
+              columns: ['account', 'domain', 'enabled', 'project', 'actions']
             }
           ]
         },
@@ -933,7 +933,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['ipaddress', 'fwdevicestate', 'type', 'action']
+              columns: ['ipaddress', 'fwdevicestate', 'type', 'actions']
             }
           ]
         },

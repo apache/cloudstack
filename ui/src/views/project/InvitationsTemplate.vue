@@ -40,7 +40,7 @@
             <template v-if="column.key === 'state'">
               <status :text="text ? text : ''" displayText />
             </template>
-            <template v-if="column.key === 'action'">
+            <template v-if="column.key === 'actions'">
               <div v-if="record.state===stateAllow" class="account-button-action">
                 <tooltip-button
                   tooltipPlacement="top"
@@ -150,9 +150,9 @@ export default {
         filterMultiple: false
       },
       {
-        key: 'action',
-        title: this.$t('label.action'),
-        dataIndex: 'action',
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
         width: 80
       }
     ]

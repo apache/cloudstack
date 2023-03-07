@@ -33,7 +33,7 @@
             <template v-if="column.key === 'projectrole'">
               <span v-if="record.projectroleid">{{ getProjectRole(record) }}</span>
             </template>
-            <template v-if="column.key === 'action'">
+            <template v-if="column.key === 'actions'">
               <div>
                 <span v-if="imProjectAdmin && dataSource.length > 1" class="account-button-action">
                   <tooltip-button
@@ -134,9 +134,9 @@ export default {
         dataIndex: 'role'
       },
       {
-        key: 'action',
-        title: this.$t('label.action'),
-        dataIndex: 'action'
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions'
       }
     ]
     if (this.isProjectRolesSupported()) {

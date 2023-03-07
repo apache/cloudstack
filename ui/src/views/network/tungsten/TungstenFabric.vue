@@ -95,8 +95,8 @@ export default {
               key: 'network'
             },
             {
-              title: this.$t('label.action'),
-              key: 'action',
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -148,8 +148,8 @@ export default {
               key: 'tag'
             },
             {
-              title: this.$t('label.action'),
-              key: 'action',
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -212,8 +212,8 @@ export default {
             title: this.$t('label.network'),
             key: 'network'
           }, {
-            title: this.$t('label.action'),
-            key: 'action',
+            title: this.$t('label.actions'),
+            key: 'actions',
             width: 150
           }]
         },
@@ -301,8 +301,8 @@ export default {
               key: 'name'
             },
             {
-              title: this.$t('label.action'),
-              key: 'action',
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -340,8 +340,8 @@ export default {
             title: this.$t('label.name'),
             key: 'name'
           }, {
-            title: this.$t('label.action'),
-            key: 'action',
+            title: this.$t('label.actions'),
+            key: 'actions',
             width: 150
           }]
         },
@@ -429,8 +429,8 @@ export default {
               key: 'endport'
             },
             {
-              title: this.$t('label.action'),
-              key: 'action',
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -489,8 +489,8 @@ export default {
               key: 'ipprefixlen'
             },
             {
-              title: this.$t('label.action'),
-              key: 'action',
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]

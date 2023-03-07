@@ -274,7 +274,7 @@ export default {
   },
   data () {
     return {
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       loading: true,
       editProfileModalVisible: false,
       profileid: null,
@@ -303,7 +303,7 @@ export default {
           dataIndex: 'value'
         },
         {
-          title: this.$t('label.action'),
+          title: this.$t('label.actions'),
           key: 'actions'
         }
       ]

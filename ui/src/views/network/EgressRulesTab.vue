@@ -178,7 +178,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.delete.egress.firewall.rules'),
@@ -222,7 +222,7 @@ export default {
         },
         {
           key: 'actions',
-          title: this.$t('label.action')
+          title: this.$t('label.actions')
         }
       ]
     }

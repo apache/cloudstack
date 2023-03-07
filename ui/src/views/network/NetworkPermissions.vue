@@ -45,7 +45,7 @@
         :pagination="false" >
 
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
+          <template v-if="column.key === 'actions'">
             <a-popconfirm
               :title="$t('message.confirm.remove.network.permission')"
               @confirm="removeNetworkPermission(record.accountid, record.projectid)"
@@ -139,7 +139,7 @@ export default {
           dataIndex: 'project'
         },
         {
-          key: 'action',
+          key: 'actions',
           title: ''
         }
       ]

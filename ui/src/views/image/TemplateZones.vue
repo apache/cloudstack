@@ -47,7 +47,7 @@
           <span v-if="record.isready">{{ $t('label.yes') }}</span>
           <span v-else>{{ $t('label.no') }}</span>
         </template>
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'actions'">
           <tooltip-button
             style="margin-right: 5px"
             :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
@@ -292,9 +292,9 @@ export default {
     ]
     if (this.isActionPermitted()) {
       this.columns.push({
-        key: 'action',
+        key: 'actions',
         title: '',
-        dataIndex: 'action',
+        dataIndex: 'actions',
         width: 100
       })
     }

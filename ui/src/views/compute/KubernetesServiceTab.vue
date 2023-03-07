@@ -111,7 +111,7 @@
             <template v-if="column.key === 'port'" :name="text" :record="record">
               {{ cksSshStartingPort + index }}
             </template>
-            <template v-if="column.key === 'action'">
+            <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
                 <template #title>
                   {{ $t('label.action.delete.node') }}
@@ -267,9 +267,9 @@ export default {
   mounted () {
     if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
       this.vmColumns.push({
-        key: 'action',
-        title: this.$t('label.action'),
-        dataIndex: 'action'
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions'
       })
     }
     this.handleFetchData()

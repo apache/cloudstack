@@ -249,9 +249,9 @@ export default {
       pageSize: this.$store.getters.defaultListViewPageSize,
       columns: [
         {
-          title: this.$t('label.action'),
-          dataIndex: 'action',
-          key: 'action'
+          title: this.$t('label.actions'),
+          dataIndex: 'actions',
+          key: 'actions'
         },
         {
           title: this.$t('label.direction'),

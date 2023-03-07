@@ -1092,7 +1092,7 @@ export default {
           dataIndex: 'threshold'
         },
         {
-          title: this.$t('label.action'),
+          title: this.$t('label.actions'),
           key: 'actions'
         }
       ],
@@ -1120,7 +1120,7 @@ export default {
           dataIndex: 'threshold'
         },
         {
-          title: this.$t('label.action'),
+          title: this.$t('label.actions'),
           key: 'actions'
         }
       ],

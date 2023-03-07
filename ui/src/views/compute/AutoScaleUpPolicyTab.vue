@@ -343,7 +343,7 @@ export default {
   },
   data () {
     return {
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       loading: true,
       policies: [],
       isEditable: false,
@@ -389,7 +389,7 @@ export default {
           dataIndex: 'threshold'
         },
         {
-          title: this.$t('label.action'),
+          title: this.$t('label.actions'),
           key: 'actions'
         }
       ]

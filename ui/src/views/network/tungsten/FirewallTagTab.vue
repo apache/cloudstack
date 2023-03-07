@@ -143,8 +143,8 @@ export default {
         title: this.$t('label.name'),
         dataIndex: 'name'
       }, {
-        title: this.$t('label.action'),
-        key: 'action',
+        title: this.$t('label.actions'),
+        key: 'actions',
         width: 80
       }],
       page: 1,

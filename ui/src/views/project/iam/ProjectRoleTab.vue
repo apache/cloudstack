@@ -37,7 +37,7 @@
             <template v-if="column.key === 'description'">
               {{ record.description }}
             </template>
-            <template v-if="column.key === 'action'">
+            <template v-if="column.key === 'actions'">
               <tooltip-button
                 tooltipPlacement="top"
                 :tooltip="$t('label.update.project.role')"
@@ -162,9 +162,9 @@ export default {
         dataIndex: 'description'
       },
       {
-        key: 'action',
-        title: this.$t('label.action'),
-        dataIndex: 'action',
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
         width: 100
       }
     ]

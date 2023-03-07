@@ -29,7 +29,7 @@
           v-if="!quickview"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'action'" class="cert-button-action">
+            <template v-if="column.key === 'actions'" class="cert-button-action">
               <tooltip-button
                 tooltipPlacement="top"
                 :tooltip="$t('label.quickview')"
@@ -141,9 +141,9 @@ export default {
         width: 450
       },
       {
-        key: 'action',
-        title: this.$t('label.action'),
-        dataIndex: 'action',
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
         fixed: 'right',
         width: 80
       }

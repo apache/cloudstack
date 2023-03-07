@@ -61,7 +61,7 @@
         <template v-if="column.key === 'tags'">
           <a-tag v-for="(tag, index) in record.tags" :key="index">{{ tag.key + '=' + tag.value }}</a-tag>
         </template>
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'actions'">
           <div class="account-button-action">
             <tooltip-button
               tooltipPlacement="top"
@@ -145,9 +145,9 @@ export default {
         dataIndex: 'tags'
       },
       {
-        key: 'action',
-        title: this.$t('label.action'),
-        dataIndex: 'action',
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
         width: 50
       }
     ]

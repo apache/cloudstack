@@ -498,7 +498,7 @@
               <status :text="text ? text : ''" displayText></status>
             </template>
 
-            <template v-if="column.key === 'action'" style="text-align: center" :text="text">
+            <template v-if="column.key === 'actions'" style="text-align: center" :text="text">
               <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale"/>
             </template>
           </template>
@@ -655,7 +655,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
+      filterColumns: ['State', 'Actions', 'Add VMs', 'Stickiness'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.delete.load.balancer.rules'),
@@ -741,7 +741,7 @@ export default {
         },
         {
           key: 'actions',
-          title: this.$t('label.action')
+          title: this.$t('label.actions')
         }
       ],
       tiers: {
@@ -773,9 +773,9 @@ export default {
           dataIndex: 'zonename'
         },
         {
-          key: 'action',
+          key: 'actions',
           title: this.$t('label.select'),
-          dataIndex: 'action',
+          dataIndex: 'actions',
           width: 80
         }
       ],

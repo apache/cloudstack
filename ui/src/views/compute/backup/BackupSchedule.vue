@@ -58,7 +58,7 @@
         <template v-if="column.key === 'timezone'" :name="text">
           <label>{{ getTimeZone(record.timezone) }}</label>
         </template>
-        <template v-if="column.key === 'action'" class="account-button-action" :name="text">
+        <template v-if="column.key === 'actions'" class="account-button-action" :name="text">
           <tooltip-button
             tooltipPlacement="top"
             :tooltip="$t('label.delete')"
@@ -130,9 +130,9 @@ export default {
           dataIndex: 'timezone'
         },
         {
-          key: 'action',
-          title: this.$t('label.action'),
-          dataIndex: 'action',
+          key: 'actions',
+          title: this.$t('label.actions'),
+          dataIndex: 'actions',
           width: 80
         }
       ]

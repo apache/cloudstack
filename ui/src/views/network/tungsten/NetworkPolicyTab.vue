@@ -145,9 +145,9 @@ export default {
         title: this.$t('label.name'),
         dataIndex: 'name'
       }, {
-        title: this.$t('label.action'),
-        dataIndex: 'action',
-        key: 'action',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
+        key: 'actions',
         width: 80
       }],
       dataSource: [],

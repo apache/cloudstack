@@ -36,7 +36,7 @@
         <template v-if="column.key === 'policy'">
         <span v-if="record.policy.length > 0">{{ record.policy[0].name }}</span>
         </template>
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'actions'">
           <a-popconfirm
             v-if="'removeTungstenFabricTag' in $store.getters.apis"
             placement="topRight"
@@ -157,9 +157,9 @@ export default {
           key: 'policy'
         },
         {
-          title: this.$t('label.action'),
-          dataIndex: 'action',
-          key: 'action',
+          title: this.$t('label.actions'),
+          dataIndex: 'actions',
+          key: 'actions',
           width: 70
         }
       ]

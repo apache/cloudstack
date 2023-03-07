@@ -37,7 +37,7 @@
         :pagination="false" >
 
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
+          <template v-if="column.key === 'actions'">
             <a-popconfirm
               :title="$t('message.confirm.remove.ip.range')"
               @confirm="removeIpRange(record.id)"
@@ -142,7 +142,7 @@ export default {
           dataIndex: 'netmask'
         },
         {
-          key: 'action',
+          key: 'actions',
           title: ''
         }
       ]

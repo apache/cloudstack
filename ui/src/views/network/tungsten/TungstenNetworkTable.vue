@@ -57,7 +57,7 @@
             <a-tag :key="tag.uuid">{{ tag.name }}</a-tag>
           </div>
         </template>
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'actions'">
           <span v-for="(action, index) in actions" :key="index" style="margin-right: 5px">
             <tooltip-button
               v-if="action.dataView && ('show' in action ? action.show(record, $store.getters) : true)"

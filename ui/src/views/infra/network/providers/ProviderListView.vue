@@ -50,7 +50,7 @@
           </span>
           <span v-else>{{ text }}</span>
         </template>
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'actions'">
           <a-tooltip placement="top">
             <template #title>
               <span v-if="resource.name==='BigSwitchBcf'">{{ $t('label.delete.bigswitchbcf') }}</span>

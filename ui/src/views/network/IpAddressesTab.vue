@@ -86,7 +86,7 @@
             <div v-else>{{ record.networkname }}</div>
           </template>
 
-          <template v-if="column.key === 'action'">
+          <template v-if="column.key === 'actions'">
             <tooltip-button
               v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
               :tooltip="$t('label.action.release.ip')"
@@ -207,7 +207,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.release.public.ip.address'),
@@ -235,7 +235,7 @@ export default {
           dataIndex: 'associatednetworkname'
         },
         {
-          key: 'action',
+          key: 'actions',
           title: ''
         }
       ],
