@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.storage.Storage;
+import com.sun.jna.Pointer;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -53,6 +54,9 @@ import org.libvirt.LibvirtException;
 import org.libvirt.event.BlockJobListener;
 import org.libvirt.event.BlockJobStatus;
 import org.libvirt.event.BlockJobType;
+import org.libvirt.jna.ConnectionPointer;
+import org.libvirt.jna.DomainPointer;
+import org.libvirt.jna.Libvirt;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
@@ -122,7 +126,6 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
             TypedParameter[] parameters = new TypedParameter[1];
             parameters[0] = parameter;
-            LOGGER.info("Krishna  source disk label: " + diskdef.getDiskLabel());
 
             Domain finalDm = dm;
             final Boolean[] copyStatus = {true};
@@ -132,7 +135,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
                 public void onEvent(Domain domain, String diskPath, BlockJobType type, BlockJobStatus status) {
                     if (type == BlockJobType.COPY && status == BlockJobStatus.READY) {
                         try {
-                            finalDm.blockJobAbort(diskFilePath, 0);
+                            finalDm.blockJobAbort(diskFilePath, Domain.BlockJobAbortFlags.PIVOT);
                             copyStatus[0] = false;
                         } catch (LibvirtException e) {
                             throw new RuntimeException(e);
