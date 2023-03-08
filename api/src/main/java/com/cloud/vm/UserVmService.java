@@ -404,8 +404,7 @@ public interface UserVmService {
     /**
      * Creates a vm group.
      *
-     * @param cmd
-     *            - the command specifying domain id, account name, group name, and project id
+     * @param cmd The command specifying domain id, account name, group name, and project id
      */
     InstanceGroup createVmGroup(CreateVMGroupCmd cmd);
 
