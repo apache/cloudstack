@@ -195,7 +195,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'adopt'
+          distribution: 'temurin'
           architecture: x64
           cache: maven
 
@@ -237,6 +237,9 @@ jobs:
 
       - name: Build with Maven
         run: |
+          wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.zip
+          unzip apache-maven-3.8.7-bin.zip
+          export PATH="$PWD/apache-maven-3.8.7/bin:$PATH"
           mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
 
       - name: Setup Simulator Prerequisites

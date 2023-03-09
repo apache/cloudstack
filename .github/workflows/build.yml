@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'adopt'
+          distribution: 'temurin'
           architecture: x64
           cache: maven
 
@@ -61,6 +61,9 @@ jobs:
 
       - name: Noredist Build
         run: |
+          wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.zip
+          unzip apache-maven-3.8.7-bin.zip
+          export PATH="$PWD/apache-maven-3.8.7/bin:$PATH"
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
           rm -fr nonoss
           mvn -B -P developer,systemvm -Dsimulator -Dnoredist clean install
