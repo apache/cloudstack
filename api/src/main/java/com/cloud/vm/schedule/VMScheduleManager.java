@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.vm.schedule;
 
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.command.user.vmschedule.ListVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vmschedule.UpdateVMScheduleCmd;
+
 import java.util.List;
 
 public interface VMScheduleManager {
@@ -29,7 +32,9 @@ public interface VMScheduleManager {
 
      boolean deleteVMSchedule(Long vmScheduleId);
 
-     boolean enableVMSchedule(Long vmScheduleId);
+     boolean enableVMSchedule(Long vmScheduleId) throws ResourceUnavailableException;
 
      boolean disableVMSchedule(Long vmScheduleId);
+
+     VMSchedule updateVMSchedule(UpdateVMScheduleCmd cmd);
 }

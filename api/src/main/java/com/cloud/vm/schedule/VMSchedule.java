@@ -36,7 +36,7 @@ public interface VMSchedule extends Identity, InternalIdentity {
 
     public String getAction();
 
-    public State getState();
+    public VMSchedule.State getState();
 
     public void setState(State state);
 

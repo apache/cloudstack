@@ -109,7 +109,7 @@ public class VMScheduleVO implements VMSchedule {
         this.vmId = vmId;
     }
 
-    public State getState() {
+    public VMSchedule.State getState() {
         return state;
     }
 

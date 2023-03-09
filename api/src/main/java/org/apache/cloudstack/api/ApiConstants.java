@@ -1028,7 +1028,7 @@ public class ApiConstants {
     public static final String VM_SCHEDULE_ID = "vmscheduleid";
 
     public static final String VM_SCHEDULE_IDS = "vmscheduleids";
-
+    public static final String VM_SCHEDULE_STATE = "state";
 
 
     /**

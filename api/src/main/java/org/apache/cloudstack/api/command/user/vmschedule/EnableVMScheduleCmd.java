@@ -17,11 +17,13 @@
 package org.apache.cloudstack.api.command.user.vmschedule;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.schedule.VMSchedule;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.APICommand;
@@ -30,7 +32,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 @APICommand(name = EnableVMScheduleCmd.APINAME, description = "enable a VM Schedule", responseObject = SuccessResponse.class,
@@ -54,7 +55,7 @@ public class EnableVMScheduleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute()  {
+    public void execute() throws ResourceUnavailableException {
 
         CallContext.current().setEventDetails("vmschedule id: " + this._uuidMgr.getUuid(VMSchedule.class, getId()));
         boolean result = vmScheduleManager.enableVMSchedule(getId());
