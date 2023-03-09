@@ -1013,7 +1013,9 @@
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
+                            <exclude>.github/**</exclude>
                             <exclude>.gitignore</exclude>
+                            <exclude>apache-maven*/**</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
                             <exclude>README.md</exclude>

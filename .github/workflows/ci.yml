@@ -240,6 +240,7 @@ jobs:
           wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.zip
           unzip apache-maven-3.8.7-bin.zip
           export PATH="$PWD/apache-maven-3.8.7/bin:$PATH"
+          mvn -v
           mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
 
       - name: Setup Simulator Prerequisites

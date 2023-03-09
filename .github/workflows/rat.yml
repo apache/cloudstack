@@ -40,6 +40,7 @@ jobs:
           wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.zip
           unzip apache-maven-3.8.7-bin.zip
           export PATH="$PWD/apache-maven-3.8.7/bin:$PATH"
+          mvn -v
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
           rm -fr nonoss
           mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
