@@ -404,7 +404,7 @@ public interface UserVmService {
     /**
      * Creates a vm group.
      *
-     * @param cmd The command specifying domain id, account name, group name, and project id
+     * @param cmd The command specifying domain ID, account name, group name, and project ID
      */
     InstanceGroup createVmGroup(CreateVMGroupCmd cmd);
 
@@ -437,8 +437,8 @@ public interface UserVmService {
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds.
      * Only Root Admin can migrate a VM.
      *
-     * @param vmId the id of the VM to be migrated
-     * @param destinationHost destinationHost to migrate the VM
+     * @param vmId The ID of the VM to be migrated
+     * @param destinationHost The destination host to where the VM will be migrated
      *
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
@@ -457,8 +457,8 @@ public interface UserVmService {
      * Migrate the given VM with its volumes to the destination host. The API returns the migrated VM if it succeeds.
      * Only root admin can migrate a VM.
      *
-     * @param vmId of The VM to migrate
-     * @param destinationHost destination host to migrate the VM
+     * @param vmId The ID of the VM to be migrated
+     * @param destinationHost The destination host to where the VM will be migrated
      * @param volumeToPool A map of volume to which pool it should be migrated
      *
      * @return VirtualMachine migrated VM
