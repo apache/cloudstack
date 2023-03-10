@@ -707,6 +707,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         result = new CopyCommandResult(null, answer);
+        if (answer != null && !answer.getResult()) {
+            result.setResult(answer.getDetails());
+        }
         callback.complete(result);
     }
 
@@ -760,121 +763,176 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private Answer copyVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Volume migration within same PowerFlex/ScaleIO cluster (with same System ID)
+        final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
+        Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData, srcStore);
+
         DataStore destStore = destData.getDataStore();
+        final long destPoolId = destStore.getId();
+        Map<String, String> destDetails = getVolumeDetails((VolumeInfo) destData, destStore);
+        VolumeObjectTO destVolTO = (VolumeObjectTO) destData.getTO();
+        String destVolumePath = null;
+
+        Host host = findEndpointForVolumeOperation(srcData);
+        EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+
         Answer answer = null;
         try {
-            long srcPoolId = srcStore.getId();
-            long destPoolId = destStore.getId();
-
-            final ScaleIOGatewayClient client = getScaleIOClient(srcPoolId);
-            final String srcVolumePath = ((VolumeInfo) srcData).getPath();
-            final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
-            final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
-            final String destStoragePoolId = destStoragePool.getPath();
             CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());
-            String destVolumePath = createAnswer.getData().getPath();
-            //final String destVolumeId = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
-            //final String destScaleIOVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, srcData.getId(), srcData.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-            //String destVolumePath = String.format("%s:%s", destVolumeId, destScaleIOVolumeName);
-
-            VolumeObjectTO destVolTO = (VolumeObjectTO) destData.getTO();
+            destVolumePath = createAnswer.getData().getPath();
             destVolTO.setPath(destVolumePath);
 
-            Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData, srcStore);
-            Map<String, String> destDetails = getVolumeDetails((VolumeInfo) destData, destStore);
+            grantAccess(destData, host, destData.getDataStore());
 
-            String value = configDao.getValue(Config.MigrateWait.key());
-            int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+            int waitInterval = NumbersUtil.parseInt(configDao.getValue(Config.MigrateWait.key()), Integer.parseInt(Config.MigrateWait.getDefaultValue()));
             MigrateVolumeCommand migrateVolumeCommand = new MigrateVolumeCommand(srcData.getTO(), destVolTO,
                     srcDetails, destDetails, waitInterval);
-
-            long hostId = 0;
-            VMInstanceVO instance = vmInstanceDao.findVMByInstanceName(((VolumeInfo) srcData).getAttachedVmName());
-            if (instance.getState().equals(VirtualMachine.State.Running)) {
-                hostId = instance.getHostId();
-            }
-            if (hostId == 0) {
-                hostId = selector.select(srcData, true).getId();
-            }
-            HostVO host = hostDao.findById(hostId);
-            if (host == null) {
-                throw new CloudRuntimeException("Found no hosts to run resize command on");
-            }
-            EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(host);
-            grantAccess(destData, ep, destData.getDataStore());
-
             answer = ep.sendMessage(migrateVolumeCommand);
             boolean migrateStatus = answer.getResult();
 
             if (migrateStatus) {
-                String newVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, destData.getId(),
-                        destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-                boolean renamed = client.renameVolume(srcVolumeId, newVolumeName);
+                updateVolumeAfterCopyVolume(srcData, destData);
+                updateSnapshotsAfterCopyVolume(srcData, destData);
 
-                if (srcData.getId() != destData.getId()) {
-                    VolumeVO destVolume = volumeDao.findById(destData.getId());
-                    // Volume Id in the PowerFlex/ScaleIO pool remains the same after the migration
-                    // Update PowerFlex volume name only after it is renamed, to maintain the consistency
-                    if (renamed) {
-                        String newVolumePath = ScaleIOUtil.updatedPathWithVolumeName(srcVolumeId, newVolumeName);
-                        destVolume.set_iScsiName(newVolumePath);
-                        destVolume.setPath(newVolumePath);
-                    } else {
-                        destVolume.set_iScsiName(srcVolumePath);
-                        destVolume.setPath(srcVolumePath);
-                    }
-                    volumeDao.update(destData.getId(), destVolume);
-
-                    VolumeVO srcVolume = volumeDao.findById(srcData.getId());
-                    srcVolume.set_iScsiName(null);
-                    srcVolume.setPath(null);
-                    srcVolume.setFolder(null);
-                    volumeDao.update(srcData.getId(), srcVolume);
-                } else {
-                    // Live migrate volume
-                    VolumeVO volume = volumeDao.findById(srcData.getId());
-                    Long oldPoolId = volume.getPoolId();
-                    volume.setPoolId(destPoolId);
-                    volume.setLastPoolId(oldPoolId);
-                    volumeDao.update(srcData.getId(), volume);
-                }
-
-                List<SnapshotVO> snapshots = snapshotDao.listByVolumeId(srcData.getId());
-                if (CollectionUtils.isNotEmpty(snapshots)) {
-                    for (SnapshotVO snapshot : snapshots) {
-                        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
-                        if (snapshotStore == null) {
-                            continue;
-                        }
-
-                        String snapshotVolumeId = ScaleIOUtil.getVolumePath(snapshotStore.getInstallPath());
-                        String newSnapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshot.getId(),
-                                destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
-                        renamed = client.renameVolume(snapshotVolumeId, newSnapshotName);
-
-                        snapshotStore.setDataStoreId(destPoolId);
-                        // Snapshot Id in the PowerFlex/ScaleIO pool remains the same after the migration
-                        // Update PowerFlex snapshot name only after it is renamed, to maintain the consistency
-                        if (renamed) {
-                            snapshotStore.setInstallPath(ScaleIOUtil.updatedPathWithVolumeName(snapshotVolumeId, newSnapshotName));
-                        }
-                        snapshotDataStoreDao.update(snapshotStore.getId(), snapshotStore);
-                    }
-                }
-
+                LOGGER.debug(String.format("Successfully migrated migrate PowerFlex volume %d to storage pool %d", srcVolumeId,  destPoolId));
                 answer = new Answer(null, true, null);
             } else {
-                String errorMsg = "Failed to migrate PowerFlex volume: " + srcData.getId() + " to storage pool " + destPoolId;
+                String errorMsg = "Failed to migrate PowerFlex volume: " + srcVolumeId + " to storage pool " + destPoolId;
                 LOGGER.debug(errorMsg);
                 answer = new Answer(null, false, errorMsg);
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to migrate PowerFlex volume: " + srcData.getId() + " due to: " + e.getMessage());
+            LOGGER.error("Failed to migrate PowerFlex volume: " + srcVolumeId + " due to: " + e.getMessage());
             answer = new Answer(null, false, e.getMessage());
         }
 
+        if (destVolumePath != null && !answer.getResult()) {
+            revertCopyVolumeOperations(srcData, destData, host, destVolumePath);
+        }
+
         return answer;
+    }
+
+    private void checkForDestinationVolumeExistence(DataStore destStore, String destVolumePath) throws Exception {
+        int retryCount = 3;
+        while (retryCount > 0) {
+            try {
+                Thread.sleep(3000); // Try after few secs
+                String destScaleIOVolumeId = ScaleIOUtil.getVolumePath(destVolumePath);
+                final ScaleIOGatewayClient destClient = getScaleIOClient(destStore.getId());
+                org.apache.cloudstack.storage.datastore.api.Volume destScaleIOVolume = destClient.getVolume(destScaleIOVolumeId);
+                if (destScaleIOVolume != null) {
+                    return;
+                }
+            } catch (Exception ex) {
+                LOGGER.error("Exception while checking for existence of the volume at " + destVolumePath + " - " + ex.getLocalizedMessage());
+                throw ex;
+            } finally {
+                retryCount--;
+            }
+        }
+    }
+
+    private void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {
+        // destination volume is already created and volume path is set in database by this time at "CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());"
+        final long srcVolumeId = srcData.getId();
+        final long destVolumeId = destData.getId();
+
+        if (srcVolumeId != destVolumeId) {
+            VolumeVO srcVolume = volumeDao.findById(srcVolumeId);
+            srcVolume.set_iScsiName(null);
+            srcVolume.setPath(null);
+            srcVolume.setFolder(null);
+            volumeDao.update(srcVolumeId, srcVolume);
+        } else {
+            // Live migrate volume
+            VolumeVO volume = volumeDao.findById(srcVolumeId);
+            Long oldPoolId = volume.getPoolId();
+            volume.setLastPoolId(oldPoolId);
+            volumeDao.update(srcVolumeId, volume);
+        }
+    }
+    private Host findEndpointForVolumeOperation(DataObject srcData) {
+        long hostId = 0;
+        VMInstanceVO instance = vmInstanceDao.findVMByInstanceName(((VolumeInfo) srcData).getAttachedVmName());
+        if (instance.getState().equals(VirtualMachine.State.Running)) {
+            hostId = instance.getHostId();
+        }
+        if (hostId == 0) {
+            hostId = selector.select(srcData, true).getId();
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Found no hosts to run migrate volume command on");
+        }
+
+        return host;
+    }
+    private void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) throws Exception {
+        final long srcVolumeId = srcData.getId();
+        DataStore srcStore = srcData.getDataStore();
+        final long srcPoolId = srcStore.getId();
+        final ScaleIOGatewayClient client = getScaleIOClient(srcPoolId);
+
+        DataStore destStore = destData.getDataStore();
+        final long destPoolId = destStore.getId();
+        final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
+
+        List<SnapshotVO> snapshots = snapshotDao.listByVolumeId(srcVolumeId);
+        if (CollectionUtils.isNotEmpty(snapshots)) {
+            for (SnapshotVO snapshot : snapshots) {
+                SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+                if (snapshotStore == null) {
+                    continue;
+                }
+
+                String snapshotVolumeId = ScaleIOUtil.getVolumePath(snapshotStore.getInstallPath());
+                String newSnapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshot.getId(),
+                        destStoragePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
+                boolean renamed = client.renameVolume(snapshotVolumeId, newSnapshotName);
+
+                snapshotStore.setDataStoreId(destPoolId);
+                // Snapshot Id in the PowerFlex/ScaleIO pool remains the same after the migration
+                // Update PowerFlex snapshot name only after it is renamed, to maintain the consistency
+                if (renamed) {
+                    snapshotStore.setInstallPath(ScaleIOUtil.updatedPathWithVolumeName(snapshotVolumeId, newSnapshotName));
+                }
+                snapshotDataStoreDao.update(snapshotStore.getId(), snapshotStore);
+            }
+        }
+    }
+
+    private void revertCopyVolumeOperations(DataObject srcData, DataObject destData, Host host, String destVolumePath) {
+        final String srcVolumePath = ((VolumeInfo) srcData).getPath();
+        final String srcVolumeFolder = ((VolumeInfo) srcData).getFolder();
+        DataStore destStore = destData.getDataStore();
+
+        revokeAccess(destData, host, destData.getDataStore());
+        String errMsg;
+        try {
+            String scaleIOVolumeId = ScaleIOUtil.getVolumePath(destVolumePath);
+            final ScaleIOGatewayClient client = getScaleIOClient(destStore.getId());
+            Boolean deleteResult =  client.deleteVolume(scaleIOVolumeId);
+            if (!deleteResult) {
+                errMsg = "Failed to delete PowerFlex volume with id: " + scaleIOVolumeId;
+                LOGGER.warn(errMsg);
+            }
+
+        } catch (Exception e) {
+            errMsg = "Unable to delete destination PowerFlex volume: " + destVolumePath + " due to " + e.getMessage();
+            LOGGER.warn(errMsg);
+            throw new CloudRuntimeException(errMsg, e);
+        }
+
+        final long srcVolumeId = srcData.getId();
+        if (srcVolumeId == destData.getId()) {
+            VolumeVO volume = volumeDao.findById(srcVolumeId);
+            volume.set_iScsiName(srcVolumePath);
+            volume.setPath(srcVolumePath);
+            volume.setFolder(srcVolumeFolder);
+            volume.setPoolId(((VolumeInfo) srcData).getPoolId());
+            volumeDao.update(srcVolumeId, volume);
+        }
     }
 
     private Map<String, String> getVolumeDetails(VolumeInfo volumeInfo, DataStore dataStore) {
@@ -938,8 +996,6 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
             final String destStoragePoolId = destStoragePool.getPath();
             int migrationTimeout = StorageManager.KvmStorageOfflineMigrationWait.value();
-            LOGGER.info("HARI source volume " + srcVolumeId);
-            LOGGER.info("HARI destination volume " + destStoragePoolId);
             boolean migrateStatus = client.migrateVolume(srcVolumeId, destStoragePoolId, migrationTimeout);
             if (migrateStatus) {
                 String newVolumeName = String.format("%s-%s-%s-%s", ScaleIOUtil.VOLUME_PREFIX, destData.getId(),

@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.storage.Storage;
-import com.sun.jna.Pointer;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -54,9 +53,6 @@ import org.libvirt.LibvirtException;
 import org.libvirt.event.BlockJobListener;
 import org.libvirt.event.BlockJobStatus;
 import org.libvirt.event.BlockJobType;
-import org.libvirt.jna.ConnectionPointer;
-import org.libvirt.jna.DomainPointer;
-import org.libvirt.jna.Libvirt;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
@@ -120,6 +116,11 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             if (domainState != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
                 return new MigrateVolumeAnswer(command, false, "Migrate volume failed due to VM is not running: " + vmName + " with domainState = " + domainState, null);
             }
+
+            final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+            PrimaryDataStoreTO spool = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
+            KVMStoragePool pool = storagePoolMgr.getStoragePool(spool.getPoolType(), spool.getUuid());
+            pool.connectPhysicalDisk(destVolumeObjectTO.getPath(), null);
 
             LibvirtVMDef.DiskDef diskdef = generateDestinationDiskDefinition(dm, srcVolumeId, srcPath, diskFilePath);
 
