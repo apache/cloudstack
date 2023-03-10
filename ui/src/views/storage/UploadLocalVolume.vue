@@ -86,8 +86,12 @@
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="opt in offerings" :key="opt.id" :label="opt.name || opt.displaytext">
-              {{ opt.name || opt.displaytext }}
+            <a-select-option
+              v-for="(offering, index) in offerings"
+              :value="offering.id"
+              :key="index"
+              :label="offering.displaytext || offering.name">
+              {{ offering.displaytext || offering.name }}
             </a-select-option>
           </a-select>
         </a-form-item>

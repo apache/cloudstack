@@ -223,7 +223,7 @@
               v-for="tier in tiers.data"
               :loading="tiers.loading"
               :key="tier.id"
-              :label="tier.displaytext">
+              :label="tier.displaytext || ''">
               {{ tier.displaytext }}
             </a-select-option>
           </a-select>
@@ -263,7 +263,7 @@
                   v-for="(nic, nicIndex) in nics"
                   :key="nic"
                   :value="nic"
-                  :label="nic + nicIndex === 0 ? ` (${$t('label.primary')})` : null">
+                  :label="nic">
                   {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
                 </a-select-option>
               </a-select>

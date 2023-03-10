@@ -94,7 +94,6 @@ export default {
   created () {
     this.vm = this.resource
     this.fetchData()
-    console.log(this.resource.volumes)
   },
   watch: {
     resource: function (newItem) {

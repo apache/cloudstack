@@ -205,14 +205,14 @@
             mode="tags"
             v-model:value="form.tags"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
             v-if="isAdmin() || isDomainAdminAllowedToInformTags">
-            <a-select-option v-for="(opt) in storageTags" :key="opt" :label="opt">
+            <a-select-option v-for="(opt) in storageTags" :key="opt">
               {{ opt }}
             </a-select-option>
           </a-select>
@@ -280,7 +280,7 @@
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="policy in storagePolicies" :key="policy.id" :label="policy.name || policy.id">
+            <a-select-option v-for="policy in storagePolicies" :key="policy.id" :label="policy.name || policy.id || ''">
               {{ policy.name || policy.id }}
             </a-select-option>
           </a-select>

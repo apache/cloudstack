@@ -79,7 +79,7 @@
             <a-select-option
               v-for="(opt, optIndex) in domains"
               :key="optIndex"
-              :label="opt.path || opt.name || opt.description">
+              :label="opt.path || opt.name || opt.description || ''">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>

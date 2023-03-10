@@ -252,7 +252,7 @@
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option key="" label="">{{ }}</a-select-option>
                   <a-select-option
                     v-for="(opt, optIndex) in currentAction.mapping[field.name].options"
                     :key="optIndex"
@@ -273,7 +273,7 @@
                   }"
                   v-focus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
+                  <a-select-option key="" label="">{{ }}</a-select-option>
                   <a-select-option
                     v-for="(opt, optIndex) in field.opts"
                     :key="optIndex"
@@ -1765,7 +1765,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         default:
-          console.log('hererere')
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)

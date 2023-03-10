@@ -67,7 +67,7 @@
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description"
             @change="val => { handleDomainChanged(domains[val]) }">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label=" opt.path || opt.name || opt.description">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label=" opt.path || opt.name || opt.description || ''">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
