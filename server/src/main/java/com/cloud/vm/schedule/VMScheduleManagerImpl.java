@@ -20,7 +20,6 @@ package com.cloud.vm.schedule;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.ListUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -174,7 +173,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VMSCHEDULE_ENABLE, eventDescription = "enable VM Schedule")
-    public boolean enableVMSchedule(Long vmScheduleId) throws ResourceUnavailableException {
+    public boolean enableVMSchedule(Long vmScheduleId) {
         VMScheduleVO vmSchedule = vmScheduleDao.findById(vmScheduleId);
         if (vmSchedule == null) {
             throw new InvalidParameterValueException("unable to find the vm schedule with id " + vmScheduleId);

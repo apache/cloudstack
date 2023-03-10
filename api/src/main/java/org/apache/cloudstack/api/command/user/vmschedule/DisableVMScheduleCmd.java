@@ -55,7 +55,6 @@ public class DisableVMScheduleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-
         CallContext.current().setEventDetails("vmschedule id: " + this._uuidMgr.getUuid(VMSchedule.class, getId()));
         boolean result = vmScheduleManager.disableVMSchedule(getId());
         if (result) {

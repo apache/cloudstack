@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.vmschedule;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.schedule.VMSchedule;
 import org.apache.cloudstack.acl.RoleType;
@@ -55,8 +54,7 @@ public class EnableVMScheduleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException {
-
+    public void execute() {
         CallContext.current().setEventDetails("vmschedule id: " + this._uuidMgr.getUuid(VMSchedule.class, getId()));
         boolean result = vmScheduleManager.enableVMSchedule(getId());
         if (result) {
@@ -65,7 +63,6 @@ public class EnableVMScheduleCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable vm schedule");
         }
-
     }
 
     @Override
