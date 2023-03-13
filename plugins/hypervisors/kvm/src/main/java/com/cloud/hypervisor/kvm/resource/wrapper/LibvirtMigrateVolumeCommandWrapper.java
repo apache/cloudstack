@@ -46,13 +46,11 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainBlockJobInfo;
 import org.libvirt.DomainInfo;
 import org.libvirt.TypedParameter;
 import org.libvirt.TypedUlongParameter;
 import org.libvirt.LibvirtException;
-import org.libvirt.event.BlockJobListener;
-import org.libvirt.event.BlockJobStatus;
-import org.libvirt.event.BlockJobType;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
@@ -80,15 +78,6 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         String srcPath = srcVolumeObjectTO.getPath();
         final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumeObjectTO.getPath());
         final String vmName = srcVolumeObjectTO.getVmName();
-        Map<String, String> srcDetails = command.getSrcDetails();
-        final String srcSystemId = srcDetails.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-
-        final String diskFileName = ScaleIOUtil.DISK_NAME_PREFIX + srcSystemId + "-" + srcVolumeId;
-        final String srcFilePath = ScaleIOUtil.DISK_PATH + File.separator + diskFileName;
-
-        LOGGER.info("HARI Source volume ID: "+ srcVolumeId);
-        LOGGER.info("HARI source volume PATH: "+ srcFilePath);
-        LOGGER.info("HARI source system ID: "+ srcSystemId);
 
         // Destination Details
         VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
@@ -96,12 +85,10 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         final String destVolumeId = ScaleIOUtil.getVolumePath(destVolumeObjectTO.getPath());
         Map<String, String> destDetails = command.getDestDetails();
         final String destSystemId = destDetails.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        String destDiskLabel = null;
 
         final String destDiskFileName = ScaleIOUtil.DISK_NAME_PREFIX + destSystemId + "-" + destVolumeId;
         final String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + destDiskFileName;
-
-        LOGGER.info("HARI destination volume ID: "+ destVolumeId);
-        LOGGER.info("HARI destination system ID: "+ destSystemId);
 
         Domain dm = null;
         try {
@@ -123,6 +110,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             pool.connectPhysicalDisk(destVolumeObjectTO.getPath(), null);
 
             LibvirtVMDef.DiskDef diskdef = generateDestinationDiskDefinition(dm, srcVolumeId, srcPath, diskFilePath);
+            destDiskLabel = diskdef.getDiskLabel();
 
             TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
             TypedParameter[] parameters = new TypedParameter[1];
@@ -130,28 +118,41 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
 
             Domain finalDm = dm;
             final Boolean[] copyStatus = {true};
-            dm.blockCopy(diskdef.getDiskLabel(), diskdef.toString(), parameters, Domain.BlockCopyFlags.REUSE_EXT);
-            BlockJobListener listener = new BlockJobListener() {
-                @Override
-                public void onEvent(Domain domain, String diskPath, BlockJobType type, BlockJobStatus status) {
-                    if (type == BlockJobType.COPY && status == BlockJobStatus.READY) {
-                        try {
-                            finalDm.blockJobAbort(diskFilePath, Domain.BlockJobAbortFlags.PIVOT);
-                            copyStatus[0] = false;
-                        } catch (LibvirtException e) {
-                            throw new RuntimeException(e);
-                        }
+            dm.blockCopy(destDiskLabel, diskdef.toString(), parameters, Domain.BlockCopyFlags.REUSE_EXT);
+            LOGGER.info(String.format("Block copy has started for the volume %s : %s ", diskdef.getDiskLabel(), srcPath));
+
+            int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
+            int waitTimeInSec = command.getWait();
+            while (waitTimeInSec > 0) {
+                DomainBlockJobInfo blockJobInfo = dm.getBlockJobInfo(destDiskLabel, 0);
+                if (blockJobInfo != null) {
+                    LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% ", destDiskLabel, srcPath, 100 * (blockJobInfo.cur / blockJobInfo.end)));
+                    if (blockJobInfo.cur == blockJobInfo.end) {
+                        LOGGER.debug(String.format("Block copy completed for the volume %s : %s", destDiskLabel, srcPath));
+                        dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.PIVOT);
+                        break;
                     }
+                } else {
+                    LOGGER.debug("Failed to get the block copy status, trying to abort the job");
+                    dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
                 }
-            };
-            dm.addBlockJobListener(listener);
-            while (copyStatus[0]) {
-                LOGGER.info("Waiting for the block copy to complete");
+                waitTimeInSec--;
+
+                try {
+                    Thread.sleep(timeBetweenTries);
+                } catch (Exception ex) {
+                    // don't do anything
+                }
             }
 
-            if (copyStatus[0]) {
-                String msg = "Migrate volume failed due to timeout";
-                LOGGER.warn(msg);
+            if (waitTimeInSec <= 0) {
+                String msg = "Block copy is taking long time, failing the job";
+                LOGGER.error(msg);
+                try {
+                    dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
+                } catch (LibvirtException ex) {
+                    LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                }
                 return new MigrateVolumeAnswer(command, false, msg, null);
             }
 
@@ -159,6 +160,13 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
             LOGGER.warn(msg, e);
+            if (destDiskLabel != null) {
+                try {
+                    dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
+                } catch (LibvirtException ex) {
+                    LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                }
+            }
             return new MigrateVolumeAnswer(command, false, msg, null);
         } finally {
             if (dm != null) {
@@ -180,7 +188,6 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         LibvirtVMDef.DiskDef diskdef = null;
         for (final LibvirtVMDef.DiskDef disk : disks) {
             final String file = disk.getDiskPath();
-            LOGGER.info("HARIIII disk: " + file);
             if (file != null && file.contains(srcVolumeId)) {
                 diskdef = disk;
                 break;
@@ -190,7 +197,6 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             throw new InternalErrorException("disk: " + srcPath + " is not attached before");
         }
         diskdef.setDiskPath(diskFilePath);
-        LOGGER.info("HARIIII Destination xml : " + diskdef.toString());
 
         return diskdef;
     }

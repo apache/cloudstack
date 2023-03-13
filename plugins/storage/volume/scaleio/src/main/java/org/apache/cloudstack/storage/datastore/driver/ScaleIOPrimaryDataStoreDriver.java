@@ -793,7 +793,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (migrateStatus) {
                 updateVolumeAfterCopyVolume(srcData, destData);
                 updateSnapshotsAfterCopyVolume(srcData, destData);
-
+                deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
                 LOGGER.debug(String.format("Successfully migrated migrate PowerFlex volume %d to storage pool %d", srcVolumeId,  destPoolId));
                 answer = new Answer(null, true, null);
             } else {
@@ -807,30 +807,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (destVolumePath != null && !answer.getResult()) {
-            revertCopyVolumeOperations(srcData, destData, host, destVolumePath);
+            revertBlockCopyVolumeOperations(srcData, destData, host, destVolumePath);
         }
 
         return answer;
-    }
-
-    private void checkForDestinationVolumeExistence(DataStore destStore, String destVolumePath) throws Exception {
-        int retryCount = 3;
-        while (retryCount > 0) {
-            try {
-                Thread.sleep(3000); // Try after few secs
-                String destScaleIOVolumeId = ScaleIOUtil.getVolumePath(destVolumePath);
-                final ScaleIOGatewayClient destClient = getScaleIOClient(destStore.getId());
-                org.apache.cloudstack.storage.datastore.api.Volume destScaleIOVolume = destClient.getVolume(destScaleIOVolumeId);
-                if (destScaleIOVolume != null) {
-                    return;
-                }
-            } catch (Exception ex) {
-                LOGGER.error("Exception while checking for existence of the volume at " + destVolumePath + " - " + ex.getLocalizedMessage());
-                throw ex;
-            } finally {
-                retryCount--;
-            }
-        }
     }
 
     private void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {
@@ -852,6 +832,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volumeDao.update(srcVolumeId, volume);
         }
     }
+
     private Host findEndpointForVolumeOperation(DataObject srcData) {
         long hostId = 0;
         VMInstanceVO instance = vmInstanceDao.findVMByInstanceName(((VolumeInfo) srcData).getAttachedVmName());
@@ -868,6 +849,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         return host;
     }
+
     private void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) throws Exception {
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
@@ -902,7 +884,26 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private void revertCopyVolumeOperations(DataObject srcData, DataObject destData, Host host, String destVolumePath) {
+    private void deleteSourceVolumeAfterSuccessfulBlockCopy(DataObject srcData, Host host) {
+        DataStore srcStore = srcData.getDataStore();
+        String srcVolumePath = srcData.getTO().getPath();
+        revokeAccess(srcData, host, srcData.getDataStore());
+        String errMsg;
+        try {
+            String scaleIOVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
+            final ScaleIOGatewayClient client = getScaleIOClient(srcStore.getId());
+            Boolean deleteResult =  client.deleteVolume(scaleIOVolumeId);
+            if (!deleteResult) {
+                errMsg = "Failed to delete source PowerFlex volume with id: " + scaleIOVolumeId;
+                LOGGER.warn(errMsg);
+            }
+        } catch (Exception e) {
+            errMsg = "Unable to delete source PowerFlex volume: " + srcVolumePath + " due to " + e.getMessage();
+            LOGGER.warn(errMsg);;
+        }
+    }
+
+    private void revertBlockCopyVolumeOperations(DataObject srcData, DataObject destData, Host host, String destVolumePath) {
         final String srcVolumePath = ((VolumeInfo) srcData).getPath();
         final String srcVolumeFolder = ((VolumeInfo) srcData).getFolder();
         DataStore destStore = destData.getDataStore();
