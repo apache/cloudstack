@@ -1320,6 +1320,8 @@
 "label.nfsserver": "NFS server",
 "label.nic": "NIC",
 "label.nicadaptertype": "NIC adapter type",
+"label.nicmultiqueuenumber" : "NIC multiqueue number",
+"label.nicpackedvirtqueuesenabled" : "NIC packed virtqueues enabled",
 "label.nics": "NICs",
 "label.no": "No",
 "label.no.data": "No data to show",
