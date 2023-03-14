@@ -1280,6 +1280,8 @@ public class LibvirtVMDef {
             DIRECT_ATTACHED_WITHOUT_DHCP, DIRECT_ATTACHED_WITH_DHCP, VNET, VLAN;
         }
 
+        public static final int MULTI_QUEUE_NUMBER_MEANS_CPU_CORES = -1;
+
         private GuestNetType _netType; /*
          * bridge, ethernet, network, user,
          * internal, vhostuser

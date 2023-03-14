@@ -3220,7 +3220,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         final InterfaceDef interfaceDef = getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig);
         if (vmSpec.getDetails() != null) {
-            setInterfaceDefQueueSettings(vmSpec.getDetails(), interfaceDef);
+            setInterfaceDefQueueSettings(vmSpec.getDetails(), vmSpec.getCpus(), interfaceDef);
         }
         vm.getDevices().addDevice(interfaceDef);
     }
@@ -5092,11 +5092,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 
-    public void setInterfaceDefQueueSettings(Map<String, String> details, InterfaceDef interfaceDef) {
+    public void setInterfaceDefQueueSettings(Map<String, String> details, Integer cpus, InterfaceDef interfaceDef) {
         String nicMultiqueueNumber = details.get(VmDetailConstants.NIC_MULTIQUEUE_NUMBER);
         if (nicMultiqueueNumber != null) {
             try {
-                interfaceDef.setMultiQueueNumber(Integer.valueOf(nicMultiqueueNumber));
+                Integer nicMultiqueueNumberInteger = Integer.valueOf(nicMultiqueueNumber);
+                if (nicMultiqueueNumberInteger == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES) {
+                    if (cpus != null) {
+                        interfaceDef.setMultiQueueNumber(cpus);
+                    }
+                } else {
+                    interfaceDef.setMultiQueueNumber(nicMultiqueueNumberInteger);
+                }
             } catch (NumberFormatException ex) {
                 s_logger.warn(String.format("VM details %s is not a valid integer value %s", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber));
             }
