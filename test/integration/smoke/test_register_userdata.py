@@ -827,4 +827,4 @@ class TestRegisteredUserdata(cloudstackTestCase):
             self.userapiclient,
             id=self.userdata.userdata.id
         )
-        self.cleanup.pop()
+        self.cleanup.remove(self.userdata)
