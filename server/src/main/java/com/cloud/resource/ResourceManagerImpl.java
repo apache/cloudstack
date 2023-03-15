@@ -1805,8 +1805,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         AgentManager.EnableKVMAutoEnableDisable.key(), host.getName(), resourceEvent));
                 hostDetail.setValue(Boolean.FALSE.toString());
                 _hostDetailsDao.update(hostDetail.getId(), hostDetail);
-            } else if (isUpdateFromHostHealthCheck && hostDetail == null) {
-                hostDetail = new DetailVO(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST, Boolean.TRUE.toString());
+            } else if (hostDetail == null) {
+                String autoEnableValue = !isUpdateFromHostHealthCheck ? Boolean.FALSE.toString() : Boolean.TRUE.toString();
+                hostDetail = new DetailVO(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST, autoEnableValue);
                 _hostDetailsDao.persist(hostDetail);
             }
         }
