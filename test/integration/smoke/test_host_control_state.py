@@ -446,7 +446,7 @@ class TestAutoEnableDisableHost(cloudstackTestCase):
         # 1. Enable the KVM Auto Enable/Disable Feature
         # 2. Set a health check script that fails and observe the host is Disabled
         # 3. Make the host Enabled
-        # 4. Verify the host does not get auto-disabled after the previous step
+        # 4. Verify the host does get auto-disabled after the previous step
         """
 
         selected_host = self.select_host_for_health_checks()
