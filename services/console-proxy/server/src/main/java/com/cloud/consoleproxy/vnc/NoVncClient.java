@@ -472,18 +472,13 @@ public class NoVncClient {
         return new Pair<>(result, message);
     }
 
-    public void processSecurityResultMsg(int securityType) {
+    public void processSecurityResultMsg() {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Processing security result message");
         }
 
-        int result;
-        if (securityType == RfbConstants.NO_AUTH) {
-            result = RfbConstants.VNC_AUTH_OK;
-        } else {
-            nioSocketConnection.waitForBytesAvailableForReading(1);
-            result = nioSocketConnection.readUnsignedInteger(32);
-        }
+        nioSocketConnection.waitForBytesAvailableForReading(1);
+        int result = nioSocketConnection.readUnsignedInteger(32);
 
         Pair<Boolean, String> securityResultType = processSecurityResultType(result);
         boolean success = BooleanUtils.toBoolean(securityResultType.first());
