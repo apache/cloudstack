@@ -42,9 +42,9 @@ Added commands:
 
     createTungstenFabricTagType (create Tungsten-Fabric tag type)
 
-    deleteUserData (Deletes a userdata)
-
     assignVolume (Changes ownership of a Volume from one account to another.)
+
+    deleteUserData (Deletes a userdata)
 
     quotaTariffDelete (Marks a quota tariff as removed.)
 
@@ -283,12 +283,6 @@ Changes in commands arguments:
 
 			New parameters: fortungsten 
 
-	stopSystemVm
-
-		Response:
-
-			New parameters: hostcontrolstate 
-
 	updateVPC
 
 		Request:
@@ -298,6 +292,12 @@ Changes in commands arguments:
 		Response:
 
 			New parameters: dns1, dns2, ip6dns1, ip6dns2, publicmtu 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
 
 	createNetworkOffering
 
@@ -381,17 +381,17 @@ Changes in commands arguments:
 
 			New parameters: activationRule, endDate, name, removed, usageTypeDescription, uuid 
 
-	stopNetScalerVpx
-
-		Response:
-
-			New parameters: hostcontrolstate 
-
 	scaleKubernetesCluster
 
 		Response:
 
 			New parameters: created 
+
+	stopNetScalerVpx
+
+		Response:
+
+			New parameters: hostcontrolstate 
 
 	listCapabilities
 
@@ -729,17 +729,17 @@ Changes in commands arguments:
 
 			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
 
-	cancelHostMaintenance
-
-		Response:
-
-			New parameters: encryptionsupported 
-
 	updateZone
 
 		Response:
 
 			New parameters: allowuserspecifyvrmtu, routerprivateinterfacemaxmtu, routerpublicinterfacemaxmtu, type 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: encryptionsupported 
 
 	updateAutoScalePolicy
 
@@ -795,17 +795,17 @@ Changes in commands arguments:
 
 			New parameters: fortungsten 
 
-	migrateVirtualMachineWithVolume
-
-		Response:
-
-			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
-
 	listVPCs
 
 		Response:
 
 			New parameters: dns1, dns2, ip6dns1, ip6dns2, publicmtu 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
 
 	updateUser
 
@@ -875,17 +875,17 @@ Changes in commands arguments:
 
 			New parameters: hostcontrolstate 
 
-	declareHostAsDegraded
-
-		Response:
-
-			New parameters: encryptionsupported 
-
 	createKubernetesCluster
 
 		Response:
 
 			New parameters: created 
+
+	declareHostAsDegraded
+
+		Response:
+
+			New parameters: encryptionsupported 
 
 	migrateVolume
 
@@ -917,12 +917,6 @@ Changes in commands arguments:
 
 			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
 
-	migrateSystemVm
-
-		Response:
-
-			New parameters: hostcontrolstate 
-
 	listCounters
 
 		Request:
@@ -932,6 +926,12 @@ Changes in commands arguments:
 		Response:
 
 			New parameters: provider 
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
 
 	listAutoScaleVmProfiles
 
@@ -1087,17 +1087,17 @@ Changes in commands arguments:
 
 			Removed parameters: destroyvmgraceperiod 
 
-	startKubernetesCluster
-
-		Response:
-
-			New parameters: created 
-
 	reconnectHost
 
 		Response:
 
 			New parameters: encryptionsupported 
+
+	startKubernetesCluster
+
+		Response:
+
+			New parameters: created 
 
 	getUser
 
