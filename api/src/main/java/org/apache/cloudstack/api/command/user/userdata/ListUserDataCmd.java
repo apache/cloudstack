@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.UserData;
 import com.cloud.utils.Pair;
