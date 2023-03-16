@@ -17,19 +17,27 @@
 package com.cloud.user;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.Resource;
 import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.exception.ResourceAllocationException;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -131,6 +139,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private DomainDetailsDao _domainDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private ResourceLimitService resourceLimitService;
+    @Inject
+    private AffinityGroupDomainMapDao affinityGroupDomainMapDao;
 
     @Inject
     MessageBus _messageBus;
@@ -252,7 +264,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<DomainVO> domains = _domainDao.search(sc, null);
 
         if (!domains.isEmpty()) {
-            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
+            throw new InvalidParameterValueException(String.format("Domain with name [%s] already exists for the parent with ID [%s].", name, parentId));
         }
     }
 
@@ -839,4 +851,151 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_MOVE, eventDescription = "moving Domain")
+    @DB
+    public Domain moveDomainAndChildrenToNewParentDomain(MoveDomainCmd cmd) throws ResourceAllocationException {
+        Long idOfDomainToBeMoved = cmd.getDomainId();
+        Long idOfNewParentDomain = cmd.getParentDomainId();
+
+        if (idOfDomainToBeMoved == Domain.ROOT_DOMAIN) {
+            throw new InvalidParameterValueException("The domain to be moved cannot be the ROOT domain.");
+        }
+
+        if (idOfDomainToBeMoved.equals(idOfNewParentDomain)) {
+            throw new InvalidParameterValueException("The domain to be moved and the new parent domain cannot be the same.");
+        }
+
+        DomainVO domainToBeMoved = returnDomainIfExistsAndIsActive(idOfDomainToBeMoved);
+        s_logger.debug(String.format("Found the domain [%s] as the domain to be moved.", domainToBeMoved));
+
+        DomainVO newParentDomain = returnDomainIfExistsAndIsActive(idOfNewParentDomain);
+        s_logger.debug(String.format("Found the domain [%s] as the new parent domain of the domain to be moved [%s].", newParentDomain, domainToBeMoved));
+
+        Long idOfCurrentParentOfDomainToBeMoved = domainToBeMoved.getParent();
+        if (idOfCurrentParentOfDomainToBeMoved.equals(idOfNewParentDomain)) {
+            throw new InvalidParameterValueException(String.format("The current parent domain of the domain to be moved is equal to the new parent domain [%s].", newParentDomain));
+        }
+
+        validateUniqueDomainName(domainToBeMoved.getName(), idOfNewParentDomain);
+
+        String currentPathOfDomainToBeMoved = domainToBeMoved.getPath();
+        String domainToBeMovedName = domainToBeMoved.getName().concat("/");
+        String newPathOfDomainToBeMoved = newParentDomain.getPath().concat(domainToBeMovedName);
+
+        validateNewParentDomainCanAccessAllDomainToBeMovedResources(domainToBeMoved, newParentDomain, currentPathOfDomainToBeMoved, newPathOfDomainToBeMoved);
+
+        DomainVO parentOfDomainToBeMoved = _domainDao.findById(idOfCurrentParentOfDomainToBeMoved);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                s_logger.debug(String.format("Setting the new parent of the domain to be moved [%s] as [%s].", domainToBeMoved, newParentDomain));
+                domainToBeMoved.setParent(idOfNewParentDomain);
+
+                updateDomainAndChildrenPathAndLevel(domainToBeMoved, newParentDomain, currentPathOfDomainToBeMoved, newPathOfDomainToBeMoved);
+
+                for (Resource.ResourceType resourceType : Resource.ResourceType.values()) {
+                    s_logger.debug(String.format("Recalculating the resource limit of the domain to be moved [%s] for the type [%s].", domainToBeMoved, resourceType));
+                    resourceLimitService.findCorrectResourceLimitForDomain(domainToBeMoved, resourceType);
+                }
+
+                updateResourceCounts(idOfCurrentParentOfDomainToBeMoved, idOfNewParentDomain);
+
+                updateChildCounts(parentOfDomainToBeMoved, newParentDomain);
+            }
+        });
+
+        return domainToBeMoved;
+    }
+
+    protected void validateNewParentDomainCanAccessAllDomainToBeMovedResources(DomainVO domainToBeMoved, DomainVO newParentDomain, String currentPathOfDomainToBeMoved,
+                                                                               String newPathOfDomainToBeMoved) {
+        Map<Long, List<String>> idsOfDomainsWithNetworksUsedByDomainToBeMoved = _networkDomainDao.listDomainsOfSharedNetworksUsedByDomainPath(currentPathOfDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsWithNetworksUsedByDomainToBeMoved);
+
+        Map<Long, List<String>> idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved =
+                affinityGroupDomainMapDao.listDomainsOfAffinityGroupsUsedByDomainPath(currentPathOfDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved);
+    }
+
+    protected void validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(String newPathOfDomainToBeMoved, DomainVO domainToBeMoved, DomainVO newParentDomain,
+                                                                              Map<Long, List<String>> idsOfDomainsWithResourcesUsedByDomainToBeMoved) {
+        Map<DomainVO, List<String>> domainsOfResourcesInaccessibleToNewParentDomain = new HashMap<>();
+        for (Map.Entry<Long, List<String>> entry : idsOfDomainsWithResourcesUsedByDomainToBeMoved.entrySet()) {
+            DomainVO domainWithResourceUsedByDomainToBeMoved = _domainDao.findById(entry.getKey());
+
+            Pattern pattern = Pattern.compile(domainWithResourceUsedByDomainToBeMoved.getPath().replace("/", "\\/").concat(".*"));
+            Matcher matcher = pattern.matcher(newPathOfDomainToBeMoved);
+            if (!matcher.matches()) {
+                domainsOfResourcesInaccessibleToNewParentDomain.put(domainWithResourceUsedByDomainToBeMoved, entry.getValue());
+            }
+        }
+
+        if (!domainsOfResourcesInaccessibleToNewParentDomain.isEmpty()) {
+            s_logger.error(String.format("The new parent domain [%s] does not have access to the domains [%s] used by [%s] in the domain to be moved [%s].",
+                    newParentDomain, domainsOfResourcesInaccessibleToNewParentDomain.keySet(), domainsOfResourcesInaccessibleToNewParentDomain.values(), domainToBeMoved));
+            throw new InvalidParameterValueException(String.format("The domain [%s] could not be moved to domain [%s].", domainToBeMoved, newParentDomain));
+        }
+    }
+
+    protected DomainVO returnDomainIfExistsAndIsActive(Long idOfDomain) {
+        s_logger.debug(String.format("Checking if domain with ID [%s] exists and is active.", idOfDomain));
+        DomainVO domain = _domainDao.findById(idOfDomain);
+
+        if (domain == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find a domain with the specified ID [%s].", idOfDomain));
+        } else if (domain.getState().equals(Domain.State.Inactive)) {
+            throw new InvalidParameterValueException(String.format("Unable to use the domain [%s] as it is in state [%s].", domain, Domain.State.Inactive));
+        }
+
+        return domain;
+    }
+
+    protected void updateDomainAndChildrenPathAndLevel(DomainVO domainToBeMoved, DomainVO newParentDomain, String oldPath, String newPath) {
+        Integer oldRootLevel = domainToBeMoved.getLevel();
+        Integer newLevel = newParentDomain.getLevel() + 1;
+
+        updateDomainPathAndLevel(domainToBeMoved, oldPath, newPath, oldRootLevel, newLevel);
+
+        List<DomainVO> childrenDomain = _domainDao.findAllChildren(oldPath, domainToBeMoved.getId());
+        for (DomainVO childDomain : childrenDomain) {
+            updateDomainPathAndLevel(childDomain, oldPath, newPath, oldRootLevel, newLevel);
+        }
+    }
+
+    protected void updateDomainPathAndLevel(DomainVO domain, String oldPath, String newPath, Integer oldRootLevel, Integer newLevel) {
+        String finalPath = StringUtils.replaceOnce(domain.getPath(), oldPath, newPath);
+        domain.setPath(finalPath);
+
+        Integer currentLevel = domain.getLevel();
+        int finalLevel = newLevel + currentLevel - oldRootLevel;
+        domain.setLevel(finalLevel);
+
+        s_logger.debug(String.format("Updating the path to [%s] and the level to [%s] of the domain [%s].", finalPath, finalLevel, domain));
+        _domainDao.update(domain.getId(), domain);
+    }
+
+    protected void updateResourceCounts(Long idOfOldParentDomain, Long idOfNewParentDomain) {
+        s_logger.debug(String.format("Updating the resource counts of the old parent domain [%s] and of the new parent domain [%s].", idOfOldParentDomain, idOfNewParentDomain));
+        resourceLimitService.recalculateResourceCount(null, idOfOldParentDomain, null);
+        resourceLimitService.recalculateResourceCount(null, idOfNewParentDomain, null);
+    }
+
+    protected void updateChildCounts(DomainVO oldParentDomain, DomainVO newParentDomain) {
+        int finalOldParentChildCount = oldParentDomain.getChildCount() - 1;
+
+        oldParentDomain.setChildCount(finalOldParentChildCount);
+        oldParentDomain.setNextChildSeq(finalOldParentChildCount + 1);
+
+        s_logger.debug(String.format("Updating the child count of the old parent domain [%s] to [%s].", oldParentDomain, finalOldParentChildCount));
+        _domainDao.update(oldParentDomain.getId(), oldParentDomain);
+
+        int finalNewParentChildCount = newParentDomain.getChildCount() + 1;
+
+        newParentDomain.setChildCount(finalNewParentChildCount);
+        newParentDomain.setNextChildSeq(finalNewParentChildCount + 1);
+
+        s_logger.debug(String.format("Updating the child count of the new parent domain [%s] to [%s].", newParentDomain, finalNewParentChildCount));
+        _domainDao.update(newParentDomain.getId(), newParentDomain);
+    }
 }

@@ -306,6 +306,7 @@ public class EventTypes {
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
     public static final String EVENT_DOMAIN_DELETE = "DOMAIN.DELETE";
     public static final String EVENT_DOMAIN_UPDATE = "DOMAIN.UPDATE";
+    public static final String EVENT_DOMAIN_MOVE = "DOMAIN.MOVE";
 
     // Snapshots
     public static final String EVENT_SNAPSHOT_CREATE = "SNAPSHOT.CREATE";
@@ -835,6 +836,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);
         entityEventDetails.put(EVENT_DOMAIN_DELETE, Domain.class);
         entityEventDetails.put(EVENT_DOMAIN_UPDATE, Domain.class);
+        entityEventDetails.put(EVENT_DOMAIN_MOVE, Domain.class);
 
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
