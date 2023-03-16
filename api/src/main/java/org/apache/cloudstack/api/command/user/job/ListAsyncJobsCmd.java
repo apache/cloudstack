@@ -37,7 +37,7 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the async job (use format \"yyyy-MM-dd'T'HH:mm:ss'+'SSSS\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The id of the management server")
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The id of the management server", since="4.19")
     private Long msId;
 
     /////////////////////////////////////////////////////

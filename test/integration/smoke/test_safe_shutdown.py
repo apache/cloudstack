@@ -22,7 +22,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 
-class TestLogin(cloudstackTestCase):
+class TestSafeShutdown(cloudstackTestCase):
     """
         Tests safely shutting down the Management Server
     """
@@ -33,10 +33,7 @@ class TestLogin(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestSafeShutdown, self).tearDown()
 
     def isServerShutdown(self):
         sshClient = SshClient(

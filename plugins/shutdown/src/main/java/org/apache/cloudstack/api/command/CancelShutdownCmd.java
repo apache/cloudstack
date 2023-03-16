@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.RoleType;
 
 @APICommand(name = CancelShutdownCmd.APINAME,
             description = "Cancels a triggered shutdown",
+            since = "4.19.0",
             responseObject = ReadyForShutdownResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             authorized = {RoleType.Admin})

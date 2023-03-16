@@ -72,7 +72,7 @@ public class AsyncJobResponse extends BaseResponse {
     private String jobInstanceId;
 
     @SerializedName("managementserverid")
-    @Param(description = "the msid of the management server on which the job is running")
+    @Param(description = "the msid of the management server on which the job is running", since = "4.19")
     private Long msid;
 
     @SerializedName(ApiConstants.CREATED)

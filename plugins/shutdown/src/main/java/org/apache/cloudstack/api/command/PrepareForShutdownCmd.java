@@ -29,6 +29,7 @@ import org.apache.cloudstack.acl.RoleType;
 
 @APICommand(name = PrepareForShutdownCmd.APINAME,
             description = "Prepares CloudStack for a safe manual shutdown by preventing new jobs from being accepted",
+            since = "4.19.0",
             responseObject = ReadyForShutdownResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             authorized = {RoleType.Admin})

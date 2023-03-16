@@ -18,6 +18,7 @@
 package org.apache.cloudstack.shutdown;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -132,21 +133,24 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
     @Override
     public ReadyForShutdownResponse readyForShutdown(Long managementserverid) {
         Long[] msIds = null;
-        boolean shutdownTriggered = this.shutdownTriggered;
+        boolean hasShutdownBeenTriggered = true;
+        State[] shutdownTriggeredStates = {State.ShuttingDown, State.PreparingToShutDown, State.ReadyToShutDown};
         if (managementserverid == null) {
-            List<ManagementServerHostVO> msHosts = msHostDao.listBy(State.ShuttingDown, State.PreparingToShutDown, State.ReadyToShutDown);
+            List<ManagementServerHostVO> msHosts = msHostDao.listBy(shutdownTriggeredStates);
             if (msHosts != null && !msHosts.isEmpty()) {
                 msIds = new Long[msHosts.size()];
                 for (int i = 0; i < msHosts.size(); i++) {
                     msIds[i] = msHosts.get(i).getMsid();
                 }
-                shutdownTriggered = !msHosts.isEmpty();
+                hasShutdownBeenTriggered = !msHosts.isEmpty();
             }
         } else {
             msIds = new Long[]{msHostDao.findById(managementserverid).getMsid()};
+            ManagementServerHostVO msHost = msHostDao.findByMsid(managementserverid);
+            hasShutdownBeenTriggered = Arrays.asList(shutdownTriggeredStates).contains(msHost.getState());
         }
         long pendingJobCount = countPendingJobs(msIds);
-        return new ReadyForShutdownResponse(managementserverid, shutdownTriggered, pendingJobCount == 0, pendingJobCount);
+        return new ReadyForShutdownResponse(managementserverid, hasShutdownBeenTriggered, pendingJobCount == 0, pendingJobCount);
     }
 
     @Override

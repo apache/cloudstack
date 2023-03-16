@@ -30,6 +30,7 @@ import org.apache.cloudstack.acl.RoleType;
 
 @APICommand(name = TriggerShutdownCmd.APINAME,
             description = "Triggers an automatic safe shutdown of CloudStack by not accepting new jobs and shutting down when all pending jobbs have been completed. Triggers an immediate shutdown if forced",
+            since = "4.19.0",
             responseObject = ReadyForShutdownResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             authorized = {RoleType.Admin})
