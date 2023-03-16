@@ -22,7 +22,7 @@ Build API doc
 ```bash
 $ cd /path/to/cloudstack
 $ git fetch <upstream>
-$ git checkout master
+$ git checkout main
 $ git checkout <release_commit>
 $ mvn -Pdeveloper -Dnoredist clean install -DskipTests=true
 $ mvn -Pdeveloper -Dnoredist clean install -pl :cloud-apidoc
