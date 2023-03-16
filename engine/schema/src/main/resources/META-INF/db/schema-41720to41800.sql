@@ -1574,3 +1574,12 @@ CREATE VIEW `cloud`.`user_view` AS
 -- Remove snapshot references if primary storage pool has been removed, see github issue #7093
 DELETE FROM `cloud`.`snapshot_store_ref`
 WHERE store_role = "Primary" AND store_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
+
+
+-- Change usage of VM_DISK_IO_WRITE to use right usage_type
+UPDATE
+  `cloud_usage`.`cloud_usage`
+SET
+  usage_type = 22
+WHERE
+  usage_type = 24 AND usage_display like '% io write';

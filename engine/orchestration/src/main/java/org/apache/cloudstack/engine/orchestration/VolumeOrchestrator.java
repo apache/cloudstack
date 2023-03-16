@@ -317,8 +317,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setFormat(oldVol.getFormat());
 
         if (oldVol.getPassphraseId() != null) {
-            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO());
-            passphrase.clearPassphrase();
+            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
             newVol.setPassphraseId(passphrase.getId());
         }
 
@@ -1799,8 +1798,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         logger.debug("Creating passphrase for the volume: " + volume.getName());
         long startTime = System.currentTimeMillis();
-        PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO());
-        passphrase.clearPassphrase();
+        PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
         volume.setPassphraseId(passphrase.getId());
         long finishTime = System.currentTimeMillis();
         logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
