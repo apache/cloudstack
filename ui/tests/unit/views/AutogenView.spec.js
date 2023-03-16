@@ -553,12 +553,14 @@ describe('Views > AutogenView.vue', () => {
         await router.push({ name: 'testRouter9' })
         await flushPromises()
 
-        expect(wrapper.vm.columns.length).toEqual(1)
+        expect(wrapper.vm.columns.length).toEqual(2)
         expect(wrapper.vm.columns[0].key).toEqual('name')
         expect(wrapper.vm.columns[0].title).toEqual('name-en')
         expect(wrapper.vm.columns[0].dataIndex).toEqual('name')
-        expect(wrapper.vm.columns[0].customFilterDropdown).toBeTruthy()
         expect(typeof wrapper.vm.columns[0].sorter).toBe('function')
+        expect(wrapper.vm.columns[1].key).toEqual('filtercolumn')
+        expect(wrapper.vm.columns[1].dataIndex).toEqual('filtercolumn')
+        expect(wrapper.vm.columns[1].customFilterDropdown).toBeTruthy()
         done(0)
       })
 
@@ -737,14 +739,12 @@ describe('Views > AutogenView.vue', () => {
         expect(wrapper.vm.items).toEqual([{
           id: 'test-id',
           name: 'test-name-value',
-          key: 0,
-          column1: 'test-name-value'
+          key: 0
         }])
         expect(wrapper.vm.resource).toEqual({
           id: 'test-id',
           name: 'test-name-value',
-          key: 0,
-          column1: 'test-name-value'
+          key: 0
         })
         done()
       })
