@@ -45,15 +45,15 @@ public class ReadyForShutdownCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server")
-    private Long msId;
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the uuid of the management server")
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getMsId() {
-        return msId;
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////

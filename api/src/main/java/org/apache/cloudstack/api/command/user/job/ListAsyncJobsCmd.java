@@ -38,7 +38,7 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     private Date startDate;
 
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The id of the management server", since="4.19")
-    private Long msId;
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -48,8 +48,8 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
         return startDate;
     }
 
-    public Long getMsId() {
-        return msId;
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////

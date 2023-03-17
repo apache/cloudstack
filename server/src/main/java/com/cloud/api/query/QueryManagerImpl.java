@@ -2544,7 +2544,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        if (cmd.getMsId() != null) {
+        if (cmd.getManagementServerId() != null) {
             sb.and("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
         }
 
@@ -2576,8 +2576,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
         }
 
-        if (cmd.getMsId() != null) {
-            ManagementServerHostVO msHost = msHostDao.findById(cmd.getMsId());
+        if (cmd.getManagementServerId() != null) {
+            ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
             sc.setParameters("executingMsid", msHost.getMsid());
         }
 

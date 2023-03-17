@@ -214,6 +214,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         @SuppressWarnings("rawtypes")
         GenericDao dao = GenericDaoBase.getDao(job.getClass());
         job.setInitMsid(getMsid());
+        job.setExecutingMsid(getMsid());
         job.setSyncSource(null);        // no sync source originally
         dao.persist(job);
 

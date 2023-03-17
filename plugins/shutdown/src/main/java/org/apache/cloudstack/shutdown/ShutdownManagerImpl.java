@@ -133,7 +133,7 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
     @Override
     public ReadyForShutdownResponse readyForShutdown(Long managementserverid) {
         Long[] msIds = null;
-        boolean hasShutdownBeenTriggered = true;
+        boolean shutdownTriggeredAnywhere = false;
         State[] shutdownTriggeredStates = {State.ShuttingDown, State.PreparingToShutDown, State.ReadyToShutDown};
         if (managementserverid == null) {
             List<ManagementServerHostVO> msHosts = msHostDao.listBy(shutdownTriggeredStates);
@@ -142,25 +142,25 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
                 for (int i = 0; i < msHosts.size(); i++) {
                     msIds[i] = msHosts.get(i).getMsid();
                 }
-                hasShutdownBeenTriggered = !msHosts.isEmpty();
+                shutdownTriggeredAnywhere = !msHosts.isEmpty();
             }
         } else {
-            msIds = new Long[]{msHostDao.findById(managementserverid).getMsid()};
-            ManagementServerHostVO msHost = msHostDao.findByMsid(managementserverid);
-            hasShutdownBeenTriggered = Arrays.asList(shutdownTriggeredStates).contains(msHost.getState());
+            ManagementServerHostVO msHost = msHostDao.findById(managementserverid);
+            msIds = new Long[]{msHost.getMsid()};
+            shutdownTriggeredAnywhere = Arrays.asList(shutdownTriggeredStates).contains(msHost.getState());
         }
         long pendingJobCount = countPendingJobs(msIds);
-        return new ReadyForShutdownResponse(managementserverid, hasShutdownBeenTriggered, pendingJobCount == 0, pendingJobCount);
+        return new ReadyForShutdownResponse(managementserverid, shutdownTriggeredAnywhere, pendingJobCount == 0, pendingJobCount);
     }
 
     @Override
     public ReadyForShutdownResponse readyForShutdown(ReadyForShutdownCmd cmd) {
-        return readyForShutdown(cmd.getMsId());
+        return readyForShutdown(cmd.getManagementServerId());
     }
 
     @Override
     public ReadyForShutdownResponse prepareForShutdown(PrepareForShutdownCmd cmd) {
-        ManagementServerHostVO msHost = msHostDao.findById(cmd.getMsId());
+        ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         final Command[] cmds = new Command[1];
         cmds[0] = new PrepareForShutdownManagementServerHostCommand(msHost.getMsid());
         String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
@@ -172,12 +172,12 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
         msHost.setState(State.PreparingToShutDown);
         msHostDao.persist(msHost);
 
-        return readyForShutdown(cmd.getMsId());
+        return readyForShutdown(cmd.getManagementServerId());
     }
 
     @Override
     public ReadyForShutdownResponse triggerShutdown(TriggerShutdownCmd cmd) {
-        ManagementServerHostVO msHost = msHostDao.findById(cmd.getMsId());
+        ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         final Command[] cmds = new Command[1];
         cmds[0] = new TriggerShutdownManagementServerHostCommand(msHost.getMsid());
         String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
@@ -189,12 +189,12 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
         msHost.setState(State.ShuttingDown);
         msHostDao.persist(msHost);
 
-        return readyForShutdown(cmd.getMsId());
+        return readyForShutdown(cmd.getManagementServerId());
     }
 
     @Override
     public ReadyForShutdownResponse cancelShutdown(CancelShutdownCmd cmd) {
-        ManagementServerHostVO msHost = msHostDao.findById(cmd.getMsId());
+        ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         final Command[] cmds = new Command[1];
         cmds[0] = new CancelShutdownManagementServerHostCommand(msHost.getMsid());
         String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
@@ -206,7 +206,7 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
         msHost.setState(State.Up);
         msHostDao.persist(msHost);
 
-        return readyForShutdown(cmd.getMsId());
+        return readyForShutdown(cmd.getManagementServerId());
     }
 
     @Override

@@ -26,6 +26,12 @@
     <template #cmd="{ text }">
       {{ text.split('.').pop() }}
     </template>
+    <template #account="{ text, record }">
+      <router-link :to="{ path: '/account/' + record.accountid }">{{ text }}</router-link>
+    </template>
+    <template #domainpath="{ text, record }">
+      <router-link :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
+    </template>
   </a-table>
 </template>
 
@@ -58,6 +64,16 @@ export default {
           dataIndex: 'jobinstancetype'
         },
         {
+          title: this.$t('label.account'),
+          dataIndex: 'account',
+          slots: { customRender: 'account' }
+        },
+        {
+          title: this.$t('label.domain'),
+          dataIndex: 'domainpath',
+          slots: { customRender: 'domainpath' }
+        },
+        {
           title: this.$t('label.created'),
           dataIndex: 'created'
         }
@@ -75,7 +91,11 @@ export default {
   methods: {
     fetchData () {
       this.jobs = []
-      api('listAsyncJobs', { listall: true, isrecursive: true }).then(json => {
+      api('listAsyncJobs', {
+        listall: true,
+        isrecursive: true,
+        managementserverid: this.resource.id
+      }).then(json => {
         this.jobs = json.listasyncjobsresponse.asyncjobs || []
       })
     }
