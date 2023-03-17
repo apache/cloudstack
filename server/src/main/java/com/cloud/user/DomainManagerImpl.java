@@ -877,6 +877,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             throw new InvalidParameterValueException(String.format("The current parent domain of the domain to be moved is equal to the new parent domain [%s].", newParentDomain));
         }
 
+        if (newParentDomain.getPath().startsWith(domainToBeMoved.getPath())) {
+            throw new InvalidParameterValueException("The new parent domain of the domain cannot be one of its child.");
+        }
+
         validateUniqueDomainName(domainToBeMoved.getName(), idOfNewParentDomain);
 
         String currentPathOfDomainToBeMoved = domainToBeMoved.getPath();
