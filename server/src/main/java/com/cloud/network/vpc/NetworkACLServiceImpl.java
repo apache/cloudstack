@@ -408,7 +408,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      * <ul>
      *  <li>If the parameter is null, we return an  {@link InvalidParameterValueException};
      *  <li>Default ACLs {@link NetworkACL#DEFAULT_ALLOW} and {@link NetworkACL#DEFAULT_DENY} cannot be modified. Therefore, if any of them is provided we throw a {@link InvalidParameterValueException};
-     *  <li>If no VPC is given, then it is a global ACL and there is no need to check any VPC ID. However, if a VPC is given and it does not exist, we will throw an
+     *  <li>If no VPC is given, then it is a global ACL and there is no need to check any VPC ID. However, if a VPC is given and it does not exist, throws an
      *  {@link InvalidParameterValueException}.
      * </ul>
      *

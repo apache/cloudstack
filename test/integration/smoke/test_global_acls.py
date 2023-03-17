@@ -74,10 +74,6 @@ class TestGlobalACLs(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         return
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestGlobalACLs, cls).tearDownClass()
-
     def setUp(self):
         self.user_apiclient = self.testClient.getUserApiClient(self.services["user"]["username"],
                                                                self.services["domain"]["name"],
