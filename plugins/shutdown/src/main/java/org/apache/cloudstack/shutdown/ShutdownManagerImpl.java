@@ -107,7 +107,7 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
             this.shutdownTask = null;
         }
         this.shutdownTask = new ShutdownTask(this);
-        timer.scheduleAtFixedRate(shutdownTask, 0, 30 * 1000);
+        timer.scheduleAtFixedRate(shutdownTask, 0, 30L * 1000);
     }
 
     @Override
