@@ -18,10 +18,12 @@ package com.cloud.vm.schedule.dao;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.schedule.VMScheduleVO;
+import java.util.Date;
 import java.util.List;
 
 public interface VMScheduleDao extends GenericDao<VMScheduleVO, Long> {
 
     List<VMScheduleVO> findByVm(Long vmId);
 
+    List<VMScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 }

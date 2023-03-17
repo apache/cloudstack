@@ -265,6 +265,24 @@ export default {
           }
         },
         {
+          api: 'createVMSchedule',
+          icon: 'schedule-outlined',
+          label: 'Create Virtual Machine Schedule',
+          docHelp: 'adminguide/virtual_machines.html#creating-vm-schedule',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.virtualmachineid },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/VMScheduleWizard.vue'))),
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            },
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
           api: 'removeVirtualMachineFromBackupOffering',
           icon: 'scissor-outlined',
           label: 'label.backup.offering.remove',

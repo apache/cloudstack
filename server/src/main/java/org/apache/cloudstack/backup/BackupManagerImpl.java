@@ -983,7 +983,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 apiDispatcher.dispatchCreateCmd(cmd, params);
                 params.put("id", "" + vmId);
                 params.put("ctxStartEventId", "1");
-
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), CreateBackupCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), vmId,
                         cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);

@@ -87,11 +87,11 @@ import com.cloud.vm.VirtualMachine;
 
 public class EventTypes {
 
-    public static final String EVENT_VMSCHEDULE_CREATE = "VM.SCHEDULE";
-    public static final String EVENT_VMSCHEDULE_DELETE = "VMSCHEDULE.DELETE";
-    public static final String EVENT_VMSCHEDULE_ENABLE = "VMSCHEDULE.ENABLE";
-    public static final String EVENT_VMSCHEDULE_DISABLE = "VMSCHEDULE.DISABLE";
-    public static final String EVENT_VMSCHEDULE_UPDATE = "VMSHEDULE.UPDATE";
+    public static final String EVENT_VMSCHEDULE_CREATE = "VM.SCHEDULE.CREATE";
+    public static final String EVENT_VMSCHEDULE_DELETE = "VM.SCHEDULE.DELETE";
+    public static final String EVENT_VMSCHEDULE_ENABLE = "VM.SCHEDULE.ENABLE";
+    public static final String EVENT_VMSCHEDULE_DISABLE = "VM.SCHEDULE.DISABLE";
+    public static final String EVENT_VMSCHEDULE_UPDATE = "VM.SCHEDULE.UPDATE";
 
     //map of Event and corresponding entity for which Event is applicable
     private static Map<String, Object> entityEventDetails = null;

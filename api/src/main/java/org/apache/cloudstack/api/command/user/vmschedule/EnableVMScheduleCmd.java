@@ -39,7 +39,7 @@ import org.apache.log4j.Logger;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class EnableVMScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "enableVMSchedule";
-    public static final Logger s_logger = Logger.getLogger(EnableVMScheduleCmd.class);
+    public static final Logger LOGGER = Logger.getLogger(EnableVMScheduleCmd.class);
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VM_SCHEDULE_ID,

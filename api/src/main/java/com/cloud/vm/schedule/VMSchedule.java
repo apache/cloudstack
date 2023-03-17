@@ -18,8 +18,9 @@ package com.cloud.vm.schedule;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import java.util.Date;
 
-public interface VMSchedule extends Identity, InternalIdentity {
+public interface VMSchedule extends InternalIdentity, Identity {
     public enum State {
         Disabled, Enabled
     }
@@ -46,4 +47,11 @@ public interface VMSchedule extends Identity, InternalIdentity {
 
     public Long getVmId();
 
+    Date getScheduledTimestamp();
+
+    String getScheduleType();
+
+    String getSchedule();
+
+    long getId();
 }

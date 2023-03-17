@@ -15,15 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.vm.schedule;
-
+import javax.persistence.EnumType;
+import javax.persistence.TemporalType;
+import javax.persistence.Temporal;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
 import javax.persistence.GenerationType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
+import javax.persistence.Id;
+import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -60,6 +62,19 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "schedule_type")
+    private String scheduleType;
+
+    @Column(name = "schedule")
+    private String schedule;
+
+    @Column(name = "scheduled_timestamp")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date scheduledTimestamp;
+
+    @Column(name = "async_job_id")
+    Long asyncJobId;
+
     public VMScheduleVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -72,6 +87,20 @@ public class VMScheduleVO implements VMSchedule {
         this.period = period;
         this.timezone = timezone;
         this.tag = tag;
+    }
+
+    public VMScheduleVO(long vmId, String description, String action, String scheduleType,
+                        String schedule, String timezone, Date scheduledTimestamp, String tag, Long asyncJobId) {
+        this.uuid = UUID.randomUUID().toString();
+        this.vmId = vmId;
+        this.description = description;
+        this.action = action;
+        this.scheduleType = scheduleType;
+        this.schedule = schedule;
+        this.timezone = timezone;
+        this.scheduledTimestamp = scheduledTimestamp;
+        this.tag = tag;
+        this.asyncJobId = asyncJobId;
     }
 
     @Override
@@ -137,7 +166,41 @@ public class VMScheduleVO implements VMSchedule {
         return timezone;
     }
 
+    public void setScheduleType(String scheduleType) {
+        this.scheduleType = scheduleType;
+    }
+
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public Date getScheduledTimestamp() {
+        return scheduledTimestamp;
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(String schedule) {
+        this.schedule = schedule;
+    }
+
+    public void setScheduledTimestamp(Date scheduledTimestamp) {
+        this.scheduledTimestamp = scheduledTimestamp;
+    }
+
+    @Override
+    public String getScheduleType() {
+        return scheduleType;
+    }
+
+
+    public Long getAsyncJobId() {
+        return asyncJobId;
+    }
+
+    public void setAsyncJobId(Long asyncJobId) {
+        this.asyncJobId = asyncJobId;
     }
 }

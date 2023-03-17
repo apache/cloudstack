@@ -34,12 +34,11 @@ import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.log4j.Logger;
 
 @APICommand(name = DisableVMScheduleCmd.APINAME, description = "Updates a VM Schedule", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,since = "4.19.0",
-        entityType = {VMSchedule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DisableVMScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "disableVMSchedule";
-    public static final Logger s_logger = Logger.getLogger(DisableVMScheduleCmd.class);
+    public static final Logger LOGGER = Logger.getLogger(DisableVMScheduleCmd.class);
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VM_SCHEDULE_ID,

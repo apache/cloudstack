@@ -38,12 +38,12 @@ import java.util.List;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMScheduleCmd extends BaseListCmd {
     public static final String APINAME = "listVMSchedules";
-    public static final Logger s_logger = Logger.getLogger(ListVMScheduleCmd.class);
+    public static final Logger LOGGER = Logger.getLogger(ListVMScheduleCmd.class);
 
-    @Parameter(name = ApiConstants.VM_SCHEDULE_ID, type = CommandType.UUID, entityType = VMScheduleResponse.class, description = "The ID of the VM schedule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VMScheduleResponse.class, description = "The ID of the VM schedule")
     private Long id;
 
-    @Parameter(name=ApiConstants.VM_SCHEDULE_IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMScheduleResponse.class, description="the IDs of the vm schedule, mutually exclusive with vmscheduleid", since = "4.9")
+    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMScheduleResponse.class, description="the IDs of the vm schedule, mutually exclusive with vmscheduleid", since = "4.9")
     private List<Long> ids;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the vm schedule")

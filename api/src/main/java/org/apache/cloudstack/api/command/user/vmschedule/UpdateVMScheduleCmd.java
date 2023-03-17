@@ -40,19 +40,22 @@ import org.apache.log4j.Logger;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateVMScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "updateVMSchedule";
-    public static final Logger s_logger = Logger.getLogger(UpdateVMScheduleCmd.class);
+    public static final Logger LOGGER = Logger.getLogger(UpdateVMScheduleCmd.class);
 
     @Parameter(name = ApiConstants.VM_SCHEDULE_ID, type = CommandType.UUID, entityType = VMScheduleResponse.class, description = "The ID of the VM schedule")
     private Long id;
 
-    @Parameter(name = ApiConstants.VM_SCHEDULE_DESCRIPTION, type = CommandType.STRING, required = false, description = "The description of the VM schedule")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "The description of the VM schedule")
     private String description;
 
     @Parameter(name = ApiConstants.VM_SCHEDULE_ACTION, type = CommandType.STRING, required = false, description = "The action of VM Schedule")
     private String action;
 
-    @Parameter(name = ApiConstants.VM_SCHEDULE_PERIOD, type = CommandType.STRING, required = false, description = "The period of VM Schedule")
-    private String period;
+    @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = false, description = "The schedule of VM")
+    private String schedule;
+
+    @Parameter(name = ApiConstants.INTERVAL_TYPE, type = CommandType.STRING, required = false, description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+    private String intervalType;
 
     @Parameter(name = ApiConstants.VM_SCHEDULE_TAG, type = CommandType.STRING, required = false, description = "The tag of VM Schedule")
     private String tag;
@@ -68,6 +71,14 @@ public class UpdateVMScheduleCmd extends BaseAsyncCmd {
         return description;
     }
 
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public String getIntervalType() {
+        return intervalType;
+    }
+
     public Long getId() {
         return id;
     }
@@ -78,10 +89,6 @@ public class UpdateVMScheduleCmd extends BaseAsyncCmd {
 
     public String getAction() {
         return action;
-    }
-
-    public String getPeriod() {
-        return period;
     }
 
     public String getTag() {

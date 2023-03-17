@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm.schedule;
 
+import org.apache.cloudstack.api.command.user.vmschedule.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vmschedule.ListVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vmschedule.UpdateVMScheduleCmd;
 
@@ -24,8 +25,6 @@ import java.util.List;
 public interface VMScheduleManager {
 
      VMSchedule findVMSchedule(Long id);
-
-     VMSchedule createVMSchedule(Long vmId, String description, String action, String period, String tag, String timezone);
 
      List<VMSchedule> listVMSchedules(ListVMScheduleCmd cmd);
 
@@ -36,4 +35,6 @@ public interface VMScheduleManager {
      boolean disableVMSchedule(Long vmScheduleId);
 
      VMSchedule updateVMSchedule(UpdateVMScheduleCmd cmd);
+
+     VMSchedule createVMSchedule(CreateVMScheduleCmd cmd);
 }

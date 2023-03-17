@@ -23,23 +23,39 @@ import com.cloud.vm.schedule.VMScheduleVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 import org.apache.log4j.Logger;
 
+import java.util.Date;
 import java.util.List;
 
-public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao{
-    private static final Logger s_logger = Logger.getLogger(VMSnapshotDaoImpl.class);
+public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao {
+    private static final Logger LOGGER = Logger.getLogger(VMSnapshotDaoImpl.class);
 
-    private final SearchBuilder<VMScheduleVO> ScheduleSearch;
+    private final SearchBuilder<VMScheduleVO> VMScheduleSearch;
+    private SearchBuilder<VMScheduleVO> executableSchedulesSearch;
 
     protected VMScheduleDaoImpl() {
-        ScheduleSearch = createSearchBuilder();
-        ScheduleSearch.and("vm_id", ScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
-        ScheduleSearch.done();
+        VMScheduleSearch = createSearchBuilder();
+        VMScheduleSearch.and("vm_id", VMScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        VMScheduleSearch.and("async_job_id", VMScheduleSearch.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
+        VMScheduleSearch.done();
+        VMScheduleSearch.done();
+
+        executableSchedulesSearch = createSearchBuilder();
+        executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
+        executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
+        executableSchedulesSearch.done();
     }
 
     @Override
     public List<VMScheduleVO> findByVm(Long vmId) {
-        SearchCriteria<VMScheduleVO> sc = ScheduleSearch.create();
+        SearchCriteria<VMScheduleVO> sc = VMScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
         return listBy(sc, null);
+    }
+
+    @Override
+    public List<VMScheduleVO> getSchedulesToExecute(Date currentTimestamp) {
+        SearchCriteria<VMScheduleVO> sc = executableSchedulesSearch.create();
+        sc.setParameters("scheduledTimestamp", currentTimestamp);
+        return listBy(sc);
     }
 }

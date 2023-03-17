@@ -117,19 +117,6 @@
                                     </filterchain>
                                 </copy>
                             </target>
-                            <target>
-                                <copy overwrite="true" todir="${basedir}/target/transformed">
-                                    <fileset dir="${basedir}/conf">
-                                        <include name="*.in" />
-                                    </fileset>
-                                    <globmapper from="*.in" to="*" />
-                                    <filterchain>
-                                        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                                            <param type="propertiesfile" value="${cs.replace.properties}" />
-                                        </filterreader>
-                                    </filterchain>
-                                </copy>
-                            </target>
                         </configuration>
                     </execution>
                 </executions>
