@@ -25,7 +25,7 @@
           :dataSource="dataSource"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.scheduled.vms')" key="2">
-        <BackupSchedule
+        <VMSchedule
           :loading="loading"
           :resource="resource"
           :dataSource="dataSource" />
@@ -72,7 +72,7 @@ export default {
       this.dataSource = {}
       this.loading = true
       params.virtualmachineid = this.resource.id
-      api('listBackupSchedule', params).then(json => {
+      api('listVMSchedule', params).then(json => {
         this.dataSource = json.listvmscheduleresponse.vmschedule || {}
       }).finally(() => {
         this.loading = false
