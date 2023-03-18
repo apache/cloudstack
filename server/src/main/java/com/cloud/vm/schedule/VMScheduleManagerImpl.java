@@ -29,6 +29,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.ListUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
@@ -53,22 +54,25 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.poll.BackgroundPollManager;
-import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import com.cloud.utils.db.TransactionCallback;
+
 import java.util.Date;
-import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map;
+import java.util.Timer;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 
 public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleManager, Configurable, PluggableService {
     public static final Logger LOGGER = Logger.getLogger(VMScheduleManagerImpl.class);
@@ -97,6 +101,10 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     private Date currentTimestamp;
 
+    private ScheduledExecutorService backgroundPollTaskScheduler;
+
+    private volatile boolean isConfiguredAndStarted = false;
+
     private static final ConfigKey<Boolean> EnableVMSchedulerInterval = new ConfigKey<>("Advanced", Boolean.class,
             "vm.scheduler.enable", "false",
             "Enable the VMScheduler Interval  to schedule tasks on VM.", false);
@@ -111,6 +119,11 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         for (final VMScheduleVO vmSchedule : vmScheduleDao.listAll()) {
             scheduleNextVMJob(vmSchedule);
         }
+
+        if (isConfiguredAndStarted) {
+            return true;
+        }
+        backgroundPollTaskScheduler = Executors.newScheduledThreadPool(100, new NamedThreadFactory("BackgroundTaskPollManager"));
         final TimerTask vmPollTask = new ManagedContextTimerTask() {
             @Override
             protected void runInContext() {
@@ -121,14 +134,16 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                 }
             }
         };
-
-        vmTimer = new Timer("vmPollTask");
-        vmTimer.schedule(vmPollTask, VMSchedulerInterval.value() * 1000L, VMSchedulerInterval.value() * 1000L);
+        backgroundPollTaskScheduler.scheduleWithFixedDelay(vmPollTask, VMSchedulerInterval.value() * 1000L, VMSchedulerInterval.value() * 1000L, TimeUnit.MILLISECONDS);
+        isConfiguredAndStarted = true;
         return true;
     }
 
     @Override
     public boolean stop() {
+        if (isConfiguredAndStarted) {
+            backgroundPollTaskScheduler.shutdown();
+        }
         return true;
     }
 
@@ -147,9 +162,6 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-   //     if (EnableVMSchedulerInterval.value()) {
-   //         backgroundPollManager.submitTask(new VMScheduleManagerImpl.VMScheduleBackgroundTask(this));
-   //     }
         return true;
     }
 
@@ -340,47 +352,52 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
         LOGGER.debug("VM poll is being called at " + displayTime);
 
-        final List<VMScheduleVO> vmsToBeExecuted = vmScheduleDao.getSchedulesToExecute(currentTimestamp);
+        final List<VMScheduleVO> vmsToBeExecuted = vmScheduleDao.listAll();
         for (final VMScheduleVO vmSchedule : vmsToBeExecuted) {
-            final Long vmScheduleId = vmSchedule.getId();
-            final Long vmId = vmSchedule.getVmId();
+            final long timeDifference = DateUtil.getTimeDifference(vmSchedule.getScheduledTimestamp(), currentTimestamp);
 
-            final VMInstanceVO vm = vmInstanceDao.findById(vmId);
-            if (vm == null) {
+            if (timeDifference <= 30) {
+                final Long vmScheduleId = vmSchedule.getId();
+                final Long vmId = vmSchedule.getVmId();
 
-                vmScheduleDao.remove(vmScheduleId);
-                continue;
-            }
-
-            if (LOGGER.isDebugEnabled()) {
-                final Date scheduledTimestamp = vmSchedule.getScheduledTimestamp();
-                displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                LOGGER.debug(String.format("Scheduling for VM [ID: %s, name: %s] schedule id: [%s] at [%s].",
-                       vm.getId(), vm.getInstanceName(), vmSchedule.getId(), displayTime));
-            }
-
-            VMScheduleVO tmpVMScheduleVO = null;
-
-            try {
-                if (vmSchedule.getState() == VMSchedule.State.Enabled) {
-                    tmpVMScheduleVO = vmScheduleDao.acquireInLockTable(vmScheduleId);
-                    performActionOnVM(vmSchedule.getAction(), vm);
-                 //   vmSchedule.setAsyncJobId(jobId);
-                    vmScheduleDao.update(vmScheduleId, tmpVMScheduleVO);
-                    scheduleNextVMJob(vmSchedule);
+                final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+                if (vm == null) {
+                    vmScheduleDao.remove(vmScheduleId);
+                    continue;
                 }
-            } catch (Exception e) {
-                LOGGER.error(String.format("Scheduling VM failed due to: [%s].", e.getMessage()), e);
-            } finally {
-                if (tmpVMScheduleVO != null) {
-                    vmScheduleDao.releaseFromLockTable(vmScheduleId);
+
+                if (LOGGER.isDebugEnabled()) {
+                    final Date scheduledTimestamp = vmSchedule.getScheduledTimestamp();
+                    displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
+                    LOGGER.debug(String.format("Scheduling for VM [ID: %s, name: %s] schedule id: [%s] at [%s].",
+                            vm.getId(), vm.getInstanceName(), vmSchedule.getId(), displayTime));
+                }
+
+                VMScheduleVO tmpVMScheduleVO = null;
+
+                try {
+                    if (vmSchedule.getState() == VMSchedule.State.Enabled) {
+                        tmpVMScheduleVO = vmScheduleDao.acquireInLockTable(vmScheduleId);
+                        Long jobId = performActionOnVM(vmSchedule.getAction(), vm);
+                        if (jobId != null) {
+                            vmSchedule.setAsyncJobId(jobId);
+                            vmScheduleDao.update(vmScheduleId, vmSchedule);
+                        }
+                        scheduleNextVMJob(vmSchedule);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error(String.format("Scheduling VM failed due to: [%s].", e.getMessage()), e);
+                } finally {
+                    if (tmpVMScheduleVO != null) {
+                        vmScheduleDao.releaseFromLockTable(vmScheduleId);
+                    }
                 }
             }
         }
     }
 
     private Long setAsyncJobForVMSchedule(VMInstanceVO vmInstance, Long eventId) {
-        Long jobId = null;
+        Long jobId;
         final Map<String, String> params = new HashMap<String, String>();
         params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmInstance.getId());
         params.put("ctxUserId", "1");
@@ -388,7 +405,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         params.put("ctxStartEventId", String.valueOf(eventId));
         params.put("ctxHostId", "" + vmInstance.getHostId());
         params.put("id", "" + vmInstance.getId());
-        params.put("ctxStartEventId", "1");
+
         AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vmInstance.getAccountId(), VirtualMachineManager.class.getName(),
                 ApiGsonHelper.getBuilder().create().toJson(params), vmInstance.getId(), null, null);
         job.setDispatcher(asyncJobDispatcher.getName());
@@ -397,7 +414,8 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         return jobId;
     }
 
-    private void performActionOnVM(String action, VMInstanceVO vmInstance ) throws ResourceUnavailableException, InsufficientCapacityException {
+    private Long performActionOnVM(String action, VMInstanceVO vmInstance ) throws ResourceUnavailableException, InsufficientCapacityException {
+        Long jobId = null;
         switch (action) {
             case "start":
                 if (vmInstance.getState() == VirtualMachine.State.Running) {
@@ -409,7 +427,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                         vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
                         true, 0);
                 vmManager.start(vmInstance.getUuid(), null);
-              //  jobId = setAsyncJobForVMSchedule(vmInstance, eventStartId);
+                jobId = setAsyncJobForVMSchedule(vmInstance, eventStartId);
             case "stop":
                 if (vmInstance.getState() == VirtualMachine.State.Stopped) {
                     LOGGER.debug("Virtual Machine is already stopped" + vmInstance.getId());
@@ -420,23 +438,24 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                         vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
                         true, 0);
                 vmManager.stop(vmInstance.getUuid());
-             //   jobId = setAsyncJobForVMSchedule(vmInstance, eventStopId);
+                jobId = setAsyncJobForVMSchedule(vmInstance, eventStopId);
             case "reboot":
                 final Long eventRebootId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
                         EventTypes.EVENT_VM_REBOOT, "Rebooting a VM for VM ID:" + vmInstance.getUuid(),
                         vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
                         true, 0);
                 vmManager.reboot(vmInstance.getUuid(), null);
-              //  jobId = setAsyncJobForVMSchedule(vmInstance, eventRebootId);
+                jobId = setAsyncJobForVMSchedule(vmInstance, eventRebootId);
             case "forcestop":
                 final Long eventForcedStoppedId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
                         EventTypes.EVENT_VM_STOP, "Force Stop a VM for VM ID:" + vmInstance.getUuid(),
                         vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
                         true, 0);
                 vmManager.stopForced(vmInstance.getUuid());
-              //  jobId = setAsyncJobForVMSchedule(vmInstance, eventForcedStoppedId);
+                jobId = setAsyncJobForVMSchedule(vmInstance, eventForcedStoppedId);
         }
 
+        return jobId;
     }
 
     @DB
@@ -447,7 +466,6 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
             @Override
             public Date doInTransaction(TransactionStatus status) {
                 vmSchedule.setScheduledTimestamp(nextTimestamp);
-                vmSchedule.setAsyncJobId(1L);
                 vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
                 return nextTimestamp;
             }
@@ -483,84 +501,4 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         }
         return vm;
     }
-
-    public static final class VMScheduleBackgroundTask extends ManagedContextRunnable implements BackgroundPollTask {
-        private  VMScheduleManagerImpl serviceImpl;
-
-        public VMScheduleBackgroundTask(VMScheduleManagerImpl serviceImpl) {
-            this.serviceImpl = serviceImpl;
-        }
-
-        private void scheduleActionOnVM(String action, VMSchedule.State state, VMInstanceVO vmInstance, String period) throws ResourceUnavailableException, InsufficientCapacityException {
-            if (state == VMSchedule.State.Enabled && matchPeriodWithCurrentTimestamp(period)) {
-                performActionOnVM(action, vmInstance);
-            }
-        }
-
-        private Boolean matchPeriodWithCurrentTimestamp(String period){
-            Date currentTimestamp = new Date();
-            String[] periodParts = period.split(" ");
-            return true;
-        }
-
-        private void performActionOnVM(String action, VMInstanceVO vmInstance ) throws ResourceUnavailableException, InsufficientCapacityException {
-            switch (action) {
-                case "start":
-                    if (vmInstance.getState() == VirtualMachine.State.Running) {
-                        LOGGER.debug("Virtual Machine is already running" + vmInstance.getId());
-                        break;
-                    }
-                    final Long eventStartId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
-                            EventTypes.EVENT_VM_START, "Starting a VM for VM ID:" + vmInstance.getUuid(),
-                            vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
-                            true, 0);
-                    serviceImpl.vmManager.start(vmInstance.getUuid(), null);
-                case "stop":
-                    if (vmInstance.getState() == VirtualMachine.State.Stopped) {
-                        LOGGER.debug("Virtual Machine is already stopped" + vmInstance.getId());
-                        break;
-                    }
-                    final Long eventStopId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
-                            EventTypes.EVENT_VM_STOP, "stopping a VM for VM ID:" + vmInstance.getUuid(),
-                            vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
-                            true, 0);
-                    serviceImpl.vmManager.stop(vmInstance.getUuid());
-                case "reboot":
-                    final Long eventRebootId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
-                            EventTypes.EVENT_VM_REBOOT, "Rebooting a VM for VM ID:" + vmInstance.getUuid(),
-                            vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
-                            true, 0);
-                    serviceImpl.vmManager.reboot(vmInstance.getUuid(), null);
-                case "forcestop":
-                    final Long eventForcedStoppedId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
-                            EventTypes.EVENT_VM_STOP, "Force Stop a VM for VM ID:" + vmInstance.getUuid(),
-                            vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
-                            true, 0);
-                    serviceImpl.vmManager.stopForced(vmInstance.getUuid());
-            }
-         }
-
-        @Override
-        protected void runInContext() {
-            try {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("VM Scheduler GC task is running...");
-                }
-                for (final VMScheduleVO vmSchedule :serviceImpl.vmScheduleDao.listAll()) {
-                    VMInstanceVO vmInstance = serviceImpl.vmInstanceDao.findById(vmSchedule.getVmId());
-                    scheduleActionOnVM(vmSchedule.getAction(), vmSchedule.getState(), vmInstance, vmSchedule.getPeriod());
-                }
-
-            } catch (final Throwable t) {
-                LOGGER.error("Error trying to run VM Scheduler GC task", t);
-            }
-        }
-
-        @Override
-        public Long getDelay() {
-            // In Milliseconds
-            return VMSchedulerInterval.value() * 1000L;
-        }
-    }
-
 }
