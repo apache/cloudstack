@@ -927,8 +927,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
         handleDisconnectWithoutInvestigation(attache, event, true, true);
         host = _hostDao.findById(hostId); // Maybe the host magically reappeared?
-        if (host != null && host.getStatus() == Status.Down) {
-            _haMgr.scheduleRestartForVmsOnHost(host, true);
+        if (host != null) {
+            if (host.getStatus() == Status.Down) {
+                _haMgr.scheduleRestartForVmsOnHost(host, true);
+            } else {
+                if (HypervisorType.VMware.equals(host.getHypervisorType()) && host.getStatus() == Status.Alert) {
+                    _haMgr.scheduleRestartForVmsOnHost(host, false);
+                }
+            }
         }
         return true;
     }

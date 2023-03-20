@@ -238,7 +238,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return;
         }
 
-        if (host.getHypervisorType() == HypervisorType.VMware || host.getHypervisorType() == HypervisorType.Hyperv) {
+        if (host.getHypervisorType() == HypervisorType.Hyperv) {
             s_logger.info("Don't restart VMs on host " + host.getId() + " as it is a " + host.getHypervisorType().toString() + " host");
             return;
         }
@@ -349,8 +349,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
         }
 
-        if (vm.getHypervisorType() == HypervisorType.VMware || vm.getHypervisorType() == HypervisorType.Hyperv) {
-            s_logger.info("Skip HA for VMware VM or Hyperv VM" + vm.getInstanceName());
+        if (vm.getHypervisorType() == HypervisorType.Hyperv) {
+            s_logger.info("Skip HA for Hyperv VM" + vm.getInstanceName());
             return;
         }
 
@@ -392,11 +392,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
             }
-        }
-
-        if (vm.getHypervisorType() == HypervisorType.VMware) {
-            s_logger.info("Skip HA for VMware VM " + vm.getInstanceName());
-            return;
         }
 
         List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
