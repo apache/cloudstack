@@ -267,11 +267,11 @@ export default {
         {
           api: 'createVMSchedule',
           icon: 'schedule-outlined',
-          label: 'Create Virtual Machine Schedule',
+          label: 'Configure VM Schedule',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-schedule',
           dataView: true,
           popup: true,
-          show: (record) => { return record.virtualmachineid },
+          show: (record) => { return record.id },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/VMScheduleWizard.vue'))),
           mapping: {
             virtualmachineid: {

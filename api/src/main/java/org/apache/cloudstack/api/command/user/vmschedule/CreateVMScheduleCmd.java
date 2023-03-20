@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
+import java.util.TimeZone;
 
 @APICommand(name = CreateVMScheduleCmd.APINAME,
         description = "Creates Schedule for a VM",
@@ -65,7 +66,8 @@ public class CreateVMScheduleCmd extends BaseAsyncCreateCmd {
                     + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
     private String schedule;
 
-    @Parameter(name = ApiConstants.VM_SCHEDULE_TAG, type = CommandType.STRING, required = false, description = "The tag of VM Schedule")
+    @Parameter(name = ApiConstants.VM_SCHEDULE_TAG, type = CommandType.STRING, required = false, description = "The Tag String which " +
+            "sets to VM Instance Tag value when action is completed")
     private String tag;
 
     @Parameter(name = ApiConstants.VM_SCHEDULE_TIMEZONE, type = CommandType.STRING, required = false, description = "The timezone of VM Schedule")
@@ -92,14 +94,24 @@ public class CreateVMScheduleCmd extends BaseAsyncCreateCmd {
     }
 
     public String getDescription() {
-        return description;
+        if (description != null) {
+            return description;
+        } else
+            return null;
     }
 
     public String getTag() {
-        return tag;
+        if (tag != null) {
+            return tag;
+        } else {
+            return null;
+        }
     }
 
     public String getTimezone() {
+        if (timezone == null) {
+            return TimeZone.getDefault().getID();
+        }
         return timezone;
     }
 

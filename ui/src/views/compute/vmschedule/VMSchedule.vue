@@ -159,7 +159,7 @@ export default {
       const params = {}
       params.virtualmachineid = record.virtualmachineid
       this.actionLoading = true
-      api('deleteBackupSchedule', params).then(json => {
+      api('deleteVMSchedule', params).then(json => {
         if (json.deletevmscheduleresponse.success) {
           this.$notification.success({
             message: this.$t('label.scheduled.vms'),

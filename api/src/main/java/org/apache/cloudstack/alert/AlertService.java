@@ -71,6 +71,10 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_HA_ACTION = new AlertType((short)30, "ALERT.HA.ACTION", true);
         public static final AlertType ALERT_TYPE_CA_CERT = new AlertType((short)31, "ALERT.CA.CERT", true);
         public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true);
+        public static final AlertType ALERT_TYPE_VM_START = new AlertType((short)32, "ALERT.VM.START", true);
+        public static final AlertType ALERT_TYPE_VM_STOP = new AlertType((short)32, "ALERT.VM.STOP", true);
+        public static final AlertType ALERT_TYPE_VM_REBOOT = new AlertType((short)32, "ALERT.VM.REBOOT", true);
+        public static final AlertType ALERT_TYPE_VM_FORCESTOP = new AlertType((short)32, "ALERT.VM.FORCESTOP", true);
         public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PUBLIC.IFACE.MTU", true);
         public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PRIVATE.IFACE.MTU", true);
 

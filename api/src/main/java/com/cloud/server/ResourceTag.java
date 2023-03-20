@@ -28,6 +28,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
 
     // FIXME - extract enum to another interface as its used both by resourceTags and resourceMetaData code
     public enum ResourceObjectType {
+        VMInstance(true, true, true),
         UserVm(true, true, true),
         Template(true, true, true),
         ISO(true, false, true),

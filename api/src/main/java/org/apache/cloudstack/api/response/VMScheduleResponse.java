@@ -39,9 +39,30 @@ public class VMScheduleResponse extends BaseResponse {
     @Param(description = "the state of the vm schedule")
     private VMSchedule.State state;
 
-    @SerializedName(ApiConstants.VM_SCHEDULE_PERIOD)
-    @Param(description = "the period of the vm schedule")
-    private String period;
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(String schedule) {
+        this.schedule = schedule;
+    }
+
+    public String getScheduleType() {
+        return scheduleType;
+    }
+
+    public void setScheduleType(String scheduleType) {
+        this.scheduleType = scheduleType;
+    }
+
+    @SerializedName(ApiConstants.SCHEDULE)
+    @Param(description = "the schedule of the vm schedule")
+    private String schedule;
+
+    @SerializedName(ApiConstants.INTERVAL_TYPE)
+    @Param(description = "the scheduletype of the vm schedule")
+    private String scheduleType;
+
 
     @SerializedName(ApiConstants.VM_SCHEDULE_ACTION)
     @Param(description = "the action of the vm schedule")
@@ -83,13 +104,7 @@ public class VMScheduleResponse extends BaseResponse {
         this.state = state;
     }
 
-    public String getPeriod() {
-        return period;
-    }
 
-    public void setPeriod(String period) {
-        this.period = period;
-    }
 
     public String getAction() {
         return action;

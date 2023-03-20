@@ -37,7 +37,7 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMScheduleCmd extends BaseListCmd {
-    public static final String APINAME = "listVMSchedule";
+    public static final String APINAME = "listVMSchedules";
     public static final Logger LOGGER = Logger.getLogger(ListVMScheduleCmd.class);
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VMScheduleResponse.class, description = "The ID of the VM schedule")

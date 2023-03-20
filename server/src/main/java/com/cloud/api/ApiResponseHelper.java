@@ -781,7 +781,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         vmScheduleResponse.setId(vmSchedule.getUuid());
         vmScheduleResponse.setDescription(vmSchedule.getDescription());
         vmScheduleResponse.setState(vmSchedule.getState());
-        vmScheduleResponse.setPeriod(vmSchedule.getPeriod());
+        vmScheduleResponse.setSchedule(vmSchedule.getSchedule());
+        vmScheduleResponse.setScheduleType(vmSchedule.getScheduleType());
         vmScheduleResponse.setAction(vmSchedule.getAction());
         vmScheduleResponse.setTimezone(vmSchedule.getTimezone());
         vmScheduleResponse.setTag(vmSchedule.getTag());

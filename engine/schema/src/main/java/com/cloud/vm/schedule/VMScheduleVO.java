@@ -79,16 +79,6 @@ public class VMScheduleVO implements VMSchedule {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VMScheduleVO(long vmId, String description, String action, String period, String tag, String timezone) {
-        this.uuid = UUID.randomUUID().toString();
-        this.vmId = vmId;
-        this.description = description;
-        this.action = action;
-        this.period = period;
-        this.timezone = timezone;
-        this.tag = tag;
-    }
-
     public VMScheduleVO(long vmId, String description, String action, String scheduleType,
                         String schedule, String timezone, Date scheduledTimestamp, String tag, Long asyncJobId) {
         this.uuid = UUID.randomUUID().toString();

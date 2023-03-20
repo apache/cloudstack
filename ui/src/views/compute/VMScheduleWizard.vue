@@ -72,7 +72,7 @@ export default {
       this.dataSource = {}
       this.loading = true
       params.virtualmachineid = this.resource.id
-      api('listVMSchedule', params).then(json => {
+      api('listVMSchedules', params).then(json => {
         this.dataSource = json.listvmscheduleresponse.vmschedule || {}
       }).finally(() => {
         this.loading = false
