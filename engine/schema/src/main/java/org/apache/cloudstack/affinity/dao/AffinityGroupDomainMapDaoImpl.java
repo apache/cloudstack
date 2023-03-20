@@ -50,7 +50,7 @@ public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupD
             "INNER JOIN cloud.vm_instance AS vm ON (vm.id = affinity_group_vm_map.instance_id)\n" +
             "INNER JOIN cloud.domain AS domain ON (domain.id = vm.domain_id)\n" +
             "INNER  JOIN cloud.domain AS domain_sn ON (domain_sn.id = affinity_group_domain_map.domain_id)\n" +
-            "INNER JOIN cloud.affinity_group AS affinity_group ON (affinity_group.id = affinity_group_domain_map.domain_id)\n" +
+            "INNER JOIN cloud.affinity_group AS affinity_group ON (affinity_group.id = affinity_group_domain_map.affinity_group_id)\n" +
             "WHERE affinity_group_domain_map.subdomain_access = 1\n" +
             "AND   domain.path LIKE ?\n" +
             "AND   domain_sn.path NOT LIKE ?\n" +
