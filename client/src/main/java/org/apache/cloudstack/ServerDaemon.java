@@ -45,6 +45,7 @@ import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
@@ -241,6 +242,14 @@ public class ServerDaemon implements Daemon {
             sslConnector.setPort(httpsPort);
             sslConnector.setHost(bindInterface);
             server.addConnector(sslConnector);
+
+            // add scanner to auto-reload certs
+            try {
+                KeyStoreScanner scanner = new KeyStoreScanner(sslContextFactory);
+                server.addBean(scanner);
+            } catch (Exception ex) {
+                LOG.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
+            }
         }
     }
 
