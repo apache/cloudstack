@@ -865,7 +865,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             String templateUuid = UUID.randomUUID().toString();
             String templateName = templateUuid + ".vhd";
-            Script command = new Script(createTemplateFromSnapshotXenScript, cmd.getWait() * 1000, s_logger);
+            Script command = new Script(createTemplateFromSnapshotXenScript, cmd.getWait() * 1000L, s_logger);
             command.add("-p", snapshotPath);
             command.add("-s", snapshotName);
             command.add("-n", templateName);
