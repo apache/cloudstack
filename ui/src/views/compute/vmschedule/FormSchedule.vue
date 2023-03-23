@@ -36,7 +36,7 @@
   <a-spin :spinning="loading">
     <div class="form-layout">
       <label>
-        {{ $t('label.header.vm.schedule') }}
+        {{ $t('Create VM Schedule') }}
       </label>
       <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
@@ -47,7 +47,13 @@
           @finish="handleSubmit">
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
-              <a-form-item :label="$t('label.intervaltype')" ref="intervaltype" name="intervaltype">
+            <a-form-item :label="$t('label.description')" name="description" ref="description">
+              <a-input
+              v-focus="true"
+              v-model:value="form.description"
+              :placeholder="$t('label.description')"/>
+            </a-form-item>
+            <a-form-item :label="$t('label.intervaltype')" ref="intervaltype" name="intervaltype">
                 <a-radio-group
                   v-model:value="form.intervaltype"
                   button-style="solid"
@@ -151,6 +157,22 @@
                 </a-select>
               </a-form-item>
             </a-col>
+            <a-col :md="24" :lg="24">
+            <a-form-item :label="$t('label.tag')" name="tag" ref="tag">
+              <a-input
+              v-focus="true"
+              v-model:value="form.tag"
+              :placeholder="$t('label.tag')"/>
+            </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="24">
+              <a-form-item :label="$t('Enable')" name="enable" ref="enable" v-if="apiParams.enable">
+                <template #label>
+                  <tooltip-label :title="$t('label.enable.vm.schedule')" :tooltip="apiParams.enable.description"/>
+                </template>
+                <a-switch v-model:checked="form.enable" />
+              </a-form-item>
+            </a-col>
           </a-row>
           <div :span="24" class="action-button">
             <a-button
@@ -200,6 +222,7 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
 
     return {
+      enable: false,
       dayOfWeek: [],
       action: [],
       dayOfMonth: [],
@@ -209,6 +232,9 @@ export default {
       actionLoading: false,
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createVMSchedule')
   },
   created () {
     this.initForm()
@@ -220,14 +246,15 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        intervaltype: 'HOURLY'
+        intervaltype: 'HOURLY',
+        enable: 'false'
       })
       this.rules = reactive({
         time: [{ type: 'number', required: true, message: this.$t('message.error.required.input') }],
         timeSelect: [{ type: 'object', required: true, message: this.$t('message.error.time') }],
         'day-of-week': [{ type: 'number', required: true, message: `${this.$t('message.error.select')}` }],
         'day-of-month': [{ required: true, message: `${this.$t('message.error.select')}` }],
-        timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        action: [{ required: true, message: `${this.$t('message.error.select')}` }]
       })
     },
     fetchTimeZone (value) {
@@ -294,6 +321,13 @@ export default {
         params.intervaltype = values.intervaltype
         params.action = values.action
         params.timezone = values.timezone
+        params.description = values.description
+        params.tag = values.tag
+
+        if (values.enable) {
+          params.enable = values.enable
+        }
+
         switch (values.intervaltype) {
           case 'HOURLY':
             params.schedule = values.time
@@ -328,6 +362,7 @@ export default {
     resetForm () {
       this.formRef.value.resetFields()
       this.form.intervaltype = 'HOURLY'
+      this.form.enable = 'false'
       this.tags = []
     },
     closeAction () {

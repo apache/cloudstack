@@ -20,14 +20,13 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.schedule.VMScheduleVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.util.List;
 
 public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao {
-    private static final Logger LOGGER = Logger.getLogger(VMSnapshotDaoImpl.class);
+    private static final Logger LOGGER = Logger.getLogger(VMScheduleDaoImpl.class);
 
     private final SearchBuilder<VMScheduleVO> VMScheduleSearch;
     private SearchBuilder<VMScheduleVO> executableSchedulesSearch;

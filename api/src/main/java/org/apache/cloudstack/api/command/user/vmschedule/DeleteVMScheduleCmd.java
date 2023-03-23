@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteVMScheduleCmd extends BaseAsyncCmd {
     public static final String APINAME = "deleteVMSchedule";
-    public static final Logger s_logger = Logger.getLogger(CreateVMScheduleCmd.class);
+    public static final Logger s_logger = Logger.getLogger(DeleteVMScheduleCmd.class);
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VM_SCHEDULE_ID,

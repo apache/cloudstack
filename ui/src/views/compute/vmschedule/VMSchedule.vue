@@ -113,14 +113,14 @@ export default {
           slots: { customRender: 'icon' }
         },
         {
-          title: this.$t('label.time'),
+          title: this.$t('label.schedule'),
           dataIndex: 'schedule',
           slots: { customRender: 'time' }
         },
         {
           title: '',
-          dataIndex: 'interval',
-          slots: { customRender: 'interval' }
+          dataIndex: 'intervaltype',
+          slots: { customRender: 'intervaltype' }
         },
         {
           title: this.$t('label.timezone'),
@@ -138,19 +138,14 @@ export default {
   },
   mounted () {
     this.dataSchedules = []
-    if (this.dataSource && Object.keys(this.dataSource).length > 0) {
-      this.dataSchedules.push(this.dataSource)
-    }
+    this.dataSchedules = this.dataSource
   },
   inject: ['refreshSchedule'],
   watch: {
     dataSource: {
       deep: true,
       handler (newData) {
-        this.dataSchedules = []
-        if (newData && Object.keys(newData).length > 0) {
-          this.dataSchedules.push(newData)
-        }
+        this.dataSchedules = newData
       }
     }
   },

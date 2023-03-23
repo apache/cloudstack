@@ -211,6 +211,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VMSCHEDULE_CREATE, eventDescription = "creating vm schedule", async = true)
     public VMSchedule createVMSchedule(CreateVMScheduleCmd cmd) {
+        VMSchedule.State state = VMSchedule.State.Disabled;
         final String action = cmd.getAction();
         final Long vmId = cmd.getVmId();
         String intervalType = cmd.getIntervalType();
@@ -218,17 +219,22 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         String description = cmd.getDescription();
         String tag = cmd.getTag();
         TimeZone timeZone = TimeZone.getTimeZone(cmd.getTimezone());
+        Boolean enable = cmd.getEnable();
 
-        if (intervalType == "hourly")
+        if (enable) {
+            state = VMSchedule.State.Enabled;
+        }
+
+        if (intervalType.equals("hourly"))
             intervalType = "HOURLY";
 
-        if (intervalType == "daily")
+        if (intervalType.equals("daily"))
             intervalType = "DAILY";
 
-        if (intervalType == "weekly")
+        if (intervalType.equals("weekly"))
             intervalType = "WEEKLY";
 
-        if (intervalType == "monthly")
+        if (intervalType.equals("monthly"))
             intervalType = "MONTHLY";
 
         if (description == null) {
@@ -258,19 +264,30 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         } catch (Exception e) {
             throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + cmd.getIntervalType());
         }
-        return vmScheduleDao.persist(new VMScheduleVO(vmId, description, action, intervalType, scheduleString, timezoneId, nextDateTime, tag, 1L));
+
+        return vmScheduleDao.persist(new VMScheduleVO(vmId, description, action, intervalType, scheduleString,
+                timezoneId, nextDateTime, tag, state, 1L));
     }
 
     @Override
     public List<VMSchedule> listVMSchedules(ListVMScheduleCmd cmd) {
-        if(cmd.getId() != null) {
+        if (cmd.getId() != null) {
             VMSchedule vmSchedule = findVMSchedule(cmd.getId());
             List<VMSchedule> arr = new ArrayList<>();
             arr.add(vmSchedule);
             return arr;
         }
 
-        List<? extends VMSchedule> vmSchedules= vmScheduleDao.listAll();
+        if (cmd.getVmId() != null) {
+            List<VMSchedule> vmSchedules = new ArrayList<>();
+            List<VMScheduleVO> vmScheduleVOS = vmScheduleDao.findByVm(cmd.getVmId());
+            for (VMScheduleVO vmSchedule : vmScheduleVOS) {
+                vmSchedules.add(vmSchedule);
+            }
+            return vmSchedules;
+        }
+
+        List<? extends VMScheduleVO> vmSchedules = vmScheduleDao.listAll();
         return ListUtils.toListOfInterface(vmSchedules);
     }
 
@@ -387,7 +404,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         for (final VMScheduleVO vmSchedule : vmsToBeExecuted) {
             final long timeDifference = DateUtil.getTimeDifference(vmSchedule.getScheduledTimestamp(), currentTimestamp);
 
-            if (timeDifference <= 30) {
+            if (timeDifference <= 10) {
                 final Long vmScheduleId = vmSchedule.getId();
                 final Long vmId = vmSchedule.getVmId();
 
@@ -427,23 +444,6 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         }
     }
 
-    /*
-    private List<VMScheduleVO> returnConflictedSchedulesInOrder(Date currentTimestamp) {
-
-        List<VMScheduleVO> schedules = new ArrayList<>();
-
-        final List<VMScheduleVO> vmsToBeExecuted = vmScheduleDao.listAll();
-        for (final VMScheduleVO vmSchedule : vmsToBeExecuted) {
-            final long timeDifference = DateUtil.getTimeDifference(vmSchedule.getScheduledTimestamp(), currentTimestamp);
-
-            if (timeDifference < 30) {
-                schedules.add(vmSchedule);
-            }
-        }
-    }
-
-     */
-
     private Map<String, String> setVMTag(VMScheduleVO vmSchedule) {
         Map<String,String> Tag = new HashMap<>();
         if (!vmSchedule.getTag().isEmpty()) {
@@ -464,7 +464,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     private Long setAsyncJobForVMSchedule(VMInstanceVO vmInstance, Long eventId) {
         Long jobId;
-        final Map<String, String> params = new HashMap<String, String>();
+        final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmInstance.getId());
         params.put("ctxUserId", "1");
         params.put("ctxAccountId", "" + vmInstance.getAccountId());

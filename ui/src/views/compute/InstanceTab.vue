@@ -109,6 +109,15 @@
           :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.schedule')" key="schedules" v-if="'listVMSchedules' in $store.getters.apis">
+        <ListResourceTable
+          apiName="listVMSchedules"
+          :resource="resource"
+          :params="{virtualmachineid: dataResource.id}"
+          :columns="['id', 'action', 'intervaltype', 'schedule']"
+          :routerlinks="(record) => { return { id: '/schedule/' + record.id } }"
+          :showSearch="false"/>
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0">
         <ListResourceTable
           :items="dataResource.securitygroup"

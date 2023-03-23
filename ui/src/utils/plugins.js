@@ -371,6 +371,8 @@ export const resourceTypePlugin = {
 
     app.config.globalProperties.$getRouteFromResourceType = function (resourceType) {
       switch (resourceType) {
+        case 'VMSchedule':
+          return 'schedule'
         case 'VirtualMachine':
           return 'vm'
         case 'DomainRouter':

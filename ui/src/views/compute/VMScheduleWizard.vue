@@ -16,19 +16,13 @@
 // under the License.
 
 <template>
-  <div class="backup-layout">
+  <div class="schedule-layout">
     <a-tabs defaultActiveKey="1" :animated="false">
       <a-tab-pane :tab="$t('label.schedule')" key="1">
         <FormSchedule
           :loading="loading"
           :resource="resource"
           :dataSource="dataSource"/>
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.scheduled.vms')" key="2">
-        <VMSchedule
-          :loading="loading"
-          :resource="resource"
-          :dataSource="dataSource" />
       </a-tab-pane>
     </a-tabs>
   </div>
@@ -86,7 +80,7 @@ export default {
 </script>
 
 <style scoped lang="less">
-  .backup-layout {
+  .schedule-layout {
     width: 80vw;
     @media (min-width: 800px) {
       width: 600px;

@@ -45,7 +45,7 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "vm_id")
     private Long vmId;
 
-    @Column(name = "state")
+    @Column(name = "state", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
     private State state = State.Disabled;
 
@@ -80,7 +80,7 @@ public class VMScheduleVO implements VMSchedule {
     }
 
     public VMScheduleVO(long vmId, String description, String action, String scheduleType,
-                        String schedule, String timezone, Date scheduledTimestamp, String tag, Long asyncJobId) {
+                        String schedule, String timezone, Date scheduledTimestamp, String tag, VMSchedule.State  state, Long asyncJobId) {
         this.uuid = UUID.randomUUID().toString();
         this.vmId = vmId;
         this.description = description;
@@ -89,6 +89,7 @@ public class VMScheduleVO implements VMSchedule {
         this.schedule = schedule;
         this.timezone = timezone;
         this.scheduledTimestamp = scheduledTimestamp;
+        this.state = state;
         this.tag = tag;
         this.asyncJobId = asyncJobId;
     }
