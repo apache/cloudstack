@@ -58,7 +58,7 @@
                         ? 'all' : ['publicip'].includes($route.name)
                         ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
                         ? 'all' : ['volume'].includes($route.name)
-                        ? 'user' : 'self')"
+                        ? 'user' : '')"
                     style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -1555,6 +1555,7 @@ export default {
       delete query.domainid
       delete query.state
       delete query.annotationfilter
+      delete query.state
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1580,6 +1581,8 @@ export default {
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
         }
+      } else if (this.$route.name === 'account') {
+        query.state = filter
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
       } else if (this.$route.name === 'guestvlans') {
