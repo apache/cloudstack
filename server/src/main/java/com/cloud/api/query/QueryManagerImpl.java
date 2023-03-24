@@ -2609,11 +2609,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
         StoragePoolStatus state = null;
-        if (cmd.getState() != null && EnumUtils.isValidEnumIgnoreCase(StoragePoolStatus.class, cmd.getState())) {
-            try {
-                state = EnumUtils.getEnumIgnoreCase(StoragePoolStatus.class, cmd.getState());
-            } catch (Exception e) {
-                throw new InvalidParameterValueException("Invalid scope type: " + cmd.getState());
+        if (cmd.getState() != null) {
+            state = EnumUtils.getEnumIgnoreCase(StoragePoolStatus.class, cmd.getState());
+            if (state == null) {
+                throw new InvalidParameterValueException("Invalid state: " + cmd.getState());
             }
         }
 

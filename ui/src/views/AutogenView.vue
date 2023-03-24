@@ -1571,8 +1571,10 @@ export default {
         } else {
           query.networkfilter = filter
         }
-      } else if (this.$route.name === 'publicip') {
-        query.state = filter
+      } else if (['systemvm', 'router', 'storagepool', 'publicip'].includes(this.$route.name)) {
+        if (filter !== 'all') {
+          query.state = filter
+        }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
@@ -1582,10 +1584,6 @@ export default {
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
-      } else if (['systemvm', 'router', 'storagepool'].includes(this.$route.name)) {
-        if (filter !== 'all') {
-          query.state = filter
-        }
       } else if (this.$route.name === 'guestvlans') {
         if (filter === 'all') {
           query.allocatedonly = 'false'
