@@ -720,10 +720,10 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     DestroyLoadBalancerApplianceAnswer answer = null;
                     try {
                         answer = (DestroyLoadBalancerApplianceAnswer)_agentMgr.easySend(lbDevice.getParentHostId(), lbDeleteCmd);
-                        if (answer == null || !answer.getResult()) {
-                            s_logger.warn("Failed to destoy load balancer appliance used by the network"
-                                    + guestConfig.getId() + " due to " + answer == null ? "communication error with agent"
-                                    : answer.getDetails());
+                        if (answer == null) {
+                            s_logger.warn(String.format("Failed to destroy load balancer appliance used by the network [%s] due to a communication error with agent.", guestConfig.getId()));
+                        } else if (!answer.getResult()) {
+                            s_logger.warn(String.format("Failed to destroy load balancer appliance used by the network [%s] due to [%s].", guestConfig.getId(),  answer.getDetails()));
                         }
                     } catch (Exception e) {
                         s_logger.warn("Failed to destroy load balancer appliance used by the network" + guestConfig.getId() + " due to " + e.getMessage());

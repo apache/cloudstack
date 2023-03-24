@@ -32,7 +32,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
           <template #label>
@@ -41,7 +41,7 @@
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <div v-if="setMTU">
           <a-row :gutter="12" v-if="resource.type !== 'L2'">
@@ -130,7 +130,7 @@
           <a-input
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="updateinsequence" ref="updateinsequence" v-if="resource.redundantrouter">
           <template #label>

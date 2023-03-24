@@ -239,6 +239,10 @@ public class ApiConstants {
     public static final String IP_ADDRESSES = "ipaddresses";
     public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";
+    public static final String IS_2FA_ENABLED = "is2faenabled";
+    public static final String IS_2FA_VERIFIED = "is2faverified";
+
+    public static final String IS_2FA_MANDATED = "is2famandated";
     public static final String IS_ASYNC = "isasync";
     public static final String IP_AVAILABLE = "ipavailable";
     public static final String IP_LIMIT = "iplimit";
@@ -1003,6 +1007,11 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
+    public static final String CODE_FOR_2FA = "codefor2fa";
+    public static final String PROVIDER_FOR_2FA = "providerfor2fa";
+    public static final String ISSUER_FOR_2FA = "issuerfor2fa";
+    public static final String MANDATE_2FA = "mandate2fa";
+    public static final String SECRET_CODE = "secretcode";
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
@@ -1010,6 +1019,7 @@ public class ApiConstants {
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
+    public static final String LIST_APIS = "listApis";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

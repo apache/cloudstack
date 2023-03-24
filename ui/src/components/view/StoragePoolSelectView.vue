@@ -23,7 +23,7 @@
       v-model:value="searchQuery"
       style="margin-bottom: 10px;"
       @search="fetchStoragePools"
-      autoFocus />
+      v-focus="true" />
     <a-table
       size="small"
       style="overflow-y: auto"
