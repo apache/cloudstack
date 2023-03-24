@@ -249,7 +249,7 @@ public class ServerDaemon implements Daemon {
                 KeyStoreScanner scanner = new KeyStoreScanner(sslContextFactory);
                 server.addBean(scanner);
             } catch (Exception ex) {
-                LOG.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
+                logger.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
             }
         }
     }
