@@ -1820,21 +1820,24 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
                 final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                         _networkModel.getNetworkTag(vm.getHypervisorType(), network));
-                for (final NetworkElement element : networkElements) {
-                    if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) && element instanceof UserDataServiceProvider) {
-                        if (element instanceof ConfigDriveNetworkElement && !migrationSuccessful || element instanceof VirtualRouterElement && migrationSuccessful) {
-                            final UserDataServiceProvider sp = (UserDataServiceProvider) element;
-                            String errorMsg = String.format("Failed to add hypervisor host name while applying the userdata during the migration of VM %s, " +
-                                    "VM needs to stop and start to apply the userdata again", vm.getInstanceName());
-                            try {
-                                if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
-                                    s_logger.error(errorMsg);
-                                }
-                            } catch (ResourceUnavailableException e) {
-                                s_logger.error(String.format("%s, error states %s", errorMsg, e));
-                            }
-                        }
+                setHypervisorHostnameInNetwork(vm, dest, network, profile, migrationSuccessful);
+            }
+        }
+    }
+
+    private void setHypervisorHostnameInNetwork(VirtualMachineProfile vm, DeployDestination dest, Network network, NicProfile profile, boolean migrationSuccessful) {
+        for (final NetworkElement element : networkElements) {
+            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) && element instanceof UserDataServiceProvider
+                && (element instanceof ConfigDriveNetworkElement && !migrationSuccessful || element instanceof VirtualRouterElement && migrationSuccessful)) {
+                String errorMsg = String.format("Failed to add hypervisor host name while applying the userdata during the migration of VM %s, " +
+                        "VM needs to stop and start to apply the userdata again", vm.getInstanceName());
+                try {
+                    final UserDataServiceProvider sp = (UserDataServiceProvider) element;
+                    if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
+                        s_logger.error(errorMsg);
                     }
+                } catch (ResourceUnavailableException e) {
+                    s_logger.error(String.format("%s, error states %s", errorMsg, e));
                 }
             }
         }
