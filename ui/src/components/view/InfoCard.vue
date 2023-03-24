@@ -395,6 +395,13 @@
             <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.id">
+          <div class="resource-detail-item__label">{{ $t('label.schedule') }}</div>
+          <div class="resource-detail-item__details">
+            <hdd-outlined />
+            <router-link :to="{ path: '/schedule/' + resource.id }">{{ resource.schedule || resource.id }} </router-link>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.associatednetworkid">
           <div class="resource-detail-item__label">{{ $t('label.associatednetwork') }}</div>
           <div class="resource-detail-item__details">
@@ -827,7 +834,7 @@ export default {
   },
   computed: {
     tagsSupportingResourceTypes () {
-      return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'Network',
+      return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'schedule', 'Network',
         'LoadBalancer', 'PortForwardingRule', 'FirewallRule', 'SecurityGroup', 'SecurityGroupRule',
         'PublicIpAddress', 'Project', 'Account', 'Vpc', 'NetworkACL', 'StaticRoute', 'VMSnapshot',
         'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']

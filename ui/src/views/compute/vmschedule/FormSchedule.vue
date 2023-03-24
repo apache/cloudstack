@@ -145,14 +145,14 @@
             <a-col :md="24" :lg="24">
              <a-form-item :label="$t('label.action')" ref="action" name="action">
                 <a-select
-                  v-model:value="form['action']"
+                  v-model:value="form.action"
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.children[0].children.toLowerCase() >= 0
                   }" >
-                  <a-select-option v-for="opt in action" :key="opt.name">
-                    {{ opt.name }}
+                  <a-select-option v-for="opt in action" :key="opt.id">
+                    {{ opt.id || opt.name}}
                   </a-select-option>
                 </a-select>
               </a-form-item>

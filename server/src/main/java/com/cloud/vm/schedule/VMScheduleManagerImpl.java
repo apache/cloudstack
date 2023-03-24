@@ -404,7 +404,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         for (final VMScheduleVO vmSchedule : vmsToBeExecuted) {
             final long timeDifference = DateUtil.getTimeDifference(vmSchedule.getScheduledTimestamp(), currentTimestamp);
 
-            if (timeDifference <= 10) {
+            if (timeDifference <= 5) {
                 final Long vmScheduleId = vmSchedule.getId();
                 final Long vmId = vmSchedule.getVmId();
 
@@ -488,7 +488,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
 
         switch (action) {
-            case "Start":
+            case "start":
                 if (vmInstance.getState() == VirtualMachine.State.Running) {
                     LOGGER.debug("Virtual Machine is already running" + vmInstance.getId());
                     break;
@@ -508,7 +508,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                 }
                 jobId = setAsyncJobForVMSchedule(vmInstance, eventStartId);
                 break;
-            case "Stop":
+            case "stop":
                 if (vmInstance.getState() == VirtualMachine.State.Stopped) {
                     LOGGER.debug("Virtual Machine is already stopped" + vmInstance.getId());
                     break;
@@ -528,7 +528,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                 }
                 jobId = setAsyncJobForVMSchedule(vmInstance, eventStopId);
                 break;
-            case "Reboot":
+            case "reboot":
                 final Long eventRebootId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
                         EventTypes.EVENT_VM_REBOOT, "Rebooting a VM for VM ID:" + vmInstance.getUuid(),
                         vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),

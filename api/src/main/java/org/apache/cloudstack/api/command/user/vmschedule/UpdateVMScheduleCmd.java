@@ -30,7 +30,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.log4j.Logger;
 
-
 @APICommand(name = UpdateVMScheduleCmd.APINAME,
         description = "Update Schedule for a VM",
         responseObject = VMScheduleResponse.class,

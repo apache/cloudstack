@@ -26,7 +26,7 @@ public interface VMSchedule extends InternalIdentity, Identity {
     }
 
     public enum Action {
-        Start, Stop, Reboot, stopForced
+        start, stop, reboot, stopForced
     }
 
     public String getUuid();

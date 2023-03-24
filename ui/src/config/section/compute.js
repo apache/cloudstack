@@ -899,6 +899,91 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'schedule',
+      title: 'label.schedule',
+      icon: 'gold-outlined',
+      docHelp: 'adminguide/virtual_machines.html#',
+      resourceType: 'VMSchedule',
+      permission: ['listVMSchedules'],
+      columns: [{ id: (record) => { return record.id } }, 'action', 'virtualmachineid'],
+      details: ['id', 'description', 'virtualmachineid', 'action', 'schedule', 'intervalType', 'state', 'tag'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'id'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'updateVMSchedule',
+          icon: 'edit-outlined',
+          label: 'label.update.vm.schedule',
+          dataView: true,
+          popup: true,
+          args: ['description', 'action', 'schedule', 'intervalType', 'tag', 'timezone'],
+          mapping: {
+            vmscheduleid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'enableVMSchedule',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.schedule',
+          message: 'message.enable.schedule',
+          dataView: true,
+          mapping: {
+            vmscheduleid: {
+              value: (record) => { return record.id }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'disableVMSchedule',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.schedule',
+          message: 'message.disable.schedule',
+          docHelp: 'adminguide/projects.html#sending-project-membership-invitations',
+          dataView: true,
+          mapping: {
+            vmscheduleid: {
+              value: (record) => { return record.id }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'deleteVMSchedule',
+          icon: 'delete-outlined',
+          label: 'label.delete.vm.schedule',
+          message: 'message.action.delete.vm.schedule',
+          args: ['vmscheduleid'],
+          dataView: true,
+          popup: true,
+          mapping: {
+            vmscheduleid: {
+              value: (record) => { return record.id }
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -110,6 +110,10 @@
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
+        <span v-else-if="$route.path.startsWith('/schedule')">
+              <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
+              <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+        </span>
         <span v-else-if="$route.path.startsWith('/tungstenfabric')">
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
@@ -222,6 +226,9 @@
     </template>
     <template #vpcname="{ text, record }">
       <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
+    </template>
+    <template #schedulename="{ text, record }">
+      <router-link :to="{ path: '/' + record.id }">{{ text }}</router-link>
     </template>
     <template #hostname="{ text, record }">
       <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
@@ -543,7 +550,7 @@ export default {
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
-        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'vmsnapshot', 'schedule', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)
@@ -727,6 +734,7 @@ export default {
     },
     generateHumanReadableEntityType (record) {
       switch (record.entitytype) {
+        case 'VMSCHEDULE' : return 'schedule'
         case 'VM' : return 'Virtual Machine'
         case 'HOST' : return 'Host'
         case 'VOLUME' : return 'Volume'
@@ -758,6 +766,7 @@ export default {
     },
     entityTypeToPath (entitytype) {
       switch (entitytype) {
+        case 'VMSCHEDULE' : return 'schedule'
         case 'VM' : return 'vm'
         case 'HOST' : return 'host'
         case 'VOLUME' : return 'volume'
