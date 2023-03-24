@@ -187,6 +187,8 @@ import com.google.gson.reflect.TypeToken;
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
 
+    private static final String SANITIZATION_REGEX = "[\n\r]";
+
     private static boolean encodeApiResponse = false;
 
     /**
@@ -918,7 +920,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                    logger.debug("Missing Expires parameter -- ignoring request.");
                     return false;
                 }
 
@@ -931,7 +933,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                 final Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                    apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
+                    logger.debug(String.format("Request expired -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
                     return false;
                 }
             }
@@ -978,7 +982,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
 
             if (!equalSig) {
-                logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                logger.info(String.format("User signature [%s] is not equaled to computed signature [%s].", signature, computedSignature));
             } else {
                 CallContext.register(user, account);
             }

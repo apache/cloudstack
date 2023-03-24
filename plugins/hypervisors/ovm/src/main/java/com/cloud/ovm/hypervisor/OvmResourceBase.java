@@ -259,7 +259,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
         _canBridgeFirewall = false;
 
-        logger.debug(_canBridgeFirewall ? "OVM host supports security groups." : "OVM host doesn't support security groups.");
+        logger.debug("OVM host doesn't support security groups.");
 
         return true;
     }
