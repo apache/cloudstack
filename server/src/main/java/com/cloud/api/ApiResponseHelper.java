@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.network.PublicIpQuarantine;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -96,6 +97,7 @@ import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
@@ -4964,5 +4966,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
         return response;
+    }
+
+    @Override
+    public IpQuarantineResponse createQuarantinedIpsResponse(PublicIpQuarantine quarantinedIp) {
+        IpQuarantineResponse quarantinedIpsResponse = new IpQuarantineResponse();
+        String ipAddress = userIpAddressDao.findById(quarantinedIp.getPublicIpAddressId()).getAddress().toString();
+        Account previousOwner = _accountMgr.getAccount(quarantinedIp.getPreviousOwnerId());
+
+        quarantinedIpsResponse.setId(quarantinedIp.getUuid());
+        quarantinedIpsResponse.setPublicIpAddress(ipAddress);
+        quarantinedIpsResponse.setPreviousOwnerId(previousOwner.getUuid());
+        quarantinedIpsResponse.setPreviousOwnerName(previousOwner.getName());
+        quarantinedIpsResponse.setCreated(quarantinedIp.getCreated());
+        quarantinedIpsResponse.setRemoved(quarantinedIp.getRemoved());
+        quarantinedIpsResponse.setEndDate(quarantinedIp.getEndDate());
+        quarantinedIpsResponse.setRemovalReason(quarantinedIp.getRemovalReason());
+        quarantinedIpsResponse.setResponseName("quarantinedip");
+
+        return quarantinedIpsResponse;
     }
 }

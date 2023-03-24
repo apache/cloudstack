@@ -51,6 +51,10 @@ public class Filter {
         addOrderBy(clazz, field, ascending);
     }
 
+    public Filter(Class<?> clazz, String field, boolean ascending) {
+        this(clazz, field, ascending, null, null);
+    }
+
     public Filter(long limit) {
         _orderBy = " ORDER BY RAND() LIMIT " + limit;
     }
