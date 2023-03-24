@@ -229,6 +229,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -2607,6 +2608,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new InvalidParameterValueException("Invalid scope type: " + cmd.getScope());
             }
         }
+        StoragePoolStatus state = null;
+        if (cmd.getState() != null && EnumUtils.isValidEnumIgnoreCase(StoragePoolStatus.class, cmd.getState())) {
+            try {
+                state = EnumUtils.getEnumIgnoreCase(StoragePoolStatus.class, cmd.getState());
+            } catch (Exception e) {
+                throw new InvalidParameterValueException("Invalid scope type: " + cmd.getState());
+            }
+        }
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object id = cmd.getId();
@@ -2632,6 +2641,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
         sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("parent", sb.entity().getParent(), Op.EQ);
 
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
@@ -2677,6 +2687,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (scopeType != null) {
             sc.setParameters("scope", scopeType.toString());
+        }
+        if (state != null) {
+            sc.setParameters("status", state.toString());
         }
         sc.setParameters("parent", 0);
 
