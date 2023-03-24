@@ -54,7 +54,7 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'systemvm', 'router'].includes($route.name)
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'systemvm', 'router', 'storagepool'].includes($route.name)
                         ? 'all' : ['publicip'].includes($route.name)
                         ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
                         ? 'all' : ['volume'].includes($route.name)
@@ -68,7 +68,7 @@
                     }" >
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
-                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'systemvm', 'router'].includes($route.name)"
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'systemvm', 'router', 'storagepool'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
                       {{ $t('label.all') }}
@@ -1582,8 +1582,8 @@ export default {
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
-      } else if (['systemvm', 'router'].includes(this.$route.name)) {
-        if (['running', 'stopped'].includes(filter)) {
+      } else if (['systemvm', 'router', 'storagepool'].includes(this.$route.name)) {
+        if (filter !== 'all') {
           query.state = filter
         }
       } else if (this.$route.name === 'guestvlans') {
