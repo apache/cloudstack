@@ -27,9 +27,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,6 +79,34 @@ public class IpAddressManagerTest {
     IPAddressVO ipAddressVO;
 
     AccountVO account;
+
+    @Mock
+    PublicIpQuarantineVO publicIpQuarantineVOMock;
+
+    @Mock
+    PublicIpQuarantineDao publicIpQuarantineDaoMock;
+
+    @Mock
+    IpAddress ipAddressMock;
+
+    @Mock
+    AccountVO newOwnerMock;
+
+    @Mock
+    AccountVO previousOwnerMock;
+
+    @Mock
+    AccountManager accountManagerMock;
+
+    final long dummyID = 1L;
+
+    final String UUID = "uuid";
+
+    private static final Date currentDate = new Date(100L);
+
+    private static final Date beforeCurrentDate = new Date(99L);
+
+    private static final Date afterCurrentDate = new Date(101L);
 
     @Before
     public void setup() throws ResourceUnavailableException {
@@ -230,4 +262,133 @@ public class IpAddressManagerTest {
         return network;
     }
 
+    @Test
+    public void isPublicIpAddressStillInQuarantineTestRemovedDateIsNullAndCurrentDateIsEqualToEndDateShouldReturnFalse() {
+        Date endDate = currentDate;
+
+        Mockito.when(publicIpQuarantineVOMock.getRemoved()).thenReturn(null);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(endDate);
+
+        boolean result = ipAddressManager.isPublicIpAddressStillInQuarantine(publicIpQuarantineVOMock, currentDate);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isPublicIpAddressStillInQuarantineTestRemovedDateIsNullAndEndDateIsBeforeCurrentDateShouldReturnFalse() {
+        Date endDate = beforeCurrentDate;
+
+        Mockito.when(publicIpQuarantineVOMock.getRemoved()).thenReturn(null);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(endDate);
+
+        boolean result = ipAddressManager.isPublicIpAddressStillInQuarantine(publicIpQuarantineVOMock, currentDate);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isPublicIpAddressStillInQuarantineTestRemovedDateIsNullAndEndDateIsAfterCurrentDateShouldReturnTrue() {
+        Date endDate = afterCurrentDate;
+
+        Mockito.when(publicIpQuarantineVOMock.getRemoved()).thenReturn(null);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(endDate);
+
+        boolean result = ipAddressManager.isPublicIpAddressStillInQuarantine(publicIpQuarantineVOMock, currentDate);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isPublicIpAddressStillInQuarantineTestRemovedDateIsEqualCurrentDateShouldReturnFalse() {
+        Date removedDate = currentDate;
+
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(currentDate);
+        Mockito.when(publicIpQuarantineVOMock.getRemoved()).thenReturn(removedDate);
+
+        boolean result = ipAddressManager.isPublicIpAddressStillInQuarantine(publicIpQuarantineVOMock, currentDate);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isPublicIpAddressStillInQuarantineTestRemovedDateIsBeforeCurrentDateShouldReturnFalse() {
+        Date removedDate = beforeCurrentDate;
+
+        Mockito.when(publicIpQuarantineVOMock.getRemoved()).thenReturn(removedDate);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(null);
+
+        boolean result = ipAddressManager.isPublicIpAddressStillInQuarantine(publicIpQuarantineVOMock, currentDate);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isPublicIpAddressStillInQuarantineTestRemovedDateIsAfterCurrentDateShouldReturnTrue() {
+        Date removedDate = afterCurrentDate;
+
+        Mockito.when(publicIpQuarantineVOMock.getRemoved()).thenReturn(removedDate);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(null);
+
+        boolean result = ipAddressManager.isPublicIpAddressStillInQuarantine(publicIpQuarantineVOMock, currentDate);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocatedTestIpIsNotInQuarantineShouldReturnTrue() {
+        Mockito.when(ipAddressMock.getId()).thenReturn(dummyID);
+        Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(null);
+
+        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, account);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocatedTestIpIsNoLongerInQuarantineShouldReturnTrue() {
+        Mockito.when(ipAddressMock.getId()).thenReturn(dummyID);
+        Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+        Mockito.doReturn(false).when(ipAddressManager).isPublicIpAddressStillInQuarantine(Mockito.any(PublicIpQuarantineVO.class), Mockito.any(Date.class));
+
+        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, newOwnerMock);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocatedTestIpIsInQuarantineAndThePreviousOwnerIsTheSameAsTheNewOwnerShouldReturnTrue() {
+        Mockito.when(ipAddressMock.getId()).thenReturn(dummyID);
+        Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+
+        Mockito.doReturn(true).when(ipAddressManager).isPublicIpAddressStillInQuarantine(Mockito.any(PublicIpQuarantineVO.class), Mockito.any(Date.class));
+        Mockito.doNothing().when(ipAddressManager).removePublicIpAddressFromQuarantine(Mockito.anyLong(), Mockito.anyString());
+
+        Mockito.when(publicIpQuarantineVOMock.getPreviousOwnerId()).thenReturn(dummyID);
+        Mockito.when(accountManagerMock.getAccount(Mockito.anyLong())).thenReturn(previousOwnerMock);
+        Mockito.when(previousOwnerMock.getUuid()).thenReturn(UUID);
+        Mockito.when(newOwnerMock.getUuid()).thenReturn(UUID);
+
+        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, newOwnerMock);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocatedTestIpIsInQuarantineAndThePreviousOwnerIsDifferentFromTheNewOwnerShouldReturnFalse() {
+        final String UUID_2 = "uuid_2";
+
+        Mockito.when(ipAddressMock.getId()).thenReturn(dummyID);
+        Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+
+        Mockito.doReturn(true).when(ipAddressManager).isPublicIpAddressStillInQuarantine(Mockito.any(PublicIpQuarantineVO.class), Mockito.any(Date.class));
+
+        Mockito.when(publicIpQuarantineVOMock.getPreviousOwnerId()).thenReturn(dummyID);
+        Mockito.when(accountManagerMock.getAccount(Mockito.anyLong())).thenReturn(previousOwnerMock);
+        Mockito.when(previousOwnerMock.getUuid()).thenReturn(UUID);
+        Mockito.when(newOwnerMock.getUuid()).thenReturn(UUID_2);
+
+        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, newOwnerMock);
+
+        Assert.assertFalse(result);
+    }
 }

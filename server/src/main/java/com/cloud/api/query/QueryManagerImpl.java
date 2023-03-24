@@ -35,6 +35,9 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -70,6 +73,7 @@ import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -98,6 +102,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -457,6 +462,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    private PublicIpQuarantineDao publicIpQuarantineDao;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -4472,6 +4480,50 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
+    }
+
+    @Override
+    public ListResponse<IpQuarantineResponse> listQuarantinedIps(ListQuarantinedIpsCmd cmd) {
+        ListResponse<IpQuarantineResponse> response = new ListResponse<>();
+        Pair<List<PublicIpQuarantineVO>, Integer> result = listQuarantinedIpsInternal(cmd.isShowRemoved(), cmd.isShowInactive());
+        List<IpQuarantineResponse> ipsQuarantinedResponses = new ArrayList<>();
+
+        for (PublicIpQuarantine quarantinedIp : result.first()) {
+            IpQuarantineResponse ipsInQuarantineResponse = responseGenerator.createQuarantinedIpsResponse(quarantinedIp);
+            ipsQuarantinedResponses.add(ipsInQuarantineResponse);
+        }
+
+        response.setResponses(ipsQuarantinedResponses);
+        return response;
+    }
+
+    /**
+     * It lists the quarantine IPs that the caller account is allowed to see by filtering the domain path of the caller account.
+     * Furthermore, it lists inactive and removed quarantined IPs according to the command parameters.
+     */
+    private Pair<List<PublicIpQuarantineVO>, Integer> listQuarantinedIpsInternal(boolean showRemoved, boolean showInactive) {
+        String callingAccountDomainPath = _domainDao.findById(CallContext.current().getCallingAccount().getDomainId()).getPath();
+
+        SearchBuilder<AccountJoinVO> filterAllowedOnly = _accountJoinDao.createSearchBuilder();
+        filterAllowedOnly.and("path", filterAllowedOnly.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+
+        SearchBuilder<PublicIpQuarantineVO> listAllPublicIpsInQuarantineAllowedToTheCaller = publicIpQuarantineDao.createSearchBuilder();
+        listAllPublicIpsInQuarantineAllowedToTheCaller.join("listQuarantinedJoin", filterAllowedOnly,
+                listAllPublicIpsInQuarantineAllowedToTheCaller.entity().getPreviousOwnerId(),
+                filterAllowedOnly.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        if (!showInactive) {
+            listAllPublicIpsInQuarantineAllowedToTheCaller.and("endDate", listAllPublicIpsInQuarantineAllowedToTheCaller.entity().getEndDate(), SearchCriteria.Op.GT);
+        }
+
+        filterAllowedOnly.done();
+        listAllPublicIpsInQuarantineAllowedToTheCaller.done();
+
+        SearchCriteria<PublicIpQuarantineVO> searchCriteria = listAllPublicIpsInQuarantineAllowedToTheCaller.create();
+        searchCriteria.setJoinParameters("listQuarantinedJoin", "path", callingAccountDomainPath + "%");
+        searchCriteria.setParametersIfNotNull("endDate", new Date());
+
+        return publicIpQuarantineDao.searchAndCount(searchCriteria, null, showRemoved);
     }
 
     @Override

@@ -248,7 +248,10 @@ known_categories = {
     'Rolling': 'Rolling Maintenance',
     'importVsphereStoragePolicies' : 'vSphere storage policies',
     'listVsphereStoragePolicies' : 'vSphere storage policies',
-    'ConsoleEndpoint': 'Console Endpoint'
+    'ConsoleEndpoint': 'Console Endpoint',
+    'listQuarantinedIp': 'IP Quarantine',
+    'updateQuarantinedIp': 'IP Quarantine',
+    'removeQuarantinedIp': 'IP Quarantine'
 }
 
 

@@ -48,6 +48,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -330,9 +331,12 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.address.ReleaseIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.address.ReserveIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.UpdateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
@@ -976,6 +980,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected VMTemplateDao templateDao;
     @Inject
     protected AnnotationDao annotationDao;
+
+    @Inject
+    private PublicIpQuarantineDao publicIpQuarantineDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -2479,10 +2486,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
             buildParameters(sb2, cmd, false);
             sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
+            sb2.and("quarantinedPublicIpsIdsNIN", sb2.entity().getId(), SearchCriteria.Op.NIN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
             setParameters(sc2, cmd, vlanType, isAllocated);
             sc2.setParameters("ids", freeAddrIds.toArray());
+            _ipAddressMgr.buildQuarantineSearchCriteria(sc2);
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
         Collections.sort(addrs, Comparator.comparing(IPAddressVO::getAddress));
@@ -3703,6 +3712,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateRemoteAccessVpnCmd.class);
         cmdList.add(UpdateVpnConnectionCmd.class);
         cmdList.add(UpdateVpnGatewayCmd.class);
+        cmdList.add(ListQuarantinedIpsCmd.class);
+        cmdList.add(UpdateQuarantinedIpCmd.class);
+        cmdList.add(RemoveQuarantinedIpCmd.class);
         // separated admin commands
         cmdList.add(ListAccountsCmdByAdmin.class);
         cmdList.add(ListZonesCmdByAdmin.class);

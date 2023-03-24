@@ -29,7 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 
 import com.cloud.network.IpAddress;
 import com.cloud.utils.db.GenericDao;
@@ -96,14 +95,6 @@ public class IPAddressVO implements IpAddress {
 
     @Column(name = "is_system")
     private boolean system;
-
-    @Column(name = "account_id")
-    @Transient
-    private Long accountId = null;
-
-    @Transient
-    @Column(name = "domain_id")
-    private Long domainId = null;
 
     @Column(name = "vpc_id")
     private Long vpcId;

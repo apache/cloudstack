@@ -263,6 +263,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public UsageEventVO findOneIncludingRemovedBy(SearchCriteria<UsageEventVO> sc, Filter filter) {
+        return null;
+    }
+
+    @Override
     public Class<UsageEventVO> getEntityBeanType() {
         return null;
     }

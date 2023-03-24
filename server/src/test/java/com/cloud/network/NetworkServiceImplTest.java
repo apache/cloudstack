@@ -29,12 +29,18 @@ import static org.mockito.Mockito.doReturn;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -42,6 +48,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
@@ -180,6 +187,35 @@ public class NetworkServiceImplTest {
     @InjectMocks
     NetworkServiceImpl service = new NetworkServiceImpl();
 
+    @Mock
+    UpdateQuarantinedIpCmd updateQuarantinedIpCmdMock;
+
+    @Mock
+    PublicIpQuarantineDao publicIpQuarantineDaoMock;
+
+    @Mock
+    private PublicIpQuarantineVO publicIpQuarantineVOMock;
+
+    @Mock
+    private IPAddressVO ipAddressVOMock;
+
+    @Mock
+    private IPAddressDao ipAddressDaoMock;
+
+    @Mock
+    private IpAddressManager ipAddressManagerMock;
+
+    @Mock
+    private Ip ipMock;
+
+    private static Date beforeDate;
+
+    private static Date afterDate;
+
+    private final Long publicIpId = 1L;
+
+    private final String dummyIpAddress = "192.168.0.1";
+
     private static final String VLAN_ID_900 = "900";
     private static final String VLAN_ID_901 = "901";
     private static final String VLAN_ID_902 = "902";
@@ -199,6 +235,20 @@ public class NetworkServiceImplTest {
     private Network network;
     private  PhysicalNetworkVO phyNet;
     private VpcVO vpc;
+
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        Date date = new Date();
+        Calendar calendar = Calendar.getInstance();
+
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, -1);
+        beforeDate = calendar.getTime();
+
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, 1);
+        afterDate = calendar.getTime();
+    }
 
     private void registerCallContext() {
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
@@ -769,5 +819,57 @@ public class NetworkServiceImplTest {
         NetworkServiceImpl networkServiceImplMock = mock(NetworkServiceImpl.class);
 
         networkServiceImplMock.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
+    }
+
+    @Test
+    public void updatePublicIpAddressInQuarantineTestQuarantineIsAlreadyExpiredShouldThrowCloudRuntimeException() {
+        Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
+        Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(afterDate);
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+        Mockito.doNothing().when(service).checkCallerForPublicIpQuarantineAccess(publicIpQuarantineVOMock);
+        Mockito.when(ipAddressDaoMock.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(ipAddressVOMock.getAddress()).thenReturn(ipMock);
+        Mockito.when(ipMock.toString()).thenReturn(dummyIpAddress);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(beforeDate);
+        String expectedMessage = String.format("The quarantine for the public IP address [%s] is no longer active; thus, it cannot be updated.", dummyIpAddress);
+        CloudRuntimeException assertThrows = Assert.assertThrows(CloudRuntimeException.class,
+                () -> service.updatePublicIpAddressInQuarantine(updateQuarantinedIpCmdMock));
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updatePublicIpAddressInQuarantineTestGivenEndDateIsBeforeCurrentDateShouldThrowInvalidParameterValueException() {
+        Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
+        Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(beforeDate);
+
+        String expectedMessage = String.format("The given end date [%s] is invalid as it is before the current date.", beforeDate);
+        InvalidParameterValueException assertThrows = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.updatePublicIpAddressInQuarantine(updateQuarantinedIpCmdMock));
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updatePublicIpAddressInQuarantineTestQuarantineIsStillValidAndGivenEndDateIsAfterCurrentDateShouldWork() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(afterDate);
+        calendar.add(Calendar.DATE, 5);
+        Date expectedNewEndDate = calendar.getTime();
+
+        Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
+        Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(expectedNewEndDate);
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+        Mockito.doNothing().when(service).checkCallerForPublicIpQuarantineAccess(publicIpQuarantineVOMock);
+        Mockito.when(ipAddressDaoMock.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(ipAddressVOMock.getAddress()).thenReturn(ipMock);
+        Mockito.when(ipMock.toString()).thenReturn(dummyIpAddress);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(afterDate);
+        Mockito.when(ipAddressManagerMock.updatePublicIpAddressInQuarantine(anyLong(), Mockito.any(Date.class))).thenReturn(publicIpQuarantineVOMock);
+
+        PublicIpQuarantine actualPublicIpQuarantine = service.updatePublicIpAddressInQuarantine(updateQuarantinedIpCmdMock);
+        Mockito.when(actualPublicIpQuarantine.getEndDate()).thenReturn(expectedNewEndDate);
+
+        Assert.assertEquals(expectedNewEndDate , actualPublicIpQuarantine.getEndDate());
     }
 }

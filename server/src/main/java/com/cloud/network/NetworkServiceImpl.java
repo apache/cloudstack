@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -55,6 +56,8 @@ import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworksCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
@@ -400,6 +403,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     AgentManager agentManager;
     @Inject
     ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -5766,5 +5771,51 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+    }
+
+    @Override
+    public PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd) {
+        Long ipId = cmd.getId();
+        Date newEndDate = cmd.getEndDate();
+
+        if (new Date().after(newEndDate)) {
+            throw new InvalidParameterValueException(String.format("The given end date [%s] is invalid as it is before the current date.", newEndDate));
+        }
+
+        PublicIpQuarantine publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
+        checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
+
+        String publicIpQuarantineAddress = _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString();
+        Date currentEndDate = publicIpQuarantine.getEndDate();
+
+        if (new Date().after(currentEndDate)) {
+            throw new CloudRuntimeException(String.format("The quarantine for the public IP address [%s] is no longer active; thus, it cannot be updated.", publicIpQuarantineAddress));
+        }
+
+        return _ipAddrMgr.updatePublicIpAddressInQuarantine(ipId, newEndDate);
+    }
+
+    @Override
+    public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) {
+        Long ipId = cmd.getId();
+        String removalReason = cmd.getRemovalReason();
+        PublicIpQuarantine publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
+        String publicIpQuarantineAddress = _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString();
+
+        if (StringUtils.isBlank(removalReason)) {
+            s_logger.error("The removalReason parameter cannot be blank.");
+            throw new CloudRuntimeException(String.format("The given reason for removing the public IP address [%s] from quarantine is blank.", publicIpQuarantineAddress));
+        }
+
+        checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
+
+        _ipAddrMgr.removePublicIpAddressFromQuarantine(ipId, removalReason);
+    }
+
+    protected void checkCallerForPublicIpQuarantineAccess(PublicIpQuarantine publicIpQuarantine) {
+        Account callingAccount = CallContext.current().getCallingAccount();
+        DomainVO domainOfThePreviousOwner = _domainDao.findById(_accountDao.findById(publicIpQuarantine.getPreviousOwnerId()).getDomainId());
+
+        _accountMgr.checkAccess(callingAccount, domainOfThePreviousOwner);
     }
 }
