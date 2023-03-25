@@ -649,6 +649,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
+    private static final ConfigKey<Integer> MigrateRetry = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry", "10",
+            "Number of times to retry migrating a user vm", true, ConfigKey.Scope.Cluster);
+
+    private static final ConfigKey<Integer> MigrateRetryDelay = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry.delay", "5",
+            "Wait Interval (in seconds) before retrying to migrate a user vm", true, ConfigKey.Scope.Cluster);
+
     public static final List<HypervisorType> VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
             HypervisorType.KVM,
             HypervisorType.VMware,
@@ -6402,7 +6408,43 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
-    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
+        final int retry = MigrateRetry.value();
+        int currentRetry = 0;
+        VirtualMachine migratedVm = null;
+        while (currentRetry < retry) {
+            int num_retries = currentRetry + 1;
+            try {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Trying to migrate the VM, attempt #" + num_retries + " out of " + retry);
+                }
+                migratedVm = _migrateVirtualMachine(vmId, destinationHost);
+                break; // Successfully migrated the VM
+            } catch (Exception e) {
+                // Failed to migrate the VM, retry after a delay
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Failed to migrate the VM on attempt " + num_retries + " out of " + retry);
+                }
+                currentRetry++;
+                if (currentRetry < retry) {
+                    try {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Waiting " + MigrateRetryDelay.value() + " seconds before trying another migration");
+                        }
+                        Thread.sleep(MigrateRetryDelay.value());
+                    } catch (InterruptedException ie) {
+                        throw new ManagementServerException("Interrupted while waiting to retry VM migration", ie);
+                    }
+                } else {
+                    s_logger.error("Failed to migrate the VM after " + retry + " attempts");
+                    throw e; // Rethrow the exception if all retries have failed
+                }
+            }
+        }
+        return migratedVm;
+    }
+
+    private VirtualMachine _migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
     VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
@@ -8003,7 +8045,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
-                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction};
+                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction, MigrateRetry, MigrateRetryDelay};
     }
 
     @Override
