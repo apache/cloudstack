@@ -22,7 +22,7 @@ import java.util.Date;
 
 public interface VMSchedule extends InternalIdentity, Identity {
     public enum State {
-        Disabled, Enabled
+        DISABLED, ENABLED
     }
 
     public enum Action {
@@ -32,8 +32,6 @@ public interface VMSchedule extends InternalIdentity, Identity {
     public String getUuid();
 
     public String getDescription();
-
-    public String getPeriod();
 
     public String getAction();
 

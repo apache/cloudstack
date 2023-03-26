@@ -1579,7 +1579,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vm_schedule` (
   `uuid` varchar(40) UNIQUE COMMENT 'UUID for the VM Schedule',
   `description` varchar(255) COMMENT 'description of VM Schedule',
   `action` varchar(40) NOT NULL COMMENT 'action Scheduled on VM',
-  `period` varchar(255) COMMENT 'period Scheduled on VM',
   `schedule_type` varchar(40) NOT NULL COMMENT 'interval type of VM',
   `schedule` varchar(255) NOT NULL COMMENT 'schedule of VM',
   `scheduled_timestamp` DATE  COMMENT 'timestamp of VM Schedule',

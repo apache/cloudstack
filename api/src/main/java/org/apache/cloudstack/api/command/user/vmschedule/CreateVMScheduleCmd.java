@@ -56,9 +56,6 @@ public class CreateVMScheduleCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VM_SCHEDULE_ACTION, type = CommandType.STRING, required = true, description = "The action of VM Schedule")
     private String action;
 
-    @Parameter(name = ApiConstants.VM_SCHEDULE_PERIOD, type = CommandType.STRING, required = false, description = "The period of VM Schedule")
-    private String period;
-
     @Parameter(name = ApiConstants.ENABLE, type = CommandType.BOOLEAN, description = "set to true if the schedule is to be enabled during creation. Default is false",
             since = "4.19.0")
     private Boolean enable;
@@ -87,10 +84,6 @@ public class CreateVMScheduleCmd extends BaseAsyncCreateCmd {
 
     public String getAction() {
         return action;
-    }
-
-    public String getPeriod() {
-        return period;
     }
 
     public Long getVmId() {

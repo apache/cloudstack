@@ -125,13 +125,12 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     @Override
     public boolean start() {
+        if (isConfiguredAndStarted) {
+            return true;
+        }
         currentTimestamp = new Date();
         for (final VMScheduleVO vmSchedule : vmScheduleDao.listAll()) {
             scheduleNextVMJob(vmSchedule);
-        }
-
-        if (isConfiguredAndStarted) {
-            return true;
         }
         backgroundPollTaskScheduler = Executors.newScheduledThreadPool(100, new NamedThreadFactory("BackgroundTaskPollManager"));
         final TimerTask vmPollTask = new ManagedContextTimerTask() {
@@ -199,7 +198,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
          VMSchedule vmSchedule = vmScheduleDao.findById(id);
         if (vmSchedule == null) {
-            if(LOGGER.isTraceEnabled()) {
+            if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("VmSchedule ID not found [id=%s]", id));
                 return null;
             }
@@ -211,7 +210,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VMSCHEDULE_CREATE, eventDescription = "creating vm schedule", async = true)
     public VMSchedule createVMSchedule(CreateVMScheduleCmd cmd) {
-        VMSchedule.State state = VMSchedule.State.Disabled;
+        VMSchedule.State state = VMSchedule.State.DISABLED;
         final String action = cmd.getAction();
         final Long vmId = cmd.getVmId();
         String intervalType = cmd.getIntervalType();
@@ -222,7 +221,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         Boolean enable = cmd.getEnable();
 
         if (enable) {
-            state = VMSchedule.State.Enabled;
+            state = VMSchedule.State.ENABLED;
         }
 
         if (intervalType.equals("hourly"))
@@ -310,7 +309,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
             throw new InvalidParameterValueException("unable to find the vm schedule with id " + vmScheduleId);
         }
 
-        vmSchedule.setState(VMSchedule.State.Enabled);
+        vmSchedule.setState(VMSchedule.State.ENABLED);
         boolean updateResult = vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
 
         return updateResult;
@@ -324,10 +323,9 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
             throw new InvalidParameterValueException("unable to find the vm schedule with id " + vmScheduleId);
         }
 
-        vmSchedule.setState(VMSchedule.State.Disabled);
-        boolean updateResult = vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
+        vmSchedule.setState(VMSchedule.State.DISABLED);
+        return vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
 
-        return updateResult;
     }
 
     @Override
@@ -344,7 +342,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         String tag = cmd.getTag();
         String timezone = cmd.getTimezone();
 
-        if (vmSchedule.getState() == VMSchedule.State.Disabled) {
+        if (vmSchedule.getState() == VMSchedule.State.DISABLED) {
             if (description != null)
                 vmSchedule.setDescription(description);
             if(schedule != null)
@@ -424,7 +422,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                 VMScheduleVO tmpVMScheduleVO = null;
 
                 try {
-                    if (vmSchedule.getState() == VMSchedule.State.Enabled) {
+                    if (vmSchedule.getState() == VMSchedule.State.ENABLED) {
                         tmpVMScheduleVO = vmScheduleDao.acquireInLockTable(vmScheduleId);
                         Long jobId = performActionOnVM(vmSchedule.getAction(), vm, vmSchedule);
                         if (jobId != null) {
@@ -447,18 +445,17 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
     private Map<String, String> setVMTag(VMScheduleVO vmSchedule) {
         Map<String,String> Tag = new HashMap<>();
         if (!vmSchedule.getTag().isEmpty()) {
-            Tag.put("ScheduleMessage", vmSchedule.getTag());
+            Tag.put("ScheduleMessage" + currentTimestamp, vmSchedule.getTag());
         } else {
-            String tagValue = String.format("VM {" + vmSchedule.getAction() + "} by the schedule" + "on" + vmSchedule.getScheduleType()
-                                + "at" + vmSchedule.getSchedule() + vmSchedule.getTimezone());
-            Tag.put("ScheduleMessage", tagValue);
+            String tagValue = String.format("VM {" + vmSchedule.getAction() + '}');
+            Tag.put("ScheduleMessage" + currentTimestamp, tagValue);
         }
         return Tag;
     }
 
     protected void createTagForVMInstance(Map<String, String> tag, VMInstanceVO vmInstance) {
         if (MapUtils.isNotEmpty(tag)) {
-            taggedResourceService.createTags(Collections.singletonList(vmInstance.getUuid()), ResourceTag.ResourceObjectType.VMInstance, tag, null);
+            taggedResourceService.createTags(Collections.singletonList(vmInstance.getUuid()), ResourceTag.ResourceObjectType.UserVm, tag, null);
         }
     }
 
@@ -496,13 +493,13 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                 final Long eventStartId = ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vmInstance.getAccountId(),
                         EventTypes.EVENT_VM_START, "Starting a VM for VM ID:" + vmInstance.getUuid(),
                         vmInstance.getId(), ApiCommandResourceType.VirtualMachine.toString(),
-                        true, 0);;
+                        true, 0);
                 vmManager.start(vmInstance.getUuid(), params);
                 vmTag = setVMTag(vmSchedule);
                 createTagForVMInstance(vmTag, vmInstance);
                 if (CallContext.current().getCallingUser().getEmail() != null) {
                     String subject = "VM START";
-                    String message = "VM started on " + vmSchedule.getScheduleType() + " at " + vmSchedule.getSchedule() ;
+                    String message = "VM started on " + vmSchedule.getScheduleType() + " at " + vmSchedule.getSchedule();
                     alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VM_START, vmInstance.getDataCenterId(),
                             vmInstance.getPodIdToDeployIn(),subject,message);
                 }
@@ -567,8 +564,8 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     @DB
     private Date scheduleNextVMJob(final VMScheduleVO vmSchedule) {
-        final Date nextTimestamp = DateUtil.getNextRunTime(DateUtil.IntervalType.valueOf(vmSchedule.getScheduleType()), vmSchedule.getSchedule(),
-                vmSchedule.getTimezone(), currentTimestamp);
+        final Date nextTimestamp = DateUtil.getNextRunTime(DateUtil.IntervalType.valueOf(vmSchedule.getScheduleType()),
+                vmSchedule.getSchedule(), vmSchedule.getTimezone(), currentTimestamp);
         return Transaction.execute(new TransactionCallback<Date>() {
             @Override
             public Date doInTransaction(TransactionStatus status) {
@@ -599,13 +596,5 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
                     break;
             }
         }
-    }
-
-    private VMInstanceVO findVmById(final Long vmId) {
-        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
-        if (vm == null) {
-            throw new CloudRuntimeException(String.format("Can't find any VM with ID: [%s].", vmId));
-        }
-        return vm;
     }
 }

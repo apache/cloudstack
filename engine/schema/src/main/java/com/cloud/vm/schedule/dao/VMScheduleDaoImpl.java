@@ -20,23 +20,25 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.schedule.VMScheduleVO;
-import org.apache.log4j.Logger;
 
+import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 
 public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao {
-    private static final Logger LOGGER = Logger.getLogger(VMScheduleDaoImpl.class);
-
-    private final SearchBuilder<VMScheduleVO> VMScheduleSearch;
+    private  SearchBuilder<VMScheduleVO> VMScheduleSearch;
     private SearchBuilder<VMScheduleVO> executableSchedulesSearch;
 
-    protected VMScheduleDaoImpl() {
+    public VMScheduleDaoImpl() {
+    }
+
+    @PostConstruct
+    protected void init () {
         VMScheduleSearch = createSearchBuilder();
         VMScheduleSearch.and("vm_id", VMScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         VMScheduleSearch.and("async_job_id", VMScheduleSearch.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
         VMScheduleSearch.done();
-        VMScheduleSearch.done();
+
 
         executableSchedulesSearch = createSearchBuilder();
         executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);

@@ -908,7 +908,7 @@ export default {
       resourceType: 'VMSchedule',
       permission: ['listVMSchedules'],
       columns: [{ id: (record) => { return record.id } }, 'action', 'virtualmachineid'],
-      details: ['id', 'description', 'virtualmachineid', 'action', 'schedule', 'intervalType', 'state', 'tag'],
+      details: ['id', 'description', 'virtualmachineid', 'action', 'schedule', 'intervalType', 'state', 'tag', 'timezone'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -944,14 +944,18 @@ export default {
           label: 'label.enable.schedule',
           message: 'message.enable.schedule',
           dataView: true,
+          show: (record) => { return record.state === 'DISABLED' },
           mapping: {
             vmscheduleid: {
               value: (record) => { return record.id }
+            },
+            state: {
+              value: (record) => { return 'ENABLED' }
             }
           },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'ENABLED' } }) }
         },
         {
           api: 'disableVMSchedule',
@@ -960,14 +964,18 @@ export default {
           message: 'message.disable.schedule',
           docHelp: 'adminguide/projects.html#sending-project-membership-invitations',
           dataView: true,
+          show: (record) => { return record.state === 'ENABLED' },
           mapping: {
             vmscheduleid: {
               value: (record) => { return record.id }
+            },
+            state: {
+              value: (record) => { return 'DISABLED' }
             }
           },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'DISABLED' } }) }
         },
         {
           api: 'deleteVMSchedule',

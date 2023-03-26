@@ -47,14 +47,11 @@ public class VMScheduleVO implements VMSchedule {
 
     @Column(name = "state", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
-    private State state = State.Disabled;
+    private State state = State.DISABLED;
 
     @Column(name = "action")
     @Enumerated(value = EnumType.STRING)
     private String action;
-
-    @Column(name = "period")
-    private String period;
 
     @Column(name = "timezone")
     private String timezone;
@@ -143,14 +140,6 @@ public class VMScheduleVO implements VMSchedule {
 
     public void setAction(String action) {
         this.action = action;
-    }
-
-    public String getPeriod() {
-        return period;
-    }
-
-    public void setPeriod(String period) {
-        this.period = period;
     }
 
     public String getTimezone() {
