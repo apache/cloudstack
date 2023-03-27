@@ -1671,6 +1671,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private void arrangeForRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
         String sourceNatIp = cmd.getSourceNatIP();
         if (sourceNatIp == null) {
+            s_logger.debug(String.format("no source nat ip given for create network %s command, using something arbitrary.", cmd.getNetworkName()));
             return; // nothing to try
         }
         IpAddress ip = allocateIP(owner, cmd.getZoneId(), network.getId(), null, sourceNatIp);
@@ -1688,24 +1689,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      * @param owner
      * @param cmd
      * @param network
-     * @return if the sourceNat is changes, and consequently restart is needed
+     * @return whether the sourceNat is changed, and consequently restart is needed
      * @throws InsufficientAddressCapacityException
      * @throws ResourceAllocationException
      */
-    private boolean arrangeForRouterSourceNatIp(Account owner, UpdateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
-        String sourceNatIp = cmd.getSourceNatIP();
-        if (sourceNatIp == null) {
-            return false; // nothing to try
-        }
-        // check if the address is already aqcuired for this network
-        IPAddressVO requestedIp = _ipAddressDao.findByIp(cmd.getSourceNatIP());
-        if (requestedIp.getNetworkId() == null || ! requestedIp.getNetworkId().equals(network.getId())) {
-            return false; // ip not associated with this network
-        }
-        // check if it is the current source NAT address
-        if (requestedIp.isSourceNat()) {
-            return false; // already sourcenat
-        }
+    private boolean arrangeForRouterSourceNatIp(Account owner, UpdateNetworkCmd cmd, Network network) {
+        IPAddressVO requestedIp = checkSourceNatIpAddressForUpdate(cmd, network);
+        if (requestedIp == null) return false; // ip not associated with this network
 
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
         if (! userIps.isEmpty()) {
@@ -1721,25 +1711,41 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return true;
     }
 
-    private void updateSourceNat(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
-        // TODO start a transaction to set the new sourcenat ip
-        Transaction.execute(new TransactionCallbackWithException<IpAddress, Exception>() {
-            @Override
-            public IpAddress doInTransaction(TransactionStatus status) throws Exception {
-                // update all other IPs to not be sourcenat, should be at most one
-                for(
-                        IPAddressVO oldIpAddress :userIps)
-
-                {
-                    oldIpAddress.setSourceNat(false);
-                    _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
-                }
-                requestedIp.setSourceNat(true);
-                _ipAddressDao.update(requestedIp.getId(),requestedIp);
-                return requestedIp;
-            };
+    @Nullable
+    private IPAddressVO checkSourceNatIpAddressForUpdate(UpdateNetworkCmd cmd, Network network) {
+        String sourceNatIp = cmd.getSourceNatIP();
+        if (sourceNatIp == null) {
+            s_logger.trace(String.format("no source NAT ip given to update network %s with.", cmd.getNetworkName()));
+            return null;
+        } else {
+            s_logger.info(String.format("updating network %s to have source NAT ip %s", cmd.getNetworkName(), sourceNatIp));
         }
-        );
+        // check if the address is already aqcuired for this network
+        IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
+        if (requestedIp.getNetworkId() == null || ! requestedIp.getAssociatedWithNetworkId().equals(network.getId())) {
+            s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
+                    sourceNatIp, network.getName(), network.getUuid()));
+            return null;
+        }
+        // check if it is the current source NAT address
+        if (requestedIp.isSourceNat()) {
+            s_logger.info(String.format("IP address %s is allready the source Nat address. Not updating!", sourceNatIp));
+            return null;
+        }
+        return requestedIp;
+    }
+
+    private void updateSourceNat(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
+        Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
+            // update all other IPs to not be sourcenat, should be at most one
+            for(IPAddressVO oldIpAddress :userIps) {
+                oldIpAddress.setSourceNat(false);
+                _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+            }
+            requestedIp.setSourceNat(true);
+            _ipAddressDao.update(requestedIp.getId(),requestedIp);
+            return requestedIp;
+        });
     }
 
     @Nullable
@@ -2903,7 +2909,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
-        String sourceNatIP = cmd.getSourceNatIP();
 
         boolean restartNetwork = false;
 
@@ -2934,6 +2939,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         _accountMgr.checkAccess(callerAccount, AccessType.OperateEntry, true, network);
         _accountMgr.checkAccess(_accountMgr.getActiveAccountById(network.getAccountId()), offering, _dcDao.findById(network.getDataCenterId()));
+
+        restartNetwork |= arrangeForRouterSourceNatIp(callerAccount, cmd, network);
 
         if (cmd instanceof UpdateNetworkCmdByAdmin) {
             final Boolean hideIpAddressUsage = ((UpdateNetworkCmdByAdmin) cmd).getHideIpAddressUsage();
@@ -3032,10 +3039,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        if (checkAndUpdateNetworkDns(network, networkOfferingChanged ? networkOffering : oldNtwkOff, ip4Dns1, ip4Dns2,
-                ip6Dns1, ip6Dns2)) {
-            restartNetwork = true;
-        }
+        restartNetwork |= checkAndUpdateNetworkDns(network, networkOfferingChanged ? networkOffering : oldNtwkOff, ip4Dns1, ip4Dns2,
+                ip6Dns1, ip6Dns2);
 
         final Map<String, String> newSvcProviders = networkOfferingChanged
                 ? _networkMgr.finalizeServicesAndProvidersForNetwork(_entityMgr.findById(NetworkOffering.class, networkOfferingId), network.getPhysicalNetworkId())
