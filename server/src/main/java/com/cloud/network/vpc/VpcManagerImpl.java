@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -1243,8 +1245,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
+    public Vpc updateVpc(UpdateVPCCmd cmd) {
+        return updateVpc(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getCustomId(), cmd.isDisplayVpc(), cmd.getPublicMtu(), cmd.getSourceNatIP());
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu) {
+    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu, String sourceNatIp) {
         CallContext.current().setEventDetails(" Id: " + vpcId);
         final Account caller = CallContext.current().getCallingAccount();
 
@@ -1279,12 +1286,77 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             updateMtuOfVpcNetwork(vpcToUpdate, vpc, mtu);
         }
 
+        boolean restartRequired = checkAndUpdateRouterSourceNatIp(vpcToUpdate, sourceNatIp);
+        if (restartRequired) {
+            vpc.setRestartRequired(true);
+        }
+
         if (vpcDao.update(vpcId, vpc)) {
             s_logger.debug("Updated VPC id=" + vpcId);
             return vpcDao.findById(vpcId);
         } else {
             return null;
         }
+    }
+
+    private boolean checkAndUpdateRouterSourceNatIp(Vpc vpc, String sourceNatIp) {
+        IPAddressVO requestedIp = validateSourceNatip(vpc, sourceNatIp);
+        if (requestedIp == null) return false; // ip not associated with this network
+
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
+        if (! userIps.isEmpty()) {
+            try {
+                updateSourceNatIpAddress(requestedIp, userIps);
+            } catch (Exception e) { // pokemon execption from transaction
+                String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
+                        requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg, e);
+            }
+        }
+        return true;
+    }
+
+    @Nullable
+    private IPAddressVO validateSourceNatip(Vpc vpc, String sourceNatIp) {
+        if (sourceNatIp == null) {
+            s_logger.trace(String.format("no source NAT ip given to update vpc %s with.", vpc.getName()));
+            return null;
+        } else {
+            s_logger.info(String.format("updating VPC %s to have source NAT ip %s", vpc.getName(), sourceNatIp));
+        }
+        // check if the address is already aqcuired for this network
+        IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
+        if (requestedIp.getVpcId() == null || ! requestedIp.getVpcId().equals(vpc.getId())) {
+            s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
+                    sourceNatIp, vpc.getName(), vpc.getUuid()));
+            return null;
+        }
+        // check if it is the current source NAT address
+        if (requestedIp.isSourceNat()) {
+            s_logger.info(String.format("IP address %s is allready the source Nat address. Not updating!", sourceNatIp));
+            return null;
+        }
+        return requestedIp;
+    }
+
+    /**
+     * TODO move to ip-manager or - service and unify with {@see NetworkServiceImpl.updateSourceNat()}}
+     * @param requestedIp the new source nat
+     * @param userIps the list of now marked as sourcenat
+     * @throws Exception legacy generic but really an SQLException
+     */
+    private void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
+        Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
+            // update all other IPs to not be sourcenat, should be at most one
+            for(IPAddressVO oldIpAddress :userIps) {
+                oldIpAddress.setSourceNat(false);
+                _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+            }
+            requestedIp.setSourceNat(true);
+            _ipAddressDao.update(requestedIp.getId(),requestedIp);
+            return requestedIp;
+        });
     }
 
     protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {

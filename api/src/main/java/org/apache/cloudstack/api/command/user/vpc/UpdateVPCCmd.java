@@ -114,7 +114,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Override
     public void execute() {
-        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), getCustomId(), isDisplayVpc(), getPublicMtu());
+        Vpc result = _vpcService.updateVpc(this);
         if (result != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
             response.setResponseName(getCommandName());

@@ -85,10 +85,10 @@ public class UpdateVPCCmdTest extends TestCase {
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         cmd._responseGenerator = responseGenerator;
         Mockito.when(_vpcService.updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt())).thenReturn(vpc);
+                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString())).thenReturn(vpc);
         Mockito.when(responseGenerator.createVpcResponse(ResponseObject.ResponseView.Full, vpc)).thenReturn(response);
         Mockito.verify(_vpcService, Mockito.times(0)).updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString());
 
     }
 }

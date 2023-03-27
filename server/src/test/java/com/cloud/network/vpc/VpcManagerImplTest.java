@@ -398,7 +398,7 @@ public class VpcManagerImplTest {
         Mockito.when(networkDao.update(anyLong(), any())).thenReturn(true);
         Mockito.when(vpcDao.update(vpcId, vpcVO)).thenReturn(true);
 
-        manager.updateVpc(vpcId, null, null, null, true, publicMtu);
+        manager.updateVpc(vpcId, null, null, null, true, publicMtu, null);
         Assert.assertEquals(publicMtu, vpcVO.getPublicMtu());
 
     }

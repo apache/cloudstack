@@ -34,6 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 
 public interface VpcService {
 
@@ -76,17 +77,26 @@ public interface VpcService {
     boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
+     * Persists VPC record in the database
+     *
+     * @param cmd the command with specification data for updating the vpc
+     * @return a data object describing the new vpc state
+     */
+    Vpc updateVpc(UpdateVPCCmd cmd);
+
+    /**
      * Updates VPC with new name/displayText
      *
-     * @param vpcId
-     * @param vpcName
-     * @param displayText
-     * @param customId    TODO
-     * @param displayVpc  TODO
-     * @param mtu
-     * @return
+     * @param vpcId the ID of the Vpc to update
+     * @param vpcName The new name to give the vpc
+     * @param displayText the new display text to use for describing the VPC
+     * @param customId A new custom (external) ID to associate this VPC with
+     * @param displayVpc should this VPC be displayed on public lists
+     * @param mtu what maximal transfer unit to us in this VPCs networks
+     * @param sourceNatIp the source NAT address to use for this VPC (must already be associated with the VPC)
+     * @return an object describing the current state of the VPC
      */
-    Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc, Integer mtu);
+    Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc, Integer mtu, String sourceNatIp);
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call
