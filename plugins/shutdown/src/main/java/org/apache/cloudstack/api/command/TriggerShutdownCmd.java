@@ -18,9 +18,7 @@
 package org.apache.cloudstack.api.command;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
@@ -39,19 +37,8 @@ public class TriggerShutdownCmd extends BaseShutdownActionCmd {
     public static final String APINAME = "triggerShutdown";
 
     /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Force an immediate shutdown instead of a safe one")
-    private Boolean forced;
-
-    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public Boolean getForced() {
-        return forced;
-    }
 
     @Override
     public String getCommandName() {
