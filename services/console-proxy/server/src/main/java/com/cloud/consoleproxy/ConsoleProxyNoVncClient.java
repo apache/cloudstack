@@ -200,7 +200,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         client.processHandshakeSecurityType(secType, getClientHostPassword(),
                 getClientHostAddress(), getClientHostPort());
 
-        client.processSecurityResultMsg(secType);
+        client.processSecurityResultMsg();
         byte[] securityResultToClient = new byte[] { 0, 0, 0, 0 };
         sendMessageToVNCClient(securityResultToClient, 4);
         client.setWaitForNoVnc(true);

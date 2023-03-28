@@ -233,7 +233,7 @@ CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY` (
     IN in_foreign_column_name VARCHAR(200)
 )
 BEGIN
-    DECLARE CONTINUE HANDLER FOR 1005 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD CONSTRAINT '); SET @ddl = CONCAT(@ddl, 'fk_', in_foreign_table_name, '_', in_foreign_column_name); SET @ddl = CONCAT(@ddl, ' FOREIGN KEY (', in_foreign_table_name, '_', in_foreign_column_name, ')'); SET @ddl = CONCAT(@ddl, ' REFERENCES ', in_foreign_table_name, '(', in_foreign_column_name, ')'); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+    DECLARE CONTINUE HANDLER FOR 1005,1826 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD CONSTRAINT '); SET @ddl = CONCAT(@ddl, 'fk_', in_foreign_table_name, '_', in_foreign_column_name); SET @ddl = CONCAT(@ddl, ' FOREIGN KEY (', in_foreign_table_name, '_', in_foreign_column_name, ')'); SET @ddl = CONCAT(@ddl, ' REFERENCES ', in_foreign_table_name, '(', in_foreign_column_name, ')'); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Add passphrase table
 CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
@@ -638,7 +638,7 @@ WHERE ntwk_offering_service_map.service = 'Lb'
     AND (SELECT COUNT(id) AS count FROM `network_offering_view` WHERE supports_vm_autoscaling = 1) = 0;
 
 -- UserData as first class resource (PR #6202)
-CREATE TABLE `cloud`.`user_data` (
+CREATE TABLE IF NOT EXISTS `cloud`.`user_data` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'UUID of the user data',
   `name` varchar(256) NOT NULL COMMENT 'name of the user data',
@@ -652,13 +652,13 @@ CREATE TABLE `cloud`.`user_data` (
   CONSTRAINT `uc_userdata__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data' AFTER `user_data`;
-ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_details` mediumtext DEFAULT NULL COMMENT 'value of the comma-separated list of parameters' AFTER `user_data_id`;
-ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__user_data_id` FOREIGN KEY `fk_user_vm__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data" AFTER `user_data`');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.user_vm', 'user_data', 'id');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_details', 'mediumtext DEFAULT NULL COMMENT "value of the comma-separated list of parameters" AFTER `user_data_id`');
 
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data';
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_link_policy` varchar(255) DEFAULT NULL COMMENT 'user data link policy with template';
-ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `fk_vm_template__user_data_id` FOREIGN KEY `fk_vm_template__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data"');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.vm_template', 'user_data', 'id');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_link_policy', 'varchar(255) DEFAULT NULL COMMENT "user data link policy with template"');
 
 -- Added userdata details to template
 DROP VIEW IF EXISTS `cloud`.`template_view`;
@@ -1570,3 +1570,16 @@ CREATE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
+
+-- Remove snapshot references if primary storage pool has been removed, see github issue #7093
+DELETE FROM `cloud`.`snapshot_store_ref`
+WHERE store_role = "Primary" AND store_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
+
+
+-- Change usage of VM_DISK_IO_WRITE to use right usage_type
+UPDATE
+  `cloud_usage`.`cloud_usage`
+SET
+  usage_type = 22
+WHERE
+  usage_type = 24 AND usage_display like '% io write';
