@@ -18,6 +18,7 @@
 package org.apache.cloudstack.alert.snmp;
 
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.message.Message;
 
 import java.util.Date;
 import java.util.StringTokenizer;
@@ -32,10 +33,11 @@ public class SnmpEnhancedPatternLayout {
     public SnmpTrapInfo parseEvent(LogEvent event) {
         SnmpTrapInfo snmpTrapInfo = null;
 
-        final String message = event.getMessage().getFormattedMessage();
-        if (message.contains("alertType") && message.contains("message")) {
+        Message message = event.getMessage();
+        final String formattedMessage = message.getFormattedMessage();
+        if (formattedMessage.contains("alertType") && formattedMessage.contains("message")) {
             snmpTrapInfo = new SnmpTrapInfo();
-            final StringTokenizer messageSplitter = new StringTokenizer(message, _pairDelimiter);
+            final StringTokenizer messageSplitter = new StringTokenizer(formattedMessage, _pairDelimiter);
             while (messageSplitter.hasMoreTokens()) {
                 final String pairToken = messageSplitter.nextToken();
                 final StringTokenizer pairSplitter = new StringTokenizer(pairToken, _keyValueDelimiter);
@@ -63,7 +65,7 @@ public class SnmpEnhancedPatternLayout {
                 } else if (keyToken.equalsIgnoreCase("clusterId") && !valueToken.equalsIgnoreCase("null")) {
                     snmpTrapInfo.setClusterId(Long.parseLong(valueToken));
                 } else if (keyToken.equalsIgnoreCase("message") && !valueToken.equalsIgnoreCase("null")) {
-                    snmpTrapInfo.setMessage(getSnmpMessage(message));
+                    snmpTrapInfo.setMessage(getSnmpMessage(formattedMessage));
                 }
             }
 
