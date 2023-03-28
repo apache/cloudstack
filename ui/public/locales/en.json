@@ -762,6 +762,7 @@
 "label.egressdefaultpolicy": "Default egress policy",
 "label.elastic": "Elastic",
 "label.email": "Email",
+"label.enabled": "Enabled",
 "label.enable.autoscale.vmgroup": "Enable AutoScale VM Group",
 "label.enable.host": "Enable Host",
 "label.enable.network.offering": "Enable network offering",
