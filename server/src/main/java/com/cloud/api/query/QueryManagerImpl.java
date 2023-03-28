@@ -2600,21 +2600,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
-        ScopeType scopeType = null;
-        if (cmd.getScope() != null) {
-            try {
-                scopeType = Enum.valueOf(ScopeType.class, cmd.getScope().toUpperCase());
-            } catch (Exception e) {
-                throw new InvalidParameterValueException("Invalid scope type: " + cmd.getScope());
-            }
-        }
-        StoragePoolStatus state = null;
-        if (cmd.getState() != null) {
-            state = EnumUtils.getEnumIgnoreCase(StoragePoolStatus.class, cmd.getState());
-            if (state == null) {
-                throw new InvalidParameterValueException("Invalid state: " + cmd.getState());
-            }
-        }
+        ScopeType scopeType = ScopeType.validateAndGetScopeType(cmd.getScope());
+        StoragePoolStatus state = StoragePoolStatus.validateAndGetStatus(cmd.getState());
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Long id = cmd.getId();
