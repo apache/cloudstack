@@ -1590,3 +1590,11 @@ UPDATE `cloud`.`backups` b INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.i
 ALTER TABLE `cloud`.`vm_instance` ADD backup_name varchar(255) NULL COMMENT 'backup job name when using Veeam provider';
 
 UPDATE `cloud`.`vm_instance` vm INNER JOIN `cloud`.`backup_offering` bo ON vm.backup_offering_id = bo.id SET vm.backup_name = CONCAT(vm.instance_name, "-CSBKP-", vm.uuid);
+
+-- Change usage of VM_DISK_IO_WRITE to use right usage_type
+UPDATE
+  `cloud_usage`.`cloud_usage`
+SET
+  usage_type = 22
+WHERE
+  usage_type = 24 AND usage_display like '% io write';

@@ -1759,7 +1759,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(_patchScriptPath, 300 * 1000, s_logger);
+        final Script command = new Script(_patchScriptPath, 300000, s_logger);
         String result;
         command.add("-n", vmName);
         command.add("-c", cmdLine);
