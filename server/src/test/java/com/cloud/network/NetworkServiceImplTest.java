@@ -36,8 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
@@ -184,8 +188,19 @@ public class NetworkServiceImplTest {
     CommandSetupHelper commandSetupHelper;
     @Mock
     private Account accountMock;
+
+    @Mock
+    private AccountVO accountVOMock;
+    @Mock
+    private DomainVO domainVOMock;
     @InjectMocks
     NetworkServiceImpl service = new NetworkServiceImpl();
+
+    @Mock
+    DomainDao domainDaoMock;
+
+    @Mock
+    AccountDao accountDaoMock;
 
     @Mock
     UpdateQuarantinedIpCmd updateQuarantinedIpCmdMock;
@@ -198,9 +213,6 @@ public class NetworkServiceImplTest {
 
     @Mock
     private IPAddressVO ipAddressVOMock;
-
-    @Mock
-    private IPAddressDao ipAddressDaoMock;
 
     @Mock
     private IpAddressManager ipAddressManagerMock;
@@ -826,8 +838,10 @@ public class NetworkServiceImplTest {
         Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
         Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(afterDate);
         Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
-        Mockito.doNothing().when(service).checkCallerForPublicIpQuarantineAccess(publicIpQuarantineVOMock);
-        Mockito.when(ipAddressDaoMock.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(accountDaoMock.findById(Mockito.anyLong())).thenReturn(accountVOMock);
+        Mockito.when(domainDaoMock.findById(Mockito.anyLong())).thenReturn(domainVOMock);
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.when(ipAddressDao.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
         Mockito.when(ipAddressVOMock.getAddress()).thenReturn(ipMock);
         Mockito.when(ipMock.toString()).thenReturn(dummyIpAddress);
         Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(beforeDate);
@@ -860,8 +874,11 @@ public class NetworkServiceImplTest {
         Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
         Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(expectedNewEndDate);
         Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
-        Mockito.doNothing().when(service).checkCallerForPublicIpQuarantineAccess(publicIpQuarantineVOMock);
-        Mockito.when(ipAddressDaoMock.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(accountDaoMock.findById(Mockito.anyLong())).thenReturn(accountVOMock);
+        Mockito.when(domainDaoMock.findById(Mockito.anyLong())).thenReturn(domainVOMock);
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.when(ipAddressDao.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(ipAddressDao.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
         Mockito.when(ipAddressVOMock.getAddress()).thenReturn(ipMock);
         Mockito.when(ipMock.toString()).thenReturn(dummyIpAddress);
         Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(afterDate);
