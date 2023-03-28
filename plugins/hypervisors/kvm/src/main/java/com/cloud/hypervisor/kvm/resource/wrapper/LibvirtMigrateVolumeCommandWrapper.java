@@ -32,13 +32,13 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -66,7 +66,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
 
         MigrateVolumeAnswer answer;
         if (srcPrimaryDataStore.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
-            answer = migrateVolumeInternal(command, libvirtComputingResource);
+            answer = migratePowerFlexVolume(command, libvirtComputingResource);
         } else {
             answer = migrateRegularVolume(command, libvirtComputingResource);
         }
@@ -74,7 +74,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         return answer;
     }
 
-    private MigrateVolumeAnswer migrateVolumeInternal (final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+    private MigrateVolumeAnswer migratePowerFlexVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
 
         // Source Details
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();

@@ -762,7 +762,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private Answer copyVolume(DataObject srcData, DataObject destData, Host destHost) {
-        // Volume migration within same PowerFlex/ScaleIO cluster (with same System ID)
+        // Volume migration across different PowerFlex/ScaleIO clusters
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
         Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData, srcStore);
