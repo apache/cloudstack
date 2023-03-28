@@ -40,4 +40,3 @@ VMWare and HyperV in `dist` directory:
 
     bash build.sh systemvmtemplate
     bash build.sh builtin
-

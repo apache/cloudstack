@@ -45,4 +45,3 @@ public class Subnet {
         this.length = length;
     }
 }
-

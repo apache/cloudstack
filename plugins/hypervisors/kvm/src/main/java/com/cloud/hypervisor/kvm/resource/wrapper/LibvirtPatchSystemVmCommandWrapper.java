@@ -107,4 +107,3 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         return result;
     }
 }
-

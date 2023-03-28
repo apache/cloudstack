@@ -183,4 +183,3 @@ public class Upgrade40to41 extends DbUpgradeAbstractImpl {
     }
 
 }
-

@@ -108,4 +108,3 @@ public class ImageStoreUtil {
                        .anyMatch(lowerCasePath::endsWith);
     }
 }
-
