@@ -760,7 +760,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
             s_logger.debug("Released a public ip id=" + addrId);
         } else {
-            removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+            if (publicIpQuarantine != null) {
+                removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+            }
         }
 
         return success;
@@ -1141,6 +1143,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             } else if (addr.getState() == IpAddress.State.Releasing) {
                 // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the system
                 if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
+                    addPublicIpAddressToQuarantine(addr);
                     _ipAddressDao.unassignIpAddress(addr.getId());
                     messageBus.publish(_name, MESSAGE_RELEASE_IPADDR_EVENT, PublishScope.LOCAL, addr);
                 } else {
@@ -2421,8 +2424,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress) {
         Integer quarantineDuration = PublicIpAddressQuarantineDuration.value();
-        Long ipId = publicIpAddress.getId();
-        Long accountId = _ipAddressDao.findById(ipId).getAccountId();
+        if (quarantineDuration <= 0) {
+            s_logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
+                    PublicIpAddressQuarantineDuration.key()));
+            return null;
+        }
+
+        long ipId = publicIpAddress.getId();
+        long accountId = publicIpAddress.getAccountId();
+
+        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
+            s_logger.debug(String.format("Not adding IP [%s] to quarantine because it belongs to the system account.", publicIpAddress.getAddress()));
+            return null;
+        }
 
         Date currentDate = new Date();
         Calendar quarantineEndDate = Calendar.getInstance();
