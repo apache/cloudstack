@@ -20,7 +20,8 @@ import java.util.List;
 
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.api.query.vo.StoragePoolJoinVO;
@@ -41,9 +42,6 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
 
     List<StoragePoolJoinVO> searchByIds(Long... spIds);
 
-    SearchCriteria<StoragePoolJoinVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
-                                                                             Long zoneId, String path, Long podId,
-                                                                             Long clusterId, String address,
-                                                                             ScopeType scopeType, StoragePoolStatus status, String keyword);
+    Pair<List<StoragePoolJoinVO>, Integer> searchAndCount(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword, Filter searchFilter);
 
 }

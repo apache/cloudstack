@@ -2616,11 +2616,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(StoragePoolJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
-        SearchCriteria<StoragePoolJoinVO> sc = _poolJoinDao.createStoragePoolSearchCriteria(
-                id, name, zoneId, path, pod, cluster, address, scopeType, state, keyword);
+        // search & count Pool details by ids
+        Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(id, name, zoneId, path, pod,
+                cluster, address, scopeType, state, keyword, searchFilter);
 
-        // search Pool details by ids
-        Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniquePoolPair.second();
         if (count.intValue() == 0) {
             // empty result

@@ -26,7 +26,9 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageStats;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -294,10 +296,12 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public SearchCriteria<StoragePoolJoinVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
-                                                                              Long zoneId, String path, Long podId,
-                                                                              Long clusterId, String address,
-                                                                              ScopeType scopeType, StoragePoolStatus status, String keyword) {
+    public Pair<List<StoragePoolJoinVO>, Integer> searchAndCount(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword, Filter searchFilter) {
+        SearchCriteria<StoragePoolJoinVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId, address, scopeType, status, keyword);
+        return searchAndCount(sc, searchFilter);
+    }
+
+    private SearchCriteria<StoragePoolJoinVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword) {
         SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
         sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
