@@ -3027,7 +3027,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm == null || !State.Running.equals(vm.getState())) {
             StoragePoolVO sourceStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
             if (sourceStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) && isScaleIOVolumeOnDifferentScaleIOStorageInstances(vol.getPoolId(), storagePoolId)) {
-                throw new InvalidParameterValueException("Volume needs to be attached to a VM to move across ScaleIO storages in different ScaleIO clusters");
+                throw new InvalidParameterValueException("Volume needs to be attached to a running VM to move across ScaleIO storages in different ScaleIO clusters");
             }
         }
 
@@ -3182,7 +3182,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration as storage instance details are not available");
         }
 
-        if (srcPoolSystemId.equals(destPoolSystemId)) {
+        if (!srcPoolSystemId.equals(destPoolSystemId)) {
             return true;
         }
 
