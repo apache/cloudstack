@@ -284,4 +284,3 @@ public interface IpAddressManager {
 
     void buildQuarantineSearchCriteria(SearchCriteria<IPAddressVO> sc);
 }
-
