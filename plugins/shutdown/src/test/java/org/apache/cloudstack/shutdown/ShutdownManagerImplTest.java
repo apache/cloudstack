@@ -76,4 +76,3 @@ public class ShutdownManagerImplTest {
         Mockito.verify(jobManagerMock).enableAsyncJobs();
     }
 }
-
