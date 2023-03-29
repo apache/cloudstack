@@ -168,5 +168,4 @@ public class CreateVPCCmdTest extends TestCase {
         cmd.execute();
         Mockito.verify(_vpcService, Mockito.times(1)).startVpc(Mockito.anyLong(), Mockito.anyBoolean());
     }
-
 }

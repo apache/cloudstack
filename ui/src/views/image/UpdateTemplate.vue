@@ -31,7 +31,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
           <template #label>
@@ -40,7 +40,7 @@
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="passwordenabled" ref="passwordenabled">
           <template #label>

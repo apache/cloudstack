@@ -7541,6 +7541,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     // prepare network on the host
                     prepareNetworkFromNicInfo((HostMO)targetHyperHost, nic, false, vmTo.getType());
                 }
+
+                if (targetHyperHost == null) {
+                    throw new CloudRuntimeException(String.format("Trying to relocate VM [%s], but target hyper host is null.", vmTo.getUuid()));
+                }
+
                 // Ensure secondary storage mounted on target host
                 VmwareManager mgr = targetHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));

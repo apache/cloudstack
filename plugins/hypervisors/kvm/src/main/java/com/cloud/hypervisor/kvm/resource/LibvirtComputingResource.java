@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +49,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
-import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -461,6 +460,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
     protected LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+
+    private boolean isTungstenEnabled = false;
 
     private static Gson gson = new Gson();
 
@@ -1396,6 +1397,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _migrateWait = intValue;
         }
 
+        if (params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()) != null) {
+            isTungstenEnabled = Boolean.parseBoolean(params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()));
+        }
+
         return true;
     }
 
@@ -1481,8 +1486,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 defaultVifDriverName = DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME;
             }
         }
-        tungstenVifDriver = getVifDriverClass(DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME, params);
         _defaultVifDriver = getVifDriverClass(defaultVifDriverName, params);
+        tungstenVifDriver = getVifDriverClass(DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME, params);
 
         // Load any per-traffic-type vif drivers
         for (final Map.Entry<String, Object> entry : params.entrySet()) {
@@ -1556,7 +1561,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Set<VifDriver> vifDrivers = new HashSet<VifDriver>();
 
         vifDrivers.add(_defaultVifDriver);
-        if (TungstenService.isTungstenEnabled(Long.parseLong(_dcId))) {
+        if (isTungstenEnabled) {
             vifDrivers.add(tungstenVifDriver);
         }
         vifDrivers.addAll(_trafficTypeVifDrivers.values());
@@ -1754,7 +1759,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(_patchScriptPath, 300 * 1000, s_logger);
+        final Script command = new Script(_patchScriptPath, 300000, s_logger);
         String result;
         command.add("-n", vmName);
         command.add("-c", cmdLine);
@@ -4223,7 +4228,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     continue;
                 }
                 final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                s_logger.info(String.format("STATS_LOG getVm****Stat @ %s: Disk: %s---------------%s", new Date(), disk.getDiskLabel(), gson.toJson(blockStats)));
                 io_rd += blockStats.rd_req;
                 io_wr += blockStats.wr_req;
                 bytes_rd += blockStats.rd_bytes;

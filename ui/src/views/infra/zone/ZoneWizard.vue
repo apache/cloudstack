@@ -139,7 +139,7 @@ export default {
         {
           name: 'network',
           title: 'label.network',
-          step: ['physicalNetwork', 'netscaler', 'pod', 'guestTraffic', 'storageTraffic', 'publicTraffic'],
+          step: ['physicalNetwork', 'tungsten', 'netscaler', 'pod', 'guestTraffic', 'storageTraffic', 'publicTraffic'],
           description: this.$t('message.network.description'),
           hint: this.$t('message.network.hint')
         },
@@ -212,7 +212,7 @@ export default {
       this.onCloseAction()
     },
     onStepError (step, launchData) {
-      this.currentStep = this.steps.findIndex(item => item.step.includes(step))
+      this.currentStep = this.zoneSteps.findIndex(item => item.step.includes(step))
       this.stepChild = step
       this.launchData = launchData
       this.launchZone = false
@@ -221,7 +221,7 @@ export default {
     onLaunchZone () {
       this.stepFixError = false
       this.launchZone = true
-      this.currentStep = this.steps.findIndex(item => item.step.includes('launchZone'))
+      this.currentStep = this.zoneSteps.findIndex(item => item.step.includes('launchZone'))
     }
   }
 }
