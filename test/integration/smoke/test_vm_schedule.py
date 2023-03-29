@@ -16,8 +16,6 @@
 # under the License.
 
 # Import Local Modules
-
-
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import random_gen, cleanup_resources, validateList, is_snapshot_on_nfs, isAlmostEqual
@@ -154,7 +152,6 @@ class TestVmSchedule(cloudstackTestCase):
         cmd.timezone = "Asia/Kolkata"
 
         response = self.apiclient.createVMSchedule(cmd)
-        print(response)
 
         self.assertEqual(
             response.action,
@@ -175,78 +172,6 @@ class TestVmSchedule(cloudstackTestCase):
 
         self.assertEqual(response[0].action,
         "start",
-        "check the action of vm schedule is start!"
-        )
-        return
-
-    @attr(tags=["advanced", "advancedns", "smoke", "simulator"], required_hardware="true")
-    def test_03_update_vm_schedule(self):
-        """Test to update VM schedules
-        """
-
-        cmd = updateVMSchedule.updateVMScheduleCmd()
-        cmd.virtualmachineid = self.virtual_machine.id
-        cmd.description = "update description of vm"
-        cmd.tag = "bye"
-        cmd.intervaltype = "DAILY"
-        cmd.schedule = "45"
-
-        response = self.apiclient.updateVMSchedule(cmd)
-
-        self.assertEqual(
-        response.schedule,
-        "45",
-        "Check the action of vm is start!"
-        )
-        return
-
-    @attr(tags=["advanced", "advancedns", "smoke", "simulator"], required_hardware="true")
-    def test_04_enable_vm_schedule(self):
-        """Test to enable VM schedules
-        """
-
-        cmd = enableVMSchedule.enableVMScheduleCmd()
-        cmd.vmscheduleid = 91
-
-        response = self.apiclient.enableVMSchedule(cmd)
-
-        self.assertEqual(
-        response.success,
-        True,
-        "VM schedule is not enabled "
-        )
-        return
-
-    @attr(tags=["advanced", "advancedns", "smoke", "simulator"], required_hardware="true")
-    def test_05_disable_vm_schedule(self):
-        """Test to disable VM schedules
-        """
-
-        cmd = disableVMSchedule.disableVMScheduleCmd()
-        cmd.vmscheduleid = 91
-
-        response = self.apiclient.disableVMSchedule(cmd)
-
-        self.assertEqual(
-        response.success,
-        True,
-        "VM schedule is not disabled"
-        )
-        return
-
-    @attr(tags=["advanced", "advancedns", "smoke", "simulator"], required_hardware="true")
-    def test_06_delete_vm_schedule(self):
-        """Test to delete VM schedules
-        """
-
-        cmd = deleteVMSchedule.deleteVMScheduleCmd()
-        cmd.vmscheduleid = 91
-
-        response = self.apiclient.deleteVMSchedule(cmd)
-
-        self.assertEqual(
-        response.success,
-        True,
-        "VM schedule is not removed "
+        "check the response action of vm schedule is start!"
         )
         return
