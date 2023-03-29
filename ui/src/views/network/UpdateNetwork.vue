@@ -80,6 +80,15 @@
             </a-col>
           </a-row>
         </div>
+        <a-form-item name="sourcenatipaddress" ref="sourcenatipaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.sourcenatipaddress')" :tooltip="apiParams.sourcenatipaddress.description"/>
+          </template>
+          <a-input
+            v-model:value="form.sourcenatipaddress"
+            :placeholder="apiParams.sourcenatipaddress.description"
+            v-focus="true" />
+        </a-form-item>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>

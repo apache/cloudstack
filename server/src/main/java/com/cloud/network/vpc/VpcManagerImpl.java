@@ -1327,7 +1327,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         // check if the address is already aqcuired for this network
         IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
-        if (requestedIp.getVpcId() == null || ! requestedIp.getVpcId().equals(vpc.getId())) {
+        if (requestedIp == null || requestedIp.getVpcId() == null || ! requestedIp.getVpcId().equals(vpc.getId())) {
             s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
                     sourceNatIp, vpc.getName(), vpc.getUuid()));
             return null;

@@ -1720,7 +1720,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // check if the address is already aqcuired for this network
         IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
-        if (requestedIp.getNetworkId() == null || ! requestedIp.getAssociatedWithNetworkId().equals(network.getId())) {
+        if (requestedIp == null || requestedIp.getAssociatedWithNetworkId() == null || ! requestedIp.getAssociatedWithNetworkId().equals(network.getId())) {
             s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
                     sourceNatIp, network.getName(), network.getUuid()));
             return null;

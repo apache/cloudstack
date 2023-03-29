@@ -69,7 +69,20 @@
           <template v-if="column.key === 'ipaddress'">
             <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
             <div v-else>{{ text }}</div>
-            <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
+            &nbsp;
+            <template v-if="record.issourcenat === true">
+              <a-tag>source-nat</a-tag>
+            </template>
+            <template v-else-if="record.isstaticnat === false">
+              <tooltip-button
+                v-if="record.forvirtualnetwork === true"
+                :tooltip="$t('label.action.set.as.source.nat.ip')"
+                type="primary"
+                :danger="false"
+                icon="aim-outlined"
+                :disabled="!('updateNetwork' in $store.getters.apis)"
+                @onClick="setSourceNatIp(record)" />
+            </template>
           </template>
 
           <template v-if="column.key === 'state'">
@@ -314,6 +327,40 @@ export default {
       this.selectedItems = (this.ips.filter(function (item) {
         return selection.indexOf(item.id) !== -1
       }))
+    },
+    setSourceNatIp (ipaddress) {
+      if (this.settingsourcenat) return
+      const params = {}
+      params.sourcenatipaddress = ipaddress.ipaddress
+      if (this.$route.path.startsWith('/vpc')) {
+        params.vpcid = this.resource.id
+        this.settingsourcenat = true
+        api('updateVpc', params).then(response => {
+          this.fetchData()
+        }).catch(error => {
+          this.$notification.error({
+            message: `${this.$t('label.error')} ${error.response.status}`,
+            description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
+            duration: 0
+          })
+        }).finally(() => {
+          this.settingsourcenat = false
+        })
+      } else {
+        params.id = this.resource.id
+        this.settingsourcenat = true
+        api('updateNetwork', params).then(response => {
+          this.fetchData()
+        }).catch(error => {
+          this.$notification.error({
+            message: `${this.$t('label.error')} ${error.response.status}`,
+            description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
+            duration: 0
+          })
+        }).finally(() => {
+          this.settingsourcenat = false
+        })
+      }
     },
     resetSelection () {
       this.setSelection([])

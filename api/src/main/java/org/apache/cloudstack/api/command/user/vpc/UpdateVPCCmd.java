@@ -63,7 +63,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
             description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
     private Integer publicMtu;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router. This address must already be acquired for this VPC", since = "4.19")
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the network router. This address must already be acquired for this VPC", since = "4.19")
     private String sourceNatIP;
 
     /////////////////////////////////////////////////////
