@@ -57,7 +57,6 @@ public class DeleteVMScheduleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-
         CallContext.current().setEventDetails("vmschedule id: " + this._uuidMgr.getUuid(VMSchedule.class, getId()));
         boolean result = vmScheduleManager.deleteVMSchedule(getId());
         if (result) {
@@ -66,7 +65,6 @@ public class DeleteVMScheduleCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vm schedule");
         }
-
     }
 
     @Override

@@ -43,9 +43,6 @@ public class ListVMScheduleCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VMScheduleResponse.class, description = "The ID of the VM schedule")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType=VMScheduleResponse.class, description="the IDs of the vm schedule, mutually exclusive with vmscheduleid", since = "4.9")
-    private List<Long> ids;
-
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the vm schedule")
     private String state;
 
@@ -77,9 +74,4 @@ public class ListVMScheduleCmd extends BaseListCmd {
         VMScheduleResponses.setResponseName(getCommandName());
         setResponseObject(VMScheduleResponses);
     }
-
-    public List<Long> getIds() {
-        return ids;
-    }
-
 }

@@ -49,5 +49,4 @@ public @interface APICommand {
     RoleType[] authorized() default {};
 
     Class<?>[] entityType() default {};
-
 }

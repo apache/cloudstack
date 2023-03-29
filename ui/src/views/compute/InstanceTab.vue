@@ -110,11 +110,11 @@
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.schedule')" key="schedules" v-if="'listVMSchedules' in $store.getters.apis">
-        <ListResourceTable
+        <ListResourceActionTable
           apiName="listVMSchedules"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['id', 'action', 'intervaltype', 'schedule']"
+          :columns="['id', 'action', 'intervaltype', 'schedule', 'Buttons']"
           :routerlinks="(record) => { return { id: '/schedule/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
@@ -300,6 +300,7 @@ import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
+import ListResourceActionTable from '@/components/view/ListResourceActionTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
@@ -315,6 +316,7 @@ export default {
     DetailSettings,
     NicsTable,
     ListResourceTable,
+    ListResourceActionTable,
     TooltipButton,
     ResourceIcon,
     AnnotationsTab,

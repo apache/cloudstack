@@ -34,7 +34,6 @@ public class VMScheduleResponse extends BaseResponse {
     @Param(description = "the description of the vm schedule")
     private String description;
 
-
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the vm schedule")
     private VMSchedule.State state;
@@ -103,8 +102,6 @@ public class VMScheduleResponse extends BaseResponse {
     public void setState(VMSchedule.State state) {
         this.state = state;
     }
-
-
 
     public String getAction() {
         return action;

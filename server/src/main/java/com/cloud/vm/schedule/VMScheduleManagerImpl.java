@@ -310,9 +310,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         }
 
         vmSchedule.setState(VMSchedule.State.ENABLED);
-        boolean updateResult = vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
-
-        return updateResult;
+        return vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
     }
 
     @Override
@@ -325,7 +323,6 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
         vmSchedule.setState(VMSchedule.State.DISABLED);
         return vmScheduleDao.update(vmSchedule.getId(), vmSchedule);
-
     }
 
     @Override
@@ -402,7 +399,7 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
         for (final VMScheduleVO vmSchedule : vmsToBeExecuted) {
             final long timeDifference = DateUtil.getTimeDifference(vmSchedule.getScheduledTimestamp(), currentTimestamp);
 
-            if (timeDifference <= 5) {
+            if (timeDifference <= 1) {
                 final Long vmScheduleId = vmSchedule.getId();
                 final Long vmId = vmSchedule.getVmId();
 
@@ -455,7 +452,8 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     protected void createTagForVMInstance(Map<String, String> tag, VMInstanceVO vmInstance) {
         if (MapUtils.isNotEmpty(tag)) {
-            taggedResourceService.createTags(Collections.singletonList(vmInstance.getUuid()), ResourceTag.ResourceObjectType.UserVm, tag, null);
+            taggedResourceService.createTags(Collections.singletonList(vmInstance.getUuid()),
+                    ResourceTag.ResourceObjectType.UserVm, tag, null);
         }
     }
 
@@ -479,8 +477,8 @@ public class VMScheduleManagerImpl extends ManagerBase implements VMScheduleMana
 
     private Long performActionOnVM(String action, VMInstanceVO vmInstance, VMScheduleVO vmSchedule) throws ResourceUnavailableException, InsufficientCapacityException {
         Long jobId = null;
-        Map<String,String> vmTag = new HashMap<>();
-        Map<VirtualMachineProfile.Param,Object> params = null;
+        Map<String,String> vmTag;
+        Map<VirtualMachineProfile.Param,Object> params;
         params = new HashMap();
         params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
 
