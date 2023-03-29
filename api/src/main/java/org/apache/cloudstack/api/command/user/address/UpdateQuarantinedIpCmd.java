@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import java.util.Date;
 
 @APICommand(name = UpdateQuarantinedIpCmd.API_NAME, responseObject = IpQuarantineResponse.class, description = "Updates the quarantine end date for the given public IP address.",
-        since = "4.16.0.15", entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.18.0", entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class UpdateQuarantinedIpCmd extends BaseCmd {
     public static final String API_NAME = "updateQuarantinedIp";
