@@ -269,9 +269,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private static final long MIN_GRE_KEY = 0L;
     private static final long MAX_GRE_KEY = 4294967295L; // 2^32 -1
     private static final long MIN_VXLAN_VNI = 0L;
+    /**
+     // MAX_VXLAN_VNI should be 16777215L (2^24-1), but Linux vxlan interface doesn't accept VNI:2^24-1 now.
+     // It seems a bug.
+     // Is this still valid (per 2023?)
+     */
     private static final long MAX_VXLAN_VNI = 16777214L; // 2^24 -2
-    // MAX_VXLAN_VNI should be 16777215L (2^24-1), but Linux vxlan interface doesn't accept VNI:2^24-1 now.
-    // It seems a bug.
+    private static final String NETWORK_OFFERING_ID = "networkOfferingId";
 
     @Inject
     DataCenterDao _dcDao = null;
@@ -1624,7 +1628,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // Can add vlan range only to the network which allows it
         if (createVlan && !ntwkOff.isSpecifyIpRanges()) {
-            throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), "networkOfferingId");
+            throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), NETWORK_OFFERING_ID);
         }
 
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
@@ -1698,7 +1702,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
         if (! userIps.isEmpty()) {
             try {
-                updateSourceNatIpAddress(requestedIp, userIps);
+                _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
             } catch (Exception e) { // pokemon execption from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), network.getName(), network.getUuid(), e.getLocalizedMessage());
@@ -1769,10 +1773,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Incorrect aclType specified. Check the API documentation for supported types");
         }
         // In 3.0 all Shared networks should have aclType == Domain, all Isolated networks aclType==Account
-        if (ntwkOff.getGuestType() == GuestType.Isolated) {
-            if (aclType != ACLType.Account) {
-                throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + GuestType.Isolated);
-            }
+        if (ntwkOff.getGuestType() == GuestType.Isolated && aclType != ACLType.Account) {
+            throw new InvalidParameterValueException("AclType should be " + ACLType.Account + " for network of type " + GuestType.Isolated);
         }
         return aclType;
     }
@@ -1883,7 +1885,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (ntwkOff == null || ntwkOff.isSystemOnly()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering by specified id");
             if (ntwkOff != null) {
-                ex.addProxyObject(ntwkOff.getUuid(), "networkOfferingId");
+                ex.addProxyObject(ntwkOff.getUuid(), NETWORK_OFFERING_ID);
             }
             throw ex;
         }
@@ -2515,7 +2517,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (networkOfferingId != null) {
-            sc.addAnd("networkOfferingId", SearchCriteria.Op.EQ, networkOfferingId);
+            sc.addAnd(NETWORK_OFFERING_ID, SearchCriteria.Op.EQ, networkOfferingId);
         }
 
         if (associatedNetworkId != null) {
@@ -2988,13 +2990,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOfferingId != null) {
             if (networkOffering == null || networkOffering.isSystemOnly()) {
-                throwInvalidIdException("Unable to find network offering with specified id", networkOfferingId.toString(), "networkOfferingId");
+                throwInvalidIdException("Unable to find network offering with specified id", networkOfferingId.toString(), NETWORK_OFFERING_ID);
             }
 
             // network offering should be in Enabled state
             if (networkOffering.getState() != NetworkOffering.State.Enabled) {
                 throwInvalidIdException("Network offering with specified id is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it", networkOffering.getUuid(),
-                        "networkOfferingId");
+                        NETWORK_OFFERING_ID);
             }
             //can't update from vpc to non-vpc network offering
             boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
@@ -3789,7 +3791,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (newNtwkOff == null || newNtwkOff.isSystemOnly()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find network offering.");
             if (newNtwkOff != null) {
-                ex.addProxyObject(String.valueOf(newNtwkOff.getId()), "networkOfferingId");
+                ex.addProxyObject(String.valueOf(newNtwkOff.getId()), NETWORK_OFFERING_ID);
             }
             throw ex;
         }

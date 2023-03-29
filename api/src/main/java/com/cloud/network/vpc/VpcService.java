@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -99,7 +100,17 @@ public interface VpcService {
     Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc, Integer mtu, String sourceNatIp);
 
     /**
+     * Lists VPC(s) based on the parameters passed to the API call
+     *
+     * @param cmd object containing the search specs
+     * @return the List of VPCs
+     */
+    Pair<List<? extends Vpc>, Integer> listVpcs(ListVPCsCmd cmd);
+
+    /**
      * Lists VPC(s) based on the parameters passed to the method call
+     *
+     * TODO phase out to replace with the one with the cmd as parameter object
      */
     Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
                                                 String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,

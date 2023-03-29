@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -1306,7 +1307,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
         if (! userIps.isEmpty()) {
             try {
-                updateSourceNatIpAddress(requestedIp, userIps);
+                _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
             } catch (Exception e) { // pokemon execption from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());
@@ -1338,25 +1339,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return null;
         }
         return requestedIp;
-    }
-
-    /**
-     * TODO move to ip-manager or - service and unify with {@see NetworkServiceImpl.updateSourceNat()}}
-     * @param requestedIp the new source nat
-     * @param userIps the list of now marked as sourcenat
-     * @throws Exception legacy generic but really an SQLException
-     */
-    private void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
-        Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
-            // update all other IPs to not be sourcenat, should be at most one
-            for(IPAddressVO oldIpAddress :userIps) {
-                oldIpAddress.setSourceNat(false);
-                _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
-            }
-            requestedIp.setSourceNat(true);
-            _ipAddressDao.update(requestedIp.getId(),requestedIp);
-            return requestedIp;
-        });
     }
 
     protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {
@@ -1445,6 +1427,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return success;
     }
 
+    @Override
+    public Pair<List<? extends Vpc>, Integer> listVpcs(ListVPCsCmd cmd) {
+        return listVpcs(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getSupportedServices(), cmd.getCidr(), cmd.getVpcOffId(),
+                cmd.getState(), cmd.getAccountName(), cmd.getDomainId(), cmd.getKeyword(), cmd.getStartIndex(), cmd.getPageSizeVal(),
+                cmd.getZoneId(), cmd.isRecursive(), cmd.listAll(), cmd.getRestartRequired(), cmd.getTags(), cmd.getProjectId(),
+                cmd.getDisplay());
+    }
     @Override
     public Pair<List<? extends Vpc>, Integer> listVpcs(final Long id, final String vpcName, final String displayText, final List<String> supportedServicesStr, final String cidr,
                                                        final Long vpcOffId, final String state, final String accountName, Long domainId, final String keyword, final Long startIndex, final Long pageSizeVal,
@@ -1573,22 +1562,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             final List<? extends Vpc> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<>(wPagination, supportedVpcs.size());
-                return listWPagination;
+                return new Pair<>(wPagination, supportedVpcs.size());
             }
             return new Pair<>(supportedVpcs, supportedVpcs.size());
         } else {
             final List<? extends Vpc> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<>(wPagination, vpcs.size());
-                return listWPagination;
+                return new Pair<>(wPagination, vpcs.size());
             }
-            return new Pair<List<? extends Vpc>, Integer>(vpcs, vpcs.size());
+            return new Pair<>(vpcs, vpcs.size());
         }
     }
 
     protected List<Service> getSupportedServices() {
-        final List<Service> services = new ArrayList<Service>();
+        final List<Service> services = new ArrayList<>();
         services.add(Network.Service.Dhcp);
         services.add(Network.Service.Dns);
         services.add(Network.Service.UserData);
