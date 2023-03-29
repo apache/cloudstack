@@ -26,6 +26,17 @@ public class DatabaseAccessObject {
 
     private static Logger s_logger = Logger.getLogger(DatabaseAccessObject.class);
 
+    public void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
+        String addForeignKeyStmt = String.format("CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('%s', '%s', '%s', '%s')", tableName, tableColumn, foreignTableName, foreignColumnName);
+        try(PreparedStatement pstmt = conn.prepareStatement(addForeignKeyStmt);)
+        {
+            pstmt.executeUpdate();
+            s_logger.debug(String.format("Foreign key is added successfully from the table %s", tableName));
+        } catch (SQLException e) {
+            s_logger.error("Ignored SQL Exception when trying to add foreign key on table "  + tableName + " exception: " + e.getMessage());
+        }
+    }
+
     public void dropKey(Connection conn, String tableName, String key, boolean isForeignKey)
     {
         String alter_sql_str;
