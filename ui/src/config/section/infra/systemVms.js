@@ -28,7 +28,7 @@ export default {
   details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate'],
   resourceType: 'SystemVm',
   filters: () => {
-    const filters = ['running', 'stopped']
+    const filters = ['starting', 'running', 'stopping', 'stopped', 'destroyed', 'expunging', 'migrating', 'error', 'unknown', 'shutdown']
     return filters
   },
   tabs: [

@@ -42,7 +42,7 @@ export default {
   }],
   resourceType: 'PrimaryStorage',
   filters: () => {
-    const filters = ['up', 'maintenance', 'disabled']
+    const filters = ['initial', 'initialized', 'creating', 'attaching', 'up', 'prepareformaintenance', 'errorinmaintenance', 'cancelmaintenance', 'maintenance', 'disabled', 'removed']
     return filters
   },
   tabs: [{
