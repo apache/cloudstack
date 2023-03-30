@@ -185,51 +185,6 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         return new MigrateVolumeAnswer(command, true, null, destPath);
     }
 
-    private MigrateVolumeAnswer checkBlockJobStatusUsingListener(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath) throws LibvirtException, InterruptedException {
-        final Boolean[] copyStatus = {false};
-
-        BlockJobListener listener = new BlockJobListener() {
-            @Override
-            public void onEvent(Domain domain, String diskPath, BlockJobType type, BlockJobStatus status) {
-                LOGGER.info("waiting for the event");
-                if (type == BlockJobType.COPY && status == BlockJobStatus.READY) {
-                    try {
-                        domain.blockJobAbort(diskPath, Domain.BlockJobAbortFlags.PIVOT);
-                        copyStatus[0] = true;
-                    } catch (LibvirtException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        };
-        dm.addBlockJobListener(listener);
-
-        int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
-        int waitTimeInSec = command.getWait();
-        while (waitTimeInSec > 0 && !copyStatus[0]) {
-            waitTimeInSec--;
-            try {
-                Thread.sleep(timeBetweenTries);
-            } catch (Exception ex) {
-                // don't do anything
-            }
-            LOGGER.info("Waiting for the block copy to complete");
-        }
-
-        if (!copyStatus[0]) {
-            String msg = "Block copy is taking long time, failing the job";
-            LOGGER.error(msg);
-            try {
-                dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
-            } catch (LibvirtException ex) {
-                LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
-            }
-            return new MigrateVolumeAnswer(command, false, msg, null);
-        }
-
-        return new MigrateVolumeAnswer(command, true, null, destPath);
-    }
-
     private LibvirtVMDef.DiskDef generateDestinationDiskDefinition(Domain dm, String srcVolumeId, String srcPath, String diskFilePath) throws InternalErrorException, LibvirtException {
         final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         final String domXml = dm.getXMLDesc(0);
