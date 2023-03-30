@@ -884,6 +884,7 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
+    public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
 
     public enum BootType {
         UEFI, BIOS;

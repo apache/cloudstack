@@ -308,6 +308,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _pod;
     private String _clusterId;
     private final Properties _uefiProperties = new Properties();
+    private String hostHealthCheckScriptPath;
 
     private long _hvVersion;
     private Duration _timeout;
@@ -677,6 +678,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         NATIVE, OPENVSWITCH
     }
 
+    protected enum HealthCheckResult {
+        SUCCESS, FAILURE, IGNORE
+    }
+
     protected BridgeType _bridgeType;
 
     protected StorageSubsystemCommandHandler storageHandler;
@@ -934,6 +939,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _ovsPvlanVmPath = Script.findScript(networkScriptsDir, "ovs-pvlan-kvm-vm.sh");
         if (_ovsPvlanVmPath == null) {
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
+        }
+
+        hostHealthCheckScriptPath = (String) params.get("agent.health.check.script.path");
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(hostHealthCheckScriptPath) &&
+                !new File(hostHealthCheckScriptPath).exists()) {
+            s_logger.info(String.format("Unable to find the host health check script at: %s, " +
+                    "discarding it", hostHealthCheckScriptPath));
         }
 
         String value = (String)params.get("developer");
@@ -3336,13 +3348,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public PingCommand getCurrentStatus(final long id) {
-
+        PingRoutingCommand pingRoutingCommand;
         if (!_canBridgeFirewall) {
-            return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
+            pingRoutingCommand = new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
         } else {
             final HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
-            return new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
+            pingRoutingCommand = new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
         }
+        HealthCheckResult healthCheckResult = getHostHealthCheckResult();
+        if (healthCheckResult != HealthCheckResult.IGNORE) {
+            pingRoutingCommand.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
+        }
+        return pingRoutingCommand;
     }
 
     @Override
@@ -3384,6 +3401,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        HealthCheckResult healthCheckResult = getHostHealthCheckResult();
+        if (healthCheckResult != HealthCheckResult.IGNORE) {
+            cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
+        }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
             _hostDistro = cmd.getHostDetails().get("Host.OS");
@@ -3411,6 +3432,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else {
             return new StartupCommand[] {cmd};
         }
+    }
+
+    /**
+     * The health check result is true, if the script is executed successfully and the exit code is 0
+     * The health check result is false, if the script is executed successfully and the exit code is 1
+     * The health check result is null, if
+     * - Script file is not specified, or
+     * - Script file does not exist, or
+     * - Script file is not accessible by the user of the cloudstack-agent process, or
+     * - Script file is not executable
+     * - There are errors when the script is executed (exit codes other than 0 or 1)
+     */
+    private HealthCheckResult getHostHealthCheckResult() {
+        if (org.apache.commons.lang3.StringUtils.isBlank(hostHealthCheckScriptPath)) {
+            s_logger.debug("Host health check script path is not specified");
+            return HealthCheckResult.IGNORE;
+        }
+        File script = new File(hostHealthCheckScriptPath);
+        if (!script.exists() || !script.isFile() || !script.canExecute()) {
+            s_logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
+                    "reason: %s", hostHealthCheckScriptPath,
+                    !script.exists() ? "file does not exist" : "please check file permissions to execute this file"));
+            return HealthCheckResult.IGNORE;
+        }
+        int exitCode = executeBashScriptAndRetrieveExitValue(hostHealthCheckScriptPath);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
+        }
+        return retrieveHealthCheckResultFromExitCode(exitCode);
+    }
+
+    private HealthCheckResult retrieveHealthCheckResultFromExitCode(int exitCode) {
+        if (exitCode != 0 && exitCode != 1) {
+            return HealthCheckResult.IGNORE;
+        }
+        return exitCode == 0 ? HealthCheckResult.SUCCESS : HealthCheckResult.FAILURE;
     }
 
     public String diskUuidToSerial(String uuid) {
