@@ -502,6 +502,7 @@
 "label.copied.clipboard": "Copied to clipboard",
 "label.copy": "Copy",
 "label.copy.clipboard": "Copy to clipboard",
+"label.copy.consoleurl": "Copy console URL to clipboard",
 "label.copyid": "Copy ID",
 "label.core": "Core",
 "label.core.zone.type": "Core zone type",
