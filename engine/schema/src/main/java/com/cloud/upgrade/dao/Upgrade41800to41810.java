@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.storage.GuestOSHypervisorMapping;
+import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate {
     final static Logger LOG = Logger.getLogger(Upgrade41800to41810.class);
@@ -55,6 +59,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateGuestOsMappings();
     }
 
     @Override
@@ -81,5 +86,82 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
         }
+    }
+
+    private void updateGuestOsMappings() {
+        LOG.debug("Updating guest OS mappings");
+
+        GuestOsMapper guestOsMapper = new GuestOsMapper();
+        List<GuestOSHypervisorMapping> mappings = new ArrayList<>();
+
+        // Add support for almalinux_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "almalinux_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(1, "AlmaLinux (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for darwin22_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "darwin22_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 13 (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for darwin23_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "darwin23_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 14 (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for debian12_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "debian12_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(2, "Debian GNU/Linux 12 (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for debian12Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "debian12Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(2, "Debian GNU/Linux 12 (32-bit)", mappings);
+        mappings.clear();
+
+        // Add support for freebsd14_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "freebsd14_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(9, "FreeBSD 14 (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for freebsd14Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "freebsd14Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(9, "FreeBSD 14 (32-bit)", mappings);
+        mappings.clear();
+
+        // Add support for other6xLinux64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "other6xLinux64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(7, "Linux 6.x Kernel (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for other6xLinuxGuest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "other6xLinuxGuest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(7, "Linux 6.x Kernel (32-bit)", mappings);
+        mappings.clear();
+
+        // Add support for rockylinux_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "rockylinux_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(1, "Rocky Linux (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for vmkernel8Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "vmkernel8Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(7, "VMware ESXi 8.0", mappings);
+        mappings.clear();
+
+        // Add support for windows11_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "windows11_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows 11 (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for windows12_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "windows12_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows 12 (64-bit)", mappings);
+        mappings.clear();
+
+        // Add support for windows2022srvNext_64Guest from VMware 8.0
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "windows2022srvNext_64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows Server 2025 (64-bit)", mappings);
+        mappings.clear();
     }
 }
