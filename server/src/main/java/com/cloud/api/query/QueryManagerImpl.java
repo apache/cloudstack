@@ -2601,7 +2601,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForStoragePoolsInternal(ListStoragePoolsCmd cmd) {
         ScopeType scopeType = ScopeType.validateAndGetScopeType(cmd.getScope());
-        StoragePoolStatus state = StoragePoolStatus.validateAndGetStatus(cmd.getState());
+        StoragePoolStatus status = StoragePoolStatus.validateAndGetStatus(cmd.getStatus());
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Long id = cmd.getId();
@@ -2618,7 +2618,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // search & count Pool details by ids
         Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(id, name, zoneId, path, pod,
-                cluster, address, scopeType, state, keyword, searchFilter);
+                cluster, address, scopeType, status, keyword, searchFilter);
 
         Integer count = uniquePoolPair.second();
         if (count.intValue() == 0) {

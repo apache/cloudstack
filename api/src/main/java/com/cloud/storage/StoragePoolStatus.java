@@ -28,7 +28,7 @@ public enum StoragePoolStatus {
         } else {
             StoragePoolStatus status = EnumUtils.getEnumIgnoreCase(StoragePoolStatus.class, value);
             if (status == null) {
-                throw new InvalidParameterValueException("Invalid scope type: " + value);
+                throw new InvalidParameterValueException("Invalid status: " + value);
             }
             return status;
         }

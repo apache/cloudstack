@@ -1572,9 +1572,15 @@ export default {
         } else {
           query.networkfilter = filter
         }
-      } else if (['account', 'publicip', 'systemvm', 'router', 'storagepool'].includes(this.$route.name)) {
+      } else if (['account', 'publicip', 'systemvm', 'router'].includes(this.$route.name)) {
         if (filter !== 'all') {
           query.state = filter
+        }
+      } else if (this.$route.name === 'storagepool') {
+        if (filter === 'all') {
+          delete query.status
+        } else {
+          query.status = filter
         }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
