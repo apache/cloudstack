@@ -357,13 +357,13 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByName(String name) {
-        return findRolesByName(name, null, null).first();
+        return findRolesByName(name, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit) {
-        if (StringUtils.isNotBlank(name)) {
-            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, startIndex, limit);
+    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit) {
+        if (StringUtils.isNotBlank(name) || StringUtils.isNotBlank(keyword)) {
+            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, startIndex, limit);
             int removed = removeRootAdminRolesIfNeeded(data.first());
             return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }
