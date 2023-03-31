@@ -333,14 +333,14 @@ export default {
       const params = {}
       params.sourcenatipaddress = ipaddress.ipaddress
       if (this.$route.path.startsWith('/vpc')) {
-        params.vpcid = this.resource.id
+        params.id = this.resource.id
         this.settingsourcenat = true
-        api('updateVpc', params).then(response => {
+        api('updateVPC', params).then(response => {
           this.fetchData()
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
+            description: error.response.data.updatevpcresponse.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {
@@ -354,7 +354,7 @@ export default {
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
+            description: error.response.data.updatenetworkresponse.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {
