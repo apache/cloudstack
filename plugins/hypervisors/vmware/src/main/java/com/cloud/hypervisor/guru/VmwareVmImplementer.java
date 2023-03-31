@@ -47,6 +47,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -166,6 +167,13 @@ class VmwareVmImplementer {
         GuestOSHypervisorVO guestOsMapping = null;
         if (host != null) {
             guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), host.getHypervisorVersion());
+            if (guestOsMapping == null) {
+                LOGGER.debug(String.format("Cannot find guest os mappings for guest os \"%s\" on VMware %s", guestOS.getDisplayName(), host.getHypervisorVersion()));
+                String parentVersion = getParentVersion(host.getHypervisorVersion());
+                if (parentVersion != null) {
+                    guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), parentVersion);
+                }
+            }
         }
         if (guestOsMapping == null || host == null) {
             to.setPlatformEmulator(null);
@@ -180,6 +188,23 @@ class VmwareVmImplementer {
         setDetails(to, details);
 
         return to;
+    }
+
+    /**
+     * Get the parent version of VMware hypervisor version
+     */
+    String getParentVersion(String hypervisorVersion) {
+        try {
+            CloudStackVersion version = CloudStackVersion.parse(hypervisorVersion);
+            String parentVersion = String.format("%s.%s", version.getMajorRelease(), version.getMinorRelease());
+            if (version.getPatchRelease() != 0) {
+                parentVersion = String.format("%s.%s", parentVersion, version.getPatchRelease());
+            }
+            return parentVersion;
+        } catch (Exception ex) {
+            LOGGER.debug("Failed to get guest os mappings from the parent version: " + ex.getMessage());
+        }
+        return null;
     }
 
     /**
