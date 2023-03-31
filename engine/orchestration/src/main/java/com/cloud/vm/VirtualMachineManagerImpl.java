@@ -1041,13 +1041,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         if (template == null) {
             String msg = "Template for the VM instance can not be found, VM instance configuration needs to be updated";
-            s_logger.error(String.format("%s. Template ID: %d seems to be removed", msg, vm.getTemplateId()));
+            logger.error(String.format("%s. Template ID: %d seems to be removed", msg, vm.getTemplateId()));
             throw new CloudRuntimeException(msg);
         }
         final VMTemplateZoneVO templateZoneVO = templateZoneDao.findByZoneTemplate(vm.getDataCenterId(), template.getId());
         if (templateZoneVO == null) {
             String msg = "Template for the VM instance can not be found in the zone ID: %s, VM instance configuration needs to be updated";
-            s_logger.error(String.format("%s. %s", msg, template));
+            logger.error(String.format("%s. %s", msg, template));
             throw new CloudRuntimeException(msg);
         }
     }

@@ -1708,7 +1708,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             } else {
                 final VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
                 if (template == null) {
-                    s_logger.error(String.format("Failed to find template: %d for %s", templateId, volume));
+                    logger.error(String.format("Failed to find template: %d for %s", templateId, volume));
                     throw new CloudRuntimeException(String.format("Failed to find template for volume ID: %s", volume.getUuid()));
                 }
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
