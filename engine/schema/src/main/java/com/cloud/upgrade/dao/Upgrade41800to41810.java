@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOSHypervisorMapping;
 import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
@@ -94,73 +95,76 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         GuestOsMapper guestOsMapper = new GuestOsMapper();
         List<GuestOSHypervisorMapping> mappings = new ArrayList<>();
 
+        final String hypervisorVMware = Hypervisor.HypervisorType.VMware.name();
+        final String hypervisorVersionVmware8 = "8.0";
+
         // Add support for almalinux_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "almalinux_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "almalinux_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(1, "AlmaLinux (64-bit)", mappings);
         mappings.clear();
 
         // Add support for darwin22_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "darwin22_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "darwin22_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 13 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for darwin23_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "darwin23_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "darwin23_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 14 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for debian12_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "debian12_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "debian12_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(2, "Debian GNU/Linux 12 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for debian12Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "debian12Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "debian12Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(2, "Debian GNU/Linux 12 (32-bit)", mappings);
         mappings.clear();
 
         // Add support for freebsd14_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "freebsd14_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "freebsd14_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(9, "FreeBSD 14 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for freebsd14Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "freebsd14Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "freebsd14Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(9, "FreeBSD 14 (32-bit)", mappings);
         mappings.clear();
 
         // Add support for other6xLinux64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "other6xLinux64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "other6xLinux64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Linux 6.x Kernel (64-bit)", mappings);
         mappings.clear();
 
         // Add support for other6xLinuxGuest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "other6xLinuxGuest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "other6xLinuxGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Linux 6.x Kernel (32-bit)", mappings);
         mappings.clear();
 
         // Add support for rockylinux_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "rockylinux_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rockylinux_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(1, "Rocky Linux (64-bit)", mappings);
         mappings.clear();
 
         // Add support for vmkernel8Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "vmkernel8Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "vmkernel8Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "VMware ESXi 8.0", mappings);
         mappings.clear();
 
         // Add support for windows11_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "windows11_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows11_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows 11 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for windows12_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "windows12_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows12_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows 12 (64-bit)", mappings);
         mappings.clear();
 
         // Add support for windows2022srvNext_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "windows2022srvNext_64Guest"));
+        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows2022srvNext_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows Server 2025 (64-bit)", mappings);
         mappings.clear();
     }
