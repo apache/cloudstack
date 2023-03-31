@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.FirewallRulesDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -455,6 +456,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserVmJoinDao userVmJoinDao;
     @Inject
     NetworkServiceMapDao ntwkSrvcDao;
+    @Inject
+    FirewallRulesDao firewallRulesDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1058,6 +1061,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setHasAnnotation(annotationDao.hasAnnotations(ipAddr.getUuid(), AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
+        ipResponse.setHasRules(firewallRulesDao.countRulesByIpId(ipAddr.getId()) > 0);
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
     }

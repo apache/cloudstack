@@ -83,6 +83,7 @@
                 :disabled="!('updateNetwork' in $store.getters.apis)"
                 @onClick="setSourceNatIp(record)" />
             </template>
+            <template v-else-if="record.isstaticnat === false && record.hasrules === false">
           </template>
 
           <template v-if="column.key === 'state'">

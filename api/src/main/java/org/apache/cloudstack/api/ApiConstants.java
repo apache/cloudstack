@@ -1026,6 +1026,7 @@ public class ApiConstants {
 
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
+    public static final String HAS_RULES = "hasrules";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

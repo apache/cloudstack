@@ -1326,16 +1326,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         } else {
             s_logger.info(String.format("updating VPC %s to have source NAT ip %s", vpc.getName(), sourceNatIp));
         }
+        IPAddressVO requestedIp = getIpAddressVO(vpc, sourceNatIp);
+        if (requestedIp == null) return null;
+        // check if it is the current source NAT address
+        if (requestedIp.isSourceNat()) {
+            s_logger.info(String.format("IP address %s is already the source Nat address. Not updating!", sourceNatIp));
+            return null;
+        }
+        if (_firewallDao.countRulesByIpId(requestedIp.getId()) > 0) {
+            s_logger.info(String.format("IP address %s has firewall/portforwarding rules. Not updating!", sourceNatIp));
+            return null;
+        }
+        return requestedIp;
+    }
+
+    @Nullable
+    private IPAddressVO getIpAddressVO(Vpc vpc, String sourceNatIp) {
         // check if the address is already aqcuired for this network
         IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
         if (requestedIp == null || requestedIp.getVpcId() == null || ! requestedIp.getVpcId().equals(vpc.getId())) {
             s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
                     sourceNatIp, vpc.getName(), vpc.getUuid()));
-            return null;
-        }
-        // check if it is the current source NAT address
-        if (requestedIp.isSourceNat()) {
-            s_logger.info(String.format("IP address %s is allready the source Nat address. Not updating!", sourceNatIp));
             return null;
         }
         return requestedIp;
