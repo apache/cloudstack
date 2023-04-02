@@ -301,6 +301,12 @@ class TestData():
             },
         }
 class StorPoolHelper():
+    def setUpClass(cls):
+        cls.logger = None
+
+    @classmethod
+    def logging(cls):
+        return cls.logger
 
     @classmethod
     def create_template_from_snapshot(self, apiclient, services, snapshotid=None, volumeid=None):
