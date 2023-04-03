@@ -422,14 +422,14 @@ export default {
       ]
       this.selectedAccount = {}
       api('listAccounts', params).then(json => {
-        const listAccounts = json.listaccountsresponse.account
+        const listAccounts = json.listaccountsresponse.account || []
         this.accounts = this.accounts.concat(listAccounts)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.accountLoading = false
         if (this.arrayHasItems(this.accounts)) {
-          this.form.accountid = 0
+          this.form.account = null
         }
       })
     },
@@ -453,7 +453,7 @@ export default {
         }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
-          if (this.isValidTextValueForKey(values, 'account')) {
+          if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
             params.account = this.selectedAccount.name
           }
         }
