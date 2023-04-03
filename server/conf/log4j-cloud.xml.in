@@ -31,7 +31,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>
 
 
@@ -40,7 +40,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </RollingFile>
 
 
@@ -49,7 +49,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%n"/>
+         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>
 
       <!-- ============================== -->
@@ -59,7 +59,7 @@ under the License.
 
       <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%n"/>
+         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </Syslog>
 
       <!-- ============================== -->
@@ -68,7 +68,7 @@ under the License.
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%n"/>
+         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </Console>
    </Appenders>
 

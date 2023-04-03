@@ -28,7 +28,7 @@ under the License.
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
             <DefaultRolloverStrategy max="4"/>
-            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
         </RollingFile>
 
         <RollingFile name="cloudOut" append="true" fileName="/var/log/cloud/cloud.out" filePattern="/var/log/cloud/cloud.%i.out">
@@ -36,7 +36,7 @@ under the License.
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
             <DefaultRolloverStrategy max="4"/>
-            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
         </RollingFile>
 
         <RollingFile name="cloudSystemvmLog" append="true" fileName="/usr/local/cloud/systemvm/cloud.log" filePattern="/usr/local/cloud/systemvm/cloud.%i.log">
@@ -44,7 +44,7 @@ under the License.
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
             <DefaultRolloverStrategy max="4"/>
-            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
         </RollingFile>
 
         <RollingFile name="APISERVER" append="true" fileName="/var/log/cloud/api-server.log" filePattern="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz">
@@ -62,7 +62,7 @@ under the License.
 
         <Console name="CONSOLE" target="SYSTEM_OUT">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
+            <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
         </Console>
     </Appenders>
 

@@ -29,7 +29,7 @@
 
     <Console name="CONSOLE" target="SYSTEM_OUT">
         <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
-        <PatternLayout pattern="%d{ABSOLUTE} %-5p [%c{1}] %m%xEx{filters(${filters})}%n"/>
+        <PatternLayout pattern="%d{ABSOLUTE} %-5p [%c{1}] %m%ex{filters(${filters})}%n"/>
     </Console>
 </Appenders>
 
