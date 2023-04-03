@@ -85,6 +85,36 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item ref="account" name="account" v-if="accountVisible">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
+            <a-select
+             v-model:value="form.account"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="accountLoading"
+              :placeholder="apiParams.account.description"
+              @change="val => { handleAccountChange(accounts[val]) }">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item
+            ref="networkdomain"
+            name="networkdomain"
+            v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
+            <template #label>
+              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            </template>
+            <a-input
+             v-model:value="form.networkdomain"
+              :placeholder="apiParams.networkdomain.description"/>
+          </a-form-item>
           <a-form-item ref="networkofferingid" name="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -261,36 +291,6 @@
               </a-col>
             </a-row>
           </div>
-          <a-form-item
-            ref="networkdomain"
-            name="networkdomain"
-            v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
-            <template #label>
-              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
-            </template>
-            <a-input
-             v-model:value="form.networkdomain"
-              :placeholder="apiParams.networkdomain.description"/>
-          </a-form-item>
-          <a-form-item ref="account" name="account" v-if="accountVisible">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-select
-             v-model:value="form.account"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="accountLoading"
-              :placeholder="apiParams.account.description"
-              @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
-                {{ opt.name || opt.description }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"

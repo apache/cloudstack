@@ -89,6 +89,25 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item v-if="accountVisible" name="account" ref="account">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
+            <a-select
+             v-model:value="form.account"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="accountLoading"
+              :placeholder="apiParams.account.description"
+              @change="val => { handleAccountChange(accounts[val]) }">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-form-item name="networkofferingid" ref="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -163,25 +182,6 @@
             <a-input
               v-model:value="form.isolatedpvlan"
               :placeholder="apiParams.isolatedpvlan.description"/>
-          </a-form-item>
-          <a-form-item v-if="accountVisible" name="account" ref="account">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-select
-             v-model:value="form.account"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="accountLoading"
-              :placeholder="apiParams.account.description"
-              @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
-                {{ opt.name || opt.description }}
-              </a-select-option>
-            </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button
