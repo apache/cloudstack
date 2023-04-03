@@ -66,7 +66,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the ID of the storage pool")
     private String scope;
 
-    @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the status of the storage pool")
+    @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, description = "the status of the storage pool")
     private String status;
 
     /////////////////////////////////////////////////////
