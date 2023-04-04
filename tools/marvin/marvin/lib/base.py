@@ -108,6 +108,8 @@ class Role:
             cmd.roleid = services["roleid"]
         if "description" in services:
             cmd.description = services["description"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.createRole(cmd).__dict__)
 
@@ -122,6 +124,8 @@ class Role:
             cmd.description = services["description"]
         if "forced" in services:
             cmd.type = services["forced"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.importRole(cmd).__dict__)
 
