@@ -1402,6 +1402,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
         } else {
+            s_logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
             owner = caller;
         }
 
