@@ -23,7 +23,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.host.HostVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -49,6 +48,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
@@ -69,6 +69,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
@@ -624,8 +626,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             String[] keyValuePairs = userDataDetails.split(",");
             for(String pair : keyValuePairs)
             {
-                String[] entry = pair.split("=");
-                customUserdataParamMap.put(entry[0].trim(), entry[1].trim());
+                final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
+                customUserdataParamMap.put(keyValue.first(), keyValue.second());
             }
         }
 
