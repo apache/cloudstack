@@ -91,7 +91,7 @@ class TestData(object):
         }
 
 
-class Testroleusers(cloudstackTestCase):
+class TestPrivateRoles(cloudstackTestCase):
     """Tests Visibility of private and public roles
     """
 
