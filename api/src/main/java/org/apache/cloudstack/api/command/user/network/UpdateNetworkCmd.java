@@ -191,7 +191,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         return sourceNatIP;
     }
 
-    public Long getSourceNatIpUuid() {
+    public Long getSourceNatIpId() {
         return sourceNatIpUuid;
     }
 
