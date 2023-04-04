@@ -32,6 +32,10 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Partition {
         Basic, Advanced,
     }
 
+    public enum Type {
+        Core, Edge,
+    }
+
     String getDns1();
 
     String getDns2();
@@ -83,4 +87,6 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Partition {
     boolean isLocalStorageEnabled();
 
     int getSortKey();
+
+    Type getType();
 }

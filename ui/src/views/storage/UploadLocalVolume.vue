@@ -221,6 +221,7 @@ export default {
       api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
           if (this.zones.length > 0) {
             this.onZoneChange(this.zones[0].id)
           }
@@ -347,10 +348,10 @@ export default {
             formData,
             {
               headers: {
-                'Content-Type': 'multipart/form-data',
-                'X-signature': this.uploadParams.signature,
-                'X-expires': this.uploadParams.expires,
-                'X-metadata': this.uploadParams.metadata
+                'content-type': 'multipart/form-data',
+                'x-signature': this.uploadParams.signature,
+                'x-expires': this.uploadParams.expires,
+                'x-metadata': this.uploadParams.metadata
               },
               onUploadProgress: (progressEvent) => {
                 this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))

@@ -1652,7 +1652,7 @@ export default {
         if (this.templateId) {
           apiName = 'listTemplates'
           params.listall = true
-          params.templatefilter = 'all'
+          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.templateId
         } else if (this.networkId) {
           params.listall = true

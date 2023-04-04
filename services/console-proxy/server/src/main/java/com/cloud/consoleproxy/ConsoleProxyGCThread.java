@@ -18,9 +18,9 @@ package com.cloud.consoleproxy;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -35,11 +35,13 @@ public class ConsoleProxyGCThread extends Thread {
 
     private final static int MAX_SESSION_IDLE_SECONDS = 180;
 
-    private final Hashtable<String, ConsoleProxyClient> connMap;
+    private final Map<String, ConsoleProxyClient> connMap;
+    private final Set<String> removedSessionsSet;
     private long lastLogScan = 0;
 
-    public ConsoleProxyGCThread(Hashtable<String, ConsoleProxyClient> connMap) {
+    public ConsoleProxyGCThread(Map<String, ConsoleProxyClient> connMap, Set<String> removedSet) {
         this.connMap = connMap;
+        this.removedSessionsSet = removedSet;
     }
 
     private void cleanupLogging() {
@@ -69,22 +71,22 @@ public class ConsoleProxyGCThread extends Thread {
 
         boolean bReportLoad = false;
         long lastReportTick = System.currentTimeMillis();
-        List<String> removedSessions = new ArrayList<>();
 
         while (true) {
             cleanupLogging();
             bReportLoad = false;
-            removedSessions.clear();
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("connMap=" + connMap);
-            Enumeration<String> e = connMap.keys();
-            while (e.hasMoreElements()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
+            }
+            Set<String> e = connMap.keySet();
+            Iterator<String> iterator = e.iterator();
+            while (iterator.hasNext()) {
                 String key;
                 ConsoleProxyClient client;
 
                 synchronized (connMap) {
-                    key = e.nextElement();
+                    key = iterator.next();
                     client = connMap.get(key);
                 }
 
@@ -94,7 +96,6 @@ public class ConsoleProxyGCThread extends Thread {
                 }
 
                 synchronized (connMap) {
-                    removedSessions.add(client.getSessionUuid());
                     connMap.remove(key);
                     bReportLoad = true;
                 }
@@ -107,13 +108,17 @@ public class ConsoleProxyGCThread extends Thread {
             if (bReportLoad || System.currentTimeMillis() - lastReportTick > 5000) {
                 // report load changes
                 ConsoleProxyClientStatsCollector collector = new ConsoleProxyClientStatsCollector(connMap);
-                collector.setRemovedSessions(removedSessions);
+                collector.setRemovedSessions(new ArrayList<>(removedSessionsSet));
                 String loadInfo = collector.getStatsReport();
                 ConsoleProxy.reportLoadInfo(loadInfo);
                 lastReportTick = System.currentTimeMillis();
+                synchronized (removedSessionsSet) {
+                    removedSessionsSet.clear();
+                }
 
-                if (s_logger.isDebugEnabled())
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Report load change : " + loadInfo);
+                }
             }
 
             try {

@@ -87,6 +87,10 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "true if local storage offering enabled, false otherwise")
     private Boolean localStorageEnabled;
 
+    @Parameter(name = ApiConstants.IS_EDGE, type = CommandType.BOOLEAN, description = "true if the zone is an edge zone, false otherwise", since = "4.18.0")
+    private Boolean isEdge;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -151,6 +155,13 @@ public class CreateZoneCmd extends BaseCmd {
             return false;
         }
         return localStorageEnabled;
+    }
+
+    public boolean isEdge() {
+        if (isEdge == null) {
+            return false;
+        }
+        return isEdge;
     }
 
     /////////////////////////////////////////////////////

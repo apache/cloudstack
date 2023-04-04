@@ -298,7 +298,14 @@ export default {
     loginSuccess (res) {
       this.$notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
-      this.$router.push({ path: '/dashboard' }).catch(() => {})
+      if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '' && store.getters.twoFaProvider !== undefined) {
+        this.$router.push({ path: '/verify2FA' }).catch(() => {})
+      } else if (store.getters.twoFaEnabled === true && (store.getters.twoFaProvider === '' || store.getters.twoFaProvider === undefined)) {
+        this.$router.push({ path: '/setup2FA' }).catch(() => {})
+      } else {
+        this.$store.commit('SET_LOGIN_FLAG', true)
+        this.$router.push({ path: '/dashboard' }).catch(() => {})
+      }
     },
     requestFailed (err) {
       if (err && err.response && err.response.data && err.response.data.loginresponse) {
