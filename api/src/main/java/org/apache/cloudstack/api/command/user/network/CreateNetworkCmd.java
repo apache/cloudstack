@@ -185,11 +185,17 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SOURCE_NAT_IP,
             type = CommandType.STRING,
-            description = "IPV4 address to be assigned to the piublic interface of the network router. This is a hint." +
+            description = "IPV4 address to be assigned to the public interface of the network router. This is a hint." +
                     " If an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented," +
                     " even if so requested.",
             since = "4.19")
     private String sourceNatIP;
+
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID,
+            type = CommandType.UUID,
+            description = "IPV4 address to be assigned to the public interface of the network router.",
+            since = "4.19")
+    private Long sourceNatIpUuid;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -276,6 +282,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public long getSourceNatIpId() {
+        return sourceNatIpUuid;
     }
 
     @Override

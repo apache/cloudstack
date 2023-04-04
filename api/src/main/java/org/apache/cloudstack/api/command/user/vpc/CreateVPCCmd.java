@@ -113,11 +113,11 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the VPC", since = "4.18.0")
     private String ip6Dns2;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router.", since = "4.19")
-    private String sourceNatIp;
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the network router.", since = "4.19")
+    private String sourceNatIP;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID, type = CommandType.STRING, description = "IPV4 address to be assigned to the piublic interface of the network router.", since = "4.19")
-    private String sourceNatIpUuid;
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID, type = CommandType.UUID, description = "IPV4 address to be assigned to the public interface of the network router.", since = "4.19")
+    private Long sourceNatIpUuid;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -185,6 +185,19 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     public Boolean getDisplayVpc() {
         return display;
     }
+
+
+    public String getSourceNatIP() {
+        return sourceNatIP;
+    }
+
+    public Long getSourceNatIPId() {
+        return sourceNatIpUuid;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public void create() throws ResourceAllocationException {

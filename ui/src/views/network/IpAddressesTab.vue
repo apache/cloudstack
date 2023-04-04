@@ -71,7 +71,10 @@
             <div v-else>{{ text }}</div>
             &nbsp;
             <template v-if="record.issourcenat === true">
-              <a-tag>source-nat</a-tag>
+              <a-tag>{{ $t('label.sourcenat') }}</a-tag>
+            </template>
+            <template v-else-if="record.isstaticnat === true">
+              <a-tag>{{ $t('label.staticnat') }}</a-tag>
             </template>
             <template v-else-if="record.isstaticnat === false">
               <tooltip-button
@@ -83,7 +86,6 @@
                 :disabled="!('updateNetwork' in $store.getters.apis)"
                 @onClick="setSourceNatIp(record)" />
             </template>
-            <template v-else-if="record.isstaticnat === false && record.hasrules === false">
           </template>
 
           <template v-if="column.key === 'state'">
@@ -109,6 +111,7 @@
               icon="delete-outlined"
               :disabled="!('disassociateIpAddress' in $store.getters.apis)"
               @onClick="releaseIpAddress(record)" />
+            </template>
           </template>
         </template>
       </a-table>
