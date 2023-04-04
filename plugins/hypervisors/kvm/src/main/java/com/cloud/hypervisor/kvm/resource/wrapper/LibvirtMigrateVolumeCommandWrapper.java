@@ -51,9 +51,6 @@ import org.libvirt.DomainInfo;
 import org.libvirt.TypedParameter;
 import org.libvirt.TypedUlongParameter;
 import org.libvirt.LibvirtException;
-import org.libvirt.event.BlockJobListener;
-import org.libvirt.event.BlockJobStatus;
-import org.libvirt.event.BlockJobType;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
