@@ -406,6 +406,18 @@ public class StorPoolUtil {
         return data;
     }
 
+    public static JsonArray volumesSpace(SpConnectionDesc conn) {
+        SpApiResponse resp = GET("MultiCluster/AllClusters/VolumesSpace", conn);
+        JsonObject obj = resp.fullJson.getAsJsonObject();
+        return obj.getAsJsonObject("data").getAsJsonArray("clusters");
+    }
+
+    public static JsonArray templatesStats(SpConnectionDesc conn) {
+        SpApiResponse resp = GET("MultiCluster/AllClusters/VolumeTemplatesStatus", conn);
+        JsonObject obj = resp.fullJson.getAsJsonObject();
+        return obj.getAsJsonObject("data").getAsJsonArray("clusters");
+    }
+
     private static boolean objectExists(SpApiError err) {
         if (!err.getName().equals("objectDoesNotExist")) {
             throw new CloudRuntimeException(err.getDescr());
