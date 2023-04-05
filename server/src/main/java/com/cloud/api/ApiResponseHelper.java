@@ -936,6 +936,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         return userIpAddresVO != null ? userIpAddresVO.isForSystemVms() : false;
     }
 
+    private void addVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
+        if (ipAddress.getAssociatedWithVmId() == null) {
+            return;
+        }
+        VMInstanceVO vm = ApiDBUtils.findVMInstanceById(ipAddress.getAssociatedWithVmId());
+        final boolean isAdmin = Account.Type.ADMIN.equals(CallContext.current().getCallingAccount().getType());
+        if (vm != null && (isAdmin || VirtualMachine.Type.User.equals(vm.getType()))) {
+            response.setVirtualMachineId(vm.getUuid());
+            response.setVirtualMachineName(vm.getHostName());
+            if (isAdmin) {
+                response.setVirtualMachineType(vm.getType().toString());
+            }
+            if (VirtualMachine.Type.User.equals(vm.getType())) {
+                UserVm userVm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+                response.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
+            }
+        }
+    }
+
     @Override
     public IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddr) {
         VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
@@ -964,18 +983,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddr.isOneToOneNat());
 
-        if (ipAddr.getAssociatedWithVmId() != null) {
-            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(ipAddr.getAssociatedWithVmId());
-            if (vm != null) {
-                ipResponse.setVirtualMachineId(vm.getUuid());
-                ipResponse.setVirtualMachineName(vm.getHostName());
-                ipResponse.setVirtualMachineType(vm.getType().toString());
-                if (VirtualMachine.Type.User.equals(vm.getType())) {
-                    UserVm userVm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
-                    ipResponse.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
-                }
-            }
-        }
+        addVmDetailsInIpResponse(ipResponse, ipAddr);
         if (ipAddr.getVmIp() != null) {
             ipResponse.setVirtualMachineIp(ipAddr.getVmIp());
         }
