@@ -91,7 +91,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         }
 
         //1) allocate nic for control and source nat public ip
-        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(vpcRouterDeploymentDefinition);
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(vpcRouterDeploymentDefinition, router);
 
         final Long vpcId = vpcRouterDeploymentDefinition.getVpc().getId();
         //2) allocate nic for private gateways if needed
@@ -130,6 +130,9 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         for (final IPAddressVO ip : ips) {
             if (vpcIsStaticNatProvider || !ip.isOneToOneNat()) {
                 final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
+                if (ip.isSourceNat()) {
+                    _ipAddrMgr.updateAssociatedVmIdForAllocatedIp(ip.getId(), router.getId());
+                }
                 if ((ip.getState() == IpAddress.State.Allocated  || ip.getState() == IpAddress.State.Allocating)
                         && vpcMgr.isIpAllocatedToVpc(ip)
                         && !publicVlans.contains(publicIp.getVlanTag())) {
@@ -170,7 +173,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
     }
 
     @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition, final VirtualRouter router) throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
@@ -179,7 +182,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         networks.putAll(controlNic);
 
         // 2) Public network
-        final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, false);
+        final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, false, router);
         networks.putAll(publicNic);
 
         // 3) Guest Network

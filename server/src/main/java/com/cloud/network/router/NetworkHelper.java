@@ -86,7 +86,7 @@ public interface NetworkHelper {
     public abstract void reallocateRouterNetworks(RouterDeploymentDefinition routerDeploymentDefinition, VirtualRouter router, VMTemplateVO template, HypervisorType hType)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, InsufficientCapacityException;
 
-    public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(RouterDeploymentDefinition routerDeploymentDefinition)
+    public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(RouterDeploymentDefinition routerDeploymentDefinition, VirtualRouter router)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
     public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureGuestNic(RouterDeploymentDefinition routerDeploymentDefinition)

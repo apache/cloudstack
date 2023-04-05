@@ -199,6 +199,7 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -964,14 +965,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setStaticNat(ipAddr.isOneToOneNat());
 
         if (ipAddr.getAssociatedWithVmId() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
+            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(ipAddr.getAssociatedWithVmId());
             if (vm != null) {
                 ipResponse.setVirtualMachineId(vm.getUuid());
                 ipResponse.setVirtualMachineName(vm.getHostName());
-                if (vm.getDisplayName() != null) {
-                    ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
-                } else {
-                    ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+                ipResponse.setVirtualMachineType(vm.getType().toString());
+                if (VirtualMachine.Type.User.equals(vm.getType())) {
+                    UserVm userVm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
+                    ipResponse.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
                 }
             }
         }

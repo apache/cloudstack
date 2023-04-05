@@ -72,6 +72,9 @@ public interface IpAddressManager {
     PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
             throws InsufficientAddressCapacityException;
 
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long vmId, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
+            throws InsufficientAddressCapacityException;
+
     PublicIp assignSourceNatPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
         throws InsufficientAddressCapacityException;
 
@@ -230,6 +233,8 @@ public interface IpAddressManager {
                                              final boolean forSystemVms,
                                              final boolean lockOneRow)
             throws InsufficientAddressCapacityException;
+
+    void updateAssociatedVmIdForAllocatedIp(long ipId, long vmId);
 
     public static final String MESSAGE_ASSIGN_IPADDR_EVENT = "Message.AssignIpAddr.Event";
     public static final String MESSAGE_RELEASE_IPADDR_EVENT = "Message.ReleaseIpAddr.Event";

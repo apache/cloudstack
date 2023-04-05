@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -99,6 +98,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -665,7 +665,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         return controlConfig;
     }
 
-    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) throws InsufficientAddressCapacityException {
+    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic, final VirtualRouter router) throws InsufficientAddressCapacityException {
         final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         if (routerDeploymentDefinition.isPublicNetwork()) {
@@ -675,6 +675,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             final NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             final PublicIp sourceNatIp = routerDeploymentDefinition.getSourceNatIP();
+            if (router != null) {
+                _ipAddrMgr.updateAssociatedVmIdForAllocatedIp(sourceNatIp.getId(), router.getId());
+            }
             defaultNic.setIPv4Address(sourceNatIp.getAddress().addr());
             defaultNic.setIPv4Gateway(sourceNatIp.getGateway());
             defaultNic.setIPv4Netmask(sourceNatIp.getNetmask());
@@ -716,7 +719,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition, final VirtualRouter router) throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
@@ -729,7 +732,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         networks.putAll(controlNic);
 
         // 3) Public network
-        final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, networks.size() > 1);
+        final LinkedHashMap<Network, List<? extends NicProfile>> publicNic = configurePublicNic(routerDeploymentDefinition, networks.size() > 1, router);
         networks.putAll(publicNic);
 
         return networks;
@@ -825,7 +828,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             throws ConcurrentOperationException, InsufficientCapacityException {
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
 
-        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition);
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition, router);
 
         _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType);
     }
