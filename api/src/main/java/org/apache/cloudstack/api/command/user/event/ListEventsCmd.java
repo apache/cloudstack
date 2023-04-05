@@ -72,7 +72,7 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the event", since="4.17.0")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.ARCHIVED, type = CommandType.STRING, description = "true to list archived events otherwise false", since="4.19.0")
+    @Parameter(name = ApiConstants.ARCHIVED, type = CommandType.BOOLEAN, description = "true to list archived events otherwise false", since="4.19.0")
     private Boolean archived;
 
     /////////////////////////////////////////////////////
