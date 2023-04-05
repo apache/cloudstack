@@ -44,6 +44,7 @@ public class StartupRoutingCommand extends StartupCommand {
     List<String> hostTags = new ArrayList<String>();
     String hypervisorVersion;
     HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
+    private Boolean hostHealthCheckResult;
 
     public StartupRoutingCommand() {
         super(Host.Type.Routing);
@@ -187,5 +188,13 @@ public class StartupRoutingCommand extends StartupCommand {
 
     public void setSupportsClonedVolumes(boolean supportsClonedVolumes) {
         this.supportsClonedVolumes = supportsClonedVolumes;
+    }
+
+    public Boolean getHostHealthCheckResult() {
+        return hostHealthCheckResult;
+    }
+
+    public void setHostHealthCheckResult(Boolean hostHealthCheckResult) {
+        this.hostHealthCheckResult = hostHealthCheckResult;
     }
 }

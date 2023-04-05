@@ -1655,7 +1655,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    protected boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
+    public boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
 

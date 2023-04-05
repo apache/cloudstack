@@ -74,4 +74,3 @@ public class DiskOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<DiskOffer
         return findResourceIdsByNameAndValueIn("domainid", dIds);
     }
 }
-
