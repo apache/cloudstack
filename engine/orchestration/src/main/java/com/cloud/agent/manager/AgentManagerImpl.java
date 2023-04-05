@@ -1255,11 +1255,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
             HostVO host = _hostDao.findById(hostId);
             if (host == null) {
-                s_logger.error(String.format("Unable to find host with ID: %s", hostId));
+                logger.error(String.format("Unable to find host with ID: %s", hostId));
                 return;
             }
             if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
-                s_logger.debug(String.format("%s is disabled for the cluster %s, cannot process the health check result " +
+                logger.debug(String.format("%s is disabled for the cluster %s, cannot process the health check result " +
                         "received for the host %s", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName()));
                 return;
             }
@@ -1267,19 +1267,19 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             ResourceState.Event resourceEvent = hostHealthCheckResult ? ResourceState.Event.Enable : ResourceState.Event.Disable;
 
             try {
-                s_logger.info(String.format("Host health check %s, auto %s KVM host: %s",
+                logger.info(String.format("Host health check %s, auto %s KVM host: %s",
                         hostHealthCheckResult ? "succeeds" : "fails",
                         hostHealthCheckResult ? "enabling" : "disabling",
                         host.getName()));
                 _resourceMgr.autoUpdateHostAllocationState(hostId, resourceEvent);
             } catch (NoTransitionException e) {
-                s_logger.error(String.format("Cannot Auto %s host: %s", resourceEvent, host.getName()), e);
+                logger.error(String.format("Cannot Auto %s host: %s", resourceEvent, host.getName()), e);
             }
         }
 
         private void processStartupRoutingCommand(StartupRoutingCommand startup, long hostId) {
             if (startup == null) {
-                s_logger.error("Empty StartupRoutingCommand received");
+                logger.error("Empty StartupRoutingCommand received");
                 return;
             }
             Boolean hostHealthCheckResult = startup.getHostHealthCheckResult();
@@ -1288,7 +1288,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         private void processPingRoutingCommand(PingRoutingCommand pingRoutingCommand, long hostId) {
             if (pingRoutingCommand == null) {
-                s_logger.error("Empty PingRoutingCommand received");
+                logger.error("Empty PingRoutingCommand received");
                 return;
             }
             Boolean hostHealthCheckResult = pingRoutingCommand.getHostHealthCheckResult();

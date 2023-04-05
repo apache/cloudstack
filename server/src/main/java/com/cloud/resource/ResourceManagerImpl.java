@@ -1798,7 +1798,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _hostDetailsDao.update(hostDetail.getId(), hostDetail);
             } else if (!isUpdateFromHostHealthCheck && hostDetail != null &&
                     Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Disable) {
-                s_logger.info(String.format("The setting %s is enabled but the host %s is manually set into %s state," +
+                logger.info(String.format("The setting %s is enabled but the host %s is manually set into %s state," +
                                 "ignoring future auto enabling of the host based on health check results",
                         AgentManager.EnableKVMAutoEnableDisable.key(), host.getName(), resourceEvent));
                 hostDetail.setValue(Boolean.FALSE.toString());
@@ -1819,12 +1819,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if ((host.getResourceState() == ResourceState.Enabled && resourceEvent == ResourceState.Event.Enable) ||
                 (host.getResourceState() == ResourceState.Disabled && resourceEvent == ResourceState.Event.Disable)) {
-            s_logger.info(String.format("The host %s is already on the allocated state", host.getName()));
+            logger.info(String.format("The host %s is already on the allocated state", host.getName()));
             return false;
         }
 
         if (isAutoEnableAttemptForADisabledHost(autoEnableDisableKVMSetting, isUpdateFromHostHealthCheck, hostDetail, resourceEvent)) {
-            s_logger.debug(String.format("The setting '%s' is enabled and the health check succeeds on the host, " +
+            logger.debug(String.format("The setting '%s' is enabled and the health check succeeds on the host, " +
                             "but the host has been manually disabled previously, ignoring auto enabling",
                     AgentManager.EnableKVMAutoEnableDisable.key()));
             return false;

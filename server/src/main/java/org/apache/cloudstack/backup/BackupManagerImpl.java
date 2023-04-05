@@ -623,7 +623,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         // The restore process is executed by a backup provider outside of ACS, I am using the catch-all (Exception) to
         // ensure that no provider-side exception is missed. Therefore, we have a proper handling of exceptions, and rollbacks if needed.
         } catch (Exception e) {
-            LOG.error(String.format("Failed to restore backup [%s] due to: [%s].", backupDetailsInMessage, e.getMessage()), e);
+            logger.error(String.format("Failed to restore backup [%s] due to: [%s].", backupDetailsInMessage, e.getMessage()), e);
             updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             throw new CloudRuntimeException(String.format("Error restoring VM from backup [%s].", backupDetailsInMessage));
@@ -637,7 +637,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * @param next The desired state, just needed to add more context to the logs
      */
     private void updateVmState(VMInstanceVO vm, VirtualMachine.Event event, VirtualMachine.State next) {
-        LOG.debug(String.format("Trying to update state of VM [%s] with event [%s].", vm, event));
+        logger.debug(String.format("Trying to update state of VM [%s] with event [%s].", vm, event));
         Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<VMInstanceVO>) status -> {
             try {
                 if (!virtualMachineManager.stateTransitTo(vm, event, vm.getHostId())) {
@@ -645,7 +645,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 }
             } catch (NoTransitionException e) {
                 String errMsg = String.format("Failed to update state of VM [%s] with event [%s] due to [%s].", vm, event, e.getMessage());
-                LOG.error(errMsg, e);
+                logger.error(errMsg, e);
                 throw new RuntimeException(errMsg);
             }
             return null;
@@ -675,14 +675,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      *
      */
     private void tryToUpdateStateOfSpecifiedVolume(VolumeVO volume, Volume.Event event, Volume.State next) {
-        LOG.debug(String.format("Trying to update state of volume [%s] with event [%s].", volume, event));
+        logger.debug(String.format("Trying to update state of volume [%s] with event [%s].", volume, event));
         try {
             if (!volumeApiService.stateTransitTo(volume, event)) {
                 throw new CloudRuntimeException(String.format("Unable to change state of volume [%s] to [%s].", volume, next));
             }
         } catch (NoTransitionException e) {
             String errMsg = String.format("Failed to update state of volume [%s] with event [%s] due to [%s].", volume, event, e.getMessage());
-            LOG.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new RuntimeException(errMsg);
         }
     }

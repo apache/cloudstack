@@ -951,7 +951,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         hostHealthCheckScriptPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEALTH_CHECK_SCRIPT_PATH);
         if (StringUtils.isNotBlank(hostHealthCheckScriptPath) && !new File(hostHealthCheckScriptPath).exists()) {
-            s_logger.info(String.format("Unable to find the host health check script at: %s, " +
+            logger.info(String.format("Unable to find the host health check script at: %s, " +
                     "discarding it", hostHealthCheckScriptPath));
         }
 
@@ -3474,19 +3474,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private HealthCheckResult getHostHealthCheckResult() {
         if (StringUtils.isBlank(hostHealthCheckScriptPath)) {
-            s_logger.debug("Host health check script path is not specified");
+            logger.debug("Host health check script path is not specified");
             return HealthCheckResult.IGNORE;
         }
         File script = new File(hostHealthCheckScriptPath);
         if (!script.exists() || !script.isFile() || !script.canExecute()) {
-            s_logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
+            logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
                             "reason: %s", hostHealthCheckScriptPath,
                     !script.exists() ? "file does not exist" : "please check file permissions to execute this file"));
             return HealthCheckResult.IGNORE;
         }
         int exitCode = executeBashScriptAndRetrieveExitValue(hostHealthCheckScriptPath);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Host health check script exit code: %s", exitCode));
         }
         return retrieveHealthCheckResultFromExitCode(exitCode);
     }
