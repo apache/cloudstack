@@ -1319,7 +1319,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Nullable
-    private IPAddressVO validateSourceNatip(Vpc vpc, String sourceNatIp) {
+    protected IPAddressVO validateSourceNatip(Vpc vpc, String sourceNatIp) {
         if (sourceNatIp == null) {
             s_logger.trace(String.format("no source NAT ip given to update vpc %s with.", vpc.getName()));
             return null;

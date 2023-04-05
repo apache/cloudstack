@@ -6216,7 +6216,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private boolean sourceNatCapabilitiesContainValidValues(Map<Capability, String> sourceNatServiceCapabilityMap) {
+    boolean sourceNatCapabilitiesContainValidValues(Map<Capability, String> sourceNatServiceCapabilityMap) {
         for (final Entry<Capability ,String> srcNatPair : sourceNatServiceCapabilityMap.entrySet()) {
             final Capability capability = srcNatPair.getKey();
             final String value = srcNatPair.getValue();
@@ -6411,17 +6411,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             final Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
             if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-                String param = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
-                if (param != null) {
-                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, param);
-                    sharedSourceNat = param.contains(PERZONE);
-                }
-
-                param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
-                if (param != null) {
-                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
-                    redundantRouter = param.contains("true");
-                }
+                sharedSourceNat = isSharedSourceNat(serviceProviderMap, sourceNatServiceCapabilityMap);
+                redundantRouter = isRedundantRouter(serviceProviderMap, sourceNatServiceCapabilityMap);
             }
 
             final Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
@@ -6569,6 +6560,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return offering;
             }
         });
+    }
+
+    boolean isRedundantRouter(Map<Service, Set<Provider>> serviceProviderMap, Map<Capability, String> sourceNatServiceCapabilityMap) {
+        boolean redundantRouter = false;
+        String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
+        if (param != null) {
+            _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
+            redundantRouter = param.contains("true");
+        }
+        return redundantRouter;
+    }
+
+    boolean isSharedSourceNat(Map<Service, Set<Provider>> serviceProviderMap, Map<Capability, String> sourceNatServiceCapabilityMap) {
+        boolean sharedSourceNat = false;
+        String param = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
+        if (param != null) {
+            _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, param);
+            sharedSourceNat = param.contains(PERZONE);
+        }
+        return sharedSourceNat;
     }
 
     protected void validateNtwkOffDetails(final Map<Detail, String> details, final Map<Service, Set<Provider>> serviceProviderMap) {

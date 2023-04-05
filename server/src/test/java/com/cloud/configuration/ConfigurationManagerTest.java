@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
@@ -619,6 +620,40 @@ public class ConfigurationManagerTest {
             caught = true;
         }
         Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void isRedundantRouter() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "True");
+        Assert.assertTrue(configurationMgr.isRedundantRouter(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void isSharedSourceNat() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "perzone");
+        Assert.assertTrue(configurationMgr.isSharedSourceNat(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void isNotSharedSourceNat() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        Assert.assertFalse(configurationMgr.isSharedSourceNat(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void sourceNatCapabilitiesContainValidValues() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "True");
+
+        Assert.assertTrue(configurationMgr.sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap));
     }
 
     @Test
