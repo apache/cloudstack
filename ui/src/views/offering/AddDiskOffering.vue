@@ -357,7 +357,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         disksize: [
           { required: true, message: this.$t('message.error.required.input') },
           { type: 'number', validator: this.validateNumber }

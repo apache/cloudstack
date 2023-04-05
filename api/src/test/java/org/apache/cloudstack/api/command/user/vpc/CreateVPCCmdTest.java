@@ -133,6 +133,12 @@ public class CreateVPCCmdTest extends TestCase {
         Assert.assertTrue(cmd.getDisplayVpc());
     }
 
+    public void testGetDisplayTextWhenEmpty() {
+        String netName = "net-vpc";
+        ReflectionTestUtils.setField(cmd, "vpcName", netName);
+        Assert.assertEquals(cmd.getDisplayText(), netName);
+    }
+
     public void testCreate() throws ResourceAllocationException {
         Vpc vpc = Mockito.mock(Vpc.class);
         ReflectionTestUtils.setField(cmd, "zoneId", 1L);

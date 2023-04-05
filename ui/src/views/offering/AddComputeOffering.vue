@@ -707,7 +707,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         cpunumber: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
