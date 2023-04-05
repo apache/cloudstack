@@ -64,6 +64,7 @@ class DBDeployer(object):
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
     encryptionJarPath = '@COMMONLIBDIR@/lib/cloudstack-utils.jar'
+    log4j2JarPath = ':@COMMONLIBDIR@/lib/log4j-api-2.19.0.jar:@COMMONLIBDIR@/lib/log4j-api-2.19.0.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
 
@@ -184,7 +185,7 @@ for example:
                         
     def processEncryptionStuff(self):
         def encrypt(value):
-            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' + self.mgmtsecretkey + '"']
+            cmd = ['java','-classpath','"' + self.encryptionJarPath + self.log4j2JarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' + self.mgmtsecretkey + '"']
             return runCmd(cmd).strip('\n')
         
         def saveMgmtServerSecretKey():

@@ -264,7 +264,6 @@
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.apache.commons:commons-lang3</include>
                                     <include>org.jasypt:jasypt</include>
-                                    <include>org.apache.logging.log4j:log4j-api</include>
                                 </includes>
                             </artifactSet>
                         </configuration>

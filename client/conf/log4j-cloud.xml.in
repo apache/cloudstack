@@ -92,7 +92,7 @@ under the License.
 
       <Logger name="org.apache" level="INFO"/>
 
-      <Logger name="org.apache.cloudstack.api.command" level="TRACE"/>
+      <Logger name="org.apache.cloudstack.api.command" level="DEBUG"/>
 
       <Logger name="org" level="INFO"/>
 

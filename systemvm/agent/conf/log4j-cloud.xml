@@ -24,6 +24,7 @@ under the License.
         <!-- Preserve messages in a local file -->
         <!-- ================================= -->
         <RollingFile name="cloudLog" fileName="/var/log/cloud.log" filePattern="/var/log/cloud.%i.log">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
@@ -32,6 +33,7 @@ under the License.
         </RollingFile>
 
         <RollingFile name="cloudOut" append="true" fileName="/var/log/cloud/cloud.out" filePattern="/var/log/cloud/cloud.%i.out">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
@@ -40,6 +42,7 @@ under the License.
         </RollingFile>
 
         <RollingFile name="cloudSystemvmLog" append="true" fileName="/usr/local/cloud/systemvm/cloud.log" filePattern="/usr/local/cloud/systemvm/cloud.%i.log">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="10000KB"/>
             </Policies>
@@ -52,7 +55,7 @@ under the License.
             <Policies>
                 <TimeBasedTriggeringPolicy/>
             </Policies>
-            <PatternLayout pattern="%d{ISO8601}{GMT} %m%n"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %m%ex%n"/>
         </RollingFile>
 
 

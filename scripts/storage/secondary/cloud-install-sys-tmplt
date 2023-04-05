@@ -55,7 +55,7 @@ dbHost="localhost"
 dbUser="root"
 dbPassword=
 dbPort=3306
-jarfile='/usr/share/cloudstack-common/lib/cloudstack-utils.jar'
+jarfile='/usr/share/cloudstack-common/lib/cloudstack-utils.jar:/usr/share/cloudstack-common/lib/log4j-api-2.19.0.jar:/usr/share/cloudstack-common/lib/log4j-api-2.19.0.jar'
 
 # check if first parameter is not a dash (-) then print the usage block
 if [[ ! $@ =~ ^\-.+ ]]; then

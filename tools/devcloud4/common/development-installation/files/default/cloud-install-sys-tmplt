@@ -41,7 +41,7 @@ dbHost=
 dbUser=
 dbPassword=
 name=
-jarfile='/usr/share/cloudstack-common/lib/cloudstack-utils.jar'
+jarfile='/usr/share/cloudstack-common/lib/cloudstack-utils.jar:/usr/share/cloudstack-common/lib/log4j-api-2.19.0.jar:/usr/share/cloudstack-common/lib/log4j-api-2.19.0.jar'
 
 while getopts 'm:h:f:u:Ft:e:s:o:r:d:n:' OPTION
 do
