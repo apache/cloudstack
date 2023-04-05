@@ -2030,6 +2030,7 @@
 "label.usagename": "Usage type",
 "label.usageunit": "Unit",
 "label.usageislocal": "A Usage Server is installed locally",
+"label.usagetypedescription": "Usage description",
 "label.use.kubectl.access.cluster": "<code><b>kubectl</b></code> and <code><b>kubeconfig</b></code> file to access cluster",
 "label.use.local.timezone": "Use local timezone",
 "label.used": "Used",
