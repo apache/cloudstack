@@ -19,59 +19,77 @@
 
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
+import org.apache.cloudstack.vm.schedule.VMSchedule;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+
+import javax.inject.Inject;
+import java.util.Collections;
+import java.util.List;
 
 @APICommand(name = "deleteVMSchedule", description = "Delete VM Schedule.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class DeleteVMScheduleCmd extends BaseAsyncCmd {
+public class DeleteVMScheduleCmd extends BaseCmd {
+    @Inject
+    private VMScheduleManager vmScheduleManager;
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = VMScheduleResponse.class,
+            required = false,
+            description = "ID of VM schedule")
+    private Long id;
+    @Parameter(name = ApiConstants.IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = VMScheduleResponse.class,
+            required = false,
+            description = "IDs of VM schedule")
+    private List<Long> ids;
 
-    /**
-     * For proper tracking of async commands through the system, events must be generated when the command is
-     * scheduled, started, and completed. Commands should specify the type of event so that when the scheduled,
-     * started, and completed events are saved to the events table, they have the proper type information.
-     *
-     * @return a string representing the type of event, e.g. VM.START, VOLUME.CREATE.
-     */
-    @Override
-    public String getEventType() {
-        return null;
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
 
-    /**
-     * For proper tracking of async commands through the system, events must be generated when the command is
-     * scheduled, started, and completed. Commands should specify a description for these events so that when
-     * the scheduled, started, and completed events are saved to the events table, they have a meaningful description.
-     *
-     * @return a string representing a description of the event
-     */
-    @Override
-    public String getEventDescription() {
-        return null;
+    public List<Long> getIds() {
+        if (ids == null){
+            return Collections.emptyList();
+        }
+        return ids;
     }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
+        long rowsRemoved = vmScheduleManager.removeSchedule(this);
 
+        if (rowsRemoved > 0) {
+            final SuccessResponse response = new SuccessResponse();
+            response.setResponseName(getCommandName());
+            response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete VM Schedules");
+        }
     }
 
-    /**
-     * For commands the API framework needs to know the owner of the object being acted upon. This method is
-     * used to determine that information.
-     *
-     * @return the id of the account that owns the object being acted upon
-     */
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

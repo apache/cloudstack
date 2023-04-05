@@ -16,34 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
+import org.apache.cloudstack.api.response.VMScheduleResponse;
 
-import java.util.Date;
+import java.util.List;
 
-public interface VMSchedule extends Identity, InternalIdentity {
-    enum Action {
-        START, STOP, RESTART;
-    }
-    long getVmId();
+public interface VMScheduleManager {
+    VMSchedule createSchedule(CreateVMScheduleCmd createVMScheduleCmd);
 
-    String getName();
+    VMScheduleResponse createResponse(VMSchedule vmSchedule);
 
-    String getDescription();
+    Pair<List<? extends VMSchedule>, Integer> listSchedule(ListVMScheduleCmd listVMScheduleCmd);
 
-    String getSchedule();
+    VMSchedule updateSchedule(UpdateVMScheduleCmd updateVMScheduleCmd);
 
-    String getTimeZone();
-
-    Action getAction();
-
-    boolean getEnabled();
-
-    Date getStartDate();
-
-    Date getEndDate();
-
+    long removeSchedule(DeleteVMScheduleCmd deleteVMScheduleCmd);
 }

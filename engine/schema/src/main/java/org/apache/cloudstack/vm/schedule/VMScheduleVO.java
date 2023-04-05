@@ -23,10 +23,14 @@ import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.util.Date;
 import java.util.UUID;
 
@@ -35,30 +39,38 @@ import java.util.UUID;
 public class VMScheduleVO implements VMSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     Long id;
 
-    @Column(name = "uuid")
+    @Column(name = "uuid", nullable = false)
     String uuid = UUID.randomUUID().toString();
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     String name;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     String description;
 
-    @Column(name = "schedule")
-    String schedule;
-
-    @Column(name = "vm_id")
+    @Column(name = "vm_id", nullable = false)
     long vmId;
-    @Column(name = "enabled")
+
+    @Column(name = "schedule", nullable = false)
+    String schedule;
+    @Column(name = "timezone")
+    String timeZone;
+    @Column(name = "action", nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    Action action;
+
+    @Column(name = "enabled", nullable = false)
     boolean enabled;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
+    @Temporal(value = TemporalType.TIMESTAMP)
     Date startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
     Date endDate;
 
     @Column(name = GenericDao.CREATED_COLUMN)
@@ -67,17 +79,19 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    @Column(name = "update_count", updatable = true, nullable = false)
-    protected long updatedCount;
+    public VMScheduleVO() {
+        uuid = UUID.randomUUID().toString();
+    }
 
-
-    public VMScheduleVO() {}
-
-    public VMScheduleVO(long vmId, String name, String description, String schedule, boolean enabled) {
+    public VMScheduleVO(long vmId, String name, String description, String schedule, String timeZone, Action action, Date startDate, Date endDate, boolean enabled) {
         this.vmId = vmId;
         this.name = name;
         this.description = description;
         this.schedule = schedule;
+        this.timeZone = timeZone;
+        this.action = action;
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.enabled = enabled;
     }
 
@@ -123,11 +137,46 @@ public class VMScheduleVO implements VMSchedule {
         this.schedule = schedule;
     }
 
+    @Override
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
+    }
+
+    public Action getAction() {
+        return action;
+    }
+
+    public void setAction(Action action) {
+        this.action = action;
+    }
+
     public boolean getEnabled() {
         return enabled;
     }
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @Override
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    @Override
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 }

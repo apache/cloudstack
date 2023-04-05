@@ -19,56 +19,131 @@
 
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
+import org.apache.cloudstack.vm.schedule.VMSchedule;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+
+import javax.inject.Inject;
+import java.util.Date;
 
 @APICommand(name = "createVMSchedule", description = "Create VM Schedule", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVMScheduleCmd extends BaseAsyncCreateCmd {
-    /**
-     * For proper tracking of async commands through the system, events must be generated when the command is
-     * scheduled, started, and completed. Commands should specify the type of event so that when the scheduled,
-     * started, and completed events are saved to the events table, they have the proper type information.
-     *
-     * @return a string representing the type of event, e.g. VM.START, VOLUME.CREATE.
-     */
-    @Override
-    public String getEventType() {
-        return null;
+public class CreateVMScheduleCmd extends BaseCmd {
+
+    @Inject
+    private VMScheduleManager vmScheduleManager;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "ID of the VM for which schedule is to be defined")
+    private Long vmId;
+
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            required = true,
+            description = "Name of the schedule")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            required = true,
+            description = "Name of the schedule")
+    private String description;
+
+    @Parameter(name = ApiConstants.SCHEDULE,
+            type = CommandType.STRING,
+            required = true,
+            description = "Schedule for action on VM in cron format")
+    private String schedule;
+
+    @Parameter(name = ApiConstants.TIMEZONE,
+            type = CommandType.STRING,
+            required = true,
+            description = "Specifies a timezone for this command. For more information on the timezone parameter, see TimeZone Format.")
+    private String timeZone;
+
+    @Parameter(name = ApiConstants.ACTION,
+            type = CommandType.STRING,
+            required = true,
+            description = "Action to take on the VM (start/stop/restart).")
+    private String action;
+
+    @Parameter(name = ApiConstants.START_DATE,
+            type = CommandType.DATE,
+            required = false,
+            description = "start date from which the schedule becomes active"
+                    + "Use format \"yyyy-MM-dd hh:mm:ss\"). Defaults to current date time.")
+    private Date startDate;
+
+    @Parameter(name = ApiConstants.END_DATE,
+            type = CommandType.DATE,
+            required = false,
+            description = "end date after which the schedule becomes inactive"
+                    + "Use format \"yyyy-MM-dd hh:mm:ss\")")
+    private Date endDate;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getVmId() {
+        return vmId;
     }
 
-    /**
-     * For proper tracking of async commands through the system, events must be generated when the command is
-     * scheduled, started, and completed. Commands should specify a description for these events so that when
-     * the scheduled, started, and completed events are saved to the events table, they have a meaningful description.
-     *
-     * @return a string representing a description of the event
-     */
-    @Override
-    public String getEventDescription() {
-        return null;
+    public String getName() {
+        return name;
     }
 
-
-    @Override
-    public void create() {
-
+    public String getDescription() {
+        return description;
     }
 
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
     @Override
     public void execute() {
-
+        VMSchedule vmSchedule = vmScheduleManager.createSchedule(this);
+        VMScheduleResponse response = vmScheduleManager.createResponse(vmSchedule);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 
-    /**
-     * For commands the API framework needs to know the owner of the object being acted upon. This method is
-     * used to determine that information.
-     *
-     * @return the id of the account that owns the object being acted upon
-     */
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find VM by id=" + getVmId());
+        }
+        return vm.getAccountId();
     }
 }

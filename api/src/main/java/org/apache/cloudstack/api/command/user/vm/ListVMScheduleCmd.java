@@ -19,16 +19,87 @@
 
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
+import org.apache.cloudstack.vm.schedule.VMSchedule;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = "listVMSchedule", description = "List VM Schedules.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMScheduleCmd extends BaseListCmd {
+    @Inject
+    private VMScheduleManager vmScheduleManager;
 
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "ID of the VM for which schedule is to be defined")
+    private Long vmId;
+
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = VMScheduleResponse.class,
+            required = false,
+            description = "ID of VM schedule")
+    private Long id;
+
+    @Parameter(name = ApiConstants.ACTION,
+            type = CommandType.STRING,
+            required = false,
+            description = "Action taken by schedule")
+    private String action;
+
+    @Parameter(name = ApiConstants.ENABLED,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "ID of VM schedule")
+    private Boolean enabled;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getVmId() {
+        return vmId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
     @Override
     public void execute() {
+        Pair<List<? extends VMSchedule>, Integer> result = vmScheduleManager.listSchedule(this);
+        ListResponse<VMScheduleResponse> response = new ListResponse<VMScheduleResponse>();
+        List<VMScheduleResponse> responsesList = new ArrayList<VMScheduleResponse>();
+        for (VMSchedule vmSchedule : result.first()) {
+            responsesList.add(vmScheduleManager.createResponse(vmSchedule));
+        }
+        response.setResponses(responsesList, result.second());
+        response.setResponseName(getCommandName());
+        response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
+        setResponseObject(response);
     }
 }

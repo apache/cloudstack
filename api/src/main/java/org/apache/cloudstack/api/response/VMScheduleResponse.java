@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
+import java.util.Date;
+
 @EntityReference(value = VMSchedule.class)
 public class VMScheduleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
@@ -50,17 +52,61 @@ public class VMScheduleResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.TIMEZONE)
     @Param(description = "Timezone of the schedule")
-    private String timezone;
+    private String timeZone;
+
+    @SerializedName(ApiConstants.ACTION)
+    @Param(description = "Action")
+    private VMSchedule.Action action;
 
     @SerializedName(ApiConstants.ENABLED)
-    @Param(description = "Cron formatted VM schedule")
-    private String enabled;
+    @Param(description = "VM schedule is enabled")
+    private boolean enabled;
 
     @SerializedName(ApiConstants.START_DATE)
     @Param(description = "Date from which the schedule is active")
-    private String startDate;
+    private Date startDate;
 
     @SerializedName(ApiConstants.END_DATE)
     @Param(description = "Date after which the schedule becomes inactive")
-    private String endDate;
+    private Date endDate;
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setVmId(String vmId) {
+        this.vmId = vmId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setSchedule(String schedule) {
+        this.schedule = schedule;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
+    }
+
+    public void setAction(VMSchedule.Action action) {
+        this.action = action;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
 }
