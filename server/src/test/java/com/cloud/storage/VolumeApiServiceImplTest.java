@@ -54,6 +54,8 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -113,6 +115,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -210,6 +213,8 @@ public class VolumeApiServiceImplTest {
     @Mock
     private ProjectManager projectManagerMock;
 
+    @Mock
+    private StoragePoolDetailsDao storagePoolDetailsDao;
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
@@ -1563,4 +1568,56 @@ public class VolumeApiServiceImplTest {
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Assert.assertFalse(volumeApiServiceImpl.isSendCommandForVmVolumeAttachDetach(host, Mockito.mock(StoragePoolVO.class)));
     }
+
+    @Test
+    public void testVolumeOnDifferentScaleIOStorageInstance() {
+        StoragePoolDetailVO srcPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+        String srcPoolSystemId = "610204d03e3ad60f";
+        when(srcPoolSystemIdDetail.getValue()).thenReturn(srcPoolSystemId);
+
+        StoragePoolDetailVO destPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+        String destPoolSystemId = "7332760565f6340f";
+        when(destPoolSystemIdDetail.getValue()).thenReturn(destPoolSystemId);
+
+        when(storagePoolDetailsDao.findDetail(1L,"powerflex.storagepool.system.id")).thenReturn(srcPoolSystemIdDetail);
+        when(storagePoolDetailsDao.findDetail(2L,"powerflex.storagepool.system.id")).thenReturn(destPoolSystemIdDetail);
+
+        boolean result = volumeApiServiceImpl.isScaleIOVolumeOnDifferentScaleIOStorageInstances(1L, 2L);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testVolumeOnSameScaleIOStorageInstance() {
+        StoragePoolDetailVO srcPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+        String srcPoolSystemId = "610204d03e3ad60f";
+        when(srcPoolSystemIdDetail.getValue()).thenReturn(srcPoolSystemId);
+
+        StoragePoolDetailVO destPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+        String destPoolSystemId = "610204d03e3ad60f";
+        when(destPoolSystemIdDetail.getValue()).thenReturn(destPoolSystemId);
+
+        when(storagePoolDetailsDao.findDetail(1L,"powerflex.storagepool.system.id")).thenReturn(srcPoolSystemIdDetail);
+        when(storagePoolDetailsDao.findDetail(2L,"powerflex.storagepool.system.id")).thenReturn(destPoolSystemIdDetail);
+
+        boolean result = volumeApiServiceImpl.isScaleIOVolumeOnDifferentScaleIOStorageInstances(1L, 2L);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void testCheckVolumeOnDifferentScaleIOStorageInstanceSystemIdShouldNotBeNull() {
+        StoragePoolDetailVO srcPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+        String srcPoolSystemId = "610204d03e3ad60f";
+        when(srcPoolSystemIdDetail.getValue()).thenReturn(srcPoolSystemId);
+
+        StoragePoolDetailVO destPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+        when(destPoolSystemIdDetail.getValue()).thenReturn(null);
+
+        when(storagePoolDetailsDao.findDetail(1L,"powerflex.storagepool.system.id")).thenReturn(srcPoolSystemIdDetail);
+        when(storagePoolDetailsDao.findDetail(2L,"powerflex.storagepool.system.id")).thenReturn(destPoolSystemIdDetail);
+
+        volumeApiServiceImpl.isScaleIOVolumeOnDifferentScaleIOStorageInstances(1L, 2L);
+    }
+
 }

@@ -1068,7 +1068,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    private boolean isSameScaleIOStorageInstance(DataStore srcStore, DataStore destStore) {
+    public boolean isSameScaleIOStorageInstance(DataStore srcStore, DataStore destStore) {
         long srcPoolId = srcStore.getId();
         String srcPoolSystemId = null;
         StoragePoolDetailVO srcPoolSystemIdDetail = storagePoolDetailsDao.findDetail(srcPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
