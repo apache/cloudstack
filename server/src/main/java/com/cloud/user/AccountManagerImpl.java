@@ -2446,7 +2446,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void logoutUser(long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
         if (userAcct != null) {
-            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_loggerOUT, "user has logged out", userId, ApiCommandResourceType.User.toString());
+            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out", userId, ApiCommandResourceType.User.toString());
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
     }
 
@@ -2585,7 +2585,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
 
-            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_loggerIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
 
             return user;
         } else {
@@ -2620,7 +2620,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
+        boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
         if (authenticated) {
 

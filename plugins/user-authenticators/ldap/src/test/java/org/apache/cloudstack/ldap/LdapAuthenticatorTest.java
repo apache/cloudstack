@@ -89,7 +89,7 @@ public class LdapAuthenticatorTest {
         when(ldapManager.getUser(username, domainId)).thenReturn(ldapUser);
         rc = ldapAuthenticator.authenticate(username, "password", domainId, user);
         assertFalse("authentication succeeded when it should have failed", rc.first());
-        assertEquals("", UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT,rc.second());
+        assertEquals("", UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT,rc.second());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class LdapAuthenticatorTest {
         when(ldapManager.getLinkedLdapGroup(domainId, "g1")).thenReturn(trustMap);
         rc = auth.authenticate(username, "password", domainId, user, maps);
         assertFalse("authentication succeeded when it should have failed", rc.first());
-        assertEquals("", UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT,rc.second());
+        assertEquals("", UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT,rc.second());
     }
 
     @Test

@@ -199,7 +199,7 @@ public class KubernetesClusterActionWorker {
             }
             Set<String> vm = new HashSet<>();
             vm.add(userVM.getName());
-            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_loggerIN_USER);
+            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
             if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
                 return vmDetail.getValue();
             } else {
@@ -453,7 +453,7 @@ public class KubernetesClusterActionWorker {
             for (Long vmId : clusterVMs) {
                 UserVm controlNode = userVmDao.findById(vmId);
                 if (controlNode != null) {
-                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_loggerIN_USER, CLUSTER_NODE_VM_USER, true);
+                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
                 }
             }
         }

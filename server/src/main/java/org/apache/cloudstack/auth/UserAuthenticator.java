@@ -27,7 +27,7 @@ import com.cloud.utils.component.Adapter;
  */
 public interface UserAuthenticator extends Adapter {
     public enum ActionOnFailedAuthentication {
-        INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT;
+        INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
     }
 
     /**

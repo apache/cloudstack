@@ -253,8 +253,8 @@ public class EventTypes {
     public static final String EVENT_ACCOUNT_MARK_DEFAULT_ZONE = "ACCOUNT.MARK.DEFAULT.ZONE";
 
     // UserVO Events
-    public static final String EVENT_USER_loggerIN = "USER.loggerIN";
-    public static final String EVENT_USER_loggerOUT = "USER.loggerOUT";
+    public static final String EVENT_USER_LOGIN = "USER.LOGIN";
+    public static final String EVENT_USER_LOGOUT = "USER.LOGOUT";
     public static final String EVENT_USER_CREATE = "USER.CREATE";
     public static final String EVENT_USER_DELETE = "USER.DELETE";
     public static final String EVENT_USER_DISABLE = "USER.DISABLE";
@@ -797,8 +797,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ACCOUNT_MARK_DEFAULT_ZONE, Account.class);
 
         // UserVO Events
-        entityEventDetails.put(EVENT_USER_loggerIN, User.class);
-        entityEventDetails.put(EVENT_USER_loggerOUT, User.class);
+        entityEventDetails.put(EVENT_USER_LOGIN, User.class);
+        entityEventDetails.put(EVENT_USER_LOGOUT, User.class);
         entityEventDetails.put(EVENT_USER_CREATE, User.class);
         entityEventDetails.put(EVENT_USER_DELETE, User.class);
         entityEventDetails.put(EVENT_USER_DISABLE, User.class);

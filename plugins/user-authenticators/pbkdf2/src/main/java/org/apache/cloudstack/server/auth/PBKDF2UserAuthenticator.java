@@ -87,7 +87,7 @@ public class PBKDF2UserAuthenticator extends AdapterBase implements UserAuthenti
 
             UserAuthenticator.ActionOnFailedAuthentication action = null;
             if ((!result) && (isValidUser)) {
-                action = UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT;
+                action = UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
             }
             return new Pair(Boolean.valueOf(result), action);
         } catch (NumberFormatException e) {

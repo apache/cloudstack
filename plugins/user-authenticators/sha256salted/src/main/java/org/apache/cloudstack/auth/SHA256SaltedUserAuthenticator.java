@@ -79,7 +79,7 @@ public class SHA256SaltedUserAuthenticator extends AdapterBase implements UserAu
             boolean result = constantTimeEquals(realPassword, hashedPassword) && realUser;
             ActionOnFailedAuthentication action = null;
             if (!result && realUser) {
-                action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT;
+                action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
             }
             return new Pair<>(result, action);
         } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {

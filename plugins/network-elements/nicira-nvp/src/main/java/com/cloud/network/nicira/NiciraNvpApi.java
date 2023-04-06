@@ -96,7 +96,7 @@ public class NiciraNvpApi {
             .hostname(builder.host)
             .username(builder.username)
             .password(builder.password)
-            .loginUrl(NiciraConstants.loggerIN_URL)
+            .loginUrl(NiciraConstants.LOGIN_URL)
             .executionLimit(DEFAULT_MAX_RETRIES)
             .build();
         restConnector = RESTServiceConnector.create()

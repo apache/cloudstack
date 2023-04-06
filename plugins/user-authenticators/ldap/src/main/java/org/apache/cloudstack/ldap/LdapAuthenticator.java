@@ -143,7 +143,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 String accountName = account.getAccountName();
                 rc.first(_ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId));
                 if (! rc.first()) {
-                    rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
+                    rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
                 }
                 // for security reasons we keep processing on faulty login attempt to not give a way information on userid existence
                 if (userAccount == null) {
@@ -246,7 +246,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     enableUserInCloudStack(user);
                 }
             } else if(user != null) {
-                rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
+                rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
             }
         } else {
             //disable user in cloudstack
@@ -282,7 +282,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
 
     private Pair<Boolean, ActionOnFailedAuthentication> processResultAndAction(UserAccount user, boolean result) {
         return (!result && user != null) ?
-                new Pair<Boolean, ActionOnFailedAuthentication>(result, ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT):
+                new Pair<Boolean, ActionOnFailedAuthentication>(result, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
                 new Pair<Boolean, ActionOnFailedAuthentication>(result, null);
     }
 

@@ -57,7 +57,7 @@ public class SAML2UserAuthenticator extends AdapterBase implements UserAuthentic
             }
         }
         // Deny all by default
-        return new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
+        return new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
     }
 
     @Override

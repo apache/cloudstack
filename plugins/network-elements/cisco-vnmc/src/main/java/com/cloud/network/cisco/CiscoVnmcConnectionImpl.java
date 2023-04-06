@@ -50,7 +50,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     protected static Logger LOGGER = LogManager.getLogger(CiscoVnmcConnectionImpl.class);
 
     private enum VnmcXml {
-        LOGGERIN("login.xml", "mgmt-controller"),
+        LOGIN("login.xml", "mgmt-controller"),
 
         CREATE_TENANT("create-tenant.xml", "service-reg"),
         DELETE_TENANT("delete-tenant.xml", "service-reg"),
@@ -160,8 +160,8 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     public boolean login() throws ExecutionException {
-        String xml = VnmcXml.LOGGERIN.getXml();
-        String service = VnmcXml.LOGGERIN.getService();
+        String xml = VnmcXml.LOGIN.getXml();
+        String service = VnmcXml.LOGIN.getService();
         xml = replaceXmlValue(xml, "username", _username);
         xml = replaceXmlValue(xml, "password", _password);
         String response = sendRequest(service, xml);

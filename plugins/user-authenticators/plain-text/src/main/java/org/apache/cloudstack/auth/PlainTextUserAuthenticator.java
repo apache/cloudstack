@@ -50,7 +50,7 @@ public class PlainTextUserAuthenticator extends AdapterBase implements UserAuthe
 
         if (!user.getPassword().equals(password)) {
             logger.debug("Password does not match");
-            return new Pair<>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
+            return new Pair<>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
         }
         return new Pair<>(true, null);
     }

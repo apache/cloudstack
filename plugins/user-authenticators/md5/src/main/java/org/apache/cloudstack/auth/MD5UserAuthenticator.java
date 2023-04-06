@@ -59,7 +59,7 @@ public class MD5UserAuthenticator extends AdapterBase implements UserAuthenticat
 
         if (!user.getPassword().equals(encode(password))) {
             logger.debug("Password does not match");
-            return new Pair<>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_loggerIN_ATTEMPT_COUNT);
+            return new Pair<>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
         }
         return new Pair<>(true, null);
     }

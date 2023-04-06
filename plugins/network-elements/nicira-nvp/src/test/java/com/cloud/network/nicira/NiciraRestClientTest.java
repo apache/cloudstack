@@ -64,7 +64,7 @@ public class NiciraRestClientTest {
     private static final int HTTPS_PORT = 443;
 
     private static final String HTTPS = "HTTPS";
-    private static final String loggerIN_PATH = "/login";
+    private static final String LOGIN_PATH = "/login";
     private static final String LOCALHOST = "localhost";
     private static final String ADMIN = "admin";
     private static final String ADMIN_PASSWORD = "adminpassword";
@@ -93,7 +93,7 @@ public class NiciraRestClientTest {
         loginRequest = HttpUriRequestBuilder.create()
             .method(HttpMethods.POST)
             .methodParameters(loginParameters)
-            .path(loggerIN_PATH)
+            .path(LOGIN_PATH)
             .build();
     }
 
@@ -106,7 +106,7 @@ public class NiciraRestClientTest {
             .hostname(LOCALHOST)
             .username(ADMIN)
             .password(ADMIN_PASSWORD)
-            .loginUrl(loggerIN_PATH)
+            .loginUrl(LOGIN_PATH)
             .executionLimit(5)
             .build());
     }
@@ -159,7 +159,7 @@ public class NiciraRestClientTest {
             .hostname(LOCALHOST)
             .username(ADMIN)
             .password(ADMIN_PASSWORD)
-            .loginUrl(loggerIN_PATH)
+            .loginUrl(LOGIN_PATH)
             .executionLimit(2)
             .build());
 
@@ -202,7 +202,7 @@ public class NiciraRestClientTest {
             .hostname(LOCALHOST)
             .username(ADMIN)
             .password(ADMIN_PASSWORD)
-            .loginUrl(loggerIN_PATH)
+            .loginUrl(LOGIN_PATH)
             .executionLimit(2)
             .build());
 
