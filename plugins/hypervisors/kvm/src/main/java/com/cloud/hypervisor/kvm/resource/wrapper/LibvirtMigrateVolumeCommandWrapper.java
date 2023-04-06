@@ -51,6 +51,9 @@ import org.libvirt.DomainInfo;
 import org.libvirt.TypedParameter;
 import org.libvirt.TypedUlongParameter;
 import org.libvirt.LibvirtException;
+import org.libvirt.event.BlockJobListener;
+import org.libvirt.event.BlockJobStatus;
+import org.libvirt.event.BlockJobType;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
 public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
@@ -116,47 +119,11 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             TypedParameter[] parameters = new TypedParameter[1];
             parameters[0] = parameter;
 
-            Domain finalDm = dm;
-            final Boolean[] copyStatus = {true};
             dm.blockCopy(destDiskLabel, diskdef.toString(), parameters, Domain.BlockCopyFlags.REUSE_EXT);
             LOGGER.info(String.format("Block copy has started for the volume %s : %s ", diskdef.getDiskLabel(), srcPath));
 
-            int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
-            int waitTimeInSec = command.getWait();
-            while (waitTimeInSec > 0) {
-                DomainBlockJobInfo blockJobInfo = dm.getBlockJobInfo(destDiskLabel, 0);
-                if (blockJobInfo != null) {
-                    LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% ", destDiskLabel, srcPath, 100 * (blockJobInfo.cur / blockJobInfo.end)));
-                    if (blockJobInfo.cur == blockJobInfo.end) {
-                        LOGGER.debug(String.format("Block copy completed for the volume %s : %s", destDiskLabel, srcPath));
-                        dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.PIVOT);
-                        break;
-                    }
-                } else {
-                    LOGGER.debug("Failed to get the block copy status, trying to abort the job");
-                    dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
-                }
-                waitTimeInSec--;
+            return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath);
 
-                try {
-                    Thread.sleep(timeBetweenTries);
-                } catch (Exception ex) {
-                    // don't do anything
-                }
-            }
-
-            if (waitTimeInSec <= 0) {
-                String msg = "Block copy is taking long time, failing the job";
-                LOGGER.error(msg);
-                try {
-                    dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
-                } catch (LibvirtException ex) {
-                    LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
-                }
-                return new MigrateVolumeAnswer(command, false, msg, null);
-            }
-
-            return new MigrateVolumeAnswer(command, true, null, destPath);
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
             LOGGER.warn(msg, e);
@@ -177,6 +144,90 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
                 };
             }
         }
+    }
+
+    private MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath) throws LibvirtException {
+        int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
+        int waitTimeInSec = command.getWait();
+        while (waitTimeInSec > 0) {
+            DomainBlockJobInfo blockJobInfo = dm.getBlockJobInfo(diskLabel, 0);
+            if (blockJobInfo != null) {
+                LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% ", diskLabel, srcPath, 100 * (blockJobInfo.cur / blockJobInfo.end)));
+                if (blockJobInfo.cur == blockJobInfo.end) {
+                    LOGGER.debug(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
+                    dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
+                    break;
+                }
+            } else {
+                LOGGER.debug("Failed to get the block copy status, trying to abort the job");
+                dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
+            }
+            waitTimeInSec--;
+
+            try {
+                Thread.sleep(timeBetweenTries);
+            } catch (Exception ex) {
+                // don't do anything
+            }
+        }
+
+        if (waitTimeInSec <= 0) {
+            String msg = "Block copy is taking long time, failing the job";
+            LOGGER.error(msg);
+            try {
+                dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
+            } catch (LibvirtException ex) {
+                LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+            }
+            return new MigrateVolumeAnswer(command, false, msg, null);
+        }
+
+        return new MigrateVolumeAnswer(command, true, null, destPath);
+    }
+
+    private MigrateVolumeAnswer checkBlockJobStatusUsingListener(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath) throws LibvirtException, InterruptedException {
+        final Boolean[] copyStatus = {false};
+
+        BlockJobListener listener = new BlockJobListener() {
+            @Override
+            public void onEvent(Domain domain, String diskPath, BlockJobType type, BlockJobStatus status) {
+                LOGGER.info("waiting for the event");
+                if (type == BlockJobType.COPY && status == BlockJobStatus.READY) {
+                    try {
+                        domain.blockJobAbort(diskPath, Domain.BlockJobAbortFlags.PIVOT);
+                        copyStatus[0] = true;
+                    } catch (LibvirtException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        };
+        dm.addBlockJobListener(listener);
+
+        int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
+        int waitTimeInSec = command.getWait();
+        while (waitTimeInSec > 0 && !copyStatus[0]) {
+            waitTimeInSec--;
+            try {
+                Thread.sleep(timeBetweenTries);
+            } catch (Exception ex) {
+                // don't do anything
+            }
+            LOGGER.info("Waiting for the block copy to complete");
+        }
+
+        if (!copyStatus[0]) {
+            String msg = "Block copy is taking long time, failing the job";
+            LOGGER.error(msg);
+            try {
+                dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
+            } catch (LibvirtException ex) {
+                LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+            }
+            return new MigrateVolumeAnswer(command, false, msg, null);
+        }
+
+        return new MigrateVolumeAnswer(command, true, null, destPath);
     }
 
     private LibvirtVMDef.DiskDef generateDestinationDiskDefinition(Domain dm, String srcVolumeId, String srcPath, String diskFilePath) throws InternalErrorException, LibvirtException {

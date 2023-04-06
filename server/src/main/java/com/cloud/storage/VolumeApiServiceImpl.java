@@ -88,12 +88,7 @@ import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.*;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -157,12 +152,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.dao.*;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -326,6 +316,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Inject
     protected ProjectManager projectManager;
+    @Inject
+    protected StoragePoolDetailsDao storagePoolDetailsDao;
 
     protected Gson _gson;
 
@@ -1098,8 +1090,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (isNotPossibleToResize(volume, diskOffering)) {
                     throw new InvalidParameterValueException(
                             "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                                    + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                                    + "For more details please check out the Official Resizing Volumes documentation.");
+                            "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                            "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1246,7 +1238,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              */
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
-                        + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                     "Need to sign off by supplying the shrinkok parameter with value of true.");
             }
 
             if (newSize > currentSize) {
@@ -3019,6 +3011,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        // Offline volume migration check for scaleIO volumes across scaleio clusters
+        if (vm == null || !State.Running.equals(vm.getState())) {
+            StoragePoolVO sourceStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
+            if (sourceStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) && isScaleIOVolumeOnDifferentScaleIOStorageInstances(vol.getPoolId(), storagePoolId)) {
+                throw new InvalidParameterValueException("Volume needs to be attached to a VM to move across ScaleIO storages in different ScaleIO clusters");
+            }
+        }
+
         if (vm != null &&
                 HypervisorType.VMware.equals(vm.getHypervisorType()) &&
                 State.Stopped.equals(vm.getState())) {
@@ -3150,6 +3150,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateMigrateVolume(vol, destPool, liveMigrateVolume, newDiskOffering);
+    }
+
+    private boolean isScaleIOVolumeOnDifferentScaleIOStorageInstances(long srcPoolId, long destPoolId) {
+        String srcPoolSystemId = null;
+        StoragePoolDetailVO srcPoolSystemIdDetail = storagePoolDetailsDao.findDetail(srcPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (srcPoolSystemIdDetail != null) {
+            srcPoolSystemId = srcPoolSystemIdDetail.getValue();
+        }
+
+        String destPoolSystemId = null;
+        StoragePoolDetailVO destPoolSystemIdDetail = storagePoolDetailsDao.findDetail(destPoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (destPoolSystemIdDetail != null) {
+            destPoolSystemId = destPoolSystemIdDetail.getValue();
+        }
+
+        if (StringUtils.isAnyEmpty(srcPoolSystemId, destPoolSystemId)) {
+            throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration as storage instance details are not available");
+        }
+
+        if (srcPoolSystemId.equals(destPoolSystemId)) {
+            return true;
+        }
+
+        return false;
     }
 
     private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
