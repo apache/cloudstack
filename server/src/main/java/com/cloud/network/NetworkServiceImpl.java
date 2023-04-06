@@ -1304,7 +1304,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateSharedNetworkRouterIPs(String gateway, String startIP, String endIP, String netmask, String routerIPv4, String routerIPv6, String startIPv6, String endIPv6, String ip6Cidr, NetworkOffering ntwkOff) {
+    void validateSharedNetworkRouterIPs(String gateway, String startIP, String endIP, String netmask, String routerIPv4, String routerIPv6, String startIPv6, String endIPv6, String ip6Cidr, NetworkOffering ntwkOff) {
         if (ntwkOff.getGuestType() == GuestType.Shared) {
             validateSharedNetworkRouterIPv4(routerIPv4, startIP, endIP, gateway, netmask);
             validateSharedNetworkRouterIPv6(routerIPv6, startIPv6, endIPv6, ip6Cidr);

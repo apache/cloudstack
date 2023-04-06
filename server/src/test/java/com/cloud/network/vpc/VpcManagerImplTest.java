@@ -413,7 +413,7 @@ public class VpcManagerImplTest {
         Mockito.when(cmd.getPublicMtu()).thenReturn(publicMtu);
         Mockito.when(cmd.getSourceNatIP()).thenReturn(sourceNatIp);
 
-        manager.updateVpc(vpcId, null, null, null, true, publicMtu, sourceNatIp);
+        manager.updateVpc(cmd);
         Assert.assertEquals(publicMtu, vpcVO.getPublicMtu());
     }
 

@@ -772,4 +772,50 @@ public class NetworkServiceImplTest {
 
         networkServiceImplMock.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
     }
+
+    @Test
+    public void validateNotSharedNetworkRouterIPv4() {
+        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.L2);
+        service.validateSharedNetworkRouterIPs(null, null, null, null, null, null, null, null, null, ntwkOff);
+    }
+
+    @Test
+    public void validateSharedNetworkRouterIPs() {
+        String startIP = "10.0.16.2";
+        String endIP = "10.0.16.100";
+        String routerIPv4 = "10.0.16.100";
+        String routerPv6 = "fd17:ac56:1234:2000::fb";
+        String startIPv6 = "fd17:ac56:1234:2000::1";
+        String endIPv6 = "fd17:ac56:1234:2000::fc";
+        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
+        service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+    }
+
+    @Test
+    public void validateSharedNetworkWrongRouterIPv4() {
+        String startIP = "10.0.16.2";
+        String endIP = "10.0.16.100";
+        String routerIPv4 = "10.0.16.101";
+        String routerPv6 = "fd17:ac56:1234:2000::fb";
+        String startIPv6 = "fd17:ac56:1234:2000::1";
+        String endIPv6 = "fd17:ac56:1234:2000::fc";
+        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
+        service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+    }
+
+    @Test
+    public void validateSharedNetworkNoEndOfIPv6Range() {
+        String startIP = "10.0.16.2";
+        String endIP = "10.0.16.100";
+        String routerIPv4 = "10.0.16.100";
+        String routerPv6 = "fd17:ac56:1234:2000::1";
+        String startIPv6 = "fd17:ac56:1234:2000::1";
+        String endIPv6 = null;
+        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
+        service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+    }
 }
