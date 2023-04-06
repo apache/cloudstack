@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,17 +32,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.vm.VmDetailConstants;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ConfigKey.class, VmwareVmImplementer.class})
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VmwareVmImplementerTest {
 
     @Spy
