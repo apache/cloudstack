@@ -149,7 +149,7 @@ class TestPrivateRoles(cloudstackTestCase):
         )
 
     def tearDown(self):
-        super(, self).tearDown()
+        super(TestPrivateRoles, self).tearDown()
 
     def getRandomString(self):
         return "".join(random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(10))
