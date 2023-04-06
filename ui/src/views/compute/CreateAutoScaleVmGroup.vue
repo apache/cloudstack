@@ -1201,6 +1201,7 @@ export default {
         },
         zones: {
           list: 'listZones',
+          networktype: 'Advanced',
           isLoad: true,
           field: 'zoneid'
         },
