@@ -1169,6 +1169,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ssc.addOr("instanceName", SearchCriteria.Op.LIKE, likeKeyword);
             }
             ssc.addOr("ipAddress", SearchCriteria.Op.LIKE, likeKeyword);
+            ssc.addOr("publicIpAddress", SearchCriteria.Op.LIKE, likeKeyword);
             ssc.addOr("ip6Address", SearchCriteria.Op.LIKE, likeKeyword);
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
