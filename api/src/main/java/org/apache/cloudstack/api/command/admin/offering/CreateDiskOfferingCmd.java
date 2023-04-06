@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -54,7 +55,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "size of the disk offering in GB (1GB = 1,073,741,824 bytes)")
     private Long diskSize;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "alternate display text of the disk offering", length = 4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "An alternate display text of the disk offering, defaults to 'name'.", length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the disk offering")
@@ -177,7 +178,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? offeringName : displayText;
     }
 
     public String getOfferingName() {

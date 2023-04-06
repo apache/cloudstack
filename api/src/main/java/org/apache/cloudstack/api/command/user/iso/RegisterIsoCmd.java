@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -53,8 +54,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               required = true,
-               description = "the display text of the ISO. This is usually used for display purposes.",
+               description = "the display text of the ISO, defaults to the 'name'",
                length = 4096)
     private String displayText;
 
@@ -131,7 +131,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? isoName : displayText;
     }
 
     public void setDisplayText(String displayText) {
