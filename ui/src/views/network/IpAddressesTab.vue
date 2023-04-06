@@ -111,7 +111,6 @@
               icon="delete-outlined"
               :disabled="!('disassociateIpAddress' in $store.getters.apis)"
               @onClick="releaseIpAddress(record)" />
-            </template>
           </template>
         </template>
       </a-table>
@@ -184,6 +183,7 @@
       @close-modal="closeModal" />
   </div>
 </template>
+
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'

@@ -803,7 +803,13 @@ public class NetworkServiceImplTest {
         String endIPv6 = "fd17:ac56:1234:2000::fc";
         NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
         when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
-        service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+        boolean passing = false;
+        try {
+            service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+        } catch (CloudRuntimeException e) {
+            passing = true;
+        }
+        Assert.assertTrue(passing);
     }
 
     @Test
