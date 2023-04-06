@@ -3164,7 +3164,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return orchestrateMigrateVolume(vol, destPool, liveMigrateVolume, newDiskOffering);
     }
 
-    private boolean isScaleIOVolumeOnDifferentScaleIOStorageInstances(long srcPoolId, long destPoolId) {
+    protected boolean isScaleIOVolumeOnDifferentScaleIOStorageInstances(long srcPoolId, long destPoolId) {
         String SCALEIO_STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
         String srcPoolSystemId = null;
         StoragePoolDetailVO srcPoolSystemIdDetail = storagePoolDetailsDao.findDetail(srcPoolId, SCALEIO_STORAGE_POOL_SYSTEM_ID);
