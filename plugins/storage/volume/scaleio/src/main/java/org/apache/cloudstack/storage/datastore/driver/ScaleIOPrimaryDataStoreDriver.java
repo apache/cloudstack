@@ -136,7 +136,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     }
 
-    private ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
+    public ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePoolId, storagePoolDetailsDao);
     }
 
@@ -448,7 +448,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId) {
+    public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId) {
         LOGGER.debug("Creating PowerFlex volume");
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
@@ -687,7 +687,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     if (isSameScaleIOStorageInstance(srcStore, destStore)) {
                         answer = migrateVolume(srcData, destData);
                     } else {
-                        answer = copyVolume(srcData, destData, destHost);
+                        answer = copyVolume(srcData, destData);
                     }
                 } else {
                     errMsg = "Unsupported copy operation from src object: (" + srcData.getType() + ", " + srcData.getDataStore() + "), dest object: ("
@@ -761,7 +761,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    private Answer copyVolume(DataObject srcData, DataObject destData, Host destHost) {
+    public Answer copyVolume(DataObject srcData, DataObject destData) {
         // Volume migration across different PowerFlex/ScaleIO clusters
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
@@ -813,7 +813,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    private void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {
+    public void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {
         // destination volume is already created and volume path is set in database by this time at "CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());"
         final long srcVolumeId = srcData.getId();
         final long destVolumeId = destData.getId();
@@ -850,7 +850,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return host;
     }
 
-    private void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) throws Exception {
+    public void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) throws Exception {
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
         final long srcPoolId = srcStore.getId();
@@ -884,7 +884,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private void deleteSourceVolumeAfterSuccessfulBlockCopy(DataObject srcData, Host host) {
+    public void deleteSourceVolumeAfterSuccessfulBlockCopy(DataObject srcData, Host host) {
         DataStore srcStore = srcData.getDataStore();
         String srcVolumePath = srcData.getTO().getPath();
         revokeAccess(srcData, host, srcData.getDataStore());
@@ -903,7 +903,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private void revertBlockCopyVolumeOperations(DataObject srcData, DataObject destData, Host host, String destVolumePath) {
+    public void revertBlockCopyVolumeOperations(DataObject srcData, DataObject destData, Host host, String destVolumePath) {
         final String srcVolumePath = ((VolumeInfo) srcData).getPath();
         final String srcVolumeFolder = ((VolumeInfo) srcData).getFolder();
         DataStore destStore = destData.getDataStore();
