@@ -20,11 +20,13 @@
 package org.apache.cloudstack.vm.schedule.dao;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.vm.schedule.VMScheduleVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -32,9 +34,18 @@ public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implem
     private static final Logger LOGGER = Logger.getLogger(VMScheduleDaoImpl.class);
 
     @Override
-    public List<VMScheduleVO> findByVm(Long vmId) {
-        SearchCriteria<VMScheduleVO> sc = createSearchCriteria();
-        sc.setParameters("vm_id", vmId);
-        return listBy(sc, null);
+    public List<VMScheduleVO> listAllActiveSchedules() {
+        // WHERE enabled = true AND (end_date IS NULL OR end_date < current_date)
+        SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
+        sb.and("enabled", sb.entity().getEnabled(), SearchCriteria.Op.EQ);
+        sb.and().op(sb.entity().getEndDate(), SearchCriteria.Op.NULL);
+        sb.or("end_date", sb.entity().getEndDate(), SearchCriteria.Op.LT);
+        sb.cp();
+
+        SearchCriteria<VMScheduleVO> sc = sb.create();
+        sc.setParameters("enabled", true);
+        sc.setParameters("end_date", new Date());
+        // TODO: Check if we need to take lock on schedules here.
+        return search(sc, null);
     }
 }

@@ -55,6 +55,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject
     private VirtualMachineManager virtualMachineManager;
 
+    @Inject
+    private VMScheduler vmScheduler;
+
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<>();
@@ -84,10 +87,14 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
 
+        // TODO: Check for timezone related issues
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
+        Date now = new Date();
         if (startDate == null) {
-            startDate = new Date();
+            startDate = now;
+        } else if (startDate.compareTo(now) < 0) {
+            throw new InvalidParameterValueException("Invalid value for start date. start can't be less than current datetime");
         }
 
         if (endDate != null && startDate.compareTo(endDate) > 0) {
@@ -103,8 +110,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 cmdTimeZone));
 
 
+        // TODO: Wrap in a db transaction
         VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), cmd.getName(), cmd.getDescription(), cronExpression.toString(), timeZoneId, action, startDate, endDate, false));
-        // TODO: Setup a scheduled job
+        vmScheduler.scheduleNextJob(vmSchedule);
+
         return vmSchedule;
     }
 
@@ -181,12 +190,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
 
-        if (endDate != null) {
-            if (startDate != null && startDate.compareTo(endDate) > 0) {
-                throw new InvalidParameterValueException("Invalid value for end date. End date can't be less than start date.");
-            } else if(vmSchedule.startDate.compareTo(endDate) > 0) {
-                throw new InvalidParameterValueException("Invalid value for end date. End date can't be less than start date.");
-            }
+        if (endDate != null && ((startDate != null && startDate.compareTo(endDate) > 0) || vmSchedule.getStartDate().compareTo(endDate) > 0)) {
+            throw new InvalidParameterValueException("Invalid value for end date. End date can't be less than start date.");
         }
         Boolean enabled = cmd.getEnabled();
         VMSchedule.Action action = null;
@@ -197,7 +202,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 throw new InvalidParameterValueException("Invalid value for action: " + cmd.getAction());
             }
         }
-
 
         if (name != null) {
             vmSchedule.setName(name);
@@ -231,9 +235,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (action != null) {
             vmSchedule.setAction(action);
         }
-        // TODO: Update existing jobs for this schedule
 
+        // TODO: Wrap this in a transaction
         vmScheduleDao.update(cmd.getId(), vmSchedule);
+        vmScheduler.updateScheduledJob(vmSchedule);
 
         return vmSchedule;
     }
@@ -247,9 +252,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
         sc.setParameters("id", ids.toArray());
-
-        // TODO: Remove existing schedules
-
-        return vmScheduleDao.remove(sc);
+        // TODO: Wrap this in a transaction
+        vmScheduler.removeScheduledJobs(ids);
+        int rowsRemoved = vmScheduleDao.remove(sc);
+        return rowsRemoved;
     }
 }

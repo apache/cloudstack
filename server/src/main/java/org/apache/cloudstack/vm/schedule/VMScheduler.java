@@ -16,18 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.vm.schedule.dao;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.vm.schedule.VMScheduledJobVO;
+package org.apache.cloudstack.vm.schedule;
+
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.Scheduler;
 
 import java.util.Date;
 import java.util.List;
 
-public interface VMScheduledJobDao extends GenericDao<VMScheduledJobVO, Long> {
-    List<VMScheduledJobVO> findByVm(Long vmId);
+public interface VMScheduler extends Manager, Scheduler {
+    void removeScheduledJobs(List<Long> vmScheduleIds);
 
-    List<VMScheduledJobVO> listAllExpiredPendingJobs();
+    void updateScheduledJob(VMScheduleVO vmSchedule);
 
-    List<VMScheduledJobVO> getSchedulesToExecute(Date currentTimestamp);
+    Date scheduleNextJob(VMScheduleVO vmSchedule);
 }

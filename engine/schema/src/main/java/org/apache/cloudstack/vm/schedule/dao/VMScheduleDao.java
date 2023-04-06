@@ -24,6 +24,5 @@ import org.apache.cloudstack.vm.schedule.VMScheduleVO;
 import java.util.List;
 
 public interface VMScheduleDao extends GenericDao<VMScheduleVO, Long> {
-    List<VMScheduleVO> findByVm(Long vmId);
-
+    List<VMScheduleVO> listAllActiveSchedules();
 }

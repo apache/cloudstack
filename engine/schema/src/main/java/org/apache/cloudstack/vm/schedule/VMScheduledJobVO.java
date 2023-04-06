@@ -19,14 +19,16 @@
 
 package org.apache.cloudstack.vm.schedule;
 
-import com.cloud.utils.db.GenericDao;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.util.Date;
 import java.util.UUID;
 
@@ -37,25 +39,30 @@ public class VMScheduledJobVO implements VMScheduledJob {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
-    @Column(name = "uuid")
+    @Column(name = "uuid", nullable = false)
     String uuid = UUID.randomUUID().toString();
-    @Column(name = "vm_id")
+    @Column(name = "vm_id", nullable = false)
     long vmId;
-    @Column(name = "vm_schedule_id")
+    @Column(name = "vm_schedule_id", nullable = false)
     long vmScheduleId;
     @Column(name = "async_job_id")
-    long asyncJobId;
-    @Column(name = GenericDao.CREATED_COLUMN)
-    Date created;
-    @Column(name = GenericDao.REMOVED_COLUMN)
-    Date removed;
+    Long asyncJobId;
+    @Column(name = "action", nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    VMSchedule.Action action;
+    @Column(name = "scheduled_timestamp")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date scheduledTime;
 
-    public VMScheduledJobVO() {}
+    public VMScheduledJobVO() {
+        uuid = UUID.randomUUID().toString();
+    }
 
-    public VMScheduledJobVO(long vmId, long vmScheduleId, long asyncJobId) {
+    public VMScheduledJobVO(long vmId, long vmScheduleId, VMSchedule.Action action, Date scheduledTime) {
         this.vmId = vmId;
         this.vmScheduleId = vmScheduleId;
-        this.asyncJobId = asyncJobId;
+        this.action = action;
+        this.scheduledTime = scheduledTime;
     }
 
     @Override
@@ -71,15 +78,24 @@ public class VMScheduledJobVO implements VMScheduledJob {
     public long getVmId() {
         return vmId;
     }
+
     public long getVmScheduleId() {
         return vmScheduleId;
     }
 
-    public long getAsyncJobId() {
+    public Long getAsyncJobId() {
         return asyncJobId;
     }
 
     public void setAsyncJobId(long asyncJobId) {
         this.asyncJobId = asyncJobId;
+    }
+
+    public VMSchedule.Action getAction() {
+        return action;
+    }
+
+    public Date getScheduledTime() {
+        return scheduledTime;
     }
 }
