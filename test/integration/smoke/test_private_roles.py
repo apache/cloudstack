@@ -102,32 +102,39 @@ class TestPrivateRoles(cloudstackTestCase):
         self.testdata["roleadmin"]["name"] += self.getRandomString()
         self.testdata["roledomainadmin"]["name"] += self.getRandomString()
         self.testdata["roleuser"]["name"] += self.getRandomString()
+        self.cleanup = []
+
         self.role_admin = Role.create(
             self.apiclient,
             self.testdata["roleadmin"]
         )
+        self.cleanup.append(self.role_admin)
 
         self.role_domain_admin = Role.create(
             self.apiclient,
             self.testdata["roledomainadmin"]
         )
+        self.cleanup.append(self.role_domain_admin)
 
         self.private_role = Role.create(
             self.apiclient,
             self.testdata["roleuser"]
         )
+        self.cleanup.append(self.private_role)
 
         self.account_admin = Account.create(
             self.apiclient,
             self.testdata["accountadmin"],
             roleid=self.role_admin.id
         )
+        self.cleanup.append(self.account_admin)
 
         self.account_domain_admin = Account.create(
             self.apiclient,
             self.testdata["accountdomainadmin"],
             roleid=self.role_domain_admin.id
         )
+        self.cleanup.append(self.account_domain_admin)
 
         self.admin_apiclient = self.testClient.getUserApiClient(
             UserName=self.account_admin.name,
@@ -141,24 +148,8 @@ class TestPrivateRoles(cloudstackTestCase):
             type=2
         )
 
-        self.cleanup = [
-            self.testdata,
-            self.account_admin,
-            self.account_domain_admin,
-            self.role_admin,
-            self.role_domain_admin,
-            self.admin_apiclient,
-            self.private_role,
-            self.domain_admin_apiclient
-        ]
-
-
-
     def tearDown(self):
-        try:
-           cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+        super(, self).tearDown()
 
     def getRandomString(self):
         return "".join(random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(10))
@@ -210,10 +201,12 @@ class TestPrivateRoles(cloudstackTestCase):
             self.apiclient,
             self.testdata["roleuser"]
         )
+        self.cleanup.append(self.private_role)
         public_role = Role.create(
             self.apiclient,
             self.testdata["publicrole"]
         )
+        self.cleanup.append(self.public_role)
         self.asserts_visibility_of_private_role(private_role.id)
         self.asserts_visibility_of_public_role(public_role.id)
 
@@ -230,6 +223,7 @@ class TestPrivateRoles(cloudstackTestCase):
             self.apiclient,
             self.testdata["publicrole"]
         )
+        self.cleanup.append(role)
         self.asserts_visibility_of_public_role(role.id)
         role.update(self.apiclient, id=role.id, ispublic=False)
         self.asserts_visibility_of_private_role(role.id)
@@ -246,12 +240,14 @@ class TestPrivateRoles(cloudstackTestCase):
             self.apiclient,
             self.testdata["importrole"]
         )
+        self.cleanup.append(imported_public_role)
         self.testdata["importrole"]["name"] += self.getRandomString()
         self.testdata["importrole"]["ispublic"] = False
         imported_private_role = Role.importRole(
             self.apiclient,
             self.testdata["importrole"]
         )
+        self.cleanup.append(imported_private_role)
 
         self.asserts_visibility_of_public_role(imported_public_role.id)
         self.asserts_visibility_of_private_role(imported_private_role.id)
@@ -268,6 +264,7 @@ class TestPrivateRoles(cloudstackTestCase):
             self.testdata["accountroleuser"],
             roleid=self.private_role.id
         )
+        self.cleanup.append(account_private_role)
 
         response = User.login(
             self.apiclient,
