@@ -627,7 +627,7 @@ public class ConfigurationManagerTest {
         Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
         Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
         sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
-        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "True");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "true");
         Assert.assertTrue(configurationMgr.isRedundantRouter(serviceCapabilityMap, sourceNatServiceCapabilityMap));
     }
 
