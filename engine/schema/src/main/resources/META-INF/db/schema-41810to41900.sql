@@ -19,3 +19,7 @@
 -- Schema upgrade from 4.18.1.0 to 4.19.0.0
 --;
 
+-- Invalidate existing console_session records
+UPDATE console_session SET removed=now();
+-- Modify acquired column in console_session to datetime type
+ALTER TABLE console_session MODIFY acquired datetime COMMENT 'When the session was acquired;
