@@ -20,6 +20,6 @@
 --;
 
 -- Invalidate existing console_session records
-UPDATE console_session SET removed=now();
+UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
-ALTER TABLE console_session MODIFY acquired datetime COMMENT 'When the session was acquired;
+ALTER TABLE `cloud`.`console_session` MODIFY `acquired` datetime COMMENT 'When the session was acquired;
