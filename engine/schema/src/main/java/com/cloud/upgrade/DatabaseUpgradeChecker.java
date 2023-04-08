@@ -382,7 +382,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             return;
         }
 
-        s_logger.info(String.format("Executing VIEW scripts under resource directory [%s].", VIEWS_DIRECTORY));
+        s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
         for (String filePath : filesPathUnderViewsDirectory) {
             s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
 
@@ -390,7 +390,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             runScript(conn, viewScript);
         }
 
-        s_logger.info(String.format("Finished execution of VIEW scripts under resource directory [%s].", VIEWS_DIRECTORY));
+        s_logger.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
     }
 
     @Override
