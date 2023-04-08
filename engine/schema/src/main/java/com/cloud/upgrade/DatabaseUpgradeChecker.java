@@ -22,15 +22,18 @@ import static com.google.common.collect.ObjectArrays.concat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -123,6 +126,9 @@ import com.google.common.annotations.VisibleForTesting;
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
+    private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
+    private static final CloudStackVersion BASE_VERSION_FOR_MANAGE_DATABASE_VIEWS_VIA_SEPARATED_FILES = CloudStackVersion.parse("4.19.0.0");
+    private List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathUnderResourceDirectory(VIEWS_DIRECTORY);
 
     @Inject
     VersionDao _dao;
@@ -315,9 +321,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     }
                 }
 
+                String upgradedVersion = upgrade.getUpgradedVersion();
+                executeViewScripts(conn, upgradedVersion);
+
                 upgrade.performDataMigration(conn);
 
-                version = new VersionVO(upgrade.getUpgradedVersion());
+                version = new VersionVO(upgradedVersion);
                 version = _dao.persist(version);
 
                 txn.commit();
@@ -364,6 +373,24 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         }
         updateSystemVmTemplates(upgrades);
+    }
+
+    protected void executeViewScripts(Connection conn, String upgradedVersion) {
+        if (CloudStackVersion.parse(upgradedVersion).compareTo(BASE_VERSION_FOR_MANAGE_DATABASE_VIEWS_VIA_SEPARATED_FILES) < 0) {
+            s_logger.debug(String.format("The base version for executing the VIEW scripts in separated files is [%s]; the current upgraded version is [%s], therefore, we will " +
+                    "not execute the VIEW scripts that are in separated files.", BASE_VERSION_FOR_MANAGE_DATABASE_VIEWS_VIA_SEPARATED_FILES, upgradedVersion));
+            return;
+        }
+
+        s_logger.info(String.format("Executing VIEW scripts under resource directory [%s].", VIEWS_DIRECTORY));
+        for (String filePath : filesPathUnderViewsDirectory) {
+            s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
+
+            InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+            runScript(conn, viewScript);
+        }
+
+        s_logger.info(String.format("Finished execution of VIEW scripts under resource directory [%s].", VIEWS_DIRECTORY));
     }
 
     @Override
