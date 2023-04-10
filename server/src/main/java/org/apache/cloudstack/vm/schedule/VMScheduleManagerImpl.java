@@ -20,6 +20,7 @@
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
@@ -34,6 +35,8 @@ import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.log4j.Logger;
 
@@ -51,12 +54,12 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Inject
     private VMScheduleDao vmScheduleDao;
-
     @Inject
     private VirtualMachineManager virtualMachineManager;
-
     @Inject
     private VMScheduler vmScheduler;
+    @Inject
+    private MessageBus messageBus;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -68,15 +71,22 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return cmdList;
     }
 
-    @Override
-    public VMSchedule createSchedule(CreateVMScheduleCmd cmd) {
-        // TODO: Check if user is permitted to create the schedule
-        CronExpression cronExpression;
+    private CronExpression parseSchedule(String schedule) {
         try {
-            cronExpression = CronExpression.parse(cmd.getSchedule());
+            if (schedule != null) {
+                // CronExpression's granularity is in seconds. Prepending "0 " to change the granularity to minutes.
+                return CronExpression.parse(String.format("0 %s", schedule));
+            } else {
+                return null;
+            }
         } catch (IllegalArgumentException exception) {
             throw new InvalidParameterValueException("Invalid cron format: " + exception.getMessage());
         }
+    }
+
+    @Override
+    public VMSchedule createSchedule(CreateVMScheduleCmd cmd) {
+        // TODO: Check if user is permitted to create the schedule
 
         VMSchedule.Action action = null;
         if (cmd.getAction() != null) {
@@ -100,6 +110,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (endDate != null && startDate.compareTo(endDate) > 0) {
             throw new InvalidParameterValueException("Invalid value for end date. End date can't be less than start date. ");
         }
+        CronExpression cronExpression = parseSchedule(cmd.getSchedule());
 
         // TODO: Revisit validation here.
         String cmdTimeZone = cmd.getTimeZone();
@@ -185,7 +196,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         String name = cmd.getName();
         String description = cmd.getDescription();
-        String schedule = cmd.getSchedule();
+        CronExpression cronExpression = parseSchedule(cmd.getSchedule());
 
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
@@ -209,8 +220,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (description != null) {
             vmSchedule.setDescription(description);
         }
-        if (schedule != null) {
-            vmSchedule.setSchedule(schedule);
+        if (cronExpression != null) {
+            vmSchedule.setSchedule(cronExpression.toString());
         }
         if (cmd.getTimeZone() != null) {
             // TODO: Revisit validation here.
@@ -243,10 +254,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return vmSchedule;
     }
 
-    @Override
-    public long removeSchedule(DeleteVMScheduleCmd cmd) {
-        // TODO: Check if the user has access to delete all schedules in the list
-        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+    private long removeScheduleByIds(List<Long> ids) {
         SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.IN);
 
@@ -256,5 +264,42 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         vmScheduler.removeScheduledJobs(ids);
         int rowsRemoved = vmScheduleDao.remove(sc);
         return rowsRemoved;
+    }
+
+    private long removeScheduleByVmId(Long vmId) {
+        SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
+        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<VMScheduleVO> sc = sb.create();
+        sc.setParameters("id", vmId);
+        // TODO: Wrap this in a transaction
+        List<VMScheduleVO> vmSchedules = vmScheduleDao.search(sc, null);
+        List<Long> ids = new ArrayList<>();
+        for (final VMScheduleVO vmSchedule: vmSchedules){
+            ids.add(vmSchedule.getId());
+        }
+        vmScheduler.removeScheduledJobs(ids);
+        return vmScheduleDao.remove(sc);
+    }
+
+    @Override
+    public long removeSchedule(DeleteVMScheduleCmd cmd) {
+        // TODO: Check if the user has access to delete all schedules in the list
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+        return removeScheduleByIds(ids);
+    }
+
+    @Override
+    public boolean start() {
+
+        // TODO: Check how to make this work?
+        messageBus.subscribe(EventTypes.EVENT_VM_DESTROY, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                Long id = (Long) args;
+                removeScheduleByVmId(id);
+            }
+        });
+        return super.start();
     }
 }

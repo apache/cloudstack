@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.vm.schedule.dao;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -72,7 +73,7 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
 
         SearchCriteria<VMScheduledJobVO> sc = sb.create();
         sc.setParameters("scheduled_timestamp", truncatedTs);
-        // TODO: Should we take a lock here? To ensure that something bad doesn't happen.
-        return search(sc, null);
+        Filter filter = new Filter(VMScheduledJobVO.class, "vm_schedule_id", true, null,null);
+        return search(sc, filter);
     }
 }

@@ -53,6 +53,7 @@ import javax.persistence.EntityExistsException;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -241,24 +242,61 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         } finally {
             scanLock.releaseRef();
         }
+
+        try {
+            cleanupVMScheduledJobs();
+        }
+        catch (Exception e) {
+            LOGGER.warn("Error in cleaning up vm scheduled jobs", e);
+        }
+    }
+
+    private void cleanupVMScheduledJobs() {
+        // keep only latest 5 jobs
+        //
+//        DELETE FROM scheduled_jobs
+//        WHERE id NOT IN (SELECT id
+//        FROM scheduled_jobs
+//        WHERE
+//        AND schedule_id IN (SELECT schedule_id FROM (SELECT schedule_id, COUNT(*)
+//                FROM scheduled_jobs
+//                GROUP BY schedule_id) a
+//        WHERE count > 5)
+//        ORDER BY id DESC LIMIT 5
+//)
+
+//        vmScheduledJobDao.
+        return;
     }
 
     // Create async jobs for VM scheduled jobs
     private void scheduleJobs() {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
-        LOGGER.debug("VM scheduler.poll is being called at " + displayTime);
+        LOGGER.debug(String.format("VM scheduler.poll is being called at %s", displayTime));
 
         final List<VMScheduledJobVO> vmScheduledJobs = vmScheduledJobDao.getSchedulesToExecute(currentTimestamp);
-        LOGGER.debug("Got " + vmScheduledJobs.size() + " snapshots to be executed at " + displayTime);
+        LOGGER.debug("Got " + vmScheduledJobs.size() + " scheduled jobs to be executed at " + displayTime);
 
-        for (final VMScheduledJobVO vmScheduledJob : vmScheduledJobs) {
+        Map<Long,VMScheduledJobVO> jobsToExecute = new HashMap<>();
+        Map<Long,List<VMScheduledJobVO>> jobsNotToExecute = new HashMap<>();
+        for (final VMScheduledJobVO vmScheduledJobVO : vmScheduledJobs) {
+            long vmId = vmScheduledJobVO.getVmId();
+            if (jobsToExecute.get(vmId) == null) {
+                jobsToExecute.put(vmId, vmScheduledJobVO);
+            } else {
+                jobsNotToExecute.computeIfAbsent(vmId, k -> new ArrayList<>()).add(vmScheduledJobVO);
+            }
+        }
 
+        for (Map.Entry<Long, VMScheduledJobVO> entry : jobsToExecute.entrySet()) {
+            VMScheduledJobVO vmScheduledJob = entry.getValue();
             VMScheduledJobVO tmpVMScheduleJob = null;
             try {
                 if (LOGGER.isDebugEnabled()) {
                     final Date scheduledTimestamp = vmScheduledJob.getScheduledTime();
                     displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                    LOGGER.debug("Scheduling " + vmScheduledJob.getAction() + " for VM id " + vmScheduledJob.getVmId() + " for schedule id: " + vmScheduledJob.getVmScheduleId() + " at " + displayTime);
+                    LOGGER.debug(String.format("Scheduling %s for VM id %d for schedule id: %d at %s",
+                            vmScheduledJob.getAction(), vmScheduledJob.getVmId(), vmScheduledJob.getVmScheduleId(), displayTime));
                 }
 
                 tmpVMScheduleJob = vmScheduledJobDao.acquireInLockTable(vmScheduledJob.getId());
@@ -282,21 +320,33 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
                 tmpVMScheduleJob.setAsyncJobId(jobId);
                 vmScheduledJobDao.update(vmScheduledJob.getId(), tmpVMScheduleJob);
             } catch (final Exception e) {
-                // TODO Logging this exception is enough?
-                LOGGER.warn("Scheduling snapshot failed due to " + e.toString());
+                LOGGER.warn(String.format("Executing scheduled job id: %s failed due to %s", vmScheduledJob.getId(), e.toString()));
             } finally {
                 if (tmpVMScheduleJob != null) {
                     vmScheduledJobDao.releaseFromLockTable(vmScheduledJob.getId());
                 }
             }
         }
+
+        for (Map.Entry<Long, List<VMScheduledJobVO>> entry : jobsNotToExecute.entrySet()) {
+            Long vmId = entry.getKey();
+            List<VMScheduledJobVO> skippedVmScheduledJobVOS = entry.getValue();
+
+            for (final VMScheduledJobVO skippedVmScheduledJobVO : skippedVmScheduledJobVOS) {
+                VMScheduledJobVO scheduledJob = jobsToExecute.get(vmId);
+                LOGGER.info(String.format("Skipping scheduled job [id: %s, vmId: %s] because of conflict with another scheduled job [id: %s]",
+                        skippedVmScheduledJobVO.getId(), vmId, scheduledJob.getId()));
+            }
+        }
     }
 
     private long scheduleStartVMJob(VMScheduledJobVO vmScheduledJob) throws Exception {
         VirtualMachine vm = virtualMachineManager.findById(vmScheduledJob.getVmId());
+        // TODO: Skip and log if the VM is already in Running state
         final Long eventId =
-                ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_START, "Executing action (" + vmScheduledJob.getAction() + ") for VM Id:" +
-                        vm.getUuid(), vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), true, 0);
+                ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_START,
+                        String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
+                        vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), true, 0);
 
         final Map<String, String> params = new HashMap<String, String>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
@@ -306,9 +356,6 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
         final StartVMCmd cmd = new StartVMCmd();
         ComponentContext.inject(cmd);
-        // TODO: check if this is actually working or correct usage
-        apiDispatcher.dispatch(cmd, params, false);
-        params.put("ctxStartEventId", String.valueOf(eventId));
 
         AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StartVMCmd.class.getName(),
                 ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
@@ -321,6 +368,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
     private long scheduleStopVMJob(VMScheduledJobVO vmScheduledJob) throws Exception {
         VirtualMachine vm = virtualMachineManager.findById(vmScheduledJob.getVmId());
+        // TODO: Skip and log if the VM is already in Running state
         final Long eventId =
                 ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "Executing action (" + vmScheduledJob.getAction() + ") for VM Id:" +
                         vm.getUuid(), vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), true, 0);
@@ -333,11 +381,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
         final StopVMCmd cmd = new StopVMCmd();
         ComponentContext.inject(cmd);
-        // TODO: check if this is actually working or correct usage
-        apiDispatcher.dispatch(cmd, params, false);
-        params.put("ctxStartEventId", String.valueOf(eventId));
 
-        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StartVMCmd.class.getName(),
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StopVMCmd.class.getName(),
                 ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
                 cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
         job.setDispatcher(asyncJobDispatcher.getName());
@@ -347,6 +392,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
     private long scheduleRebootVMJob(VMScheduledJobVO vmScheduledJob) throws Exception {
         VirtualMachine vm = virtualMachineManager.findById(vmScheduledJob.getVmId());
+        // TODO: Skip and log if the VM is already in Running state
         final Long eventId =
                 ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Executing action (" + vmScheduledJob.getAction() + ") for VM Id:" +
                         vm.getUuid(), vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), true, 0);
@@ -359,11 +405,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
         final RebootVMCmd cmd = new RebootVMCmd();
         ComponentContext.inject(cmd);
-        // TODO: check if this is actually working or correct usage
-        apiDispatcher.dispatch(cmd, params, false);
-        params.put("ctxStartEventId", String.valueOf(eventId));
 
-        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StartVMCmd.class.getName(),
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), RebootVMCmd.class.getName(),
                 ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
                 cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
         job.setDispatcher(asyncJobDispatcher.getName());
@@ -373,6 +416,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
     // Check status and schedule next job if required
     private void checkStatusOfCurrentlyExecutingJobs() {
+        // TODO: Fix this query to fetch last executed jobs only? Maybe add status column to keep track of this?
         final SearchCriteria<VMScheduledJobVO> sc = vmScheduledJobDao.createSearchCriteria();
         sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
         final List<VMScheduledJobVO> vmScheduledJobs = vmScheduledJobDao.search(sc, null);
@@ -384,7 +428,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
                 case FAILED:
                     final Date nextDateTime = scheduleNextJob(vmScheduledJob.getVmScheduleId());
                     final String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextDateTime);
-                    LOGGER.debug("Next scheduled time for VM ID " + vmScheduledJob.getVmId() + " is " + nextScheduledTime);
+                    LOGGER.debug(String.format("Next scheduled time for VM ID %s Schedule ID %s is %s", vmScheduledJob.getVmId(), vmScheduledJob.getVmScheduleId(), nextScheduledTime));
                     break;
                 default:
                     LOGGER.debug(String.format("Found async job [id: %s, vmId: %s] with status [%s] and cmd information: [cmd: %s, cmdInfo: %s].", asyncJob.getId(), vmScheduledJob.getVmId(),
