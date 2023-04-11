@@ -45,15 +45,6 @@ try {
 
 export const supportsCursorURIs = _supportsCursorURIs;
 
-let _supportsImageMetadata = false;
-try {
-    new ImageData(new Uint8ClampedArray(4), 1, 1);
-    _supportsImageMetadata = true;
-} catch (ex) {
-    // ignore failure
-}
-export const supportsImageMetadata = _supportsImageMetadata;
-
 let _hasScrollbarGutter = true;
 try {
     // Create invisible container
@@ -86,35 +77,76 @@ export const hasScrollbarGutter = _hasScrollbarGutter;
  * It's better to use feature detection than platform detection.
  */
 
+/* OS */
+
 export function isMac() {
-    return navigator && !!(/mac/i).exec(navigator.platform);
+    return !!(/mac/i).exec(navigator.platform);
 }
 
 export function isWindows() {
-    return navigator && !!(/win/i).exec(navigator.platform);
+    return !!(/win/i).exec(navigator.platform);
 }
 
 export function isIOS() {
-    return navigator &&
-           (!!(/ipad/i).exec(navigator.platform) ||
+    return (!!(/ipad/i).exec(navigator.platform) ||
             !!(/iphone/i).exec(navigator.platform) ||
             !!(/ipod/i).exec(navigator.platform));
 }
 
+export function isAndroid() {
+    /* Android sets navigator.platform to Linux :/ */
+    return !!navigator.userAgent.match('Android ');
+}
+
+export function isChromeOS() {
+    /* ChromeOS sets navigator.platform to Linux :/ */
+    return !!navigator.userAgent.match(' CrOS ');
+}
+
+/* Browser */
+
 export function isSafari() {
-    return navigator && (navigator.userAgent.indexOf('Safari') !== -1 &&
-                         navigator.userAgent.indexOf('Chrome') === -1);
-}
-
-export function isIE() {
-    return navigator && !!(/trident/i).exec(navigator.userAgent);
-}
-
-export function isEdge() {
-    return navigator && !!(/edge/i).exec(navigator.userAgent);
+    return !!navigator.userAgent.match('Safari/...') &&
+           !navigator.userAgent.match('Chrome/...') &&
+           !navigator.userAgent.match('Chromium/...') &&
+           !navigator.userAgent.match('Epiphany/...');
 }
 
 export function isFirefox() {
-    return navigator && !!(/firefox/i).exec(navigator.userAgent);
+    return !!navigator.userAgent.match('Firefox/...') &&
+           !navigator.userAgent.match('Seamonkey/...');
 }
 
+export function isChrome() {
+    return !!navigator.userAgent.match('Chrome/...') &&
+           !navigator.userAgent.match('Chromium/...') &&
+           !navigator.userAgent.match('Edg/...') &&
+           !navigator.userAgent.match('OPR/...');
+}
+
+export function isChromium() {
+    return !!navigator.userAgent.match('Chromium/...');
+}
+
+export function isOpera() {
+    return !!navigator.userAgent.match('OPR/...');
+}
+
+export function isEdge() {
+    return !!navigator.userAgent.match('Edg/...');
+}
+
+/* Engine */
+
+export function isGecko() {
+    return !!navigator.userAgent.match('Gecko/...');
+}
+
+export function isWebKit() {
+    return !!navigator.userAgent.match('AppleWebKit/...') &&
+           !navigator.userAgent.match('Chrome/...');
+}
+
+export function isBlink() {
+    return !!navigator.userAgent.match('Chrome/...');
+}
