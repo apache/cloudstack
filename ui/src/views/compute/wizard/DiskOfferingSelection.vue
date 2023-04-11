@@ -32,18 +32,23 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <template #diskSizeTitle><hdd-outlined /> {{ $t('label.disksize') }}</template>
-      <template #iopsTitle><rocket-outlined /> {{ $t('label.minmaxiops') }}</template>
-      <template #diskSize="{ record }">
-        <div v-if="record.isCustomized">{{ $t('label.iscustomized') }}</div>
-        <div v-else-if="record.diskSize">{{ record.diskSize }} GB</div>
-        <div v-else>-</div>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'diskSize'"><hdd-outlined /> {{ $t('label.disksize') }}</template>
+        <template v-if="column.key === 'iops'"><rocket-outlined /> {{ $t('label.minmaxiops') }}</template>
       </template>
-      <template #iops="{ record }">
-        <span v-if="record.miniops && record.maxiops">{{ record.miniops }} - {{ record.maxiops }}</span>
-        <span v-else-if="record.miniops && !record.maxiops">{{ record.miniops }}</span>
-        <span v-else-if="!record.miniops && record.maxiops">{{ record.maxiops }}</span>
-        <span v-else>-</span>
+
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'diskSize'">
+          <div v-if="record.isCustomized">{{ $t('label.iscustomized') }}</div>
+          <div v-else-if="record.diskSize">{{ record.diskSize }} GB</div>
+          <div v-else>-</div>
+        </template>
+        <template v-if="column.key === 'iops'">
+          <span v-if="record.miniops && record.maxiops">{{ record.miniops }} - {{ record.maxiops }}</span>
+          <span v-else-if="record.miniops && !record.maxiops">{{ record.miniops }}</span>
+          <span v-else-if="!record.miniops && record.maxiops">{{ record.maxiops }}</span>
+          <span v-else>-</span>
+        </template>
       </template>
     </a-table>
 
@@ -108,19 +113,20 @@ export default {
       filter: '',
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
           title: this.$t('label.diskoffering'),
           width: '40%'
         },
         {
+          key: 'diskSize',
           dataIndex: 'disksize',
-          width: '30%',
-          slots: { customRender: 'diskSize', title: 'diskSizeTitle' }
+          width: '30%'
         },
         {
+          key: 'iops',
           dataIndex: 'iops',
-          width: '30%',
-          slots: { customRender: 'iops', title: 'iopsTitle' }
+          width: '30%'
         }
       ],
       selectedRowKeys: ['0'],

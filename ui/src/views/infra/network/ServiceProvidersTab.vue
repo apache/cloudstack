@@ -27,8 +27,10 @@
           v-for="item in hardcodedNsps"
           :key="item.title">
           <template #tab>
-            {{ $t(item.title) }}
-            <status :text="item.title in nsps ? nsps[item.title].state : $t('label.disabled')" style="margin-bottom: 6px; margin-left: 6px" />
+            <span>
+              {{ $t(item.title) }}
+              <status :text="item.title in nsps ? nsps[item.title].state : $t('label.disabled')" style="margin-bottom: 6px; margin-left: 6px" />
+            </span>
           </template>
           <provider-item
             v-if="tabKey===item.title"
@@ -109,11 +111,12 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option
                   v-for="(opt, idx) in field.opts"
-                  :key="idx">{{ opt.name || opt.description }}</a-select-option>
+                  :key="idx"
+                  :label="opt.name || opt.description">{{ opt.name || opt.description }}</a-select-option>
               </a-select>
             </span>
             <span v-else>
@@ -356,7 +359,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'action']
+              columns: ['hostname', 'actions']
             }
           ]
         },
@@ -415,7 +418,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'action']
+              columns: ['hostname', 'actions']
             }
           ]
         },
@@ -496,7 +499,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'insideportprofile', 'action']
+              columns: ['hostname', 'insideportprofile', 'actions']
             }
           ]
         },
@@ -587,7 +590,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['ipaddress', 'lbdevicestate', 'action']
+              columns: ['ipaddress', 'lbdevicestate', 'actions']
             }
           ]
         },
@@ -737,7 +740,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['ipaddress', 'lbdevicestate', 'action']
+              columns: ['ipaddress', 'lbdevicestate', 'actions']
             }
           ]
         },
@@ -796,7 +799,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['hostname', 'transportzoneuuid', 'l3gatewayserviceuuid', 'l2gatewayserviceuuid', 'action']
+              columns: ['hostname', 'transportzoneuuid', 'l3gatewayserviceuuid', 'l2gatewayserviceuuid', 'actions']
             }
           ]
         },
@@ -855,7 +858,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['name', 'url', 'username', 'action']
+              columns: ['name', 'url', 'username', 'actions']
             }
           ]
         },
@@ -871,7 +874,7 @@ export default {
                   value: (record) => { return record.id }
                 }
               },
-              columns: ['account', 'domain', 'enabled', 'project', 'action']
+              columns: ['account', 'domain', 'enabled', 'project', 'actions']
             }
           ]
         },
@@ -930,7 +933,7 @@ export default {
                   value: (record) => { return record.physicalnetworkid }
                 }
               },
-              columns: ['ipaddress', 'fwdevicestate', 'type', 'action']
+              columns: ['ipaddress', 'fwdevicestate', 'type', 'actions']
             }
           ]
         },
@@ -1362,6 +1365,16 @@ export default {
       .ant-badge {
         margin-left: 10px;
       }
+    }
+  }
+
+  &-tab {
+    justify-content: end;
+  }
+
+  &-tab-btn {
+    span {
+      display: flex;
     }
   }
 }

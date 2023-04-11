@@ -22,6 +22,7 @@ export default {
   name: 'host',
   title: 'label.hosts',
   icon: 'desktop-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
   params: { type: 'routing' },

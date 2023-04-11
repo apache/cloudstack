@@ -506,3 +506,32 @@ a {
 .ant-dropdown-menu-submenu-title:hover {
   background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
 }
+
+.ant-tabs.tab-center {
+  > .ant-tabs-nav, > div > .ant-tabs-nav,
+  > .ant-tabs-nav .ant-tabs-nav-wrap,
+  > div > .ant-tabs-nav .ant-tabs-nav-wrap {
+    justify-content: center;
+  }
+}
+
+.ant-tabs-large>.ant-tabs-nav .ant-tabs-tab {
+  padding: 16px;
+}
+
+.ant-steps {
+  &-item-container {
+    &:hover {
+      .ant-steps-item-content .ant-steps-item-description {
+        color: inherit !important;
+      }
+    }
+  }
+
+  &-item-process {
+    .ant-steps-item-content .ant-steps-item-title {
+      color: inherit !important;
+      font-weight: 600;
+    }
+  }
+}

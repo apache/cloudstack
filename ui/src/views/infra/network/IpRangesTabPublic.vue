@@ -34,58 +34,60 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #gateway="{record}">
-        {{ record.gateway || record.ip6gateway }}
-      </template>
-      <template #cidr="{record}">
-        {{ record.cidr || record.ip6cidr }}
-      </template>
-      <template #startip="{record}">
-        {{ record.startip || record.startipv6 }}
-      </template>
-      <template #endip="{record}">
-        {{ record.endip || record.endipv6 }}
-      </template>
-      <template #account="{record}" v-if="!basicGuestNetwork">
-        <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
-      </template>
-      <template #actions="{record}">
-        <div
-          class="actions"
-          style="text-align: right" >
-          <tooltip-button
-            v-if="record.account === 'system' && !basicGuestNetwork && record.gateway && !record.ip6gateway"
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.add.account')"
-            icon="user-add-outlined"
-            @onClick="() => handleOpenAddAccountModal(record)"
-            :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
-          <tooltip-button
-            v-if="record.account !== 'system' && !basicGuestNetwork"
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.release.account')"
-            icon="user-delete-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="() => handleRemoveAccount(record.id)"
-            :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
-          <tooltip-button
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.update.ip.range')"
-            icon="edit-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="() => handleUpdateIpRangeModal(record)"
-            :disabled="!('updateVlanIpRange' in $store.getters.apis)" />
-          <tooltip-button
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.remove.ip.range')"
-            icon="delete-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="handleDeleteIpRange(record.id)"
-            :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'gateway'">
+          {{ record.gateway || record.ip6gateway }}
+        </template>
+        <template v-if="column.key === 'cidr'">
+          {{ record.cidr || record.ip6cidr }}
+        </template>
+        <template v-if="column.key === 'startip'">
+          {{ record.startip || record.startipv6 }}
+        </template>
+        <template v-if="column.key === 'endip'">
+          {{ record.endip || record.endipv6 }}
+        </template>
+        <template v-if="column.key === 'account' && !basicGuestNetwork">
+          <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div
+            class="actions"
+            style="text-align: right" >
+            <tooltip-button
+              v-if="record.account === 'system' && !basicGuestNetwork && record.gateway && !record.ip6gateway"
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.add.account')"
+              icon="user-add-outlined"
+              @onClick="() => handleOpenAddAccountModal(record)"
+              :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
+            <tooltip-button
+              v-if="record.account !== 'system' && !basicGuestNetwork"
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.release.account')"
+              icon="user-delete-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="() => handleRemoveAccount(record.id)"
+              :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.update.ip.range')"
+              icon="edit-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="() => handleUpdateIpRangeModal(record)"
+              :disabled="!('updateVlanIpRange' in $store.getters.apis)" />
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.remove.ip.range')"
+              icon="delete-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="handleDeleteIpRange(record.id)"
+              :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -152,12 +154,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
-              :value="domain.id">{{ domain.path || domain.name || domain.description }}
+              :value="domain.id"
+              :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </div>
@@ -205,10 +208,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true">
-            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
+            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id" :label="pod.name">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
@@ -255,12 +258,13 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"
-                  :value="domain.id">{{ domain.path || domain.name || domain.description }}
+                  :value="domain.id"
+                  :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -377,28 +381,28 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('label.gateway'),
-          slots: { customRender: 'gateway' }
+          key: 'gateway',
+          title: this.$t('label.gateway')
         },
         {
-          title: this.$t('label.cidr'),
-          slots: { customRender: 'cidr' }
+          key: 'cidr',
+          title: this.$t('label.cidr')
         },
         {
           title: this.$t('label.vlan'),
           dataIndex: 'vlan'
         },
         {
-          title: this.$t('label.startip'),
-          slots: { customRender: 'startip' }
+          key: 'startip',
+          title: this.$t('label.startip')
         },
         {
-          title: this.$t('label.endip'),
-          slots: { customRender: 'endip' }
+          key: 'endip',
+          title: this.$t('label.endip')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ]
     }
@@ -409,8 +413,8 @@ export default {
     if (!this.basicGuestNetwork) {
       this.columns.splice(6, 0,
         {
-          title: this.$t('label.account'),
-          slots: { customRender: 'account' }
+          key: 'account',
+          title: this.$t('label.account')
         }
       )
     } else {

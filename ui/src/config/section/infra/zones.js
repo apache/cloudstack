@@ -22,6 +22,7 @@ export default {
   name: 'zone',
   title: 'label.zones',
   icon: 'global-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-zones',
   permission: ['listZonesMetrics'],
   columns: () => {
     const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
