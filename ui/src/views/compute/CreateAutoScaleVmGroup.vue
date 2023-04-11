@@ -1205,6 +1205,7 @@ export default {
         },
         zones: {
           list: 'listZones',
+          networktype: 'Advanced',
           isLoad: true,
           field: 'zoneid'
         },
@@ -2552,7 +2553,7 @@ export default {
         const args = { listall: true, showicon: true }
         if (zoneId) args.id = zoneId
         api(param.list, args).then(json => {
-          const zoneResponse = json.listzonesresponse.zone || []
+          const zoneResponse = (json.listzonesresponse.zone || []).filter(item => item.securitygroupsenabled === false)
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
               if (listZoneAllow.includes(zone.id)) {
