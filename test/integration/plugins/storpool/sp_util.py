@@ -44,6 +44,7 @@ from marvin.lib.common import (get_zone,
 from marvin.cloudstackAPI import (listOsTypes,
                                   listTemplates,
                                   listHosts,
+                                  listClusters,
                                   createTemplate,
                                   createVolume,
                                   getVolumeSnapshotDetails,
@@ -745,3 +746,33 @@ class StorPoolHelper():
         cmd.id = vmid
         cmd.hostid = hostid
         return (apiclient.startVirtualMachine(cmd))
+
+    @classmethod
+    def getClustersWithStorPool(cls, apiclient, zoneId,):
+        cmd = listClusters.listClustersCmd()
+        cmd.zoneid = zoneId
+        cmd.allocationstate = "Enabled"
+        clusters = apiclient.listClusters(cmd)
+        clustersToDeploy = []
+        for cluster in clusters:
+            if cluster.resourcedetails['sp.cluster.id']:
+                clustersToDeploy.append(cluster.id)
+
+        return clustersToDeploy
+
+    @classmethod
+    def getHostToDeployOrMigrate(cls, apiclient, hostsToavoid, clustersToDeploy):
+        hostsOnCluster = []
+        for c in clustersToDeploy:
+            hostsOnCluster.append(cls.list_hosts_by_cluster_id(apiclient, c))
+
+        destinationHost = None
+        for host in hostsOnCluster:
+
+            if hostsToavoid is None:
+                return host[0]
+            if host[0].id not in hostsToavoid:
+                destinationHost = host[0]
+                break
+
+        return destinationHost

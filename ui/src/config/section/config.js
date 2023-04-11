@@ -25,13 +25,17 @@ export default {
       name: 'globalsetting',
       title: 'label.global.settings',
       icon: 'setting-outlined',
+      docHelp: 'adminguide/index.html#tuning',
       permission: ['listConfigurations'],
-      columns: ['name', 'description', 'category', 'value', 'actions']
+      listView: true,
+      popup: true,
+      component: () => import('@/views/setting/ConfigurationTab.vue')
     },
     {
       name: 'ldapsetting',
       title: 'label.ldap.configuration',
       icon: 'team-outlined',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       permission: ['listLdapConfigurations'],
       columns: ['hostname', 'port', 'domainid'],
       details: ['hostname', 'port', 'domainid'],
@@ -70,6 +74,7 @@ export default {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
       icon: 'database-outlined',
+      docHelp: 'adminguide/hosts.html?highlight=Hypervisor%20capabilities#hypervisor-capabilities',
       permission: ['listHypervisorCapabilities'],
       columns: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxhostspercluster'],
       details: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxdatavolumeslimit', 'maxhostspercluster', 'securitygroupenabled', 'storagemotionenabled'],

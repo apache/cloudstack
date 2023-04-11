@@ -37,7 +37,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteCounterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteCounterCmd.class.getName());
-    private static final String s_name = "deletecounterresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -72,11 +71,6 @@ public class DeleteCounterCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public Long getId() {
         return id;

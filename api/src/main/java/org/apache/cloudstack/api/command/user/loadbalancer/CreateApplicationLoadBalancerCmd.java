@@ -46,7 +46,6 @@ import com.cloud.utils.net.NetUtils;
 public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateApplicationLoadBalancerCmd.class.getName());
 
-    private static final String s_name = "createloadbalancerresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -192,11 +191,6 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
         ApplicationLoadBalancerRule rule = null;

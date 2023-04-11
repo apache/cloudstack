@@ -43,7 +43,6 @@ import com.cloud.user.User;
 public class ListApisCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListApisCmd.class.getName());
-    private static final String s_name = "listapisresponse";
 
     @Inject
     ApiDiscoveryService _apiDiscoveryService;
@@ -62,11 +61,6 @@ public class ListApisCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

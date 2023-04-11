@@ -63,7 +63,6 @@ import com.cloud.utils.HttpUtils;
 @APICommand(name = "listAndSwitchSamlAccount", description = "Lists and switches to other SAML accounts owned by the SAML user", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthenticator {
     public static final Logger s_logger = Logger.getLogger(ListAndSwitchSAMLAccountCmd.class.getName());
-    private static final String s_name = "listandswitchsamlaccountresponse";
 
     @Inject
     ApiServerService _apiServer;
@@ -86,11 +85,6 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = false, description = "Domain uuid")
     private Long domainId;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

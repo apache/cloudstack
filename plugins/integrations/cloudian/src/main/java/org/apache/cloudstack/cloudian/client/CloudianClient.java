@@ -151,7 +151,7 @@ public class CloudianClient {
         final String json = mapper.writeValueAsString(item);
         final StringEntity entity = new StringEntity(json);
         final HttpPost request = new HttpPost(adminApiUrl + path);
-        request.setHeader("Content-type", "application/json");
+        request.setHeader("content-type", "application/json");
         request.setEntity(entity);
         final HttpResponse response = httpClient.execute(request, httpContext);
         checkAuthFailure(response);
@@ -163,7 +163,7 @@ public class CloudianClient {
         final String json = mapper.writeValueAsString(item);
         final StringEntity entity = new StringEntity(json);
         final HttpPut request = new HttpPut(adminApiUrl + path);
-        request.setHeader("Content-type", "application/json");
+        request.setHeader("content-type", "application/json");
         request.setEntity(entity);
         final HttpResponse response = httpClient.execute(request, httpContext);
         checkAuthFailure(response);

@@ -203,6 +203,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "the name of the Network associated with this network")
     private String associatedNetworkName;
 
+    @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
+    @Param(description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -290,6 +294,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.IPV6_ROUTES)
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6RouteResponse> ipv6Routes;
+
+    @SerializedName(ApiConstants.PUBLIC_MTU)
+    @Param(description = "MTU configured on the network VR's public facing interfaces")
+    private Integer publicMtu;
+
+    @SerializedName(ApiConstants.PRIVATE_MTU)
+    @Param(description = "MTU configured on the network VR's private interfaces")
+    private Integer privateMtu;
 
     @SerializedName(ApiConstants.IP6_DNS1)
     @Param(description = "the first IPv6 DNS for the network", since = "4.18.0")
@@ -538,12 +550,20 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.redundantRouter = redundantRouter;
     }
 
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
+    }
+
     public Boolean getSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
     }
 
     public void setSupportsVmAutoScaling(Boolean supportsVmAutoScaling) {
         this.supportsVmAutoScaling = supportsVmAutoScaling;
+    }
+
+    public void setTungstenVirtualRouterUuid(String tungstenVirtualRouterUuid) {
+        this.tungstenVirtualRouterUuid = tungstenVirtualRouterUuid;
     }
 
     public String getVpcName() {
@@ -605,6 +625,22 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
         this.ipv6Routes.add(ipv6Route);
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu;
+    }
+
+    public void setPrivateMtu(Integer privateMtu) {
+        this.privateMtu = privateMtu;
     }
 
     public void setIpv6Dns1(String ipv6Dns1) {

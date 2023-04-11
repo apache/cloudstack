@@ -22,6 +22,7 @@ export default {
   name: 'cluster',
   title: 'label.clusters',
   icon: 'cluster-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-clusters',
   permission: ['listClustersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']

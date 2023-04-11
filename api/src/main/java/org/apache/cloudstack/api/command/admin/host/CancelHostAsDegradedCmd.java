@@ -62,11 +62,6 @@ public class CancelHostAsDegradedCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
-    public String getCommandName() {
-        return COMMAND_RESPONSE_NAME;
-    }
-
     public static String getResultObjectName() {
         return "host";
     }

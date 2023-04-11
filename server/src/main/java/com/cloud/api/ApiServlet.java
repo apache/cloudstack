@@ -36,7 +36,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
@@ -50,11 +52,16 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
 import com.cloud.projects.Project;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.StringUtils;
@@ -218,7 +225,7 @@ public class ApiServlet extends HttpServlet {
                         logName));
             }
 
-            if (command != null) {
+            if (command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
 
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
@@ -292,17 +299,27 @@ public class ApiServlet extends HttpServlet {
             // Initialize an empty context and we will update it after we have verified the request below,
             // we no longer rely on web-session here, verifyRequest will populate user/account information
             // if a API key exists
-            Long userId = null;
 
             if (isNew && s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("new session: %s", session));
             }
+
+            if (!isNew && (command.equalsIgnoreCase(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME) || (!skip2FAcheckForAPIs(command) && !skip2FAcheckForUser(session)))) {
+                s_logger.debug("Verifying two factor authentication");
+                boolean success = verify2FA(session, command, auditTrailSb, params, remoteAddress, responseType, req, resp);
+                if (!success) {
+                    s_logger.debug("Verification of two factor authentication failed");
+                    return;
+                }
+            }
+
+            Long userId = null;
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
                 final String account = (String) session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
                 if (account != null) {
-                    if (invalidateHttpSesseionIfNeeded(req, resp, auditTrailSb, responseType, params, session, account)) return;
+                    if (invalidateHttpSessionIfNeeded(req, resp, auditTrailSb, responseType, params, session, account)) return;
                 } else {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("no account, this request will be validated through apikey(%s)/signature");
@@ -359,9 +376,103 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    private boolean checkIfAuthenticatorIsOf2FA(String command) {
+        boolean verify2FA = false;
+        APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
+        if (apiAuthenticator != null && apiAuthenticator.getAPIType().equals(APIAuthenticationType.LOGIN_2FA_API)) {
+            verify2FA = true;
+        } else {
+            verify2FA = false;
+        }
+        return verify2FA;
+    }
+
+    protected boolean skip2FAcheckForAPIs(String command) {
+        boolean skip2FAcheck = false;
+
+        if (command.equalsIgnoreCase(ApiConstants.LIST_IDPS)
+                || command.equalsIgnoreCase(ApiConstants.LIST_APIS)
+                || command.equalsIgnoreCase(ListUserTwoFactorAuthenticatorProvidersCmd.APINAME)
+                || command.equalsIgnoreCase(SetupUserTwoFactorAuthenticationCmd.APINAME)) {
+            skip2FAcheck = true;
+        }
+        return skip2FAcheck;
+    }
+
+    protected boolean skip2FAcheckForUser(HttpSession session) {
+        boolean skip2FAcheck = false;
+        Long userId = (Long) session.getAttribute("userid");
+        boolean is2FAverified = (boolean) session.getAttribute(ApiConstants.IS_2FA_VERIFIED);
+        if (is2FAverified) {
+            s_logger.debug(String.format("Two factor authentication is already verified for the user %d, so skipping", userId));
+            skip2FAcheck = true;
+        } else {
+            UserAccount userAccount = accountMgr.getUserAccountById(userId);
+            boolean is2FAenabled = userAccount.isUser2faEnabled();
+            if (is2FAenabled) {
+                skip2FAcheck = false;
+            } else {
+                Long domainId = userAccount.getDomainId();
+                boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(domainId)) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(domainId));
+                if (is2FAmandated) {
+                    skip2FAcheck = false;
+                } else {
+                    skip2FAcheck = true;
+                }
+            }
+        }
+        return skip2FAcheck;
+    }
+
+    protected boolean verify2FA(HttpSession session, String command, StringBuilder auditTrailSb, Map<String, Object[]> params,
+                                InetAddress remoteAddress, String responseType, HttpServletRequest req, HttpServletResponse resp) {
+        boolean verify2FA = false;
+        if (command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
+            APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
+            if (apiAuthenticator != null) {
+                String responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
+                HttpUtils.writeHttpResponse(resp, responseString, HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
+                verify2FA = true;
+            } else {
+                s_logger.error("Cannot find API authenticator while verifying 2FA");
+                auditTrailSb.append(" Cannot find API authenticator while verifying 2FA");
+                verify2FA = false;
+            }
+        } else {
+            // invalidate the session
+            Long userId = (Long) session.getAttribute("userid");
+            UserAccount userAccount = accountMgr.getUserAccountById(userId);
+            boolean is2FAenabled = userAccount.isUser2faEnabled();
+            String keyFor2fa = userAccount.getKeyFor2fa();
+            String providerFor2fa = userAccount.getUser2faProvider();
+            String errorMsg;
+            if (is2FAenabled) {
+                if (org.apache.commons.lang3.StringUtils.isEmpty(keyFor2fa) || org.apache.commons.lang3.StringUtils.isEmpty(providerFor2fa)) {
+                    errorMsg = "Two factor authentication is mandated by admin, user needs to setup 2FA using setupUserTwoFactorAuthentication API and" +
+                            " then verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs. Existing session is invalidated.";
+                } else {
+                    errorMsg = "Two factor authentication 2FA is enabled but not verified, please verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs. Existing session is invalidated.";
+                }
+            } else {
+                // when (is2FAmandated) is true
+                errorMsg = "Two factor authentication is mandated by admin, user needs to setup 2FA using setupUserTwoFactorAuthentication API and" +
+                        " then verify 2FA using validateUserTwoFactorAuthenticationCode API before calling other APIs. Existing session is invalidated.";
+            }
+            s_logger.error(errorMsg);
+
+            invalidateHttpSession(session, String.format("Unable to process the API request for %s from %s due to %s", userId, remoteAddress.getHostAddress(), errorMsg));
+            auditTrailSb.append(" " + ApiErrorCode.UNAUTHORIZED2FA + " " + errorMsg);
+            final String serializedResponse = apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), "Unable to process the API request due to :" + errorMsg, params, responseType);
+            HttpUtils.writeHttpResponse(resp, serializedResponse, ApiErrorCode.UNAUTHORIZED2FA.getHttpCode(), responseType, ApiServer.JSONcontentType.value());
+            verify2FA = false;
+        }
+
+        return verify2FA;
+    }
     protected void setClientAddressForConsoleEndpointAccess(String command, Map<String, Object[]> params, HttpServletRequest req) throws UnknownHostException {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(command) &&
-                command.equalsIgnoreCase(CreateConsoleEndpointCmd.APINAME)) {
+                command.equalsIgnoreCase(BaseCmd.getCommandNameByClass(CreateConsoleEndpointCmd.class))) {
             InetAddress addr = getClientAddress(req);
             String clientAddress = addr != null ? addr.getHostAddress() : null;
             params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] {clientAddress});
@@ -399,7 +510,7 @@ public class ApiServlet extends HttpServlet {
         return true;
     }
 
-    private boolean invalidateHttpSesseionIfNeeded(HttpServletRequest req, HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String account) {
+    private boolean invalidateHttpSessionIfNeeded(HttpServletRequest req, HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String account) {
         if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
             String msg = String.format("invalidating session %s for account %s", session.getId(), account);
             invalidateHttpSession(session, msg);

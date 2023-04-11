@@ -67,20 +67,20 @@ public class ScaleIOGatewayClientImplTest {
     public void setUp() throws Exception {
         wireMockRule.stubFor(get("/api/login")
                 .willReturn(ok()
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader("content-type", "application/json;charset=UTF-8")
                         .withBody(sessionKey)));
 
         client = new ScaleIOGatewayClientImpl("https://localhost/api", username, password, false, timeout, maxConnections);
 
         wireMockRule.stubFor(post("/api/types/Volume/instances")
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader("content-type", "application/json;charset=UTF-8")
                         .withStatus(200)
                         .withBody("{\"id\":\"c948d0b10000000a\"}")));
 
         wireMockRule.stubFor(get("/api/instances/Volume::c948d0b10000000a")
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader("content-type", "application/json;charset=UTF-8")
                         .withStatus(200)
                         .withBody("{\"storagePoolId\":\"4daaa55e00000000\",\"dataLayout\":\"MediumGranularity\",\"vtreeId\":\"657e289500000009\","
                                 + "\"sizeInKb\":8388608,\"snplIdOfAutoSnapshot\":null,\"volumeType\":\"ThinProvisioned\",\"consistencyGroupId\":null,"
@@ -103,7 +103,7 @@ public class ScaleIOGatewayClientImplTest {
 
         wireMockRule.stubFor(get("/api/types/StoragePool/instances")
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader("content-type", "application/json;charset=UTF-8")
                         .withStatus(200)
                         .withBody("")));
 
@@ -117,7 +117,7 @@ public class ScaleIOGatewayClientImplTest {
     public void testClientAuthFailure() throws Exception {
         wireMockRule.stubFor(get("/api/login")
                 .willReturn(unauthorized()
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader("content-type", "application/json;charset=UTF-8")
                         .withBody("")));
 
         new ScaleIOGatewayClientImpl("https://localhost/api", username, password, false, timeout, maxConnections);
@@ -131,7 +131,7 @@ public class ScaleIOGatewayClientImplTest {
 
         wireMockRule.stubFor(get("/api/types/StoragePool/instances")
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader("content-type", "application/json;charset=UTF-8")
                         .withStatus(200)
                         .withFixedDelay(2 * timeout * 1000)
                         .withBody("")));
@@ -153,7 +153,7 @@ public class ScaleIOGatewayClientImplTest {
         wireMockRule.verify(postRequestedFor(urlEqualTo("/api/types/Volume/instances"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey))
                 .withRequestBody(containing("\"name\":\"" + volumeName + "\""))
-                .withHeader("Content-Type", equalTo("application/json")));
+                .withHeader("content-type", equalTo("application/json")));
         wireMockRule.verify(getRequestedFor(urlEqualTo("/api/instances/Volume::c948d0b10000000a"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey)));
 
@@ -190,7 +190,7 @@ public class ScaleIOGatewayClientImplTest {
         wireMockRule.verify(volumesCount, postRequestedFor(urlEqualTo("/api/types/Volume/instances"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey))
                 .withRequestBody(containing("\"name\":\"" + volumeNamePrefix))
-                .withHeader("Content-Type", equalTo("application/json")));
+                .withHeader("content-type", equalTo("application/json")));
         wireMockRule.verify(volumesCount, getRequestedFor(urlEqualTo("/api/instances/Volume::c948d0b10000000a"))
                 .withBasicAuth(new BasicCredentials(username, sessionKey)));
     }

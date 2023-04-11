@@ -53,22 +53,24 @@ public class GuestOsMapper {
 
     private long getGuestOsId(long categoryId, String displayName) {
         GuestOSVO guestOS = guestOSDao.findByCategoryIdAndDisplayNameOrderByCreatedDesc(categoryId, displayName);
+        long id = 0l;
         if (guestOS != null) {
-            guestOS.getId();
+            id = guestOS.getId();
+        } else {
+            LOG.warn(String.format("Unable to find the guest OS details with category id: %d and display name: %s",  + categoryId, displayName));
         }
-
-        LOG.warn("Unable to find the guest OS details with category id: " + categoryId + " and display name: " + displayName);
-        return 0;
+        return id;
     }
 
     private long getGuestOsIdFromHypervisorMapping(GuestOSHypervisorMapping mapping) {
         GuestOSHypervisorVO guestOSHypervisorVO = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(mapping.getGuestOsName(), mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        long id = 0;
         if (guestOSHypervisorVO != null) {
-            guestOSHypervisorVO.getGuestOsId();
+            id = guestOSHypervisorVO.getGuestOsId();
+        } else {
+            LOG.warn(String.format("Unable to find the guest OS hypervisor mapping details for %s", mapping.toString()));
         }
-
-        LOG.debug("Unable to find the guest OS hypervisor mapping details for " + mapping.toString());
-        return 0;
+        return id;
     }
 
     public void addGuestOsAndHypervisorMappings(long categoryId, String displayName, List<GuestOSHypervisorMapping> mappings) {
@@ -100,8 +102,16 @@ public class GuestOsMapper {
         guestOS = guestOSDao.persist(guestOS);
         return (guestOS != null);
     }
+    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long category, String displayName) {
+        long guestOsId =  getGuestOsId(category, displayName);
+        if (guestOsId == 0) {
+            LOG.error(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
+        } else {
+            addGuestOsHypervisorMapping(mapping, guestOsId);
+        }
+    }
 
-    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+    private void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
         if(!isValidGuestOSHypervisorMapping(mapping)) {
             return;
         }

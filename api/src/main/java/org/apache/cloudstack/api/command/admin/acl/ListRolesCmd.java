@@ -34,10 +34,9 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = ListRolesCmd.APINAME, description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.9.0", authorized = {
+@APICommand(name = "listRoles", description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.9.0", authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin })
 public class ListRolesCmd extends BaseListCmd {
-    public static final String APINAME = "listRoles";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -74,11 +73,6 @@ public class ListRolesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseListCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -48,6 +48,8 @@ import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupC
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -74,6 +76,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
@@ -171,6 +174,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     NicDao _nicDao;
     @Inject
     NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    MessageBus messageBus;
 
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -816,6 +821,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
+        messageBus.publish(_name, MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, newRules);
+
         try {
             final ArrayList<Long> affectedVms = new ArrayList<Long>();
             affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
@@ -899,6 +906,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             scheduleRulesetUpdateToHosts(affectedVms, true, null);
         } catch (Exception e) {
             s_logger.debug("Can't update rules for host, ignore", e);
+        }
+
+        if(Boolean.TRUE.equals(result)) {
+            messageBus.publish(_name, MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT, PublishScope.LOCAL, rule);
         }
 
         return result;
@@ -1223,7 +1234,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         // check permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        return Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
+        boolean result = Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) throws ResourceInUseException {
                 SecurityGroupVO group = _securityGroupDao.lockRow(groupId, true);
@@ -1251,6 +1262,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
+        if(result) {
+            messageBus.publish(_name, MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, group);
+        }
+        return result;
     }
 
     @Override
@@ -1424,6 +1439,12 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         }
 
         NicVO nic = _nicDao.findById(nicId);
+
+        // Tungsten-Fabric will handle security group by themselves
+        if (nic.getBroadcastUri().equals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"))) {
+            return true;
+        }
+
         long vmId = nic.getInstanceId();
         UserVm vm = _userVMDao.findById(vmId);
         if (vm == null || vm.getType() != VirtualMachine.Type.User) {

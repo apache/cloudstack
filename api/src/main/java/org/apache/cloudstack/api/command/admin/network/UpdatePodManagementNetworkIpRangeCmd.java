@@ -33,7 +33,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = UpdatePodManagementNetworkIpRangeCmd.APINAME,
+@APICommand(name = "updatePodManagementNetworkIpRange",
         description = "Updates a management network IP range. Only allowed when no IPs are allocated.",
         responseObject = SuccessResponse.class,
         since = "4.16.0.0",
@@ -44,7 +44,6 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(UpdatePodManagementNetworkIpRangeCmd.class);
 
-    public static final String APINAME = "updatePodManagementNetworkIpRange";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -117,11 +116,6 @@ public class UpdatePodManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Updating pod management IP range " + getNewStartIP() + "-" + getNewEndIP() + " of Pod: " + getPodId();
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseAsyncCmd.RESPONSE_SUFFIX;
     }
 
     @Override

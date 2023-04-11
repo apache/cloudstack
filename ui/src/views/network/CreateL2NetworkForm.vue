@@ -98,12 +98,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -164,7 +164,7 @@
               v-model:value="form.isolatedpvlan"
               :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
-          <a-form-item v-if="accountVisible" name="account" ref="name">
+          <a-form-item v-if="accountVisible" name="account" ref="account">
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
             </template>
@@ -266,7 +266,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
         vlanid: [{ required: true, message: this.$t('message.please.enter.value') }]
@@ -302,7 +301,7 @@ export default {
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
-          if (zone.networktype === 'Advanced') {
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
             this.zones.push(zone)
           }
         }

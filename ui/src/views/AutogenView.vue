@@ -55,8 +55,10 @@
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                      ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
+                        ? 'all' : ['publicip'].includes($route.name)
+                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
+                        ? 'all' : ['volume'].includes($route.name)
+                        ? 'user' : 'self')"
                     style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -117,7 +119,7 @@
           :maskClosable="false"
           :cancelText="$t('label.cancel')"
           style="top: 20px;"
-          @cancel="closeAction"
+          @cancel="cancelAction"
           :confirmLoading="actionLoading"
           :footer="null"
           centered
@@ -161,7 +163,7 @@
         :ok-button-props="getOkProps()"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
-        @cancel="closeAction"
+        @cancel="cancelAction"
         centered
       >
         <template #title>
@@ -247,11 +249,14 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option key="" >{{ }}</a-select-option>
-                  <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
+                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option
+                    v-for="(opt, optIndex) in currentAction.mapping[field.name].options"
+                    :key="optIndex"
+                    :label="opt">
                     {{ opt }}
                   </a-select-option>
                 </a-select>
@@ -264,12 +269,15 @@
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   v-focus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
-                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option
+                    v-for="(opt, optIndex) in field.opts"
+                    :key="optIndex"
+                    :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
@@ -338,10 +346,13 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                  <a-select-option
+                    v-for="(opt, optIndex) in field.opts"
+                    :key="optIndex"
+                    :label="opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -403,7 +414,7 @@
         ref="listview"
         @update-selected-columns="updateSelectedColumns"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData"
+        @refresh="fetchData"
         @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
@@ -801,26 +812,23 @@ export default {
         })
       }
 
-      const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.customTitle
+            key = columnKey.field
             title = columnKey.customTitle
-            customRender[key] = columnKey[key]
           } else {
             key = Object.keys(columnKey)[0]
             title = Object.keys(columnKey)[0]
-            customRender[key] = columnKey[key]
           }
         }
         this.columns.push({
+          key: key,
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          slots: { customRender: key },
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: function (a, b) { return genericCompare(a[key] || '', b[key] || '') }
         })
         this.selectedColumns.push(key)
       }
@@ -842,13 +850,10 @@ export default {
           this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
           this.$t('label.created'), this.$t('label.order')].includes(column.title)
       })
+      this.chosenColumns.splice(this.chosenColumns.length - 1, 1)
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
-      }
-
-      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
-        params.listsystemvms = true
       }
 
       this.loading = true
@@ -867,6 +872,21 @@ export default {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicy/')) {
+          params.policyuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicyset/')) {
+          params.applicationpolicysetuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstennetworkroutertable/')) {
+          params.tungstennetworkroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungsteninterfaceroutertable/')) {
+          params.tungsteninterfaceroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenfirewallpolicy/')) {
+          params.firewallpolicyuuid = this.$route.params.id
         }
       }
 
@@ -938,12 +958,6 @@ export default {
 
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
-          for (const key in customRender) {
-            const func = customRender[key]
-            if (func && typeof func === 'function') {
-              this.items[idx][key] = func(this.items[idx])
-            }
-          }
           if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
@@ -995,6 +1009,10 @@ export default {
       this.actionLoading = false
       this.showAction = false
       this.currentAction = {}
+    },
+    cancelAction () {
+      eventBus.emit('action-closing', { action: this.currentAction })
+      this.closeAction()
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
@@ -1161,6 +1179,11 @@ export default {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
+            if (possibleApi === 'listBackupOfferings' && json[obj].backupoffering) {
+              json[obj].backupoffering.sort((a, b) => {
+                return a.name > b.name
+              })
+            }
             for (const res in json[obj]) {
               if (res === 'count') {
                 continue
@@ -1258,9 +1281,9 @@ export default {
           this.bulkColumns = this.chosenColumns
           this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
           this.bulkColumns.splice(0, 0, {
+            key: 'status',
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
-            slots: { customRender: 'status' },
             filters: [
               { text: 'In Progress', value: 'InProgress' },
               { text: 'Success', value: 'success' },
@@ -1394,13 +1417,13 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateAccount'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'networkdomain'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1443,7 +1466,7 @@ export default {
               if (!action.mapping[key].value) {
                 continue
               }
-              params[key] = action.mapping[key].value(this.resource, params)
+              params[key] = action.mapping[key].value(this.resource, params, this.$route.query)
             }
           }
         }
@@ -1512,13 +1535,17 @@ export default {
       }
 
       this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
-      this.columns.push({
-        dataIndex: 'dropdownFilter',
-        slots: {
-          filterDropdown: 'filterDropdown',
-          filterIcon: 'filterIcon'
-        }
-      })
+      const filterColumn = {
+        key: 'filtercolumn',
+        dataIndex: 'filtercolumn',
+        title: '',
+        customFilterDropdown: true,
+        width: 5
+      }
+      if (this.columns.length === 0) {
+        filterColumn.width = 'auto'
+      }
+      this.columns.push(filterColumn)
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
       }
@@ -1537,6 +1564,12 @@ export default {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
         query.isofilter = filter
+      } else if (this.$route.name === 'volume') {
+        if (filter === 'all') {
+          query.listsystemvms = true
+        } else {
+          delete query.listsystemvms
+        }
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
           delete query.networkfilter
@@ -1687,6 +1720,7 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
+          console.log('op: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
@@ -1697,17 +1731,20 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (field.type === 'uuid'):
+          console.log('uuid: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'list'):
+          console.log('list: ' + field)
           rule.type = 'array'
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'long'):
+          console.log(field)
           rule.type = 'number'
           rule.required = field.required
           rule.message = this.$t('message.validate.number')

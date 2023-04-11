@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 public class ListAffinityGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupsCmd.class.getName());
 
-    private static final String s_name = "listaffinitygroupsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,11 +75,6 @@ public class ListAffinityGroupsCmd extends BaseListProjectAndAccountResourcesCmd
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

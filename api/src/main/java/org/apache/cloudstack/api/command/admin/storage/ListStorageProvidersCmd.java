@@ -41,15 +41,9 @@ import com.cloud.exception.ResourceUnavailableException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStorageProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStorageProvidersCmd.class.getName());
-    private static final String s_name = "liststorageprovidersresponse";
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of storage provider: either primary or image", required = true)
     private String type;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public String getType() {
         return this.type;

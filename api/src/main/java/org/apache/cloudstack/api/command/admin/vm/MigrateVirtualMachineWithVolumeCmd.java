@@ -54,7 +54,6 @@ import com.cloud.vm.VirtualMachine;
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
-    private static final String s_name = "migratevirtualmachinewithvolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -120,11 +119,6 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

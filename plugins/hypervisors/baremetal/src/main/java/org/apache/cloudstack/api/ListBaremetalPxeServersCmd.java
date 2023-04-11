@@ -36,7 +36,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalPxeServersCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListBaremetalPxeServersCmd.class);
-    private static final String s_name = "listbaremetalpxeserversresponse";
 
     @Inject
     BaremetalPxeManager _pxeMgr;
@@ -82,8 +81,4 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
         }
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
-}
