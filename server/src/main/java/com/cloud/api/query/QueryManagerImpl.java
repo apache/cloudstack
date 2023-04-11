@@ -790,7 +790,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("resourceType", resourceType.toString());
         }
 
-        sc.setParameters("archived", false);
+        if (id == null) {
+            sc.setParameters("archived", cmd.getArchived());
+        }
 
         Pair<List<EventJoinVO>, Integer> eventPair = null;
         // event_view will not have duplicate rows for each event, so

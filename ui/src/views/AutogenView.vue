@@ -53,12 +53,7 @@
                   <a-select
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
-                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                        ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
-                        ? 'all' : ['volume'].includes($route.name)
-                        ? 'user' : 'self')"
+                    :value="filterValue"
                     style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -670,6 +665,25 @@ export default {
       return [...new Set(sizes)].sort(function (a, b) {
         return a - b
       }).map(String)
+    },
+    filterValue () {
+      if (this.$route.query.filter) {
+        return this.$route.query.filter
+      }
+      const routeName = this.$route.name
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes(routeName)) || ['guestnetwork', 'guestvlans'].includes(routeName)) {
+        return 'all'
+      }
+      if (['publicip'].includes(routeName)) {
+        return 'allocated'
+      }
+      if (['volume'].includes(routeName)) {
+        return 'user'
+      }
+      if (['event'].includes(routeName)) {
+        return 'active'
+      }
+      return 'self'
     }
   },
   methods: {
@@ -1592,6 +1606,12 @@ export default {
           query.allocatedonly = 'false'
         } else if (filter === 'allocatedonly') {
           query.allocatedonly = 'true'
+        }
+      } else if (this.$route.name === 'event') {
+        if (filter === 'archived') {
+          query.archived = true
+        } else {
+          delete query.archived
         }
       }
       query.filter = filter
