@@ -57,7 +57,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         UploadInProgress("Volume upload is in progress"),
         UploadError("Volume upload encountered some error"),
         UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specified time"),
-        Attaching("The volume is attaching to a VM from Ready state.");
+        Attaching("The volume is attaching to a VM from Ready state."),
+        Restoring("The volume is being restored from backup.");
 
         String _description;
 
@@ -133,6 +134,11 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationFailed, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.RecoverRequested, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.RestoreRequested, Restoring, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.RestoreRequested, Restoring, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.RestoreRequested, Restoring, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Restoring, Event.RestoreSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Restoring, Event.RestoreFailed, Ready, null));
         }
     }
 
@@ -156,7 +162,10 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         ExpungingRequested,
         ResizeRequested,
         AttachRequested,
-        OperationTimeout;
+        OperationTimeout,
+        RestoreRequested,
+        RestoreSucceeded,
+        RestoreFailed;
     }
 
     /**

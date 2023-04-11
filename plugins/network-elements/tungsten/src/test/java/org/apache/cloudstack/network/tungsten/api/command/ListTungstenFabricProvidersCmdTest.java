@@ -72,4 +72,3 @@ public class ListTungstenFabricProvidersCmdTest {
         Assert.assertEquals(responseList, listTungstenFabricProvidersCmd.getResponseObject());
     }
 }
-

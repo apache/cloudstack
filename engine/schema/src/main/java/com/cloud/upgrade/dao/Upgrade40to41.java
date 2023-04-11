@@ -185,4 +185,3 @@ public class Upgrade40to41 implements DbUpgrade {
     }
 
 }
-

@@ -99,8 +99,9 @@ export default {
       label: 'label.disable.host',
       message: 'message.confirm.disable.host',
       dataView: true,
-      defaultArgs: { allocationstate: 'Disable' },
-      show: (record) => { return record.resourcestate === 'Enabled' }
+      show: (record) => { return record.resourcestate === 'Enabled' },
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable')))
     },
     {
       api: 'updateHost',
@@ -108,8 +109,9 @@ export default {
       label: 'label.enable.host',
       message: 'message.confirm.enable.host',
       dataView: true,
-      defaultArgs: { allocationstate: 'Enable' },
-      show: (record) => { return record.resourcestate === 'Disabled' }
+      show: (record) => { return record.resourcestate === 'Disabled' },
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable')))
     },
     {
       api: 'prepareHostForMaintenance',

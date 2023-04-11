@@ -134,6 +134,10 @@
           &nbsp;
           <a-tag>source-nat</a-tag>
         </span>
+        <span v-if="record.isstaticnat">
+          &nbsp;
+          <a-tag>static-nat</a-tag>
+        </span>
       </template>
       <template v-if="column.key === 'ip6address'" href="javascript:;">
         <span>{{ ipV6Address(text, record) }}</span>
@@ -153,7 +157,7 @@
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
         </span>
         <span v-else>{{ text }}</span>
       </template>
@@ -199,7 +203,6 @@
         <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
-
       <template v-for="(value, name) in thresholdMapping" :key="name">
         <template v-if="column.key === name">
           <span>

@@ -222,7 +222,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
         cidr: [{ required: true, message: this.$t('message.error.required.input') }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]

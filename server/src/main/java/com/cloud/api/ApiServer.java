@@ -188,6 +188,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
+    private static final String SANITIZATION_REGEX = "[\n\r]";
+
     private static boolean encodeApiResponse = false;
 
     /**
@@ -919,7 +921,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request.");
                     return false;
                 }
 
@@ -932,7 +934,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                 final Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                    apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
+                    s_logger.debug(String.format("Request expired -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
                     return false;
                 }
             }
@@ -979,7 +983,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
 
             if (!equalSig) {
-                s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                s_logger.info(String.format("User signature [%s] is not equaled to computed signature [%s].", signature, computedSignature));
             } else {
                 CallContext.register(user, account);
             }

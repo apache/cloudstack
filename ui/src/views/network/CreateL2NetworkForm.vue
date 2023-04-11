@@ -164,7 +164,7 @@
               v-model:value="form.isolatedpvlan"
               :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
-          <a-form-item v-if="accountVisible" name="account" ref="name">
+          <a-form-item v-if="accountVisible" name="account" ref="account">
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
             </template>

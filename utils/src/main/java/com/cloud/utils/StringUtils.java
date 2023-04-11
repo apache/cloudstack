@@ -275,4 +275,11 @@ public class StringUtils {
     public static String toCSVList(final List<String> csvList) {
         return org.apache.commons.lang3.StringUtils.defaultString(org.apache.commons.lang3.StringUtils.join(csvList, ","));
     }
+
+    public static Pair<String, String> getKeyValuePairWithSeparator(String keyValuePair, String separator) {
+        final int index = keyValuePair.indexOf(separator);
+        final String key = keyValuePair.substring(0, index);
+        final String value = keyValuePair.substring(index + 1);
+        return new Pair<>(key.trim(), value.trim());
+    }
 }

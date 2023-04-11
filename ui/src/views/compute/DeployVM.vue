@@ -1623,11 +1623,11 @@ export default {
         if (this.templateId) {
           apiName = 'listTemplates'
           params.listall = true
-          params.templatefilter = 'all'
+          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.templateId
         } else if (this.isoId) {
           params.listall = true
-          params.isofilter = 'all'
+          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.isoId
           apiName = 'listIsos'
         } else if (this.networkId) {
@@ -1848,7 +1848,7 @@ export default {
       this.form.networkids = ids
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
       this.form.defaultnetworkid = id
     },
     updateNetworkConfig (networks) {
