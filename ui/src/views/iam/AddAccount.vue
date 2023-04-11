@@ -37,9 +37,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option v-for="role in roles" :key="role.id">
+            <a-select-option v-for="role in roles" :key="role.id" :label="role.name + ' (' + role.type + ')'">
               {{ role.name + ' (' + role.type + ')' }}
             </a-select-option>
           </a-select>
@@ -143,9 +143,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
-            <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+            <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -173,9 +173,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }">
-              <a-select-option v-for="idp in idps" :key="idp.id">
+              <a-select-option v-for="idp in idps" :key="idp.id" :label="idp.orgName">
                 {{ idp.orgName }}
               </a-select-option>
             </a-select>
