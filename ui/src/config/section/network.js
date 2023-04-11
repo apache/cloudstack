@@ -656,9 +656,8 @@ export default {
     {
       name: 'vpnuser',
       title: 'label.vpn.users',
-      icon: 'user-alt-outlined',
+      icon: 'user-switch-outlined',
       permission: ['listVpnUsers'],
-      hidden: true,
       columns: ['username', 'state', 'account', 'domain'],
       details: ['username', 'state', 'account', 'domain'],
       actions: [
