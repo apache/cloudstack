@@ -703,7 +703,7 @@
                     </div>
                   </div>
                   <a-divider/>
-                  <div>
+                  <div style="display: block">
                     <a-table
                       size="small"
                       style="overflow-y: auto"
