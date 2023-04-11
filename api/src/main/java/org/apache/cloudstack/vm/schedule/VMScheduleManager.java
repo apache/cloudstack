@@ -18,21 +18,19 @@
  */
 package org.apache.cloudstack.vm.schedule;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 
-import java.util.List;
-
 public interface VMScheduleManager {
-    VMSchedule createSchedule(CreateVMScheduleCmd createVMScheduleCmd);
+    VMScheduleResponse createSchedule(CreateVMScheduleCmd createVMScheduleCmd);
 
     VMScheduleResponse createResponse(VMSchedule vmSchedule);
 
-    Pair<List<? extends VMSchedule>, Integer> listSchedule(ListVMScheduleCmd listVMScheduleCmd);
+    ListResponse<VMScheduleResponse> listSchedule(ListVMScheduleCmd listVMScheduleCmd);
 
     VMSchedule updateSchedule(UpdateVMScheduleCmd updateVMScheduleCmd);
 

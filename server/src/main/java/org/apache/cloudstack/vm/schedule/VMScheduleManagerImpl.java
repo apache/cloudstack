@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -85,7 +86,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
-    public VMSchedule createSchedule(CreateVMScheduleCmd cmd) {
+    public VMScheduleResponse createSchedule(CreateVMScheduleCmd cmd) {
         // TODO: Check if user is permitted to create the schedule
 
         VMSchedule.Action action = null;
@@ -125,7 +126,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), cmd.getName(), cmd.getDescription(), cronExpression.toString(), timeZoneId, action, startDate, endDate, false));
         vmScheduler.scheduleNextJob(vmSchedule);
 
-        return vmSchedule;
+        return createResponse(vmSchedule);
     }
 
     @Override
@@ -148,7 +149,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
-    public Pair<List<? extends VMSchedule>, Integer> listSchedule(ListVMScheduleCmd cmd) {
+    public ListResponse<VMScheduleResponse> listSchedule(ListVMScheduleCmd cmd) {
         Long id = cmd.getId();
         Boolean enabled = cmd.getEnabled();
         Long vmId = cmd.getVmId();
@@ -180,8 +181,15 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             sc.setParameters("action", action);
         }
         sc.setParameters("vm_id", vmId);
+
         Pair<List<VMScheduleVO>, Integer> result = vmScheduleDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends VMSchedule>, Integer>(result.first(), result.second());
+        ListResponse<VMScheduleResponse> response = new ListResponse<VMScheduleResponse>();
+        List<VMScheduleResponse> responsesList = new ArrayList<VMScheduleResponse>();
+        for (VMSchedule vmSchedule : result.first()) {
+            responsesList.add(createResponse(vmSchedule));
+        }
+        response.setResponses(responsesList, result.second());
+        return response;
     }
 
     @Override

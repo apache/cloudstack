@@ -38,7 +38,7 @@ import java.util.Date;
 public class CreateVMScheduleCmd extends BaseCmd {
 
     @Inject
-    private VMScheduleManager vmScheduleManager;
+    VMScheduleManager vmScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -132,9 +132,9 @@ public class CreateVMScheduleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        VMSchedule vmSchedule = vmScheduleManager.createSchedule(this);
-        VMScheduleResponse response = vmScheduleManager.createResponse(vmSchedule);
+        VMScheduleResponse response = vmScheduleManager.createSchedule(this);
         response.setResponseName(getCommandName());
+        response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
         setResponseObject(response);
     }
 

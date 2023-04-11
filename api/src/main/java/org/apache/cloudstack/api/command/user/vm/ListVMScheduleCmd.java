@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -31,14 +30,12 @@ import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
 
 @APICommand(name = "listVMSchedule", description = "List VM Schedules.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMScheduleCmd extends BaseListCmd {
     @Inject
-    private VMScheduleManager vmScheduleManager;
+    VMScheduleManager vmScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -91,13 +88,7 @@ public class ListVMScheduleCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        Pair<List<? extends VMSchedule>, Integer> result = vmScheduleManager.listSchedule(this);
-        ListResponse<VMScheduleResponse> response = new ListResponse<VMScheduleResponse>();
-        List<VMScheduleResponse> responsesList = new ArrayList<VMScheduleResponse>();
-        for (VMSchedule vmSchedule : result.first()) {
-            responsesList.add(vmScheduleManager.createResponse(vmSchedule));
-        }
-        response.setResponses(responsesList, result.second());
+        ListResponse<VMScheduleResponse> response = vmScheduleManager.listSchedule(this);
         response.setResponseName(getCommandName());
         response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
         setResponseObject(response);
