@@ -2787,6 +2787,7 @@
 "message.network.offering.promiscuous.mode": "Applicable for guest networks on VMware hypervisor only.\nReject - The switch drops any outbound frame from a virtual machine adapter with a source MAC address that is different from the one in the .vmx configuration file.\nAccept - The switch does not perform filtering, and permits all outbound frames.\nNone - Default to value from global setting.",
 "message.network.removenic": "Please confirm that want to remove this NIC, which will also remove the associated network from the VM.",
 "message.network.secondaryip": "Please confirm that you would like to acquire a new secondary IP for this NIC. \n NOTE: You need to manually configure the newly-acquired secondary IP inside the virtual machine.",
+"message.network.selection": "Choose one or more networks to attach the instance to. A new network can also be created here.",
 "message.network.updateip": "Please confirm that you would like to change the IP address for this NIC on VM.",
 "message.network.usage.info.data.points": "Each data point represents the difference in data traffic since the last data point.",
 "message.network.usage.info.sum.of.vnics": "The network usage shown is made up of the sum of data traffic from all the vNICs in the VM.",
