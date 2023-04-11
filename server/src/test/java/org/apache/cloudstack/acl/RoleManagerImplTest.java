@@ -166,7 +166,7 @@ public class RoleManagerImplTest {
         String roleName = "roleName";
         List<Role> roles = new ArrayList<>();
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 0);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByName(roleName, null, null);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByName(roleName, null, null, null);
 
         roleManagerImpl.findRolesByName(roleName);
         Mockito.verify(roleManagerImpl).removeRootAdminRolesIfNeeded(roles);

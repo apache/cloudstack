@@ -1609,9 +1609,7 @@ export default {
         if ('searchQuery' in opts) {
           const value = opts.searchQuery
           if (value && value.length > 0) {
-            if (this.$route.name === 'role') {
-              query.name = value
-            } else if (this.$route.name === 'quotaemailtemplate') {
+            if (this.$route.name === 'quotaemailtemplate') {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
