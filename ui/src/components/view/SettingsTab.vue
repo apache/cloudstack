@@ -135,6 +135,9 @@ export default {
       case 'imagestore':
         this.scopeKey = 'imagestoreuuid'
         break
+      case 'guestnetwork':
+        this.scopeKey = 'networkid'
+        break
       default:
         this.scopeKey = ''
     }
