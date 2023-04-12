@@ -31,37 +31,45 @@
             <render-icon
             v-if="item.meta.icon && typeof (item.meta.icon) === 'string'"
             :icon="item.meta.icon"
-            @click="() => { handleClickParentMenu(item) }" />
+            @click="() => { handleClickParentMenu(item) }"
+            v-shortkey="item.meta.shortKey"
+            @shortkey="handleMenuItemShortKey(item, '1')" />
             <span @click="() => { handleClickParentMenu(item) }">{{ $t(item.meta.title) }}</span>
             <span class="show-shortkey" v-if="$store.getters.showshortkeys && item.meta.shortKey">
-              {{ item.meta.shortKey[0] + (item.meta.shortKey[1] ? '+' + item.meta.shortKey[1] : '') }}
+              {{ getShortKeyLabel(item) }}
             </span>
           </span>
         </template>
-        <template v-for="children in item.children" :key="children.path">
-          <a-menu-item :key="children.path" v-if="!children.hidden">
-            <router-link :to="{ name: children.name, target: children.meta.target || null }">
+        <template v-for="child in item.children" :key="child.path">
+          <a-menu-item :key="child.path" v-if="!child.hidden">
+            <router-link
+              :to="{ name: child.name, target: child.meta.target || null }"
+              v-shortkey="child.meta.shortKey"
+              @shortkey="handleMenuItemShortKey(child, '2')">
               <render-icon
-                v-if="children.meta.icon && typeof (children.meta.icon) === 'string'"
-                :icon="children.meta.icon" />
-              <render-icon v-else :svgIcon="children.meta.icon" />
-              <span>{{ $t(children.meta.title) }}</span>
-              <span class="show-shortkey" v-if="$store.getters.showshortkeys && children.meta.shortKey">
-                {{ children.meta.shortKey[0] + (children.meta.shortKey[1] ? '+' + children.meta.shortKey[1] : '') }}
+                v-if="child.meta.icon && typeof (child.meta.icon) === 'string'"
+                :icon="child.meta.icon" />
+              <render-icon v-else :svgIcon="child.meta.icon" />
+              <span>{{ $t(child.meta.title) }}</span>
+              <span class="show-shortkey" v-if="$store.getters.showshortkeys && child.meta.shortKey">
+                {{ getShortKeyLabel(child) }}
               </span>
             </router-link>
           </a-menu-item>
         </template>
       </a-sub-menu>
       <a-menu-item v-else :key="item.path">
-        <router-link :to="{ name: item.name, target: item.meta.target || null }">
+        <router-link
+          :to="{ name: item.name, target: item.meta.target || null }"
+          v-shortkey="item.meta.shortKey"
+          @shortkey="handleMenuItemShortKey(item)">
           <render-icon
             v-if="item.meta.icon && typeof (item.meta.icon) === 'string'"
             :icon="item.meta.icon"
             @click="() => { handleClickParentMenu(item) }" />
           <span>{{ $t(item.meta.title) }}</span>
           <span class="show-shortkey" v-if="$store.getters.showshortkeys && item.meta.shortKey">
-            {{ item.meta.shortKey[0] + (item.meta.shortKey[1] ? '+' + item.meta.shortKey[1] : '') }}
+            {{ getShortKeyLabel(item) }}
           </span>
         </router-link>
       </a-menu-item>
@@ -158,13 +166,29 @@ export default {
         this.openKeys = openKeys
       }
     },
-    handleClickParentMenu (menuItem) {
-      if (this.cachedPath === menuItem.redirect) {
+    routeMenuItem (redirect, path) {
+      if (this.cachedPath === redirect) {
         return
       }
-      if (menuItem.redirect) {
-        this.cachedPath = menuItem.redirect
-        setTimeout(() => this.$router.push({ path: menuItem.path }))
+      if (redirect) {
+        this.cachedPath = redirect
+        setTimeout(() => this.$router.push({ path: path }))
+      }
+    },
+    getShortKeyLabel (item) {
+      if (item.meta.shortKey) {
+        return item.meta.shortKey.join('+')
+      }
+      return null
+    },
+    handleClickParentMenu (menuItem) {
+      this.routeMenuItem(menuItem.redirect, menuItem.path)
+    },
+    handleMenuItemShortKey (item, type) {
+      if (type === 1) {
+        this.handleClickParentMenu(item)
+      } else {
+        this.routeMenuItem(item.path, item.path)
       }
     }
   }
