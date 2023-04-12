@@ -33,6 +33,9 @@
             :icon="item.meta.icon"
             @click="() => { handleClickParentMenu(item) }" />
             <span @click="() => { handleClickParentMenu(item) }">{{ $t(item.meta.title) }}</span>
+            <span class="show-shortkey" v-if="$store.getters.showshortkeys && item.meta.shortKey">
+              {{ item.meta.shortKey[0] + (item.meta.shortKey[1] ? '+' + item.meta.shortKey[1] : '') }}
+            </span>
           </span>
         </template>
         <template v-for="children in item.children" :key="children.path">
@@ -43,6 +46,9 @@
                 :icon="children.meta.icon" />
               <render-icon v-else :svgIcon="children.meta.icon" />
               <span>{{ $t(children.meta.title) }}</span>
+              <span class="show-shortkey" v-if="$store.getters.showshortkeys && children.meta.shortKey">
+                {{ children.meta.shortKey[0] + (children.meta.shortKey[1] ? '+' + children.meta.shortKey[1] : '') }}
+              </span>
             </router-link>
           </a-menu-item>
         </template>
@@ -54,6 +60,9 @@
             :icon="item.meta.icon"
             @click="() => { handleClickParentMenu(item) }" />
           <span>{{ $t(item.meta.title) }}</span>
+          <span class="show-shortkey" v-if="$store.getters.showshortkeys && item.meta.shortKey">
+            {{ item.meta.shortKey[0] + (item.meta.shortKey[1] ? '+' + item.meta.shortKey[1] : '') }}
+          </span>
         </router-link>
       </a-menu-item>
     </template>
@@ -163,7 +172,18 @@ export default {
 </script>
 
 <style>
-.sider .ant-menu-vertical .ant-menu-item {
-  margin-right: 0;
-}
+  .sider .ant-menu-vertical .ant-menu-item {
+    margin-right: 0;
+  }
+  .show-shortkey {
+    font-size: 10px;
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 2px 6px 2px 6px;
+    border-radius: 4px;
+    color: #e9e9e9;
+    margin: 5px;
+    border: solid .1em transparent;
+    text-shadow: 2px 2px 2px rgba(255,255,255,0.1);
+    box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 1px  rgba(0, 0, 0, 0.9);
+  }
 </style>

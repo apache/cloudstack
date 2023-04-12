@@ -35,7 +35,7 @@ const parseValue = (value) => {
   return value
 }
 
-const bindValue = (value, el, binding, vnode) => {
+const bindValue = (value, el, binding) => {
   const push = binding.modifiers.push === true
   const avoid = binding.modifiers.avoid === true
   const focus = !binding.modifiers.focus === true
@@ -47,7 +47,7 @@ const bindValue = (value, el, binding, vnode) => {
     })
     objAvoided.push(el)
   } else {
-    mappingFunctions({ b: value, push, once, focus, propagte, el: vnode.elm })
+    mappingFunctions({ b: value, push, once, focus, propagte, el })
   }
 }
 
@@ -63,19 +63,19 @@ const unbindValue = (value, el) => {
   }
 }
 vueApp.directive('shortkey', {
-  bind: (el, binding, vnode) => {
+  beforeMount: (el, binding, vnode) => {
     // Mapping the commands
     const value = parseValue(binding.value)
     bindValue(value, el, binding, vnode)
   },
-  update: (el, binding, vnode) => {
+  updated: (el, binding, vnode) => {
     const oldValue = parseValue(binding.oldValue)
     unbindValue(oldValue, el)
 
     const newValue = parseValue(binding.value)
     bindValue(newValue, el, binding, vnode)
   },
-  unbind: (el, binding) => {
+  unmounted: (el, binding) => {
     const value = parseValue(binding.value)
     unbindValue(value, el)
   }
