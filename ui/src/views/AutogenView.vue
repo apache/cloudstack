@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="78">
+    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
@@ -390,44 +390,46 @@
       </a-modal>
     </div>
 
-    <div v-if="dataView" style="margin-top: -10px">
-      <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
-      <resource-view
-        v-else
-        :resource="resource"
-        :loading="loading"
-        :tabs="$route.meta.tabs" />
-    </div>
-    <div class="row-element" v-else>
-      <list-view
-        :loading="loading"
-        :columns="columns"
-        :items="items"
-        :actions="actions"
-        :columnKeys="columnKeys"
-        :selectedColumns="selectedColumns"
-        ref="listview"
-        @update-selected-columns="updateSelectedColumns"
-        @selection-change="onRowSelectionChange"
-        @refresh="fetchData"
-        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
-      <a-pagination
-        class="row-element"
-        style="margin-top: 10px"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="itemCount"
-        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="pageSizeOptions"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger
-        showQuickJumper>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
+      <div v-if="dataView" style="margin-top: -10px">
+        <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
+        <resource-view
+          v-else
+          :resource="resource"
+          :loading="loading"
+          :tabs="$route.meta.tabs" />
+      </div>
+      <div class="row-element" v-else>
+        <list-view
+          :loading="loading"
+          :columns="columns"
+          :items="items"
+          :actions="actions"
+          :columnKeys="columnKeys"
+          :selectedColumns="selectedColumns"
+          ref="listview"
+          @update-selected-columns="updateSelectedColumns"
+          @selection-change="onRowSelectionChange"
+          @refresh="fetchData"
+          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        <a-pagination
+          class="row-element"
+          style="margin-top: 10px"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="itemCount"
+          :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="pageSizeOptions"
+          @change="changePage"
+          @showSizeChange="changePageSize"
+          showSizeChanger
+          showQuickJumper>
+          <template #buildOptionText="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
     </div>
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
