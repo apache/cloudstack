@@ -184,6 +184,8 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
@@ -454,6 +456,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ResourceIconDao resourceIconDao;
+
+    @Inject
+    private ManagementServerHostDao msHostDao;
+
 
     @Inject
     EntityManager entityManager;
@@ -2544,6 +2550,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        if (cmd.getManagementServerId() != null) {
+            sb.and("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+        }
+
         Object keyword = cmd.getKeyword();
         Object startDate = cmd.getStartDate();
 
@@ -2570,6 +2580,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (startDate != null) {
             sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
+        }
+
+        if (cmd.getManagementServerId() != null) {
+            ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
+            sc.setParameters("executingMsid", msHost.getMsid());
         }
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
