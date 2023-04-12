@@ -839,7 +839,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             protected void reallyRun() {
                 try {
                     if (!isAsyncJobsEnabled()) {
-                        s_logger.info("A shutdown has been triggered. Not executing any async job");
+                        logger.info("A shutdown has been triggered. Not executing any async job");
                         return;
                     }
 

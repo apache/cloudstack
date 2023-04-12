@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
@@ -33,7 +32,6 @@ import org.apache.cloudstack.acl.RoleType;
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             authorized = {RoleType.Admin})
 public class TriggerShutdownCmd extends BaseShutdownActionCmd {
-    public static final Logger LOG = Logger.getLogger(TriggerShutdownCmd.class);
     public static final String APINAME = "triggerShutdown";
 
     /////////////////////////////////////////////////////

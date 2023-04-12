@@ -1385,7 +1385,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         private String handleShutdownManagementServerHostCommand(BaseShutdownManagementServerHostCommand cmd) {
             if (cmd instanceof PrepareForShutdownManagementServerHostCommand) {
-                s_logger.debug("Received BaseShutdownManagementServerHostCommand - preparing to shut down");
+                logger.debug("Received BaseShutdownManagementServerHostCommand - preparing to shut down");
                 try {
                     shutdownManager.prepareForShutdown();
                     return "Successfully prepared for shutdown";
@@ -1394,7 +1394,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
             }
             if (cmd instanceof TriggerShutdownManagementServerHostCommand) {
-                s_logger.debug("Received TriggerShutdownManagementServerHostCommand - triggering a shut down");
+                logger.debug("Received TriggerShutdownManagementServerHostCommand - triggering a shut down");
                 try {
                     shutdownManager.triggerShutdown();
                     return "Successfully triggered shutdown";
@@ -1403,7 +1403,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
             }
             if (cmd instanceof CancelShutdownManagementServerHostCommand) {
-                s_logger.debug("Received CancelShutdownManagementServerHostCommand - cancelling shut down");
+                logger.debug("Received CancelShutdownManagementServerHostCommand - cancelling shut down");
                 try {
                     shutdownManager.cancelShutdown();
                     return "Successfully prepared for shutdown";
