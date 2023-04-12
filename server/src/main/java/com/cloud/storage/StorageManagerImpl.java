@@ -45,12 +45,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
-import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.server.StatsCollector;
-import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.google.common.collect.Sets;
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -127,6 +123,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
+import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
@@ -178,6 +176,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
@@ -185,6 +184,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -202,6 +202,7 @@ import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -344,6 +345,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     private AnnotationDao annotationDao;
 
+    @Inject
+    protected UserVmManager userVmManager;
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -1100,14 +1103,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException {
+    public boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException {
         StoragePool pool = (StoragePool)_dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         assert (pool.isShared()) : "Now, did you actually read the name of this method?";
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
-        listener.hostConnect(hostId, pool.getId());
+        return listener.hostConnect(hostId, pool.getId());
     }
 
     @Override
@@ -1325,6 +1328,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
+                        if (Type.ROOT.equals(vol.getVolumeType())) {
+                             VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vol.getInstanceId());
+                             if (vmInstanceVO != null && vmInstanceVO.getState() == State.Destroyed) {
+                                 s_logger.debug(String.format("ROOT volume [%s] will not be expunged because the VM is [%s], therefore this volume will be expunged with the VM"
+                                         + " cleanup job.", vol.getUuid(), vmInstanceVO.getState()));
+                                 continue;
+                             }
+                        }
+
                         try {
                             // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
                             // system, but not necessary.
@@ -3368,13 +3380,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_DISK_WAIT,
                 STORAGE_POOL_CLIENT_TIMEOUT,
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
+                STORAGE_POOL_IO_POLICY,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
                 PreferredStoragePool,
                 SecStorageVMAutoScaleDown,
-                MountDisabledStoragePool
+                MountDisabledStoragePool,
+                VmwareCreateCloneFull,
+                VmwareAllowParallelExecution
         };
     }
 

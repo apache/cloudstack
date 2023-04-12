@@ -59,6 +59,10 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -68,6 +72,8 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -77,6 +83,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -100,6 +107,7 @@ import com.cloud.event.ActionEvents;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.CloudTwoFactorAuthenticationException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -109,6 +117,8 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -139,8 +149,6 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
-import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -200,6 +208,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private ResourceCountDao _resourceCountDao;
     @Inject
     private UserDao _userDao;
+    @Inject
+    private UserDetailsDao _userDetailsDao;
     @Inject
     private InstanceGroupDao _vmGroupDao;
     @Inject
@@ -291,7 +301,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private GlobalLoadBalancingRulesService _gslbService;
 
+    @Inject
+    public AccountService _accountService;
+
     private List<UserAuthenticator> _userAuthenticators;
+    private List<UserTwoFactorAuthenticator> _userTwoFactorAuthenticators;
     protected List<UserAuthenticator> _userPasswordEncoders;
     protected List<PluggableService> services;
     private List<APIChecker> apiAccessCheckers;
@@ -300,6 +314,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IpAddressManager _ipAddrMgr;
     @Inject
     private RoleService roleService;
+
+    @Inject
+    private PasswordPolicy passwordPolicy;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -312,6 +329,39 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private int _cleanupInterval;
     private List<String> apiNameList;
 
+    protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
+
+    private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
+
+    public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
+            Boolean.class,
+            "enable.user.2fa",
+            "false",
+            "Determines whether two factor authentication is enabled or not. This can also be configured at domain level.",
+            true,
+            ConfigKey.Scope.Domain);
+
+    public static ConfigKey<Boolean> mandateUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
+            Boolean.class,
+            "mandate.user.2fa",
+            "false",
+            "Determines whether to make the two factor authentication mandatory or not. This setting is applicable only when enable.user.2fa is true. This can also be configured at domain level.",
+            true,
+            ConfigKey.Scope.Domain);
+
+    public static final ConfigKey<String> userTwoFactorAuthenticationIssuer = new ConfigKey<>("Advanced",
+            String.class,
+            "user.2fa.issuer",
+            "CloudStack",
+            "Name of the issuer of two factor authentication",
+            true,
+            ConfigKey.Scope.Domain);
+
+    static final ConfigKey<String> userTwoFactorAuthenticationDefaultProvider = new ConfigKey<>("Advanced", String.class,
+            "user.2fa.default.provider",
+            "totp",
+            "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
+
     protected AccountManagerImpl() {
         super();
     }
@@ -322,6 +372,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public void setUserAuthenticators(List<UserAuthenticator> authenticators) {
         _userAuthenticators = authenticators;
+    }
+
+    public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticators() {
+        return _userTwoFactorAuthenticators;
+    }
+
+    public void setUserTwoFactorAuthenticators(List<UserTwoFactorAuthenticator> twoFactorAuthenticators) {
+        _userTwoFactorAuthenticators = twoFactorAuthenticators;
     }
 
     public List<UserAuthenticator> getUserPasswordEncoders() {
@@ -397,6 +455,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean start() {
+
+        initializeUserTwoFactorAuthenticationProvidersMap();
+
         if (apiNameList == null) {
             long startTime = System.nanoTime();
             apiNameList = new ArrayList<String>();
@@ -771,6 +832,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            // delete autoscaling VM groups
+            if (!_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(accountId)) {
+                accountCleanupNeeded = true;
+            }
+
+
             // delete global load balancer rules for the account.
             List<org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
             if (gslbRules != null && !gslbRules.isEmpty()) {
@@ -846,7 +913,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
-                if (!_vmMgr.expunge(vm, callerUserId, caller)) {
+                if (!_vmMgr.expunge(vm)) {
                     s_logger.error("Unable to expunge vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
@@ -878,6 +945,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
+            }
+
+            // Cleanup tungsten security groups
+            List<SecurityGroupVO> securityGroupList = _securityGroupDao.listByAccountId(accountId);
+            for(SecurityGroupVO securityGroupVO : securityGroupList) {
+                _messageBus.publish(_name, SecurityGroupService.MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT, PublishScope.LOCAL, securityGroupVO);
             }
 
             // Cleanup security groups
@@ -1345,6 +1418,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isNotBlank(timezone)) {
             user.setTimezone(timezone);
         }
+        Boolean mandate2FA = updateUserCmd.getMandate2FA();
+        if (mandate2FA != null && mandate2FA) {
+            user.setUser2faEnabled(true);
+        }
         _userDao.update(user.getId(), user);
         return _userAccountDao.findById(user.getId());
     }
@@ -1368,6 +1445,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
         }
+
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
+
         Account callingAccount = getCurrentCallingAccount();
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
@@ -2043,7 +2123,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
         if (newAccount.getDomainId() != domainId) {
             // not in scope
-            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in another domain is not supported!");
         }
     }
 
@@ -2342,6 +2422,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
 
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {
             encodedPassword = authenticator.encode(password);
@@ -2356,6 +2438,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (userUUID == null) {
             userUUID = UUID.randomUUID().toString();
         }
+
         UserVO user = _userDao.persist(new UserVO(accountId, userName, encodedPassword, firstName, lastName, email, timezone, userUUID, source));
         CallContext.current().putContextParameter(User.class, user.getUuid());
         return user;
@@ -2626,6 +2709,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         keys.put("secretkey", user.getSecretKey());
 
         return keys;
+    }
+
+    @Override
+    public List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders() {
+        return userTwoFactorAuthenticationProviders;
+    }
+
+    @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
+        final String name = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
+        return getUserTwoFactorAuthenticationProvider(name);
+    }
+
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final String name) {
+        if (StringUtils.isEmpty(name)) {
+            throw new CloudRuntimeException("Two factor authentication provider name is empty");
+        }
+        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name.toLowerCase())) {
+            throw new CloudRuntimeException(String.format("Failed to find two factor authentication provider by the name: %s.", name));
+        }
+        return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
     @Override
@@ -3009,7 +3113,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount getUserAccountById(Long userId) {
-        return _userAccountDao.findById(userId);
+        UserAccount userAccount = _userAccountDao.findById(userId);
+        Map<String, String> details = _userDetailsDao.listDetailsKeyPairs(userId);
+        userAccount.setDetails(details);
+
+        return userAccount;
     }
 
     @Override
@@ -3092,6 +3200,171 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSecretKeyInResponse};
+        return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
+                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer};
     }
+
+    public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
+        return userTwoFactorAuthenticationProviders;
+    }
+
+    public void setUserTwoFactorAuthenticationProviders(final List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders) {
+        this.userTwoFactorAuthenticationProviders = userTwoFactorAuthenticationProviders;
+    }
+
+    protected void initializeUserTwoFactorAuthenticationProvidersMap() {
+        if (userTwoFactorAuthenticationProviders != null) {
+            for (final UserTwoFactorAuthenticator userTwoFactorAuthenticator : userTwoFactorAuthenticationProviders) {
+                userTwoFactorAuthenticationProvidersMap.put(userTwoFactorAuthenticator.getName().toLowerCase(), userTwoFactorAuthenticator);
+            }
+        }
+    }
+
+    @Override
+    public void verifyUsingTwoFactorAuthenticationCode(final String code, final Long domainId, final Long userAccountId) {
+
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountService.getActiveAccountById(caller.getId());
+
+        checkAccess(caller, null, true, owner);
+
+        UserAccount userAccount = _accountService.getUserAccountById(userAccountId);
+        if (!userAccount.isUser2faEnabled()) {
+            throw new CloudRuntimeException(String.format("Two factor authentication is not enabled on the user: %s", userAccount.getUsername()));
+        }
+        if (StringUtils.isBlank(userAccount.getUser2faProvider()) || StringUtils.isBlank(userAccount.getKeyFor2fa())) {
+            throw new CloudRuntimeException(String.format("Two factor authentication is not setup for the user: %s, please setup 2FA before verifying", userAccount.getUsername()));
+        }
+
+        UserTwoFactorAuthenticator userTwoFactorAuthenticator = getUserTwoFactorAuthenticator(domainId, userAccountId);
+        try {
+            userTwoFactorAuthenticator.check2FA(code, userAccount);
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null) {
+                userDetailVO.setValue(UserAccountVO.Setup2FAstatus.VERIFIED.name());
+                _userDetailsDao.update(userDetailVO.getId(), userDetailVO);
+            }
+        } catch (CloudTwoFactorAuthenticationException e) {
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, "2FAsetupComplete");
+            if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
+                disableTwoFactorAuthentication(userAccountId, caller, owner);
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
+        if (userAccountId != null) {
+            UserAccount userAccount = _accountService.getUserAccountById(userAccountId);
+            String user2FAProvider = userAccount.getUser2faProvider();
+            if (user2FAProvider != null) {
+                return getUserTwoFactorAuthenticator(user2FAProvider);
+            }
+        }
+        final String name = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
+        return getUserTwoFactorAuthenticator(name);
+    }
+
+    @Override
+    public UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd) {
+        String providerName = cmd.getProvider();
+
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountService.getActiveAccountById(caller.getId());
+
+        if (Boolean.TRUE.equals(cmd.getEnable())) {
+            checkAccess(caller, null, true, owner);
+            Long userId = CallContext.current().getCallingUserId();
+
+            return enableTwoFactorAuthentication(userId, providerName);
+        }
+
+        // Admin can disable 2FA of the users
+        Long userId = cmd.getUserId();
+        return disableTwoFactorAuthentication(userId, caller, owner);
+    }
+
+    protected UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
+        UserAccountVO userAccount = _userAccountDao.findById(userId);
+        UserVO userVO = _userDao.findById(userId);
+        Long domainId = userAccount.getDomainId();
+        if (Boolean.FALSE.equals(enableUserTwoFactorAuthentication.valueIn(domainId)) && Boolean.FALSE.equals(mandateUserTwoFactorAuthentication.valueIn(domainId))) {
+            throw new CloudRuntimeException("2FA is not enabled for this domain or at global level");
+        }
+
+        if (StringUtils.isEmpty(providerName)) {
+            providerName = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
+            s_logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
+        }
+
+        UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
+        String code = provider.setup2FAKey(userAccount);
+        UserVO user = _userDao.createForUpdate();
+        user.setKeyFor2fa(code);
+        user.setUser2faProvider(provider.getName());
+        user.setUser2faEnabled(true);
+        _userDao.update(userId, user);
+
+        // 2FA setup will be complete only upon successful verification with 2FA code
+        UserDetailVO setup2FAstatus = new UserDetailVO(userId, UserDetailVO.Setup2FADetail, UserAccountVO.Setup2FAstatus.ENABLED.name());
+        _userDetailsDao.persist(setup2FAstatus);
+
+        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
+        response.setId(userVO.getUuid());
+        response.setUsername(userAccount.getUsername());
+        response.setSecretCode(code);
+
+        return response;
+    }
+
+    protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
+        UserVO userVO = null;
+        if (userId != null) {
+            userVO = validateUser(userId, caller.getDomainId());
+            owner = _accountService.getActiveAccountById(userVO.getAccountId());
+        } else {
+            userId = CallContext.current().getCallingUserId();
+            userVO = _userDao.findById(userId);
+        }
+        checkAccess(caller, null, true, owner);
+
+        UserVO user = _userDao.createForUpdate();
+        user.setKeyFor2fa(null);
+        user.setUser2faProvider(null);
+        user.setUser2faEnabled(false);
+        _userDao.update(userVO.getId(), user);
+        _userDetailsDao.removeDetail(userId, UserDetailVO.Setup2FADetail);
+
+        UserTwoFactorAuthenticationSetupResponse response = new UserTwoFactorAuthenticationSetupResponse();
+        response.setId(userVO.getUuid());
+        response.setUsername(userVO.getUsername());
+
+        return response;
+    }
+
+    private UserVO validateUser(Long userId, Long domainId) {
+        UserVO user = null;
+        if (userId != null) {
+            user = _userDao.findById(userId);
+            if (user == null) {
+                throw new InvalidParameterValueException("Invalid user ID provided");
+            }
+            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
+                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
+            }
+        }
+        return user;
+    }
+
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final String name) {
+        if (StringUtils.isEmpty(name)) {
+            throw new CloudRuntimeException("UserTwoFactorAuthenticator name provided is empty");
+        }
+        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name.toLowerCase())) {
+            throw new CloudRuntimeException(String.format("Failed to find UserTwoFactorAuthenticator by the name: %s.", name));
+        }
+        return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
+    }
+
 }

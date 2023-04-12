@@ -46,6 +46,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.exception.AccountLimitException", 4280);
             ExceptionErrorCodeMap.put("com.cloud.exception.AgentUnavailableException", 4285);
             ExceptionErrorCodeMap.put("com.cloud.exception.CloudAuthenticationException", 4290);
+            ExceptionErrorCodeMap.put("com.cloud.exception.CloudTwoFactorAuthenticationException", 4295);
             ExceptionErrorCodeMap.put("com.cloud.exception.ConcurrentOperationException", 4300);
             ExceptionErrorCodeMap.put("com.cloud.exception.ConflictingNetworkSettingsException", 4305);
             ExceptionErrorCodeMap.put("com.cloud.exception.DiscoveredWithErrorException", 4310);

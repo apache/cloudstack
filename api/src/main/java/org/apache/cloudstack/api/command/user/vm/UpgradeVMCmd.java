@@ -44,8 +44,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
-                                            "The virtual machine must be in a \"Stopped\" state for " +
+@Deprecated(since = "4.18")
+@APICommand(name = "changeServiceForVirtualMachine", responseObject=UserVmResponse.class, description="(This API is deprecated, use scaleVirtualMachine API)" +
+        "Changes the service offering for a virtual machine. The virtual machine must be in a \"Stopped\" state for " +
         "this command to take effect.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpgradeVMCmd extends BaseCmd implements UserCmd {
@@ -65,7 +66,7 @@ public class UpgradeVMCmd extends BaseCmd implements UserCmd {
             required=true, description="the service offering ID to apply to the virtual machine")
     protected Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpu, memory and cpunumber. example details[i].name=value")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS for the custom disk offering", since = "4.17")

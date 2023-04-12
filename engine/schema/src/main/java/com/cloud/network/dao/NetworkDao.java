@@ -47,10 +47,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent);
 
-    @Override
-    @Deprecated
-    NetworkVO persist(NetworkVO vo);
-
     /**
      * Retrieves the next available mac address in this network configuration.
      *

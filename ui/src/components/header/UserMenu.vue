@@ -17,6 +17,7 @@
 
 <template>
   <div class="user-menu">
+    <external-link class="action"/>
     <translation-menu class="action"/>
     <header-notice class="action"/>
     <label class="user-menu-server-info action" v-if="$config.multipleServer">
@@ -37,41 +38,30 @@
         <span>{{ nickname() }}</span>
       </span>
       <template #overlay>
-        <a-menu class="user-menu-wrapper">
-          <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
-            <a-menu-item class="user-menu-item" key="0">
-                <UserOutlined class="user-menu-item-icon" />
-                <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
-            </a-menu-item>
-          </router-link>
-          <a @click="toggleUseBrowserTimezone">
-            <a-menu-item class="user-menu-item" key="1">
-                <ClockCircleOutlined class="user-menu-item-icon" />
-                <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.use.local.timezone') }}</span>
-                <a-switch :checked="$store.getters.usebrowsertimezone" />
-            </a-menu-item>
-          </a>
-          <a @click="toggleShowShortkey">
-            <a-menu-item class="user-menu-item" key="2">
-              <EyeOutlined v-if="$store.getters.showshortkeys" class="user-menu-item-icon" />
-              <EyeInvisibleOutlined v-else class="user-menu-item-icon" />
-              <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.keyboard.show') }}</span>
-              <a-switch :checked="$store.getters.showshortkeys"/>
-            </a-menu-item>
-          </a>
-          <a :href="$config.docBase" target="_blank">
-            <a-menu-item class="user-menu-item" key="3">
-              <QuestionCircleOutlined class="user-menu-item-icon" />
-              <span class="user-menu-item-name">{{ $t('label.help') }}</span>
-            </a-menu-item>
-          </a>
+        <a-menu class="user-menu-wrapper" @click="handleClickMenu">
+          <a-menu-item class="user-menu-item" key="profile">
+            <UserOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
+          </a-menu-item>
+          <a-menu-item class="user-menu-item" key="timezone">
+            <ClockCircleOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.use.local.timezone') }}</span>
+            <a-switch :checked="$store.getters.usebrowsertimezone" />
+          </a-menu-item>
+          <a-menu-item class="user-menu-item" key="showshortkeys">
+            <EyeInvisibleOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.keyboard.show') }}</span>
+            <a-switch :checked="$store.getters.showshortkeys" />
+          </a-menu-item>
+          <a-menu-item class="user-menu-item" key="document">
+            <QuestionCircleOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name">{{ $t('label.help') }}</span>
+          </a-menu-item>
           <a-menu-divider/>
-          <a href="javascript:;" @click="handleLogout">
-            <a-menu-item class="user-menu-item" key="4">
-              <LogoutOutlined class="user-menu-item-icon" />
-              <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
-            </a-menu-item>
-          </a>
+          <a-menu-item class="user-menu-item" key="logout">
+            <LogoutOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
+          </a-menu-item>
         </a-menu>
       </template>
     </a-dropdown>
@@ -80,6 +70,7 @@
 
 <script>
 import { api } from '@/api'
+import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
@@ -90,6 +81,7 @@ import { SERVER_MANAGER } from '@/store/mutation-types'
 export default {
   name: 'UserMenu',
   components: {
+    ExternalLink,
     TranslationMenu,
     HeaderNotice,
     ResourceIcon
@@ -152,6 +144,25 @@ export default {
           reject(error)
         })
       })
+    },
+    handleClickMenu (item) {
+      switch (item.key) {
+        case 'profile':
+          this.$router.push(`/accountuser/${this.$store.getters.userInfo.id}`)
+          break
+        case 'timezone':
+          this.toggleUseBrowserTimezone()
+          break
+        case 'showshortkeys':
+          this.toggleShowShortkey()
+          break
+        case 'document':
+          window.open(this.$config.docBase, '_blank')
+          break
+        case 'logout':
+          this.handleLogout()
+          break
+      }
     },
     handleLogout () {
       return this.Logout({}).then(() => {

@@ -44,18 +44,25 @@
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticators"
+                  value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
         <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />
         <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
         <property name="services" value="#{apiCommandsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticationProviders" value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
     </bean>
+
+    <bean id="passwordPolicies" class="com.cloud.user.PasswordPolicyImpl" />
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
         <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticators"
+                  value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="hostAllocators" value="#{hostAllocatorsRegistry.registered}" />
@@ -106,6 +113,8 @@
         <property name="consoleProxyAllocators"
             value="#{consoleProxyAllocatorsRegistry.registered}" />
     </bean>
+
+    <bean id="consoleAccessManagerImpl" class="org.apache.cloudstack.consoleproxy.ConsoleAccessManagerImpl" />
 
     <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
 

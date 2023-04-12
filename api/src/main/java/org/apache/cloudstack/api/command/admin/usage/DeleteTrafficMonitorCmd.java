@@ -34,7 +34,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTrafficMonitorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTrafficMonitorCmd.class.getName());
-    private static final String s_name = "deletetrafficmonitorresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -54,11 +53,6 @@ public class DeleteTrafficMonitorCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

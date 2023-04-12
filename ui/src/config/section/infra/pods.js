@@ -23,6 +23,7 @@ export default {
   title: 'label.pods',
   shortKey: ['i', 'p'],
   icon: 'appstore-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-pods',
   permission: ['listPods'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],

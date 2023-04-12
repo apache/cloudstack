@@ -21,17 +21,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -47,6 +50,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -116,6 +120,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -147,10 +152,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * Class to manage console proxys. <br><br>
@@ -263,11 +264,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeystoreDao _ksDao;
     @Inject
     private KeystoreManager _ksMgr;
+    @Inject
+    private ConsoleAccessManager consoleAccessManager;
 
     public class VmBasedAgentHook extends AgentHookBase {
 
-        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
+        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
+                                AgentManager agentMgr, KeysManager keysMgr, ConsoleAccessManager consoleAccessManager) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr, consoleAccessManager);
         }
 
         @Override
@@ -340,11 +344,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             s_logger.warn(String.format("SSL is enabled for console proxy [%s] but no server certificate found in database.", proxy.toString()));
         }
 
+        ConsoleProxyInfo info;
         if (staticPublicIp == null) {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), consoleProxyPort, proxy.getPort(), consoleProxyUrlDomain);
+            info = new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), consoleProxyPort, proxy.getPort(), consoleProxyUrlDomain);
         } else {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), staticPublicIp, consoleProxyPort, staticPort, consoleProxyUrlDomain);
+            info = new ConsoleProxyInfo(proxy.isSslEnabled(), staticPublicIp, consoleProxyPort, staticPort, consoleProxyUrlDomain);
         }
+        info.setProxyName(proxy.getHostName());
+        return  info;
     }
 
     public ConsoleProxyVO doAssignProxy(long dataCenterId, long vmId) {
@@ -695,6 +702,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), accountManager.getSystemUser().getId(), 0, serviceOffering.isOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
+        proxy.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         proxy = consoleProxyDao.persist(proxy);
         try {
             virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
@@ -981,7 +989,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     }
                 });
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             s_logger.error(String.format("Unable to set console proxy management state to [%s] due to [%s].", state, e.getMessage()), e);
         }
     }
@@ -1016,7 +1024,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (lastState != state) {
                 configurationDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), lastState.toString());
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             s_logger.error(String.format("Unable to resume last management state due to [%s].", e.getMessage()), e);
         }
     }
@@ -1095,6 +1103,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
     }
 
+    @Override
+    public int getVncPort() {
+        return sslEnabled && _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME) != null ? 8443 : 8080;
+    }
+
     private String getAllocProxyLockName() {
         return "consoleproxy.alloc";
     }
@@ -1155,7 +1168,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         value = agentMgrConfigs.get("port");
         managementPort = NumbersUtil.parseInt(value, 8250);
 
-        consoleProxyListener = new ConsoleProxyListener(new VmBasedAgentHook(vmInstanceDao, hostDao, configurationDao, _ksMgr, agentManager, keysManager));
+        consoleProxyListener = new ConsoleProxyListener(new VmBasedAgentHook(vmInstanceDao, hostDao, configurationDao,
+                _ksMgr, agentManager, keysManager, consoleAccessManager));
         agentManager.registerForHostEvents(consoleProxyListener, true, true, false);
 
         virtualMachineManager.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
@@ -1286,6 +1300,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" dns1=").append(dc.getDns1());
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
+        }
+        if (VirtualMachine.Type.ConsoleProxy == profile.getVirtualMachine().getType()) {
+            buf.append(" vncport=").append(getVncPort());
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
@@ -1474,15 +1491,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public Long[] getScannablePools() {
-        List<DataCenterVO> zones = dataCenterDao.listEnabledZones();
-
-        Long[] dcIdList = new Long[zones.size()];
-        int i = 0;
-        for (DataCenterVO dc : zones) {
-            dcIdList[i++] = dc.getId();
+        List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
         }
-
-        return dcIdList;
+        return zoneIds.toArray(Long[]::new);
     }
 
     @Override
@@ -1620,7 +1633,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (status.getConnections() != null) {
                 count = status.getConnections().length;
             }
-
+            if (status.getRemovedSessions() != null) {
+                consoleAccessManager.removeSessions(status.getRemovedSessions());
+            }
             details = statusInfo.getBytes(Charset.forName("US-ASCII"));
         } else {
             s_logger.debug(String.format("Unable to retrieve load info from proxy {\"vmId\": %s}. Invalid load info [%s].", proxyVmId, statusInfo));

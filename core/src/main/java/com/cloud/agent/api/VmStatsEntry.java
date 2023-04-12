@@ -19,11 +19,9 @@
 
 package com.cloud.agent.api;
 
-import com.cloud.vm.UserVmVO;
-
 public class VmStatsEntry extends VmStatsEntryBase {
 
-    private UserVmVO userVmVO;
+    private String vmUuid;
 
     public VmStatsEntry() {
 
@@ -52,12 +50,12 @@ public class VmStatsEntry extends VmStatsEntryBase {
                 entityType);
     }
 
-    public UserVmVO getUserVmVO() {
-        return userVmVO;
+    public String getVmUuid() {
+        return vmUuid;
     }
 
-    public void setUserVmVO(UserVmVO userVmVO) {
-        this.userVmVO = userVmVO;
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
     }
 
 }

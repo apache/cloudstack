@@ -51,6 +51,7 @@ const factory = (opts = {}) => {
 describe('Components > View > ActionButton.vue', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   describe('Template', () => {
@@ -272,6 +273,7 @@ describe('Components > View > ActionButton.vue', () => {
             }
           }
         })
+        wrapper.vm.hasOwnProperty = () => Object.hasOwnProperty
         const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
         await wrapper.setProps({ resource: null })
 
@@ -286,6 +288,7 @@ describe('Components > View > ActionButton.vue', () => {
             }
           }
         })
+        wrapper.vm.hasOwnProperty = () => Object.hasOwnProperty
         const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
         await wrapper.setProps({ resource: { id: null } })
 
@@ -300,6 +303,7 @@ describe('Components > View > ActionButton.vue', () => {
             }
           }
         })
+        wrapper.vm.hasOwnProperty = () => Object.hasOwnProperty
         const handleShowBadge = jest.spyOn(wrapper.vm, 'handleShowBadge')
         await wrapper.setProps({
           resource: {

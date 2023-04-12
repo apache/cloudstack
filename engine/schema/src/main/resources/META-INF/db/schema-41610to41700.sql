@@ -23,10 +23,8 @@
 ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
 
 
--- PR#5832 Fix 'endpointe.url' global settings configruation typo.
+-- PR#5832 Fix 'endpointe.url' global settings configuration typo.
 UPDATE `cloud`.`configuration` SET name='endpoint.url' WHERE name='endpointe.url';
-
-
 
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `uuid` varchar(40) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `name` varchar(255) NOT NULL;
@@ -592,7 +590,7 @@ CREATE TABLE `cloud`.`vm_stats` (
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- PR#5984 Update name for global configuration vm.stats.increment.metrics
-Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+UPDATE `cloud`.`configuration` SET name = 'vm.stats.increment.metrics' WHERE name = 'vm.stats.increment.metrics.in.memory';
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `software_version` varchar(100) COMMENT 'Software version';
 
@@ -887,9 +885,8 @@ left join `cloud`.`mshost_status` on
     ((`cloud`.`mshost`.`uuid` = `cloud`.`mshost_status`.`ms_id`)));
 
 -- Alter event table to add resource_id and resource_type
-ALTER TABLE `cloud`.`event`
-    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the event' AFTER `domain_id`,
-    ADD COLUMN `resource_type` varchar(32) COMMENT 'Type of the resource associated with the event' AFTER `resource_id`;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event','resource_id', 'bigint unsigned COMMENT "ID of the resource associated with the event" AFTER `domain_id`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.event','resource_type', 'VARCHAR(32) COMMENT "Type of the resource associated with the event" AFTER `resource_id`');
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS

@@ -104,6 +104,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
     List<DataCenterVO> listEnabledZones();
 
+    List<Long> listEnabledNonEdgeZoneIds();
+
     DataCenterVO findByToken(String zoneToken);
 
     DataCenterVO findByTokenOrIdOrName(String tokenIdOrName);

@@ -68,7 +68,7 @@
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
                 :disabled="!('deployVirtualMachine' in $store.getters.apis)"
-                @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id + '&zoneid=' + network.zoneid })">
+                @click="$router.push({ path: '/action/deployVirtualMachine', query: { networkid: network.id, zoneid: network.zoneid } })">
                 <template #icon><plus-outlined /></template>
                 {{ $t('label.vm.add') }}
               </a-button>
@@ -80,17 +80,19 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template #name="{ record }">
-                  <router-link :to="{ path: '/vm/' + record.id}">{{ record.name }}
-                  </router-link>
-                </template>
-                <template #state="{ record }">
-                  <status :text="record.state" displayText></status>
-                </template>
-                <template #ip="{ record }">
-                  <div v-for="nic in record.nic" :key="nic.id">
-                    {{ nic.networkid === network.id ? nic.ipaddress : '' }}
-                  </div>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <router-link :to="{ path: '/vm/' + record.id}">{{ record.name }}
+                    </router-link>
+                  </template>
+                  <template v-if="column.key === 'state'">
+                    <status :text="record.state" displayText></status>
+                  </template>
+                  <template v-if="column.key === 'ip'">
+                    <div v-for="nic in record.nic" :key="nic.id">
+                      {{ nic.networkid === network.id ? nic.ipaddress : '' }}
+                    </div>
+                  </template>
                 </template>
               </a-table>
               <a-divider/>
@@ -110,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="!showIlb(network) ? 'disabled' : null" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
@@ -127,9 +129,11 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template #name="{ record }">
-                  <router-link :to="{ path: '/ilb/'+ record.id}">{{ record.name }}
-                  </router-link>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <router-link :to="{ path: '/ilb/'+ record.id}">{{ record.name }}
+                    </router-link>
+                  </template>
                 </template>
               </a-table>
               <a-divider/>
@@ -188,12 +192,26 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
+              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
+          </a-form-item>
+          <a-form-item
+            v-if="setMTU"
+            ref="privatemtu"
+            name="privatemtu">
+            <template #label>
+              <tooltip-label :title="$t('label.privatemtu')" :tooltip="$t('label.privatemtu')"/>
+            </template>
+            <a-input-number
+              style="width: 100%;"
+              v-model:value="form.privatemtu"
+              :placeholder="$t('label.privatemtu')"
+              @change="updateMtu()"/>
+              <div style="color: red" v-if="errorPrivateMtu" v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
           </a-form-item>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
@@ -238,9 +256,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
+              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id" :label="`${item.name}(${item.description})`">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
             </a-select>
@@ -302,9 +320,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
+              <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]" :label="key">
                 {{ key }}
               </a-select-option>
             </a-select>
@@ -361,6 +379,8 @@ export default {
       staticNats: {},
       vms: {},
       selectedNetworkOffering: {},
+      privateMtuMax: 1500,
+      errorPrivateMtu: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -368,9 +388,9 @@ export default {
       },
       internalLbCols: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.sourceipaddress'),
@@ -385,58 +405,20 @@ export default {
           dataIndex: 'account'
         }
       ],
-      LBPublicIPCols: [
-        {
-          title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        },
-        {
-          title: this.$t('label.networkid'),
-          dataIndex: 'associatedNetworkName'
-        },
-        {
-          title: this.$t('label.vm'),
-          dataIndex: 'virtualmachinename'
-        }
-      ],
-      StaticNatCols: [
-        {
-          title: this.$t('label.ips'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('label.zoneid'),
-          dataIndex: 'zonename'
-        },
-        {
-          title: this.$t('label.networkid'),
-          dataIndex: 'associatedNetworkName'
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        }
-      ],
       vmCols: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
-          title: this.$t('label.ip'),
-          slots: { customRender: 'ip' }
+          key: 'ip',
+          title: this.$t('label.ip')
         }
       ],
       customStyle: 'margin-bottom: 0; border: none',
@@ -453,7 +435,8 @@ export default {
           vpc: ['Netscaler']
         }
       },
-      publicLBExists: false
+      publicLBExists: false,
+      setMTU: false
     }
   },
   created () {
@@ -479,8 +462,17 @@ export default {
     showIlb (network) {
       return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
     },
+    updateMtu () {
+      if (this.form.privatemtu > this.privateMtuMax) {
+        this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed')}`
+        this.form.privatemtu = this.privateMtuMax
+      } else {
+        this.errorPrivateMtu = ''
+      }
+    },
     fetchData () {
       this.networks = this.resource.network
+      this.fetchMtuForZone()
       if (!this.networks || this.networks.length === 0) {
         return
       }
@@ -489,6 +481,14 @@ export default {
         this.fetchVMs(network.id)
       }
       this.publicLBNetworkExists()
+    },
+    fetchMtuForZone () {
+      api('listZones', {
+        id: this.resource.zoneid
+      }).then(json => {
+        this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
+        this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
+      })
     },
     fetchNetworkAclList () {
       this.fetchLoading = true
@@ -569,7 +569,8 @@ export default {
       api('listLoadBalancers', {
         networkid: id,
         page: this.page,
-        pagesize: this.pageSize
+        pagesize: this.pageSize,
+        listAll: true
       }).then(json => {
         this.internalLB[id] = json.listloadbalancersresponse.loadbalancer || []
         this.itemCounts.internalLB[id] = json.listloadbalancersresponse.count || 0
@@ -657,6 +658,10 @@ export default {
 
         if (values.vlan) {
           params.vlan = values.vlan
+        }
+
+        if (values.privatemtu) {
+          params.privatemtu = values.privatemtu
         }
 
         api('createNetwork', params).then(() => {

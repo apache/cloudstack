@@ -48,7 +48,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
-    private static final String s_name = "createserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,7 +59,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "the CPU speed of the service offering in MHz.")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the service offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
@@ -190,7 +189,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.14")
     private String cacheMode;
 
-    // Introduce 4 new optional paramaters to work custom compute offerings
+    // Introduce 4 new optional parameters to work custom compute offerings
     @Parameter(name = ApiConstants.CUSTOMIZED,
             type = CommandType.BOOLEAN,
             since = "4.13",
@@ -242,6 +241,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since = "4.17")
     private Boolean diskOfferingStrictness;
 
+    @Parameter(name = ApiConstants.ENCRYPT_ROOT, type = CommandType.BOOLEAN, description = "VMs using this offering require root volume encryption", since="4.18")
+    private Boolean encryptRoot;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -255,10 +258,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        if (StringUtils.isEmpty(displayText)) {
-            throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
-        }
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? serviceOfferingName : displayText;
     }
 
     public String getProvisioningType() {
@@ -472,14 +472,16 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return diskOfferingStrictness == null ? false : diskOfferingStrictness;
     }
 
+    public boolean getEncryptRoot() {
+        if (encryptRoot != null) {
+            return encryptRoot;
+        }
+        return false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

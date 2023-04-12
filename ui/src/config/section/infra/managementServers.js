@@ -22,6 +22,7 @@ export default {
   name: 'managementserver',
   title: 'label.management.servers',
   icon: 'CloudServerOutlined',
+  docHelp: 'conceptsandterminology/concepts.html#management-server-overview',
   permission: ['listManagementServersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'version']

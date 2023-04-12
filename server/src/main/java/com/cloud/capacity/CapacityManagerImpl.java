@@ -357,7 +357,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         /* alloc from free resource */
                         if (!((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem))) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Host doesnt seem to have enough free capacity, but increasing the used capacity anyways, " +
+                                s_logger.debug("Host doesn't seem to have enough free capacity, but increasing the used capacity anyways, " +
                                     "since the VM is already starting on this host ");
                             }
                         }
@@ -978,16 +978,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         allocateVmCapacity(vm, fromLastHost);
       }
 
-      if (newState == State.Stopped) {
-        if (vm.getType() == VirtualMachine.Type.User) {
-
+      if (newState == State.Stopped && event != Event.RestoringFailed && event != Event.RestoringSuccess && vm.getType() == VirtualMachine.Type.User) {
           UserVmVO userVM = _userVMDao.findById(vm.getId());
           _userVMDao.loadDetails(userVM);
           // free the message sent flag if it exists
           userVM.setDetail(VmDetailConstants.MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
           _userVMDao.saveDetails(userVM);
-
-        }
       }
 
       return true;
@@ -1256,6 +1252,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
-            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold};
+            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold};
     }
 }

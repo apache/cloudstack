@@ -363,7 +363,7 @@ class OvmVm(OvmObject):
 
 
             if not isdir(vmPath):
-                # The case is, when vm starting was not completed at primaryStroageDownload or createVolume(e.g. mgmt server stop), the mgmt
+                # The case is, when vm starting was not completed at primaryStorageDownload or createVolume(e.g. mgmt server stop), the mgmt
                 # server will keep vm state in staring, then a stop command will be sent. The stop command will delete bridges that vm attaches,
                 # by retriving birdge info by OvmVm.getDetails(). In this case, the vm doesn't exists, so returns a fake object here.
                 fakeDisk = OvmDisk()

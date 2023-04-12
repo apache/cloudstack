@@ -23,12 +23,14 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +62,6 @@ import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.SnapshotDao;
@@ -91,6 +92,8 @@ public class AccountManagetImplTestBase {
     ResourceCountDao _resourceCountDao;
     @Mock
     UserDao userDaoMock;
+    @Mock
+    UserDetailsDao userDetailsDaoMock;
     @Mock
     InstanceGroupDao _vmGroupDao;
     @Mock
@@ -185,9 +188,7 @@ public class AccountManagetImplTestBase {
     @Mock
     UserAuthenticator userAuthenticator;
     @Mock
-    ServiceOfferingDao _serviceOfferingDao;
-    @Mock
-    ServiceOfferingDao _offeringDao;
+    ServiceOfferingDao serviceOfferingDao;
     @Mock
     OrchestrationService _orchSrvc;
     @Mock
@@ -198,6 +199,8 @@ public class AccountManagetImplTestBase {
     AccountManagerImpl accountManagerImpl;
     @Mock
     UsageEventDao _usageEventDao;
+    @Mock
+    AccountService _accountService;
 
     @Before
     public void setup() {

@@ -35,43 +35,45 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <template #zonename="{record}">
-        <span v-if="fetchZoneIcon(record.zoneid)">
-          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
-        </span>
-        <global-outlined v-else style="margin-right: 5px" />
-        <span> {{ record.zonename }} </span>
-      </template>
-      <template #isready="{ record }">
-        <span v-if="record.isready">{{ $t('label.yes') }}</span>
-        <span v-else>{{ $t('label.no') }}</span>
-      </template>
-      <template #action="{ record }">
-        <span style="margin-right: 5px">
-          <tooltip-button
-            :tooltip="$t('label.action.copy.iso')"
-            :disabled="!('copyIso' in $store.getters.apis && record.isready)"
-            icon="copy-outlined"
-            :loading="copyLoading"
-            @click="showCopyIso(record)" />
-        </span>
-        <span style="margin-right: 5px">
-          <a-popconfirm
-            v-if="'deleteIso' in $store.getters.apis"
-            placement="topRight"
-            :title="$t('message.action.delete.iso')"
-            :ok-text="$t('label.yes')"
-            :cancel-text="$t('label.no')"
-            :loading="deleteLoading"
-            @confirm="deleteIso(record)"
-          >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'zonename'">
+          <span v-if="fetchZoneIcon(record.zoneid)">
+            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          </span>
+          <global-outlined v-else style="margin-right: 5px" />
+          <span> {{ record.zonename }} </span>
+        </template>
+        <template v-if="column.key === 'isready'">
+          <span v-if="record.isready">{{ $t('label.yes') }}</span>
+          <span v-else>{{ $t('label.no') }}</span>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <span style="margin-right: 5px">
             <tooltip-button
-              :tooltip="$t('label.action.delete.iso')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
-        </span>
+              :tooltip="$t('label.action.copy.iso')"
+              :disabled="!('copyIso' in $store.getters.apis && record.isready)"
+              icon="copy-outlined"
+              :loading="copyLoading"
+              @click="showCopyIso(record)" />
+          </span>
+          <span style="margin-right: 5px">
+            <a-popconfirm
+              v-if="'deleteIso' in $store.getters.apis"
+              placement="topRight"
+              :title="$t('message.action.delete.iso')"
+              :ok-text="$t('label.yes')"
+              :cancel-text="$t('label.no')"
+              :loading="deleteLoading"
+              @confirm="deleteIso(record)"
+            >
+              <tooltip-button
+                :tooltip="$t('label.action.delete.iso')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </span>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -206,6 +208,7 @@ export default {
       selectedColumns: [],
       filterColumns: ['Status', 'Ready'],
       showConfirmationAction: false,
+      redirectOnFinish: true,
       message: {
         title: this.$t('label.action.bulk.delete.isos'),
         confirmMessage: this.$t('label.confirm.delete.isos')
@@ -220,27 +223,27 @@ export default {
     this.initForm()
     this.columns = [
       {
+        key: 'zonename',
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename',
-        slots: { customRender: 'zonename' }
+        dataIndex: 'zonename'
       },
       {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
       {
+        key: 'isready',
         title: this.$t('label.isready'),
-        dataIndex: 'isready',
-        slots: { customRender: 'isready' }
+        dataIndex: 'isready'
       }
     ]
     if (this.isActionPermitted()) {
       this.columns.push({
+        key: 'actions',
         title: '',
-        dataIndex: 'action',
+        dataIndex: 'actions',
         fixed: 'right',
-        width: 100,
-        slots: { customRender: 'action' }
+        width: 100
       })
     }
 
@@ -340,15 +343,23 @@ export default {
       this.selectedRowKeys = []
       this.fetchData()
       if (this.dataSource.length === 0) {
+        this.moveToPreviousView()
+        this.redirectOnFinish = false
+      }
+    },
+    async moveToPreviousView () {
+      const lastPath = this.$router.currentRoute.value.fullPath
+      const navigationResult = await this.$router.go(-1)
+      if (navigationResult !== undefined || this.$router.currentRoute.value.fullPath === lastPath) {
         this.$router.go(-1)
       }
     },
     deleteIsos (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -372,14 +383,15 @@ export default {
         const jobId = json.deleteisoresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
+        this.redirectOnFinish = true
         this.$pollJob({
           jobId,
           title: this.$t('label.action.delete.iso'),
           description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
-              if (this.selectedItems.length === 0) {
-                this.$router.go(-1)
+              if (this.selectedItems.length === 0 && this.redirectOnFinish) {
+                this.moveToPreviousView()
               }
             } else {
               if (this.selectedItems.length === 0) {
@@ -388,6 +400,9 @@ export default {
             }
             if (this.selectedItems.length > 0) {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
+              if (this.selectedItems.length === this.zones.length && this.redirectOnFinish) {
+                this.moveToPreviousView()
+              }
             }
           },
           errorMethod: () => {
@@ -413,7 +428,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { listall: true, showicon: true }).then(json => {
+      api('listZones', { showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {

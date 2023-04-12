@@ -104,13 +104,13 @@ public class StorPoolStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        return _storageAdaptor.createPhysicalDisk(name, this, format, provisioningType, size);
+    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        return _storageAdaptor.createPhysicalDisk(name, this, format, provisioningType, size, passphrase);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size) {
-        return _storageAdaptor.createPhysicalDisk(name, this, null, provisioningType, size);
+    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        return _storageAdaptor.createPhysicalDisk(name, this, null, provisioningType, size, passphrase);
     }
 
     @Override
@@ -160,5 +160,10 @@ public class StorPoolStoragePool implements KVMStoragePool {
 
     public boolean supportsConfigDriveIso() {
         return false;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
     }
 }

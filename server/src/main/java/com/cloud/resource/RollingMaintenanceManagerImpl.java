@@ -503,7 +503,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     /**
      * Execute stage on host
      * @return tuple: (SUCCESS, DETAILS, AVOID_MAINTENANCE) where:
-     *                  - SUCCESS: True if stage is successfull
+     *                  - SUCCESS: True if stage is successful
      *                  - DETAILS: Information retrieved by the host after executing the stage
      *                  - AVOID_MAINTENANCE: True if maintenance stage must be avoided
      */
@@ -519,7 +519,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     /**
      * Send rolling maintenance command to a host to perform a certain stage specified in cmd
      * @return tuple: (SUCCESS, DETAILS, AVOID_MAINTENANCE) where:
-     *                  - SUCCESS: True if stage is successfull
+     *                  - SUCCESS: True if stage is successful
      *                  - DETAILS: Information retrieved by the host after executing the stage
      *                  - AVOID_MAINTENANCE: True if maintenance stage must be avoided
      */
@@ -617,7 +617,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         }
         List<String> hostTags = hostTagsDao.getHostTags(host.getId());
 
-        int sucessfullyCheckedVmMigrations = 0;
+        int successfullyCheckedVmMigrations = 0;
         for (VMInstanceVO runningVM : vmsRunning) {
             boolean canMigrateVm = false;
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
@@ -656,9 +656,9 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                 s_logger.error(msg);
                 return new Pair<>(false, msg);
             }
-            sucessfullyCheckedVmMigrations++;
+            successfullyCheckedVmMigrations++;
         }
-        if (sucessfullyCheckedVmMigrations != vmsRunning.size()) {
+        if (successfullyCheckedVmMigrations != vmsRunning.size()) {
             String migrationCheckDetails = String.format("%s cannot enter maintenance mode as capacity check failed for hosts in cluster %s", host, cluster);
             return new Pair<>(false, migrationCheckDetails);
         }

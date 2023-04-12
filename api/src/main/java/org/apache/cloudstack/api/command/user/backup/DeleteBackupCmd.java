@@ -24,13 +24,13 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -40,12 +40,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = DeleteBackupCmd.APINAME,
+@APICommand(name = "deleteBackup",
         description = "Delete VM backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteBackupCmd  extends BaseAsyncCmd {
-    public static final String APINAME = "deleteBackup";
 
     @Inject
     private BackupManager backupManager;
@@ -61,12 +60,23 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
             description = "id of the VM backup")
     private Long backupId;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "force the deletion of backup which removes the entire backup chain but keep VM in Backup Offering",
+            since = "4.18.0.0")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return backupId;
+    }
+
+    public Boolean isForced() {
+        return BooleanUtils.isTrue(forced);
     }
 
     /////////////////////////////////////////////////////
@@ -76,7 +86,7 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.deleteBackup(backupId);
+            boolean result = backupManager.deleteBackup(getId(), isForced());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -87,11 +97,6 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

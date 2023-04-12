@@ -43,6 +43,7 @@ import java.util.function.Predicate;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -53,6 +54,7 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.util.URIUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -64,12 +66,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import org.apache.commons.lang3.StringUtils;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 public class UriUtils {
 
@@ -230,7 +230,7 @@ public class UriUtils {
                 httpConn.setRequestMethod(method);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
-                String contentLength = httpConn.getHeaderField("Content-Length");
+                String contentLength = httpConn.getHeaderField("content-length");
                 if (contentLength != null) {
                     remoteSize = Long.parseLong(contentLength);
                 } else if (method.equals("GET") && httpConn.getResponseCode() < 300) {
@@ -376,7 +376,7 @@ public class UriUtils {
     protected static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
         Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
             Document doc = docBuilder.parse(is);
             Element rootElement = doc.getDocumentElement();
@@ -638,5 +638,89 @@ public class UriUtils {
         expandedVlans.add(Integer.parseInt(parts[0]));
         expandedVlans.add(Integer.parseInt(parts[1]));
         return expandedVlans;
+    }
+
+    public static class UriInfo {
+        String scheme;
+        String storageHost;
+        String storagePath;
+        String userInfo;
+        int port = -1;
+
+        public UriInfo() {
+        }
+
+        public UriInfo(String scheme, String storageHost, String storagePath, String userInfo, int port) {
+            this.scheme = scheme;
+            this.storageHost = storageHost;
+            this.storagePath = storagePath;
+            this.userInfo = userInfo;
+            this.port = port;
+        }
+
+        public String getScheme() {
+            return scheme;
+        }
+
+        public String getStorageHost() {
+            return storageHost;
+        }
+
+        public String getStoragePath() {
+            return storagePath;
+        }
+
+        public String getUserInfo() {
+            return userInfo;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s://%s%s%s%s", scheme,
+                    userInfo == null ? "" : userInfo + "@",
+                    storageHost,
+                    port == -1 ? "" : ":" + port,
+                    storagePath == null ? "" : storagePath);
+        }
+    }
+
+    public static UriInfo getUriInfo(String url) {
+        try {
+            if (url == null) {
+                return new UriInfo();
+            }
+            if (url.startsWith("rbd://")) {
+                return getRbdUrlInfo(url);
+            }
+            URI uri = new URI(UriUtils.encodeURIComponent(url));
+            return new UriInfo(uri.getScheme(), uri.getHost(), uri.getPath(), uri.getUserInfo(), uri.getPort());
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(url + " is not a valid uri");
+        }
+    }
+
+    private static UriInfo getRbdUrlInfo(String url) {
+        int secondSlash = StringUtils.ordinalIndexOf(url, "/", 2);
+        int thirdSlash = StringUtils.ordinalIndexOf(url, "/", 3);
+        int firstAt = StringUtils.indexOf(url, "@");
+        int lastColon = StringUtils.lastIndexOf(url,":");
+        int lastSquareBracket = StringUtils.lastIndexOf(url,"]");
+        int startOfHost = Math.max(secondSlash, firstAt) + 1;
+        int endOfHost = lastColon < startOfHost ? (thirdSlash > 0 ? thirdSlash : url.length() + 1) :
+                (lastSquareBracket > lastColon ? lastSquareBracket + 1 : lastColon);
+        String storageHosts = StringUtils.substring(url, startOfHost, endOfHost);
+        String firstHost = storageHosts.split(",")[0];
+        String strBeforeHosts = StringUtils.substring(url, 0, startOfHost);
+        String strAfterHosts = StringUtils.substring(url, endOfHost);
+        try {
+            URI uri = new URI(UriUtils.encodeURIComponent(strBeforeHosts + firstHost + strAfterHosts));
+            return new UriInfo(uri.getScheme(), storageHosts, uri.getPath(), uri.getUserInfo(), uri.getPort());
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(url + " is not a valid uri for RBD");
+        }
     }
 }

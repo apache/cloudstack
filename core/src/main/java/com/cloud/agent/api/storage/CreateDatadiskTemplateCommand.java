@@ -18,6 +18,8 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public final class CreateDatadiskTemplateCommand extends Command {
     private DataTO dataDiskTemplate;
@@ -66,6 +68,10 @@ public final class CreateDatadiskTemplateCommand extends Command {
 
     public void setDiskId(String diskId) {
         this.diskId = diskId;
+    }
+
+    public String stringRepresentation() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SIMPLE_STYLE);
     }
 
 }

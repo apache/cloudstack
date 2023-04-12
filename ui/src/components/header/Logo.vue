@@ -16,9 +16,16 @@
 // under the License.
 
 <template>
-  <div class="logo">
+  <div v-if="collapsed && $config.minilogo">
     <img
-      v-if="$config.logo"
+      :style="{
+        width: $config.theme['@mini-logo-width'],
+        height: $config.theme['@mini-logo-height']
+      }"
+      :src="$config.minilogo" />
+  </div>
+  <div v-else-if="$config.logo">
+    <img
       :style="{
         width: $config.theme['@logo-width'],
         height: $config.theme['@logo-height']
@@ -47,6 +54,11 @@ export default {
       type: Boolean,
       default: true,
       required: false
+    },
+    collapsed: {
+      type: Boolean,
+      default: false,
+      required: false
     }
   },
   methods: {
@@ -63,19 +75,6 @@ export default {
 </script>
 
 <style type="less" scoped>
-.logo {
-  height: 64px;
-  position: relative;
-  line-height: 64px;
-  -webkit-transition: all .3s;
-  transition: all .3s;
-  overflow: hidden;
-}
-
-.sider.light .logo {
-  box-shadow: 1px 1px 0px 0px #e8e8e8;
-}
-
 .logo-image {
   display: inline-block;
   vertical-align: middle;
@@ -83,5 +82,4 @@ export default {
 .none {
   display: none;
 }
-
 </style>

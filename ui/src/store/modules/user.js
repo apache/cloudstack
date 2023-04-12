@@ -60,8 +60,12 @@ const user = {
     darkMode: false,
     defaultListViewPageSize: 20,
     countNotify: 0,
+    loginFlag: false,
     logoutFlag: false,
-    customColumns: {}
+    customColumns: {},
+    twoFaEnabled: false,
+    twoFaProvider: '',
+    twoFaIssuer: ''
   },
 
   mutations: {
@@ -137,6 +141,18 @@ const user = {
     },
     SET_LOGOUT_FLAG: (state, flag) => {
       state.logoutFlag = flag
+    },
+    SET_2FA_ENABLED: (state, flag) => {
+      state.twoFaEnabled = flag
+    },
+    SET_2FA_PROVIDER: (state, flag) => {
+      state.twoFaProvider = flag
+    },
+    SET_2FA_ISSUER: (state, flag) => {
+      state.twoFaIssuer = flag
+    },
+    SET_LOGIN_FLAG: (state, flag) => {
+      state.loginFlag = flag
     }
   },
 
@@ -165,6 +181,8 @@ const user = {
 
           const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          const cachedShowKeyboardShortKeys = vueProps.$localStorage.get(SHOW_KEYBOARD_SHORTKEYS, false)
+          commit('SET_SHOW_KEYBOARD_SHORTKEYS', cachedShowKeyboardShortKeys)
           const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
           commit('SET_DARK_MODE', darkMode)
           const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
@@ -181,7 +199,10 @@ const user = {
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
-
+          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
+          commit('SET_2FA_PROVIDER', result.providerfor2fa)
+          commit('SET_2FA_ISSUER', result.issuerfor2fa)
+          commit('SET_LOGIN_FLAG', false)
           notification.destroy()
 
           resolve()
@@ -197,6 +218,7 @@ const user = {
         const cachedZones = vueProps.$localStorage.get(ZONES, [])
         const cachedTimezoneOffset = vueProps.$localStorage.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
+        const cachedShowKeyboardShortKeys = vueProps.$localStorage.get(SHOW_KEYBOARD_SHORTKEYS, false)
         const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
@@ -210,6 +232,7 @@ const user = {
           commit('SET_APIS', cachedApis)
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          commit('SET_SHOW_KEYBOARD_SHORTKEYS', cachedShowKeyboardShortKeys)
           commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
@@ -221,9 +244,9 @@ const user = {
           }).catch(error => {
             reject(error)
           })
-        } else {
+        } else if (store.getters.loginFlag) {
           const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
-          api('listZones', { listall: true }).then(json => {
+          api('listZones').then(json => {
             const zones = json.listzonesresponse.zone || []
             commit('SET_ZONES', zones)
           }).catch(error => {
@@ -309,6 +332,10 @@ const user = {
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
         commit('SET_LOGOUT_FLAG', true)
+        commit('SET_2FA_ENABLED', false)
+        commit('SET_2FA_PROVIDER', '')
+        commit('SET_2FA_ISSUER', '')
+        commit('SET_LOGIN_FLAG', false)
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
@@ -390,6 +417,9 @@ const user = {
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
+    },
+    SetLoginFlag ({ commit }, loggedIn) {
+      commit('SET_LOGIN_FLAG', loggedIn)
     }
   }
 }

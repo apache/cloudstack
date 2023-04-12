@@ -53,7 +53,7 @@ class InstallSysTemplate(object):
 
   def parseOptions(self):
     self.parser = argparse.ArgumentParser(prog="System Template Installer")
-    self.parser.add_argument("-m", "--mount-point", action="store", dest="mountpoint", help="Secondary Storage Mount Point where to install the temlate.", required="true")
+    self.parser.add_argument("-m", "--mount-point", action="store", dest="mountpoint", help="Secondary Storage Mount Point where to install the template.", required="true")
     self.parser.add_argument("-H", "--hypervisor", action="store", dest="hypervisor", help="The Hypervisor name for which template need to be installed", required="true", choices=['kvm','xenserver','vmware','lxc','hyperv'])
     group = self.parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--system-vm-template", action="store", dest="systemvmtemplatepath", help="The local system vm template file path")

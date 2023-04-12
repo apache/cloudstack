@@ -34,11 +34,15 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
-@APICommand(name = UpdateIpv6FirewallRuleCmd.APINAME, description = "Updates Ipv6 firewall rule with specified ID", responseObject = FirewallRuleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateIpv6FirewallRule",
+        description = "Updates Ipv6 firewall rule with specified ID",
+        responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIpv6FirewallRuleCmd.class.getName());
 
-    public static final String APINAME = "updateIpv6FirewallRule";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -115,11 +119,6 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
 
     public Integer getSourcePortStart() {
         return publicStartPort;

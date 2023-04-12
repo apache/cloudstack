@@ -42,7 +42,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ScaleKubernetesClusterCmd.APINAME,
+@APICommand(name = "scaleKubernetesCluster",
         description = "Scales a created, running or stopped Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
@@ -52,7 +52,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     public static final Logger LOGGER = Logger.getLogger(ScaleKubernetesClusterCmd.class.getName());
-    public static final String APINAME = "scaleKubernetesCluster";
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -140,11 +139,6 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
             description += String.format(" ID: %d", getId());
         }
         return description;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + "response";
     }
 
     @Override

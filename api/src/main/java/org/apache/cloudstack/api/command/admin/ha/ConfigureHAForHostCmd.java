@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostHAResponse;
@@ -42,12 +41,11 @@ import org.apache.cloudstack.ha.HAResource;
 
 import javax.inject.Inject;
 
-@APICommand(name = ConfigureHAForHostCmd.APINAME, description = "Configures HA for a host",
+@APICommand(name = "configureHAForHost", description = "Configures HA for a host",
         responseObject = HostHAResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11", authorized = {RoleType.Admin})
 public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
-    public static final String APINAME = "configureHAForHost";
 
     @Inject
     private HAConfigManager haConfigManager;
@@ -79,11 +77,6 @@ public final class ConfigureHAForHostCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

@@ -386,7 +386,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         rootdisksize=newrootsize
                 )
             except Exception as ex:
-                    if "rootdisksize override is smaller than template size" in str(ex):
+                    if "rootdisksize override (" + str(newrootsize) + " GB) is smaller than template size" in str(ex):
                         success = True
                     else:
                         self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex));
@@ -394,6 +394,3 @@ class TestDeployVmRootSize(cloudstackTestCase):
             self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
         else:
             self.debug("test 02 does not support hypervisor type " + self.hypervisor)
-
-
-

@@ -50,7 +50,7 @@
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
-            :remove="handleRemove"
+            @remove="handleRemove"
             :beforeUpload="beforeUpload"
             v-model:value="form.file">
             <p class="ant-upload-drag-icon">
@@ -121,6 +121,48 @@
           </a-select>
         </a-form-item>
 
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12">
+            <a-form-item
+              name="userdataid"
+              ref="userdataid"
+              :label="$t('label.userdata')">
+              <a-select
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
+                v-model:value="userdataid"
+                :placeholder="linkUserDataParams.userdataid.description"
+                :loading="userdata.loading">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id" :label="opt.name || opt.description">
+                  {{ opt.name || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="userdatapolicy" name="userdatapolicy">
+              <template #label>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+              </template>
+              <a-select
+                showSearch
+                v-model:value="userdatapolicy"
+                :placeholder="linkUserDataParams.userdatapolicy.description"
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id" :label="opt.id || opt.description">
+                  {{ opt.id || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+
         <a-form-item ref="isextractable" name="isextractable" :label="$t('label.isextractable')">
           <a-switch v-model:checked="form.isextractable" />
         </a-form-item>
@@ -153,6 +195,7 @@ import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RegisterIso',
@@ -168,7 +211,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    TooltipLabel
   },
   data () {
     return {
@@ -177,6 +221,10 @@ export default {
       osTypes: [],
       zoneLoading: false,
       osTypeLoading: false,
+      userdata: {},
+      userdataid: null,
+      userdatapolicy: null,
+      userdatapolicylist: {},
       loading: false,
       allowed: false,
       uploadParams: null,
@@ -186,6 +234,7 @@ export default {
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('registerIso')
+    this.linkUserDataParams = this.$getApiParams('linkUserDataToTemplate')
   },
   created () {
     this.initForm()
@@ -212,7 +261,6 @@ export default {
         url: [{ required: true, message: this.$t('label.upload.iso.from.local') }],
         file: [{ required: true, message: this.$t('message.error.required.input') }],
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
@@ -220,10 +268,11 @@ export default {
     fetchData () {
       this.fetchZoneData()
       this.fetchOsType()
+      this.fetchUserData()
+      this.fetchUserdataPolicy()
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
 
       this.zoneLoading = true
@@ -232,25 +281,55 @@ export default {
       }
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
+        }
       }).finally(() => {
         this.zoneLoading = false
         this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
       })
     },
     fetchOsType () {
-      const params = {}
-      params.listAll = true
-
       this.osTypeLoading = true
 
-      api('listOsTypes', params).then(json => {
+      api('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes = this.osTypes.concat(listOsTypes)
       }).finally(() => {
         this.osTypeLoading = false
         this.form.ostypeid = this.osTypes[0].id
       })
+    },
+    fetchUserData () {
+      const params = {}
+      params.listAll = true
+
+      this.userdata.opts = []
+      this.userdata.loading = true
+
+      api('listUserData', params).then(json => {
+        const listUserdata = json.listuserdataresponse.userdata
+        this.userdata.opts = listUserdata
+      }).finally(() => {
+        this.userdata.loading = false
+      })
+    },
+    fetchUserdataPolicy () {
+      const userdataPolicy = []
+      userdataPolicy.push({
+        id: 'allowoverride',
+        description: 'allowoverride'
+      })
+      userdataPolicy.push({
+        id: 'append',
+        description: 'append'
+      })
+      userdataPolicy.push({
+        id: 'denyoverride',
+        description: 'denyoverride'
+      })
+      this.userdatapolicylist.opts = userdataPolicy
     },
     handleRemove (file) {
       const index = this.fileList.indexOf(file)
@@ -282,10 +361,10 @@ export default {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
-            'X-signature': this.uploadParams.signature,
-            'X-expires': this.uploadParams.expires,
-            'X-metadata': this.uploadParams.metadata
+            'content-type': 'multipart/form-data',
+            'x-signature': this.uploadParams.signature,
+            'x-expires': this.uploadParams.expires,
+            'x-metadata': this.uploadParams.metadata
           },
           onUploadProgress: (progressEvent) => {
             this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
@@ -338,6 +417,9 @@ export default {
         if (this.currentForm === 'Create') {
           this.loading = true
           api('registerIso', params).then(json => {
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.registerisoresponse.iso[0].id, this.userdatapolicy)
+            }
             this.$notification.success({
               message: this.$t('label.action.register.iso'),
               description: `${this.$t('message.success.register.iso')} ${params.name}`
@@ -358,6 +440,9 @@ export default {
           api('getUploadParamsForIso', params).then(json => {
             this.uploadParams = (json.postuploadisoresponse && json.postuploadisoresponse.getuploadparams) ? json.postuploadisoresponse.getuploadparams : ''
             const response = this.handleUpload()
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.postuploadisoresponse.iso[0].id)
+            }
             if (response === 'upload successful') {
               this.$notification.success({
                 message: this.$t('message.success.upload'),
@@ -377,6 +462,22 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    linkUserdataToTemplate (userdataid, templateid, userdatapolicy) {
+      this.loading = true
+      const params = {}
+      params.userdataid = userdataid
+      params.templateid = templateid
+      if (userdatapolicy) {
+        params.userdatapolicy = userdatapolicy
+      }
+      api('linkUserDataToTemplate', params).then(json => {
+        this.closeAction()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
     }
   }
 }

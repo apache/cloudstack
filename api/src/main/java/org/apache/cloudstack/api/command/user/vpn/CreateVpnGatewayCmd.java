@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnGatewayCmd.class.getName());
 
-    private static final String s_name = "createvpngatewayresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,11 +77,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

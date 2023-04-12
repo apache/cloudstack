@@ -27,7 +27,7 @@ except ImportError:
         raise RuntimeError("python setuptools is required to build Marvin")
 
 
-VERSION = "4.18.0.0-SNAPSHOT"
+VERSION = "4.19.0.0"
 
 setup(name="Marvin",
       version=VERSION,
@@ -46,7 +46,7 @@ setup(name="Marvin",
                 "marvin.sandbox.basic"],
       license="LICENSE.txt",
       install_requires=[
-          "mysql-connector-python >= 1.1.6",
+          "mysql-connector-python <= 8.0.30",
           "requests >= 2.2.1",
           "paramiko >= 1.13.0",
           "nose >= 1.3.3",

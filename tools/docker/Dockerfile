@@ -17,10 +17,10 @@
 #
 # CloudStack-simulator build
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.18.0.0-SNAPSHOT"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.19.0.0"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -45,7 +45,7 @@ RUN apt-get -y update && apt-get install -y \
 
 RUN apt-get install -qqy mysql-server && \
     apt-get clean all && \
-    mkdir /var/run/mysqld; \
+    mkdir -p /var/run/mysqld; \
     chown mysql /var/run/mysqld
 
 RUN echo '''sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"''' >> /etc/mysql/mysql.conf.d/mysqld.cnf
@@ -67,7 +67,7 @@ RUN find /var/lib/mysql -type f -exec touch {} \; && \
     ln -s /usr/bin/gcc-10 /usr/bin/x86_64-linux-gnu-gcc; \
     pip3 install $MARVIN_FILE
 
-RUN curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -; \
+RUN curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -; \
     apt-get install -y nodejs; \
     cd ui && npm rebuild node-sass && npm install
 

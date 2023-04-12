@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -33,6 +34,7 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 
 public interface AccountService {
 
@@ -124,4 +126,18 @@ public interface AccountService {
     public Map<String, String> getKeys(GetUserKeysCmd cmd);
 
     public Map<String, String> getKeys(Long userId);
+
+    /**
+     * Lists user two-factor authentication provider plugins
+     * @return list of providers
+     */
+    List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders();
+
+    /**
+     * Finds user two factor authenticator provider by domain ID
+     * @param domainId domain id
+     * @return backup provider
+     */
+    UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final Long domainId);
+
 }

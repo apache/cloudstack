@@ -23,13 +23,21 @@ import java.util.List;
 public interface EndPointSelector {
     EndPoint select(DataObject srcData, DataObject destData);
 
+    EndPoint select(DataObject srcData, DataObject destData, boolean encryptionSupportRequired);
+
     EndPoint select(DataObject srcData, DataObject destData, StorageAction action);
+
+    EndPoint select(DataObject srcData, DataObject destData, StorageAction action, boolean encryptionSupportRequired);
 
     EndPoint select(DataObject object);
 
     EndPoint select(DataStore store);
 
+    EndPoint select(DataObject object, boolean encryptionSupportRequired);
+
     EndPoint select(DataObject object, StorageAction action);
+
+    EndPoint select(DataObject object, StorageAction action, boolean encryptionSupportRequired);
 
     List<EndPoint> selectAll(DataStore store);
 
@@ -38,4 +46,6 @@ public interface EndPointSelector {
     EndPoint select(Scope scope, Long storeId);
 
     EndPoint select(DataStore store, String downloadUrl);
+
+    EndPoint findSsvm(long dcId);
 }

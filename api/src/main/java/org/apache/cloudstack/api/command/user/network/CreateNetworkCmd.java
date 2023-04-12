@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import com.cloud.network.NetworkService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -45,6 +46,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.NetUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -60,7 +62,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the network")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network")
     private String displayText;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
@@ -109,13 +111,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         + " - Account. Account means that only the account owner can use the network, domain - all accounts in the domain can use the network")
     private String aclType;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the network")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account that will own the network. Account should be under the selected domain")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the network")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network. " +
+            "If no account is provided then network will be assigned to the caller account and domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.SUBDOMAIN_ACCESS,
@@ -126,6 +129,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC network belongs to")
     private Long vpcId;
+
+    @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID, type = CommandType.STRING, description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
 
     @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
@@ -156,6 +162,26 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.17.0",
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
+
+    @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer publicMtu;
+
+    @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's private interface(s)", since = "4.18.0")
+    private Integer privateMtu;
+
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first IPv4 DNS for the network", since = "4.18.0")
+    private String ip4Dns1;
+
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second IPv4 DNS for the network", since = "4.18.0")
+    private String ip4Dns2;
+
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first IPv6 DNS for the network", since = "4.18.0")
+    private String ip6Dns1;
+
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
+    private String ip6Dns2;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -197,7 +223,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? name : displayText;
     }
 
     public String getNetworkDomain() {
@@ -234,6 +260,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Long getAssociatedNetworkId() {
         return associatedNetworkId;
+    }
+
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
     }
 
     @Override
@@ -324,6 +354,29 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Long getAclId() {
         return aclId;
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu != null ? publicMtu : NetworkService.DEFAULT_MTU;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu != null ? privateMtu : NetworkService.DEFAULT_MTU;
+    }
+    public String getIp4Dns1() {
+        return ip4Dns1;
+    }
+
+    public String getIp4Dns2() {
+        return ip4Dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
     }
 
     /////////////////////////////////////////////////////

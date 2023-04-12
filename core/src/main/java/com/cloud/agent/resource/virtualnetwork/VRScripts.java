@@ -78,5 +78,7 @@ public class VRScripts {
     public static final String RETRIEVE_DIAGNOSTICS = "get_diagnostics_files.py";
     public static final String VR_FILE_CLEANUP = "cleanup.sh";
 
+    public static final String VR_UPDATE_INTERFACE_CONFIG = "update_interface_config.sh";
+
     public static final String ROUTER_FILESYSTEM_WRITABLE_CHECK = "filesystem_writable_check.py";
 }

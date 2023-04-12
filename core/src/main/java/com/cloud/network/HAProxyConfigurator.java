@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
@@ -43,10 +44,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private static final Logger s_logger = Logger.getLogger(HAProxyConfigurator.class);
     private static final String blankLine = "\t ";
     private static String[] globalSection = {"global", "\tlog 127.0.0.1:3914   local0 warning", "\tmaxconn 4096", "\tmaxpipes 1024", "\tchroot /var/lib/haproxy",
-        "\tuser haproxy", "\tgroup haproxy", "\tdaemon"};
+        "\tuser haproxy", "\tgroup haproxy", "\tstats socket /run/haproxy/admin.sock", "\tdaemon"};
 
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
-        "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
+        "\toption forwardfor", "\toption httpclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
     private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
 
@@ -95,7 +96,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final PortForwardingRuleTO firstRule = fwRules.get(0);
         final String publicIP = firstRule.getSrcIp();
         final int publicPort = firstRule.getSrcPortRange()[0];
-        // FIXEME: String algorithm = firstRule.getAlgorithm();
+        // FIXME: String algorithm = firstRule.getAlgorithm();
 
         final List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
@@ -551,6 +552,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             result.add(sb.toString());
         }
 
+        String cidrList = lbTO.getCidrList();
+
+        if (StringUtils.isNotBlank(cidrList)) {
+            result.add(String.format("\tacl network_allowed src %s \n\ttcp-request connection reject if !network_allowed", cidrList));
+        }
+
         result.add(blankLine);
         return result;
     }
@@ -596,7 +603,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         result.add(blankLine);
         final List<String> dSection = Arrays.asList(defaultsSection);
         if (lbCmd.keepAliveEnabled) {
-            dSection.set(7, "\tno option forceclose");
+            dSection.set(7, "\tno option httpclose");
         }
 
         if (s_logger.isDebugEnabled()) {

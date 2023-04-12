@@ -39,7 +39,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
-    private static final String s_name = "deletesnapshotresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -61,11 +60,6 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

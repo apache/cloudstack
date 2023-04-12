@@ -26,7 +26,6 @@ import com.cloud.utils.backoff.BackoffAlgorithm;
 
 public interface IAgentShell {
     String hostLbAlgorithmSeparator = "@";
-    String preferredHostIntervalKey = "host.lb.check.interval";
 
     Map<String, Object> getCmdLineProperties();
 

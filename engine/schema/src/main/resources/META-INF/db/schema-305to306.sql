@@ -91,6 +91,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'Agent
 
 UPDATE `cloud`.`networks` set name='Shared SG enabled network', display_text='Shared SG enabled network' WHERE name IS null AND traffic_type='Guest' AND data_center_id IN (select id from data_center where networktype='Advanced' and is_security_group_enabled=1) AND acl_type='Domain';
 
-# patch UUID colomn with ID for volumes and snapshot_policy tables
+# patch UUID column with ID for volumes and snapshot_policy tables
 UPDATE `cloud`.`volumes` set uuid=id WHERE uuid is NULL;
 UPDATE `cloud`.`snapshot_policy` set uuid=id WHERE uuid is NULL;

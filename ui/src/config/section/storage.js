@@ -32,6 +32,13 @@ export default {
       docHelp: 'adminguide/storage.html#working-with-volumes',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
+      filters: () => {
+        if (store.getters.userInfo.roletype === 'Admin') {
+          return ['user', 'all']
+        } else {
+          return []
+        }
+      },
       columns: () => {
         const fields = ['name', 'state', 'type', 'vmname', 'sizegb']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
@@ -69,6 +76,12 @@ export default {
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'metrics',
+          resourceType: 'Volume',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+          show: (record) => { return store.getters.features.instancesdisksstatsretentionenabled }
         },
         {
           name: 'events',
@@ -193,12 +206,13 @@ export default {
         },
         {
           api: 'migrateVolume',
+          permission: ['migrateVolume', 'findStoragePoolsForMigration', 'listStoragePools', 'listDiskOfferings'],
           icon: 'drag-outlined',
           docHelp: 'adminguide/storage.html#id2',
           label: 'label.migrate.volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
-          show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return record.state === 'Ready' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateVolume.vue')))
         },

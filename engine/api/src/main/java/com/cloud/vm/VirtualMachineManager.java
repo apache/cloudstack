@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public interface VirtualMachineManager extends Manager {
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> VmConfigDriveUseHostCacheOnUnsupportedPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.use.host.cache.on.unsupported.pool", "true",
-            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone);
+            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone, VmConfigDriveOnPrimaryPool.key());
 
     ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
             "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
@@ -79,6 +80,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeHypervisorHostname = new ConfigKey<Boolean>("Advanced", Boolean.class, "global.allow.expose.host.hostname",
             "false", "If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
+            "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
@@ -90,7 +94,7 @@ public interface VirtualMachineManager extends Manager {
      *
      * @param vmInstanceName Instance name of the VM.  This name uniquely
      *        a VM in CloudStack's deploy environment.  The caller gets to
-     *        define this VM but it must be unqiue for all of CloudStack.
+     *        define this VM but it must be unique for all of CloudStack.
      * @param template The template this VM is based on.
      * @param serviceOffering The service offering that specifies the offering this VM should provide.
      * @param defaultNetwork The default network for the VM.
@@ -259,5 +263,26 @@ public interface VirtualMachineManager extends Manager {
     boolean isRootVolumeOnLocalStorage(long vmId);
 
     Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
+
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmIds list of VM IDs
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmMap map of VM IDs and the corresponding VirtualMachine object
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
 
 }

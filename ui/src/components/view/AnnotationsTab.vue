@@ -96,7 +96,7 @@
         <template #content>
           <div v-ctrl-enter="saveNote">
             <a-textarea
-              rows="4"
+              :rows="4"
               @change="handleNoteChange"
               v-model:value="annotation"
               :placeholder="$t('label.add.note')" />
@@ -173,6 +173,7 @@ export default {
         case 'VMSnapshot': return 'VM_SNAPSHOT'
         case 'VMInstanceGroup': return 'INSTANCE_GROUP'
         case 'SSHKeyPair': return 'SSH_KEYPAIR'
+        case 'UserData': return 'USER_DATA'
         case 'KubernetesCluster': return 'KUBERNETES_CLUSTER'
         case 'Network': return 'NETWORK'
         case 'Vpc': return 'VPC'
@@ -190,6 +191,7 @@ export default {
         case 'SecondaryStorage': return 'SECONDARY_STORAGE'
         case 'SystemVm': return 'SYSTEM_VM'
         case 'VirtualRouter': return 'VR'
+        case 'AutoScaleVmGroup': return 'AUTOSCALE_VM_GROUP'
         default: return ''
       }
     },

@@ -44,7 +44,7 @@
             <a-upload-dragger
               :multiple="false"
               :fileList="fileList"
-              :remove="handleRemove"
+              @remove="handleRemove"
               :beforeUpload="beforeUpload"
               v-model:value="form.file">
               <p class="ant-upload-drag-icon">
@@ -107,7 +107,7 @@
               @change="handlerSelectZone"
               :placeholder="apiParams.zoneid.description"
               :loading="zones.loading">
-              <a-select-option :value="zone.id" v-for="zone in zones.opts" :key="zone.id" :label="zone.name || zone.description">
+              <a-select-option :value="zone.id" v-for="zone in filteredZones" :key="zone.id" :label="zone.name || zone.description">
                 <span>
                   <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                   <global-outlined v-else style="margin-right: 5px" />
@@ -128,9 +128,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
+                <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -145,9 +145,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in format.opts" :key="opt.id">
+                <a-select-option v-for="opt in format.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -191,9 +191,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
+                <a-select-option v-for="opt in rootDisk.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -206,10 +206,10 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 :placeholder="$t('label.nicadaptertype')">
-                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
+                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -226,10 +226,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.keyboard')">
-            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
+            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -243,16 +243,57 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="form.ostypeid"
             :loading="osTypes.loading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+            <a-select-option v-for="opt in osTypes.opts" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12">
+            <a-form-item
+              name="userdataid"
+              ref="userdataid"
+              :label="$t('label.userdata')">
+              <a-select
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
+                v-model:value="userdataid"
+                :placeholder="linkUserDataParams.userdataid.description"
+                :loading="userdata.loading">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id" :label="opt.name || opt.description">
+                  {{ opt.name || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="userdatapolicy" name="userdatapolicy">
+              <template #label>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+              </template>
+              <a-select
+                showSearch
+                v-model:value="userdatapolicy"
+                :placeholder="linkUserDataParams.userdatapolicy.description"
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id" :label="opt.id || opt.description">
+                  {{ opt.id || opt.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
             <a-form-item ref="groupenabled" name="groupenabled">
@@ -318,6 +359,7 @@ import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -333,7 +375,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    TooltipLabel
   },
   data () {
     return {
@@ -349,6 +392,10 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      userdata: {},
+      userdataid: null,
+      userdatapolicy: null,
+      userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
       hyperXenServerShow: false,
@@ -366,6 +413,7 @@ export default {
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('registerTemplate')
+    this.linkUserDataParams = this.$getApiParams('linkUserDataToTemplate')
   },
   created () {
     this.initForm()
@@ -374,6 +422,13 @@ export default {
   computed: {
     isAdminRole () {
       return this.$store.getters.userInfo.roletype === 'Admin'
+    },
+    filteredZones () {
+      let zoneList = this.zones.opts
+      if (zoneList && zoneList.length > 0 && this.currentForm === 'Upload') {
+        zoneList = zoneList.filter(zone => zone.type !== 'Edge')
+      }
+      return zoneList
     }
   },
   methods: {
@@ -387,7 +442,6 @@ export default {
         url: [{ required: true, message: this.$t('message.error.required.input') }],
         file: [{ required: true, message: this.$t('message.error.required.input') }],
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneids: [
           { type: 'array', required: true, message: this.$t('message.error.select') },
           {
@@ -400,11 +454,12 @@ export default {
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
-      console.log(this.form)
     },
     fetchData () {
       this.fetchZone()
       this.fetchOsTypes()
+      this.fetchUserData()
+      this.fetchUserdataPolicy()
       if (Object.prototype.hasOwnProperty.call(store.getters.apis, 'listConfigurations')) {
         if (this.allowed && this.hyperXenServerShow) {
           this.fetchXenServerProvider()
@@ -437,10 +492,10 @@ export default {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
-            'X-signature': this.uploadParams.signature,
-            'X-expires': this.uploadParams.expires,
-            'X-metadata': this.uploadParams.metadata
+            'content-type': 'multipart/form-data',
+            'x-signature': this.uploadParams.signature,
+            'x-expires': this.uploadParams.expires,
+            'x-metadata': this.uploadParams.metadata
           },
           onUploadProgress: (progressEvent) => {
             this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
@@ -464,7 +519,6 @@ export default {
     fetchZone () {
       const params = {}
       let listZones = []
-      params.listAll = true
       params.showicon = true
       this.allowed = false
 
@@ -484,9 +538,14 @@ export default {
         listZones = listZones.concat(listZonesResponse)
         this.zones.opts = listZones
       }).finally(() => {
-        this.form.zoneid = (this.zones.opts && this.zones.opts[1]) ? this.zones.opts[1].id : ''
+        this.form.zoneid = (this.filteredZones && this.filteredZones[1]) ? this.filteredZones[1].id : ''
+        if (!this.form.zoneid) {
+          this.form.zoneid = (this.filteredZones && this.filteredZones[0] && this.filteredZones[0].id !== this.$t('label.all.zone')) ? this.filteredZones[0].id : ''
+        }
         this.zones.loading = false
-        this.fetchHyperVisor({ zoneid: this.form.zoneid })
+        if (this.form.zoneid) {
+          this.fetchHyperVisor({ zoneid: this.form.zoneid })
+        }
       })
     },
     fetchHyperVisor (params) {
@@ -500,7 +559,7 @@ export default {
         }
         if (this.currentForm !== 'Upload') {
           listhyperVisors.push({
-            name: 'Any'
+            name: 'Simulator'
           })
         }
         this.hyperVisor.opts = listhyperVisors
@@ -509,19 +568,30 @@ export default {
       })
     },
     fetchOsTypes () {
-      const params = {}
-      params.listAll = true
-
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes', params).then(json => {
+      api('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
         this.defaultOsId = this.osTypes.opts[1].id
       }).finally(() => {
         this.osTypes.loading = false
+      })
+    },
+    fetchUserData () {
+      const params = {}
+      params.listAll = true
+
+      this.userdata.opts = []
+      this.userdata.loading = true
+
+      api('listUserData', params).then(json => {
+        const listUserdata = json.listuserdataresponse.userdata
+        this.userdata.opts = listUserdata
+      }).finally(() => {
+        this.userdata.loading = false
       })
     },
     fetchXenServerProvider () {
@@ -716,6 +786,23 @@ export default {
       }
       this.format.opts = format
     },
+    fetchUserdataPolicy () {
+      const userdataPolicy = []
+      userdataPolicy.push({
+        id: 'allowoverride',
+        description: 'allowoverride'
+      })
+      userdataPolicy.push({
+        id: 'append',
+        description: 'append'
+      })
+      userdataPolicy.push({
+        id: 'denyoverride',
+        description: 'denyoverride'
+      })
+      this.userdatapolicylist.opts = userdataPolicy
+    },
+
     handlerSelectZone (value) {
       if (!Array.isArray(value)) {
         value = [value]
@@ -732,7 +819,6 @@ export default {
       const params = {}
 
       if (value.includes(this.$t('label.all.zone'))) {
-        params.listAll = true
         this.fetchHyperVisor(params)
         return
       }
@@ -835,6 +921,9 @@ export default {
         if (this.currentForm === 'Create') {
           this.loading = true
           api('registerTemplate', params).then(json => {
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
+            }
             this.$notification.success({
               message: this.$t('label.register.template'),
               description: `${this.$t('message.success.register.template')} ${params.name}`
@@ -858,6 +947,9 @@ export default {
           api('getUploadParamsForTemplate', params).then(json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
             this.handleUpload()
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.postuploadtemplateresponse.template[0].id)
+            }
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
@@ -885,6 +977,22 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    linkUserdataToTemplate (userdataid, templateid, userdatapolicy) {
+      this.loading = true
+      const params = {}
+      params.userdataid = userdataid
+      params.templateid = templateid
+      if (userdatapolicy) {
+        params.userdatapolicy = userdatapolicy
+      }
+      api('linkUserDataToTemplate', params).then(json => {
+        this.closeAction()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
     },
     resetSelect (arrSelectReset) {
       arrSelectReset.forEach(name => {

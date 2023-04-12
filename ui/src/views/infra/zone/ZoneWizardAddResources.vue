@@ -18,6 +18,7 @@
 <template>
   <div style="width: auto;">
     <a-steps
+      v-if="steps.length > 1"
       ref="resourceStep"
       progressDot
       :current="currentStep"
@@ -54,7 +55,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="(!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
+        v-if="!isEdgeZone && (!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -65,7 +66,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="checkVisibleResource('secondaryResource')"
+        v-if="!isEdgeZone && checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -76,7 +77,7 @@
         :isFixError="isFixError"
       />
     </div>
-    <div v-else>
+    <div v-else-if="!isEdgeZone">
       <static-inputs-form
         v-if="checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
@@ -133,23 +134,31 @@ export default {
     zoneType () {
       return this.prefillContent?.zoneType || null
     },
+    isAdvancedZone () {
+      return this.zoneType === 'Advanced'
+    },
     hypervisor () {
       return this.prefillContent?.hypervisor || null
     },
     localstorageenabled () {
-      return this.prefillContent?.localstorageenabled?.value || false
+      return this.prefillContent?.localstorageenabled || false
     },
     localstorageenabledforsystemvm () {
-      return this.prefillContent?.localstorageenabledforsystemvm?.value || false
+      return this.prefillContent?.localstorageenabledforsystemvm || false
+    },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     steps () {
       const steps = []
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
-      steps.push({
-        title: 'label.cluster',
-        fromKey: 'clusterResource',
-        description: 'message.desc.cluster'
-      })
+      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
+      if (!this.isEdgeZone) {
+        steps.push({
+          title: 'label.cluster',
+          fromKey: 'clusterResource',
+          description: 'message.desc.cluster'
+        })
+      }
       if (hypervisor !== 'VMware') {
         steps.push({
           title: 'label.host',
@@ -157,18 +166,20 @@ export default {
           description: 'message.desc.host'
         })
       }
-      if (!this.localstorageenabled || !this.localstorageenabledforsystemvm) {
+      if (!this.isEdgeZone) {
+        if (!this.localstorageenabled || !this.localstorageenabledforsystemvm) {
+          steps.push({
+            title: 'label.primary.storage',
+            fromKey: 'primaryResource',
+            description: 'message.desc.primary.storage'
+          })
+        }
         steps.push({
-          title: 'label.primary.storage',
-          fromKey: 'primaryResource',
-          description: 'message.desc.primary.storage'
+          title: 'label.secondary.storage',
+          fromKey: 'secondaryResource',
+          description: 'message.desc.secondary.storage'
         })
       }
-      steps.push({
-        title: 'label.secondary.storage',
-        fromKey: 'secondaryResource',
-        description: 'message.desc.secondary.storage'
-      })
 
       return steps
     },
@@ -238,7 +249,7 @@ export default {
         {
           title: 'label.cisco.nexus1000v.ip.address',
           key: 'vsmipaddress',
-          placeHolder: 'message.error.nexus1000v.ipaddess',
+          placeHolder: 'message.error.nexus1000v.ipaddress',
           required: false,
           display: {
             vSwitchEnabled: true
@@ -285,13 +296,41 @@ export default {
           }
         },
         {
+          title: 'label.authentication.method',
+          key: 'authmethod',
+          placeHolder: 'message.error.authmethod',
+          required: false,
+          radioGroup: true,
+          defaultValue: 'password',
+          radioOption: [{
+            label: 'label.password',
+            value: 'password'
+          }, {
+            label: 'label.authentication.sshkey',
+            value: 'sshkey',
+            condition: {
+              hypervisor: ['KVM']
+            }
+          }],
+          display: {
+            hypervisor: ['BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+          },
+          alert: {
+            message: 'message.add.host.sshkey',
+            display: {
+              authmethod: 'sshkey'
+            }
+          }
+        },
+        {
           title: 'label.password',
           key: 'hostPassword',
           placeHolder: 'message.error.host.password',
           required: true,
           password: true,
           display: {
-            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator'],
+            authmethod: 'password'
           }
         },
         {
@@ -457,7 +496,7 @@ export default {
         {
           title: 'label.volgroup',
           key: 'primaryStorageVolumeGroup',
-          placeHolder: 'message.error.volumne.group',
+          placeHolder: 'message.error.volume.group',
           required: true,
           display: {
             primaryStorageProtocol: 'clvm'
@@ -466,7 +505,7 @@ export default {
         {
           title: 'label.volume',
           key: 'primaryStorageVolume',
-          placeHolder: 'message.error.volumne',
+          placeHolder: 'message.error.volume',
           required: true,
           display: {
             primaryStorageProtocol: 'gluster'

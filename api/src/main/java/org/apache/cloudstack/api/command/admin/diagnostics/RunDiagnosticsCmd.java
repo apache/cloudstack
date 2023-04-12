@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RunDiagnosticsResponse;
@@ -47,7 +46,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = RunDiagnosticsCmd.APINAME, responseObject = RunDiagnosticsResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "runDiagnostics", responseObject = RunDiagnosticsResponse.class, entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
         requestHasSensitiveInfo = false,
         description = "Execute network-utility command (ping/arping/tracert) on system VMs remotely",
@@ -55,7 +54,6 @@ import com.cloud.vm.VirtualMachine;
         since = "4.12.0.0")
 public class RunDiagnosticsCmd extends BaseAsyncCmd {
     private static final Logger LOGGER = Logger.getLogger(RunDiagnosticsCmd.class);
-    public static final String APINAME = "runDiagnostics";
 
     @Inject
     private DiagnosticsService diagnosticsService;
@@ -108,11 +106,6 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Implementation //////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();

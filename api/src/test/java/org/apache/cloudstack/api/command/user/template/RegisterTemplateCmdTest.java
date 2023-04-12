@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.util.ArrayList;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -138,5 +140,13 @@ public class RegisterTemplateCmdTest {
         testIsDeployAsIsBase(Hypervisor.HypervisorType.KVM, true, false);
         testIsDeployAsIsBase(Hypervisor.HypervisorType.XenServer, true, false);
         testIsDeployAsIsBase(Hypervisor.HypervisorType.Any, true, false);
+    }
+
+    @Test
+    public void testGetDisplayTextWhenEmpty() {
+        registerTemplateCmd = new RegisterTemplateCmd();
+        String netName = "net-template";
+        ReflectionTestUtils.setField(registerTemplateCmd , "templateName", netName);
+        Assert.assertEquals(registerTemplateCmd.getDisplayText(), netName);
     }
 }

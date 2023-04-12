@@ -119,7 +119,7 @@ vm_port=$(find_port $vm_mac)
 pri_vlan_header=$((4096 + $pri_vlan))
 sec_vlan_header=$((4096 + $sec_vlan))
 
-# Get the groups for broadcast. Ensure we end the group id with ',' so that we wont accidentally match groupid 111 with 1110.
+# Get the groups for broadcast. Ensure we end the group id with ',' so that we won't accidentally match groupid 111 with 1110.
 # We're using the header value for the pri vlan port group, as anything from a promiscuous device has to go to every device in the vlan.
 # Since we're creating a separate group for just the promiscuous devices, adding 4096 so that it'll be unique. Hence we're restricted to 4096 vlans!
 # Not a big deal because if you have vxlan, why do you even need pvlan!!
@@ -139,7 +139,7 @@ add_to_ports() {
 }
 
 del_from_ports() {
-  # Delete when only, begining, middle and end of string
+  # Delete when only, beginning, middle and end of string
   echo "$1" | sed -e "s/^$2$//g" -e "s/^$2,//g" -e "s/,$2$//g" -e "s/,$2,/,/g"
 }
 
@@ -231,7 +231,7 @@ then
   ovs-ofctl add-flow $br table=0,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan
   # From a promiscuous device, so send it to all community and isolated devices on this switch. Passed to all promiscuous devices in the prior step ^^
   ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$pri_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$pri_vlan_header
-  # Since it's from a community, gotta braodcast it to all community devices
+  # Since it's from a community, gotta broadcast it to all community devices
   if [ "$type" == "C" ]
   then
     ovs-ofctl add-flow $br table=1,priority=70,dl_vlan=$sec_vlan,dl_dst=ff:ff:ff:ff:ff:ff,actions=strip_vlan,group:$sec_vlan

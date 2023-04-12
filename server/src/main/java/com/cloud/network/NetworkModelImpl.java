@@ -58,6 +58,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -79,6 +80,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -90,6 +92,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
@@ -119,6 +122,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
@@ -137,12 +141,14 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
+    public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -165,6 +171,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao = null;
     @Inject
@@ -224,6 +232,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
     @Inject
     private NetworkService _networkService;
+    @Inject
+    TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -1182,26 +1192,31 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         if (pNtwks.size() > 1) {
-            if (tag == null) {
-                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId +
-                    " and no tags are specified in order to make a choice");
-            }
-
-            Long pNtwkId = null;
-            for (PhysicalNetwork pNtwk : pNtwks) {
-                if (pNtwk.getTags().contains(tag)) {
-                    s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
-                    pNtwkId = pNtwk.getId();
-                    break;
-                }
-            }
-            if (pNtwkId == null) {
-                throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
-            }
-            return pNtwkId;
+            return getPhysicalNetworkId(zoneId, pNtwks, tag);
         } else {
             return pNtwks.get(0).getId();
         }
+    }
+
+    private Long getPhysicalNetworkId(long zoneId, List<PhysicalNetworkVO> pNtwks, String tag) {
+        Long pNtwkId = null;
+        for (PhysicalNetwork pNtwk : pNtwks) {
+            if (tag == null && pNtwk.getTags().isEmpty()) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " with null tag");
+                if (pNtwkId != null) {
+                    throw new CloudRuntimeException("There is more than 1 physical network with empty tag in the zone id=" + zoneId);
+                }
+                pNtwkId = pNtwk.getId();
+            } else if (tag != null && pNtwk.getTags().contains(tag)) {
+                s_logger.debug("Found physical network id=" + pNtwk.getId() + " based on requested tags " + tag);
+                pNtwkId = pNtwk.getId();
+                break;
+            }
+        }
+        if (pNtwkId == null) {
+            throw new InvalidParameterValueException("Unable to find physical network which match the tags " + tag);
+        }
+        return pNtwkId;
     }
 
     @Override
@@ -1659,39 +1674,49 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public void checkNetworkPermissions(Account owner, Network network) {
-        // dahn 20140310: I was thinking of making this an assert but
-        //                as we hardly ever test with asserts I think
-        //                we better make sure at runtime.
-        if (network == null) {
-            throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
-        }
-        // Perform account permission check
-        if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
-            AccountVO networkOwner = _accountDao.findById(network.getAccountId());
-            if (networkOwner == null)
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                    ", network does not have an owner");
-            if (owner.getType() != Account.Type.PROJECT && networkOwner.getType() == Account.Type.PROJECT) {
-                checkProjectNetworkPermissions(owner, networkOwner, network);
-            } else {
-                List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
-                NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), owner.getId());
-                if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
-                }
+    public final void checkNetworkPermissions(Account caller, Network network) {
+        if (_accountMgr.isRootAdmin(caller.getAccountId()) && Boolean.TRUE.equals(AdminIsAllowedToDeployAnywhere.value())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("root admin is permitted to do stuff on every network");
             }
-
         } else {
-            if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
-                DomainVO ownerDomain = _domainDao.findById(owner.getDomainId());
-                if (ownerDomain == null) {
-                    throw new CloudRuntimeException("cannot check permission on account " + owner.getAccountName() + " whose domain does not exist");
-                }
-                throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
-                        ownerDomain.getUuid());
+            if (network == null) {
+                throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
             }
+            s_logger.info(String.format("Checking permission for account %s (%s) on network %s (%s)", caller.getAccountName(), caller.getUuid(), network.getName(), network.getUuid()));
+            if (network.getGuestType() != GuestType.Shared || network.getAclType() == ACLType.Account) {
+                checkAccountNetworkPermissions(caller, network);
+
+            } else {
+                checkDomainNetworkPermissions(caller, network);
+            }
+        }
+    }
+
+    private void checkAccountNetworkPermissions(Account caller, Network network) {
+        AccountVO networkOwner = _accountDao.findById(network.getAccountId());
+        if (networkOwner == null)
+            throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
+                ", network does not have an owner");
+        if (!Account.Type.PROJECT.equals(caller.getType()) && Account.Type.PROJECT.equals(networkOwner.getType())) {
+            checkProjectNetworkPermissions(caller, networkOwner, network);
+        } else {
+            List<NetworkVO> networkMap = _networksDao.listBy(caller.getId(), network.getId());
+            NetworkPermissionVO networkPermission = _networkPermissionDao.findByNetworkAndAccount(network.getId(), caller.getId());
+            if (CollectionUtils.isEmpty(networkMap) && networkPermission == null) {
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));
+            }
+        }
+    }
+
+    private void checkDomainNetworkPermissions(Account caller, Network network) {
+        if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
+            DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+            if (callerDomain == null) {
+                throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
+            }
+            throw new PermissionDeniedException("Shared network id=" + ((NetworkVO) network).getUuid() + " is not available in domain id=" +
+                    callerDomain.getUuid());
         }
     }
 
@@ -1704,13 +1729,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
         if (projectAccountUser != null) {
             if (!_projectAccountDao.canUserAccessProjectAccount(user.getAccountId(), user.getId(), networkOwner.getId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
-                        ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO)network).getUuid()));
             }
         } else {
             if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), networkOwner.getId())) {
-                throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO) network).getUuid() +
-                        ", permission denied");
+                throw new PermissionDeniedException(String.format(UNABLE_TO_USE_NETWORK, ((NetworkVO) network).getUuid()));
             }
         }
     }
@@ -2001,7 +2024,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             usedIps.add(NetUtils.ip2Long(ip));
         }
 
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps);
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]), usedIps, -1);
 
         String gateway = network.getGateway();
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
@@ -2020,6 +2043,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         //Get ips used by load balancers
         List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
         ips.addAll(lbIps);
+        //Get ips used by tungsten
+        List<String> tfIps = tungstenGuestNetworkIpAddressDao.listGuestIpAddressByNetworkId(network.getId());
+        ips.addAll(tfIps);
         return ips;
     }
 
@@ -2162,6 +2188,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
+        if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
+            profile.setMtu(network.getPublicMtu());
+        }
+        if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
+            profile.setMtu(network.getPrivateMtu());
+        }
 //        guru.updateNicProfile(profile, network);
         return profile;
     }
@@ -2543,7 +2575,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    public List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                          String vmName, String vmHostName, long vmId, String vmUuid,
                                          String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
 
@@ -2551,6 +2583,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final String zoneName = dcVo.getName();
 
         IPAddressVO publicIp = _ipAddressDao.findByAssociatedVmId(vmId);
+        VirtualMachine vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("Cannot generate VM instance data, no VM exists by ID: %d", vmId));
+        }
 
         final List<String[]> vmData = new ArrayList<String[]>();
 
@@ -2561,6 +2597,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
+
+        addUserDataDetailsToCommand(vmData, userDataDetails);
 
         String publicIpAddress = guestIpAddress;
         String publicHostName = StringUtils.unicodeEscape(vmHostName);
@@ -2619,7 +2657,27 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             vmData.add(new String[]{PASSWORD_DIR, PASSWORD_FILE, password});
         }
         vmData.add(new String[]{METATDATA_DIR, HYPERVISOR_HOST_NAME_FILE, hostname});
+
+        Domain domain = _domainDao.findById(vm.getDomainId());
+        if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
+            s_logger.debug("Adding domain info to cloud metadata");
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_FILE, domain.getName()});
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_ID_FILE, domain.getUuid()});
+        }
+
         return vmData;
+    }
+
+    protected void addUserDataDetailsToCommand(List<String[]> vmData, String userDataDetails) {
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
+                vmData.add(new String[]{METATDATA_DIR, keyValue.first(), StringUtils.unicodeEscape(keyValue.second())});
+            }
+        }
     }
 
     @Override
@@ -2629,12 +2687,54 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MACIdentifier};
+        return new ConfigKey<?>[] {MACIdentifier, AdminIsAllowedToDeployAnywhere};
     }
 
     @Override
     public String getValidNetworkCidr(Network guestNetwork) {
         String networkCidr = guestNetwork.getNetworkCidr();
         return networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getDns1())) {
+            return new Pair<>(network.getDns1(), network.getDns2());
+        }
+        return new Pair<>(zone.getDns1(), zone.getDns2());
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getIp6Dns1())) {
+            return new Pair<>(network.getIp6Dns1(), network.getIp6Dns2());
+        }
+        return new Pair<>(zone.getIp6Dns1(), zone.getIp6Dns2());
+    }
+
+    @Override
+    public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
+            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
+        }
+    }
+
+    @Override
+    public void verifyIp6DnsPair(String ip6Dns1, String ip6Dns2) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
+        }
     }
 }

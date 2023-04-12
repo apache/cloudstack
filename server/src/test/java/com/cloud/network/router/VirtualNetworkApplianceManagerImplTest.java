@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -306,6 +307,26 @@ public class VirtualNetworkApplianceManagerImplTest {
         }
     }
 
+    @Test
+    public void checkLogrotateTimerPatternTestDoNotMatchWithRegex(){
+        String foo = "non-sense";
+        boolean result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
+        Assert.assertFalse(result);
+        foo = "*";
+        result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
+        Assert.assertFalse(result);
+    }
 
-
+    @Test
+    public void checkLogrotateTimerPatternTestMatchesWithRegex(){
+        String foo = "hourly";
+        boolean result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
+        Assert.assertTrue(result);
+        foo = "*:00:00";
+        result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
+        Assert.assertTrue(result);
+        foo = "*:*:00";
+        result = virtualNetworkApplianceManagerImpl.checkLogrotateTimerPattern(foo);
+        Assert.assertTrue(result);
+    }
 }
