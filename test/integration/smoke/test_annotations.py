@@ -139,8 +139,8 @@ class TestAnnotations(cloudstackTestCase):
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_add_ms_annotation(self):
         """Testing the addAnnotations API ability to add an annoatation per management server"""
-        self.addAnnotation("annotation1", self.mgmt_server.id, "MANAGEMENT_SERVER")
-        self.assertEqual(self.added_annotations[-1].annotation.annotation, "annotation1")
+        self.addAnnotation("mgmt-server-annotation1", self.mgmt_server.id, "MANAGEMENT_SERVER")
+        self.assertEqual(self.added_annotations[-1].annotation.annotation, "mgmt-server-annotation1")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_add_multiple_annotations(self):
