@@ -762,3 +762,69 @@ class TestRegisteredUserdata(cloudstackTestCase):
             self.apiclient,
             templateid=self.template.id
         )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)
+    def test_user_userdata_crud(self):
+        """Test following operations as a normal user:
+            1. Register userdata
+            2. List userdata
+            3. Link userdata to a template, unlink
+            4. Delete userdata.
+        """
+        self.user = self.account.user[0]
+        self.userapiclient = self.testClient.getUserApiClient(
+            self.user.username,
+            self.domain.name)
+
+        self.userdata = UserData.register(
+            self.userapiclient,
+            name="UserdataName",
+            userdata="VGVzdFVzZXJEYXRh",
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(self.userdata)
+
+        list_userdata = UserData.list(self.apiclient, id=self.userdata.userdata.id, listall=True)
+        self.assertNotEqual(
+            len(list_userdata),
+            0,
+            "List userdata was empty"
+        )
+        userdata = list_userdata[0]
+        self.assertEqual(
+            userdata.id,
+            self.userdata.userdata.id,
+            "userdata ids do not match"
+        )
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id,
+            userdataid=self.userdata.userdata.id
+        )
+        self.assertEqual(
+            self.userdata.userdata.id,
+            self.template.userdataid,
+            "Match userdata id in template response"
+        )
+        self.assertEqual(
+            self.template.userdatapolicy,
+            "ALLOWOVERRIDE",
+            "Match default userdata override policy in template response"
+        )
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id
+        )
+        self.assertEqual(
+            self.template.userdataid,
+            None,
+            "Check userdata id in template response is None"
+        )
+
+        UserData.delete(
+            self.userapiclient,
+            id=self.userdata.userdata.id
+        )
+        self.cleanup.remove(self.userdata)

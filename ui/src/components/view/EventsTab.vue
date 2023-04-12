@@ -152,19 +152,15 @@ export default {
       for (var columnKey of this.columnKeys) {
         if (!this.selectedColumnKeys.includes(columnKey)) continue
         this.columns.push({
+          key: columnKey,
           title: this.$t('label.' + String(columnKey).toLowerCase()),
           dataIndex: columnKey,
-          slots: { customRender: columnKey },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
       }
-      this.columns.push({
-        dataIndex: 'dropdownFilter',
-        slots: {
-          filterDropdown: 'filterDropdown',
-          filterIcon: 'filterIcon'
-        }
-      })
+      if (this.columns.length > 0) {
+        this.columns[this.columns.length - 1].customFilterDropdown = true
+      }
     }
   }
 }

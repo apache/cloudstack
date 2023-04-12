@@ -796,7 +796,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("resourceType", resourceType.toString());
         }
 
-        sc.setParameters("archived", false);
+        if (id == null) {
+            sc.setParameters("archived", cmd.getArchived());
+        }
 
         Pair<List<EventJoinVO>, Integer> eventPair = null;
         // event_view will not have duplicate rows for each event, so
@@ -1168,11 +1170,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (keyword != null) {
             SearchCriteria<UserVmJoinVO> ssc = _userVmJoinDao.createSearchCriteria();
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            String likeKeyword = String.format("%%%s%%", keyword);
+            ssc.addOr("displayName", SearchCriteria.Op.LIKE, likeKeyword);
+            ssc.addOr("name", SearchCriteria.Op.LIKE, likeKeyword);
             if (isRootAdmin) {
-                ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+                ssc.addOr("instanceName", SearchCriteria.Op.LIKE, likeKeyword);
             }
+            ssc.addOr("ipAddress", SearchCriteria.Op.LIKE, likeKeyword);
+            ssc.addOr("publicIpAddress", SearchCriteria.Op.LIKE, likeKeyword);
+            ssc.addOr("ip6Address", SearchCriteria.Op.LIKE, likeKeyword);
             ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
         }
@@ -4459,6 +4465,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setLastServerStart(mgmt.getLastJvmStart());
         mgmtResponse.setLastServerStop(mgmt.getLastJvmStop());
         mgmtResponse.setLastBoot(mgmt.getLastSystemBoot());
+        mgmtResponse.setServiceIp(mgmt.getServiceIP());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }
