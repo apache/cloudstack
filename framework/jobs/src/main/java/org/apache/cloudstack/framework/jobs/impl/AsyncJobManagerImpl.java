@@ -61,6 +61,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.cluster.ClusterManagerListener;
 import org.apache.cloudstack.management.ManagementServerHost;
+
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.dao.SnapshotDao;
@@ -152,6 +153,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
 
+    private boolean asyncJobsEnabled = true;
+
     @Override
     public String getConfigComponentName() {
         return AsyncJobManager.class.getSimpleName();
@@ -194,12 +197,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return submitAsyncJob(job, false);
     }
 
+    private void checkShutdown() {
+        if (!isAsyncJobsEnabled()) {
+            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @DB
     public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext) {
+        checkShutdown();
+
         @SuppressWarnings("rawtypes")
         GenericDao dao = GenericDaoBase.getDao(job.getClass());
         job.setInitMsid(getMsid());
+        job.setExecutingMsid(getMsid());
         job.setSyncSource(null);        // no sync source originally
         dao.persist(job);
 
@@ -215,6 +227,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
+        checkShutdown();
+
         try {
             @SuppressWarnings("rawtypes")
             final GenericDao dao = GenericDaoBase.getDao(job.getClass());
@@ -824,6 +838,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             protected void reallyRun() {
                 try {
+                    if (!isAsyncJobsEnabled()) {
+                        s_logger.info("A shutdown has been triggered. Not executing any async job");
+                        return;
+                    }
+
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if (l != null && l.size() > 0) {
                         for (SyncQueueItemVO item : l) {
@@ -1167,5 +1186,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public long countPendingJobs(String havingInfo, String... cmds) {
         return _jobDao.countPendingJobs(havingInfo, cmds);
+    }
+
+    // Returns the number of pending jobs for the given Management server msids.
+    // NOTE: This is the msid and NOT the id
+    @Override
+    public long countPendingNonPseudoJobs(Long... msIds) {
+    return _jobDao.countPendingNonPseudoJobs(msIds);
+    }
+
+    @Override
+    public void enableAsyncJobs() {
+        this.asyncJobsEnabled = true;
+    }
+
+    @Override
+    public void disableAsyncJobs() {
+        this.asyncJobsEnabled = false;
+    }
+
+    @Override
+    public boolean isAsyncJobsEnabled() {
+        return asyncJobsEnabled;
     }
 }

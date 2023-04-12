@@ -84,6 +84,9 @@
               <a-tag v-if="resource.internetprotocol && ['IPv6', 'DualStack'].includes(resource.internetprotocol)">
                 {{ resource.internetprotocol ? $t('label.ip.v4.v6') : resource.internetprotocol }}
               </a-tag>
+              <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
+                {{ $t('label.archived') }}
+              </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
                   <span>{{ $t('label.view.console') }}</span>

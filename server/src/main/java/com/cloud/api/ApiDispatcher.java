@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -45,6 +46,7 @@ import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ApiDispatcher {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -63,6 +65,9 @@ public class ApiDispatcher {
 
     @Inject()
     protected DispatchChainFactory dispatchChainFactory;
+
+    @Inject
+    AsyncJobManagerImpl asyncJobManager;
 
     protected DispatchChain standardDispatchChain;
 
@@ -86,7 +91,11 @@ public class ApiDispatcher {
     }
 
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
-        asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
+        if (asyncJobManager.isAsyncJobsEnabled()) {
+            asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
+        } else {
+            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+        }
     }
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
