@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1471,7 +1470,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * @param owner account
      * @return a Pair of CPU and RAM
      */
-    private Pair<Long, Long> resolveCpuAndMemoryCount(ServiceOffering offering, ServiceOffering defaultRouterOffering, Account owner) {
+    public Pair<Long, Long> resolveCpuAndMemoryCount(ServiceOffering offering, ServiceOffering defaultRouterOffering, Account owner) {
         Integer cpuCount = 0;
         Integer memoryCount = 0;
         if (COUNT_ALL_VR_RESOURCES.equalsIgnoreCase(ResourceCountRoutersType.valueIn(owner.getDomainId()))) {
@@ -1501,7 +1500,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memoryCount);
             }
         } catch (ResourceAllocationException ex) {
-            throw new CloudRuntimeException(String.format("Unable to deploy/start routers due to {}.", ex.getMessage()));
+            throw new CloudRuntimeException(String.format("Unable to deploy/start routers due to %s.", ex.getMessage()));
         }
     }
 
@@ -1511,7 +1510,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * @param cpuMemoryCount a Pair of cpu and ram
      * @param owner the account
      */
-    private void calculateResourceCount(Pair<Long, Long> cpuMemoryCount, Account owner, boolean isIncrement) {
+    public void calculateResourceCount(Pair<Long, Long> cpuMemoryCount, Account owner, boolean isIncrement) {
         validateResourceCount(cpuMemoryCount, owner);
         final Long cpuCount = cpuMemoryCount.first();
         final Long memoryCount = cpuMemoryCount.second();
@@ -1555,7 +1554,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void incrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) {
         if (isDeployOrDestroy == Boolean.TRUE.equals(ResourceCountRunningVMsonly.value())) {
             return;
-        }
+        } //
 
         final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
         final Pair<Long, Long> cpuMemoryCount = resolveCpuAndMemoryCount(offering, defaultRouterOffering, owner);
@@ -1565,9 +1564,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      * Decrements the VR resource count.
      *
-     * @param offering VR service offering
-     * @param owner account
-     * @param isDeployOrDestroy true if router is being deployed/destroyed
+     * @param offering the service offering of the VR
+     * @param owner the account of the VR
+     * @param isDeployOrDestroy true if the VR is being deployed or destroyed, false if the VR is being started or stopped
      */
     @Override
     public void decrementVrResourceCount(ServiceOffering offering, Account owner, boolean isDeployOrDestroy) {
@@ -3671,13 +3670,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO vm = _vmDao.findById(vmId);
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         final List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
-        Collections.sort(nics, new Comparator<NicVO>() {
-            @Override
-            public int compare(NicVO nic1, NicVO nic2) {
-                Long nicId1 = Long.valueOf(nic1.getDeviceId());
-                Long nicId2 = Long.valueOf(nic2.getDeviceId());
-                return nicId1.compareTo(nicId2);
-            }
+        nics.sort((nic1, nic2) -> {
+            Long nicDevId1 = (long) nic1.getDeviceId();
+            Long nicDevId2 = (long) nic2.getDeviceId();
+            return nicDevId1.compareTo(nicDevId2);
         });
 
         for (final NicVO nic : nics) {

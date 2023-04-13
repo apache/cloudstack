@@ -602,7 +602,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (Boolean.TRUE.equals(VirtualMachineManager.ResourceCountRouters.valueIn(owner.getDomainId()))) {
             _itMgr.decrementVrResourceCount(routerOffering, owner,true);
         }
-    }
+    } // shouldDecrementIfTheDomainExists
 
     /**
      * Increment the resource count with router offering.

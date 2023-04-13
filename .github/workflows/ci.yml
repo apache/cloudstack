@@ -186,7 +186,8 @@ jobs:
                   component/test_vpc_offerings
                   component/test_vpc_routers
                   component/test_vpn_users",
-                "component/test_vpc_network_lbrules" ]
+                "component/test_vpc_network_lbrules",
+                "component/test_router_resources"]
 
     steps:
       - uses: actions/checkout@v3

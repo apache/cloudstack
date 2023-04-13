@@ -26,12 +26,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachineManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -40,7 +44,9 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkHelperImplTest {
@@ -53,9 +59,12 @@ public class NetworkHelperImplTest {
     @InjectMocks
     protected NetworkHelperImpl nwHelper = new NetworkHelperImpl();
 
+    @Mock
+    protected VirtualMachineManager _itMgr;
+
     @Test(expected=ResourceUnavailableException.class)
     public void testSendCommandsToRouterWrongRouterVersion()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -70,7 +79,7 @@ public class NetworkHelperImplTest {
 
     @Test
     public void testSendCommandsToRouter()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -108,7 +117,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithTrueResult()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -146,7 +155,7 @@ public class NetworkHelperImplTest {
      */
     @Test
     public void testSendCommandsToRouterWithNoAnswers()
-            throws AgentUnavailableException, OperationTimedoutException, ResourceUnavailableException {
+            throws OperationTimedoutException, ResourceUnavailableException {
         // Prepare
         NetworkHelperImpl nwHelperUT = spy(this.nwHelper);
         VirtualRouter vr = mock(VirtualRouter.class);
@@ -170,4 +179,53 @@ public class NetworkHelperImplTest {
         assertFalse(result);
     }
 
+    @Test
+    public void shouldIncrementIfTheDomainExists() throws NoSuchFieldException, IllegalAccessException {
+        Account owner = Mockito.mock(Account.class);
+        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+        when(owner.getDomainId()).thenReturn(1L);
+
+        overrideDefaultConfigValue(VirtualMachineManager.ResourceCountRouters, "true");
+        nwHelper.incrementVrResourceCount(owner, offering);
+        verify(_itMgr, times(1)).incrementVrResourceCount(offering, owner, true);
+    }
+
+    @Test
+    public void shouldDoNothingIfTheDomainDoNotExistsForIncrementVrResourceCount() throws NoSuchFieldException, IllegalAccessException {
+        Account owner = Mockito.mock(Account.class);
+        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+        when(owner.getDomainId()).thenReturn(999L);
+
+        overrideDefaultConfigValue(VirtualMachineManager.ResourceCountRouters, "false");
+        nwHelper.incrementVrResourceCount(owner, offering);
+        verify(_itMgr, times(0)).incrementVrResourceCount(offering, owner, true);
+    }
+
+    @Test
+    public void shouldDecrementIfTheDomainExists() throws NoSuchFieldException, IllegalAccessException {
+        Account owner = Mockito.mock(Account.class);
+        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+        when(owner.getDomainId()).thenReturn(1L);
+
+        overrideDefaultConfigValue(VirtualMachineManager.ResourceCountRouters, "true");
+        nwHelper.decrementVrResourceCount(owner, offering);
+        verify(_itMgr, times(1)).decrementVrResourceCount(offering, owner, true);
+    }
+
+    @Test
+    public void shouldDoNothingIfTheDomainDoNotExistsForDecrementVrResourceCount() throws NoSuchFieldException, IllegalAccessException {
+        Account owner = Mockito.mock(Account.class);
+        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+        when(owner.getDomainId()).thenReturn(999L);
+
+        overrideDefaultConfigValue(VirtualMachineManager.ResourceCountRouters, "false");
+        nwHelper.decrementVrResourceCount(owner, offering);
+        verify(_itMgr, times(0)).decrementVrResourceCount(offering, owner, true);
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(configKey, value);
+    }
 }
