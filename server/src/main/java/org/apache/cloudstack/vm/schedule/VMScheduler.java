@@ -21,11 +21,14 @@ package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.Scheduler;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.Date;
 import java.util.List;
 
 public interface VMScheduler extends Manager, Scheduler {
+    ConfigKey<Integer> VMScheduledJobExpireInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class, "vmscheduler.jobs.expire.interval", "30", "VM Snapshot expire interval in hours", true);
+
     void removeScheduledJobs(List<Long> vmScheduleIds);
 
     void updateScheduledJob(VMScheduleVO vmSchedule);

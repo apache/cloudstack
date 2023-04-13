@@ -130,7 +130,7 @@ public class VMScheduleVO implements VMSchedule {
     }
 
     public String getSchedule() {
-        return schedule;
+        return schedule.substring(2);
     }
 
     public void setSchedule(String schedule) {

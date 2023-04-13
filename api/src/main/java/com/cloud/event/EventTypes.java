@@ -111,6 +111,16 @@ public class EventTypes {
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
 
+    // VM Schedule
+    public static final String EVENT_VM_SCHEDULE_CREATE = "VM.SCHEDULE.CREATE";
+    public static final String EVENT_VM_SCHEDULE_UPDATE = "VM.SCHEDULE.UPDATE";
+    public static final String EVENT_VM_SCHEDULE_DELETE = "VM.SCHEDULE.DELETE";
+
+    public static final String EVENT_VM_SCHEDULE_SCHEDULED = "VM.SCHEDULE.SCHEDULED";
+    public static final String EVENT_VM_SCHEDULE_EXECUTE = "VM.SCHEDULE.EXECUTE";
+    public static final String EVENT_VM_SCHEDULE_SKIPPED = "VM.SCHEDULE.SKIPPED";
+
+
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
     public static final String EVENT_ROUTER_DESTROY = "ROUTER.DESTROY";

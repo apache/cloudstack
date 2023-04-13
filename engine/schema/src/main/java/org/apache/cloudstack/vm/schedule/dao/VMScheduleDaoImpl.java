@@ -35,6 +35,7 @@ public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implem
 
     @Override
     public List<VMScheduleVO> listAllActiveSchedules() {
+        // TODO: Add check for time zone here.
         // WHERE enabled = true AND (end_date IS NULL OR end_date < current_date)
         SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
         sb.and("enabled", sb.entity().getEnabled(), SearchCriteria.Op.EQ);

@@ -43,29 +43,11 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
         return listBy(sc, null);
     }
 
-    @Override
-    public List<VMScheduledJobVO> listAllExpiredPendingJobs() {
-        // Conditions/Checks:
-        // scheduled_timestamp < current timestamp
-        // asyncJobId is NULL
-        SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
-        sb.and("async_job_id", sb.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
-        sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.LT);
-
-        SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("scheduled_timestamp", new Date());
-
-        // TODO: Should we take a lock here? To ensure that something bad doesn't happen.
-        return search(sc, null);
-    }
-
     /**
-     * @param currentTimestamp
-     * @return
+     * Execution of job wouldn't be at exact seconds. So, we round off and then execute. Should we use truncate or round off here?
      */
     @Override
-    public List<VMScheduledJobVO> getSchedulesToExecute(Date currentTimestamp) {
-        // Execution of job wouldn't be at exact seconds. So, we round off and then execute. Should we use truncate or round off here?
+    public List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp) {
         Date truncatedTs = DateUtils.round(currentTimestamp, Calendar.MINUTE);
         SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
         sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.EQ);
@@ -73,7 +55,7 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
 
         SearchCriteria<VMScheduledJobVO> sc = sb.create();
         sc.setParameters("scheduled_timestamp", truncatedTs);
-        Filter filter = new Filter(VMScheduledJobVO.class, "vm_schedule_id", true, null,null);
+        Filter filter = new Filter(VMScheduledJobVO.class, "vmScheduleId", true, null,null);
         return search(sc, filter);
     }
 }

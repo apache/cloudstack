@@ -34,5 +34,7 @@ public interface VMScheduleManager {
 
     VMSchedule updateSchedule(UpdateVMScheduleCmd updateVMScheduleCmd);
 
+    long removeScheduleByVmId(long vmId, boolean expunge);
+
     long removeSchedule(DeleteVMScheduleCmd deleteVMScheduleCmd);
 }

@@ -27,7 +27,5 @@ import java.util.List;
 public interface VMScheduledJobDao extends GenericDao<VMScheduledJobVO, Long> {
     List<VMScheduledJobVO> findByVm(Long vmId);
 
-    List<VMScheduledJobVO> listAllExpiredPendingJobs();
-
-    List<VMScheduledJobVO> getSchedulesToExecute(Date currentTimestamp);
+    List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp);
 }

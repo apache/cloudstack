@@ -31,6 +31,7 @@ import java.time.format.DateTimeParseException;
 import java.time.OffsetDateTime;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.springframework.scheduling.support.CronExpression;
 
 public class DateUtil {
     public static final int HOURS_IN_A_MONTH = 30 * 24;
@@ -294,5 +295,14 @@ public class DateUtil {
 
         return (dateCalendar1.getTimeInMillis() - dateCalendar2.getTimeInMillis() )/1000;
 
+    }
+
+    public static CronExpression parseSchedule(String schedule) {
+        if (schedule != null) {
+            // CronExpression's granularity is in seconds. Prepending "0 " to change the granularity to minutes.
+            return CronExpression.parse(String.format("0 %s", schedule));
+        } else {
+            return null;
+        }
     }
 }
