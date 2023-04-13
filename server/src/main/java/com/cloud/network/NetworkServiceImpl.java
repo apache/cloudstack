@@ -1672,7 +1672,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
-    private void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
+    void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
         String sourceNatIp = cmd.getSourceNatIP();
         if (sourceNatIp == null) {
             s_logger.debug(String.format("no source nat ip given for create network %s command, using something arbitrary.", cmd.getNetworkName()));
