@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
@@ -1077,12 +1078,17 @@ public class ConfigurationManagerTest {
     @Test
     public void updateDiskOfferingTagsWithPrimaryStorageWithCorrectTagsTestSuccess(){
         String tags = "tag1,tag2";
-        List<String> storageTagsWithCorrectTags = new ArrayList<>(Arrays.asList("tag1","tag2"));
         List<StoragePoolVO> pools = new ArrayList<>(Arrays.asList(storagePoolVO));
         List<VolumeVO> volumes = new ArrayList<>(Arrays.asList(volumeVO));
 
+        StoragePoolTagVO poolTagMock1 = Mockito.mock(StoragePoolTagVO.class);
+        StoragePoolTagVO poolTagMock2 = Mockito.mock(StoragePoolTagVO.class);
+        List<StoragePoolTagVO> poolTags = List.of(poolTagMock1, poolTagMock2);
+        Mockito.doReturn("tag1").when(poolTagMock1).getTag();
+        Mockito.doReturn("tag2").when(poolTagMock2).getTag();
+
         Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
-        Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsWithCorrectTags);
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(anyLong())).thenReturn(poolTags);
         Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
 

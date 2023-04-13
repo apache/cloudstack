@@ -810,6 +810,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("hypervisorType", hypervisorType);
         params.put("url", cmd.getUrl());
         params.put("tags", cmd.getTags());
+        params.put("isTagARule", cmd.isTagARule());
         params.put("name", cmd.getStoragePoolName());
         params.put("details", details);
         params.put("providerName", storeProvider.getName());
@@ -912,10 +913,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (pool.getPoolType() == StoragePoolType.DatastoreCluster) {
                 List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
                 for (StoragePoolVO childPool : childStoragePools) {
-                    _storagePoolTagsDao.persist(childPool.getId(), storagePoolTags);
+                    _storagePoolTagsDao.persist(childPool.getId(), storagePoolTags, cmd.isTagARule());
                 }
             }
-            _storagePoolTagsDao.persist(pool.getId(), storagePoolTags);
+            _storagePoolTagsDao.persist(pool.getId(), storagePoolTags, cmd.isTagARule());
         }
 
         Long updatedCapacityBytes = null;
@@ -1823,7 +1824,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     public void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId) {
         StoragePoolVO datastoreClusterPool = _storagePoolDao.findById(datastoreClusterPoolId);
-        List<String> storageTags = _storagePoolTagsDao.getStoragePoolTags(datastoreClusterPoolId);
+        List<StoragePoolTagVO> storageTags = _storagePoolTagsDao.findStoragePoolTags(datastoreClusterPoolId);
         List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterPoolId);
         Set<String> childDatastoreUUIDs = new HashSet<>();
         for (StoragePoolVO childDatastore : childDatastores) {
@@ -1851,18 +1852,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     dataStoreVO.setParent(datastoreClusterPoolId);
                     _storagePoolDao.update(dataStoreVO.getId(), dataStoreVO);
                     if (CollectionUtils.isNotEmpty(storageTags)) {
-                        storageTags.addAll(_storagePoolTagsDao.getStoragePoolTags(dataStoreVO.getId()));
+                        storageTags.addAll(_storagePoolTagsDao.findStoragePoolTags(dataStoreVO.getId()));
                     } else {
-                        storageTags = _storagePoolTagsDao.getStoragePoolTags(dataStoreVO.getId());
+                        storageTags = _storagePoolTagsDao.findStoragePoolTags(dataStoreVO.getId());
                     }
                     if (CollectionUtils.isNotEmpty(storageTags)) {
-                        Set<String> set = new LinkedHashSet<>(storageTags);
+                        Set<StoragePoolTagVO> set = new LinkedHashSet<>(storageTags);
                         storageTags.clear();
                         storageTags.addAll(set);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Updating Storage Pool Tags to :" + storageTags);
                         }
-                        _storagePoolTagsDao.persist(dataStoreVO.getId(), storageTags);
+                        _storagePoolTagsDao.persist(storageTags);
                     }
                 } else {
                     // This is to find datastores which are removed from datastore cluster.
@@ -1870,7 +1871,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     childDatastoreUUIDs.remove(dataStoreVO.getUuid());
                 }
             } else {
-                dataStoreVO = createChildDatastoreVO(datastoreClusterPool, childDataStoreAnswer);
+                dataStoreVO = createChildDatastoreVO(datastoreClusterPool, childDataStoreAnswer, storageTags);
             }
             updateStoragePoolHostVOAndBytes(dataStoreVO, hostId, childDataStoreAnswer);
         }
@@ -1911,9 +1912,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    private StoragePoolVO createChildDatastoreVO(StoragePoolVO datastoreClusterPool, ModifyStoragePoolAnswer childDataStoreAnswer) {
+    private StoragePoolVO createChildDatastoreVO(StoragePoolVO datastoreClusterPool, ModifyStoragePoolAnswer childDataStoreAnswer, List<StoragePoolTagVO> storagePoolTagVOList) {
         StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-        List<String> storageTags = _storagePoolTagsDao.getStoragePoolTags(datastoreClusterPool.getId());
 
         StoragePoolVO dataStoreVO = new StoragePoolVO();
         dataStoreVO.setStorageProviderName(datastoreClusterPool.getStorageProviderName());
@@ -1940,7 +1940,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
             details.put("pool_type", childDataStoreAnswer.getPoolType());
         }
-        _storagePoolDao.persist(dataStoreVO, details, storageTags);
+
+        List<String> storagePoolTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(storagePoolTagVOList)) {
+            storagePoolTags = storagePoolTagVOList.parallelStream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
+            isTagARule = storagePoolTagVOList.get(0).isTagARule();
+        }
+
+        _storagePoolDao.persist(dataStoreVO, details, storagePoolTags, isTagARule);
         return dataStoreVO;
     }
 

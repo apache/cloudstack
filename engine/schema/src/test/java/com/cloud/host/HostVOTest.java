@@ -19,6 +19,8 @@ package com.cloud.host;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.vm.VirtualMachine;
 import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -47,15 +49,36 @@ public class HostVOTest {
 
     @Test
     public void testRightTag() {
-        host.setHostTags(Arrays.asList("tag1","tag2"));
+        host.setHostTags(Arrays.asList("tag1","tag2"), false);
         offering.setHostTag("tag2,tag1");
         assertTrue(host.checkHostServiceOfferingTags(offering));
     }
 
     @Test
     public void testWrongTag() {
-        host.setHostTags(Arrays.asList("tag1","tag2"));
+        host.setHostTags(Arrays.asList("tag1","tag2"), false);
         offering.setHostTag("tag2,tag4");
+        assertFalse(host.checkHostServiceOfferingTags(offering));
+    }
+
+    @Test
+    public void checkHostServiceOfferingTagsTestRuleTagWithServiceTagThatMatches() {
+        host.setHostTags(List.of("tags[0] == 'A'"), true);
+        offering.setHostTag("A");
+        assertTrue(host.checkHostServiceOfferingTags(offering));
+    }
+
+    @Test
+    public void checkHostServiceOfferingTagsTestRuleTagWithServiceTagThatDoesNotMatch() {
+        host.setHostTags(List.of("tags[0] == 'A'"), true);
+        offering.setHostTag("B");
+        assertFalse(host.checkHostServiceOfferingTags(offering));
+    }
+
+    @Test
+    public void checkHostServiceOfferingTagsTestRuleTagWithNullServiceTag() {
+        host.setHostTags(List.of("tags[0] == 'A'"), true);
+        offering.setHostTag(null);
         assertFalse(host.checkHostServiceOfferingTags(offering));
     }
 }

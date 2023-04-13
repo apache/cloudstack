@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.CapacityVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -521,6 +522,12 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     private void removeClustersWithoutMatchingTag(List<Long> clusterListForVmAllocation, String hostTagOnOffering) {
 
         List<Long> matchingClusters = hostDao.listClustersByHostTag(hostTagOnOffering);
+        matchingClusters.addAll(hostDao.findClustersThatMatchHostTagRule(hostTagOnOffering));
+
+        if (matchingClusters.isEmpty()) {
+            s_logger.error(String.format("No suitable host found for the following compute offering tags [%s].", hostTagOnOffering));
+            throw new CloudRuntimeException("No suitable host found.");
+        }
 
         clusterListForVmAllocation.retainAll(matchingClusters);
 

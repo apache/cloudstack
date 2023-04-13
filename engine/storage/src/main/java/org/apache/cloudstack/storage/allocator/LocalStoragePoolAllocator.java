@@ -100,7 +100,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 return null;
             }
             List<StoragePoolVO> availablePools =
-                storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
+                storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags(), true);
+            availablePools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST, List.of(dskCh.getTags())));
             for (StoragePoolVO pool : availablePools) {
                 if (suitablePools.size() == returnUpTo) {
                     break;
@@ -114,7 +115,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
 
             // add remaining pools in cluster to the 'avoid' set which did not match tags
-            List<StoragePoolVO> allPools = storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null);
+            List<StoragePoolVO> allPools = storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null, false);
             allPools.removeAll(availablePools);
             for (StoragePoolVO pool : allPools) {
                 avoid.addPool(pool.getId());

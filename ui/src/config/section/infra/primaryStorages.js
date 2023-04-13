@@ -75,7 +75,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'tags', 'capacitybytes', 'capacityiops']
+      args: ['name', 'tags', 'istagarule', 'capacitybytes', 'capacityiops']
     },
     {
       api: 'updateStoragePool',

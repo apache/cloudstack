@@ -69,6 +69,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
         NexentaUtil.NexentaPluginParameters params = NexentaUtil.parseNexentaPluginUrl(url);
         DataCenterVO zone = zoneDao.findById(zoneId);
@@ -98,6 +99,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(Hypervisor.HypervisorType.Any);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
 
         details.put(NexentaUtil.NMS_URL, params.getNmsUrl().toString());
 
