@@ -267,7 +267,6 @@
     </a-modal>
 
     <a-modal
-      :title="$t('label.configure.sticky.policy')"
       :visible="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
@@ -275,6 +274,16 @@
       :closable="true"
       :okButtonProps="{ props: {htmlType: 'submit'}}"
       @cancel="stickinessModalVisible = false">
+
+      <template #title>
+        <span>{{ $t('label.configure.sticky.policy') }}</span>
+        <a
+          style="margin-left: 5px"
+          :href="$config.docBase + '/adminguide/networking/external_firewalls_and_load_balancers.html#sticky-session-policies-for-load-balancer-rules'"
+          target="_blank">
+          <question-circle-outlined />
+        </a>
+      </template>
 
       <span v-show="stickinessModalLoading" class="modal-loading">
         <loading-outlined />
