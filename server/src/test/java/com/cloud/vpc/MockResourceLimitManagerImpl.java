@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.user.ResourceReservation;
 import org.springframework.stereotype.Component;
@@ -178,6 +179,11 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
         throw new CloudRuntimeException("no reservation implemented for mock resource management.");
     }
 
+    @Override
+    public ServiceOffering getServiceOfferingByConfig() {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.utils.component.Manager#configure(java.lang.String, java.util.Map)
      */
@@ -213,5 +219,4 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
         // TODO Auto-generated method stub
         return null;
     }
-
 }

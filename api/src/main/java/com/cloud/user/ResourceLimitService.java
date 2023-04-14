@@ -23,6 +23,7 @@ import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.user.ResourceReservation;
 
@@ -210,4 +211,10 @@ public interface ResourceLimitService {
      */
     ResourceReservation getReservation(Account account, Boolean displayResource, ResourceType type, Long delta) throws ResourceAllocationException;
 
+    /**
+     * Returns the service offering by the given configuration.
+     *
+     * @return the service offering found or null if not found
+     */
+    ServiceOffering getServiceOfferingByConfig();
 }

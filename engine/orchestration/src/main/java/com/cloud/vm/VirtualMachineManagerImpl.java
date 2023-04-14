@@ -47,7 +47,6 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -1466,26 +1465,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Returns the service offering by the given configuration.
-     *
-     * @return the service offering found or null if not found
-     */
-    public ServiceOffering getServiceOfferingByConfig() {
-        ServiceOffering defaultRouterOffering = null;
-        final String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
-
-        if (globalRouterOffering != null) {
-            defaultRouterOffering = _serviceOfferingDao.findByUuid(globalRouterOffering);
-        }
-
-        if (defaultRouterOffering == null) {
-            defaultRouterOffering =  _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
-        }
-
-        return defaultRouterOffering;
-    }
-
-    /**
      * Counts VR resources for the domain if global setting is true.
      * If the value is "all", counts all VR resources, otherwise get the difference between
      * current VR offering and default VR offering.
@@ -1581,7 +1560,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         } //
 
-        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
+        final ServiceOffering defaultRouterOffering = _resourceLimitMgr.getServiceOfferingByConfig();
         final Pair<Long, Long> cpuMemoryCount = resolveCpuAndMemoryCount(offering, defaultRouterOffering, owner);
         calculateResourceCount(cpuMemoryCount, owner, true);
     }
@@ -1599,7 +1578,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
 
-        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
+        final ServiceOffering defaultRouterOffering = _resourceLimitMgr.getServiceOfferingByConfig();
         final Pair<Long, Long> cpuMemoryCount = resolveCpuAndMemoryCount(offering, defaultRouterOffering, owner);
         calculateResourceCount(cpuMemoryCount, owner, false);
     }

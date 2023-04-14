@@ -1012,15 +1012,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         boolean hasCpus = false;
         final Account owner = _accountDao.findById(accountId);
         final DomainVO domain = _domainDao.findById(owner.getDomainId());
-
-        ServiceOffering defaultRouterOffering = null;
-        String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
-        if (globalRouterOffering != null) {
-            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
-        }
-        if (defaultRouterOffering == null) {
-            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
-        }
+        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
 
         GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
         cpuSearch.select("sum", Func.SUM, cpuSearch.entity().getCpu());
@@ -1096,16 +1088,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public Pair<Boolean, Long> calculateMemoryTotalByAccountId(long accountId) {
         long ramtotal = 0;
         boolean hasMemory = false;
-        Account owner = _accountDao.findById(accountId);
-        DomainVO domain = _domainDao.findById(owner.getDomainId());
-        ServiceOffering defaultRouterOffering = null;
-        String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
-        if (globalRouterOffering != null) {
-            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
-        }
-        if (defaultRouterOffering == null) {
-            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
-        }
+        final Account owner = _accountDao.findById(accountId);
+        final DomainVO domain = _domainDao.findById(owner.getDomainId());
+        final ServiceOffering defaultRouterOffering = getServiceOfferingByConfig();
+
         GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = serviceOfferingDao.createSearchBuilder(SumCount.class);
         memorySearch.select("sum", Func.SUM, memorySearch.entity().getRamSize());
         memorySearch.select("count", Func.COUNT, null);
@@ -1220,6 +1206,26 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (isDisplayFlagOn(displayResource)) {
             decrementResourceCount(accountId, type, delta);
         }
+    }
+
+    /**
+     * Returns the service offering by the given configuration.
+     *
+     * @return the service offering found or null if not found
+     */
+    public ServiceOffering getServiceOfferingByConfig() {
+        ServiceOffering defaultRouterOffering = null;
+        final String globalRouterOffering = VirtualNetworkApplianceManager.VirtualRouterServiceOffering.value();
+
+        if (globalRouterOffering != null) {
+            defaultRouterOffering = serviceOfferingDao.findByUuid(globalRouterOffering);
+        }
+
+        if (defaultRouterOffering == null) {
+            defaultRouterOffering =  serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
+        }
+
+        return defaultRouterOffering;
     }
 
     @Override
