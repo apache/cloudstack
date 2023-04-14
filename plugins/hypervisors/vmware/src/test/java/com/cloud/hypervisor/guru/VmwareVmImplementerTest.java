@@ -154,6 +154,7 @@ public class VmwareVmImplementerTest {
         verifyGetParentVersion("6.7.3", "6.7.3");
         verifyGetParentVersion("7.0.3.0", "7.0.3");
         verifyGetParentVersion("8.0", null);
+        verifyGetParentVersion("8.0.0", "8.0");
         verifyGetParentVersion("8.0.0.2", "8.0");
         verifyGetParentVersion("8.0.1.0", "8.0.1");
     }
