@@ -833,12 +833,12 @@ public class NetworkServiceImplTest {
         String routerIPv6 = "fd17:ac56:1234:2001::1";
         NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
         when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
-        boolean passing = false;
+        boolean passing = true;
         try {
             service.validateSharedNetworkRouterIPs(IP4_GATEWAY, null, null, IP4_NETMASK, routerIPv4, routerIPv6, null, null, IP6_CIDR, ntwkOff);
+            passing = false;
         } catch (CloudRuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Router IPv6 address provided is not with the network range"));
-            passing = true;
         }
         Assert.assertTrue(passing);
     }
