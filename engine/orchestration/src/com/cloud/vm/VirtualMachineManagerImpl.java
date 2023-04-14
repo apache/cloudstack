@@ -951,6 +951,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User caller = cctxt.getCallingUser();
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
+        vm.setDetails(details);
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 

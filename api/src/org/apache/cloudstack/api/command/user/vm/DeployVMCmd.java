@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.user.Account;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -244,6 +246,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         }
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
+        }
+        Account account = CallContext.current().getCallingAccount();
+        if (!_accountService.isRootAdmin(account.getId()) && (customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_STORAGE_POOL) || customparameterMap.containsKey(VmDetailConstants.DATA_DISK_STORAGE_POOL))) {
+            throw new InvalidParameterValueException("Only root admins can specify the storage pool for a volume");
         }
         return customparameterMap;
     }
