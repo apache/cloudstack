@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.network.NetworkService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -43,10 +43,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -191,12 +191,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID,
-            type = CommandType.UUID,
-            description = "IPV4 address to be assigned to the public interface of the network router.",
-            since = "4.19")
-    private Long sourceNatIpUuid;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -282,10 +276,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
-    }
-
-    public long getSourceNatIpId() {
-        return sourceNatIpUuid;
     }
 
     @Override

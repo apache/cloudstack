@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.FirewallRulesDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -292,6 +291,7 @@ import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;

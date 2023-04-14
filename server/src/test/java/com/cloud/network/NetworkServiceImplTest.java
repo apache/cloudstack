@@ -876,7 +876,6 @@ public class NetworkServiceImplTest {
     @Test
     public void checkAndDontSetSourceNatIp() {
         CreateNetworkCmd cmd = new CreateNetworkCmd();
-        String srcNatIp = "10.100.1000.1";
         try {
             service.checkAndSetRouterSourceNatIp(account, cmd, null);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
@@ -901,7 +900,7 @@ public class NetworkServiceImplTest {
         when(networkVO.getId()).thenReturn(networkId);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
         when(networkDao.findById(networkId)).thenReturn(networkVO);
-        when(entityMgr.findById(eq(NetworkOffering.class), eq(networkOfferingId))).thenReturn(ntwkOff);
+        when(entityMgr.findById(NetworkOffering.class, networkOfferingId)).thenReturn(ntwkOff);
         when(entityMgr.findById(eq(DataCenter.class), anyLong())).thenReturn(dc);
         when(ipAddress.getId()).thenReturn(5l);
         when(networkVO.getId()).thenReturn(networkId);

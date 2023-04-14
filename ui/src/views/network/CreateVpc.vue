@@ -163,14 +163,6 @@
             v-model:value="form.sourcenatipaddress"
             :placeholder="apiParams.sourcenatipaddress.description"/>
         </a-form-item>
-        <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat" name="sourcenatipaddressid" ref="sourcenatipaddressid">
-          <template #label>
-            <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddressid.description"/>
-          </template>
-          <a-input
-            v-model:value="form.sourcenatipaddress"
-            :placeholder="apiParams.sourcenatipaddress.description"/>
-        </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
             <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>

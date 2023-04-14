@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -35,7 +36,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 
 public interface VpcService {
 

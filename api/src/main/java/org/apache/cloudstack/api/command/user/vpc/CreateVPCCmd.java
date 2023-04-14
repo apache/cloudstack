@@ -116,9 +116,6 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.SOURCE_NAT_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the network router.", since = "4.19")
     private String sourceNatIP;
 
-    @Parameter(name = ApiConstants.SOURCE_NAT_IP_ID, type = CommandType.UUID, description = "IPV4 address to be assigned to the public interface of the network router.", since = "4.19")
-    private Long sourceNatIpUuid;
-
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -189,10 +186,6 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
-    }
-
-    public Long getSourceNatIPId() {
-        return sourceNatIpUuid;
     }
 
     /////////////////////////////////////////////////////
