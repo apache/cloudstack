@@ -40,6 +40,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
@@ -69,6 +70,11 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 
     @Override
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
+        throw new CloudRuntimeException("Baremetal doesn't support ISO template");
+    }
+
+    @Override
+    public TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException {
         throw new CloudRuntimeException("Baremetal doesn't support ISO template");
     }
 

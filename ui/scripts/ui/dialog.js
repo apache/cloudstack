@@ -753,7 +753,16 @@
                                             $form.find('.loading-overlay').remove();
                                             $('div.loading-overlay').remove();
 
-                                            cloudStack.dialog.error({ message: msg });
+                                            if (!msg) {
+                                                msg = "Failed to upload file due to system misconfiguration. Please contact admin.";
+                                            }
+                                            cloudStack.dialog.notice({ message: msg });
+
+                                            $('.tooltip-box').remove();
+                                            $formContainer.remove();
+                                            $(this).dialog('destroy');
+
+                                            $('.hovered-elem').hide();
                                         }
                                     }
                                 };
