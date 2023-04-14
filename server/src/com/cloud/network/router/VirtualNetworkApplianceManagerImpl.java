@@ -1255,7 +1255,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         final String alerts[] = answer.getAlerts();
                         if (alerts != null) {
                             final String lastAlertTimeStamp = answer.getTimeStamp();
-                            final SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                            final SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                             sdfrmt.setLenient(false);
                             try {
                                 sdfrmt.parse(lastAlertTimeStamp);
