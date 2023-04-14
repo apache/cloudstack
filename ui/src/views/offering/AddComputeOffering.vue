@@ -51,12 +51,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.systemvmtype.description">
-            <a-select-option key="domainrouter">{{ $t('label.domain.router') }}</a-select-option>
-            <a-select-option key="consoleproxy">{{ $t('label.console.proxy') }}</a-select-option>
-            <a-select-option key="secondarystoragevm">{{ $t('label.secondary.storage.vm') }}</a-select-option>
+            <a-select-option key="domainrouter" :label="$t('label.domain.router')">{{ $t('label.domain.router') }}</a-select-option>
+            <a-select-option key="consoleproxy" :label="$t('label.console.proxy')">{{ $t('label.console.proxy') }}</a-select-option>
+            <a-select-option key="secondarystoragevm" :label="$t('label.secondary.storage.vm')">{{ $t('label.secondary.storage.vm') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="offeringtype" ref="offeringtype" :label="$t('label.offeringtype')" v-show="!isSystem">
@@ -218,12 +218,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="deploymentPlannerLoading"
             :placeholder="apiParams.deploymentplanner.description"
             @change="val => { handleDeploymentPlannerChange(val) }">
-            <a-select-option v-for="(opt) in deploymentPlanners" :key="opt.name">
+            <a-select-option v-for="(opt) in deploymentPlanners" :key="opt.name" :label="opt.name || opt.description || ''">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -259,10 +259,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.vgputype')">
-            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex" :label="opt">
               {{ opt }}
             </a-select-option>
           </a-select>
@@ -331,9 +331,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="policy in storagePolicies" :key="policy.id">
+            <a-select-option v-for="policy in storagePolicies" :key="policy.id" :label="policy.name || policy.id || ''">
               {{ policy.name || policy.id }}
             </a-select-option>
           </a-select>
@@ -516,9 +516,9 @@
                     mode="tags"
                     v-model:value="form.storagetags"
                     showSearch
-                    optionFilterProp="label"
+                    optionFilterProp="value"
                     :filterOption="(input, option) => {
-                      return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="storageTagLoading"
                     :placeholder="apiParams.tags.description"
@@ -707,7 +707,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         cpunumber: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
