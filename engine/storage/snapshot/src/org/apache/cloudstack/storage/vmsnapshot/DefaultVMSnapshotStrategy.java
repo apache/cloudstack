@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
@@ -70,7 +72,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshotStrategy {
+public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshotStrategy, Configurable {
     private static final Logger s_logger = Logger.getLogger(DefaultVMSnapshotStrategy.class);
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
@@ -94,11 +96,22 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     @Inject
     HostDao hostDao;
 
+    public static final ConfigKey<Integer> DeleteTimeout = new ConfigKey<Integer>(Integer.class, "vmsnapshot.delete.wait", "Advanced", "1800",
+            "In seconds, timeout for delete of vm snapshot", false, ConfigKey.Scope.Global, null);
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         String value = configurationDao.getValue("vmsnapshot.create.wait");
         _wait = NumbersUtil.parseInt(value, 1800);
         return true;
+    }
+
+    public String getConfigComponentName() {
+        return DefaultVMSnapshotStrategy.class.getSimpleName();
+    }
+
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {DeleteTimeout};
     }
 
     @Override
@@ -212,6 +225,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                     vmSnapshot.getCurrent(), parent, true);
             GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
             DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+            deleteSnapshotCommand.setWait(DeleteTimeout.value());
 
             Answer answer = agentMgr.send(hostId, deleteSnapshotCommand);
 
