@@ -251,7 +251,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     @Override
-    public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)
+    public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner, boolean isForMigration)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
         ServiceOffering offering = vmProfile.getServiceOffering();
@@ -275,7 +275,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
-        _clusterDrainingManager.addDrainingToAvoids(dc, avoids);
+        if (!isForMigration) {
+            _clusterDrainingManager.addDrainingToAvoids(dc, avoids);
+        }
 
         if (plan.getHostId() != null && haVmTag == null) {
             Long hostIdSpecified = plan.getHostId();
@@ -1046,7 +1048,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (Long clusterId : clusterList) {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
 
-            if (clusterVO.getAllocationState() == Grouping.AllocationState.Disabled) {
+            if (clusterVO.getAllocationState() == Grouping.AllocationState.Disabled && !_clusterDrainingManager.isClusterDraining(clusterVO)) {
                 s_logger.debug("Cannot deploy in disabled cluster " + clusterId + ", skipping this cluster");
                 avoid.addCluster(clusterVO.getId());
             }
