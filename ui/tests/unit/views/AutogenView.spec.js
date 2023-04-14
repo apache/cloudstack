@@ -926,7 +926,7 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(router.currentRoute.value.path).toEqual('/role')
-        expect(router.currentRoute.value.query).toEqual({ name: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
+        expect(router.currentRoute.value.query).toEqual({ keyword: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
         done()
       })
 

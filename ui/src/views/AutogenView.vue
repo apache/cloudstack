@@ -1433,13 +1433,13 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateAccount'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'networkdomain'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1636,9 +1636,7 @@ export default {
         if ('searchQuery' in opts) {
           const value = opts.searchQuery
           if (value && value.length > 0) {
-            if (this.$route.name === 'role') {
-              query.name = value
-            } else if (this.$route.name === 'quotaemailtemplate') {
+            if (this.$route.name === 'quotaemailtemplate') {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
