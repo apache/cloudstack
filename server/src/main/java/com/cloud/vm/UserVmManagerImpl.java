@@ -649,7 +649,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
-    private static final ConfigKey<Integer> MigrateRetry = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry", "10",
+    private static final ConfigKey<Integer> MigrateRetry = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry", "1",
             "Number of times to retry migrating a user vm", true, ConfigKey.Scope.Cluster);
 
     private static final ConfigKey<Integer> MigrateRetryDelay = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry.delay", "5",
