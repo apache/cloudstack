@@ -2744,6 +2744,7 @@
 "message.linstor.resourcegroup.description": "Linstor resource group to use for primary storage.",
 "message.listnsp.not.return.providerid": "error: listNetworkServiceProviders API doesn't return VirtualRouter provider ID.",
 "message.load.host.failed": "Failed to load hosts.",
+"message.loadbalancer.stickypolicy.configuration": "Customize the load balancer stickiness policy:",
 "message.loading.add.interface.static.route": "Adding interface Static Route...",
 "message.loading.add.network.static.route": "Adding network Static Route...",
 "message.loading.add.policy.rule": "Adding Policy rule...",
