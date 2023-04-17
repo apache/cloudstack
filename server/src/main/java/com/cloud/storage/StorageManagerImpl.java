@@ -1889,7 +1889,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return _storagePoolDao.findByUuid(uuid);
     }
 
-    private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
+    public void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
@@ -1904,8 +1904,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (dataStoreVO != null && !dataStoreVO.getStatus().equals(StoragePoolStatus.Up)) {
-                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not ready for syncing, " +
-                        "as the status is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
+                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not in Up state, " +
+                        "current state is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
                 throw new CloudRuntimeException(msg);
             }
         }
