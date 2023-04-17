@@ -149,6 +149,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         vmType = offering.getSystemVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
+        diskOfferingStrictness = offering.diskOfferingStrictness;
     }
 
     @Override
