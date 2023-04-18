@@ -1584,6 +1584,8 @@ export default {
       } else if (['host'].includes(this.$route.name)) {
         if (filter === 'all') {
           delete query.resourcestate
+        } else if (['up', 'down', 'alert'].includes(filter)) {
+          query.state = filter
         } else {
           query.resourcestate = filter
         }
