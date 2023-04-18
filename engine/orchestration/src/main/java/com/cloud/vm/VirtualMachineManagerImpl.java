@@ -5739,8 +5739,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<>(clusterId, hostId);
     }
 
-    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
-        Long hostId = vm.getHostId();
+    @Override
+    public Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm, boolean skipCurrentHostForStartingVm) {
+        Long hostId = null;
+        if (!skipCurrentHostForStartingVm || !State.Starting.equals(vm.getState())) {
+            hostId = vm.getHostId();
+        }
         Long clusterId = null;
         if(hostId == null) {
             hostId = vm.getLastHostId();
@@ -5756,6 +5760,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             clusterId = host.getClusterId();
         }
         return new Pair<>(clusterId, hostId);
+    }
+
+    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
+        return findClusterAndHostIdForVm(vm, false);
     }
 
     @Override
