@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import io.netty.handler.codec.DecoderException;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +40,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
@@ -130,22 +130,16 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 long contentLength = 0;
 
                 for (Entry<String, String> entry : request.headers()) {
-                    switch (entry.getKey()) {
-                        case HEADER_SIGNATURE:
-                            signature = entry.getValue();
-                            break;
-                        case HEADER_METADATA:
-                            metadata = entry.getValue();
-                            break;
-                        case HEADER_EXPIRES:
-                            expires = entry.getValue();
-                            break;
-                        case HEADER_HOST:
-                            hostname = entry.getValue();
-                            break;
-                        case HttpHeaders.Names.CONTENT_LENGTH:
-                            contentLength = Long.parseLong(entry.getValue());
-                            break;
+                    if (HEADER_SIGNATURE.equalsIgnoreCase(entry.getKey())) {
+                        signature = entry.getValue();
+                    } else if (HEADER_METADATA.equalsIgnoreCase(entry.getKey())) {
+                        metadata = entry.getValue();
+                    } else if (HEADER_EXPIRES.equalsIgnoreCase(entry.getKey())) {
+                        expires = entry.getValue();
+                    } else if (HEADER_HOST.equalsIgnoreCase(entry.getKey())) {
+                        hostname = entry.getValue();
+                    } else if (HttpHeaders.Names.CONTENT_LENGTH.equalsIgnoreCase(entry.getKey())) {
+                        contentLength = Long.parseLong(entry.getValue());
                     }
                 }
                 logger.info("HEADER: signature=" + signature);
