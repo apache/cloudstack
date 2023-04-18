@@ -287,7 +287,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
         SearchBuilder<VMInstanceVO> sb =  vmInstanceDao.createSearchBuilder();
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.NEQ);
 
@@ -340,7 +340,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
         SearchBuilder<VolumeVO> sb =  volumeDao.createSearchBuilder();
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         SearchCriteria<VolumeVO> sc = sb.create();

@@ -29,42 +29,46 @@
       :rowKey="record => record.id"
       size="middle"
       :scroll="{ y: 225 }">
-      <template #name="{ text, record }">
-        <div>{{ text }}</div>
-        <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
-      </template>
-      <template #ipAddress="{ record }" v-if="!this.autoscale">
-        <a-form-item
-          style="display: block"
-          v-if="record.type !== 'L2'"
-          :name="'ipAddress' + record.id">
-          <a-input
-            style="width: 150px;"
-            v-model:value="form['ipAddress' + record.id]"
-            :placeholder="record.cidr"
-            @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)">
-            <template #suffix>
-              <a-tooltip :title="getIpRangeDescription(record)">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
-          </a-input>
-        </a-form-item>
-      </template>
-      <template #macAddress="{ record }" v-if="!this.autoscale">
-        <a-form-item style="display: block" :name="'macAddress' + record.id">
-          <a-input
-            style="width: 150px;"
-            :placeholder="$t('label.macaddress')"
-            v-model:value="form[`macAddress` + record.id]"
-            @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)">
-            <template #suffix>
-              <a-tooltip :title="$t('label.macaddress.example')">
-                <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </template>
-          </a-input>
-        </a-form-item>
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'name'">
+          <div>{{ text }}</div>
+          <small v-if="record.type!=='L2'">{{ $t('label.cidr') + ': ' + record.cidr }}</small>
+        </template>
+        <template  v-if="!this.autoscale">
+          <template v-if="column.key === 'ipAddress'">
+            <a-form-item
+              style="display: block"
+              v-if="record.type !== 'L2'"
+              :name="'ipAddress' + record.id">
+              <a-input
+                style="width: 150px;"
+                v-model:value="form['ipAddress' + record.id]"
+                :placeholder="record.cidr"
+                @change="($event) => updateNetworkData('ipAddress', record.id, $event.target.value)">
+                <template #suffix>
+                  <a-tooltip :title="getIpRangeDescription(record)">
+                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </template>
+              </a-input>
+            </a-form-item>
+          </template>
+          <template v-if="column.key === 'macAddress'">
+            <a-form-item style="display: block" :name="'macAddress' + record.id">
+              <a-input
+                style="width: 150px;"
+                :placeholder="$t('label.macaddress')"
+                v-model:value="form[`macAddress` + record.id]"
+                @change="($event) => updateNetworkData('macAddress', record.id, $event.target.value)">
+                <template #suffix>
+                  <a-tooltip :title="$t('label.macaddress.example')">
+                    <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+                  </a-tooltip>
+                </template>
+              </a-input>
+            </a-form-item>
+          </template>
+        </template>
       </template>
     </a-table>
   </a-form>
@@ -97,22 +101,22 @@ export default {
       networks: [],
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
           title: this.$t('label.defaultnetwork'),
-          width: '30%',
-          slots: { customRender: 'name' }
+          width: '30%'
         },
         {
+          key: 'ipAddress',
           dataIndex: 'ip',
           title: this.$t('label.ip'),
-          width: '30%',
-          slots: { customRender: 'ipAddress' }
+          width: '30%'
         },
         {
+          key: 'macAddress',
           dataIndex: 'mac',
           title: this.$t('label.macaddress'),
-          width: '30%',
-          slots: { customRender: 'macAddress' }
+          width: '30%'
         }
       ],
       selectedRowKeys: [],

@@ -47,12 +47,12 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option key="all" value="">
             {{ $t('label.view.all') }}
           </a-select-option>
-          <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
+          <a-select-option v-for="network in networksList" :key="network.id" :value="network.id" :label="network.name">
             {{ network.name }}
           </a-select-option>
         </a-select>
@@ -65,35 +65,37 @@
         :rowKey="item => item.id"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         :pagination="false" >
-        <template #ipaddress="{ text, record }">
-          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
-          <div v-else>{{ text }}</div>
-          <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
-        </template>
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'ipaddress'">
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+            <div v-else>{{ text }}</div>
+            <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
+          </template>
 
-        <template #state="{ record }">
-          <status :text="record.state" displayText />
-        </template>
+          <template v-if="column.key === 'state'">
+            <status :text="record.state" displayText />
+          </template>
 
-        <template #virtualmachineid="{ record }">
-          <desktop-outlined v-if="record.virtualmachineid" />
-          <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
-        </template>
+          <template v-if="column.key === 'virtualmachineid'">
+            <desktop-outlined v-if="record.virtualmachineid" />
+            <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
+          </template>
 
-        <template #associatednetworkname="{ record }">
-          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
-          <div v-else>{{ record.networkname }}</div>
-        </template>
+          <template v-if="column.key === 'associatednetworkname'">
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
+            <div v-else>{{ record.networkname }}</div>
+          </template>
 
-        <template #action="{ record }">
-          <tooltip-button
-            v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
-            :tooltip="$t('label.action.release.ip')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            :disabled="!('disassociateIpAddress' in $store.getters.apis)"
-            @onClick="releaseIpAddress(record)" />
+          <template v-if="column.key === 'actions'">
+            <tooltip-button
+              v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
+              :tooltip="$t('label.action.release.ip')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              :disabled="!('disassociateIpAddress' in $store.getters.apis)"
+              @onClick="releaseIpAddress(record)" />
+          </template>
         </template>
       </a-table>
       <a-divider/>
@@ -133,11 +135,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="ip in listPublicIpAddress"
-                :key="ip.ipaddress">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
+                :key="ip.ipaddress"
+                :label="ip.ipaddress + '(' + ip.state + ')'">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
             </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
@@ -204,7 +207,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.release.public.ip.address'),
@@ -212,28 +215,28 @@ export default {
       },
       columns: [
         {
+          key: 'ipaddress',
           title: this.$t('label.ipaddress'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
+          key: 'virtualmachineid',
           title: this.$t('label.vm'),
-          dataIndex: 'virtualmachineid',
-          slots: { customRender: 'virtualmachineid' }
+          dataIndex: 'virtualmachineid'
         },
         {
+          key: 'associatednetworkname',
           title: this.$t('label.network'),
-          dataIndex: 'associatednetworkname',
-          slots: { customRender: 'associatednetworkname' }
+          dataIndex: 'associatednetworkname'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: ''
         }
       ],
       showAcquireIp: false,
@@ -385,9 +388,9 @@ export default {
     releaseIpAddresses (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
