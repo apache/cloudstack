@@ -24,6 +24,7 @@ export default {
   icon: 'CloudServerOutlined',
   docHelp: 'conceptsandterminology/concepts.html#management-server-overview',
   permission: ['listManagementServersMetrics'],
+  resourceType: 'ManagementServer',
   columns: () => {
     const fields = ['name', 'state', 'version']
     const metricsFields = ['collectiontime', 'availableprocessors', 'cpuload', 'heapmemoryused', 'agentcount']
@@ -80,6 +81,9 @@ export default {
           value: (record, params) => { return record.id }
         }
       }
+    }, {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
     }
   ]
 }
