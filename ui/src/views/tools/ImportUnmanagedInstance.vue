@@ -524,7 +524,13 @@ export default {
       return 'serviceofferingdetails' in this.computeOffering ? this.computeOffering.serviceofferingdetails.maxmemory * 1 : Number.MAX_SAFE_INTEGER
     },
     getCPUSpeed () {
-      return (this.computeOffering.iscustomized ? this.resource.cpuspeed : 0) || this.computeOffering?.cpuspeed * 1 || 0
+      if (!this.computeOffering) {
+        return 0
+      }
+      if (this.computeOffering.cpuspeed) {
+        return this.computeOffering.cpuspeed * 1
+      }
+      return this.resource.cpuspeed * 1 || 0
     },
     fetchOptions (param, name, exclude) {
       if (exclude && exclude.length > 0) {
