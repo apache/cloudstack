@@ -139,7 +139,7 @@ public class VeeamClientTest {
     @Test
     public void getRepositoryNameFromJobTestSuccess() throws Exception {
         String backupName = "TEST-BACKUP3";
-        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\n\nName : test");
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\r\n\r\nName : test");
         Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
         String repositoryNameFromJob = mockClient.getRepositoryNameFromJob(backupName);
         Assert.assertEquals("test", repositoryNameFromJob);
