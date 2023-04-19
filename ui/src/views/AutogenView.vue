@@ -54,7 +54,8 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host'].includes($route.name)
                         ? 'all' : ['publicip'].includes($route.name)
                         ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
                         ? 'all' : ['volume'].includes($route.name)
@@ -68,7 +69,8 @@
                     }" >
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
-                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
                       {{ $t('label.all') }}
@@ -1573,6 +1575,23 @@ export default {
         }
       } else if (this.$route.name === 'publicip') {
         query.state = filter
+      } else if (['pod', 'cluster'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.allocationstate
+        } else {
+          query.allocationstate = filter
+        }
+      } else if (['host'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.resourcestate
+          delete query.state
+        } else if (['up', 'down', 'alert'].includes(filter)) {
+          delete query.resourcestate
+          query.state = filter
+        } else {
+          delete query.state
+          query.resourcestate = filter
+        }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
