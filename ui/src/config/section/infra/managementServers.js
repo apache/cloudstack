@@ -85,6 +85,9 @@ export default {
           value: (record, params) => { return record.id }
         }
       }
+    }, {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
     }
   ]
 }
