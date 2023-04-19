@@ -73,7 +73,7 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACTION,
             type = CommandType.STRING,
             required = false,
-            description = "Action to take on the VM (start/stop/restart).")
+            description = "Action to take on the VM (start/stop/restart/force_stop/force_reboot).")
     private String action;
 
     @Parameter(name = ApiConstants.START_DATE,

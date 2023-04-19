@@ -93,14 +93,8 @@
         <a-radio-group
           v-model:value="form.action"
           button-style="solid">
-          <a-radio-button value="START">
-            {{ $t('label.start') }}
-          </a-radio-button>
-          <a-radio-button value="STOP">
-            {{ $t('label.stop') }}
-          </a-radio-button>
-          <a-radio-button value="REBOOT">
-            {{ $t('label.reboot') }}
+          <a-radio-button v-for="action in actions" :key="action.id" :value="action.value">
+            {{ $t(action.label) }}
           </a-radio-button>
         </a-radio-group>
       </a-form-item>
@@ -133,7 +127,7 @@
       </a-form-item>
       <a-form-item name="enabled" ref="enabled">
         <template #label>
-          <tooltip-label :title="$t('label.enable')" :tooltip="apiParams.enabled.description"/>
+          <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
         </template>
         <a-switch
           v-model:checked="form.enabled">
@@ -165,7 +159,6 @@ import ListView from '@/components/view/ListView'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { mixinForm } from '@/utils/mixin'
-import { genericCompare } from '@/utils/sort.js'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import moment from 'moment'
@@ -192,12 +185,18 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       tabLoading: false,
-      columnKeys: ['enabled', 'name', 'description', 'schedule', 'timezone', 'vmScheduleActions'],
+      columnKeys: ['enabled', 'name', 'action', 'description', 'schedule', 'timezone', 'vmScheduleActions'],
       selectedColumnKeys: [],
       columns: [],
       schedules: [],
       timeZoneMap: [],
-      actions: [],
+      actions: [
+        { value: 'START', label: 'label.start' },
+        { value: 'STOP', label: 'label.stop' },
+        { value: 'REBOOT', label: 'label.reboot' },
+        { value: 'FORCE_STOP', label: 'label.force.stop' },
+        { value: 'FORCE_REBOOT', label: 'label.force.reboot' }
+      ],
       page: 1,
       pageSize: 20,
       totalCount: 0,
@@ -256,7 +255,8 @@ export default {
     },
     removeVMSchedule (schedule) {
       api('deleteVMSchedule', {
-        id: schedule.id
+        id: schedule.id,
+        virtualmachineid: this.virtualmachine.id
       }).then(() => {
         const message = `${this.$t('label.removing')} ${schedule.name}`
         this.$message.success(message)
@@ -381,8 +381,7 @@ export default {
         this.columns.push({
           key: columnKey,
           title: this.$t('label.' + String(columnKey).toLowerCase()),
-          dataIndex: columnKey,
-          sorter: function (a, b) { console.log(this); return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          dataIndex: columnKey
         })
       }
       if (this.columns.length > 0) {

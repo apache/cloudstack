@@ -23,6 +23,7 @@ import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
@@ -40,6 +41,7 @@ import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.log4j.Logger;
@@ -65,6 +67,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     private VMScheduler vmScheduler;
     @Inject
     private MessageBus messageBus;
+    @Inject
+    private AccountManager accountManager;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -80,6 +84,12 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_CREATE, eventDescription = "Creating VM Schedule")
     public VMScheduleResponse createSchedule(CreateVMScheduleCmd cmd) {
         // TODO: Check if user is permitted to create the schedule
+
+        VirtualMachine vm = virtualMachineManager.findById(cmd.getVmId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("Invalid value for vmId: %s", cmd.getVmId()));
+        }
 
         VMSchedule.Action action = null;
         if (cmd.getAction() != null) {
@@ -143,6 +153,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         Long id = cmd.getId();
         Boolean enabled = cmd.getEnabled();
         Long vmId = cmd.getVmId();
+
+        VirtualMachine vm = virtualMachineManager.findById(vmId);
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
+
         VMSchedule.Action action = null;
         if (cmd.getAction() != null) {
             try {
@@ -182,6 +196,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return response;
     }
 
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_UPDATE, eventDescription = "Updating VM Schedule")
     public VMSchedule updateSchedule(UpdateVMScheduleCmd cmd) {
@@ -192,6 +207,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (vmSchedule == null) {
             throw new CloudRuntimeException("VM schedule doesn't exist");
         }
+
+        VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
         String name = cmd.getName();
         CronExpression cronExpression = Objects.requireNonNullElse(
@@ -274,12 +292,14 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
     }
 
-    private long removeScheduleByIds(List<Long> ids) {
+    private long removeScheduleByIds(Long vmId, List<Long> ids) {
         SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
         sc.setParameters("id", ids.toArray());
+        sc.setParameters("vm_id", vmId);
         vmScheduler.removeScheduledJobs(ids);
         return vmScheduleDao.remove(sc);
     }
@@ -307,7 +327,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_DELETE, eventDescription = "Deleting VM Schedule")
     public Long removeSchedule(DeleteVMScheduleCmd cmd) {
         // TODO: Check if the user has access to delete all schedules in the list
+        VirtualMachine vm = virtualMachineManager.findById(cmd.getVmId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
+
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
-        return Transaction.execute((TransactionCallback<Long>) status -> removeScheduleByIds(ids));
+        return Transaction.execute((TransactionCallback<Long>) status -> removeScheduleByIds(vm.getId(), ids));
     }
 }

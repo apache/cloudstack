@@ -39,7 +39,7 @@
     </template>
     <template #bodyCell="{ column, text, record }">
       <template v-if="column.key === 'name'">
-        <span v-if="['vm'].includes($route.path.split('/')[1]) && $route?.query?.tab !== 'schedules'" style="margin-right: 5px">
+        <span v-if="['vm'].includes($route.path.split('/')[1]) && $route.query.tab !== 'schedules'" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="1x"/>
           </span>
@@ -764,8 +764,8 @@ export default {
         default: return record.entitytype.toLowerCase().replace('_', '')
       }
     },
-    generateHumanReadableSchedule (cron) {
-      return cronstrue.toString(cron, { locale: this.$i18n.locale })
+    generateHumanReadableSchedule (schedule) {
+      return cronstrue.toString(schedule, { locale: this.$i18n.locale })
     },
     entityTypeToPath (entitytype) {
       switch (entitytype) {

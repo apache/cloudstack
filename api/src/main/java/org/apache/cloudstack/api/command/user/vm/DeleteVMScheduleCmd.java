@@ -41,6 +41,13 @@ import java.util.List;
 public class DeleteVMScheduleCmd extends BaseCmd {
     @Inject
     private VMScheduleManager vmScheduleManager;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = VMScheduleResponse.class,
+            required = false,
+            description = "ID of VM")
+    private Long vmId;
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = VMScheduleResponse.class,
@@ -68,6 +75,10 @@ public class DeleteVMScheduleCmd extends BaseCmd {
             return Collections.emptyList();
         }
         return ids;
+    }
+
+    public Long getVmId() {
+        return vmId;
     }
 
     /////////////////////////////////////////////////////

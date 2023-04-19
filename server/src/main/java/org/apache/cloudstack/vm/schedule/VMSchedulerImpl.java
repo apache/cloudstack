@@ -286,20 +286,29 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
                 String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
-            if (vm.getState() == VirtualMachine.State.Running && vmScheduledJob.getAction() == VMSchedule.Action.STOP) {
-                return executeStopVMJob(vm, eventId);
-            } else if (vm.getState() == VirtualMachine.State.Running && vmScheduledJob.getAction() == VMSchedule.Action.REBOOT) {
-                return executeRebootVMJob(vm, eventId);
-            } else if (vm.getState() == VirtualMachine.State.Stopped && vmScheduledJob.getAction() == VMSchedule.Action.START) {
+        if (vm.getState() == VirtualMachine.State.Running) {
+                switch (vmScheduledJob.getAction()) {
+                    case STOP:
+                        return executeStopVMJob(vm, eventId, false);
+                    case FORCE_STOP:
+                        return executeStopVMJob(vm, eventId, true);
+                    case REBOOT:
+                        return executeRebootVMJob(vm, eventId, false);
+                    case FORCE_REBOOT:
+                        return executeRebootVMJob(vm, eventId, true);
+                }
+        } else if (vm.getState() == VirtualMachine.State.Stopped && vmScheduledJob.getAction() == VMSchedule.Action.START) {
                 return executeStartVMJob(vm, eventId);
-            } else {
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                        EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
-                        String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is in state: %s", vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState()),
-                        vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
-                LOGGER.error("Invalid action " + vmScheduledJob.getAction() + " for VM scheduled job id: " + vmScheduledJob.getId());
-                return null;
-            }
+        }
+
+        String logMessage = String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is in state: %s",
+                vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState());
+        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
+                EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
+                logMessage,
+                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
+        LOGGER.warn(logMessage);
+        return null;
     }
 
     private void skipJobs(Map<Long, VMScheduledJobVO> jobsToExecute, Map<Long, List<VMScheduledJobVO>> jobsNotToExecute) {
@@ -358,12 +367,13 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         return asyncJobManager.submitAsyncJob(job);
     }
 
-    private long executeStopVMJob(VirtualMachine vm, long eventId) {
+    private long executeStopVMJob(VirtualMachine vm, long eventId, boolean isForced) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put("ctxUserId", "1");
-        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
-        params.put("ctxStartEventId", String.valueOf(eventId));
+        params.put(ApiConstants.CTX_USER_ID, "1");
+        params.put(ApiConstants.CTX_ACCOUNT_ID, String.valueOf(vm.getAccountId()));
+        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
+        params.put(ApiConstants.FORCED, String.valueOf(isForced));
 
         final StopVMCmd cmd = new StopVMCmd();
         ComponentContext.inject(cmd);
@@ -374,12 +384,13 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         return asyncJobManager.submitAsyncJob(job);
     }
 
-    private long executeRebootVMJob(VirtualMachine vm, long eventId) {
+    private long executeRebootVMJob(VirtualMachine vm, long eventId, boolean isForced) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put("ctxUserId", "1");
-        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
-        params.put("ctxStartEventId", String.valueOf(eventId));
+        params.put(ApiConstants.CTX_USER_ID, "1");
+        params.put(ApiConstants.CTX_ACCOUNT_ID, String.valueOf(vm.getAccountId()));
+        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
+        params.put(ApiConstants.FORCED, String.valueOf(isForced));
 
         final RebootVMCmd cmd = new RebootVMCmd();
         ComponentContext.inject(cmd);

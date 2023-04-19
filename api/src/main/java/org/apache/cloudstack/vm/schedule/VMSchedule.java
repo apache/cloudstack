@@ -27,7 +27,7 @@ import java.util.Date;
 
 public interface VMSchedule extends Identity, InternalIdentity {
     enum Action {
-        START, STOP, REBOOT
+        START, STOP, REBOOT, FORCE_STOP, FORCE_REBOOT
     }
     long getVmId();
 
