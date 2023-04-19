@@ -47,11 +47,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
-            <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
-            <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
+            <a-select-option value="roundrobin" :label="$t('label.lb.algorithm.roundrobin')">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
+            <a-select-option value="leastconn" :label="$t('label.lb.algorithm.leastconn')">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
+            <a-select-option value="source" :label="$t('label.lb.algorithm.source')">{{ $t('label.lb.algorithm.source') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
@@ -62,11 +62,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
@@ -76,9 +76,9 @@
             defaultValue="no"
             style="min-width: 100px"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="yes">{{ $t('label.yes') }}</a-select-option>
             <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
@@ -118,42 +118,61 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #cidrlist="{ record }">
-        <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
-      </template>
-      <template #algorithm="{ record }">
-        {{ returnAlgorithmName(record.algorithm) }}
-      </template>
-      <template #protocol="{record}">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #stickiness="{record}">
-        <a-button @click="() => openStickinessModal(record.id)">
-          {{ returnStickinessLabel(record.id) }}
-        </a-button>
-      </template>
-      <template #autoscale="{record}">
-        <div>
-          <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
-            <a-button>{{ $t('label.view') }}</a-button>
-          </router-link>
-          <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { networkid: record.networkid, lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
-            <a-button>{{ $t('label.new') }}</a-button>
-          </router-link>
-        </div>
-      </template>
-      <template #healthmonitor="{ record }">
-        <a-button @click="() => openHealthMonitorModal(record.id)">
-          {{ returnHealthMonitorLabel(record.id) }}
-        </a-button>
-      </template>
-      <template #add="{record}">
-        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }" v-if='!record.autoscalevmgroup'>
-          <template #icon>
-            <plus-outlined />
-          </template>
-          {{ $t('label.add') }}
-        </a-button>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'cidrlist'">
+          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+        </template>
+        <template v-if="column.key === 'algorithm'">
+          {{ returnAlgorithmName(record.algorithm) }}
+        </template>
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'stickiness'">
+          <a-button @click="() => openStickinessModal(record.id)">
+            {{ returnStickinessLabel(record.id) }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'autoscale'">
+          <div>
+            <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
+              <a-button>{{ $t('label.view') }}</a-button>
+            </router-link>
+            <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { networkid: record.networkid, lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
+              <a-button>{{ $t('label.new') }}</a-button>
+            </router-link>
+          </div>
+        </template>
+        <template v-if="column.key === 'healthmonitor'">
+          <a-button @click="() => openHealthMonitorModal(record.id)">
+            {{ returnHealthMonitorLabel(record.id) }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'add'">
+          <a-button v-if="!record.autoscalevmgroup" type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+            <template #icon><plus-outlined /></template>
+              {{ $t('label.add') }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
+            <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
+            <a-popconfirm
+              :title="$t('label.delete') + '?'"
+              @confirm="handleDeleteRule(record)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+            >
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </div>
+        </template>
       </template>
       <template #expandedRowRender="{ record }">
         <div class="rule-instance-list">
@@ -176,25 +195,6 @@
                 @onClick="() => handleDeleteInstanceFromRule(instance, record, ip)" />
             </div>
           </div>
-        </div>
-      </template>
-      <template #actions="{record}">
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
-          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
-          <a-popconfirm
-            :title="$t('label.delete') + '?'"
-            @confirm="handleDeleteRule(record)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')"
-          >
-            <tooltip-button
-              :tooltip="$t('label.delete')"
-              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis) || record.autoscalevmgroup"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
         </div>
       </template>
     </a-table>
@@ -296,12 +296,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
-            <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
-            <a-select-option value="SourceBased">{{ $t('label.source.based') }}</a-select-option>
-            <a-select-option value="none">{{ $t('label.none') }}</a-select-option>
+            <a-select-option value="LbCookie" :label="$t('label.lb.cookie')">{{ $t('label.lb.cookie') }}</a-select-option>
+            <a-select-option value="AppCookie" :label="$t('label.app.cookie')">{{ $t('label.app.cookie') }}</a-select-option>
+            <a-select-option value="SourceBased" :label="$t('label.source.based')">{{ $t('label.source.based') }}</a-select-option>
+            <a-select-option value="none" :label="$t('label.none')">{{ $t('label.none') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item
@@ -390,11 +390,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
-            <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
-            <a-select-option value="source">{{ $t('label.lb.algorithm.source') }}</a-select-option>
+            <a-select-option value="roundrobin" :label="$t('label.lb.algorithm.roundrobin')">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
+            <a-select-option value="leastconn" :label="$t('label.lb.algorithm.leastconn')">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
+            <a-select-option value="source" :label="$t('label.lb.algorithm.source')">{{ $t('label.lb.algorithm.source') }}</a-select-option>
           </a-select>
         </div>
         <div class="edit-rule__item">
@@ -404,11 +404,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
         <div :span="24" class="action-button">
@@ -441,12 +441,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
-              :key="tier.id">
+              :key="tier.id"
+              :label="tier.displaytext">
               {{ tier.displaytext }}
             </a-select-option>
           </a-select>
@@ -467,33 +468,39 @@
           :pagination="false"
           :rowKey="record => record.id"
           :scroll="{ y: 300 }">
-          <template #name="{text, record, index}">
-            <span>
-              {{ text }}
-            </span>
-            <loading-outlined v-if="addVmModalNicLoading" />
-            <a-select
-              style="display: block"
-              v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
-              mode="multiple"
-              v-model:value="newRule.vmguestip[index]"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-              </a-select-option>
-            </a-select>
-          </template>
+          <template #bodyCell="{ column, text, record, index }">
+            <template v-if="column.key === 'name'">
+              <span>
+                {{ text }}
+              </span>
+              <loading-outlined v-if="addVmModalNicLoading" />
+              <a-select
+                style="display: block"
+                v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
+                mode="multiple"
+                v-model:value="newRule.vmguestip[index]"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option
+                  v-for="(nic, nicIndex) in nics[index]"
+                  :key="nic"
+                  :value="nic"
+                  :label="nic + nicIndex === 0 ? ` (${$t('label.primary')})` : null">
+                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+                </a-select-option>
+              </a-select>
+            </template>
 
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText></status>
-          </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText></status>
+            </template>
 
-          <template #action="{text, record, index}" style="text-align: center" :text="text">
-            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale" />
+            <template v-if="column.key === 'actions'" style="text-align: center" :text="text">
+              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale"/>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -540,9 +547,9 @@
             v-model:value="monitorForm.type"
             @change="(value) => { healthMonitorParams.type = value }"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option value="PING">PING</a-select-option>
             <a-select-option value="TCP">TCP</a-select-option>
@@ -567,9 +574,9 @@
             v-focus="true"
             v-model:value="monitorForm.httpmethodtype"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option value="GET">GET</a-select-option>
             <a-select-option value="HEAD">HEAD</a-select-option>
@@ -648,7 +655,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['State', 'Action', 'Add VMs', 'Stickiness'],
+      filterColumns: ['State', 'Actions', 'Add VMs', 'Stickiness'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.delete.load.balancer.rules'),
@@ -705,36 +712,36 @@ export default {
           dataIndex: 'privateport'
         },
         {
-          title: this.$t('label.cidrlist'),
-          slots: { customRender: 'cidrlist' }
+          key: 'algorithm',
+          title: this.$t('label.algorithm')
         },
         {
-          title: this.$t('label.algorithm'),
-          slots: { customRender: 'algorithm' }
+          key: 'cidrlist',
+          title: this.$t('label.cidrlist')
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('label.action.configure.stickiness'),
-          slots: { customRender: 'stickiness' }
+          key: 'stickiness',
+          title: this.$t('label.action.configure.stickiness')
         },
         {
-          title: this.$t('label.autoscale'),
-          slots: { customRender: 'autoscale' }
+          key: 'add',
+          title: this.$t('label.add.vms')
         },
         {
-          title: this.$t('label.add.vms'),
-          slots: { customRender: 'add' }
+          key: 'autoscale',
+          title: this.$t('label.autoscale')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ],
       tiers: {
@@ -743,15 +750,15 @@ export default {
       },
       vmColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
           dataIndex: 'name',
-          slots: { customRender: 'name' },
           width: 220
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.displayname'),
@@ -766,9 +773,9 @@ export default {
           dataIndex: 'zonename'
         },
         {
+          key: 'actions',
           title: this.$t('label.select'),
-          dataIndex: 'action',
-          slots: { customRender: 'action' },
+          dataIndex: 'actions',
           width: 80
         }
       ],
@@ -857,7 +864,7 @@ export default {
         if (this.tiers.data?.[0]?.broadcasturi === 'tf://tf') {
           this.columns.splice(8, 0, {
             title: this.$t('label.action.health.monitor'),
-            slots: { customRender: 'healthmonitor' }
+            key: 'healthmonitor'
           })
         }
       }).catch(error => {
@@ -1311,9 +1318,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

@@ -255,6 +255,9 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_UPDATE, eventDescription = "updating Role")
     public Role updateRole(final Role role, final String name, final RoleType roleType, final String description, Boolean publicRole) {
         checkCallerAccess();
+        if (role.isDefault()) {
+            throw new PermissionDeniedException("Default roles cannot be updated");
+        }
 
         if (roleType != null && roleType == RoleType.Unknown) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unknown is not a valid role type");
@@ -378,13 +381,13 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByName(String name) {
-        return findRolesByName(name, null, null).first();
+        return findRolesByName(name, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit) {
-        if (StringUtils.isNotBlank(name)) {
-            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, startIndex, limit, isCallerRootAdmin());
+    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit) {
+        if (StringUtils.isNotBlank(name) || StringUtils.isNotBlank(keyword)) {
+            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, startIndex, limit, isCallerRootAdmin());
             int removed = removeRootAdminRolesIfNeeded(data.first());
             return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }

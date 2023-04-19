@@ -32,6 +32,7 @@ public class ApiConstants {
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
+    public static final String ARCHIVED = "archived";
     public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String AUTO_SELECT = "autoselect";
     public static final String USER_API_KEY = "userapikey";
@@ -522,6 +523,7 @@ public class ApiConstants {
     public static final String PRIVATE_NETWORK_ID = "privatenetworkid";
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String MANAGED_STATE = "managedstate";
+    public static final String MANAGEMENT_SERVER_ID = "managementserverid";
     public static final String STORAGE_ID = "storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";
@@ -1016,6 +1018,10 @@ public class ApiConstants {
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
+
+    public static final String READY_FOR_SHUTDOWN = "readyforshutdown";
+    public static final String SHUTDOWN_TRIGGERED = "shutdowntriggered";
+    public static final String PENDING_JOBS_COUNT = "pendingjobscount";
 
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";

@@ -24,49 +24,51 @@
       :rowKey="record => record.virtualmachineid"
       :pagination="false"
       :loading="loading">
-      <template #icon="{ text, record }" :name="text">
-        <label class="interval-icon">
-          <span v-if="record.intervaltype==='HOURLY'">
-            <clock-circle-outlined />
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'icon'" :name="text">
+          <label class="interval-icon">
+            <span v-if="record.intervaltype==='HOURLY'">
+              <clock-circle-outlined />
+            </span>
+            <span class="custom-icon icon-daily" v-else-if="record.intervaltype==='DAILY'">
+              <calendar-outlined />
+            </span>
+            <span class="custom-icon icon-weekly" v-else-if="record.intervaltype==='WEEKLY'">
+              <calendar-outlined />
+            </span>
+            <span class="custom-icon icon-monthly" v-else-if="record.intervaltype==='MONTHLY'">
+              <calendar-outlined />
+            </span>
+          </label>
+        </template>
+        <template v-if="column.key === 'time'" :name="text">
+          <label class="interval-content">
+            <span v-if="record.intervaltype==='HOURLY'">{{ record.schedule + ' ' + $t('label.min.past.hour') }}</span>
+            <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
+          </label>
+        </template>
+        <template v-if="column.key === 'interval'" :name="text">
+          <span v-if="record.intervaltype==='WEEKLY'">
+            {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
           </span>
-          <span class="custom-icon icon-daily" v-else-if="record.intervaltype==='DAILY'">
-            <calendar-outlined />
+          <span v-else-if="record.intervaltype==='MONTHLY'">
+            {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
           </span>
-          <span class="custom-icon icon-weekly" v-else-if="record.intervaltype==='WEEKLY'">
-            <calendar-outlined />
-          </span>
-          <span class="custom-icon icon-monthly" v-else-if="record.intervaltype==='MONTHLY'">
-            <calendar-outlined />
-          </span>
-        </label>
-      </template>
-      <template #time="{ text, record }" :name="text">
-        <label class="interval-content">
-          <span v-if="record.intervaltype==='HOURLY'">{{ record.schedule + ' ' + $t('label.min.past.hour') }}</span>
-          <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
-        </label>
-      </template>
-      <template #interval="{ text, record }" :name="text">
-        <span v-if="record.intervaltype==='WEEKLY'">
-          {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
-        </span>
-        <span v-else-if="record.intervaltype==='MONTHLY'">
-          {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
-        </span>
-      </template>
-      <template #timezone="{ text, record }" :name="text">
-        <label>{{ getTimeZone(record.timezone) }}</label>
-      </template>
-      <template #action="{ text, record }" class="account-button-action" :name="text">
-        <tooltip-button
-          tooltipPlacement="top"
-          :tooltip="$t('label.delete')"
-          type="primary"
-          :danger="true"
-          icon="close-outlined"
-          size="small"
-          :loading="actionLoading"
-          @onClick="handleClickDelete(record)"/>
+        </template>
+        <template v-if="column.key === 'timezone'" :name="text">
+          <label>{{ getTimeZone(record.timezone) }}</label>
+        </template>
+        <template v-if="column.key === 'actions'" class="account-button-action" :name="text">
+          <tooltip-button
+            tooltipPlacement="top"
+            :tooltip="$t('label.delete')"
+            type="primary"
+            :danger="true"
+            icon="close-outlined"
+            size="small"
+            :loading="actionLoading"
+            @onClick="handleClickDelete(record)"/>
+        </template>
       </template>
     </a-table>
   </div>
@@ -107,31 +109,31 @@ export default {
     columns () {
       return [
         {
+          key: 'icon',
           title: '',
           dataIndex: 'icon',
-          width: 30,
-          slots: { customRender: 'icon' }
+          width: 30
         },
         {
+          key: 'time',
           title: this.$t('label.time'),
-          dataIndex: 'schedule',
-          slots: { customRender: 'time' }
+          dataIndex: 'schedule'
         },
         {
+          key: 'interval',
           title: '',
-          dataIndex: 'interval',
-          slots: { customRender: 'interval' }
+          dataIndex: 'interval'
         },
         {
+          key: 'timezone',
           title: this.$t('label.timezone'),
-          dataIndex: 'timezone',
-          slots: { customRender: 'timezone' }
+          dataIndex: 'timezone'
         },
         {
-          title: this.$t('label.action'),
-          dataIndex: 'action',
-          width: 80,
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: this.$t('label.actions'),
+          dataIndex: 'actions',
+          width: 80
         }
       ]
     }

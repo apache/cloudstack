@@ -62,13 +62,14 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               @change="fetchClusters">
               <a-select-option
                 v-for="pod in podsList"
                 :value="pod.id"
-                :key="pod.id">
+                :key="pod.id"
+                :label="pod.name">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
@@ -83,13 +84,14 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               @change="handleChangeCluster">
               <a-select-option
                 v-for="cluster in clustersList"
                 :value="cluster.id"
-                :key="cluster.id">
+                :key="cluster.id"
+                :label="cluster.name">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
@@ -206,9 +208,9 @@
             <a-select
               mode="tags"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               v-model:value="form.hosttags"
               :placeholder="placeholder.hosttags">

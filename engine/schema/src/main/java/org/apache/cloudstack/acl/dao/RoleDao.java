@@ -28,7 +28,7 @@ import java.util.List;
 public interface RoleDao extends GenericDao<RoleVO, Long> {
     List<RoleVO> findAllByName(String roleName, boolean showPrivateRole);
 
-    Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit, boolean showPrivateRole);
+    Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, Long offset, Long limit, boolean showPrivateRole);
 
     List<RoleVO> findAllByRoleType(RoleType type, boolean showPrivateRole);
     List<RoleVO> findByName(String roleName, boolean showPrivateRole);

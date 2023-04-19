@@ -112,13 +112,13 @@ export default {
       type: Object,
       required: true
     },
-    loading: {
-      type: Boolean,
-      default: false
-    },
     items: {
       type: Object,
       default: () => {}
+    },
+    loading: {
+      type: Boolean,
+      default: false
     },
     bordered: {
       type: Boolean,

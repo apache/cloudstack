@@ -25,6 +25,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -62,14 +63,20 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
 
     @Override
     public List<RoleVO> findAllByName(final String roleName, boolean showPrivateRole) {
-        return findAllByName(roleName, null, null, showPrivateRole).first();
+        return findAllByName(roleName, null, null, null, showPrivateRole).first();
     }
 
     @Override
-    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit, boolean showPrivateRole) {
+    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, Long offset, Long limit, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
         filterPrivateRolesIfNeeded(sc, showPrivateRole);
-        sc.setParameters("roleName", "%" + roleName + "%");
+        if (StringUtils.isNotEmpty(roleName)) {
+            sc.setParameters("roleName", roleName);
+        }
+        if (StringUtils.isNotEmpty(keyword)) {
+            sc.setParameters("roleName", "%" + keyword + "%");
+        }
+
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
