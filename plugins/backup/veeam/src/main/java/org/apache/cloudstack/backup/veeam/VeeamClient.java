@@ -374,7 +374,7 @@ public class VeeamClient {
             throw new CloudRuntimeException(String.format("Failed to get Repository Name from Job [name: %s].", backupName));
         }
 
-        for (String block : result.second().split("\n\n")) {
+        for (String block : result.second().split("\r\n\r\n")) {
            if (block.matches("Name(\\s)+:(.)*")) {
                return block.split(":")[1].trim();
            }
