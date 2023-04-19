@@ -41,8 +41,10 @@
               :dataSource="templateUserDataParams"
               :pagination="false"
               :rowKey="record => record.key">
-              <template #value="{ record }">
-                <a-input v-model:value="templateUserDataValues[record.key]" />
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'value'">
+                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                </template>
               </template>
             </a-table>
           </a-input-group>
@@ -87,8 +89,10 @@
                               :dataSource="userDataParams"
                               :pagination="false"
                               :rowKey="record => record.key">
-                              <template #value="{ record }">
-                                <a-input v-model:value="userDataValues[record.key]" />
+                              <template #bodyCell="{ column, record }">
+                                <template v-if="column.key === 'value'">
+                                  <a-input v-model:value="userDataValues[record.key]" />
+                                </template>
                               </template>
                             </a-table>
                           </a-input-group>
@@ -152,12 +156,12 @@ export default {
         },
         {
           dataIndex: 'account',
-          slots: { title: 'account' },
+          title: this.$t('account'),
           width: '30%'
         },
         {
           dataIndex: 'domain',
-          slots: { title: 'domain' },
+          title: this.$t('domain'),
           width: '30%'
         }
       ],
@@ -188,7 +192,7 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
@@ -309,7 +313,7 @@ export default {
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        if (resp.length > 0) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')

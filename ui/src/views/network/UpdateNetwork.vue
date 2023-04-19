@@ -98,12 +98,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkOfferingLoading"
             :placeholder="apiParams.networkofferingid.description"
             @change="val => { networkOffering = networkOfferings[val] }">
-            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name">
               {{ opt.displaytext || opt.name }}
             </a-select-option>
           </a-select>

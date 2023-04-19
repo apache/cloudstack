@@ -30,6 +30,7 @@ export default {
       name: 'guestnetwork',
       title: 'label.guest.networks',
       icon: 'apartment-outlined',
+      docHelp: 'adminguide/networking_and_traffic.html#adding-an-additional-guest-network',
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
@@ -655,9 +656,8 @@ export default {
     {
       name: 'vpnuser',
       title: 'label.vpn.users',
-      icon: 'user-alt-outlined',
+      icon: 'user-switch-outlined',
       permission: ['listVpnUsers'],
-      hidden: true,
       columns: ['username', 'state', 'account', 'domain'],
       details: ['username', 'state', 'account', 'domain'],
       actions: [
@@ -906,6 +906,7 @@ export default {
       name: 'guestvlans',
       title: 'label.guest.vlan',
       icon: 'folder-outlined',
+      docHelp: 'conceptsandterminology/network_setup.html#vlan-allocation-example',
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],

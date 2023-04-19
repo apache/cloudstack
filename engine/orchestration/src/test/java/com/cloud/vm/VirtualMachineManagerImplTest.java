@@ -71,10 +71,14 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
@@ -134,6 +138,10 @@ public class VirtualMachineManagerImplTest {
 
     @Mock
     private DiskOfferingDao diskOfferingDaoMock;
+    @Mock
+    VMTemplateDao templateDao;
+    @Mock
+    VMTemplateZoneDao templateZoneDao;
 
     @Mock
     private HostDao hostDaoMock;
@@ -775,5 +783,59 @@ public class VirtualMachineManagerImplTest {
         Mockito.doReturn("vmInstanceMockedToString").when(vmInstanceMock).toString();
         Mockito.doReturn(isOfferingUsingLocal).when(diskOfferingMock).isUseLocalStorage();
         virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, diskOfferingMock);
+    }
+
+    @Test
+    public void checkIfTemplateNeededForCreatingVmVolumesExistingRootVolumes() {
+        long vmId = 1L;
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(volumeDaoMock.findReadyRootVolumesByInstance(vmId)).thenReturn(List.of(Mockito.mock(VolumeVO.class)));
+        virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void checkIfTemplateNeededForCreatingVmVolumesMissingTemplate() {
+        long vmId = 1L;
+        long templateId = 1L;
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getTemplateId()).thenReturn(templateId);
+        Mockito.when(volumeDaoMock.findReadyRootVolumesByInstance(vmId)).thenReturn(null);
+        Mockito.when(templateDao.findById(templateId)).thenReturn(null);
+        virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void checkIfTemplateNeededForCreatingVmVolumesMissingZoneTemplate() {
+        long vmId = 1L;
+        long templateId = 1L;
+        long dcId = 1L;
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getTemplateId()).thenReturn(templateId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(dcId);
+        Mockito.when(volumeDaoMock.findReadyRootVolumesByInstance(vmId)).thenReturn(null);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(vm.getId()).thenReturn(templateId);
+        Mockito.when(templateDao.findById(templateId)).thenReturn(template);
+        virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
+    }
+
+    @Test
+    public void checkIfTemplateNeededForCreatingVmVolumesTemplateAvailable() {
+        long vmId = 1L;
+        long templateId = 1L;
+        long dcId = 1L;
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getTemplateId()).thenReturn(templateId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(dcId);
+        Mockito.when(volumeDaoMock.findReadyRootVolumesByInstance(vmId)).thenReturn(new ArrayList<>());
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getId()).thenReturn(templateId);
+        Mockito.when(templateDao.findById(templateId)).thenReturn(template);
+        Mockito.when(templateZoneDao.findByZoneTemplate(dcId, templateId)).thenReturn(Mockito.mock(VMTemplateZoneVO.class));
+        virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
     }
 }

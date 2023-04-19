@@ -249,5 +249,4 @@ public class CreateNetworkOfferingTest extends TestCase {
         // System.out.println("Creating Vpc Network Offering");
         assertNotNull("Vpc Isolated network offering with Vpc and Netscaler provider ", off);
     }
-
 }

@@ -75,12 +75,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="kubernetesVersionLoading"
             :placeholder="apiParams.kubernetesversionid.description"
             @change="val => { handleKubernetesVersionChange(kubernetesVersions[val]) }">
-            <a-select-option v-for="(opt, optIndex) in kubernetesVersions" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in kubernetesVersions" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -95,11 +95,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="serviceOfferingLoading"
             :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -122,11 +122,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkLoading"
             :placeholder="apiParams.networkid.description">
-            <a-select-option v-for="(opt, optIndex) in networks" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networks" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -171,11 +171,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="keyPairLoading"
             :placeholder="apiParams.keypair.description">
-            <a-select-option v-for="(opt, optIndex) in keyPairs" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in keyPairs" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>

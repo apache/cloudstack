@@ -51,7 +51,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -279,6 +278,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
@@ -323,6 +323,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.VmDiskStatisticsVO;
@@ -332,7 +333,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
-import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
@@ -7201,7 +7201,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
 
-            s_logger.debug("AssignVM: Basic zone, adding security groups no " + securityGroupIdList.size() + " to " + vm.getInstanceName());
+            int securityIdList = securityGroupIdList != null ? securityGroupIdList.size() : 0;
+            s_logger.debug("AssignVM: Basic zone, adding security groups no " + securityIdList + " to " + vm.getInstanceName());
         } else {
             Set<NetworkVO> applicableNetworks = new LinkedHashSet<>();
             Map<Long, String> requestedIPv4ForNics = new HashMap<>();
@@ -7533,7 +7534,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _accountMgr.checkAccess(caller, null, true, template);
                 if (isISO) {
                     if (!template.getFormat().equals(ImageFormat.ISO)) {
-                        throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+                        throw new InvalidParameterValueException("VM has been created using an ISO therefore it can not be re-installed with a template");
                     }
                 } else {
                     if (template.getFormat().equals(ImageFormat.ISO)) {

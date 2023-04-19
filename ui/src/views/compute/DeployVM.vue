@@ -42,19 +42,17 @@
                               v-model:value="form.zoneid"
                               @change="onSelectZoneId(zoneItem.id)">
                               <a-col :span="8">
-                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
-                                  <a-radio :value="zoneItem.id">
-                                    <div>
+                                <a-card style="width:200px;" :hoverable="false">
+                                  <a-radio :value="zoneItem.id" />
+                                  <div :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-30px', marginBottom: '10px'}">
                                       <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
                                         :image="zoneItem.icon.base64image"
-                                        size="36"
-                                        style="marginTop: -30px; marginLeft: 60px" />
-                                      <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
+                                        size="36" />
+                                      <global-outlined v-else/>
                                     </div>
-                                  </a-radio>
                                   <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
-                                </a-card-grid>
+                                </a-card>
                               </a-col>
                             </a-radio-group>
                           </div>
@@ -123,6 +121,7 @@
                         :filterOption="filterOption"
                         :options="hostSelectOptions"
                         :loading="loading.hosts"
+                        @change="onSelectHostId"
                       ></a-select>
                     </a-form-item>
                   </div>
@@ -220,7 +219,7 @@
                         }"
                         @change="onSelectTemplateConfigurationId"
                       >
-                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id">
+                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id" :label="opt.name || opt.description">
                           {{ opt.name || opt.description }}
                         </a-select-option>
                       </a-select>
@@ -482,11 +481,11 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="label"
+                            optionFilterProp="value"
                             v-model:value="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -527,7 +526,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
+                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id" :label="bootType.description">
                             {{ bootType.description }}
                           </a-select-option>
                         </a-select>
@@ -538,7 +537,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
+                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id" :label="bootMode.description">
                             {{ bootMode.description }}
                           </a-select-option>
                         </a-select>
@@ -581,8 +580,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -604,8 +605,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -653,8 +656,10 @@
                                                 :dataSource="userDataParams"
                                                 :pagination="false"
                                                 :rowKey="record => record.key">
-                                                <template #value="{ record }">
-                                                  <a-input v-model:value="userDataValues[record.key]" />
+                                                <template #bodyCell="{ column, record }">
+                                                  <template v-if="column.key === 'value'">
+                                                    <a-input v-model:value="userDataValues[record.key]" />
+                                                  </template>
                                                 </template>
                                               </a-table>
                                             </a-input-group>
@@ -708,7 +713,7 @@
                         v-model:value="form.iodriverpolicy"
                         optionFilterProp="label"
                         :filterOption="filterOption">
-                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id">
+                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id" :label="iodriverpolicy.description">
                           {{ iodriverpolicy.description }}
                         </a-select-option>
                       </a-select>
@@ -966,7 +971,7 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
@@ -1185,7 +1190,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1198,7 +1203,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1211,7 +1216,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1618,11 +1623,11 @@ export default {
         if (this.templateId) {
           apiName = 'listTemplates'
           params.listall = true
-          params.templatefilter = 'all'
+          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.templateId
         } else if (this.isoId) {
           params.listall = true
-          params.isofilter = 'all'
+          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.isoId
           apiName = 'listIsos'
         } else if (this.networkId) {
@@ -1843,7 +1848,7 @@ export default {
       this.form.networkids = ids
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
       this.form.defaultnetworkid = id
     },
     updateNetworkConfig (networks) {
@@ -1884,8 +1889,8 @@ export default {
       this.templateUserDataParams = []
 
       api('listUserData', { id: id }).then(json => {
-        const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        const resp = json.listuserdataresponse.userdata || []
+        if (resp.length > 0) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')
@@ -2411,14 +2416,26 @@ export default {
     },
     onSelectPodId (value) {
       this.podId = value
+      if (this.podId === null) {
+        this.form.podid = undefined
+      }
 
       this.fetchOptions(this.params.clusters, 'clusters')
       this.fetchOptions(this.params.hosts, 'hosts')
     },
     onSelectClusterId (value) {
       this.clusterId = value
+      if (this.clusterId === null) {
+        this.form.clusterid = undefined
+      }
 
       this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectHostId (value) {
+      this.hostId = value
+      if (this.hostId === null) {
+        this.form.hostid = undefined
+      }
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
