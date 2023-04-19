@@ -1065,19 +1065,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (volumePoolMap.values().stream().noneMatch(s -> destinationClusterId.equals(s.getClusterId()))) {
             return;
         }
-        Answer[] answer;
-        String warnMessage = "Hypervisor inter-cluster migration during VM start failed";
-        try {
-            answer = attemptHypervisorMigration(vm, volumePoolMap, lastHost.getId());
-            if (answer == null) {
-                s_logger.warn(warnMessage);
-                return;
-            }
-            // Other network related updates will be done using caller
-            markVolumesInPool(vm, answer);
-        } catch (CloudRuntimeException cre) {
-            s_logger.warn(warnMessage, cre);
+        Answer[] answer = attemptHypervisorMigration(vm, volumePoolMap, lastHost.getId());
+        if (answer == null) {
+            s_logger.warn("Hypervisor inter-cluster migration during VM start failed");
+            return;
         }
+        // Other network related updates will be done using caller
+        markVolumesInPool(vm, answer);
     }
 
     @Override
