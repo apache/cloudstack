@@ -1584,9 +1584,12 @@ export default {
       } else if (['host'].includes(this.$route.name)) {
         if (filter === 'all') {
           delete query.resourcestate
+          delete query.state
         } else if (['up', 'down', 'alert'].includes(filter)) {
+          delete query.resourcestate
           query.state = filter
         } else {
+          delete query.state
           query.resourcestate = filter
         }
       } else if (this.$route.name === 'vm') {
