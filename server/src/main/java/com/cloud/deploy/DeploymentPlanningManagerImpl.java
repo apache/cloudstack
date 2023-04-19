@@ -292,7 +292,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 lastHost.getId(), vm.getDataCenterId(), ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.key(), lastHostClusterId));
         List<Long> clusterIds = _clusterDao.listAllClusters(lastHost.getDataCenterId());
         Set<Long> existingAvoidedClusters = avoids.getClustersToAvoid();
-        clusterIds = clusterIds.stream().filter(x -> !Objects.equals(x, lastHostClusterId) && !existingAvoidedClusters.contains(x)).collect(Collectors.toList());
+        clusterIds = clusterIds.stream().filter(x -> !Objects.equals(x, lastHostClusterId) && (existingAvoidedClusters == null || !existingAvoidedClusters.contains(x))).collect(Collectors.toList());
         avoids.addClusterList(clusterIds);
     }
 
