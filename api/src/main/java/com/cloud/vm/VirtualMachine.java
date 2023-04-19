@@ -57,7 +57,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         Migrating(true, "VM is being migrated.  host id holds to from host"),
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
-        Shutdown(false, "VM state is shutdown from inside");
+        Shutdown(false, "VM state is shutdown from inside"),
+        Restoring(true, "VM is being restored from backup");
 
         private final boolean _transitional;
         String _description;
@@ -126,6 +127,11 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging,null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Stopped, Event.RestoringRequested, State.Restoring, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Expunging, Event.RestoringRequested, State.Restoring, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, Event.RestoringRequested, State.Restoring, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Restoring, Event.RestoringSuccess, State.Stopped, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Restoring, Event.RestoringFailed, State.Stopped, null));
 
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running, null));
@@ -210,6 +216,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         AgentReportMigrated,
         RevertRequested,
         SnapshotRequested,
+        RestoringRequested,
+        RestoringFailed,
+        RestoringSuccess,
 
         // added for new VMSync logic
         FollowAgentPowerOnReport,

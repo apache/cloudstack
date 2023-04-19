@@ -280,7 +280,7 @@ export default {
       this.listCapacity(this.zoneSelected)
     },
     filterZone (input, option) {
-      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
   }
 }

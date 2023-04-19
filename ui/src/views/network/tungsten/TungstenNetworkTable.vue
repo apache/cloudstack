@@ -25,52 +25,49 @@
       :pagination="false"
       :rowKey="(record, idx) => record.id || record.name || idx + '-' + Math.random()"
       :scroll="{ y: 350 }">
-      <template #name="{ text, record }">
-        <!-- <QuickView
-          :actions="actions"
-          :enabled="true"
-          :resource="record"
-          @exec-action="(action) => execAction(action, record)"/> -->
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'name'">
         <router-link v-if="apiName === 'listTungstenFabricPolicy'" :to="{ path: '/tungstenpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <router-link v-else-if="apiName === 'listTungstenFabricApplicationPolicySet'" :to="{ path: '/tungstenpolicyset/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
-      </template>
-      <template #tungstenvms="{ record }">
-        <ul v-if="record.tungstenvms.length > 0"><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
-      </template>
-      <template #network="{ record }">
-        <ul v-if="record.network.length > 0"><li v-for="item in record.network" :key="item.uuid"><span v-if="item.name">{{ item.name }}</span></li></ul>
-      </template>
-      <template #firewallpolicy="{ record }">
-        <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
-      </template>
-      <template #firewallrule="{ record }">
-        <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
-      </template>
-      <template #tungstenroutingpolicyterm="{ record }">
-        <span v-if="record.tungstenroutingpolicyterm.length > 0">{{ record.tungstenroutingpolicyterm[0].name }}</span>
-      </template>
-      <template #vm="{ record }">
-        <ul v-if="record.vm.length > 0"><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
-      </template>
-      <template #nic="{ record }">
-        <ul v-if="record.nic.length > 0"><li v-for="item in record.nic" :key="item.uuid">{{ item.name }}</li></ul>
-      </template>
-      <template #tag="{ record }">
-        <div class="tags" v-for="tag in record.tag" :key="tag.uuid">
-          <a-tag :key="tag.uuid">{{ tag.name }}</a-tag>
-        </div>
-      </template>
-      <template #action="{ record }">
-        <span v-for="(action, index) in actions" :key="index" style="margin-right: 5px">
-          <tooltip-button
-            v-if="action.dataView && ('show' in action ? action.show(record, $store.getters) : true)"
-            :tooltip="$t(action.label)"
-            :danger="['delete-outlined', 'DeleteOutlined'].includes(action.icon)"
-            :type="(['DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
-            :icon="action.icon"
-            @click="() => execAction(action, record)" />
-        </span>
+        </template>
+        <template v-if="column.key === 'tungstenvms'">
+          <ul v-if="record.tungstenvms.length > 0"><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
+        </template>
+        <template v-if="column.key === 'network'">
+          <ul v-if="record.network.length > 0"><li v-for="item in record.network" :key="item.uuid"><span v-if="item.name">{{ item.name }}</span></li></ul>
+        </template>
+        <template v-if="column.key === 'firewallpolicy'">
+          <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
+        </template>
+        <template v-if="column.key === 'firewallrule'">
+          <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
+        </template>
+        <template v-if="column.key === 'tungstenroutingpolicyterm'">
+          <span v-if="record.tungstenroutingpolicyterm.length > 0">{{ record.tungstenroutingpolicyterm[0].name }}</span>
+        </template>
+        <template v-if="column.key === 'vm'">
+          <ul v-if="record.vm.length > 0"><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
+        </template>
+        <template v-if="column.key === 'nic'">
+          <ul v-if="record.nic.length > 0"><li v-for="item in record.nic" :key="item.uuid">{{ item.name }}</li></ul>
+        </template>
+        <template v-if="column.key === 'tag'">
+          <div class="tags" v-for="tag in record.tag" :key="tag.uuid">
+            <a-tag :key="tag.uuid">{{ tag.name }}</a-tag>
+          </div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <span v-for="(action, index) in actions" :key="index" style="margin-right: 5px">
+            <tooltip-button
+              v-if="action.dataView && ('show' in action ? action.show(record, $store.getters) : true)"
+              :tooltip="$t(action.label)"
+              :danger="['delete-outlined', 'DeleteOutlined'].includes(action.icon)"
+              :type="(['DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
+              :icon="action.icon"
+              @click="() => execAction(action, record)" />
+          </span>
+        </template>
       </template>
     </a-table>
     <a-pagination

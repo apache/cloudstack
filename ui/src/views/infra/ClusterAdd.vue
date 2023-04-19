@@ -49,9 +49,9 @@
           v-model:value="hypervisor"
           @change="resetAllFields"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="hv in hypervisorsList"
@@ -69,12 +69,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
-            :key="pod.id">
+            :key="pod.id"
+            :label="pod.name">
             {{ pod.name }}
           </a-select-option>
         </a-select>
