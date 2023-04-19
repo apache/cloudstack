@@ -77,6 +77,7 @@ public interface AnnotationService {
             list.add(EntityType.SECONDARY_STORAGE);
             list.add(EntityType.VR);
             list.add(EntityType.SYSTEM_VM);
+            list.add(EntityType.MANAGEMENT_SERVER);
             if (roleType != RoleType.DomainAdmin) {
                 list.add(EntityType.DOMAIN);
                 list.add(EntityType.SERVICE_OFFERING);
