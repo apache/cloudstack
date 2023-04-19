@@ -34,7 +34,7 @@ import javax.inject.Inject;
 import java.util.Date;
 
 @APICommand(name = "updateVMSchedule", description = "Update VM Schedule.", responseObject = VMScheduleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
 public class UpdateVMScheduleCmd extends BaseCmd {
     @Inject
     private VMScheduleManager vmScheduleManager;

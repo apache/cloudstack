@@ -34,7 +34,7 @@ import javax.inject.Inject;
 import java.util.Date;
 
 @APICommand(name = "createVMSchedule", description = "Create VM Schedule", responseObject = VMScheduleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
 public class CreateVMScheduleCmd extends BaseCmd {
 
     @Inject
@@ -55,8 +55,8 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DESCRIPTION,
             type = CommandType.STRING,
-            required = true,
-            description = "Name of the schedule")
+            required = false,
+            description = "Description of the schedule")
     private String description;
 
     @Parameter(name = ApiConstants.SCHEDULE,
@@ -79,7 +79,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.START_DATE,
             type = CommandType.DATE,
-            required = false,
+            required = true,
             description = "start date from which the schedule becomes active"
                     + "Use format \"yyyy-MM-dd hh:mm:ss\"). Defaults to current date time.")
     private Date startDate;
@@ -90,6 +90,12 @@ public class CreateVMScheduleCmd extends BaseCmd {
             description = "end date after which the schedule becomes inactive"
                     + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
+
+    @Parameter(name = ApiConstants.ENABLED,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "Enable VM schedule. Defaults to false)")
+    private Boolean enabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -125,6 +131,13 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     public Date getEndDate() {
         return endDate;
+    }
+
+    public Boolean getEnabled() {
+        if (enabled == null) {
+            enabled = false;
+        }
+        return enabled;
     }
 
     /////////////////////////////////////////////////////

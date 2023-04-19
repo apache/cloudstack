@@ -29,6 +29,8 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -48,6 +50,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.TimeZone;
 
 public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase implements VMScheduleManager, PluggableService {
@@ -83,39 +86,37 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             try {
                 action = VMSchedule.Action.valueOf(cmd.getAction().toUpperCase());
             } catch (IllegalArgumentException exception) {
-                throw new InvalidParameterValueException("Invalid value for action: " + cmd.getAction());
+                throw new InvalidParameterValueException(String.format("Invalid value for action: %s", cmd.getAction()));
             }
         }
 
-        // TODO: Check for timezone related issues
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
-        Date now = new Date();
-        if (startDate == null) {
-            startDate = now;
-        } else if (startDate.compareTo(now) < 0) {
-            throw new InvalidParameterValueException("Invalid value for start date. start can't be less than current datetime");
-        }
 
-        if (endDate != null && startDate.compareTo(endDate) > 0) {
-            throw new InvalidParameterValueException("Invalid value for end date. End date can't be less than start date. ");
-        }
+        validateStartDateEndDate(startDate, endDate);
+
         CronExpression cronExpression = DateUtil.parseSchedule(cmd.getSchedule());
 
-        // TODO: Revisit validation here.
         String cmdTimeZone = cmd.getTimeZone();
         TimeZone timeZone = TimeZone.getTimeZone(cmdTimeZone);
         String timeZoneId = timeZone.getID();
 
+        String description = null;
+        if (cmd.getDescription() == null || cmd.getDescription().isBlank()) {
+            description = String.format("%s - %s", action, DateUtil.getHumanReadableSchedule(cronExpression));
+        } else description = cmd.getDescription();
+
         LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM [%s], as an equivalent of [%s].", cmd.getVmId(), cmd.getName(), cmd.getVmId(),
                 cmdTimeZone));
 
+        String finalDescription = description;
+        VMSchedule.Action finalAction = action;
+        return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
+            VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), cmd.getName(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, startDate, endDate, cmd.getEnabled()));
+            vmScheduler.scheduleNextJob(vmSchedule);
 
-        // TODO: Wrap in a db transaction
-        VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), cmd.getName(), cmd.getDescription(), cronExpression.toString(), timeZoneId, action, startDate, endDate, false));
-        vmScheduler.scheduleNextJob(vmSchedule);
-
-        return createResponse(vmSchedule);
+            return createResponse(vmSchedule);
+        });
     }
 
     @Override
@@ -193,18 +194,13 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
 
         String name = cmd.getName();
-        String description = cmd.getDescription();
-        CronExpression cronExpression = DateUtil.parseSchedule(cmd.getSchedule());
+        CronExpression cronExpression = Objects.requireNonNullElse(
+                DateUtil.parseSchedule(cmd.getSchedule()),
+                DateUtil.parseSchedule(vmSchedule.getSchedule())
+        );
 
-        Date startDate = cmd.getStartDate();
-        Date endDate = cmd.getEndDate();
-
-        if (endDate != null && ((startDate != null && startDate.compareTo(endDate) > 0) || vmSchedule.getStartDate().compareTo(endDate) > 0)) {
-            throw new InvalidParameterValueException("Invalid value for end date. End date can't be less than start date.");
-        }
-        Boolean enabled = cmd.getEnabled();
         VMSchedule.Action action = null;
-        if (cmd.getAction()!= null) {
+        if (cmd.getAction() != null) {
             try {
                 action = VMSchedule.Action.valueOf(cmd.getAction().toUpperCase());
             } catch (IllegalArgumentException exception) {
@@ -212,44 +208,70 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
 
+        String description = cmd.getDescription();
+
+        String cmdTimeZone = cmd.getTimeZone();
+
+        Date startDate = Objects.requireNonNullElse(cmd.getStartDate(), vmSchedule.getStartDate());
+
+        Date endDate = cmd.getEndDate();
+        if (endDate == null && vmSchedule.getEndDate() != null) {
+            endDate = vmSchedule.getEndDate();
+        }
+
+        validateStartDateEndDate(startDate, endDate);
+
+        Boolean enabled = cmd.getEnabled();
+
         if (name != null) {
             vmSchedule.setName(name);
+        }
+        if (enabled != null) {
+            vmSchedule.setEnabled(enabled);
         }
         if (description != null) {
             vmSchedule.setDescription(description);
         }
-        if (cronExpression != null) {
-            vmSchedule.setSchedule(cronExpression.toString());
-        }
-        if (cmd.getTimeZone() != null) {
-            // TODO: Revisit validation here.
-            String cmdTimeZone = cmd.getTimeZone();
-            TimeZone timeZone = TimeZone.getTimeZone(cmdTimeZone);
-            String timeZoneId = timeZone.getID();
-            if (!timeZoneId.equals(cmdTimeZone)) {
-                LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM %s, as an equivalent of [%s].", timeZoneId, vmSchedule.getSchedule(), vmSchedule.getVmId(),
-                        cmdTimeZone));
-            }
-            vmSchedule.setTimeZone(timeZoneId);
-        }
-        if (startDate != null) {
-            vmSchedule.setStartDate(startDate);
-        }
         if (endDate != null) {
             vmSchedule.setEndDate(endDate);
-        }
-        if (enabled != null) {
-            vmSchedule.setEnabled(enabled);
         }
         if (action != null) {
             vmSchedule.setAction(action);
         }
 
-        // TODO: Wrap this in a transaction
-        vmScheduleDao.update(cmd.getId(), vmSchedule);
-        vmScheduler.updateScheduledJob(vmSchedule);
+        vmSchedule.setStartDate(startDate);
+        if (cmdTimeZone != null) {
+            TimeZone timeZone = TimeZone.getTimeZone(cmdTimeZone);
+            String timeZoneId = timeZone.getID();
+            if (!timeZoneId.equals(cmdTimeZone)) {
+                LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM %s, as an equivalent of [%s].",
+                        timeZoneId, vmSchedule.getSchedule(), vmSchedule.getVmId(), cmdTimeZone));
+            }
+            vmSchedule.setTimeZone(timeZoneId);
+        }
+        vmSchedule.setSchedule(cronExpression.toString());
 
-        return vmSchedule;
+        return Transaction.execute((TransactionCallback<VMScheduleVO>) status -> {
+            vmScheduleDao.update(cmd.getId(), vmSchedule);
+            vmScheduler.updateScheduledJob(vmSchedule);
+            return vmSchedule;
+        });
+    }
+
+    private void validateStartDateEndDate(Date startDate, Date endDate) {
+        Date now = new Date();
+        if (startDate.before(now)) {
+            throw new InvalidParameterValueException(String.format("Invalid value for start date. Start date [%s] can't be less than current time [%s].", startDate, now));
+        }
+
+        if (endDate != null) {
+            if (endDate.before(now)) {
+                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than current time [%s].", endDate, now));
+            }
+            if (endDate.before(startDate)) {
+                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than start date [%s].", endDate, startDate));
+            }
+        }
     }
 
     private long removeScheduleByIds(List<Long> ids) {
@@ -258,7 +280,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
         sc.setParameters("id", ids.toArray());
-        // TODO: Wrap this in a transaction
         vmScheduler.removeScheduledJobs(ids);
         return vmScheduleDao.remove(sc);
     }
@@ -270,7 +291,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
         sc.setParameters("id", vmId);
-        // TODO: Wrap this in a transaction
         List<VMScheduleVO> vmSchedules = vmScheduleDao.search(sc, null);
         List<Long> ids = new ArrayList<>();
         for (final VMScheduleVO vmSchedule: vmSchedules){
@@ -285,9 +305,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_DELETE, eventDescription = "Deleting VM Schedule")
-    public long removeSchedule(DeleteVMScheduleCmd cmd) {
+    public Long removeSchedule(DeleteVMScheduleCmd cmd) {
         // TODO: Check if the user has access to delete all schedules in the list
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
-        return removeScheduleByIds(ids);
+        return Transaction.execute((TransactionCallback<Long>) status -> removeScheduleByIds(ids));
     }
 }

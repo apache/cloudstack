@@ -31,7 +31,13 @@ import java.time.format.DateTimeParseException;
 import java.time.OffsetDateTime;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import org.springframework.scheduling.support.CronExpression;
+
 
 public class DateUtil {
     public static final int HOURS_IN_A_MONTH = 30 * 24;
@@ -304,5 +310,12 @@ public class DateUtil {
         } else {
             return null;
         }
+    }
+
+    public static String getHumanReadableSchedule(CronExpression schedule) {
+        CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.SPRING);
+        CronParser parser = new CronParser(cronDefinition);
+        CronDescriptor descriptor = CronDescriptor.instance();
+        return descriptor.describe(parser.parse(schedule.toString()));
     }
 }

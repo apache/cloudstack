@@ -22,11 +22,12 @@ package org.apache.cloudstack.vm.schedule;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.time.ZoneId;
 import java.util.Date;
 
 public interface VMSchedule extends Identity, InternalIdentity {
     enum Action {
-        START, STOP, REBOOT;
+        START, STOP, REBOOT
     }
     long getVmId();
 
@@ -46,4 +47,5 @@ public interface VMSchedule extends Identity, InternalIdentity {
 
     Date getEndDate();
 
+    ZoneId getTimeZoneId();
 }

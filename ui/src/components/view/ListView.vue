@@ -39,7 +39,7 @@
     </template>
     <template #bodyCell="{ column, text, record }">
       <template v-if="column.key === 'name'">
-        <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
+        <span v-if="['vm'].includes($route.path.split('/')[1]) && $route?.query?.tab !== 'schedules'" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="1x"/>
           </span>
@@ -86,6 +86,9 @@
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
           </span>
+          <span v-else-if="$route?.query?.tab === 'schedules'">
+            {{ text }}
+          </span>
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
@@ -98,6 +101,13 @@
       <template v-if="column.key === 'type'">
         <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(text)">{{ $t(text.toLowerCase()) }}</span>
         <span v-else>{{ text }}</span>
+      </template>
+
+      <template v-if="column.key === 'schedule'">
+        <a-tooltip>
+        <template #title>{{ generateHumanReadableSchedule(text) }}</template>
+          {{ text }}
+      </a-tooltip>
       </template>
       <template v-if="column.key === 'displayname'">
         <QuickView
@@ -296,6 +306,9 @@
       <template v-if="column.key === 'current'">
         <status :text="record.current ? record.current.toString() : 'false'" />
       </template>
+      <template v-if="column.key === 'enabled'">
+        <status :text="record.enabled ? record.enabled.toString() : 'false'" />
+      </template>
       <template v-if="column.key === 'created'">
         {{ $toLocaleDate(text) }}
       </template>
@@ -387,6 +400,20 @@
           @onClick="editTariffValue(record)" />
         <slot></slot>
       </template>
+      <template v-if="column.key === 'vmScheduleActions'">
+        <tooltip-button
+          :tooltip="$t('label.edit')"
+          :disabled="!('updateVMSchedule' in $store.getters.apis)"
+          icon="edit-outlined"
+          @onClick="updateVMSchedule(record)" />
+        <tooltip-button
+          :tooltip="$t('label.remove')"
+          :disabled="!('deleteVMSchedule' in $store.getters.apis)"
+          icon="delete-outlined"
+          :danger="true"
+          type="primary"
+          @onClick="removeVMSchedule(record)" />
+      </template>
     </template>
     <template #footer>
       <span v-if="hasSelected">
@@ -405,6 +432,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
+import cronstrue from 'cronstrue/i18n'
 
 export default {
   name: 'ListView',
@@ -686,6 +714,12 @@ export default {
     editTariffValue (record) {
       this.$emit('edit-tariff-action', true, record)
     },
+    updateVMSchedule (record) {
+      this.$emit('update-vm-schedule', record)
+    },
+    removeVMSchedule (record) {
+      this.$emit('remove-vm-schedule', record)
+    },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {
         return ''
@@ -729,6 +763,9 @@ export default {
         case 'AUTOSCALE_VM_GROUP': return 'AutoScale VM group'
         default: return record.entitytype.toLowerCase().replace('_', '')
       }
+    },
+    generateHumanReadableSchedule (cron) {
+      return cronstrue.toString(cron, { locale: this.$i18n.locale })
     },
     entityTypeToPath (entitytype) {
       switch (entitytype) {

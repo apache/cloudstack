@@ -48,6 +48,9 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
      */
     @Override
     public List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp) {
+        if (currentTimestamp == null) {
+            currentTimestamp = new Date();
+        }
         Date truncatedTs = DateUtils.round(currentTimestamp, Calendar.MINUTE);
         SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
         sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.EQ);
@@ -57,5 +60,22 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
         sc.setParameters("scheduled_timestamp", truncatedTs);
         Filter filter = new Filter(VMScheduledJobVO.class, "vmScheduleId", true, null,null);
         return search(sc, filter);
+    }
+
+    @Override
+    public int expungeJobsForSchedules(List<Long> vmScheduleIds, Date currentTimestamp) {
+        if (currentTimestamp == null) {
+            currentTimestamp = new Date();
+        }
+        Date truncatedTs = DateUtils.round(new Date(), Calendar.MINUTE);
+        SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
+        sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.GT);
+        sb.and("vm_schedule_id", sb.entity().getVmScheduleId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<VMScheduledJobVO> sc = sb.create();
+        sc.setParameters("scheduled_timestamp", truncatedTs);
+        sc.setParameters("vm_schedule_id", vmScheduleIds.toArray());
+
+        return expunge(sc);
     }
 }

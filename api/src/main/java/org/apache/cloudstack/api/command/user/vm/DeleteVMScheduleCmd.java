@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 
 @APICommand(name = "deleteVMSchedule", description = "Delete VM Schedule.", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
 public class DeleteVMScheduleCmd extends BaseCmd {
     @Inject
     private VMScheduleManager vmScheduleManager;

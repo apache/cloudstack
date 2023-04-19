@@ -68,6 +68,9 @@ import {
 import VueClipboard from 'vue3-clipboard'
 import VueCropper from 'vue-cropper'
 
+import cronLight from '@vue-js-cron/light'
+import '@vue-js-cron/light/dist/light.css'
+
 export default {
   install: (app) => {
     app.config.globalProperties.$confirm = Modal.confirm
@@ -127,5 +130,6 @@ export default {
     app.use(Collapse)
     app.use(Descriptions)
     app.use(Space)
+    app.use(cronLight)
   }
 }

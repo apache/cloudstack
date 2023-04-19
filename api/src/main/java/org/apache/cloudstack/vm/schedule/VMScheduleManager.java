@@ -36,5 +36,5 @@ public interface VMScheduleManager {
 
     long removeScheduleByVmId(long vmId, boolean expunge);
 
-    long removeSchedule(DeleteVMScheduleCmd deleteVMScheduleCmd);
+    Long removeSchedule(DeleteVMScheduleCmd deleteVMScheduleCmd);
 }

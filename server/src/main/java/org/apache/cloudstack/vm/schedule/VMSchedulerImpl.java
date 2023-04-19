@@ -86,17 +86,11 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     @Override
     public void removeScheduledJobs(List<Long> vmScheduleIds) {
         if (vmScheduleIds == null || vmScheduleIds.isEmpty()) {
+            LOGGER.debug("Removed 0 scheduled jobs");
             return;
         }
-        SearchBuilder<VMScheduledJobVO> sb = vmScheduledJobDao.createSearchBuilder();
-        sb.and("vm_schedule_id", sb.entity().getVmScheduleId(), SearchCriteria.Op.IN);
-        sb.and("async_job_id", sb.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
-
-        SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("id", vmScheduleIds.toArray());
-
-        int rowsRemoved = vmScheduledJobDao.remove(sc);
-        LOGGER.info(String.format("Removed %s scheduled jobs for VM", rowsRemoved));
+        int rowsRemoved = vmScheduledJobDao.expungeJobsForSchedules(vmScheduleIds, null);
+        LOGGER.debug(String.format("Removed %s VM scheduled jobs", rowsRemoved));
     }
 
     @Override
@@ -135,8 +129,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         }
 
         ZonedDateTime ts = null;
-        ZoneId tz = ZoneId.of(vmSchedule.getTimeZone());
-        if (startDate.compareTo(now) > 0) {
+        ZoneId tz = vmSchedule.getTimeZoneId();
+        if (startDate.after(now)) {
             ts = cron.next(ZonedDateTime.ofInstant(startDate.toInstant(), tz));
         } else {
             ts = cron.next(ZonedDateTime.ofInstant(now.toInstant(), tz));

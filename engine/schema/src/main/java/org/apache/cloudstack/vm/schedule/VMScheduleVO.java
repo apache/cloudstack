@@ -31,7 +31,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import java.time.ZoneId;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.UUID;
 
 @Entity
@@ -48,7 +50,7 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "name", nullable = false)
     String name;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description")
     String description;
 
     @Column(name = "vm_id", nullable = false)
@@ -56,7 +58,7 @@ public class VMScheduleVO implements VMSchedule {
 
     @Column(name = "schedule", nullable = false)
     String schedule;
-    @Column(name = "timezone")
+    @Column(name = "timezone", nullable = false)
     String timeZone;
     @Column(name = "action", nullable = false)
     @Enumerated(value = EnumType.STRING)
@@ -178,5 +180,10 @@ public class VMScheduleVO implements VMSchedule {
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
+    }
+
+    @Override
+    public ZoneId getTimeZoneId() {
+        return TimeZone.getTimeZone(getTimeZone()).toZoneId();
     }
 }
