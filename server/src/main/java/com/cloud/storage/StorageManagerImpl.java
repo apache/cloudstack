@@ -890,7 +890,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private Map<String,String> extractUriParamsAsMap(String url){
         Map<String,String> uriParams = new HashMap<>();
         UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
-        
+
         String scheme = uriInfo.getScheme();
         String storageHost = uriInfo.getStorageHost();
         String storagePath = uriInfo.getStoragePath();
