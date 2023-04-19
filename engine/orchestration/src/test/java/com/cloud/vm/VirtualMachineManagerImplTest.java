@@ -63,7 +63,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -152,8 +151,6 @@ public class VirtualMachineManagerImplTest {
     private UserVmDao userVmDaoMock;
     @Mock
     private UserVmVO userVmMock;
-    @Mock
-    HypervisorGuruManager hypervisorGuruManager;
 
     @Before
     public void setup() {
@@ -844,8 +841,7 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void checkAndAttemptMigrateVmAcrossClusterNonValid() {
-        // If any of the non-valid cases try migration exception is thrown
-        Mockito.when(hypervisorGuruManager.getGuru(Mockito.any())).thenThrow(CloudRuntimeException.class);
+        // Below scenarios shouldn't result in VM migration
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
