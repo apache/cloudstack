@@ -255,9 +255,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_UPDATE, eventDescription = "updating Role")
     public Role updateRole(final Role role, final String name, final RoleType roleType, final String description, Boolean publicRole) {
         checkCallerAccess();
-        if (role.isDefault()) {
-            throw new PermissionDeniedException("Default roles cannot be updated");
-        }
 
         if (roleType != null && roleType == RoleType.Unknown) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unknown is not a valid role type");

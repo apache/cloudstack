@@ -154,7 +154,6 @@ class TestPrivateRoles(cloudstackTestCase):
     def getRandomString(self):
         return "".join(random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(10))
 
-
     def asserts_visibility_of_private_role(self, role_id):
         list_roles_domain_admin = Role.list(self.domain_admin_apiclient, id=role_id)
         self.assertEqual(
@@ -170,7 +169,6 @@ class TestPrivateRoles(cloudstackTestCase):
             "Admins should be able to list private roles"
         )
 
-
     def asserts_visibility_of_public_role(self, role_id):
         list_roles_domain_admin = Role.list(self.domain_admin_apiclient, id=role_id)
         self.assertNotEqual(
@@ -185,8 +183,6 @@ class TestPrivateRoles(cloudstackTestCase):
             None,
             "Admins should be able to list public roles"
         )
-
-
 
     @attr(tags=['simulator', 'basic'], required_hardware=False)
     def test_create_role(self):
@@ -277,9 +273,3 @@ class TestPrivateRoles(cloudstackTestCase):
             None,
             "Accounts using private roles should be able to login."
         )
-
-
-
-
-
-
