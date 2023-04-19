@@ -243,6 +243,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -344,21 +345,29 @@ export default {
       })
     },
     fetchTemplateData () {
-      api('listTemplates', {
-        templatefilter: 'all',
+      const params = {
         listall: 'true',
         domainid: this.resource.domainid,
         account: this.resource.account
-      }).then(json => {
+      }
+      if (isAdmin()) {
+        params.templatefilter = 'all'
+      } else {
+        params.templatefilter = 'executable'
+      }
+      api('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })
     },
     fetchServiceOfferingData () {
-      api('listServiceOfferings', {
+      const params = {
         listall: 'true',
-        isrecursive: 'true',
         issystem: 'false'
-      }).then(json => {
+      }
+      if (isAdminOrDomainAdmin()) {
+        params.isrecursive = 'true'
+      }
+      api('listServiceOfferings', params).then(json => {
         this.serviceOfferingsList = json.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOfferingsList = this.serviceOfferingsList.filter(offering => !offering.iscustomized)
       })
