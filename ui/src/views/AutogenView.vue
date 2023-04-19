@@ -1583,6 +1583,7 @@ export default {
           delete query.status
         } else {
           query.status = filter
+        }
       } else if (['pod', 'cluster'].includes(this.$route.name)) {
         if (filter === 'all') {
           delete query.allocationstate
