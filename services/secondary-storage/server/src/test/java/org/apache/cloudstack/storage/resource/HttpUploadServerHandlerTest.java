@@ -59,8 +59,8 @@ public class HttpUploadServerHandlerTest {
         String expires = "ex";
         String host = "SomeHost";
         long contentLength = 100L;
-        request.add("Signature", sign);
-        request.add("metadata", metadata);
+        request.add("x-Signature", sign);
+        request.add("X-metadata", metadata);
         request.add("X-EXPIRES", expires);
         request.add("X-Forwarded-Host", host);
         request.add(HttpHeaders.Names.CONTENT_LENGTH, String.valueOf(contentLength));
