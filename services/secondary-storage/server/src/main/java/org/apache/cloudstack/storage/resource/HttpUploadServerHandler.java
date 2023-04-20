@@ -80,7 +80,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     private boolean requestProcessed = false;
 
     enum UploadHeader {
-        SIGNATURE("signature"),
+        SIGNATURE("x-signature"),
         METADATA("metadata"),
         EXPIRES("x-expires"),
         HOST("x-forwarded-host"),
