@@ -63,7 +63,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.util.CharsetUtil;
 
 public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObject> {
-    private static final Logger logger = Logger.getLogger(HttpUploadServerHandler.class);
+    private static final Logger logger = Logger.getLogger(HttpUploadServerHandler.class.getName());
 
     private static final HttpDataFactory factory = new DefaultHttpDataFactory(true);
 
