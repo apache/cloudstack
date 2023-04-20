@@ -912,7 +912,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         sc = checkAndSetRemovedIsNull(sc);
         filter.setLimit(1L);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);
-        return results.size() == 0 ? null : results.get(0);
+        return results.isEmpty() ? null : results.get(0);
     }
 
     @DB()

@@ -325,7 +325,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             Boolean.class, "system.vm.public.ip.reservation.mode.strictness", "false",
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", true, ConfigKey.Scope.Global);
 
-    public static ConfigKey<Integer> PublicIpAddressQuarantineDuration = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
+    public static final ConfigKey<Integer> PUBLIC_IP_ADDRESS_QUARANTINE_DURATION = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
             "0", "The duration (in hours) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Global);
 
     private Random rand = new Random(System.currentTimeMillis());
@@ -2350,7 +2350,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement,
-                PublicIpAddressQuarantineDuration};
+                PUBLIC_IP_ADDRESS_QUARANTINE_DURATION};
     }
 
     /**
@@ -2423,10 +2423,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress) {
-        Integer quarantineDuration = PublicIpAddressQuarantineDuration.value();
+        Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.value();
         if (quarantineDuration <= 0) {
             s_logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
-                    PublicIpAddressQuarantineDuration.key()));
+                    PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.key()));
             return null;
         }
 
