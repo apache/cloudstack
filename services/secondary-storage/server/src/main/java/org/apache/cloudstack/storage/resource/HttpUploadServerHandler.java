@@ -18,11 +18,11 @@ package org.apache.cloudstack.storage.resource;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -63,7 +63,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.util.CharsetUtil;
 
 public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObject> {
-    private static final Logger logger = Logger.getLogger(HttpUploadServerHandler.class.getName());
+    private static final Logger logger = Logger.getLogger(HttpUploadServerHandler.class);
 
     private static final HttpDataFactory factory = new DefaultHttpDataFactory(true);
 
@@ -79,15 +79,45 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private boolean requestProcessed = false;
 
-    private static final String HEADER_SIGNATURE = "x-signature";
+    enum UploadHeader {
+        SIGNATURE("signature"),
+        METADATA("metadata"),
+        EXPIRES("x-expires"),
+        HOST("x-forwarded-host"),
+        CONTENT_LENGTH("content-length");
 
-    private static final String HEADER_METADATA = "x-metadata";
-
-    private static final String HEADER_EXPIRES = "x-expires";
-
-    private static final String HEADER_HOST = "x-forwarded-host";
+        private final String name;
+        UploadHeader(String name) {
+            this.name = name;
+        }
+        public String getName() {
+            return this.name;
+        }
+        public static UploadHeader fromName(String name) {
+            for (UploadHeader type : values()) {
+                if (type.getName().equalsIgnoreCase(name)) {
+                    return type;
+                }
+            }
+            return null;
+        }
+    }
 
     private static long processTimeout;
+
+    protected Map<UploadHeader, String> getUploadRequestUsefulHeaders(HttpHeaders headers) {
+        Map<UploadHeader, String> headerMap = new HashMap<>();
+        for (Entry<String, String> entry : headers) {
+            UploadHeader headerType = UploadHeader.fromName(entry.getKey());
+            if (headerType != null) {
+                headerMap.put(headerType, entry.getValue());
+            }
+        }
+        for (UploadHeader type : UploadHeader.values()) {
+            logger.info(String.format("HEADER: %s=%s", type, headerMap.get(type)));
+        }
+        return headerMap;
+    }
 
     public HttpUploadServerHandler(NfsSecondaryStorageResource storageResource) {
         this.storageResource = storageResource;
@@ -123,30 +153,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
                 URI uri = new URI(request.getUri());
 
-                String signature = null;
-                String expires = null;
-                String metadata = null;
-                String hostname = null;
-                long contentLength = 0;
-
-                for (Entry<String, String> entry : request.headers()) {
-                    if (HEADER_SIGNATURE.equalsIgnoreCase(entry.getKey())) {
-                        signature = entry.getValue();
-                    } else if (HEADER_METADATA.equalsIgnoreCase(entry.getKey())) {
-                        metadata = entry.getValue();
-                    } else if (HEADER_EXPIRES.equalsIgnoreCase(entry.getKey())) {
-                        expires = entry.getValue();
-                    } else if (HEADER_HOST.equalsIgnoreCase(entry.getKey())) {
-                        hostname = entry.getValue();
-                    } else if (HttpHeaders.Names.CONTENT_LENGTH.equalsIgnoreCase(entry.getKey())) {
-                        contentLength = Long.parseLong(entry.getValue());
-                    }
-                }
-                logger.info("HEADER: signature=" + signature);
-                logger.info("HEADER: metadata=" + metadata);
-                logger.info("HEADER: expires=" + expires);
-                logger.info("HEADER: hostname=" + hostname);
-                logger.info("HEADER: content-length=" + contentLength);
+                Map<UploadHeader, String> headers = getUploadRequestUsefulHeaders(request.headers());
+                long contentLength = headers.get(UploadHeader.CONTENT_LENGTH) != null ? Long.parseLong(headers.get(UploadHeader.CONTENT_LENGTH)) : 0;
                 QueryStringDecoder decoderQuery = new QueryStringDecoder(uri);
                 Map<String, List<String>> uriAttributes = decoderQuery.parameters();
                 uuid = uriAttributes.get("uuid").get(0);
@@ -154,9 +162,10 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 UploadEntity uploadEntity = null;
                 try {
                     // Validate the request here
-                    storageResource.validatePostUploadRequest(signature, metadata, expires, hostname, contentLength, uuid);
+                    storageResource.validatePostUploadRequest(headers.get(UploadHeader.SIGNATURE), headers.get(UploadHeader.METADATA),
+                            headers.get(UploadHeader.EXPIRES), headers.get(UploadHeader.HOST), contentLength, uuid);
                     //create an upload entity. This will fail if entity already exists.
-                    uploadEntity = storageResource.createUploadEntity(uuid, metadata, contentLength);
+                    uploadEntity = storageResource.createUploadEntity(uuid, headers.get(UploadHeader.METADATA), contentLength);
                 } catch (InvalidParameterValueException ex) {
                     logger.error("post request validation failed", ex);
                     responseContent.append(ex.getMessage());
@@ -274,7 +283,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         if (!close) {
             // There's no need to add 'content-length' header if this is the last response.
-            response.headers().set(CONTENT_LENGTH, buf.readableBytes());
+            response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, buf.readableBytes());
         }
         // Write the response.
         ChannelFuture future = channel.writeAndFlush(response);
