@@ -81,7 +81,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     enum UploadHeader {
         SIGNATURE("x-signature"),
-        METADATA("metadata"),
+        METADATA("x-metadata"),
         EXPIRES("x-expires"),
         HOST("x-forwarded-host"),
         CONTENT_LENGTH("content-length");
