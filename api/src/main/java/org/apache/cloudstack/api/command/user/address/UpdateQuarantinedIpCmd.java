@@ -29,11 +29,10 @@ import org.apache.cloudstack.api.response.IpQuarantineResponse;
 
 import java.util.Date;
 
-@APICommand(name = UpdateQuarantinedIpCmd.API_NAME, responseObject = IpQuarantineResponse.class, description = "Updates the quarantine end date for the given public IP address.",
+@APICommand(name = "updateQuarantinedIp", responseObject = IpQuarantineResponse.class, description = "Updates the quarantine end date for the given public IP address.",
         since = "4.18.0", entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class UpdateQuarantinedIpCmd extends BaseCmd {
-    public static final String API_NAME = "updateQuarantinedIp";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IpQuarantineResponse.class, required = true, description = "The ID of the public IP address in " +
             "active quarantine.")
@@ -59,11 +58,6 @@ public class UpdateQuarantinedIpCmd extends BaseCmd {
         IpQuarantineResponse response = _responseGenerator.createQuarantinedIpsResponse(publicIpQuarantine);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return API_NAME + RESPONSE_SUFFIX;
     }
 
     @Override

@@ -26,10 +26,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = ListQuarantinedIpsCmd.API_NAME, responseObject = IpQuarantineResponse.class, description = "List public IP addresses in quarantine.", since = "4.18.0",
+@APICommand(name = "listQuarantinedIps", responseObject = IpQuarantineResponse.class, description = "List public IP addresses in quarantine.", since = "4.18.0",
         entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class ListQuarantinedIpsCmd extends BaseListCmd {
-    public static final String API_NAME = "listQuarantinedIps";
 
     @Parameter(name = ApiConstants.SHOW_REMOVED, type = CommandType.BOOLEAN, description = "Show IPs removed from quarantine.")
     private boolean showRemoved = false;
@@ -49,10 +48,5 @@ public class ListQuarantinedIpsCmd extends BaseListCmd {
         ListResponse<IpQuarantineResponse> response = _queryService.listQuarantinedIps(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return API_NAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 }

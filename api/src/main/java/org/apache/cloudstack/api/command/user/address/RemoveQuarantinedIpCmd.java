@@ -26,12 +26,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
-@APICommand(name = RemoveQuarantinedIpCmd.API_NAME, responseObject = IpQuarantineResponse.class, description = "Removes a public IP address from quarantine. Only IPs in active " +
+@APICommand(name = "removeQuarantinedIp", responseObject = IpQuarantineResponse.class, description = "Removes a public IP address from quarantine. Only IPs in active " +
         "quarantine can be removed.",
         since = "4.18.0", entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class RemoveQuarantinedIpCmd extends BaseCmd {
-    public static final String API_NAME = "removeQuarantinedIp";
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IpQuarantineResponse.class, required = true, description = "The ID of the public IP address in " +
             "active quarantine.")
@@ -56,11 +55,6 @@ public class RemoveQuarantinedIpCmd extends BaseCmd {
         response.setResponseName(getCommandName());
         response.setSuccess(true);
         setResponseObject(response);
-    }
-
-    @Override
-    public String getCommandName() {
-        return API_NAME + RESPONSE_SUFFIX;
     }
 
     @Override
