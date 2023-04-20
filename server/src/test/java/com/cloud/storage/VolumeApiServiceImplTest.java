@@ -1298,50 +1298,6 @@ public class VolumeApiServiceImplTest {
         Assert.assertEquals(expectedIsNotPossibleToResize, result);
     }
 
-    @Test
-    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestDifferentOfferings() {
-        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 2l, false, true, false);
-    }
-
-    @Test
-    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestDifferentOfferingsCustom() {
-        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 2l, true, true, false);
-    }
-
-    @Test
-    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestSameOfferingsCustom() {
-        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 1l, true, true, true);
-    }
-
-    @Test
-    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestSameOfferingsNotCustom() {
-        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 1l, false, true, false);
-    }
-
-    @Test
-    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestDifferentOfferingsAndNullOffering() {
-        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 2l, true, false, false);
-    }
-    @Test
-    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestSameOfferingsNullOffering() {
-        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 1l, false, false, false);
-    }
-
-    private void prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(long existingDiskOfferingId, long newDiskOfferingId, boolean isCustomized,
-            boolean isNotNullServiceOffering, boolean expectedResult) {
-        DiskOfferingVO existingDiskOffering = Mockito.mock(DiskOfferingVO.class);
-        when(existingDiskOffering.getId()).thenReturn(existingDiskOfferingId);
-        DiskOfferingVO newDiskOffering = Mockito.mock(DiskOfferingVO.class);
-        when(newDiskOffering.getId()).thenReturn(newDiskOfferingId);
-        if(isNotNullServiceOffering) {
-            ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
-            when(serviceOfferingVO.isCustomized()).thenReturn(isCustomized);
-            when(serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(anyLong())).thenReturn(serviceOfferingVO);
-        }
-        boolean result = volumeApiServiceImpl.isNewDiskOfferingTheSameAndCustomServiceOffering(existingDiskOffering, newDiskOffering);
-        Assert.assertEquals(expectedResult, result);
-    }
-
     @Test (expected = InvalidParameterValueException.class)
     public void checkIfVolumeCanBeReassignedTestNullVolume() {
         volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), null);
@@ -1536,5 +1492,37 @@ public class VolumeApiServiceImplTest {
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
                 offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
 
+    }
+
+    private void testBaseListOrderedHostsHypervisorVersionInDc(List<String> hwVersions, HypervisorType hypervisorType,
+                                                               String expected) {
+        when(_hostDao.listOrderedHostsHypervisorVersionsInDatacenter(anyLong(), any(HypervisorType.class)))
+                .thenReturn(hwVersions);
+        String min = volumeApiServiceImpl.getMinimumHypervisorVersionInDatacenter(1L, hypervisorType);
+        Assert.assertEquals(expected, min);
+    }
+
+    @Test
+    public void testGetMinimumHypervisorVersionInDatacenterSimulator() {
+        List<String> hwVersions = List.of("4.17.3.0-SNAPSHOT");
+        HypervisorType hypervisorType = HypervisorType.Simulator;
+        String expected = "default";
+        testBaseListOrderedHostsHypervisorVersionInDc(hwVersions, hypervisorType, expected);
+    }
+
+    @Test
+    public void testGetMinimumHypervisorVersionInDatacenterEmptyVersion() {
+        List<String> hwVersions = List.of("", "xxxx", "yyyy");
+        HypervisorType hypervisorType = HypervisorType.KVM;
+        String expected = "default";
+        testBaseListOrderedHostsHypervisorVersionInDc(hwVersions, hypervisorType, expected);
+    }
+
+    @Test
+    public void testGetMinimumHypervisorVersionInDatacenterVersions() {
+        List<String> hwVersions = List.of("6.7", "6.7.1", "6.7.2");
+        HypervisorType hypervisorType = HypervisorType.VMware;
+        String expected = "6.7";
+        testBaseListOrderedHostsHypervisorVersionInDc(hwVersions, hypervisorType, expected);
     }
 }

@@ -34,14 +34,16 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }"
     >
-      <template #name="{record}">
-        <resource-icon
-          v-if="record.icon"
-          :image="record.icon.base64image"
-          size="1x"
-          style="margin-right: 5px"/>
-        <apartment-outlined v-else style="margin-right: 5px" />
-        {{ record.name }}
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <resource-icon
+            v-if="record.icon"
+            :image="record.icon.base64image"
+            size="1x"
+            style="margin-right: 5px"/>
+          <apartment-outlined v-else style="margin-right: 5px" />
+          {{ record.name }}
+        </template>
       </template>
       <template #expandedRowRender="{ record }">
         <a-list
@@ -173,29 +175,35 @@ export default {
           }
         })
       }
+      const vpcCol = {
+        key: 'vpcName',
+        dataIndex: 'vpcName',
+        title: this.$t('label.vpc'),
+        width: '30%'
+      }
+      if (vpcFilter.length > 0) {
+        vpcCol.filters = vpcFilter
+        vpcCol.filteredValue = _.get(this.filteredInfo, 'id')
+        vpcCol.onFilter = (value, record) => {
+          return record.vpcid === value
+        }
+      }
       return [
         {
+          key: 'name',
           dataIndex: 'name',
           title: this.$t('label.networks'),
-          slots: { customRender: 'name' },
           width: '40%'
         },
         {
+          key: 'type',
           dataIndex: 'type',
           title: this.$t('label.guestiptype'),
           width: '15%'
         },
+        vpcCol,
         {
-          dataIndex: 'vpcName',
-          title: this.$t('label.vpc'),
-          width: '20%',
-          filters: vpcFilter,
-          filteredValue: _.get(this.filteredInfo, 'id'),
-          onFilter: (value, record) => {
-            return record.vpcid === value
-          }
-        },
-        {
+          key: 'supportsvmautoscaling',
           dataIndex: 'supportsvmautoscaling',
           title: this.$t('label.supportsvmautoscaling'),
           width: '25%'

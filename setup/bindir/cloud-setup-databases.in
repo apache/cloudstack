@@ -67,7 +67,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@COMMONLIBDIR@/lib/jasypt-1.9.3.jar'
+    encryptionJarPath = '@COMMONLIBDIR@/lib/cloudstack-utils.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
     tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
@@ -391,8 +391,8 @@ for example:
         checkSELinux()
 
     def processEncryptionStuff(self):
-        def encrypt(input):
-            cmd = ['java','-Djava.security.egd=file:/dev/urandom','-classpath','"' + self.encryptionJarPath + '"','org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=\'%s\''%self.mgmtsecretkey,'verbose=false']
+        def encrypt(value):
+            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' + self.mgmtsecretkey + '"', self.encryptorVersion]
             return str(runCmd(cmd)).strip('\r\n')
 
         def saveMgmtServerSecretKey():
@@ -408,6 +408,7 @@ for example:
 
         def encryptDBSecretKey():
             self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
+            self.putDbProperty("db.cloud.encryptor.version", self.options.encryptorVersion)
 
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')
@@ -450,7 +451,12 @@ for example:
                 self.info("Using specified cluster management server node IP %s" % self.options.mshostip, True)
 
             self.encryptiontype = self.options.encryptiontype
-            self.mgmtsecretkey = self.options.mgmtsecretkey
+            if self.encryptiontype == "env":
+                self.mgmtsecretkey = os.getenv("CLOUD_SECRET_KEY")
+                if not self.mgmtsecretkey:
+                    self.errorAndExit("Please set environment variable CLOUD_SECRET_KEY if the encryption type is 'env'")
+            else:
+                self.mgmtsecretkey = self.options.mgmtsecretkey
             self.dbsecretkey = self.options.dbsecretkey
             self.isDebug = self.options.debug
             if self.options.dbConfPath:
@@ -463,6 +469,11 @@ for example:
               self.encryptionJarPath = self.options.encryptionJarPath
             if self.options.mysqlbinpath:
               self.mysqlBinPath = self.options.mysqlbinpath
+
+            if self.options.encryptorVersion:
+              self.encryptorVersion = "--encryptorversion %s" % self.options.encryptorVersion
+            else:
+              self.encryptorVersion = ""
 
         def parseUserAndPassword(cred):
             stuff = cred.split(':')
@@ -524,11 +535,11 @@ for example:
         def validateParameters():
             if self.options.schemaonly and self.rootuser != None:
                 self.errorAndExit("--schema-only and --deploy-as cannot be passed together\n")
-            if self.encryptiontype != 'file' and self.encryptiontype != 'web':
-                self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web'%self.encryptiontype)
+            if self.encryptiontype != 'file' and self.encryptiontype != 'web' and self.encryptiontype != 'env':
+                self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web" or "env"' % self.encryptiontype)
 
     #---------------------- option parsing and command line checks ------------------------
-        usage = """%prog user:[password]@mysqlhost:[port] [--deploy-as=rootuser:[rootpassword]] [--auto=/path/to/server-setup.xml] [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [--debug]
+        usage = """%prog user:[password]@mysqlhost:[port] [--deploy-as=rootuser:[rootpassword]] [--auto=/path/to/server-setup.xml] [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [-g ENCRYPTORVERSION] [--debug]
 
     This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
 
@@ -537,6 +548,8 @@ for example:
     If a server-setup.xml cloud setup information file is specified with the --auto option, this command will also construct a customized database environment according to the cloud setup information in the file.
 
     The port and the password are optional and can be left out..  If host is omitted altogether, it will default to localhost.
+
+    The encryptor version is optional. The options are V1 and V2. If it is not set, the default encryptor will be used.
 
     Examples:
 
@@ -553,10 +566,13 @@ for example:
         with password 'nonsense', and recreates the databases, creating
         the user alex with password 'founder' as necessary
 
-    %prog alex:founder@1.2.3.4 --deploy-as=root:nonsense -e file -m password -k dbpassword
+    %prog alex:founder@1.2.3.4 --deploy-as=root:nonsense -e file -m password -k dbpassword -g V2
         In addition actions performing in above example, using 'password' as management server encryption key
         and 'dbpassword' as database encryption key, saving management server encryption key to a file as the
         encryption type specified by -e is file.
+        The credentials in @MSCONF@/db.properties are encrypted by encryptor V2 (AeadBase64Encryptor).
+        The db.cloud.encryptor.version is also set to V2. Sensitive values in cloudstack databases will be
+        encrypted by the encryptor V2 using the database encryption key.
 
     %prog alena:tests@5.6.7.8 --deploy-as=root:nonsense --auto=/root/server-setup.xml
         sets alena up as the MySQL user, then connects as the root user
@@ -577,7 +593,7 @@ for example:
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
                           help="Path to an XML file describing an automated unattended cloud setup")
         self.parser.add_option("-e", "--encrypt-type", action="store", type="string", dest="encryptiontype", default="file",
-                          help="Encryption method used for db password encryption. Valid values are file, web. Default is file.")
+                          help="Encryption method used for db password encryption. Valid values are file, web and env. Default is file.")
         self.parser.add_option("-m", "--managementserver-secretkey", action="store", type="string", dest="mgmtsecretkey", default="password",
                           help="Secret key used to encrypt confidential parameters in db.properties. A string, default is password")
         self.parser.add_option("-k", "--database-secretkey", action="store", type="string", dest="dbsecretkey", default="password",
@@ -588,8 +604,10 @@ for example:
                           help="Region Id for the management server cluster")
         self.parser.add_option("-c", "--db-conf-path", action="store", dest="dbConfPath", help="The path to find db.properties which hold db properties")
         self.parser.add_option("-f", "--db-files-path", action="store", dest="dbFilesPath", help="The path to find sql files to create initial database(s)")
-        self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The path to the jasypt library to be used to encrypt the values in db.properties")
+        self.parser.add_option("-j", "--encryption-jar-path", action="store", dest="encryptionJarPath", help="The cloudstack jar to be used to encrypt the values in db.properties")
         self.parser.add_option("-n", "--encryption-key-file", action="store", dest="encryptionKeyFile", help="The name of the file in which encryption key to be generated")
+        self.parser.add_option("-g", "--encryptor-version", action="store", dest="encryptorVersion", default="V2",
+                               help="The encryptor version to be used to encrypt the values in db.properties")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()

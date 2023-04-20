@@ -34,20 +34,22 @@
       :rowKey="record => record.id + record.startip"
       :pagination="false"
     >
-      <template #forsystemvms="{ record }">
-        <a-checkbox v-model:checked="record.forsystemvms" />
-      </template>
-      <template #actions="{ record }">
-        <div class="actions">
-          <tooltip-button
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.remove.ip.range')"
-            :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
-            icon="delete-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="handleDeleteIpRange(record)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'forsystemvms'">
+          <a-checkbox v-model:checked="record.forsystemvms" />
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.remove.ip.range')"
+              :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
+              icon="delete-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="handleDeleteIpRange(record)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -90,9 +92,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="item in pods" :key="item.id" :value="item.id">{{ item.name }}</a-select-option>
+            <a-select-option v-for="item in pods" :key="item.id" :value="item.id" :label="item.name">{{ item.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
@@ -170,28 +172,28 @@ export default {
           dataIndex: 'netmask'
         },
         {
+          key: 'vlan',
           title: this.$t('label.vlan'),
-          dataIndex: 'vlanid',
-          slots: { customRender: 'vlan' }
+          dataIndex: 'vlanid'
         },
         {
+          key: 'startip',
           title: this.$t('label.startip'),
-          dataIndex: 'startip',
-          slots: { customRender: 'startip' }
+          dataIndex: 'startip'
         },
         {
+          key: 'endip',
           title: this.$t('label.endip'),
-          dataIndex: 'endip',
-          slots: { customRender: 'endip' }
+          dataIndex: 'endip'
         },
         {
+          key: 'forsystemvms',
           title: this.$t('label.system.vms'),
-          dataIndex: 'forsystemvms',
-          slots: { customRender: 'forsystemvms' }
+          dataIndex: 'forsystemvms'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ]
     }

@@ -438,6 +438,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
+        if (serviceOfferingId != null) {
+            _ntwkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
+        }
+
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
@@ -1387,7 +1391,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final SearchBuilder<VpcVO> sb = vpcDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("displayText", sb.entity().getDisplayText(), SearchCriteria.Op.LIKE);
         sb.and("vpcOfferingId", sb.entity().getVpcOfferingId(), SearchCriteria.Op.EQ);
