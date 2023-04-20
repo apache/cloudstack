@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -35,7 +36,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "updateProject", description = "Updates a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -67,7 +67,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             "to promote or demote the user/account based on the roleType (Regular or Admin) provided. Defaults to true")
     private Boolean swapOwner;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the project")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the project", since = "4.19.0")
     private String name;
 
     /////////////////////////////////////////////////////
