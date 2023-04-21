@@ -32,7 +32,7 @@ import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import javax.inject.Inject;
 
 @APICommand(name = "listVMSchedule", description = "List VM Schedules.", responseObject = VMScheduleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class ListVMScheduleCmd extends BaseListCmd {
     @Inject
     VMScheduleManager vmScheduleManager;

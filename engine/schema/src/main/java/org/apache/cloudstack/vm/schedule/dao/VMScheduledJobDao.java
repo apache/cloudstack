@@ -30,4 +30,6 @@ public interface VMScheduledJobDao extends GenericDao<VMScheduledJobVO, Long> {
     List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp);
 
     int expungeJobsForSchedules(List<Long> scheduleId, Date currentTimestamp);
+
+    int expungeJobsBefore(Date currentTimestamp);
 }

@@ -20,7 +20,8 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 
-import com.cloud.user.Account;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -37,10 +38,10 @@ import java.util.Collections;
 import java.util.List;
 
 @APICommand(name = "deleteVMSchedule", description = "Delete VM Schedule.", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class DeleteVMScheduleCmd extends BaseCmd {
     @Inject
-    private VMScheduleManager vmScheduleManager;
+    VMScheduleManager vmScheduleManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -71,7 +72,7 @@ public class DeleteVMScheduleCmd extends BaseCmd {
     }
 
     public List<Long> getIds() {
-        if (ids == null){
+        if (ids == null) {
             return Collections.emptyList();
         }
         return ids;
@@ -101,6 +102,10 @@ public class DeleteVMScheduleCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find VM by id=" + getVmId());
+        }
+        return vm.getAccountId();
     }
 }

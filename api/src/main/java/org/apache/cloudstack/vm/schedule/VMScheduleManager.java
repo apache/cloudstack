@@ -32,7 +32,7 @@ public interface VMScheduleManager {
 
     ListResponse<VMScheduleResponse> listSchedule(ListVMScheduleCmd listVMScheduleCmd);
 
-    VMSchedule updateSchedule(UpdateVMScheduleCmd updateVMScheduleCmd);
+    VMScheduleResponse updateSchedule(UpdateVMScheduleCmd updateVMScheduleCmd);
 
     long removeScheduleByVmId(long vmId, boolean expunge);
 

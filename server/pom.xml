@@ -191,7 +191,8 @@
             <groupId>net.juniper.tungsten</groupId>
             <artifactId>juniper-tungsten-api</artifactId>
             <version>2.0</version>
-        </dependency></dependencies>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

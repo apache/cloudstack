@@ -22,5 +22,18 @@ package org.apache.cloudstack.vm.schedule;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
+
 public interface VMScheduledJob extends Identity, InternalIdentity {
+    long getVmId();
+
+    long getVmScheduleId();
+
+    Long getAsyncJobId();
+
+    void setAsyncJobId(long asyncJobId);
+
+    VMSchedule.Action getAction();
+
+    Date getScheduledTime();
 }

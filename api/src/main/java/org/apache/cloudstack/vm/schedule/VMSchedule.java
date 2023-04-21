@@ -29,6 +29,7 @@ public interface VMSchedule extends Identity, InternalIdentity {
     enum Action {
         START, STOP, REBOOT, FORCE_STOP, FORCE_REBOOT
     }
+
     long getVmId();
 
     String getName();

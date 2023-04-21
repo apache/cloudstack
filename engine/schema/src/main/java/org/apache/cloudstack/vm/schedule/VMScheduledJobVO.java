@@ -75,26 +75,32 @@ public class VMScheduledJobVO implements VMScheduledJob {
         return id;
     }
 
+    @Override
     public long getVmId() {
         return vmId;
     }
 
+    @Override
     public long getVmScheduleId() {
         return vmScheduleId;
     }
 
+    @Override
     public Long getAsyncJobId() {
         return asyncJobId;
     }
 
+    @Override
     public void setAsyncJobId(long asyncJobId) {
         this.asyncJobId = asyncJobId;
     }
 
+    @Override
     public VMSchedule.Action getAction() {
         return action;
     }
 
+    @Override
     public Date getScheduledTime() {
         return scheduledTime;
     }

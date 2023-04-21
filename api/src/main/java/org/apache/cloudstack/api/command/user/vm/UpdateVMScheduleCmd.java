@@ -34,10 +34,10 @@ import javax.inject.Inject;
 import java.util.Date;
 
 @APICommand(name = "updateVMSchedule", description = "Update VM Schedule.", responseObject = VMScheduleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class UpdateVMScheduleCmd extends BaseCmd {
     @Inject
-    private VMScheduleManager vmScheduleManager;
+    VMScheduleManager vmScheduleManager;
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
@@ -141,15 +141,13 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        VMSchedule vmSchedule = vmScheduleManager.updateSchedule(this);
-        VMScheduleResponse response = vmScheduleManager.createResponse(vmSchedule);
+        VMScheduleResponse response = vmScheduleManager.updateSchedule(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 
     @Override
     public long getEntityOwnerId() {
-
         VMSchedule vmSchedule = _entityMgr.findById(VMSchedule.class, getId());
         if (vmSchedule == null) {
             throw new InvalidParameterValueException("Unable to find vmSchedule by id=" + getId());

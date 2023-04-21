@@ -27,14 +27,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 
 import javax.inject.Inject;
 import java.util.Date;
 
 @APICommand(name = "createVMSchedule", description = "Create VM Schedule", responseObject = VMScheduleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  since="4.19.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class CreateVMScheduleCmd extends BaseCmd {
 
     @Inject
@@ -147,7 +146,6 @@ public class CreateVMScheduleCmd extends BaseCmd {
     public void execute() {
         VMScheduleResponse response = vmScheduleManager.createSchedule(this);
         response.setResponseName(getCommandName());
-        response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
         setResponseObject(response);
     }
 

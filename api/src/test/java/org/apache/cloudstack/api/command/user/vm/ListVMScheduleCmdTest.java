@@ -25,6 +25,7 @@ import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -36,13 +37,12 @@ import java.util.Collections;
 public class ListVMScheduleCmdTest {
     @Mock
     public VMScheduleManager vmScheduleManager;
-    private ListVMScheduleCmd listVMScheduleCmd;
+    @InjectMocks
+    private ListVMScheduleCmd listVMScheduleCmd = new ListVMScheduleCmd();
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        listVMScheduleCmd = new ListVMScheduleCmd();
-        listVMScheduleCmd.vmScheduleManager = vmScheduleManager;
     }
 
     /**

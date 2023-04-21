@@ -49,4 +49,16 @@ public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implem
         // TODO: Check if we need to take lock on schedules here.
         return search(sc, null);
     }
+
+    @Override
+    public long removeSchedulesForVmIdAndIds(Long vmId, List<Long> ids) {
+        SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<VMScheduleVO> sc = sb.create();
+        sc.setParameters("id", ids.toArray());
+        sc.setParameters("vm_id", vmId);
+        return remove(sc);
+    }
 }

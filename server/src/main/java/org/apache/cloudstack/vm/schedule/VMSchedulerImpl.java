@@ -27,8 +27,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.google.common.primitives.Longs;
@@ -121,7 +119,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
 
         Date now = new Date();
-        if (endDate != null && now.compareTo(endDate) > 0) {
+        if (endDate != null && now.after(endDate)) {
             LOGGER.info(String.format("End time is less than current time. Disabling VM schedule [id=%s] for VM [id=%s].", vmSchedule.getUuid(), vmSchedule.getVmId()));
             vmSchedule.setEnabled(false);
             vmScheduleDao.persist(vmSchedule);
@@ -231,21 +229,15 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
      */
     private void cleanupVMScheduledJobs() {
         Date deleteBeforeDate = DateUtils.addDays(currentTimestamp, -1 * VMScheduledJobExpireInterval.value());
-
-        SearchBuilder<VMScheduledJobVO> sb = vmScheduledJobDao.createSearchBuilder();
-        sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.LT);
-        SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("scheduled_timestamp", deleteBeforeDate);
-
-        int rowsRemoved = vmScheduledJobDao.expunge(sc);
+        int rowsRemoved = vmScheduledJobDao.expungeJobsBefore(deleteBeforeDate);
         LOGGER.info(String.format("Cleaned up %d VM scheduled job entries", rowsRemoved));
     }
 
-    private void executeJobs(Map<Long, VMScheduledJobVO> jobsToExecute) {
+    private void executeJobs(Map<Long, VMScheduledJob> jobsToExecute) {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
 
-        for (Map.Entry<Long, VMScheduledJobVO> entry : jobsToExecute.entrySet()) {
-            VMScheduledJobVO vmScheduledJob = entry.getValue();
+        for (Map.Entry<Long, VMScheduledJob> entry : jobsToExecute.entrySet()) {
+            VMScheduledJob vmScheduledJob = entry.getValue();
             VirtualMachine vm = virtualMachineManager.findById(vmScheduledJob.getVmId());
 
             VMScheduledJobVO tmpVMScheduleJob = null;
@@ -272,7 +264,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         }
     }
 
-    private Long processJob(VMScheduledJobVO vmScheduledJob, VirtualMachine vm) {
+    Long processJob(VMScheduledJob vmScheduledJob, VirtualMachine vm) {
         if (!Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped).contains(vm.getState())) {
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
                     EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
@@ -287,18 +279,18 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
         if (vm.getState() == VirtualMachine.State.Running) {
-                switch (vmScheduledJob.getAction()) {
-                    case STOP:
-                        return executeStopVMJob(vm, eventId, false);
-                    case FORCE_STOP:
-                        return executeStopVMJob(vm, eventId, true);
-                    case REBOOT:
-                        return executeRebootVMJob(vm, eventId, false);
-                    case FORCE_REBOOT:
-                        return executeRebootVMJob(vm, eventId, true);
-                }
+            switch (vmScheduledJob.getAction()) {
+                case STOP:
+                    return executeStopVMJob(vm, false, eventId);
+                case FORCE_STOP:
+                    return executeStopVMJob(vm, true, eventId);
+                case REBOOT:
+                    return executeRebootVMJob(vm, false, eventId);
+                case FORCE_REBOOT:
+                    return executeRebootVMJob(vm, true, eventId);
+            }
         } else if (vm.getState() == VirtualMachine.State.Stopped && vmScheduledJob.getAction() == VMSchedule.Action.START) {
-                return executeStartVMJob(vm, eventId);
+            return executeStartVMJob(vm, eventId);
         }
 
         String logMessage = String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is in state: %s",
@@ -311,13 +303,13 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         return null;
     }
 
-    private void skipJobs(Map<Long, VMScheduledJobVO> jobsToExecute, Map<Long, List<VMScheduledJobVO>> jobsNotToExecute) {
-        for (Map.Entry<Long, List<VMScheduledJobVO>> entry : jobsNotToExecute.entrySet()) {
+    private void skipJobs(Map<Long, VMScheduledJob> jobsToExecute, Map<Long, List<VMScheduledJob>> jobsNotToExecute) {
+        for (Map.Entry<Long, List<VMScheduledJob>> entry : jobsNotToExecute.entrySet()) {
             Long vmId = entry.getKey();
-            List<VMScheduledJobVO> skippedVmScheduledJobVOS = entry.getValue();
+            List<VMScheduledJob> skippedVmScheduledJobVOS = entry.getValue();
             VirtualMachine vm = virtualMachineManager.findById(vmId);
-            for (final VMScheduledJobVO skippedVmScheduledJobVO : skippedVmScheduledJobVOS) {
-                VMScheduledJobVO scheduledJob = jobsToExecute.get(vmId);
+            for (final VMScheduledJob skippedVmScheduledJobVO : skippedVmScheduledJobVOS) {
+                VMScheduledJob scheduledJob = jobsToExecute.get(vmId);
                 LOGGER.info(String.format("Skipping scheduled job [id: %s, vmId: %s] because of conflict with another scheduled job [id: %s]", skippedVmScheduledJobVO.getId(), vmId, scheduledJob.getUuid()));
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
                         EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
@@ -336,8 +328,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         final List<VMScheduledJobVO> vmScheduledJobs = vmScheduledJobDao.listJobsToStart(currentTimestamp);
         LOGGER.debug(String.format("Got %d scheduled jobs to be executed at %s", vmScheduledJobs.size(), displayTime));
 
-        Map<Long, VMScheduledJobVO> jobsToExecute = new HashMap<>();
-        Map<Long, List<VMScheduledJobVO>> jobsNotToExecute = new HashMap<>();
+        Map<Long, VMScheduledJob> jobsToExecute = new HashMap<>();
+        Map<Long, List<VMScheduledJob>> jobsNotToExecute = new HashMap<>();
         for (final VMScheduledJobVO vmScheduledJobVO : vmScheduledJobs) {
             long vmId = vmScheduledJobVO.getVmId();
             if (jobsToExecute.get(vmId) == null) {
@@ -351,12 +343,12 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         skipJobs(jobsToExecute, jobsNotToExecute);
     }
 
-    private long executeStartVMJob(VirtualMachine vm, long eventId) {
+    long executeStartVMJob(VirtualMachine vm, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put("ctxUserId", "1");
-        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
-        params.put("ctxStartEventId", String.valueOf(eventId));
+        params.put(ApiConstants.CTX_USER_ID, "1");
+        params.put(ApiConstants.CTX_ACCOUNT_ID, String.valueOf(vm.getAccountId()));
+        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
 
         final StartVMCmd cmd = new StartVMCmd();
         ComponentContext.inject(cmd);
@@ -367,7 +359,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         return asyncJobManager.submitAsyncJob(job);
     }
 
-    private long executeStopVMJob(VirtualMachine vm, long eventId, boolean isForced) {
+    long executeStopVMJob(VirtualMachine vm, boolean isForced, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
         params.put(ApiConstants.CTX_USER_ID, "1");
@@ -384,7 +376,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         return asyncJobManager.submitAsyncJob(job);
     }
 
-    private long executeRebootVMJob(VirtualMachine vm, long eventId, boolean isForced) {
+    long executeRebootVMJob(VirtualMachine vm, boolean isForced, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
         params.put(ApiConstants.CTX_USER_ID, "1");

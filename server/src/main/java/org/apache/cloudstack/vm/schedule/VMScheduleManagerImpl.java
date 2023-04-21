@@ -45,7 +45,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.log4j.Logger;
-
 import org.springframework.scheduling.support.CronExpression;
 
 import javax.inject.Inject;
@@ -83,8 +82,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_CREATE, eventDescription = "Creating VM Schedule")
     public VMScheduleResponse createSchedule(CreateVMScheduleCmd cmd) {
-        // TODO: Check if user is permitted to create the schedule
-
         VirtualMachine vm = virtualMachineManager.findById(cmd.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
         if (vm == null) {
@@ -199,8 +196,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_UPDATE, eventDescription = "Updating VM Schedule")
-    public VMSchedule updateSchedule(UpdateVMScheduleCmd cmd) {
-        // TODO: Check if user is permitted to edit the schedule
+    public VMScheduleResponse updateSchedule(UpdateVMScheduleCmd cmd) {
         Long id = cmd.getId();
         VMScheduleVO vmSchedule = vmScheduleDao.findById(id);
 
@@ -269,10 +265,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
         vmSchedule.setSchedule(cronExpression.toString());
 
-        return Transaction.execute((TransactionCallback<VMScheduleVO>) status -> {
+        return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
             vmScheduleDao.update(cmd.getId(), vmSchedule);
             vmScheduler.updateScheduledJob(vmSchedule);
-            return vmSchedule;
+            return createResponse(vmSchedule);
         });
     }
 
@@ -292,28 +288,16 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
     }
 
-    private long removeScheduleByIds(Long vmId, List<Long> ids) {
-        SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<VMScheduleVO> sc = sb.create();
-        sc.setParameters("id", ids.toArray());
-        sc.setParameters("vm_id", vmId);
-        vmScheduler.removeScheduledJobs(ids);
-        return vmScheduleDao.remove(sc);
-    }
-
     @Override
     public long removeScheduleByVmId(long vmId, boolean expunge) {
         SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
         sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
-        sc.setParameters("id", vmId);
+        sc.setParameters("vm_id", vmId);
         List<VMScheduleVO> vmSchedules = vmScheduleDao.search(sc, null);
         List<Long> ids = new ArrayList<>();
-        for (final VMScheduleVO vmSchedule: vmSchedules){
+        for (final VMScheduleVO vmSchedule : vmSchedules) {
             ids.add(vmSchedule.getId());
         }
         vmScheduler.removeScheduledJobs(ids);
@@ -326,11 +310,13 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_DELETE, eventDescription = "Deleting VM Schedule")
     public Long removeSchedule(DeleteVMScheduleCmd cmd) {
-        // TODO: Check if the user has access to delete all schedules in the list
         VirtualMachine vm = virtualMachineManager.findById(cmd.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
-        return Transaction.execute((TransactionCallback<Long>) status -> removeScheduleByIds(vm.getId(), ids));
+        return Transaction.execute((TransactionCallback<Long>) status -> {
+            vmScheduler.removeScheduledJobs(ids);
+            return vmScheduleDao.removeSchedulesForVmIdAndIds(vm.getId(), ids);
+        });
     }
 }

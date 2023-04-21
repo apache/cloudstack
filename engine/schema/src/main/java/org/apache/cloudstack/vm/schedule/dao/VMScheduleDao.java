@@ -25,4 +25,6 @@ import java.util.List;
 
 public interface VMScheduleDao extends GenericDao<VMScheduleVO, Long> {
     List<VMScheduleVO> listAllActiveSchedules();
+
+    long removeSchedulesForVmIdAndIds(Long vmId, List<Long> ids);
 }
