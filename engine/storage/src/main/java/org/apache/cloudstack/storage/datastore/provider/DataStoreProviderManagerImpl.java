@@ -56,6 +56,8 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
     ImageStoreProviderManager imageStoreProviderMgr;
+    @Inject
+    ObjectStoreProviderManager objectStoreProviderMgr;
 
     @Override
     public DataStoreProvider getDataStoreProvider(String name) {
@@ -144,6 +146,8 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
                 primaryDataStoreProviderMgr.registerHostListener(provider.getName(), provider.getHostListener());
             } else if (types.contains(DataStoreProviderType.IMAGE)) {
                 imageStoreProviderMgr.registerDriver(provider.getName(), (ImageStoreDriver)provider.getDataStoreDriver());
+            } else if (types.contains(DataStoreProviderType.OBJECT)) {
+                objectStoreProviderMgr.registerDriver(provider.getName(), (ObjectStoreDriver)provider.getDataStoreDriver());
             }
         } catch (Exception e) {
             s_logger.debug("configure provider failed", e);
@@ -180,7 +184,9 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
             return this.getImageDataStoreProviders();
         } else if (type.equalsIgnoreCase(DataStoreProvider.DataStoreProviderType.ImageCache.toString())) {
             return this.getCacheDataStoreProviders();
-        } else {
+        } else if (type.equalsIgnoreCase(DataStoreProviderType.OBJECT.toString())) {
+            return this.getObjectStoreProviders();
+        }else {
             throw new InvalidParameterValueException("Invalid parameter: " + type);
         }
     }
@@ -223,4 +229,16 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
         return providers;
     }
 
+    public List<StorageProviderResponse> getObjectStoreProviders() {
+        List<StorageProviderResponse> providers = new ArrayList<StorageProviderResponse>();
+        for (DataStoreProvider provider : providerMap.values()) {
+            if (provider.getTypes().contains(DataStoreProviderType.OBJECT)) {
+                StorageProviderResponse response = new StorageProviderResponse();
+                response.setName(provider.getName());
+                response.setType(DataStoreProviderType.OBJECT.toString());
+                providers.add(response);
+            }
+        }
+        return providers;
+    }
 }
