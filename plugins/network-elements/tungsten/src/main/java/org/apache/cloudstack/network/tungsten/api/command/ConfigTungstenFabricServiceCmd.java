@@ -107,7 +107,10 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                     Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
                     NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
                         Network.Service.Connectivity, Network.Provider.Tungsten);
-                    networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                    if (!networkServiceMapDao.canProviderSupportServiceInNetwork(managementNetwork.getId(),
+                            Network.Service.Connectivity, Network.Provider.Tungsten)) {
+                        networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                    }
 
                     List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
                     for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
@@ -132,6 +135,21 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
 
     private void persistDefaultSystemNetwork() {
         Transaction.execute(new TransactionCallbackNoReturn() {
+
+            private void persistNetworkServiceMapAvoidingDuplicates(Network network,
+                                                                    Network.Service service,
+                                                                    Network.Provider provider,
+                                                                    NetworkServiceMapVO mapVO) {
+                if (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), service, provider)) {
+                    s_logger.debug(String.format("A mapping between the network, service and provider (%s, %s, %s) " +
+                                    "already exists, skipping duplicated entry",
+                            network.getId(), service.getName(), provider.getName()));
+                    return;
+
+                }
+                networkServiceMapDao.persist(mapVO);
+            }
+
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 NetworkOfferingVO networkOfferingVO = networkOfferingDao.findByUniqueName(NETWORKOFFERING);
@@ -169,12 +187,14 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                 Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public);
                 NetworkServiceMapVO publicNetworkServiceMapVO = new NetworkServiceMapVO(publicNetwork.getId(),
                         Network.Service.Connectivity, Network.Provider.Tungsten);
-                networkServiceMapDao.persist(publicNetworkServiceMapVO);
+                persistNetworkServiceMapAvoidingDuplicates(publicNetwork, Network.Service.Connectivity,
+                        Network.Provider.Tungsten, publicNetworkServiceMapVO);
 
                 Network managementNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Management);
                 NetworkServiceMapVO managementNetworkServiceMapVO = new NetworkServiceMapVO(managementNetwork.getId(),
                         Network.Service.Connectivity, Network.Provider.Tungsten);
-                networkServiceMapDao.persist(managementNetworkServiceMapVO);
+                persistNetworkServiceMapAvoidingDuplicates(managementNetwork, Network.Service.Connectivity,
+                        Network.Provider.Tungsten, managementNetworkServiceMapVO);
 
                 List<NetworkOfferingVO> systemNetworkOffering = networkOfferingDao.listSystemNetworkOfferings();
                 for (NetworkOfferingVO networkOffering : systemNetworkOffering) {
