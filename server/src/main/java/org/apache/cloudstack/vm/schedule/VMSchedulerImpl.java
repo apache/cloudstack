@@ -87,7 +87,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
             LOGGER.debug("Removed 0 scheduled jobs");
             return;
         }
-        int rowsRemoved = vmScheduledJobDao.expungeJobsForSchedules(vmScheduleIds, null);
+        int rowsRemoved = vmScheduledJobDao.expungeJobsForSchedules(vmScheduleIds);
         LOGGER.debug(String.format("Removed %s VM scheduled jobs", rowsRemoved));
     }
 
@@ -117,6 +117,13 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         Date startDate = vmSchedule.getStartDate();
         Date endDate = vmSchedule.getEndDate();
         VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
+
+        if (vm == null) {
+            LOGGER.info(String.format("VM [id=%s] is removed. Disabling VM schedule [id=%s].", vmSchedule.getVmId(), vmSchedule.getUuid()));
+            vmSchedule.setEnabled(false);
+            vmScheduleDao.persist(vmSchedule);
+            return null;
+        }
 
         Date now = new Date();
         if (endDate != null && now.after(endDate)) {
@@ -233,7 +240,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         LOGGER.info(String.format("Cleaned up %d VM scheduled job entries", rowsRemoved));
     }
 
-    private void executeJobs(Map<Long, VMScheduledJob> jobsToExecute) {
+    void executeJobs(Map<Long, VMScheduledJob> jobsToExecute) {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
 
         for (Map.Entry<Long, VMScheduledJob> entry : jobsToExecute.entrySet()) {
@@ -346,8 +353,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     long executeStartVMJob(VirtualMachine vm, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put(ApiConstants.CTX_USER_ID, "1");
-        params.put(ApiConstants.CTX_ACCOUNT_ID, String.valueOf(vm.getAccountId()));
+        params.put("ctxUserId", "1");
+        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
 
         final StartVMCmd cmd = new StartVMCmd();
@@ -362,8 +369,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     long executeStopVMJob(VirtualMachine vm, boolean isForced, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put(ApiConstants.CTX_USER_ID, "1");
-        params.put(ApiConstants.CTX_ACCOUNT_ID, String.valueOf(vm.getAccountId()));
+        params.put("ctxUserId", "1");
+        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
         params.put(ApiConstants.FORCED, String.valueOf(isForced));
 
@@ -379,8 +386,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     long executeRebootVMJob(VirtualMachine vm, boolean isForced, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put(ApiConstants.CTX_USER_ID, "1");
-        params.put(ApiConstants.CTX_ACCOUNT_ID, String.valueOf(vm.getAccountId()));
+        params.put("ctxUserId", "1");
+        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
         params.put(ApiConstants.FORCED, String.valueOf(isForced));
 

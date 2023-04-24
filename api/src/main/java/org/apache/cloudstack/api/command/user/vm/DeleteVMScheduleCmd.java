@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
@@ -45,8 +46,8 @@ public class DeleteVMScheduleCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
-            entityType = VMScheduleResponse.class,
-            required = false,
+            entityType = UserVmResponse.class,
+            required = true,
             description = "ID of VM")
     private Long vmId;
     @Parameter(name = ApiConstants.ID,

@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 @Component
 public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long> implements VMScheduledJobDao {
@@ -62,16 +61,11 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
     }
 
     @Override
-    public int expungeJobsForSchedules(List<Long> vmScheduleIds, Date currentTimestamp) {
-        currentTimestamp = Objects.requireNonNullElse(currentTimestamp, new Date());
-        Date truncatedTs = DateUtils.round(currentTimestamp, Calendar.MINUTE);
-
+    public int expungeJobsForSchedules(List<Long> vmScheduleIds) {
         SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
-        sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.GT);
-        sb.and("vm_schedule_id", sb.entity().getVmScheduleId(), SearchCriteria.Op.EQ);
+        sb.and("vm_schedule_id", sb.entity().getVmScheduleId(), SearchCriteria.Op.IN);
 
         SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("scheduled_timestamp", truncatedTs);
         sc.setParameters("vm_schedule_id", vmScheduleIds.toArray());
         return expunge(sc);
     }
