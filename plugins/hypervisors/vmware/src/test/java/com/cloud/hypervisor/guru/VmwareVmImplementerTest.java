@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -140,22 +139,4 @@ public class VmwareVmImplementerTest {
         executeAndVerifyTest(false, false, "false", false);
     }
 
-    private void verifyGetParentVersion(String hypervisorVersion, String expectedParentVersion) {
-        if (expectedParentVersion == null) {
-            Assert.assertNull(implementer.getParentVersion(hypervisorVersion));
-        } else {
-            Assert.assertEquals(implementer.getParentVersion(hypervisorVersion), expectedParentVersion);
-        }
-    }
-    @Test
-    public void testGetParentVersion() {
-        verifyGetParentVersion(null, null);
-        verifyGetParentVersion("6.5", null);
-        verifyGetParentVersion("6.7.3", "6.7.3");
-        verifyGetParentVersion("7.0.3.0", "7.0.3");
-        verifyGetParentVersion("8.0", null);
-        verifyGetParentVersion("8.0.0", "8.0");
-        verifyGetParentVersion("8.0.0.2", "8.0");
-        verifyGetParentVersion("8.0.1.0", "8.0.1");
-    }
 }
