@@ -1972,16 +1972,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         searchBuilder.and("vpcId", searchBuilder.entity().getVpcId(), Op.IN);
         final SearchCriteria<NetworkACLVO> searchCriteria = searchBuilder.create();
-        searchCriteria.setParameters("vpcId", vpcId, 0);
+        searchCriteria.setParameters("vpcId", vpcId);
 
         final Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
         final Pair<List<NetworkACLVO>, Integer> aclsCountPair =  _networkAclDao.searchAndCount(searchCriteria, filter);
 
         final List<NetworkACLVO> acls = aclsCountPair.first();
         for (final NetworkACLVO networkAcl : acls) {
-            if (networkAcl.getId() != NetworkACL.DEFAULT_ALLOW && networkAcl.getId() != NetworkACL.DEFAULT_DENY) {
-                _networkAclMgr.deleteNetworkACL(networkAcl);
-            }
+            _networkAclMgr.deleteNetworkACL(networkAcl);
         }
 
         VpcVO vpc = vpcDao.findById(vpcId);
