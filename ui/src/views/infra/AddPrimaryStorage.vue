@@ -169,7 +169,7 @@
             <a-input v-model:value="form.server" :placeholder="$t('message.server.description')" />
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || protocolSelected === 'Filesystem' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
+        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || form.protocol === 'Filesystem' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
           <a-form-item name="path" ref="path">
             <template #label>
               <tooltip-label :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
@@ -505,7 +505,7 @@ export default {
       this.hypervisorType = cluster.hypervisortype
       if (this.hypervisorType === 'KVM') {
         this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom']
-        if (this.scope === 'host') {
+        if (this.form.scope === 'host') {
           this.protocols.push('Filesystem')
         }
       } else if (this.hypervisorType === 'XenServer') {
