@@ -679,7 +679,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                                     StoragePoolType.Filesystem,
                                                     capacityBytes,
                                                     0,
-                                                    (Map<String,String>)poolInfos.get("details"));
+                                                    (Map<String,String>)poolInfos.get("details"),
+                                                    poolInfos.get("name").toString());
 
         return createLocalStorage(host, pInfo);
     }
@@ -729,7 +730,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<String, Object>();
-                String name = createLocalStoragePoolName(host, pInfo);
+                String name = pInfo.getName() != null ? pInfo.getName() : createLocalStoragePoolName(host, pInfo);
                 params.put("zoneId", host.getDataCenterId());
                 params.put("clusterId", host.getClusterId());
                 params.put("podId", host.getPodId());
