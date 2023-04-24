@@ -30,6 +30,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.object.ObjectStoreDriver;
+import org.apache.cloudstack.storage.object.ObjectStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -171,6 +173,11 @@ public class DataStoreProviderManagerImpl extends ManagerBase implements DataSto
     @Override
     public DataStoreProvider getDefaultCacheDataStoreProvider() {
         return this.getDataStoreProvider(DataStoreProvider.NFS_IMAGE);
+    }
+
+    @Override
+    public DataStoreProvider getDefaultObjectStoreProvider() {
+        return this.getDataStoreProvider(DataStoreProvider.S3_IMAGE);
     }
 
     @Override

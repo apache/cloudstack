@@ -1,0 +1,131 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.cloudstack.storage.object.store;
+
+import java.util.Date;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.cloudstack.storage.object.ObjectStoreDriver;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.component.ComponentContext;
+
+public class ObjectStoreImpl implements ObjectStoreEntity {
+    private static final Logger s_logger = Logger.getLogger(ObjectStoreImpl.class);
+
+    protected ObjectStoreDriver driver;
+    protected ObjectStoreVO objectStoreVO;
+    protected ObjectStoreProvider provider;
+
+    public ObjectStoreImpl() {
+        super();
+    }
+
+    protected void configure(ObjectStoreVO objectStoreVO, ObjectStoreDriver objectStoreDriver, ObjectStoreProvider provider) {
+        this.driver = objectStoreDriver;
+        this.objectStoreVO = objectStoreVO;
+        this.provider = provider;
+    }
+
+    public static ObjectStoreEntity getDataStore(ObjectStoreVO objectStoreVO, ObjectStoreDriver objectStoreDriver, ObjectStoreProvider provider) {
+        ObjectStoreImpl instance = ComponentContext.inject(ObjectStoreImpl.class);
+        instance.configure(objectStoreVO, objectStoreDriver, provider);
+        return instance;
+    }
+
+    @Override
+    public DataStoreDriver getDriver() {
+        return this.driver;
+    }
+
+    @Override
+    public DataStoreRole getRole() {
+        return null;
+    }
+
+    @Override
+    public long getId() {
+        return this.objectStoreVO.getId();
+    }
+
+    @Override
+    public String getUri() {
+        return this.objectStoreVO.getUrl();
+    }
+
+    @Override
+    public Scope getScope() {
+        return null;
+    }
+
+
+    @Override
+    public String getUuid() {
+        return this.objectStoreVO.getUuid();
+    }
+
+    public Date getCreated() {
+        return this.objectStoreVO.getCreated();
+    }
+
+    @Override
+    public String getName() {
+        return objectStoreVO.getName();
+    }
+
+    @Override
+    public DataObject create(DataObject obj) {
+        return null;
+    }
+
+    @Override
+    public boolean delete(DataObject obj) {
+        return false;
+    }
+
+    @Override
+    public DataStoreTO getTO() {
+        return null;
+    }
+
+    @Override
+    public String getProviderName() {
+        return objectStoreVO.getProviderName();
+    }
+
+    @Override
+    public String getProtocol() {
+        return objectStoreVO.getProtocol();
+    }
+
+    @Override
+    public String getUrl() {
+        return objectStoreVO.getUrl();
+    }
+
+}

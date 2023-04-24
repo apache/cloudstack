@@ -16,23 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.datastore.db;
+
+import com.cloud.utils.db.GenericDao;
 
 import java.util.List;
 
-import com.cloud.storage.DataStoreProviderApiService;
-import com.cloud.utils.component.Manager;
+public interface ObjectStoreDao extends GenericDao<ObjectStoreVO, Long> {
+    ObjectStoreVO findByName(String name);
 
-public interface DataStoreProviderManager extends Manager, DataStoreProviderApiService {
-    DataStoreProvider getDataStoreProvider(String name);
+    List<ObjectStoreVO> findByProvider(String provider);
 
-    DataStoreProvider getDefaultPrimaryDataStoreProvider();
+    List<ObjectStoreVO> listObjectStores();
 
-    DataStoreProvider getDefaultImageDataStoreProvider();
-
-    DataStoreProvider getDefaultCacheDataStoreProvider();
-
-    List<DataStoreProvider> getProviders();
-
-    DataStoreProvider getDefaultObjectStoreProvider();
 }

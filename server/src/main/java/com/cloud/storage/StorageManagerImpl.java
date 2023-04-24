@@ -104,6 +104,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -353,6 +355,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Inject
     protected UserVmManager userVmManager;
+    @Inject
+    protected ObjectStoreDao _objectStoreDao = null;
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -3636,6 +3640,43 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public ObjectStore discoverObjectStore(String name, String url, String providerName, Map details)
             throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
-        return null;
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
+
+        if (storeProvider == null) {
+            storeProvider = _dataStoreProviderMgr.getDefaultObjectStoreProvider();
+            if (storeProvider == null) {
+                throw new InvalidParameterValueException("can't find object store provider: " + providerName);
+            }
+            providerName = storeProvider.getName(); // ignored passed provider name and use default image store provider name
+        }
+
+        if (name == null) {
+            name = url;
+        }
+
+        ObjectStoreVO objectStore = _objectStoreDao.findByName(name);
+        if (objectStore != null) {
+            throw new InvalidParameterValueException("The object store with name " + name + " already exists, try creating with another name");
+        }
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("url", url);
+        params.put("name", name);
+        params.put("providerName", storeProvider.getName());
+        params.put("role", DataStoreRole.Image);
+
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+
+        DataStore store;
+        try {
+            store = lifeCycle.initialize(params);
+        } catch (Exception e) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to add object store: " + e.getMessage(), e);
+            }
+            throw new CloudRuntimeException("Failed to add object store: " + e.getMessage(), e);
+        }
+
+        return (ObjectStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
 }

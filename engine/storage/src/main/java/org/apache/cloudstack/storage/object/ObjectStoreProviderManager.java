@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.object;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 import java.util.List;
 
-import com.cloud.storage.DataStoreProviderApiService;
-import com.cloud.utils.component.Manager;
+public interface ObjectStoreProviderManager {
+    ObjectStoreEntity getObjectStore(String uuid);
 
-public interface DataStoreProviderManager extends Manager, DataStoreProviderApiService {
-    DataStoreProvider getDataStoreProvider(String name);
+    List<DataStore> listObjectStores();
 
-    DataStoreProvider getDefaultPrimaryDataStoreProvider();
+    List<DataStore> listObjectStoreByProvider(String provider);
 
-    DataStoreProvider getDefaultImageDataStoreProvider();
+    ObjectStoreEntity getObjectStore(long objectStoreId);
 
-    DataStoreProvider getDefaultCacheDataStoreProvider();
+    boolean registerDriver(String uuid, ObjectStoreDriver driver);
 
-    List<DataStoreProvider> getProviders();
-
-    DataStoreProvider getDefaultObjectStoreProvider();
 }
