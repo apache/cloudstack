@@ -6529,11 +6529,10 @@ class VMSchedule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, virtualmachineid, name, action, schedule, timezone, startdate, enabled=False, description=None, enddate=None):
+    def create(cls, apiclient, virtualmachineid, action, schedule, timezone, startdate, enabled=False, description=None, enddate=None):
         cmd = createVMSchedule.createVMScheduleCmd()
 
         cmd.virtualmachineid = virtualmachineid
-        cmd.name = name
         cmd.description = description
         cmd.action = action
         cmd.schedule = schedule

@@ -27,7 +27,6 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;

@@ -59,7 +59,6 @@ class Services:
                 "username": "root",
                 "password": "password",
                 "ssh_port": 22,
-                # "hypervisor": 'XenServer',
                 "privateport": 22,
                 "publicport": 22,
                 "protocol": "TCP",
@@ -77,8 +76,6 @@ class Services:
                 "templatefilter": "self",
             },
             "ostype": "CentOS 5.3 (64-bit)",
-            "sleep": 60,
-            "timeout": 10,
         }
 
 
@@ -164,7 +161,6 @@ class TestVMSchedule(cloudstackTestCase):
         vmschedule = VMSchedule.create(
             self.apiclient,
             self.virtual_machine.id,
-            "TestVM",
             "start",
             schedule,
             "GMT",
@@ -218,10 +214,10 @@ class TestVMSchedule(cloudstackTestCase):
             "Check VM Schedule timezone in list resources call",
         )
 
-
         # Check for entry in vm_scheduled_job in db
         vmscheduled_job = self.dbclient.execute(
-            "select * from vm_scheduled_job where vm_schedule_id IN (SELECT id FROM vm_schedule WHERE uuid = '%s')" % vmschedule.id,
+            "select * from vm_scheduled_job where vm_schedule_id IN (SELECT id FROM vm_schedule WHERE uuid = '%s')"
+            % vmschedule.id,
             db="cloud",
         )
 
@@ -249,11 +245,11 @@ class TestVMSchedule(cloudstackTestCase):
         # 5. Create VM Schedule with invalid action
         # 6. Create VM Schedule with invalid end date
 
+        # Create VM Schedule with invalid virtual machine ID
         with self.assertRaises(Exception):
             VMSchedule.create(
                 self.apiclient,
                 "invalid",
-                "TestVM",
                 "start",
                 "0 0 1 * *",
                 "GMT",
@@ -263,11 +259,11 @@ class TestVMSchedule(cloudstackTestCase):
                 ),
             )
 
+        # Create VM Schedule with invalid schedule
         with self.assertRaises(Exception):
             VMSchedule.create(
                 self.apiclient,
                 self.virtual_machine.id,
-                "TestVM",
                 "start",
                 "invalid",
                 "GMT",
@@ -277,11 +273,11 @@ class TestVMSchedule(cloudstackTestCase):
                 ),
             )
 
+        # Create VM Schedule with invalid start date
         with self.assertRaises(Exception):
             VMSchedule.create(
                 self.apiclient,
                 self.virtual_machine.id,
-                "TestVM",
                 "start",
                 "0 0 1 * *",
                 "GMT",
@@ -289,11 +285,11 @@ class TestVMSchedule(cloudstackTestCase):
                 "invalid",
             )
 
+        # Create VM Schedule with invalid action
         with self.assertRaises(Exception):
             VMSchedule.create(
                 self.apiclient,
                 self.virtual_machine.id,
-                "TestVM",
                 "invalid",
                 "0 0 1 * *",
                 "GMT",
@@ -308,14 +304,14 @@ class TestVMSchedule(cloudstackTestCase):
             VMSchedule.create(
                 self.apiclient,
                 self.virtual_machine.id,
-                "TestVM",
                 "start",
                 "0 0 1 * *",
                 "GMT",
-                # Current date minutes   format "2014-01-01 00:00:00"
-                (datetime.datetime.now() - datetime.timedelta(minutes=5)).strftime(
+                # Current date minutes in format "2014-01-01 00:00:00"
+                (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
+                enddate="invalid",
             )
         return
 
@@ -332,7 +328,6 @@ class TestVMSchedule(cloudstackTestCase):
         vmschedule = VMSchedule.create(
             self.apiclient,
             self.virtual_machine.id,
-            "TestVM",
             "start",
             schedule,
             "GMT",
@@ -414,7 +409,6 @@ class TestVMSchedule(cloudstackTestCase):
         vmschedule = VMSchedule.create(
             self.apiclient,
             self.virtual_machine.id,
-            "TestVM",
             "start",
             schedule,
             "GMT",
@@ -521,7 +515,6 @@ class TestVMSchedule(cloudstackTestCase):
         start_vmschedule = VMSchedule.create(
             self.apiclient,
             self.virtual_machine.id,
-            "TestVM",
             "start",
             start_schedule,
             "GMT",
@@ -539,7 +532,6 @@ class TestVMSchedule(cloudstackTestCase):
         stop_vmschedule = VMSchedule.create(
             self.apiclient,
             self.virtual_machine.id,
-            "TestVM",
             "stop",
             stop_schedule,
             "GMT",
