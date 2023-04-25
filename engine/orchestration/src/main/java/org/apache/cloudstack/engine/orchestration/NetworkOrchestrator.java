@@ -1944,10 +1944,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 try {
                     final UserDataServiceProvider sp = (UserDataServiceProvider) element;
                     if (!sp.saveHypervisorHostname(profile, network, vm, dest)) {
-                        s_logger.error(errorMsg);
+                        logger.error(errorMsg);
                     }
                 } catch (ResourceUnavailableException e) {
-                    s_logger.error(String.format("%s, error states %s", errorMsg, e));
+                    logger.error(String.format("%s, error states %s", errorMsg, e));
                 }
             }
         }
