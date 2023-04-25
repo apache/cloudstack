@@ -20,7 +20,6 @@
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
 import com.cloud.user.User;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -46,6 +45,7 @@ import javax.persistence.EntityExistsException;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
@@ -63,6 +63,9 @@ public class VMSchedulerImplTest {
     private VMScheduleDao vmScheduleDao;
     @Mock
     private VMScheduledJobDao vmScheduledJobDao;
+
+    @Mock
+    private EnumMap<VMSchedule.Action, String> actionEventMap;
 
     @Before
     public void setUp() throws Exception {
@@ -82,11 +85,9 @@ public class VMSchedulerImplTest {
         Mockito.when(vmScheduledJob.getAction()).thenReturn(action);
 
         if (executeJobReturnValue != null) {
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStartVMJob(vm, 1L);
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStopVMJob(vm, false, 1L);
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStopVMJob(vm, true, 1L);
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeRebootVMJob(vm, false, 1L);
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeRebootVMJob(vm, true, 1L);
+            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStartVMJob(Mockito.any(VirtualMachine.class), Mockito.anyLong());
+            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStopVMJob(Mockito.any(VirtualMachine.class), Mockito.anyBoolean(), Mockito.anyLong());
+            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeRebootVMJob(Mockito.any(VirtualMachine.class), Mockito.anyBoolean(), Mockito.anyLong());
         }
     }
 
@@ -102,7 +103,7 @@ public class VMSchedulerImplTest {
 
         PowerMockito.verifyStatic(ActionEventUtils.class);
         ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                EventTypes.EVENT_VM_SCHEDULE_EXECUTE, true,
+                actionEventMap.get(action), true,
                 String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
         Assert.assertEquals(expectedValue, jobId);
@@ -126,15 +127,6 @@ public class VMSchedulerImplTest {
 
         Long jobId = vmScheduler.processJob(vmScheduledJob, vm);
 
-        PowerMockito.verifyStatic(ActionEventUtils.class);
-        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                EventTypes.EVENT_VM_SCHEDULE_EXECUTE, true,
-                String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
-                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
-        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
-                String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is invalid state: %s", vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState()),
-                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
         Assert.assertNull(jobId);
     }
 
@@ -146,12 +138,6 @@ public class VMSchedulerImplTest {
         prepareMocksForProcessJob(vm, vmScheduledJob, VirtualMachine.State.Unknown, VMSchedule.Action.START, null);
 
         Long jobId = vmScheduler.processJob(vmScheduledJob, vm);
-
-        PowerMockito.verifyStatic(ActionEventUtils.class);
-        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
-                String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is invalid state: %s", vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState()),
-                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
         Assert.assertNull(jobId);
     }

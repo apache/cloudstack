@@ -116,7 +116,7 @@
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.vm.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
         <Schedules
           :virtualmachine="vm"
           :loading="loading"/>

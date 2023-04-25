@@ -70,14 +70,6 @@
       :rules="rules"
       @finish="submitForm"
       v-ctrl-enter="submitForm">
-      <a-form-item name="name" ref="name">
-        <template #label>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-        </template>
-        <a-input
-          v-model:value="form.name"
-          v-focus="true" />
-      </a-form-item>
       <a-form-item name="description" ref="description">
         <template #label>
           <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
@@ -185,7 +177,7 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       tabLoading: false,
-      columnKeys: ['enabled', 'name', 'action', 'description', 'schedule', 'timezone', 'vmScheduleActions'],
+      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'vmScheduleActions'],
       selectedColumnKeys: [],
       columns: [],
       schedules: [],
@@ -221,7 +213,7 @@ export default {
   },
   created () {
     this.selectedColumnKeys = this.columnKeys
-    this.updateSelectedColumns('description')
+    this.updateColumns()
     this.pageSize = this.pageSizeOptions[0] * 1
     this.initForm()
     this.fetchData()
@@ -380,7 +372,8 @@ export default {
         if (!this.selectedColumnKeys.includes(columnKey)) continue
         this.columns.push({
           key: columnKey,
-          title: this.$t('label.' + String(columnKey).toLowerCase()),
+          // If columnKey is 'enabled', then title is 'state', else title is columnKey
+          title: columnKey === 'enabled' ? this.$t('label.state') : this.$t('label.' + String(columnKey).toLowerCase()),
           dataIndex: columnKey
         })
       }

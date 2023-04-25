@@ -145,7 +145,6 @@ CREATE TABLE `cloud`.`vm_schedule` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `vm_id` bigint unsigned NOT NULL,
   `uuid` varchar(40) NOT NULL COMMENT 'schedule uuid',
-  `name` varchar(255) NOT NULL COMMENT 'name of the vm schedule',
   `description` varchar(1024) COMMENT 'description of the vm schedule',
   `schedule` varchar(255) NOT NULL COMMENT 'schedule frequency in cron format',
   `timezone` varchar(100) NOT NULL COMMENT 'the timezone in which the schedule time is specified',
@@ -156,6 +155,8 @@ CREATE TABLE `cloud`.`vm_schedule` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
+  INDEX `i_vm_schedule__vm_id`(`vm_id`),
+  INDEX `i_vm_schedule__enabled_end_date`(`enabled`, `end_date`),
   CONSTRAINT `fk_vm_schedule__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -170,6 +171,8 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
   `async_job_id` bigint unsigned DEFAULT NULL COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
   PRIMARY KEY (`id`),
   UNIQUE KEY (`vm_schedule_id`, `scheduled_timestamp`),
+  INDEX `i_vm_scheduled_job__scheduled_timestamp`(`scheduled_timestamp`),
+  INDEX `i_vm_scheduled_job__vm_id`(`vm_id`),
   CONSTRAINT `fk_vm_scheduled_job__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vm_scheduled_job__vm_schedule_id` FOREIGN KEY (`vm_schedule_id`) REFERENCES `vm_schedule`(`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

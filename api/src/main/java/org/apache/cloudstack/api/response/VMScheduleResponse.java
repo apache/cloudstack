@@ -38,10 +38,6 @@ public class VMScheduleResponse extends BaseResponse {
     @Param(description = "ID of virtual machine")
     private String vmId;
 
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of VM schedule")
-    private String name;
-
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "Description of VM schedule")
     private String description;
@@ -76,10 +72,6 @@ public class VMScheduleResponse extends BaseResponse {
 
     public void setVmId(String vmId) {
         this.vmId = vmId;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public void setDescription(String description) {

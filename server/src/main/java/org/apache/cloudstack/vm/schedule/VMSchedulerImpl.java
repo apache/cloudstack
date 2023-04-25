@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer vmSchedulerTimer;
     private Date currentTimestamp;
+
+    private EnumMap<VMSchedule.Action, String> actionEventMap = new EnumMap<>(VMSchedule.Action.class);
 
     public AsyncJobDispatcher getAsyncJobDispatcher() {
         return asyncJobDispatcher;
@@ -140,11 +143,19 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         } else {
             ts = cron.next(ZonedDateTime.ofInstant(now.toInstant(), tz));
         }
+
+        if (ts == null) {
+            LOGGER.info(String.format("No next schedule found. Disabling VM schedule [id=%s] for VM [id=%s].", vmSchedule.getUuid(), vmSchedule.getVmId()));
+            vmSchedule.setEnabled(false);
+            vmScheduleDao.persist(vmSchedule);
+            return null;
+        }
+
         Date scheduledDateTime = Date.from(ts.toInstant());
         VMScheduledJobVO scheduledJob = new VMScheduledJobVO(vmSchedule.getVmId(), vmSchedule.getId(), vmSchedule.getAction(), scheduledDateTime);
         try {
             vmScheduledJobDao.persist(scheduledJob);
-            ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_SCHEDULE_SCHEDULED,
+            ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, vm.getAccountId(), actionEventMap.get(vmSchedule.getAction()),
                     String.format("Scheduled action (%s) [vmId: %s scheduleId: %s]  at %s", vmSchedule.getAction(), vm.getUuid(), vmSchedule.getUuid(), scheduledDateTime),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), true, 0);
         } catch (EntityExistsException exception) {
@@ -155,6 +166,11 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
     @Override
     public boolean start() {
+        actionEventMap.put(VMSchedule.Action.START, EventTypes.EVENT_VM_SCHEDULE_START);
+        actionEventMap.put(VMSchedule.Action.STOP, EventTypes.EVENT_VM_SCHEDULE_STOP);
+        actionEventMap.put(VMSchedule.Action.REBOOT, EventTypes.EVENT_VM_SCHEDULE_REBOOT);
+        actionEventMap.put(VMSchedule.Action.FORCE_STOP, EventTypes.EVENT_VM_SCHEDULE_FORCE_STOP);
+        actionEventMap.put(VMSchedule.Action.FORCE_REBOOT, EventTypes.EVENT_VM_SCHEDULE_FORCE_REBOOT);
 
         // Adding 1 minute to currentTimestamp to ensure that
         // jobs which were to be run at current time, doesn't cause issues
@@ -227,7 +243,11 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
      */
     private void scheduleNextJobs() {
         for (final VMScheduleVO schedule : vmScheduleDao.listAllActiveSchedules()) {
-            scheduleNextJob(schedule);
+            try {
+                scheduleNextJob(schedule);
+            } catch (Exception e) {
+                LOGGER.warn("Error in scheduling next job for schedule " + schedule.getUuid(), e);
+            }
         }
     }
 
@@ -273,15 +293,12 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
     Long processJob(VMScheduledJob vmScheduledJob, VirtualMachine vm) {
         if (!Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped).contains(vm.getState())) {
-            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                    EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
-                    String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is invalid state: %s", vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState()),
-                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
+            LOGGER.info(String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is invalid state: %s", vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState()));
             return null;
         }
 
         final Long eventId = ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                EventTypes.EVENT_VM_SCHEDULE_EXECUTE, true,
+                actionEventMap.get(vmScheduledJob.getAction()), true,
                 String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
@@ -300,13 +317,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
             return executeStartVMJob(vm, eventId);
         }
 
-        String logMessage = String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is in state: %s",
-                vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState());
-        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
-                logMessage,
-                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
-        LOGGER.warn(logMessage);
+        LOGGER.warn(String.format("Skipping action (%s) for [vmId:%s scheduleId: %s] because VM is in state: %s",
+                vmScheduledJob.getAction(), vm.getUuid(), vmScheduledJob.getVmScheduleId(), vm.getState()));
         return null;
     }
 
@@ -317,11 +329,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
             VirtualMachine vm = virtualMachineManager.findById(vmId);
             for (final VMScheduledJob skippedVmScheduledJobVO : skippedVmScheduledJobVOS) {
                 VMScheduledJob scheduledJob = jobsToExecute.get(vmId);
-                LOGGER.info(String.format("Skipping scheduled job [id: %s, vmId: %s] because of conflict with another scheduled job [id: %s]", skippedVmScheduledJobVO.getId(), vmId, scheduledJob.getUuid()));
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
-                        EventTypes.EVENT_VM_SCHEDULE_SKIPPED, true,
-                        String.format("Skipping scheduled job [id: %s, vmId: %s] because of conflict with another scheduled job [id: %s]", skippedVmScheduledJobVO.getId(), vmId, scheduledJob.getUuid()),
-                        vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
+                LOGGER.info(String.format("Skipping scheduled job [id: %s, vmId: %s] because of conflict with another scheduled job [id: %s]", skippedVmScheduledJobVO.getUuid(), vm.getUuid(), scheduledJob.getUuid()));
             }
         }
     }

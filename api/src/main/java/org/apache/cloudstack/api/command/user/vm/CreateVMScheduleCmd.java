@@ -46,12 +46,6 @@ public class CreateVMScheduleCmd extends BaseCmd {
             description = "ID of the VM for which schedule is to be defined")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.NAME,
-            type = CommandType.STRING,
-            required = true,
-            description = "Name of the schedule")
-    private String name;
-
     @Parameter(name = ApiConstants.DESCRIPTION,
             type = CommandType.STRING,
             required = false,
@@ -102,10 +96,6 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     public Long getVmId() {
         return vmId;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getDescription() {

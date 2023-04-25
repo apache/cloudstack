@@ -109,13 +109,12 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             description = String.format("%s - %s", action, DateUtil.getHumanReadableSchedule(cronExpression));
         } else description = cmd.getDescription();
 
-        LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM [%s], as an equivalent of [%s].", cmd.getVmId(), cmd.getName(), cmd.getVmId(),
-                cmdTimeZone));
+        LOGGER.warn(String.format("Using timezone [%s] for running the schedule for VM [%s], as an equivalent of [%s].", timeZoneId, vm.getUuid(), cmdTimeZone));
 
         String finalDescription = description;
         VMSchedule.Action finalAction = action;
         return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
-            VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), cmd.getName(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, startDate, endDate, cmd.getEnabled()));
+            VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, startDate, endDate, cmd.getEnabled()));
             vmScheduler.scheduleNextJob(vmSchedule);
 
             return createResponse(vmSchedule);
@@ -130,7 +129,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
         response.setId(vmSchedule.getUuid());
         response.setVmId(vm.getUuid());
-        response.setName(vmSchedule.getName());
         response.setDescription(vmSchedule.getDescription());
         response.setSchedule(vmSchedule.getSchedule());
         response.setTimeZone(vmSchedule.getTimeZone());
@@ -184,7 +182,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
-        String name = cmd.getName();
         CronExpression cronExpression = Objects.requireNonNullElse(
                 DateUtil.parseSchedule(cmd.getSchedule()),
                 DateUtil.parseSchedule(vmSchedule.getSchedule())
@@ -200,6 +197,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
 
         String description = cmd.getDescription();
+        if (description == null && vmSchedule.getDescription() == null) {
+            description = String.format("%s - %s", Objects.requireNonNullElse(action, vmSchedule.getAction()), DateUtil.getHumanReadableSchedule(cronExpression));
+        }
 
         String cmdTimeZone = cmd.getTimeZone();
 
@@ -214,9 +214,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         Boolean enabled = cmd.getEnabled();
 
-        if (name != null) {
-            vmSchedule.setName(name);
-        }
         if (enabled != null) {
             vmSchedule.setEnabled(enabled);
         }

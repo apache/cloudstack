@@ -24,6 +24,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleVO;
 import org.apache.log4j.Logger;
@@ -34,33 +35,30 @@ import java.util.List;
 
 @Component
 public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao {
-    private static final Logger LOGGER = Logger.getLogger(VMScheduleDaoImpl.class);
 
     @Override
     public List<VMScheduleVO> listAllActiveSchedules() {
-        // TODO: Add check for time zone here.
-        // WHERE enabled = true AND (end_date IS NULL OR end_date < current_date)
+        // WHERE enabled = true AND (end_date IS NULL OR end_date > current_date)
         SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and("enabled", sb.entity().getEnabled(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.ENABLED, sb.entity().getEnabled(), SearchCriteria.Op.EQ);
         sb.and().op(sb.entity().getEndDate(), SearchCriteria.Op.NULL);
-        sb.or("end_date", sb.entity().getEndDate(), SearchCriteria.Op.LT);
+        sb.or("end_date", sb.entity().getEndDate(), SearchCriteria.Op.GT);
         sb.cp();
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
-        sc.setParameters("enabled", true);
+        sc.setParameters(ApiConstants.ENABLED, true);
         sc.setParameters("end_date", new Date());
-        // TODO: Check if we need to take lock on schedules here.
         return search(sc, null);
     }
 
     @Override
     public long removeSchedulesForVmIdAndIds(Long vmId, List<Long> ids) {
         SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
-        sc.setParameters("id", ids.toArray());
+        sc.setParameters(ApiConstants.ID, ids.toArray());
         sc.setParameters("vm_id", vmId);
         return remove(sc);
     }
@@ -68,25 +66,25 @@ public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implem
     @Override
     public Pair<List<VMScheduleVO>, Integer> searchAndCount(Long id, Long vmId, VMSchedule.Action action, Boolean enabled, Long offset, Long limit) {
         SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-        sb.and("action", sb.entity().getAction(), SearchCriteria.Op.EQ);
-        sb.and("enabled", sb.entity().getEnabled(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.ACTION, sb.entity().getAction(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.ENABLED, sb.entity().getEnabled(), SearchCriteria.Op.EQ);
 
         SearchCriteria<VMScheduleVO> sc = sb.create();
 
         if (id != null) {
-            sc.setParameters("id", id);
+            sc.setParameters(ApiConstants.ID, id);
         }
         if (enabled != null) {
-            sc.setParameters("enabled", enabled);
+            sc.setParameters(ApiConstants.ENABLED, enabled);
         }
         if (action != null) {
-            sc.setParameters("action", action);
+            sc.setParameters(ApiConstants.ACTION, action);
         }
         sc.setParameters("vm_id", vmId);
 
-        Filter filter = new Filter(VMScheduleVO.class, "id", true, offset, limit);
+        Filter filter = new Filter(VMScheduleVO.class, ApiConstants.ID, true, offset, limit);
 
         return searchAndCount(sc, filter);
     }

@@ -81,7 +81,6 @@ public class VMScheduleManagerImplTest {
 
     private void validateResponse(VMScheduleResponse response, VMSchedule vmSchedule, VirtualMachine vm) {
         assertNotNull(response);
-        Assert.assertEquals(ReflectionTestUtils.getField(response, "name"), vmSchedule.getName());
         Assert.assertEquals(ReflectionTestUtils.getField(response, "id"), vmSchedule.getUuid());
         Assert.assertEquals(ReflectionTestUtils.getField(response, "vmId"), vm.getUuid());
         Assert.assertEquals(ReflectionTestUtils.getField(response, "schedule"), vmSchedule.getSchedule());

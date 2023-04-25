@@ -39,7 +39,7 @@
     </template>
     <template #bodyCell="{ column, text, record }">
       <template v-if="column.key === 'name'">
-        <span v-if="['vm'].includes($route.path.split('/')[1]) && $route.query.tab !== 'schedules'" style="margin-right: 5px">
+        <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="1x"/>
           </span>
@@ -86,9 +86,6 @@
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
           </span>
-          <span v-else-if="$route?.query?.tab === 'schedules'">
-            {{ text }}
-          </span>
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
@@ -104,10 +101,9 @@
       </template>
 
       <template v-if="column.key === 'schedule'">
-        <a-tooltip>
-        <template #title>{{ generateHumanReadableSchedule(text) }}</template>
           {{ text }}
-      </a-tooltip>
+          <br/>
+          ({{ generateHumanReadableSchedule(text) }})
       </template>
       <template v-if="column.key === 'displayname'">
         <QuickView
@@ -308,6 +304,7 @@
       </template>
       <template v-if="column.key === 'enabled'">
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
+        {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
       <template v-if="column.key === 'created'">
         {{ $toLocaleDate(text) }}

@@ -32,7 +32,6 @@ public interface VMSchedule extends Identity, InternalIdentity {
 
     long getVmId();
 
-    String getName();
 
     String getDescription();
 

@@ -47,9 +47,6 @@ public class VMScheduleVO implements VMSchedule {
     @Column(name = "uuid", nullable = false)
     String uuid = UUID.randomUUID().toString();
 
-    @Column(name = "name", nullable = false)
-    String name;
-
     @Column(name = "description")
     String description;
 
@@ -85,9 +82,8 @@ public class VMScheduleVO implements VMSchedule {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VMScheduleVO(long vmId, String name, String description, String schedule, String timeZone, Action action, Date startDate, Date endDate, boolean enabled) {
+    public VMScheduleVO(long vmId, String description, String schedule, String timeZone, Action action, Date startDate, Date endDate, boolean enabled) {
         this.vmId = vmId;
-        this.name = name;
         this.description = description;
         this.schedule = schedule;
         this.timeZone = timeZone;
@@ -113,14 +109,6 @@ public class VMScheduleVO implements VMSchedule {
 
     public void setVmId(long vmId) {
         this.vmId = vmId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDescription() {
