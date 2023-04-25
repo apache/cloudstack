@@ -319,10 +319,12 @@ public class VMSchedulerImplTest {
 
     @Test
     public void testExecuteJobs() {
-        // Test VMSchedulerImpl.executeJobs() method with a map of VMScheduledJob objects
-        // covering all the possible scenarios
-        // 1. When the job is executed successfully
-        // 2. When the job is skipped (processJob returns null)
+        /*
+         Test VMSchedulerImpl.executeJobs() method with a map of VMScheduledJob objects
+         covering all the possible scenarios
+         1. When the job is executed successfully
+         2. When the job is skipped (processJob returns null)
+        */
 
         VMScheduledJobVO job1 = Mockito.mock(VMScheduledJobVO.class);
         VMScheduledJobVO job2 = Mockito.mock(VMScheduledJobVO.class);

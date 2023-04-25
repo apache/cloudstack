@@ -27,8 +27,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -42,8 +40,8 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMScheduleCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.scheduling.support.CronExpression;
 
@@ -64,8 +62,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private VMScheduler vmScheduler;
-    @Inject
-    private MessageBus messageBus;
     @Inject
     private AccountManager accountManager;
 
@@ -109,7 +105,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         String timeZoneId = timeZone.getID();
 
         String description = null;
-        if (cmd.getDescription() == null || cmd.getDescription().isBlank()) {
+        if (StringUtils.isBlank(cmd.getDescription())) {
             description = String.format("%s - %s", action, DateUtil.getHumanReadableSchedule(cronExpression));
         } else description = cmd.getDescription();
 
@@ -163,27 +159,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
 
-        Filter searchFilter = new Filter(VMScheduleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-        sb.and("action", sb.entity().getAction(), SearchCriteria.Op.EQ);
-        sb.and("enabled", sb.entity().getEnabled(), SearchCriteria.Op.EQ);
+        Pair<List<VMScheduleVO>, Integer> result = vmScheduleDao.searchAndCount(id, vmId, action, enabled, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        SearchCriteria<VMScheduleVO> sc = sb.create();
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        if (enabled != null) {
-            sc.setParameters("enabled", enabled);
-        }
-        if (action != null) {
-            sc.setParameters("action", action);
-        }
-        sc.setParameters("vm_id", vmId);
-
-        Pair<List<VMScheduleVO>, Integer> result = vmScheduleDao.searchAndCount(sc, searchFilter);
         ListResponse<VMScheduleResponse> response = new ListResponse<>();
         List<VMScheduleResponse> responsesList = new ArrayList<>();
         for (VMSchedule vmSchedule : result.first()) {
@@ -272,7 +249,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         });
     }
 
-    private void validateStartDateEndDate(Date startDate, Date endDate) {
+    void validateStartDateEndDate(Date startDate, Date endDate) {
         Date now = new Date();
         if (startDate.before(now)) {
             throw new InvalidParameterValueException(String.format("Invalid value for start date. Start date [%s] can't be less than current time [%s].", startDate, now));
@@ -289,12 +266,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_DELETE, eventDescription = "Deleting VM Schedule for VM")
     public long removeScheduleByVmId(long vmId, boolean expunge) {
-        SearchBuilder<VMScheduleVO> sb = vmScheduleDao.createSearchBuilder();
-        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<VMScheduleVO> sc = sb.create();
-        sc.setParameters("vm_id", vmId);
+        SearchCriteria<VMScheduleVO> sc = vmScheduleDao.getSearchCriteriaForVMId(vmId);
         List<VMScheduleVO> vmSchedules = vmScheduleDao.search(sc, null);
         List<Long> ids = new ArrayList<>();
         for (final VMScheduleVO vmSchedule : vmSchedules) {
@@ -314,6 +288,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        if (ids.isEmpty()) {
+            throw new InvalidParameterValueException("Either id or ids parameter must be specified");
+        }
         return Transaction.execute((TransactionCallback<Long>) status -> {
             vmScheduler.removeScheduledJobs(ids);
             return vmScheduleDao.removeSchedulesForVmIdAndIds(vm.getId(), ids);

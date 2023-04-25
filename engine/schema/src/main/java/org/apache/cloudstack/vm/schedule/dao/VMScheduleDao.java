@@ -18,7 +18,10 @@
  */
 package org.apache.cloudstack.vm.schedule.dao;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleVO;
 
 import java.util.List;
@@ -27,4 +30,8 @@ public interface VMScheduleDao extends GenericDao<VMScheduleVO, Long> {
     List<VMScheduleVO> listAllActiveSchedules();
 
     long removeSchedulesForVmIdAndIds(Long vmId, List<Long> ids);
+
+    Pair<List<VMScheduleVO>, Integer> searchAndCount(Long id, Long vmId, VMSchedule.Action action, Boolean enabled, Long offset, Long limit);
+
+    SearchCriteria<VMScheduleVO> getSearchCriteriaForVMId(Long vmId);
 }
