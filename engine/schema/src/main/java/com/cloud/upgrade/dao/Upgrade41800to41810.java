@@ -61,6 +61,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         updateGuestOsMappings();
+        copyGuestOsMappingsToVMware80u1();
     }
 
     @Override
@@ -167,5 +168,11 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows2022srvNext_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows Server 2025 (64-bit)", mappings);
         mappings.clear();
+    }
+
+    private void copyGuestOsMappingsToVMware80u1() {
+        LOG.debug("Copying guest OS mappings from VMware 8.0 to VMware 8.0.1");
+        GuestOsMapper guestOsMapper = new GuestOsMapper();
+        guestOsMapper.copyGuestOSHypervisorMappings(Hypervisor.HypervisorType.VMware, "8.0", "8.0.1");
     }
 }
