@@ -31,8 +31,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
@@ -59,7 +59,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject
     private VMScheduleDao vmScheduleDao;
     @Inject
-    private VirtualMachineManager virtualMachineManager;
+    private UserVmManager userVmManager;
     @Inject
     private VMScheduler vmScheduler;
     @Inject
@@ -78,7 +78,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_CREATE, eventDescription = "Creating VM Schedule")
     public VMScheduleResponse createSchedule(CreateVMScheduleCmd cmd) {
-        VirtualMachine vm = virtualMachineManager.findById(cmd.getVmId());
+        VirtualMachine vm = userVmManager.getUserVm(cmd.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
         if (vm == null) {
             throw new InvalidParameterValueException(String.format("Invalid value for vmId: %s", cmd.getVmId()));
@@ -123,7 +123,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     public VMScheduleResponse createResponse(VMSchedule vmSchedule) {
-        VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
+        VirtualMachine vm = userVmManager.getUserVm(vmSchedule.getVmId());
         VMScheduleResponse response = new VMScheduleResponse();
 
         response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
@@ -145,7 +145,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         Boolean enabled = cmd.getEnabled();
         Long vmId = cmd.getVmId();
 
-        VirtualMachine vm = virtualMachineManager.findById(vmId);
+        VirtualMachine vm = userVmManager.getUserVm(vmId);
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
         VMSchedule.Action action = null;
@@ -179,7 +179,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new CloudRuntimeException("VM schedule doesn't exist");
         }
 
-        VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
+        VirtualMachine vm = userVmManager.getUserVm(vmSchedule.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
         CronExpression cronExpression = Objects.requireNonNullElse(
@@ -281,7 +281,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_DELETE, eventDescription = "Deleting VM Schedule")
     public Long removeSchedule(DeleteVMScheduleCmd cmd) {
-        VirtualMachine vm = virtualMachineManager.findById(cmd.getVmId());
+        VirtualMachine vm = userVmManager.getUserVm(cmd.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());

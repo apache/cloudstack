@@ -21,8 +21,9 @@ package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.event.ActionEventUtils;
 import com.cloud.user.User;
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDao;
@@ -53,12 +54,11 @@ import java.util.TimeZone;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ActionEventUtils.class})
 public class VMSchedulerImplTest {
-
     @Spy
     @InjectMocks
     private VMSchedulerImpl vmScheduler = new VMSchedulerImpl();
     @Mock
-    private VirtualMachineManager virtualMachineManager;
+    private UserVmManager userVmManager;
     @Mock
     private VMScheduleDao vmScheduleDao;
     @Mock
@@ -147,14 +147,14 @@ public class VMSchedulerImplTest {
         Date now = DateUtils.setSeconds(new Date(), 0);
         Date startDate = DateUtils.addDays(now, 1);
         Date expectedScheduledTime = DateUtils.round(DateUtils.addMinutes(startDate, 1), Calendar.MINUTE);
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
 
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEnabled()).thenReturn(true);
         Mockito.when(vmSchedule.getSchedule()).thenReturn("* * * * *");
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(startDate);
-        Mockito.when(virtualMachineManager.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
         Mockito.when(vmScheduledJobDao.persist(Mockito.any())).thenThrow(EntityExistsException.class);
         Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
 
@@ -166,14 +166,14 @@ public class VMSchedulerImplTest {
         Date now = DateUtils.setSeconds(new Date(), 0);
         Date startDate = DateUtils.addDays(now, 1);
         Date expectedScheduledTime = DateUtils.round(DateUtils.addMinutes(startDate, 1), Calendar.MINUTE);
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
 
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEnabled()).thenReturn(true);
         Mockito.when(vmSchedule.getSchedule()).thenReturn("* * * * *");
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(startDate);
-        Mockito.when(virtualMachineManager.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
         Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
 
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
@@ -190,14 +190,14 @@ public class VMSchedulerImplTest {
         Date now = DateUtils.setSeconds(new Date(), 0);
         Date startDate = DateUtils.addDays(now, 1);
 
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
 
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEnabled()).thenReturn(true);
         Mockito.when(vmSchedule.getSchedule()).thenReturn(cron);
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("EST").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(startDate);
-        Mockito.when(virtualMachineManager.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
 
         // The timezone of the user is EST. The cron expression is 30 5 * * *.
         // The start date is 1 day from now. The expected scheduled time is 5:30 AM EST.
@@ -220,14 +220,14 @@ public class VMSchedulerImplTest {
     public void testScheduleNextJobScheduleCurrentSchedule() {
         Date now = DateUtils.setSeconds(new Date(), 0);
         Date expectedScheduledTime = DateUtils.round(DateUtils.addMinutes(now, 1), Calendar.MINUTE);
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
 
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEnabled()).thenReturn(true);
         Mockito.when(vmSchedule.getSchedule()).thenReturn("* * * * *");
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(DateUtils.addDays(now, -1));
-        Mockito.when(virtualMachineManager.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
         Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
 
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
@@ -242,14 +242,14 @@ public class VMSchedulerImplTest {
 
         Date now = DateUtils.setSeconds(new Date(), 0);
 
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
 
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEnabled()).thenReturn(true);
         Mockito.when(vmSchedule.getSchedule()).thenReturn(cron);
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("EST").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(DateUtils.addDays(now, -1));
-        Mockito.when(virtualMachineManager.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
 
         // The timezone of the user is EST. The cron expression is 30 5 * * *.
         // The start date is 1 day ago. The expected scheduled time is 5:30 AM EST.
@@ -315,8 +315,8 @@ public class VMSchedulerImplTest {
         VMScheduledJobVO job1 = Mockito.mock(VMScheduledJobVO.class);
         VMScheduledJobVO job2 = Mockito.mock(VMScheduledJobVO.class);
 
-        VirtualMachine vm1 = Mockito.mock(VirtualMachine.class);
-        VirtualMachine vm2 = Mockito.mock(VirtualMachine.class);
+        UserVm vm1 = Mockito.mock(UserVm.class);
+        UserVm vm2 = Mockito.mock(UserVm.class);
 
         Mockito.when(job1.getVmId()).thenReturn(1L);
         Mockito.when(job1.getScheduledTime()).thenReturn(new Date());
@@ -327,8 +327,8 @@ public class VMSchedulerImplTest {
         Mockito.when(job2.getAction()).thenReturn(VMSchedule.Action.STOP);
         Mockito.when(job2.getVmScheduleId()).thenReturn(2L);
 
-        Mockito.when(virtualMachineManager.findById(1L)).thenReturn(vm1);
-        Mockito.when(virtualMachineManager.findById(2L)).thenReturn(vm2);
+        Mockito.when(userVmManager.getUserVm(1L)).thenReturn(vm1);
+        Mockito.when(userVmManager.getUserVm(2L)).thenReturn(vm2);
 
         Mockito.doReturn(1L).when(vmScheduler).processJob(job1, vm1);
         Mockito.doReturn(null).when(vmScheduler).processJob(job2, vm2);

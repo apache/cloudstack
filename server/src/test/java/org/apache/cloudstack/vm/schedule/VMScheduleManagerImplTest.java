@@ -23,10 +23,11 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
@@ -66,7 +67,7 @@ public class VMScheduleManagerImplTest {
     VMScheduler vmScheduler;
 
     @Mock
-    VirtualMachineManager virtualMachineManager;
+    UserVmManager userVmManager;
 
     @Mock
     AccountManager accountManager;
@@ -93,7 +94,7 @@ public class VMScheduleManagerImplTest {
     // Add tests for createSchedule method
     @Test
     public void createSchedule() {
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         CreateVMScheduleCmd cmd = Mockito.mock(CreateVMScheduleCmd.class);
 
@@ -105,7 +106,7 @@ public class VMScheduleManagerImplTest {
         Mockito.when(cmd.getEndDate()).thenReturn(DateUtils.addDays(new Date(), 2));
         Mockito.when(vm.getUuid()).thenReturn(UUID.randomUUID().toString());
         Mockito.when(vmScheduleDao.persist(Mockito.any(VMScheduleVO.class))).thenReturn(vmSchedule);
-        Mockito.when(virtualMachineManager.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.eq(false), Mockito.eq(vm));
         VMScheduleResponse response = vmScheduleManager.createSchedule(cmd);
         Mockito.verify(vmScheduleDao, Mockito.times(1)).persist(Mockito.any(VMScheduleVO.class));
@@ -116,9 +117,9 @@ public class VMScheduleManagerImplTest {
     @Test
     public void createResponse() {
         VMSchedule vmSchedule = Mockito.mock(VMSchedule.class);
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
         Mockito.when(vmSchedule.getVmId()).thenReturn(1L);
-        Mockito.when(virtualMachineManager.findById(vmSchedule.getVmId())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(vmSchedule.getVmId())).thenReturn(vm);
 
         VMScheduleResponse response = vmScheduleManager.createResponse(vmSchedule);
         validateResponse(response, vmSchedule, vm);
@@ -126,7 +127,7 @@ public class VMScheduleManagerImplTest {
 
     @Test
     public void listSchedule() {
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
         VMScheduleVO vmSchedule1 = Mockito.mock(VMScheduleVO.class);
         VMScheduleVO vmSchedule2 = Mockito.mock(VMScheduleVO.class);
         List<VMScheduleVO> vmScheduleList = new ArrayList<>();
@@ -134,7 +135,7 @@ public class VMScheduleManagerImplTest {
         vmScheduleList.add(vmSchedule2);
 
         Mockito.when(vm.getUuid()).thenReturn(UUID.randomUUID().toString());
-        Mockito.when(virtualMachineManager.findById(1L)).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(1L)).thenReturn(vm);
         Mockito.when(
                 vmScheduleDao.searchAndCount(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(),
                         Mockito.anyBoolean(), Mockito.anyLong(), Mockito.anyLong())
@@ -165,7 +166,7 @@ public class VMScheduleManagerImplTest {
     public void updateSchedule() {
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         UpdateVMScheduleCmd cmd = Mockito.mock(UpdateVMScheduleCmd.class);
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
         Mockito.when(cmd.getId()).thenReturn(1L);
         Mockito.when(cmd.getSchedule()).thenReturn("0 0 * * *");
         Mockito.when(cmd.getTimeZone()).thenReturn("UTC");
@@ -175,7 +176,7 @@ public class VMScheduleManagerImplTest {
         Mockito.when(vmScheduleDao.findById(Mockito.anyLong())).thenReturn(vmSchedule);
         Mockito.when(vmScheduleDao.update(Mockito.eq(cmd.getId()), Mockito.any(VMScheduleVO.class))).thenReturn(true);
         Mockito.when(vmSchedule.getVmId()).thenReturn(1L);
-        Mockito.when(virtualMachineManager.findById(vmSchedule.getVmId())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(vmSchedule.getVmId())).thenReturn(vm);
 
         VMScheduleResponse response = vmScheduleManager.updateSchedule(cmd);
         Mockito.verify(vmScheduleDao, Mockito.times(1)).update(Mockito.eq(cmd.getId()), Mockito.any(VMScheduleVO.class));
@@ -185,7 +186,7 @@ public class VMScheduleManagerImplTest {
 
     @Test
     public void removeScheduleByVmId() {
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
         VMScheduleVO vmSchedule1 = Mockito.mock(VMScheduleVO.class);
         VMScheduleVO vmSchedule2 = Mockito.mock(VMScheduleVO.class);
         List<VMScheduleVO> vmScheduleList = new ArrayList<>();
@@ -209,13 +210,13 @@ public class VMScheduleManagerImplTest {
     @Test
     public void removeSchedule() {
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        UserVm vm = Mockito.mock(UserVm.class);
         DeleteVMScheduleCmd cmd = Mockito.mock(DeleteVMScheduleCmd.class);
 
         Mockito.when(cmd.getId()).thenReturn(1L);
         Mockito.when(cmd.getVmId()).thenReturn(1L);
         Mockito.when(vmSchedule.getVmId()).thenReturn(1L);
-        Mockito.when(virtualMachineManager.findById(cmd.getVmId())).thenReturn(vm);
+        Mockito.when(userVmManager.getUserVm(cmd.getVmId())).thenReturn(vm);
         Mockito.when(vmScheduleDao.findById(Mockito.anyLong())).thenReturn(vmSchedule);
         Mockito.when(vmScheduleDao.removeSchedulesForVmIdAndIds(Mockito.anyLong(), Mockito.anyList())).thenReturn(1L);
 

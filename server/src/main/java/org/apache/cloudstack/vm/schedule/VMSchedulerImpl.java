@@ -27,8 +27,8 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.google.common.primitives.Longs;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -67,7 +67,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     @Inject
     private VMScheduleDao vmScheduleDao;
     @Inject
-    private VirtualMachineManager virtualMachineManager;
+    private UserVmManager userVmManager;
     @Inject
     private AsyncJobManager asyncJobManager;
     private AsyncJobDispatcher asyncJobDispatcher;
@@ -119,7 +119,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         CronExpression cron = DateUtil.parseSchedule(vmSchedule.getSchedule());
         Date startDate = vmSchedule.getStartDate();
         Date endDate = vmSchedule.getEndDate();
-        VirtualMachine vm = virtualMachineManager.findById(vmSchedule.getVmId());
+        VirtualMachine vm = userVmManager.getUserVm(vmSchedule.getVmId());
 
         if (vm == null) {
             LOGGER.info(String.format("VM [id=%s] is removed. Disabling VM schedule [id=%s].", vmSchedule.getVmId(), vmSchedule.getUuid()));
@@ -265,7 +265,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
         for (Map.Entry<Long, VMScheduledJob> entry : jobsToExecute.entrySet()) {
             VMScheduledJob vmScheduledJob = entry.getValue();
-            VirtualMachine vm = virtualMachineManager.findById(vmScheduledJob.getVmId());
+            VirtualMachine vm = userVmManager.getUserVm(vmScheduledJob.getVmId());
 
             VMScheduledJobVO tmpVMScheduleJob = null;
             try {
@@ -326,7 +326,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         for (Map.Entry<Long, List<VMScheduledJob>> entry : jobsNotToExecute.entrySet()) {
             Long vmId = entry.getKey();
             List<VMScheduledJob> skippedVmScheduledJobVOS = entry.getValue();
-            VirtualMachine vm = virtualMachineManager.findById(vmId);
+            VirtualMachine vm = userVmManager.getUserVm(vmId);
             for (final VMScheduledJob skippedVmScheduledJobVO : skippedVmScheduledJobVOS) {
                 VMScheduledJob scheduledJob = jobsToExecute.get(vmId);
                 LOGGER.info(String.format("Skipping scheduled job [id: %s, vmId: %s] because of conflict with another scheduled job [id: %s]", skippedVmScheduledJobVO.getUuid(), vm.getUuid(), scheduledJob.getUuid()));
