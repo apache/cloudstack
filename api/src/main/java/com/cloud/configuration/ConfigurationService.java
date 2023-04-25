@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
@@ -371,4 +372,6 @@ public interface ConfigurationService {
     List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd);
 
     List<? extends PortableIp> listPortableIps(long id);
+
+    Boolean isAccountAllowedToCreateOfferingsWithTags(IsAccountAllowedToCreateOfferingsWithTagsCmd cmd);
 }

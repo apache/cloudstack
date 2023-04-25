@@ -18,17 +18,13 @@ package com.cloud.agent.api.to;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.Counter;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
-import com.cloud.network.lb.LoadBalancingRule.LbCondition;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
@@ -56,6 +52,8 @@ public class LoadBalancerTO {
     private AutoScaleVmGroupTO autoScaleVmGroupTO;
     final static int MAX_STICKINESS_POLICIES = 1;
     final static int MAX_HEALTHCHECK_POLICIES = 1;
+
+    private String cidrList;
 
     public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
             List<LbDestination> destinations) {
@@ -239,6 +237,14 @@ public class LoadBalancerTO {
         this.srcIpNetmask = srcIpNetmask;
     }
 
+    public void setCidrList(String cidrList){
+        this.cidrList = cidrList;
+    }
+
+    public String getCidrList() {
+        return cidrList;
+    }
+
     public static class StickinessPolicyTO {
         private String methodName;
         private List<Pair<String, String>> params;
@@ -367,46 +373,64 @@ public class LoadBalancerTO {
 
     public static class CounterTO implements Serializable {
         private static final long serialVersionUID = 2L;
+        private final Long id;
         private final String name;
-        private final String source;
+        private final Counter.Source source;
         private final String value;
+        private final String provider;
 
-        public CounterTO(String name, String source, String value) {
+        public CounterTO(Long id, String name, Counter.Source source, String value, String provider) {
+            this.id = id;
             this.name = name;
             this.source = source;
             this.value = value;
+            this.provider = provider;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public String getName() {
             return name;
         }
 
-        public String getSource() {
+        public Counter.Source getSource() {
             return source;
         }
 
         public String getValue() {
             return value;
         }
+
+        public String getProvider() {
+            return provider;
+        }
     }
 
     public static class ConditionTO implements Serializable {
         private static final long serialVersionUID = 2L;
+        private final Long id;
         private final long threshold;
-        private final String relationalOperator;
+        private final Condition.Operator relationalOperator;
         private final CounterTO counter;
 
-        public ConditionTO(long threshold, String relationalOperator, CounterTO counter) {
+        public ConditionTO(Long id, long threshold, Condition.Operator relationalOperator, CounterTO counter) {
+            this.id = id;
             this.threshold = threshold;
             this.relationalOperator = relationalOperator;
             this.counter = counter;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public long getThreshold() {
             return threshold;
         }
 
-        public String getRelationalOperator() {
+        public Condition.Operator getRelationalOperator() {
             return relationalOperator;
         }
 
@@ -420,14 +444,16 @@ public class LoadBalancerTO {
         private final long id;
         private final int duration;
         private final int quietTime;
-        private String action;
+        private final Date lastQuietTime;
+        private AutoScalePolicy.Action action;
         boolean revoked;
         private final List<ConditionTO> conditions;
 
-        public AutoScalePolicyTO(long id, int duration, int quietTime, String action, List<ConditionTO> conditions, boolean revoked) {
+        public AutoScalePolicyTO(long id, int duration, int quietTime, Date lastQuietTime, AutoScalePolicy.Action action, List<ConditionTO> conditions, boolean revoked) {
             this.id = id;
             this.duration = duration;
             this.quietTime = quietTime;
+            this.lastQuietTime = lastQuietTime;
             this.conditions = conditions;
             this.action = action;
             this.revoked = revoked;
@@ -445,7 +471,11 @@ public class LoadBalancerTO {
             return quietTime;
         }
 
-        public String getAction() {
+        public Date getLastQuietTime() {
+            return lastQuietTime;
+        }
+
+        public AutoScalePolicy.Action getAction() {
             return action;
         }
 
@@ -466,7 +496,7 @@ public class LoadBalancerTO {
         private final String templateId;
         private final String otherDeployParams;
         private final List<Pair<String, String>> counterParamList;
-        private final Integer destroyVmGraceperiod;
+        private final Integer expungeVmGracePeriod;
         private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
@@ -475,14 +505,14 @@ public class LoadBalancerTO {
 
         public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey,
                 String serviceOfferingId, String templateId, String vmName, String networkId, String otherDeployParams, List<Pair<String, String>> counterParamList,
-                Integer destroyVmGraceperiod) {
+                Integer expungeVmGracePeriod) {
             this.zoneId = zoneId;
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
             this.templateId = templateId;
             this.otherDeployParams = otherDeployParams;
             this.counterParamList = counterParamList;
-            this.destroyVmGraceperiod = destroyVmGraceperiod;
+            this.expungeVmGracePeriod = expungeVmGracePeriod;
             this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
@@ -514,8 +544,8 @@ public class LoadBalancerTO {
             return counterParamList;
         }
 
-        public Integer getDestroyVmGraceperiod() {
-            return destroyVmGraceperiod;
+        public Integer getExpungeVmGracePeriod() {
+            return expungeVmGracePeriod;
         }
 
         public String getCloudStackApiUrl() {
@@ -541,6 +571,8 @@ public class LoadBalancerTO {
 
     public static class AutoScaleVmGroupTO implements Serializable {
         private static final long serialVersionUID = 2L;
+
+        private final Long id;
         private final String uuid;
         private final int minMembers;
         private final int maxMembers;
@@ -548,11 +580,13 @@ public class LoadBalancerTO {
         private final int interval;
         private final List<AutoScalePolicyTO> policies;
         private final AutoScaleVmProfileTO profile;
-        private final String state;
-        private final String currentState;
+        private final AutoScaleVmGroup.State state;
+        private final AutoScaleVmGroup.State currentState;
+        private final Long loadBalancerId;
 
-        AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
-                String state, String currentState) {
+        public AutoScaleVmGroupTO(Long id, String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
+                           AutoScaleVmGroup.State state, AutoScaleVmGroup.State currentState, Long loadBalancerId) {
+            this.id = id;
             this.uuid = uuid;
             this.minMembers = minMembers;
             this.maxMembers = maxMembers;
@@ -562,6 +596,11 @@ public class LoadBalancerTO {
             this.profile = profile;
             this.state = state;
             this.currentState = currentState;
+            this.loadBalancerId = loadBalancerId;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public String getUuid() {
@@ -592,44 +631,16 @@ public class LoadBalancerTO {
             return profile;
         }
 
-        public String getState() {
+        public AutoScaleVmGroup.State getState() {
             return state;
         }
 
-        public String getCurrentState() {
+        public AutoScaleVmGroup.State getCurrentState() {
             return currentState;
         }
-    }
 
-    public void setAutoScaleVmGroup(LbAutoScaleVmGroup lbAutoScaleVmGroup) {
-        List<LbAutoScalePolicy> lbAutoScalePolicies = lbAutoScaleVmGroup.getPolicies();
-        List<AutoScalePolicyTO> autoScalePolicyTOs = new ArrayList<AutoScalePolicyTO>(lbAutoScalePolicies.size());
-        for (LbAutoScalePolicy lbAutoScalePolicy : lbAutoScalePolicies) {
-            List<LbCondition> lbConditions = lbAutoScalePolicy.getConditions();
-            List<ConditionTO> conditionTOs = new ArrayList<ConditionTO>(lbConditions.size());
-            for (LbCondition lbCondition : lbConditions) {
-                Counter counter = lbCondition.getCounter();
-                CounterTO counterTO = new CounterTO(counter.getName(), counter.getSource().toString(), "" + counter.getValue());
-                Condition condition = lbCondition.getCondition();
-                ConditionTO conditionTO = new ConditionTO(condition.getThreshold(), condition.getRelationalOperator().toString(), counterTO);
-                conditionTOs.add(conditionTO);
-            }
-            AutoScalePolicy autoScalePolicy = lbAutoScalePolicy.getPolicy();
-            autoScalePolicyTOs.add(new AutoScalePolicyTO(autoScalePolicy.getId(), autoScalePolicy.getDuration(), autoScalePolicy.getQuietTime(),
-                autoScalePolicy.getAction(), conditionTOs, lbAutoScalePolicy.isRevoked()));
+        public Long getLoadBalancerId() {
+            return loadBalancerId;
         }
-        LbAutoScaleVmProfile lbAutoScaleVmProfile = lbAutoScaleVmGroup.getProfile();
-        AutoScaleVmProfile autoScaleVmProfile = lbAutoScaleVmProfile.getProfile();
-
-        AutoScaleVmProfileTO autoScaleVmProfileTO =
-            new AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(), lbAutoScaleVmProfile.getCsUrl(),
-                lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(), lbAutoScaleVmProfile.getServiceOfferingId(),
-                lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getVmName(), lbAutoScaleVmProfile.getNetworkId(), autoScaleVmProfile.getOtherDeployParams(),
-                autoScaleVmProfile.getCounterParams(), autoScaleVmProfile.getDestroyVmGraceperiod());
-
-        AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
-        autoScaleVmGroupTO =
-            new AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
-                autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
     }
 }

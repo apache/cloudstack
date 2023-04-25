@@ -19,7 +19,6 @@ package com.cloud.hypervisor;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -40,6 +39,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
+
+import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class XenServerGuruTest {
@@ -102,13 +103,33 @@ public class XenServerGuruTest {
     }
 
     @Test
-    public void getCommandHostDelegationTestCommanIsStorageSubSystemCommand() {
-        StorageSubSystemCommand storageSubSystemCommandMock = Mockito.mock(StorageSubSystemCommand.class);
-        Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, storageSubSystemCommandMock);
+    public void getCommandHostDelegationTestCommandIsStorageSubSystemCommand() {
+        CopyCommand copyCommand = Mockito.mock(CopyCommand.class);
+        DataTO srcData = Mockito.mock(DataTO.class);
+        DataTO dstData = Mockito.mock(DataTO.class);
+        Mockito.when(copyCommand.getSrcTO()).thenReturn(srcData);
+        Mockito.when(copyCommand.getDestTO()).thenReturn(dstData);
+        Mockito.when(srcData.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+
+        Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommand);
 
         assertPairOfHostToExecuteCommandIsTheDefaultHostId(pairHostToExecuteCommand);
 
-        Mockito.verify(storageSubSystemCommandMock).setExecuteInSequence(true);
+        Mockito.verify(copyCommand).setExecuteInSequence(true);
+    }
+
+    @Test
+    public void getCommandHostDelegationTestCommandIsNotForXenHypervisor() {
+        CopyCommand copyCommand = Mockito.mock(CopyCommand.class);
+        DataTO srcData = Mockito.mock(DataTO.class);
+        Mockito.when(copyCommand.getSrcTO()).thenReturn(srcData);
+        Mockito.when(srcData.getHypervisorType()).thenReturn(HypervisorType.Any);
+
+        Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommand);
+
+        assertPairOfHostToExecuteCommandIsTheDefaultHostId(pairHostToExecuteCommand);
+
+        Mockito.verify(copyCommand, times(0)).setExecuteInSequence(true);
     }
 
     @Test

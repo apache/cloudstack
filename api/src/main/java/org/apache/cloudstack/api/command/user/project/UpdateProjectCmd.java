@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -35,14 +36,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "updateProject", description = "Updates a project", responseObject = ProjectResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateProjectCmd.class.getName());
 
-    private static final String s_name = "updateprojectresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,6 +67,9 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             "to promote or demote the user/account based on the roleType (Regular or Admin) provided. Defaults to true")
     private Boolean swapOwner;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the project", since = "4.19.0")
+    private String name;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -88,6 +90,10 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
         return userId;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public ProjectAccount.Role getRoleType(String role) {
         String type = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
         if (!EnumUtils.isValidEnum(ProjectAccount.Role.class, type)) {
@@ -101,11 +107,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             return getRoleType(roleType);
         }
         return ProjectAccount.Role.Regular;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public Boolean isSwapOwner() {
@@ -142,9 +143,9 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
         Project project = null;
         if (isSwapOwner()) {
-            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName());
+            project = _projectService.updateProject(getId(), getName(), getDisplayText(), getAccountName());
         }  else {
-            project = _projectService.updateProject(getId(), getDisplayText(), getAccountName(), getUserId(), getAccountRole());
+            project = _projectService.updateProject(getId(), getName(), getDisplayText(), getAccountName(), getUserId(), getAccountRole());
         }
         if (project != null) {
             ProjectResponse response = _responseGenerator.createProjectResponse(project);

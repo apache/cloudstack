@@ -76,7 +76,8 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
-                  v-model:value="form.timeSelect" />
+                  v-model:value="form.timeSelect"
+                  style="width: 100%;" />
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='weekly'">
@@ -86,9 +87,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
+                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -99,9 +100,9 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
-                  optionFilterProp="label"
+                  optionFilterProp="value"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
@@ -117,8 +118,7 @@
                   <a-input-number
                     style="width: 100%"
                     v-model:value="form.maxsnaps"
-                    :min="1"
-                    :max="8" />
+                    :min="1" />
                 </a-tooltip>
               </a-form-item>
             </a-col>
@@ -130,9 +130,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>

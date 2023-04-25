@@ -634,15 +634,15 @@ def put_object(url, token=None, container=None, name=None, contents=None,
     if etag:
         headers['ETag'] = etag.strip('"')
     if content_length is not None:
-        headers['Content-Length'] = str(content_length)
+        headers['content-length'] = str(content_length)
     else:
         for n, v in headers.iteritems():
             if n.lower() == 'content-length':
                 content_length = int(v)
     if content_type is not None:
-        headers['Content-Type'] = content_type
+        headers['content-type'] = content_type
     if not contents:
-        headers['Content-Length'] = '0'
+        headers['content-length'] = '0'
     if hasattr(contents, 'read'):
         conn.putrequest('PUT', path)
         for header, value in headers.iteritems():

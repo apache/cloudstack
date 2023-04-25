@@ -44,7 +44,6 @@ import com.cloud.user.Account;
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 
-    private static final String s_name = "createstoragenetworkiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,7 +63,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.VLAN,
                type = CommandType.INTEGER,
-               description = "Optional. The vlan the ip range sits on, default to Null when it is not specificed which means you network is not on any Vlan. This is mainly for Vmware as other hypervisors can directly reterive bridge from pyhsical network traffic type table")
+               description = "Optional. The vlan the ip range sits on, default to Null when it is not specified which means your network is not on any Vlan. This is mainly for Vmware as other hypervisors can directly retrieve bridge from physical network traffic type table")
     private Integer vlan;
 
     @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask for storage network")
@@ -123,11 +122,6 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             s_logger.warn("Create storage network IP range failed", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

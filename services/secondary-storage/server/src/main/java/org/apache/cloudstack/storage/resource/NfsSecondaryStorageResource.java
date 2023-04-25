@@ -23,7 +23,6 @@ import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
 import static com.cloud.network.NetworkModel.USERDATA_DIR;
 import static com.cloud.network.NetworkModel.USERDATA_FILE;
 import static com.cloud.utils.storage.S3.S3Utils.putFile;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 import java.io.BufferedReader;
@@ -42,6 +41,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,6 +59,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.MoveVolumeCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
@@ -74,6 +75,7 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -312,6 +314,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((GetDatadisksCommand)cmd);
         } else if (cmd instanceof CreateDatadiskTemplateCommand) {
             return execute((CreateDatadiskTemplateCommand)cmd);
+        } else if (cmd instanceof MoveVolumeCommand) {
+            return execute((MoveVolumeCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -473,6 +477,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             long templateId = dataDiskTemplate.getId();
             String templateUniqueName = dataDiskTemplate.getUniqueName();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("no cmd? %s", cmd.stringRepresentation()));
+            }
             String origDisk = cmd.getPath();
             long virtualSize = dataDiskTemplate.getSize();
             String diskName = origDisk.substring((origDisk.lastIndexOf(File.separator)) + 1);
@@ -540,6 +547,36 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CreateDatadiskTemplateAnswer(msg);
         }
         return new CreateDatadiskTemplateAnswer(diskTemplate);
+    }
+
+    public Answer execute(MoveVolumeCommand cmd) {
+        String volumeToString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "volumeUuid", "volumeName");
+
+        String rootDir = getRootDir(cmd.getDatastoreUri(), _nfsVersion);
+
+        if (!rootDir.endsWith("/")) {
+            rootDir += "/";
+        }
+
+        Path srcPath = Paths.get(rootDir + cmd.getSrcPath());
+        Path destPath = Paths.get(rootDir + cmd.getDestPath());
+
+        try {
+            s_logger.debug(String.format("Trying to create missing directories (if any) to move volume [%s].", volumeToString));
+            Files.createDirectories(destPath.getParent());
+            s_logger.debug(String.format("Trying to move volume [%s] to [%s].", volumeToString, destPath));
+            Files.move(srcPath, destPath);
+
+            String msg = String.format("Moved volume [%s] from [%s] to [%s].", volumeToString, srcPath, destPath);
+            s_logger.debug(msg);
+
+            return new Answer(cmd, true, msg);
+
+        } catch (IOException ioException) {
+            s_logger.error(String.format("Failed to move volume [%s] from [%s] to [%s] due to [%s].", volumeToString, srcPath, destPath, ioException.getMessage()),
+                    ioException);
+            return new Answer(cmd, ioException);
+        }
     }
 
     /*
@@ -802,7 +839,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
         } catch (Exception e) {
 
-            final String errMsg = format("Failed to download" + "due to $1%s", e.getMessage());
+            final String errMsg = String.format("Failed to download" + "due to $1%s", e.getMessage());
             s_logger.error(errMsg, e);
             return new CopyCmdAnswer(errMsg);
         }
@@ -828,7 +865,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             String templateUuid = UUID.randomUUID().toString();
             String templateName = templateUuid + ".vhd";
-            Script command = new Script(createTemplateFromSnapshotXenScript, cmd.getWait() * 1000, s_logger);
+            Script command = new Script(createTemplateFromSnapshotXenScript, cmd.getWait() * 1000L, s_logger);
             command.add("-p", snapshotPath);
             command.add("-s", snapshotName);
             command.add("-n", templateName);
@@ -2223,7 +2260,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    public String allowOutgoingOnPrivate(String destCidr) {
+    /**
+    * allow *only one* setting of an outgoing destination at a time
+    *
+    * @destCidr the destination network that will be allowed for outgoing traffic.
+    * @return any error message that might be helpful or <null> on success or when called anywhere but in the router VM.
+    */
+    public synchronized String allowOutgoingOnPrivate(String destCidr) {
         if (!_inSystemVM) {
             return null;
         }
@@ -3275,12 +3318,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 "accountTemplateDirSize: " + accountTemplateDirSize + " accountSnapshotDirSize: " + accountSnapshotDirSize + " accountVolumeDirSize: " + accountVolumeDirSize);
 
         int accountDirSizeInGB = getSizeInGB(accountTemplateDirSize + accountSnapshotDirSize + accountVolumeDirSize);
-        int defaultMaxAccountSecondaryStorageInGB = Integer.parseInt(cmd.getDefaultMaxAccountSecondaryStorage());
+        long defaultMaxSecondaryStorageInGB = cmd.getDefaultMaxSecondaryStorageInGB();
 
-        if (defaultMaxAccountSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
-            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
+        if (defaultMaxSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxSecondaryStorageInGB) {
+            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxSecondaryStorageInGB: " + defaultMaxSecondaryStorageInGB + " contentLengthInGB:"
                     + contentLengthInGB); // extra attention
-            String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
+            String errorMessage = "Maximum number of resources of type secondary_storage for account/project has exceeded";
             updateStateMapWithError(cmd.getEntityUUID(), errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }

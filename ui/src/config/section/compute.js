@@ -75,9 +75,11 @@ export default {
         }
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
       details: () => {
-        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename']
+        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
+          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
+          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -115,7 +117,8 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          args: ['considerlasthost'],
           show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
@@ -139,6 +142,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           show: (record) => { return ['Running'].includes(record.state) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           args: (record, store) => {
             var fields = []
             fields.push('forced')
@@ -166,6 +170,7 @@ export default {
               value: (record) => { return record.id }
             }
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           successMethod: (obj, result) => {
             const vm = result.jobresult.virtualmachine || {}
             if (result.jobstatus === 1 && vm.password) {
@@ -190,6 +195,7 @@ export default {
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
               (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -207,6 +213,7 @@ export default {
             return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
           },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
         },
         {
@@ -280,6 +287,7 @@ export default {
           dataView: true,
           popup: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
         {
@@ -296,6 +304,7 @@ export default {
             return args
           },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -331,6 +340,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard.vue')))
         },
@@ -342,6 +352,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
           popup: true
         },
@@ -364,6 +375,17 @@ export default {
           show: (record) => { return ['Stopped'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetSshKeyPair')))
+        },
+        {
+          api: 'resetUserDataForVirtualMachine',
+          icon: 'solution-outlined',
+          label: 'label.reset.userdata.on.vm',
+          message: 'message.desc.reset.userdata',
+          docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetUserData')))
         },
         {
           api: 'assignVirtualMachine',
@@ -435,7 +457,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'created'],
       tabs: [{
         name: 'k8s',
         component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
@@ -512,6 +534,110 @@ export default {
       ]
     },
     {
+      name: 'autoscalevmgroup',
+      title: 'label.autoscale.vm.groups',
+      icon: 'ordered-list-outlined',
+      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      resourceType: 'AutoScaleVmGroup',
+      permission: ['listAutoScaleVmGroups'],
+      columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'state'],
+      details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'autoscalevmgroupid'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'autoscale.vm.profile',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleVmProfile.vue')))
+        },
+        {
+          name: 'loadbalancerrule',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleLoadBalancing.vue')))
+        },
+        {
+          name: 'scaleup.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleUpPolicyTab.vue')))
+        },
+        {
+          name: 'scaledown.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'createAutoScaleVmGroup',
+          icon: 'plus-outlined',
+          label: 'label.new.autoscale.vmgroup',
+          listView: true,
+          component: () => import('@/views/compute/CreateAutoScaleVmGroup.vue')
+        },
+        {
+          api: 'enableAutoScaleVmGroup',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.autoscale.vmgroup',
+          message: 'message.confirm.enable.autoscale.vmgroup',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return record.state === 'DISABLED' }
+        },
+        {
+          api: 'disableAutoScaleVmGroup',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.autoscale.vmgroup',
+          message: 'message.confirm.disable.autoscale.vmgroup',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['ENABLED', 'SCALING'].includes(record.state) }
+        },
+        {
+          api: 'updateAutoScaleVmGroup',
+          icon: 'edit-outlined',
+          label: 'label.update.autoscale.vmgroup',
+          dataView: true,
+          args: (record, store) => {
+            var args = ['name']
+            if (record.state === 'DISABLED') {
+              args.push('maxmembers')
+              args.push('minmembers')
+              args.push('interval')
+            }
+            return args
+          }
+        },
+        {
+          api: 'deleteAutoScaleVmGroup',
+          icon: 'delete-outlined',
+          label: 'label.delete.autoscale.vmgroup',
+          message: 'message.action.delete.autoscale.vmgroup',
+          dataView: true,
+          args: ['cleanup'],
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup || null } }) }
+        }
+      ]
+    },
+    {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold-outlined',
@@ -576,7 +702,7 @@ export default {
         return fields
       },
       resourceType: 'SSHKeyPair',
-      details: ['id', 'name', 'fingerprint', 'account', 'domain'],
+      details: ['id', 'name', 'fingerprint', 'account', 'domain', 'project'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -608,10 +734,13 @@ export default {
           label: 'label.remove.ssh.key.pair',
           message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
-          args: ['name', 'account', 'domainid'],
+          args: ['name', 'account', 'domainid', 'projectid'],
           mapping: {
             name: {
               value: (record, params) => { return record.name }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -626,7 +755,81 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                name: data[0].name, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
+              }
+            })
+          }
+        }
+      ]
+    },
+    {
+      name: 'userdata',
+      title: 'label.user.data',
+      icon: 'solution-outlined',
+      docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
+      permission: ['listUserData'],
+      columns: () => {
+        var fields = ['name', 'id']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
+        return fields
+      },
+      resourceType: 'UserData',
+      details: ['id', 'name', 'userdata', 'account', 'domain', 'params'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'userdata'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'registerUserData',
+          icon: 'plus-outlined',
+          label: 'label.register.user.data',
+          docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
+        },
+        {
+          api: 'deleteUserData',
+          icon: 'delete-outlined',
+          label: 'label.remove.user.data',
+          message: 'message.please.confirm.remove.user.data',
+          dataView: true,
+          args: ['id', 'account', 'domainid'],
+          mapping: {
+            id: {
+              value: (record, params) => { return record.id }
+            },
+            account: {
+              value: (record, params) => { return record.account }
+            },
+            domainid: {
+              value: (record, params) => { return record.domainid }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x, account: data[0].account, domainid: data[0].domainid
               }
             })
           }
@@ -662,7 +865,7 @@ export default {
           args: ['name', 'description', 'type'],
           mapping: {
             type: {
-              options: ['host anti-affinity', 'host affinity']
+              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
             }
           }
         },

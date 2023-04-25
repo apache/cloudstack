@@ -22,15 +22,17 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.Id;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
+import javax.persistence.Transient;
+
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDao;
@@ -195,6 +197,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         vmType = offering.getSystemVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
+        diskOfferingStrictness = offering.diskOfferingStrictness;
     }
 
     @Override
@@ -327,7 +330,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public boolean isCustomCpuSpeedSupported() {
-        return isCustomized() && getDetail("minCPU") != null;
+        return isCustomized() && speed == null;
     }
 
     @Override
@@ -424,7 +427,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     @Override
     public String toString() {
-        return String.format("Service offering {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\"}", getId(), getName(), getUuid());
+        return String.format("Service offering %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid"));
     }
 
     public boolean isDynamicScalingEnabled() {

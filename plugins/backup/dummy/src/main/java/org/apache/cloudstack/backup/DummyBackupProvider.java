@@ -129,7 +129,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean deleteBackup(Backup backup) {
+    public boolean deleteBackup(Backup backup, boolean forced) {
         return true;
     }
 

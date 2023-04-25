@@ -217,7 +217,7 @@ public class TrafficSentinelResource implements ServerResource {
                 String postData = "script="+URLEncoder.encode(getScript(cmd.getPublicIps(), cmd.getStart(), cmd.getEnd()), "UTF-8")+"&authenticate=basic&resultFormat=txt";
                 HttpURLConnection con = (HttpURLConnection) trafficSentinel.openConnection();
                 con.setRequestMethod("POST");
-                con.setRequestProperty("Content-Length", String.valueOf(postData.length()));
+                con.setRequestProperty("content-length", String.valueOf(postData.length()));
                 con.setDoOutput(true);
 
                 //Part 2 - Write Data

@@ -65,6 +65,8 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
+import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
@@ -72,11 +74,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private HostDao hostDao;
     @Inject
     private DedicatedResourceDao dedicatedResourceDao;
+
+    private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
-                            + "(select h.id, cd.value "
+                            + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
                             + "join cluster c on c.id=h.cluster_id "
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
+                            + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
 
     private String findOneHypervisorHostInScopeByType = "select h.id from host h where h.status = 'Up' and h.hypervisor_type = ? ";
@@ -118,8 +123,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
-    @DB
     protected EndPoint findEndPointInScope(Scope scope, String sqlBase, Long poolId) {
+        return findEndPointInScope(scope, sqlBase, poolId, false);
+    }
+
+    @DB
+    protected EndPoint findEndPointInScope(Scope scope, String sqlBase, Long poolId, boolean volumeEncryptionSupportRequired) {
         StringBuilder sbuilder = new StringBuilder();
         sbuilder.append(sqlBase);
 
@@ -142,8 +151,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
             dedicatedHosts = dedicatedResourceDao.listAllHosts();
         }
 
-        // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
+
+        if (volumeEncryptionSupportRequired) {
+            sbuilder.append(String.format(" and t.%s='true'", VOL_ENCRYPT_COLUMN_NAME));
+        }
+
+        // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by ");
         if (dedicatedHosts.size() > 0) {
             moveDedicatedHostsToLowerPriority(sbuilder, dedicatedHosts);
@@ -208,7 +222,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
-    protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
+    protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore, boolean volumeEncryptionSupportRequired) {
         // find any xenserver/kvm host in the scope
         Scope srcScope = srcStore.getScope();
         Scope destScope = destStore.getScope();
@@ -233,17 +247,22 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 poolId = destStore.getId();
             }
         }
-        return findEndPointInScope(selectedScope, findOneHostOnPrimaryStorage, poolId);
+        return findEndPointInScope(selectedScope, findOneHostOnPrimaryStorage, poolId, volumeEncryptionSupportRequired);
     }
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData) {
+        return select( srcData, destData, false);
+    }
+
+    @Override
+    public EndPoint select(DataObject srcData, DataObject destData, boolean volumeEncryptionSupportRequired) {
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
-            return findEndPointForImageMove(srcStore, destStore);
+            return findEndPointForImageMove(srcStore, destStore, volumeEncryptionSupportRequired);
         } else if (moveBetweenPrimaryDirectDownload(srcStore, destStore)) {
-            return findEndPointForImageMove(srcStore, destStore);
+            return findEndPointForImageMove(srcStore, destStore, volumeEncryptionSupportRequired);
         } else if (moveBetweenCacheAndImage(srcStore, destStore)) {
             // pick ssvm based on image cache dc
             DataStore selectedStore = null;
@@ -274,6 +293,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action) {
+        return select(srcData, destData, action, false);
+    }
+
+    @Override
+    public EndPoint select(DataObject srcData, DataObject destData, StorageAction action, boolean encryptionRequired) {
         s_logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary " + srcData.getId() + " dest=" + destData.getId());
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
@@ -293,7 +317,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 }
             }
         }
-        return select(srcData, destData);
+        return select(srcData, destData, encryptionRequired);
     }
 
     protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
@@ -306,9 +330,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (storeScope.getScopeType() == ScopeType.ZONE) {
             dcId = storeScope.getScopeId();
         }
-        // find ssvm that can be used to download data to store. For zone-wide
-        // image store, use SSVM for that zone. For region-wide store,
-        // we can arbitrarily pick one ssvm to do that task
+
+        return findSsvm(dcId);
+    }
+
+    /**
+     * Finds an SSVM that can be used to execute a command.
+     * For zone-wide image store, use SSVM for that zone. For region-wide store, we can arbitrarily pick one SSVM to do the task.
+     * */
+    public EndPoint findSsvm(long dcId) {
         List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty()) {
             return null;
@@ -351,6 +381,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @Override
+    public EndPoint select(DataObject object, boolean encryptionSupportRequired) {
+        DataStore store = object.getDataStore();
+        if (store.getRole() == DataStoreRole.Primary) {
+            return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId(), encryptionSupportRequired);
+        }
+        throw new CloudRuntimeException(String.format("Storage role %s doesn't support encryption", store.getRole()));
+    }
+
+    @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
         EndPoint ep = select(store);
@@ -388,7 +427,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             s_logger.debug("Received URISyntaxException for url" +downloadUrl);
         }
 
-        // If ssvm doesnt exist then find any ssvm in the zone.
+        // If ssvm doesn't exist then find any ssvm in the zone.
         s_logger.debug("Coudn't find ssvm for url" +downloadUrl);
         return findEndpointForImageStorage(store);
     }
@@ -415,6 +454,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject object, StorageAction action) {
+        return select(object, action, false);
+    }
+
+    @Override
+    public EndPoint select(DataObject object, StorageAction action, boolean encryptionRequired) {
         if (action == StorageAction.TAKESNAPSHOT) {
             SnapshotInfo snapshotInfo = (SnapshotInfo)object;
             if (snapshotInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
@@ -446,7 +490,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 }
             }
         }
-        return select(object);
+        return select(object, encryptionRequired);
     }
 
     @Override

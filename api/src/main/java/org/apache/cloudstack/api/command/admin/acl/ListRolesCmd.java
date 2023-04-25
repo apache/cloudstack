@@ -34,10 +34,9 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = ListRolesCmd.APINAME, description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.9.0", authorized = {
+@APICommand(name = "listRoles", description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.9.0", authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin })
 public class ListRolesCmd extends BaseListCmd {
-    public static final String APINAME = "listRoles";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,11 +75,6 @@ public class ListRolesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseListCmd.RESPONSE_SUFFIX;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -111,8 +105,8 @@ public class ListRolesCmd extends BaseListCmd {
         Pair<List<Role>, Integer> roles;
         if (getId() != null && getId() > 0L) {
             roles = new Pair<List<Role>, Integer>(Collections.singletonList(roleService.findRole(getId())), 1);
-        } else if (StringUtils.isNotBlank(getName())) {
-            roles = roleService.findRolesByName(getName(), getStartIndex(), getPageSizeVal());
+        } else if (StringUtils.isNotBlank(getName()) || StringUtils.isNotBlank(getKeyword())) {
+            roles = roleService.findRolesByName(getName(), getKeyword(), getStartIndex(), getPageSizeVal());
         } else if (getRoleType() != null) {
             roles = roleService.findRolesByType(getRoleType(), getStartIndex(), getPageSizeVal());
         } else {

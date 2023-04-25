@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
-    private static final String s_name = "listserviceofferingsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -83,6 +82,12 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.15")
     private Integer cpuSpeed;
 
+    @Parameter(name = ApiConstants.ENCRYPT_ROOT,
+        type = CommandType.BOOLEAN,
+        description = "listed offerings support root disk encryption",
+        since = "4.18")
+    private Boolean encryptRoot;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -123,14 +128,11 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
         return cpuSpeed;
     }
 
+    public Boolean getEncryptRoot() { return encryptRoot; }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

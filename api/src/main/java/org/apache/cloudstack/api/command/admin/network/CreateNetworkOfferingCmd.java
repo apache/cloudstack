@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -50,7 +51,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
-    private static final String s_name = "createnetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,7 +59,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the network offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering, defaults to the value of 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE,
@@ -127,6 +127,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
 
+    @Parameter(name = ApiConstants.FOR_TUNGSTEN,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
+    private Boolean forTungsten;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
             + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
@@ -178,7 +183,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? networkOfferingName : displayText;
     }
 
     public String getTags() {
@@ -199,10 +204,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Integer getNetworkRate() {
         return networkRate;
-    }
-
-    public static String getName() {
-        return s_name;
     }
 
     public Long getServiceOfferingId() {
@@ -238,6 +239,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public Boolean getForTungsten() {
+        return forTungsten;
     }
 
     public Boolean getEgressDefaultPolicy() {
@@ -362,11 +367,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

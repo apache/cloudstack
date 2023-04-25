@@ -98,6 +98,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -161,8 +162,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         try {
             persistDefaultValues();
             _configDepotAdmin.populateConfigurations();
-        } catch (InternalErrorException e) {
-            throw new RuntimeException("Unhandled configuration exception", e);
+        } catch (InternalErrorException | CloudRuntimeException e) {
+            s_logger.error("Unhandled configuration exception: " + e.getMessage());
+            throw new CloudRuntimeException("Unhandled configuration exception", e);
         }
         return true;
     }
@@ -202,6 +204,16 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     String description = c.getDescription();
                     ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
                     configVO.setDefaultValue(value);
+                    Pair<Long, Long> configGroupAndSubGroup = _configDepotAdmin.getConfigurationGroupAndSubGroupByName(name);
+                    configVO.setGroupId(configGroupAndSubGroup.first());
+                    configVO.setSubGroupId(configGroupAndSubGroup.second());
+                    if (c.getKind() != null) {
+                        configVO.setKind(c.getKind());
+                    }
+                    if (c.getOptions() != null) {
+                        configVO.setOptions(c.getOptions());
+                    }
+
                     _configDao.persist(configVO);
                 }
             }
@@ -375,14 +387,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         pstmt = txn.prepareAutoCloseStatement(sql);
                         rs1 = pstmt.executeQuery();
                         while (rs1.next()) {
-                            String resouce = rs1.getString(1); //resource column
-                            if (resouce == null)
+                            String resource = rs1.getString(1); //resource column
+                            if (resource == null)
                                 continue;
-                            if (resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56SP2Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer600Resource")
-                                    || resouce.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer602Resource")) {
+                            if (resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer56SP2Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer600Resource")
+                                    || resource.equalsIgnoreCase("com.cloud.hypervisor.xenserver.resource.XenServer602Resource")) {
                                 pvdriverversion = "xenserver56";
                                 break;
                             }
@@ -981,6 +993,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultSharedSGNetworkOfferingProviders.put(Service.UserData, Provider.VirtualRouter);
         defaultSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.SecurityGroupProvider);
 
+        final Map<Network.Service, Network.Provider> defaultTungstenSharedSGNetworkOfferingProviders = new HashMap<>();
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Connectivity, Provider.Tungsten);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dhcp, Provider.Tungsten);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.Tungsten);
+        defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.Tungsten);
+
         final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -1036,6 +1054,21 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     s_logger.trace("Added service for the network offering: " + offService);
                 }
 
+                NetworkOfferingVO defaultTungstenSharedSGNetworkOffering =
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE, "Offering for Tungsten Shared Security group enabled networks",
+                                TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false, false);
+
+                defaultTungstenSharedSGNetworkOffering.setForTungsten(true);
+                defaultTungstenSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultTungstenSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultTungstenSharedSGNetworkOffering);
+
+                for (Map.Entry<Network.Service, Network.Provider> service : defaultTungstenSharedSGNetworkOfferingProviders.entrySet()) {
+                    NetworkOfferingServiceMapVO offService =
+                            new NetworkOfferingServiceMapVO(defaultTungstenSharedSGNetworkOffering.getId(), service.getKey(), service.getValue());
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+
                 // Offering #3
                 NetworkOfferingVO defaultIsolatedSourceNatEnabledNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
@@ -1043,6 +1076,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 Network.GuestType.Isolated, true, false, false, false, true, false);
 
                 defaultIsolatedSourceNatEnabledNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultIsolatedSourceNatEnabledNetworkOffering.setSupportsVmAutoScaling(true);
                 defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
 
                 for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
@@ -1075,6 +1109,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 Availability.Optional, null, Network.GuestType.Shared, true, false, false, false, true, true, true, false, false, true, true, false, false, false, false, false);
 
                 defaultNetscalerNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultNetscalerNetworkOffering.setSupportsVmAutoScaling(true);
                 defaultNetscalerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetscalerNetworkOffering);
 
                 for (Service service : netscalerServiceProviders.keySet()) {
@@ -1091,6 +1126,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 null, Network.GuestType.Isolated, false, false, false, false, true, true);
 
                 defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
+                defaultNetworkOfferingForVpcNetworks.setSupportsVmAutoScaling(true);
                 defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
 
                 Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();

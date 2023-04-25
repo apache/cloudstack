@@ -113,7 +113,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
                 pstmt.setLong(1, templateId);
                 pstmt.executeUpdate();
                 pstmt.close();
-                // update templete ID of system Vms
+                // update template ID of system Vms
                 pstmt = conn.prepareStatement("update `cloud`.`vm_instance` set vm_template_id = ? where type <> 'User' and hypervisor_type = 'VMware'");
                 pstmt.setLong(1, templateId);
                 pstmt.executeUpdate();

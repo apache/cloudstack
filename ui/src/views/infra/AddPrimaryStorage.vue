@@ -35,11 +35,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.scope.description" >
-            <a-select-option :value="'cluster'"> {{ $t('label.clusterid') }} </a-select-option>
-            <a-select-option :value="'zone'"> {{ $t('label.zoneid') }} </a-select-option>
+            <a-select-option :value="'cluster'" :label="$t('label.clusterid')"> {{ $t('label.clusterid') }} </a-select-option>
+            <a-select-option :value="'zone'" :label="$t('label.zoneid')"> {{ $t('label.zoneid') }} </a-select-option>
           </a-select>
         </a-form-item>
         <div v-if="form.scope === 'zone'">
@@ -50,9 +50,9 @@
             <a-select
               v-model:value="form.hypervisor"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.hypervisor.description" >
               <a-select-option :value="hypervisor" v-for="(hypervisor, idx) in hypervisors" :key="idx">
@@ -93,10 +93,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.podid.description">
-              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id">
+              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id" :label="pod.name">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
@@ -111,10 +111,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.clusterid.description">
-              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id">
+              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id" :label="cluster.name">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
@@ -127,9 +127,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id">
+              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id" :label="host.name">
                 {{ host.name }}
               </a-select-option>
             </a-select>
@@ -148,9 +148,9 @@
           <a-select
             v-model:value="form.protocol"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.clusterid.description">
             <a-select-option :value="protocol" v-for="(protocol,idx) in protocols" :key="idx">
@@ -218,9 +218,9 @@
               v-model:value="form.provider"
               @change="updateProviderAndProtocol"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.provider.description">
               <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
@@ -284,7 +284,10 @@
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'RBD'">
-          <a-form-item name="radosmonitor" ref="radosmonitor" :label="$t('label.rados.monitor')">
+          <a-form-item name="radosmonitor" ref="radosmonitor">
+            <template #label>
+              <tooltip-label :title="$t('label.rados.monitor')" :tooltip="$t('label.rados.monitor.description')"/>
+            </template>
             <a-input v-model:value="form.radosmonitor" :placeholder="$t('label.rados.monitor')" />
           </a-form-item>
           <a-form-item name="radospool" ref="radospool" :label="$t('label.rados.pool')">
@@ -308,6 +311,12 @@
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'Linstor'">
+          <a-form-item name="capacityIops" ref="capacityIops">
+            <template #label>
+              <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            </template>
+            <a-input v-model:value="form.capacityIops" :placeholder="apiParams.capacityiops.description" />
+          </a-form-item>
           <a-form-item name="resourcegroup" ref="resourcegroup">
             <template #label>
               <tooltip-label :title="$t('label.resourcegroup')" :tooltip="$t('message.linstor.resourcegroup.description')"/>
@@ -749,6 +758,9 @@ export default {
           params.provider = 'Linstor'
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup
+          if (values.capacityIops && values.capacityIops.length > 0) {
+            params.capacityIops = values.capacityIops.split(',').join('')
+          }
         }
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {

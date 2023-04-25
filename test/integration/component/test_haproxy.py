@@ -289,7 +289,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                               domainid=self.account.domainid,
                               listall=True)
         self.assertIsInstance(routers, list,
-                              "List routers should return a valid repsonse")
+                              "List routers should return a valid response")
         return routers[0]
 
     def create_VPN(self, public_ip):
@@ -815,7 +815,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # 1. create an account
         # 2. using that account,create an instances
         # 3. select the Source NAT IP  and configure the stikiness policy
-        # 4. enable /disable the VPN. It should not impact the ceated rules
+        # 4. enable /disable the VPN. It should not impact the created rules
         #    listLBStickinessPolicies Api should show created stikiness policy
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
@@ -850,7 +850,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_11_invalid_params(self):
-        """Test verfify functionality syncronous and asyncronous validations"""
+        """Test verify functionality syncronous and asyncronous validations"""
 
         # Validate the following
         #  verify the validation  while creating or attaching stikiness policy

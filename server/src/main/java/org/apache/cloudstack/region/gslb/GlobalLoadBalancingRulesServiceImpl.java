@@ -409,7 +409,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             success = true;
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Failed to update removed load balancer details from gloabal load balancer");
+            throw new CloudRuntimeException("Failed to update removed load balancer details from global load balancer");
         }
 
         return success;
@@ -479,7 +479,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                 applyGlobalLoadBalancerRuleConfig(gslbRuleId, true);
             }
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Failed to update the gloabal load balancer");
+            throw new CloudRuntimeException("Failed to update the global load balancer");
         }
 
         Transaction.execute(new TransactionCallbackNoReturn() {

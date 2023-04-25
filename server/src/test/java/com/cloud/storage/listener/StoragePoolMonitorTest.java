@@ -63,7 +63,7 @@ public class StoragePoolMonitorTest {
         Mockito.when(poolDao.listBy(nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.any(ScopeType.class))).thenReturn(Collections.singletonList(pool));
         Mockito.when(poolDao.findZoneWideStoragePoolsByTags(Mockito.anyLong(), Mockito.any(String[].class))).thenReturn(Collections.<StoragePoolVO>emptyList());
         Mockito.when(poolDao.findZoneWideStoragePoolsByHypervisor(Mockito.anyLong(), Mockito.any(Hypervisor.HypervisorType.class))).thenReturn(Collections.<StoragePoolVO>emptyList());
-        Mockito.doNothing().when(storageManager).connectHostToSharedPool(host.getId(), pool.getId());
+        Mockito.doReturn(true).when(storageManager).connectHostToSharedPool(host.getId(), pool.getId());
 
         storagePoolMonitor.processConnect(host, cmd, false);
 

@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
 public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
-    private static final String s_name = "listprivategatewaysresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,11 +84,6 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public void execute() {
         Pair<List<PrivateGateway>, Integer> gateways = _vpcService.listPrivateGateway(this);

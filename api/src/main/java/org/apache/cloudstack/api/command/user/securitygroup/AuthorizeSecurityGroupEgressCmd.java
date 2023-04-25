@@ -52,7 +52,6 @@ import com.cloud.network.security.SecurityRule;
 public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupEgressCmd.class.getName());
 
-    private static final String s_name = "authorizesecuritygroupegressresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -162,11 +161,6 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "securitygroup";

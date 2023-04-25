@@ -127,8 +127,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         AffinityGroupProcessor processor = typeProcessorMap.get(affinityGroupType);
 
-        if(processor == null){
-            throw new InvalidParameterValueException("Unable to create affinity group, invalid affinity group type" + affinityGroupType);
+        if (processor == null) {
+            throw new InvalidParameterValueException(String.format("Unable to create affinity group, invalid affinity group type: %s. " +
+                    "Valid values are %s", affinityGroupType, String.join(",", typeProcessorMap.keySet())));
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -341,7 +342,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
         for (AffinityGroupProcessor processor : _affinityProcessors) {
             if (processor.isAdminControlledGroup()) {
-                continue; // we dont list the type if this group can be
+                continue; // we don't list the type if this group can be
                 // created only as an admin/system operation.
             }
             types.add(processor.getType());

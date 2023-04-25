@@ -44,7 +44,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotFromVMSnapshotCmd.class.getName());
-    private static final String s_name = "createsnapshotfromvmsnapshotresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -109,11 +108,6 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return ApiConstants.SNAPSHOT;

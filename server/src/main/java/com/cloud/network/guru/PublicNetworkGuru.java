@@ -34,6 +34,7 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -46,6 +47,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -73,6 +75,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     IpAddressManager _ipAddrMgr;
     @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    NetworkModel networkModel;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Public};
 
@@ -140,8 +144,9 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setMacAddress(ip.getMacAddress());
         }
 
-        nic.setIPv4Dns1(dc.getDns1());
-        nic.setIPv4Dns2(dc.getDns2());
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
+        nic.setIPv4Dns1(dns.first());
+        nic.setIPv4Dns2(dns.second());
 
         ipv6Service.updateNicIpv6(nic, dc, network);
     }
@@ -149,9 +154,13 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip6Dns = networkModel.getNetworkIp6Dns(network, dc);
         if (profile != null) {
-            profile.setIPv4Dns1(dc.getDns1());
-            profile.setIPv4Dns2(dc.getDns2());
+            profile.setIPv4Dns1(dns.first());
+            profile.setIPv4Dns2(dns.second());
+            profile.setIPv6Dns1(ip6Dns.first());
+            profile.setIPv6Dns2(ip6Dns.second());
         }
     }
 
@@ -237,8 +246,13 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
         DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
-        networkProfile.setDns1(dc.getDns1());
-        networkProfile.setDns2(dc.getDns2());
+        Network network = networkModel.getNetwork(networkProfile.getId());
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
+        networkProfile.setDns1(dns.first());
+        networkProfile.setDns2(dns.second());
+        dns = networkModel.getNetworkIp6Dns(network, dc);
+        networkProfile.setIp6Dns1(dns.first());
+        networkProfile.setIp6Dns2(dns.second());
     }
 
 }

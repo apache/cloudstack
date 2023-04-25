@@ -36,6 +36,13 @@
         <property name="orderConfigDefault" value="PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT" />
     </bean>
 
+    <bean id="userTwoFactorAuthenticatorsRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="orderConfigKey" value="user.2fa.providers.order" />
+        <property name="excludeKey" value="user.2fa.providers.exclude" />
+        <property name="orderConfigDefault" value="totp,staticpin" />
+    </bean>
+
     <bean id="pluggableAPIAuthenticatorsRegistry"
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="pluggableApi.authenticators.order" />
@@ -248,7 +255,7 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="affinity.processors.order" />
         <property name="orderConfigDefault"
-            value="HostAntiAffinityProcessor,ExplicitDedicationProcessor,HostAffinityProcessor" />
+            value="HostAntiAffinityProcessor,ExplicitDedicationProcessor,HostAffinityProcessor,NonStrictHostAntiAffinityProcessor,NonStrictHostAffinityProcessor" />
         <property name="excludeKey" value="affinity.processors.exclude" />
     </bean>
 

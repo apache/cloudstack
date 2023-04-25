@@ -20,7 +20,7 @@
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
 import unittest
-from marvin.cloudstackAPI import changeServiceForVirtualMachine, startVirtualMachine
+from marvin.cloudstackAPI import scaleVirtualMachine, startVirtualMachine
 
 # Import Integration Libraries
 
@@ -509,7 +509,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
 
         self.assertEqual(
@@ -594,10 +594,10 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.destvgpuoffering = self.vgpu_serviceoffering_creation(
             desttype,
             destmodel)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = vm.id
         cmd.serviceofferingid = self.destvgpuoffering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % vm.id)
         self.start_vm()
@@ -644,10 +644,10 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.destvgpuoffering = self.vgpu_serviceoffering_creation(
             desttype,
             destmodel)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = vm.id
         cmd.serviceofferingid = self.destvgpuoffering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % vm.id)
         self.start_vm()
@@ -1367,10 +1367,10 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             desttype,
             destmodel)
         self.stop_life_cycle_vm(vmcard)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = vmcard.id
         cmd.serviceofferingid = self.destvgpuoffering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % vmcard.id)
         self.start_life_cycle_vm(vmcard)

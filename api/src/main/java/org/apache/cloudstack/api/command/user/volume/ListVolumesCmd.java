@@ -88,6 +88,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
             RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.LIST_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "list system VMs; only ROOT admin is eligible to pass this parameter", since = "4.18",
+            authorized = { RoleType.Admin })
+    private Boolean listSystemVms;
+
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
@@ -133,6 +137,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     public String getStorageId() {
         return storageId;
+    }
+
+    public Boolean getListSystemVms() {
+        return listSystemVms;
     }
 
     @Override

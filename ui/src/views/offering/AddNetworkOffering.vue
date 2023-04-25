@@ -178,7 +178,7 @@
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="maclearning" ref="maclearning">
               <template #label>
                 <tooltip-label :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
               </template>
@@ -237,7 +237,13 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item v-if="isVirtualRouterForAtLeastOneService || isVpcVirtualRouterForAtLeastOneService">
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
+          <a-alert v-if="!isVirtualRouterForAtLeastOneService" type="warning" style="margin-bottom: 10px">
+            <template #message>
+              <span v-if="guestType === 'l2'" v-html="$t('message.vr.alert.upon.network.offering.creation.l2')" />
+              <span v-else v-html="$t('message.vr.alert.upon.network.offering.creation.others')" />
+            </template>
+          </a-alert>
           <template #label>
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
@@ -246,11 +252,11 @@
             optionFilterProp="label"
             v-model:value="form.serviceofferingid"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="serviceOfferingLoading"
             :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt) in serviceOfferings" :key="opt.id">
+            <a-select-option v-for="(opt) in serviceOfferings" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -273,6 +279,13 @@
               {{ $t('label.per.zone') }}
             </a-radio-button>
           </a-radio-group>
+        </a-form-item>
+        <a-form-item
+          name="vmautoscalingcapability"
+          ref="vmautoscalingcapability"
+          :label="$t('label.supportsvmautoscaling')"
+          v-if="lbServiceChecked && ['Netscaler', 'VirtualRouter', 'VpcVirtualRouter'].includes(lbServiceProvider)">
+          <a-switch v-model:checked="form.vmautoscalingcapability" />
         </a-form-item>
         <a-form-item
           name="elasticlb"
@@ -307,11 +320,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="registeredServicePackageLoading"
             :placeholder="$t('label.service.lb.netscaler.servicepackages')">
-            <a-select-option v-for="(opt, optIndex) in registeredServicePackages" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in registeredServicePackages" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -555,6 +568,7 @@ export default {
         maclearning: this.macLearningValue,
         sourcenattype: 'peraccount',
         inlinemode: 'false',
+        vmautoscalingcapability: true,
         isolation: 'dedicated',
         conservemode: true,
         availability: 'optional',
@@ -563,7 +577,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.description') }],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.select') }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
@@ -614,7 +627,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -649,11 +661,9 @@ export default {
       }
     },
     fetchSupportedServiceData () {
-      const params = {}
-      params.listAll = true
       this.supportedServiceLoading = true
       this.supportedServices = []
-      api('listSupportedNetworkServices', params).then(json => {
+      api('listSupportedNetworkServices').then(json => {
         this.supportedServices = json.listsupportednetworkservicesresponse.networkservice
         for (var i in this.supportedServices) {
           var networkServiceObj = this.supportedServices[i]
@@ -945,6 +955,12 @@ export default {
             delete params.associatepublicip
           }
           if (supportedServices.includes('Lb')) {
+            if ('vmautoscalingcapability' in values) {
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'VmAutoScaling'
+              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.vmautoscalingcapability
+              serviceCapabilityIndex++
+            }
             if (values.elasticlb === true) {
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
               params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'

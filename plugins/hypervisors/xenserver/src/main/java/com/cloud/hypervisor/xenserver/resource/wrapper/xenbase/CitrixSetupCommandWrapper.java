@@ -69,7 +69,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                 final boolean canBridgeFirewall = citrixResourceBase.canBridgeFirewall(conn);
                 citrixResourceBase.setCanBridgeFirewall(canBridgeFirewall);
                 if (!canBridgeFirewall) {
-                    final String msg = "Failed to configure brige firewall";
+                    final String msg = "Failed to configure bridge firewall";
                     s_logger.warn(msg);
                     s_logger.warn("Check host " + citrixResourceBase.getHost().getIp() +" for CSP is installed or not and check network mode for bridge");
                     return new SetupAnswer(command, msg);

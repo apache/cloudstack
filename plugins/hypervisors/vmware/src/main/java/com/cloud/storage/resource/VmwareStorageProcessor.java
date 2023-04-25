@@ -50,8 +50,8 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
-import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -97,6 +97,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -2081,33 +2082,17 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
                     String datastoreUUID = primaryStore.getUuid();
-                    if (disk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && disk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                        VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(hyperHost, context, vmMo, disk);
-                        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
-                            String[] diskChain = matchingExistingDisk.getDiskChain();
-                            assert (diskChain.length > 0);
-                            DatastoreFile file = new DatastoreFile(diskChain[0]);
-                            if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
-                                if (s_logger.isInfoEnabled())
-                                    s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
-                                volumePathChangeObserved = true;
-                                volumePath = file.getFileBaseName();
-                                volumeTO.setPath(volumePath);
-                                chainInfo = _gson.toJson(matchingExistingDisk);
-                            }
-
-                            DatastoreMO diskDatastoreMofromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk, diskInfoBuilder);
-                            if (diskDatastoreMofromVM != null) {
-                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                                if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                                    s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
-                                    datastoreChangeObserved = true;
-                                    datastoreUUID = actualPoolUuid;
-                                    chainInfo = _gson.toJson(matchingExistingDisk);
-                                }
-                            }
-                        }
+                    Pair<Boolean, Boolean> changes = getSyncedVolume(vmMo, context, hyperHost, disk, volumeTO);
+                    volumePathChangeObserved = changes.first();
+                    datastoreChangeObserved = changes.second();
+                    if (datastoreChangeObserved) {
+                        datastoreUUID = volumeTO.getDataStoreUuid();
+                    }
+                    if (volumePathChangeObserved) {
+                        volumePath = volumeTO.getPath();
+                    }
+                    if ((volumePathChangeObserved || datastoreChangeObserved) && StringUtils.isNotEmpty(volumeTO.getChainInfo())) {
+                        chainInfo = volumeTO.getChainInfo();
                     }
                     if (storagePort == DEFAULT_NFS_PORT) {
                         morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(diskUuid) : datastoreUUID);
@@ -2144,7 +2129,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
 
-                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId);
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
                 chainInfo = _gson.toJson(diskInfo);
@@ -2341,7 +2326,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            VirtualMachineMO vmMo = HypervisorHostHelper.findVmOnHypervisorHostOrPeer(hyperHost, vmName);
             if (vmMo == null) {
                 String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + vmName;
                 s_logger.error(msg);
@@ -2425,7 +2410,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
-
+        s_logger.debug(LogUtils.logGsonWithoutException("Executing CreateObjectCommand cmd: [%s].", cmd));
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
         DataStoreTO primaryStore = volume.getDataStore();
         String vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
@@ -2437,7 +2422,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStore.getUuid());
             if (morDatastore == null) {
-                throw new Exception("Unable to find datastore in vSphere");
+                throw new CloudRuntimeException(String.format("Unable to find datastore [%s] in vSphere.", primaryStore.getUuid()));
             }
 
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
@@ -2455,13 +2440,13 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 newVol.setPath(file.getFileBaseName());
                 newVol.setSize(volume.getSize());
             } catch (Exception e) {
-                s_logger.debug("Create disk using vStorageObject manager failed due to exception " + e.getMessage() + ", retying using worker VM");
+                s_logger.error(String.format("Create disk using vStorageObject manager failed due to [%s], retrying using worker VM.", e.getMessage()), e);
                 String dummyVmName = hostService.getWorkerName(context, cmd, 0, dsMo);
                 try {
-                    s_logger.info("Create worker VM " + dummyVmName);
+                    s_logger.info(String.format("Creating worker VM [%s].", dummyVmName));
                     vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, dummyVmName, null);
                     if (vmMo == null) {
-                        throw new Exception("Unable to create a dummy VM for volume creation");
+                        throw new CloudRuntimeException("Unable to create a dummy VM for volume creation.");
                     }
 
                     synchronized (this) {
@@ -2470,9 +2455,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                             vmMo.detachDisk(volumeDatastorePath, false);
                         }
                         catch (Exception e1) {
-                            s_logger.error("Deleting file " + volumeDatastorePath + " due to error: " + e1.getMessage());
+                            s_logger.error(String.format("Deleting file [%s] due to [%s].", volumeDatastorePath, e1.getMessage()), e1);
                             VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, volumeUuid, dcMo, VmwareManager.s_vmwareSearchExcludeFolder.value());
-                            throw new CloudRuntimeException("Unable to create volume due to: " + e1.getMessage());
+                            throw new CloudRuntimeException(String.format("Unable to create volume due to [%s].", e1.getMessage()));
                         }
                     }
 
@@ -2481,7 +2466,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     newVol.setSize(volume.getSize());
                     return new CreateObjectAnswer(newVol);
                 } finally {
-                    s_logger.info("Destroy dummy VM after volume creation");
+                    s_logger.info("Destroying dummy VM after volume creation.");
                     if (vmMo != null) {
                         vmMo.detachAllDisksAndDestroy();
                     }
@@ -3862,17 +3847,50 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
+    public Pair<Boolean, Boolean> getSyncedVolume(VirtualMachineMO vmMo, VmwareContext context,VmwareHypervisorHost hyperHost, DiskTO disk, VolumeObjectTO volumeTO) throws Exception {
+        DataStoreTO primaryStore = volumeTO.getDataStore();
+        boolean datastoreChangeObserved = false;
+        boolean volumePathChangeObserved = false;
+        if (!"DatastoreCluster".equalsIgnoreCase(disk.getDetails().get(DiskTO.PROTOCOL_TYPE))) {
+            return new Pair<>(volumePathChangeObserved, datastoreChangeObserved);
+        }
+        VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(hyperHost, context, vmMo, disk);
+        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+        if (diskInfoBuilder != null && matchingExistingDisk != null) {
+            String[] diskChain = matchingExistingDisk.getDiskChain();
+            assert (diskChain.length > 0);
+            DatastoreFile file = new DatastoreFile(diskChain[0]);
+            String volumePath = volumeTO.getPath();
+            if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
+                }
+                volumePathChangeObserved = true;
+                volumePath = file.getFileBaseName();
+                volumeTO.setPath(volumePath);
+                volumeTO.setChainInfo(_gson.toJson(matchingExistingDisk));
+            }
+
+            DatastoreMO diskDatastoreMoFromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk, diskInfoBuilder);
+            if (diskDatastoreMoFromVM != null) {
+                String actualPoolUuid = diskDatastoreMoFromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                    s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
+                    datastoreChangeObserved = true;
+                    volumeTO.setDataStoreUuid(actualPoolUuid);
+                    volumeTO.setChainInfo(_gson.toJson(matchingExistingDisk));
+                }
+            }
+        }
+        return new Pair<>(volumePathChangeObserved, datastoreChangeObserved);
+    }
+
     @Override
     public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         DiskTO disk = cmd.getDisk();
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
-        DataStoreTO primaryStore = volumeTO.getDataStore();
-        String volumePath = volumeTO.getPath();
         String vmName = volumeTO.getVmName();
 
-        boolean datastoreChangeObserved = false;
-        boolean volumePathChangeObserved = false;
-        String chainInfo = null;
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
@@ -3885,46 +3903,19 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     throw new Exception(msg);
                 }
             }
-
-            String datastoreUUID = primaryStore.getUuid();
-            if (disk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && disk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(hyperHost, context, vmMo, disk);
-                VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                if (diskInfoBuilder != null && matchingExistingDisk != null) {
-                    String[] diskChain = matchingExistingDisk.getDiskChain();
-                    assert (diskChain.length > 0);
-                    DatastoreFile file = new DatastoreFile(diskChain[0]);
-                    if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
-                        if (s_logger.isInfoEnabled())
-                            s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
-                        volumePathChangeObserved = true;
-                        volumePath = file.getFileBaseName();
-                        volumeTO.setPath(volumePath);
-                        chainInfo = _gson.toJson(matchingExistingDisk);
-                    }
-
-                    DatastoreMO diskDatastoreMofromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk, diskInfoBuilder);
-                    if (diskDatastoreMofromVM != null) {
-                        String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                        if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                            s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
-                            datastoreChangeObserved = true;
-                            datastoreUUID = actualPoolUuid;
-                            chainInfo = _gson.toJson(matchingExistingDisk);
-                        }
-                    }
-                }
-            }
+            Pair<Boolean, Boolean> changes = getSyncedVolume(vmMo, context, hyperHost, disk, volumeTO);
+            boolean volumePathChangeObserved = changes.first();
+            boolean datastoreChangeObserved = changes.second();
 
             SyncVolumePathAnswer answer = new SyncVolumePathAnswer(disk);
             if (datastoreChangeObserved) {
-                answer.setContextParam("datastoreName", datastoreUUID);
+                answer.setContextParam("datastoreName", volumeTO.getDataStoreUuid());
             }
             if (volumePathChangeObserved) {
-                answer.setContextParam("volumePath", volumePath);
+                answer.setContextParam("volumePath", volumeTO.getPath());
             }
-            if (chainInfo != null && !chainInfo.isEmpty()) {
-                answer.setContextParam("chainInfo", chainInfo);
+            if ((volumePathChangeObserved || datastoreChangeObserved) && StringUtils.isNotEmpty(volumeTO.getChainInfo())) {
+                answer.setContextParam("chainInfo", volumeTO.getChainInfo());
             }
 
             return answer;

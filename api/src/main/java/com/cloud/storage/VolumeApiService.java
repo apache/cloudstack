@@ -21,6 +21,8 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.Map;
 
+import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -45,6 +47,14 @@ public interface VolumeApiService {
             , "Limits number of migrations that can be handled per datastore concurrently; default is 0 - unlimited"
             , true // not sure if this is to be dynamic
             , ConfigKey.Scope.Global);
+
+    ConfigKey<Boolean> UseHttpsToUpload = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "use.https.to.upload",
+            "true",
+            "Determines the protocol (HTTPS or HTTP) ACS will use to generate links to upload ISOs, volumes, and templates. When set as 'true', ACS will use protocol HTTPS, otherwise, it will use protocol HTTP. Default value is 'true'.",
+            true,
+            ConfigKey.Scope.StoragePool);
 
     /**
      * Creates the database object for a volume based on the given criteria
@@ -111,6 +121,8 @@ public interface VolumeApiService {
      */
     String extractVolume(ExtractVolumeCmd cmd);
 
+    Volume assignVolumeToAccount(AssignVolumeCmd cmd) throws ResourceAllocationException;
+
     boolean isDisplayResourceEnabled(Long id);
 
     void updateDisplay(Volume volume, Boolean displayVolume);
@@ -154,7 +166,13 @@ public interface VolumeApiService {
 
     Volume recoverVolume(long volumeId);
 
+    void validateCustomDiskOfferingSizeRange(Long sizeInGB);
+
     boolean validateVolumeSizeInBytes(long size);
 
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
+
+    void publishVolumeCreationUsageEvent(Volume volume);
+
+    boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException;
 }

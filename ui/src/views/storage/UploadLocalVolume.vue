@@ -33,7 +33,7 @@
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
-            :remove="handleRemove"
+            @remove="handleRemove"
             :beforeUpload="beforeUpload"
             v-model:value="form.file">
             <p class="ant-upload-drag-icon">
@@ -84,10 +84,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="opt in offerings" :key="opt.id">
-              {{ opt.name || opt.displaytext }}
+            <a-select-option
+              v-for="(offering, index) in offerings"
+              :value="offering.id"
+              :key="index"
+              :label="offering.displaytext || offering.name">
+              {{ offering.displaytext || offering.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -98,9 +102,9 @@
           <a-select
             v-model:value="form.format"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
@@ -125,12 +129,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="$t('label.domainid')"
             @change="val => { handleDomainChange(domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex" :label="opt.path || opt.name || opt.description">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -142,9 +146,9 @@
           <a-select
             v-model:value="form.account"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.account')"
             @change="val => { handleAccountChange(val) }">
@@ -221,6 +225,7 @@ export default {
       api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
           if (this.zones.length > 0) {
             this.onZoneChange(this.zones[0].id)
           }
@@ -347,10 +352,10 @@ export default {
             formData,
             {
               headers: {
-                'Content-Type': 'multipart/form-data',
-                'X-signature': this.uploadParams.signature,
-                'X-expires': this.uploadParams.expires,
-                'X-metadata': this.uploadParams.metadata
+                'content-type': 'multipart/form-data',
+                'x-signature': this.uploadParams.signature,
+                'x-expires': this.uploadParams.expires,
+                'x-metadata': this.uploadParams.metadata
               },
               onUploadProgress: (progressEvent) => {
                 this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))

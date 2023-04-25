@@ -42,7 +42,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 public class DeleteTagsCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 
-    private static final String s_name = "deletetagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -92,11 +91,6 @@ public class DeleteTagsCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

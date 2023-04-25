@@ -101,6 +101,8 @@ public class EventTypes {
     public static final String EVENT_VM_DYNAMIC_SCALE = "VM.DYNAMIC.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
+
+    public static final String EVENT_VM_RESETUSERDATA = "VM.RESETUSERDATA";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";
@@ -158,6 +160,35 @@ public class EventTypes {
     public static final String EVENT_FIREWALL_EGRESS_OPEN = "FIREWALL.EGRESS.OPEN";
     public static final String EVENT_FIREWALL_EGRESS_CLOSE = "FIREWALL.EGRESS.CLOSE";
     public static final String EVENT_FIREWALL_EGRESS_UPDATE = "FIREWALL.EGRESS.UPDATE";
+
+    // Tungsten-Fabric
+    public static final String EVENT_TUNGSTEN_ADD_POLICY_RULE = "TUNGSTEN.ADD.POLICY.RULE";
+    public static final String EVENT_TUNGSTEN_APPLY_POLICY = "TUNGSTEN.APPLY.POLICY";
+    public static final String EVENT_TUNGSTEN_APPLY_TAG = "TUNGSTEN.APPLY.TAG";
+    public static final String EVENT_TUNGSTEN_CREATE_POLICY = "TUNGSTEN.CREATE.POLICY";
+    public static final String EVENT_TUNGSTEN_CREATE_TAG = "TUNGSTEN.CREATE.TAG";
+    public static final String EVENT_TUNGSTEN_CREATE_TAGTYPE = "TUNGSTEN.CREATE.TAGTYPE";
+    public static final String EVENT_TUNGSTEN_CREATE_ADDRESS_GROUP = "TUNGSTEN.CREATE.ADDRESS.GROUP";
+    public static final String EVENT_TUNGSTEN_CREATE_SERVICE_GROUP = "TUNGSTEN.CREATE.SERVICE.GROUP";
+    public static final String EVENT_TUNGSTEN_CREATE_APPLICATION_POLICY_SET = "TUNGSTEN.CREATE.APS";
+    public static final String EVENT_TUNGSTEN_CREATE_FIREWALL_POLICY = "TUNGSTEN.CREATE.FIREWALL.POLICY";
+    public static final String EVENT_TUNGSTEN_CREATE_FIREWALL_RULE = "TUNGSTEN.CREATE.FIREWALL.RULE";
+    public static final String EVENT_TUNGSTEN_DELETE_POLICY = "TUNGSTEN.DELETE.POLICY";
+    public static final String EVENT_TUNGSTEN_DELETE_TAG = "TUNGSTEN.DELETE.TAG";
+    public static final String EVENT_TUNGSTEN_DELETE_TAGTYPE = "TUNGSTEN.DELETE.TAGTYPE";
+    public static final String EVENT_TUNGSTEN_DELETE_ADDRESS_GROUP = "TUNGSTEN.DELETE.ADDRESS.GROUP";
+    public static final String EVENT_TUNGSTEN_DELETE_APPLICATION_POLICY_SET = "TUNGSTEN.DELETE.APS";
+    public static final String EVENT_TUNGSTEN_DELETE_FIREWALL_POLICY = "TUNGSTEN.DELETE.FIREWALL.POLICY";
+    public static final String EVENT_TUNGSTEN_DELETE_FIREWALL_RULE = "TUNGSTEN.DELETE.FIREWALL.RULE";
+    public static final String EVENT_TUNGSTEN_DELETE_SERVICE_GROUP = "TUNGSTEN.DELETE.SERVICE.GROUP";
+    public static final String EVENT_TUNGSTEN_REMOVE_POLICY = "TUNGSTEN.REMOVE.POLICY";
+    public static final String EVENT_TUNGSTEN_REMOVE_TAG = "TUNGSTEN.REMOVE.TAG";
+    public static final String EVENT_TUNGSTEN_REMOVE_POLICY_RULE = "TUNGSTEN.REMOVE.POLICY.RULE";
+    public static final String EVENT_TUNGSTEN_CREATE_LOGICAL_ROUTER = "TUNGSTEN.CREATE.LOGICAL.ROUTER";
+    public static final String EVENT_TUNGSTEN_ADD_NETWORK_GATEWAY_TO_LOGICAL_ROUTER = "TUNGSTEN.ADD.NETWORK.GW.TO.LG";
+    public static final String EVENT_TUNGSTEN_REMOVE_NETWORK_GATEWAY_FROM_LOGICAL_ROUTER = "TUNGSTEN.RM.NETWORK.GW.FROM.LG";
+    public static final String EVENT_TUNGSTEN_DELETE_LOGICAL_ROUTER = "TUNGSTEN.DELETE.LOGICAL.ROUTER";
+    public static final String EVENT_TUNGSTEN_UPDATE_LB_HEALTH_MONITOR = "TUNGSTEN.UPDATE.LB.HM";
 
     //NIC Events
     public static final String EVENT_NIC_CREATE = "NIC.CREATE";
@@ -235,6 +266,9 @@ public class EventTypes {
     //registering SSH keypair events
     public static final String EVENT_REGISTER_SSH_KEYPAIR = "REGISTER.SSH.KEYPAIR";
 
+    //registering userdata events
+    public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
+
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
 
@@ -285,6 +319,7 @@ public class EventTypes {
 
     // ISO
     public static final String EVENT_ISO_CREATE = "ISO.CREATE";
+    public static final String EVENT_ISO_UPDATE = "ISO.UPDATE";
     public static final String EVENT_ISO_DELETE = "ISO.DELETE";
     public static final String EVENT_ISO_COPY = "ISO.COPY";
     public static final String EVENT_ISO_ATTACH = "ISO.ATTACH";
@@ -553,6 +588,7 @@ public class EventTypes {
     public static final String EVENT_COUNTER_DELETE = "COUNTER.DELETE";
     public static final String EVENT_CONDITION_CREATE = "CONDITION.CREATE";
     public static final String EVENT_CONDITION_DELETE = "CONDITION.DELETE";
+    public static final String EVENT_CONDITION_UPDATE = "CONDITION.UPDATE";
     public static final String EVENT_AUTOSCALEPOLICY_CREATE = "AUTOSCALEPOLICY.CREATE";
     public static final String EVENT_AUTOSCALEPOLICY_UPDATE = "AUTOSCALEPOLICY.UPDATE";
     public static final String EVENT_AUTOSCALEPOLICY_DELETE = "AUTOSCALEPOLICY.DELETE";
@@ -564,6 +600,8 @@ public class EventTypes {
     public static final String EVENT_AUTOSCALEVMGROUP_UPDATE = "AUTOSCALEVMGROUP.UPDATE";
     public static final String EVENT_AUTOSCALEVMGROUP_ENABLE = "AUTOSCALEVMGROUP.ENABLE";
     public static final String EVENT_AUTOSCALEVMGROUP_DISABLE = "AUTOSCALEVMGROUP.DISABLE";
+    public static final String EVENT_AUTOSCALEVMGROUP_SCALEDOWN = "AUTOSCALEVMGROUP.SCALEDOWN";
+    public static final String EVENT_AUTOSCALEVMGROUP_SCALEUP = "AUTOSCALEVMGROUP.SCALEUP";
 
     public static final String EVENT_BAREMETAL_DHCP_SERVER_ADD = "PHYSICAL.DHCP.ADD";
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
@@ -1032,6 +1070,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_UPDATE, AutoScaleVmGroup.class);
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_ENABLE, AutoScaleVmGroup.class);
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_DISABLE, AutoScaleVmGroup.class);
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_SCALEDOWN, AutoScaleVmGroup.class);
+        entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_SCALEUP, AutoScaleVmGroup.class);
         entityEventDetails.put(EVENT_GUEST_VLAN_RANGE_DEDICATE, GuestVlan.class);
         entityEventDetails.put(EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE, GuestVlan.class);
 

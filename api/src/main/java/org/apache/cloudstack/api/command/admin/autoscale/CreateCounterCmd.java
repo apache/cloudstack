@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "createCounter", description = "Adds metric counter", responseObject = CounterResponse.class,
+@APICommand(name = "createCounter", description = "Adds metric counter for VM auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateCounterCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateCounterCmd.class.getName());
@@ -51,6 +51,9 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "Value of the counter e.g. oid in case of snmp.")
     private String value;
 
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Network provider of the counter.", since = "4.18.0")
+    private String provider;
+
     // /////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -65,6 +68,10 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
 
     public String getValue() {
         return value;
+    }
+
+    public String getProvider() {
+        return provider;
     }
 
     // ///////////////////////////////////////////////////

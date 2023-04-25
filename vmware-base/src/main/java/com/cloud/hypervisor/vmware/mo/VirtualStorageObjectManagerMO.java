@@ -58,7 +58,7 @@ public class VirtualStorageObjectManagerMO extends BaseMO {
     }
 
     public VStorageObject retrieveVirtualDisk (ID id, ManagedObjectReference morDS) throws Exception {
-        return _context.getService().retrieveVStorageObject(_mor, id, morDS);
+        return _context.getService().retrieveVStorageObject(_mor, id, morDS, null);
     }
 
     public VStorageObject createDisk(ManagedObjectReference morDS, Storage.ProvisioningType diskProvisioningType, long currentSizeInBytes, String datastoreFilepath, String filename) throws Exception {

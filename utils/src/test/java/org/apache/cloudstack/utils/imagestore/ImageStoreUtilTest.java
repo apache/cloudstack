@@ -26,29 +26,52 @@ import org.junit.Test;
 public class ImageStoreUtilTest {
 
     @Test
-    public void testgeneratePostUploadUrl() throws MalformedURLException {
+    public void testgenerateHttpsPostUploadUrl() throws MalformedURLException {
         String ssvmdomain = "*.realhostip.com";
         String ipAddress = "10.147.28.14";
         String uuid = UUID.randomUUID().toString();
+        String protocol = "https";
 
         //ssvm domain is not set
-        String url = ImageStoreUtil.generatePostUploadUrl(null, ipAddress, uuid);
-        assertPostUploadUrl(url, ipAddress, uuid);
+        String url = ImageStoreUtil.generatePostUploadUrl(null, ipAddress, uuid, protocol);
+        assertPostUploadUrl(url, ipAddress, uuid, protocol);
 
         //ssvm domain is set to empty value
-        url = ImageStoreUtil.generatePostUploadUrl("", ipAddress, uuid);
-        assertPostUploadUrl(url, ipAddress, uuid);
+        url = ImageStoreUtil.generatePostUploadUrl("", ipAddress, uuid, protocol);
+        assertPostUploadUrl(url, ipAddress, uuid, protocol);
 
         //ssvm domain is set to a valid value
-        url = ImageStoreUtil.generatePostUploadUrl(ssvmdomain, ipAddress, uuid);
-        assertPostUploadUrl(url, ipAddress.replace(".", "-") + ssvmdomain.substring(1), uuid);
+        url = ImageStoreUtil.generatePostUploadUrl(ssvmdomain, ipAddress, uuid, protocol);
+        assertPostUploadUrl(url, ipAddress.replace(".", "-") + ssvmdomain.substring(1), uuid, protocol);
     }
 
-    private void assertPostUploadUrl(String urlStr, String domain, String uuid) throws MalformedURLException {
+    @Test
+    public void testgenerateHttpPostUploadUrl() throws MalformedURLException {
+        String ssvmdomain = "*.realhostip.com";
+        String ipAddress = "10.147.28.14";
+        String uuid = UUID.randomUUID().toString();
+        String protocol = "http";
+
+        //ssvm domain is not set
+        String url = ImageStoreUtil.generatePostUploadUrl(null, ipAddress, uuid, protocol);
+        assertPostUploadUrl(url, ipAddress, uuid, protocol);
+
+        //ssvm domain is set to empty value
+        url = ImageStoreUtil.generatePostUploadUrl("", ipAddress, uuid, protocol);
+        assertPostUploadUrl(url, ipAddress, uuid, protocol);
+
+        //ssvm domain is set to a valid value
+        url = ImageStoreUtil.generatePostUploadUrl(ssvmdomain, ipAddress, uuid, protocol);
+        assertPostUploadUrl(url, ipAddress.replace(".", "-") + ssvmdomain.substring(1), uuid, protocol);
+    }
+
+    private void assertPostUploadUrl(String urlStr, String domain, String uuid, String protocol) throws MalformedURLException {
         URL url = new URL(urlStr);
         Assert.assertNotNull(url);
         Assert.assertEquals(url.getHost(), domain);
         Assert.assertEquals(url.getPath(), "/upload/" + uuid);
+        Assert.assertEquals(url.getProtocol(), protocol);
     }
+
 
 }

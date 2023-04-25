@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -72,6 +74,8 @@ import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
@@ -152,6 +156,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
             length = 1048576)
     private String userData;
+
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18")
+    private Long userdataId;
+
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
+    private Map userdataDetails;
 
     @Deprecated
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
@@ -247,6 +257,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
     private Long overrideDiskOfferingId;
 
+    @Parameter(name = ApiConstants.IOTHREADS_ENABLED, type = CommandType.BOOLEAN, required = false,
+            description = "IOThreads are dedicated event loop threads for supported disk devices to perform block I/O requests in order to improve scalability especially on an SMP host/guest with many LUNs.")
+    private Boolean iothreadsEnabled;
+
+    @Parameter(name = ApiConstants.IO_DRIVER_POLICY, type = CommandType.STRING, description = "Controls specific policies on IO")
+    private String ioDriverPolicy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -310,6 +327,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
+        }
+
+        IoDriverPolicy ioPolicy = getIoDriverPolicy();
+        if (ioPolicy != null) {
+            customparameterMap.put(VmDetailConstants.IO_POLICY, ioPolicy.toString());
+        }
+
+        if (BooleanUtils.toBoolean(iothreadsEnabled)) {
+            customparameterMap.put(VmDetailConstants.IOTHREADS, BooleanUtils.toStringTrueFalse(iothreadsEnabled));
         }
 
         return customparameterMap;
@@ -418,6 +444,25 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public String getUserData() {
         return userData;
+    }
+
+    public Long getUserdataId() {
+        return userdataId;
+    }
+
+    public Map<String, String> getUserdataDetails() {
+        Map<String, String> userdataDetailsMap = new HashMap<String, String>();
+        if (userdataDetails != null && userdataDetails.size() != 0) {
+            Collection parameterCollection = userdataDetails.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (Map.Entry<String,String> entry: value.entrySet()) {
+                    userdataDetailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return userdataDetailsMap;
     }
 
     public Long getZoneId() {
@@ -656,6 +701,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return overrideDiskOfferingId;
     }
 
+    public ApiConstants.IoDriverPolicy getIoDriverPolicy() {
+        if (StringUtils.isNotBlank(ioDriverPolicy)) {
+            try {
+                String policyType = ioDriverPolicy.trim().toUpperCase();
+                return ApiConstants.IoDriverPolicy.valueOf(policyType);
+            } catch (IllegalArgumentException e) {
+                String errMesg = String.format("Invalid io policy %s specified for vm %s. Valid values are: %s", ioDriverPolicy, getName(), Arrays.toString(ApiConstants.IoDriverPolicy.values()));
+                s_logger.warn(errMesg);
+                throw new InvalidParameterValueException(errMesg);
+            }
+        }
+        return null;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
