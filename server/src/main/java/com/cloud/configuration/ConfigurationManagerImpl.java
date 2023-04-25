@@ -6212,7 +6212,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && (sourceNatServiceCapabilityMap.size() > 2 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap))) {
             throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
                     + ", " + Capability.RedundantRouter
-                    + " capabilities can be sepcified for source nat service");
+                    + " capabilities can be specified for source nat service");
         }
     }
 

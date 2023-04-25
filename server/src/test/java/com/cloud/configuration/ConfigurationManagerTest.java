@@ -594,7 +594,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] capabilities can be sepcified for source nat service"));
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] capabilities can be specified for source nat service"));
             caught = true;
         }
         Assert.assertTrue("should not be accepted", caught);

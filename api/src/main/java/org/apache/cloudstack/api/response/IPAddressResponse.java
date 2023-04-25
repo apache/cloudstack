@@ -160,7 +160,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String networkName;
 
     @SerializedName(ApiConstants.HAS_RULES)
-    @Param(description="whether the ip address has Frewall-/PortForwarding-/LoadBalancing-rules defined")
+    @Param(description="whether the ip address has Firewall/PortForwarding/LoadBalancing rules defined")
     private boolean hasRules;
 
     public void setIpAddress(String ipAddress) {
