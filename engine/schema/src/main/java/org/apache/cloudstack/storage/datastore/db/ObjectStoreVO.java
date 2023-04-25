@@ -18,13 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore.db;
 
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ObjectStore;
-import com.cloud.storage.ScopeType;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GenericDao;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 import java.util.Date;
 
 @Entity

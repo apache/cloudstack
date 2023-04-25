@@ -18,22 +18,19 @@
  */
 package org.apache.cloudstack.storage.object.store;
 
-import java.util.Date;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.component.ComponentContext;
+import java.util.Date;
 
 public class ObjectStoreImpl implements ObjectStoreEntity {
     private static final Logger s_logger = Logger.getLogger(ObjectStoreImpl.class);

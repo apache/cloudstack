@@ -41,12 +41,10 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
 
         nameSearch = createSearchBuilder();
         nameSearch.and("name", nameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        nameSearch.and("role", nameSearch.entity().getRole(), SearchCriteria.Op.EQ);
         nameSearch.done();
 
         providerSearch = createSearchBuilder();
         providerSearch.and("providerName", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
-        providerSearch.and("role", providerSearch.entity().getRole(), SearchCriteria.Op.EQ);
         providerSearch.done();
 
         return true;
