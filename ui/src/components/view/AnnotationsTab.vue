@@ -192,6 +192,7 @@ export default {
         case 'SystemVm': return 'SYSTEM_VM'
         case 'VirtualRouter': return 'VR'
         case 'AutoScaleVmGroup': return 'AUTOSCALE_VM_GROUP'
+        case 'ManagementServer': return 'MANAGEMENT_SERVER'
         default: return ''
       }
     },

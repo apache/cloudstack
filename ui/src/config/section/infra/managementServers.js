@@ -24,6 +24,7 @@ export default {
   icon: 'CloudServerOutlined',
   docHelp: 'conceptsandterminology/concepts.html#management-server-overview',
   permission: ['listManagementServersMetrics'],
+  resourceType: 'ManagementServer',
   columns: () => {
     const fields = ['name', 'state', 'version']
     const metricsFields = ['collectiontime', 'availableprocessors', 'cpuload', 'heapmemoryused', 'agentcount']
@@ -41,6 +42,10 @@ export default {
     {
       name: 'pending.jobs',
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue')))
+    },
+    {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
     }
   ],
   actions: [

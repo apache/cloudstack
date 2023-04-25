@@ -64,6 +64,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the ID of the storage pool")
     private String scope;
 
+    @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, description = "the status of the storage pool")
+    private String status;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -92,6 +95,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return zoneId;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public Long getId() {
         return id;
     }
@@ -99,7 +106,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     public void setId(Long id) {
         this.id = id;
     }
-/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 

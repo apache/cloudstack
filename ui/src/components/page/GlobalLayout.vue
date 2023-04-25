@@ -18,7 +18,7 @@
 <template>
   <div>
     <a-affix v-if="this.$store.getters.shutdownTriggered" >
-      <div class="shutdownHeader" v-html="$t('message.shutdown.triggered')"/>
+      <a-alert :message="$t('message.shutdown.triggered')" type="error" banner :showIcon="false" class="shutdownHeader" />
     </a-affix>
     <a-layout class="layout" :class="[device]">
       <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
@@ -295,9 +295,7 @@ export default {
 }
 
 .shutdownHeader {
-  color: red;
-  background: black;
-  font-weight: 600;
+  font-weight: bold;
   height: 25px;
   text-align: center;
   padding: 0px;

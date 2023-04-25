@@ -36,6 +36,10 @@ export default {
     param: 'podid'
   }],
   resourceType: 'Pod',
+  filters: () => {
+    const filters = ['enabled', 'disabled']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))

@@ -22,6 +22,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+  pull-requests: write # for sonar to comment on pull-request
+
 jobs:
   build:
     name: Main Sonar JaCoCo Build
