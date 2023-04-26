@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.log4j.Logger;
 
@@ -34,7 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-@APICommand(name = "addObjectStoragePool", description = "Adds a object storage pool", responseObject = ImageStoreResponse.class, since = "4.19.0",
+@APICommand(name = "addObjectStoragePool", description = "Adds a object storage pool", responseObject = ObjectStoreResponse.class, since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddObjectStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddObjectStoragePoolCmd.class.getName());
@@ -43,10 +42,10 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name for the image store")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name for the image store")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, length = 2048, description = "the URL for the image store")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, length = 2048, required = true, description = "the URL for the image store")
     private String url;
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "the image store provider name")

@@ -233,3 +233,18 @@ ALTER TABLE `cloud`.`storage_pool_tags` MODIFY tag text NOT NULL;
 ALTER TABLE `cloud`.`host_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
 
 ALTER TABLE `cloud`.`host_tags` MODIFY tag text NOT NULL;
+
+DROP TABLE IF EXISTS `cloud`.`object_store`;
+CREATE TABLE `cloud`.`object_store` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of object store',
+  `object_provider_name` varchar(255) NOT NULL COMMENT 'id of object_store_provider',
+  `protocol` varchar(255) NOT NULL COMMENT 'protocol of object store',
+  `url` varchar(255) NOT NULL COMMENT 'url of the object store',
+  `uuid` varchar(255) COMMENT 'uuid of object store',
+  `created` datetime COMMENT 'date the object store first signed on',
+  `removed` datetime COMMENT 'date removed if not null',
+  `total_size` bigint unsigned COMMENT 'storage total size statistics',
+  `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

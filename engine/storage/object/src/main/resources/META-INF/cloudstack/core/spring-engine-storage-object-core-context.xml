@@ -26,24 +26,9 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
+    <bean id="objectStoreDao" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDaoImpl" />
+    <bean id="objectStoreProviderMgr"
+        class="org.apache.cloudstack.storage.object.manager.ObjectStoreProviderManagerImpl" />
 
-    <bean id="templateServiceImpl"
-        class="org.apache.cloudstack.storage.image.TemplateServiceImpl"
-        depends-on="dataObjectManagerImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl, defaultEndPointSelector, templateDataFactoryImpl, imageStoreDetailsUtil" />
-
-    <bean id="templateDataFactoryImpl"
-        class="org.apache.cloudstack.storage.image.TemplateDataFactoryImpl" />
-
-    <bean id="secondaryStorageServiceImpl"
-          class="org.apache.cloudstack.storage.image.SecondaryStorageServiceImpl"
-          depends-on="dataMotionServiceImpl, objectInDataStoreManagerImpl" />
-
-    <bean id="imageStoreHelper"
-        class="org.apache.cloudstack.storage.image.datastore.ImageStoreHelper" />
-    <bean id="imageFormatHelper"
-        class="org.apache.cloudstack.storage.image.format.ImageFormatHelper" />
-
-    <bean id="imageStoreProviderMgr"
-        class="org.apache.cloudstack.storage.image.manager.ImageStoreProviderManagerImpl" />
 
 </beans>

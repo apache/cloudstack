@@ -42,7 +42,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
     @Inject
     ImageStoreProviderManager imageDataStoreMgr;
     @Inject
-    ObjectStoreProviderManager objectStoreMgr;
+    ObjectStoreProviderManager objectStoreProviderMgr;
 
     @Override
     public DataStore getDataStore(long storeId, DataStoreRole role) {
@@ -67,7 +67,7 @@ public class DataStoreManagerImpl implements DataStoreManager {
         } else if (role == DataStoreRole.Image) {
             return imageDataStoreMgr.getImageStore(uuid);
         } else if (role == DataStoreRole.Object) {
-            return objectStoreMgr.getObjectStore(uuid);
+            return objectStoreProviderMgr.getObjectStore(uuid);
         }
         throw new CloudRuntimeException("un recognized type" + role);
     }

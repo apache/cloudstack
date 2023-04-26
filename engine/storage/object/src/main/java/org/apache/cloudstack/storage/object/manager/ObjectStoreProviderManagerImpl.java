@@ -18,14 +18,11 @@
  */
 package org.apache.cloudstack.storage.object.manager;
 
-import com.cloud.server.StatsCollector;
-import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectStoreProvider;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
@@ -47,14 +44,9 @@ public class ObjectStoreProviderManagerImpl implements ObjectStoreProviderManage
     private static final Logger s_logger = Logger.getLogger(ObjectStoreProviderManagerImpl.class);
     @Inject
     ObjectStoreDao objectStoreDao;
-    @Inject
-    VMTemplateDao imageDataDao;
+
     @Inject
     DataStoreProviderManager providerManager;
-    @Inject
-    StatsCollector _statsCollector;
-    @Inject
-    ConfigurationDao configDao;
 
     Map<String, ObjectStoreDriver> driverMaps;
 
