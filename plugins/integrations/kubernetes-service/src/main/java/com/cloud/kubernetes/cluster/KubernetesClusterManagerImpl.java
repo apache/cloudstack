@@ -844,8 +844,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
         if (isAutoscalingEnabled != null && isAutoscalingEnabled) {
-            if (clusterSize != null || serviceOfferingId != null || nodeIds != null) {
-                throw new InvalidParameterValueException("Autoscaling can not be passed along with nodeids or clustersize or service offering");
+            if (clusterSize != null || nodeIds != null) {
+                throw new InvalidParameterValueException("Autoscaling can not be passed along with nodeids or clustersize");
             }
 
             if (!KubernetesVersionManagerImpl.versionSupportsAutoscaling(clusterVersion)) {
@@ -914,14 +914,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             }
             final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-            if (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
-                    serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed()) {
+            if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
+                    serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed())) {
                 logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering : %s offers lesser resources as compared to service offering : %s of Kubernetes cluster : %s",
                         serviceOffering.getName(), existingServiceOffering.getName(), kubernetesCluster.getName()));
             }
         }
 
         if (clusterSize != null) {
+            if (clusterSize == kubernetesCluster.getNodeCount()) {
+                return;
+            }
             if (kubernetesCluster.getState().equals(KubernetesCluster.State.Stopped)) { // Cannot scale stopped cluster currently for cluster size
                 throw new PermissionDeniedException(String.format("Kubernetes cluster : %s is in %s state", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
             }
