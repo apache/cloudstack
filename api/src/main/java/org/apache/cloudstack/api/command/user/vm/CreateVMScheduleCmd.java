@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -55,7 +54,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SCHEDULE,
             type = CommandType.STRING,
             required = true,
-            description = "Schedule for action on VM in cron format")
+            description = "Schedule for action on VM in cron format. e.g. '0 15 10 * *' for 'at 15:00 on 10th day of every month'")
     private String schedule;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -74,7 +73,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
             type = CommandType.DATE,
             required = true,
             description = "start date from which the schedule becomes active"
-                    + "Use format \"yyyy-MM-dd hh:mm:ss\"). Defaults to current date time.")
+                    + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
@@ -87,7 +86,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Enable VM schedule. Defaults to false)")
+            description = "Enable VM schedule. Defaults to true")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
@@ -124,7 +123,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     public Boolean getEnabled() {
         if (enabled == null) {
-            enabled = false;
+            enabled = true;
         }
         return enabled;
     }
@@ -143,7 +142,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
     public long getEntityOwnerId() {
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find VM by id=" + getVmId());
+            throw new InvalidParameterValueException(String.format("Unable to find VM by id=%d", getVmId()));
         }
         return vm.getAccountId();
     }

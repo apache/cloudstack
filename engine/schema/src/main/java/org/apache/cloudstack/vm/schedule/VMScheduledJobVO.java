@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import javax.persistence.Column;
@@ -39,17 +38,23 @@ public class VMScheduledJobVO implements VMScheduledJob {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     Long id;
+
     @Column(name = "uuid", nullable = false)
-    String uuid = UUID.randomUUID().toString();
+    String uuid;
+
     @Column(name = "vm_id", nullable = false)
     long vmId;
+
     @Column(name = "vm_schedule_id", nullable = false)
     long vmScheduleId;
+
     @Column(name = "async_job_id")
     Long asyncJobId;
+
     @Column(name = "action", nullable = false)
     @Enumerated(value = EnumType.STRING)
     VMSchedule.Action action;
+
     @Column(name = "scheduled_timestamp")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date scheduledTime;
@@ -59,6 +64,7 @@ public class VMScheduledJobVO implements VMScheduledJob {
     }
 
     public VMScheduledJobVO(long vmId, long vmScheduleId, VMSchedule.Action action, Date scheduledTime) {
+        uuid = UUID.randomUUID().toString();
         this.vmId = vmId;
         this.vmScheduleId = vmScheduleId;
         this.action = action;

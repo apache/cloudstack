@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule.dao;
 
 import com.cloud.utils.db.Filter;
@@ -34,11 +33,30 @@ import java.util.List;
 @Component
 public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long> implements VMScheduledJobDao {
 
-    @Override
-    public List<VMScheduledJobVO> findByVm(Long vmId) {
-        SearchCriteria<VMScheduledJobVO> sc = createSearchCriteria();
-        sc.setParameters("vm_id", vmId);
-        return listBy(sc, null);
+    private final SearchBuilder<VMScheduledJobVO> jobsToStartSearch;
+
+    private final SearchBuilder<VMScheduledJobVO> expungeJobsBeforeSearch;
+
+    private final SearchBuilder<VMScheduledJobVO> expungeJobForScheduleSearch;
+
+    static final String SCHEDULED_TIMESTAMP = "scheduled_timestamp";
+
+    static final String VM_SCHEDULE_ID = "vm_schedule_id";
+
+    public VMScheduledJobDaoImpl() {
+        super();
+        jobsToStartSearch = createSearchBuilder();
+        jobsToStartSearch.and(SCHEDULED_TIMESTAMP, jobsToStartSearch.entity().getScheduledTime(), SearchCriteria.Op.EQ);
+        jobsToStartSearch.and("async_job_id", jobsToStartSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
+        jobsToStartSearch.done();
+
+        expungeJobsBeforeSearch = createSearchBuilder();
+        expungeJobsBeforeSearch.and(SCHEDULED_TIMESTAMP, expungeJobsBeforeSearch.entity().getScheduledTime(), SearchCriteria.Op.LT);
+        expungeJobsBeforeSearch.done();
+
+        expungeJobForScheduleSearch = createSearchBuilder();
+        expungeJobForScheduleSearch.and(VM_SCHEDULE_ID, expungeJobForScheduleSearch.entity().getVmScheduleId(), SearchCriteria.Op.IN);
+        expungeJobForScheduleSearch.done();
     }
 
     /**
@@ -50,32 +68,24 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
             currentTimestamp = new Date();
         }
         Date truncatedTs = DateUtils.round(currentTimestamp, Calendar.MINUTE);
-        SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
-        sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.EQ);
-        sb.and("async_job_id", sb.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
 
-        SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("scheduled_timestamp", truncatedTs);
+        SearchCriteria<VMScheduledJobVO> sc = jobsToStartSearch.create();
+        sc.setParameters(SCHEDULED_TIMESTAMP, truncatedTs);
         Filter filter = new Filter(VMScheduledJobVO.class, "vmScheduleId", true, null, null);
         return search(sc, filter);
     }
 
     @Override
     public int expungeJobsForSchedules(List<Long> vmScheduleIds) {
-        SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
-        sb.and("vm_schedule_id", sb.entity().getVmScheduleId(), SearchCriteria.Op.IN);
-
-        SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("vm_schedule_id", vmScheduleIds.toArray());
+        SearchCriteria<VMScheduledJobVO> sc = expungeJobForScheduleSearch.create();
+        sc.setParameters(VM_SCHEDULE_ID, vmScheduleIds.toArray());
         return expunge(sc);
     }
 
     @Override
     public int expungeJobsBefore(Date date) {
-        SearchBuilder<VMScheduledJobVO> sb = createSearchBuilder();
-        sb.and("scheduled_timestamp", sb.entity().getScheduledTime(), SearchCriteria.Op.LT);
-        SearchCriteria<VMScheduledJobVO> sc = sb.create();
-        sc.setParameters("scheduled_timestamp", date);
+        SearchCriteria<VMScheduledJobVO> sc = expungeJobsBeforeSearch.create();
+        sc.setParameters(SCHEDULED_TIMESTAMP, date);
         return expunge(sc);
     }
 }

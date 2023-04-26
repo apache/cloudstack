@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
@@ -187,18 +186,9 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 DateUtil.parseSchedule(vmSchedule.getSchedule())
         );
 
-        VMSchedule.Action action = null;
-        if (cmd.getAction() != null) {
-            try {
-                action = VMSchedule.Action.valueOf(cmd.getAction().toUpperCase());
-            } catch (IllegalArgumentException exception) {
-                throw new InvalidParameterValueException("Invalid value for action: " + cmd.getAction());
-            }
-        }
-
         String description = cmd.getDescription();
         if (description == null && vmSchedule.getDescription() == null) {
-            description = String.format("%s - %s", Objects.requireNonNullElse(action, vmSchedule.getAction()), DateUtil.getHumanReadableSchedule(cronExpression));
+            description = String.format("%s - %s", vmSchedule.getAction(), DateUtil.getHumanReadableSchedule(cronExpression));
         }
 
         String cmdTimeZone = cmd.getTimeZone();
@@ -222,9 +212,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
         if (endDate != null) {
             vmSchedule.setEndDate(endDate);
-        }
-        if (action != null) {
-            vmSchedule.setAction(action);
         }
 
         vmSchedule.setStartDate(startDate);

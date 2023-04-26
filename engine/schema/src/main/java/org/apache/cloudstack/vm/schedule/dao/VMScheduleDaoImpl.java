@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule.dao;
 
 import com.cloud.utils.Pair;
@@ -35,42 +34,55 @@ import java.util.List;
 @Component
 public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implements VMScheduleDao {
 
+    private final SearchBuilder<VMScheduleVO> activeScheduleSearch;
+
+    private final SearchBuilder<VMScheduleVO> scheduleSearchByVmIdAndIds;
+
+    private final SearchBuilder<VMScheduleVO> scheduleSearch;
+
+    public VMScheduleDaoImpl() {
+        super();
+        activeScheduleSearch = createSearchBuilder();
+        activeScheduleSearch.and(ApiConstants.ENABLED, activeScheduleSearch.entity().getEnabled(), SearchCriteria.Op.EQ);
+        activeScheduleSearch.and().op(activeScheduleSearch.entity().getEndDate(), SearchCriteria.Op.NULL);
+        activeScheduleSearch.or(ApiConstants.END_DATE, activeScheduleSearch.entity().getEndDate(), SearchCriteria.Op.GT);
+        activeScheduleSearch.cp();
+        activeScheduleSearch.done();
+
+        scheduleSearchByVmIdAndIds = createSearchBuilder();
+        scheduleSearchByVmIdAndIds.and(ApiConstants.ID, scheduleSearchByVmIdAndIds.entity().getId(), SearchCriteria.Op.IN);
+        scheduleSearchByVmIdAndIds.and(ApiConstants.VIRTUAL_MACHINE_ID, scheduleSearchByVmIdAndIds.entity().getVmId(), SearchCriteria.Op.EQ);
+        scheduleSearchByVmIdAndIds.done();
+
+        scheduleSearch = createSearchBuilder();
+        scheduleSearch.and(ApiConstants.ID, scheduleSearch.entity().getId(), SearchCriteria.Op.EQ);
+        scheduleSearch.and(ApiConstants.VIRTUAL_MACHINE_ID, scheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        scheduleSearch.and(ApiConstants.ACTION, scheduleSearch.entity().getAction(), SearchCriteria.Op.EQ);
+        scheduleSearch.and(ApiConstants.ENABLED, scheduleSearch.entity().getEnabled(), SearchCriteria.Op.EQ);
+        scheduleSearch.done();
+
+    }
+
     @Override
     public List<VMScheduleVO> listAllActiveSchedules() {
         // WHERE enabled = true AND (end_date IS NULL OR end_date > current_date)
-        SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and(ApiConstants.ENABLED, sb.entity().getEnabled(), SearchCriteria.Op.EQ);
-        sb.and().op(sb.entity().getEndDate(), SearchCriteria.Op.NULL);
-        sb.or("end_date", sb.entity().getEndDate(), SearchCriteria.Op.GT);
-        sb.cp();
-
-        SearchCriteria<VMScheduleVO> sc = sb.create();
+        SearchCriteria<VMScheduleVO> sc = activeScheduleSearch.create();
         sc.setParameters(ApiConstants.ENABLED, true);
-        sc.setParameters("end_date", new Date());
+        sc.setParameters(ApiConstants.END_DATE, new Date());
         return search(sc, null);
     }
 
     @Override
     public long removeSchedulesForVmIdAndIds(Long vmId, List<Long> ids) {
-        SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<VMScheduleVO> sc = sb.create();
+        SearchCriteria<VMScheduleVO> sc = scheduleSearchByVmIdAndIds.create();
         sc.setParameters(ApiConstants.ID, ids.toArray());
-        sc.setParameters("vm_id", vmId);
+        sc.setParameters(ApiConstants.VIRTUAL_MACHINE_ID, vmId);
         return remove(sc);
     }
 
     @Override
     public Pair<List<VMScheduleVO>, Integer> searchAndCount(Long id, Long vmId, VMSchedule.Action action, Boolean enabled, Long offset, Long limit) {
-        SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-        sb.and(ApiConstants.ACTION, sb.entity().getAction(), SearchCriteria.Op.EQ);
-        sb.and(ApiConstants.ENABLED, sb.entity().getEnabled(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<VMScheduleVO> sc = sb.create();
+        SearchCriteria<VMScheduleVO> sc = scheduleSearch.create();
 
         if (id != null) {
             sc.setParameters(ApiConstants.ID, id);
@@ -81,20 +93,16 @@ public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implem
         if (action != null) {
             sc.setParameters(ApiConstants.ACTION, action);
         }
-        sc.setParameters("vm_id", vmId);
+        sc.setParameters(ApiConstants.VIRTUAL_MACHINE_ID, vmId);
 
         Filter filter = new Filter(VMScheduleVO.class, ApiConstants.ID, true, offset, limit);
-
         return searchAndCount(sc, filter);
     }
 
     @Override
     public SearchCriteria<VMScheduleVO> getSearchCriteriaForVMId(Long vmId) {
-        SearchBuilder<VMScheduleVO> sb = createSearchBuilder();
-        sb.and("vm_id", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<VMScheduleVO> sc = sb.create();
-        sc.setParameters("vm_id", vmId);
+        SearchCriteria<VMScheduleVO> sc = scheduleSearch.create();
+        sc.setParameters(ApiConstants.VIRTUAL_MACHINE_ID, vmId);
         return sc;
     }
 }

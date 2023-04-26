@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.cloudstack.api.response.ListResponse;
@@ -51,7 +50,7 @@ public class ListVMScheduleCmdTest {
      * then: "a list of size 0 is returned"
      */
     @Test
-    public void emptyResponse() {
+    public void testEmptyResponse() {
         ListResponse<VMScheduleResponse> response = new ListResponse<VMScheduleResponse>();
         response.setResponses(new ArrayList<VMScheduleResponse>());
         Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenReturn(response);
@@ -67,7 +66,7 @@ public class ListVMScheduleCmdTest {
      * then: "a list of size 1 is returned"
      */
     @Test
-    public void nonEmptyResponse() {
+    public void testNonEmptyResponse() {
         ListResponse<VMScheduleResponse> listResponse = new ListResponse<VMScheduleResponse>();
         VMScheduleResponse response = Mockito.mock(VMScheduleResponse.class);
         listResponse.setResponses(Collections.singletonList(response));
@@ -85,7 +84,7 @@ public class ListVMScheduleCmdTest {
      * then: "an InvalidParameterException is thrown"
      */
     @Test(expected = InvalidParameterException.class)
-    public void invalidParameterException() {
+    public void testInvalidParameterException() {
         Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenThrow(InvalidParameterException.class);
         listVMScheduleCmd.execute();
         ListResponse<VMScheduleResponse> actualResponseObject = (ListResponse<VMScheduleResponse>) listVMScheduleCmd.getResponseObject();

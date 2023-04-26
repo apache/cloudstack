@@ -84,7 +84,8 @@
         </template>
         <a-radio-group
           v-model:value="form.action"
-          button-style="solid">
+          button-style="solid"
+          :disabled="isEdit">
           <a-radio-button v-for="action in actions" :key="action.id" :value="action.value">
             {{ $t(action.label) }}
           </a-radio-button>
@@ -94,11 +95,26 @@
         <template #label>
           <tooltip-label :title="$t('label.schedule')" :tooltip="apiParams.schedule.description"/>
         </template>
+        <a-switch
+          v-model:checked="form.useCronFormat"
+          :checked-children="$t('label.cron')"
+          :un-checked-children="$t('label.select')"
+          >
+        </a-switch>
+        <br/>
+        <span v-if="!form.useCronFormat">
         <cron-light
           v-model="form.schedule"
           @error="error=$event"/>
         <br/>
         <label>{{ $t('label.cron') }}: {{form.schedule}}</label>
+      </span>
+      <span v-if="form.useCronFormat">
+        <a-input
+          v-model:value="form.schedule"
+          v-focus="true" />
+        <label>{{ generateHumanReadableSchedule(form.schedule) }}</label>
+      </span>
       </a-form-item>
       <a-form-item name="timezone" ref="timezone">
         <template #label>
@@ -154,9 +170,10 @@ import { mixinForm } from '@/utils/mixin'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import moment from 'moment'
+import cronstrue from 'cronstrue/i18n'
 
 export default {
-  name: 'Schedules',
+  name: 'InstanceSchedules',
   mixins: [mixinForm],
   components: {
     Status,
@@ -177,7 +194,7 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       tabLoading: false,
-      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'vmScheduleActions'],
+      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'startdate', 'enddate', 'vmScheduleActions'],
       selectedColumnKeys: [],
       columns: [],
       schedules: [],
@@ -194,6 +211,7 @@ export default {
       totalCount: 0,
       showModal: false,
       isSubmitted: false,
+      isEdit: false,
       error: ''
     }
   },
@@ -232,7 +250,9 @@ export default {
       this.form = reactive({
         action: 'START',
         schedule: '* * * * *',
-        timezone: 'UTC'
+        timezone: 'UTC',
+        enabled: true,
+        useCronFormat: false
       })
       this.rules = reactive({
         name: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
@@ -265,6 +285,7 @@ export default {
     },
     updateVMSchedule (schedule) {
       this.resetForm()
+      this.isEdit = true
       Object.assign(this.form, schedule)
       this.showAddModal()
     },
@@ -301,7 +322,6 @@ export default {
             description: this.$t('message.success.config.vm.schedule')
           })
           this.isSubmitted = false
-          this.resetForm()
           this.fetchData()
           this.closeModal()
         }).catch(error => {
@@ -315,9 +335,8 @@ export default {
       })
     },
     resetForm () {
-      if (this.formRef.value !== null && this.formRef.value !== undefined) {
-        this.formRef.value.resetFields()
-      }
+      this.isEdit = false
+      this.formRef.value.resetFields()
     },
     fetchTimeZone (value) {
       this.timeZoneMap = []
@@ -329,6 +348,7 @@ export default {
       })
     },
     closeModal () {
+      this.resetForm()
       this.showModal = false
     },
     fetchData () {
@@ -366,14 +386,25 @@ export default {
       }
       this.updateColumns()
     },
+    generateHumanReadableSchedule (schedule) {
+      return cronstrue.toString(schedule, { locale: this.$i18n.locale })
+    },
     updateColumns () {
       this.columns = []
       for (var columnKey of this.columnKeys) {
         if (!this.selectedColumnKeys.includes(columnKey)) continue
         this.columns.push({
           key: columnKey,
-          // If columnKey is 'enabled', then title is 'state', else title is columnKey
-          title: columnKey === 'enabled' ? this.$t('label.state') : this.$t('label.' + String(columnKey).toLowerCase()),
+          // If columnKey is 'enabled', then title is 'state'
+          // If columnKey is 'startdate', then the title is `start.date.and.time`
+          // else title is columnKey
+          title: columnKey === 'enabled'
+            ? this.$t('label.state')
+            : columnKey === 'startdate'
+              ? this.$t('label.start.date.and.time')
+              : columnKey === 'enddate'
+                ? this.$t('label.end.date.and.time')
+                : this.$t('label.' + String(columnKey).toLowerCase()),
           dataIndex: columnKey
         })
       }

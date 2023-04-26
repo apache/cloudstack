@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.api.ApiGsonHelper;
@@ -238,9 +237,6 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         }
     }
 
-    /**
-     * Check status and schedule next job
-     */
     private void scheduleNextJobs() {
         for (final VMScheduleVO schedule : vmScheduleDao.listAllActiveSchedules()) {
             try {

@@ -6531,7 +6531,6 @@ class VMSchedule:
     @classmethod
     def create(cls, apiclient, virtualmachineid, action, schedule, timezone, startdate, enabled=False, description=None, enddate=None):
         cmd = createVMSchedule.createVMScheduleCmd()
-
         cmd.virtualmachineid = virtualmachineid
         cmd.description = description
         cmd.action = action

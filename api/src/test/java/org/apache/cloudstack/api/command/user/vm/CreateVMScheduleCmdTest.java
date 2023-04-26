@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -53,7 +52,7 @@ public class CreateVMScheduleCmdTest {
      * then: "a VMSchedule response is created"
      */
     @Test
-    public void successfulExecution() {
+    public void testSuccessfulExecution() {
         VMScheduleResponse vmScheduleResponse = Mockito.mock(VMScheduleResponse.class);
         Mockito.when(vmScheduleManager.createSchedule(createVMScheduleCmd)).thenReturn(vmScheduleResponse);
         createVMScheduleCmd.execute();
@@ -66,7 +65,7 @@ public class CreateVMScheduleCmdTest {
      * then: "an InvalidParameterException is thrown"
      */
     @Test(expected = InvalidParameterException.class)
-    public void invalidParameterException() {
+    public void testInvalidParameterException() {
         Mockito.when(vmScheduleManager.createSchedule(createVMScheduleCmd)).thenThrow(InvalidParameterException.class);
         createVMScheduleCmd.execute();
     }
@@ -77,7 +76,7 @@ public class CreateVMScheduleCmdTest {
      * then: "owner of that VM is returned"
      */
     @Test
-    public void successfulGetEntityOwnerId() {
+    public void testSuccessfulGetEntityOwnerId() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(entityManager.findById(VirtualMachine.class, createVMScheduleCmd.getVmId())).thenReturn(vm);
         long ownerId = createVMScheduleCmd.getEntityOwnerId();
@@ -90,7 +89,7 @@ public class CreateVMScheduleCmdTest {
      * then: "an InvalidParameterException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
-    public void failureGetEntityOwnerId() {
+    public void testFailureGetEntityOwnerId() {
         Mockito.when(entityManager.findById(VirtualMachine.class, createVMScheduleCmd.getVmId())).thenReturn(null);
         long ownerId = createVMScheduleCmd.getEntityOwnerId();
     }

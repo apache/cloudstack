@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -91,7 +90,6 @@ public class VMScheduleManagerImplTest {
         Assert.assertEquals(ReflectionTestUtils.getField(response, "endDate"), vmSchedule.getEndDate());
     }
 
-    // Add tests for createSchedule method
     @Test
     public void createSchedule() {
         UserVm vm = Mockito.mock(UserVm.class);
@@ -154,7 +152,6 @@ public class VMScheduleManagerImplTest {
         Assert.assertEquals(2, (int) responseList.getCount());
         Assert.assertEquals(2, responseList.getResponses().size());
 
-        // iterate over response list & vmScheduleList and check
         for (int i = 0; i < responseList.getResponses().size(); i++) {
             VMScheduleResponse response = responseList.getResponses().get(i);
             VMScheduleVO vmSchedule = vmScheduleList.get(i);
@@ -170,7 +167,6 @@ public class VMScheduleManagerImplTest {
         Mockito.when(cmd.getId()).thenReturn(1L);
         Mockito.when(cmd.getSchedule()).thenReturn("0 0 * * *");
         Mockito.when(cmd.getTimeZone()).thenReturn("UTC");
-        Mockito.when(cmd.getAction()).thenReturn("start");
         Mockito.when(cmd.getStartDate()).thenReturn(DateUtils.addDays(new Date(), 1));
         Mockito.when(cmd.getEndDate()).thenReturn(DateUtils.addDays(new Date(), 2));
         Mockito.when(vmScheduleDao.findById(Mockito.anyLong())).thenReturn(vmSchedule);

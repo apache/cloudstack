@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import org.apache.cloudstack.api.Identity;
@@ -31,7 +30,6 @@ public interface VMSchedule extends Identity, InternalIdentity {
     }
 
     long getVmId();
-
 
     String getDescription();
 

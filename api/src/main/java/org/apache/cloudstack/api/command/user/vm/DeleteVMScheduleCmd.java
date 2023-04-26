@@ -16,9 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.api.command.user.vm;
-
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
@@ -105,7 +103,7 @@ public class DeleteVMScheduleCmd extends BaseCmd {
     public long getEntityOwnerId() {
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find VM by id=" + getVmId());
+            throw new InvalidParameterValueException(String.format("Unable to find VM by id=%d", getVmId()));
         }
         return vm.getAccountId();
     }

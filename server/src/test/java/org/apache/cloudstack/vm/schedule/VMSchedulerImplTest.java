@@ -16,15 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.event.ActionEventUtils;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDao;
 import org.apache.commons.lang.time.DateUtils;
@@ -51,21 +57,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
+import static org.mockito.Mockito.when;
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ActionEventUtils.class})
+@PrepareForTest({ActionEventUtils.class, ComponentContext.class})
 public class VMSchedulerImplTest {
     @Spy
     @InjectMocks
     private VMSchedulerImpl vmScheduler = new VMSchedulerImpl();
+
     @Mock
     private UserVmManager userVmManager;
+
     @Mock
     private VMScheduleDao vmScheduleDao;
+
     @Mock
     private VMScheduledJobDao vmScheduledJobDao;
 
     @Mock
     private EnumMap<VMSchedule.Action, String> actionEventMap;
+
+    @Mock
+    private AsyncJobManager asyncJobManager;
+
+    @Mock
+    private AsyncJobDispatcher asyncJobDispatcher;
 
     @Before
     public void setUp() throws Exception {
@@ -347,4 +364,39 @@ public class VMSchedulerImplTest {
         Mockito.verify(vmScheduler, Mockito.times(2)).processJob(Mockito.any(), Mockito.any());
         Mockito.verify(vmScheduledJobDao, Mockito.times(2)).acquireInLockTable(Mockito.anyLong());
     }
+
+    @Test
+    public void testExecuteStopVMJob() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
+        PowerMockito.mockStatic(ComponentContext.class);
+        when(ComponentContext.inject(StopVMCmd.class)).thenReturn(Mockito.mock(StopVMCmd.class));
+        long jobId = vmScheduler.executeStopVMJob(vm, false, 1L);
+
+        Assert.assertEquals(1L, jobId);
+    }
+
+    @Test
+    public void testExecuteRebootVMJob() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
+        PowerMockito.mockStatic(ComponentContext.class);
+        when(ComponentContext.inject(RebootVMCmd.class)).thenReturn(Mockito.mock(RebootVMCmd.class));
+        long jobId = vmScheduler.executeRebootVMJob(vm, false, 1L);
+
+        Assert.assertEquals(1L, jobId);
+    }
+
+    @Test
+    public void testExecuteStartVMJob() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
+        PowerMockito.mockStatic(ComponentContext.class);
+        when(ComponentContext.inject(StartVMCmd.class)).thenReturn(Mockito.mock(StartVMCmd.class));
+        long jobId = vmScheduler.executeStartVMJob(vm, 1L);
+
+        Assert.assertEquals(1L, jobId);
+    }
+
+
 }

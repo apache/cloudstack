@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.utils.db.GenericDao;
@@ -45,7 +44,7 @@ public class VMScheduleVO implements VMSchedule {
     Long id;
 
     @Column(name = "uuid", nullable = false)
-    String uuid = UUID.randomUUID().toString();
+    String uuid;
 
     @Column(name = "description")
     String description;
@@ -55,8 +54,10 @@ public class VMScheduleVO implements VMSchedule {
 
     @Column(name = "schedule", nullable = false)
     String schedule;
+
     @Column(name = "timezone", nullable = false)
     String timeZone;
+
     @Column(name = "action", nullable = false)
     @Enumerated(value = EnumType.STRING)
     Action action;
@@ -83,6 +84,7 @@ public class VMScheduleVO implements VMSchedule {
     }
 
     public VMScheduleVO(long vmId, String description, String schedule, String timeZone, Action action, Date startDate, Date endDate, boolean enabled) {
+        uuid = UUID.randomUUID().toString();
         this.vmId = vmId;
         this.description = description;
         this.schedule = schedule;

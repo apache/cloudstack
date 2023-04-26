@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -56,7 +55,7 @@ public class DeleteVMScheduleCmdTest {
      * then: "a Success response is created"
      */
     @Test
-    public void successfulExecution() {
+    public void testSuccessfulExecution() {
         final SuccessResponse response = new SuccessResponse();
         response.setResponseName(deleteVMScheduleCmd.getCommandName());
         response.setObjectName(VMSchedule.class.getSimpleName().toLowerCase());
@@ -74,7 +73,7 @@ public class DeleteVMScheduleCmdTest {
      * then: "ServerApiException is thrown"
      */
     @Test(expected = ServerApiException.class)
-    public void serverApiException() {
+    public void testServerApiException() {
         Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenReturn(0L);
         deleteVMScheduleCmd.execute();
     }
@@ -85,7 +84,7 @@ public class DeleteVMScheduleCmdTest {
      * then: "an InvalidParameterException is thrown"
      */
     @Test(expected = InvalidParameterException.class)
-    public void invalidParameterException() {
+    public void testInvalidParameterException() {
         Mockito.when(vmScheduleManager.removeSchedule(deleteVMScheduleCmd)).thenThrow(InvalidParameterException.class);
         deleteVMScheduleCmd.execute();
     }
@@ -96,7 +95,7 @@ public class DeleteVMScheduleCmdTest {
      * then: "owner of that VM is returned"
      */
     @Test
-    public void successfulGetEntityOwnerId() {
+    public void testSuccessfulGetEntityOwnerId() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(entityManager.findById(VirtualMachine.class, deleteVMScheduleCmd.getVmId())).thenReturn(vm);
         long ownerId = deleteVMScheduleCmd.getEntityOwnerId();
@@ -109,7 +108,7 @@ public class DeleteVMScheduleCmdTest {
      * then: "an InvalidParameterException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
-    public void failureGetEntityOwnerId() {
+    public void testFailureGetEntityOwnerId() {
         Mockito.when(entityManager.findById(VirtualMachine.class, deleteVMScheduleCmd.getVmId())).thenReturn(null);
         long ownerId = deleteVMScheduleCmd.getEntityOwnerId();
     }

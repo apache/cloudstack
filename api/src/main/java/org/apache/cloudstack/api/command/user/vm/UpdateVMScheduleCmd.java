@@ -16,9 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.api.command.user.vm;
-
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
@@ -55,7 +53,7 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SCHEDULE,
             type = CommandType.STRING,
             required = false,
-            description = "Schedule for action on VM in cron format")
+            description = "Schedule for action on VM in cron format. e.g. '0 15 10 * *' for 'at 15:00 on 10th day of every month'")
     private String schedule;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -63,12 +61,6 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             required = false,
             description = "Specifies a timezone for this command. For more information on the timezone parameter, see TimeZone Format.")
     private String timeZone;
-
-    @Parameter(name = ApiConstants.ACTION,
-            type = CommandType.STRING,
-            required = false,
-            description = "Action to take on the VM (start/stop/restart/force_stop/force_reboot).")
-    private String action;
 
     @Parameter(name = ApiConstants.START_DATE,
             type = CommandType.DATE,
@@ -110,10 +102,6 @@ public class UpdateVMScheduleCmd extends BaseCmd {
         return timeZone;
     }
 
-    public String getAction() {
-        return action;
-    }
-
     public Date getStartDate() {
         return startDate;
     }
@@ -140,7 +128,7 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     public long getEntityOwnerId() {
         VMSchedule vmSchedule = _entityMgr.findById(VMSchedule.class, getId());
         if (vmSchedule == null) {
-            throw new InvalidParameterValueException("Unable to find vmSchedule by id=" + getId());
+            throw new InvalidParameterValueException(String.format("Unable to find vmSchedule by id=%d", getId()));
         }
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, vmSchedule.getVmId());
         return vm.getAccountId();
