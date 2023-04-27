@@ -167,6 +167,10 @@
         &nbsp;
         <a-tag>source-nat</a-tag>
       </span>
+      <span v-if="record.isstaticnat">
+        &nbsp;
+        <a-tag>static-nat</a-tag>
+      </span>
     </template>
     <template #ip6address="{ text, record }" href="javascript:;">
       <span>{{ ipV6Address(text, record) }}</span>

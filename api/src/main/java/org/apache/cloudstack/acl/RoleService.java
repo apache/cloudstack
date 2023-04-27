@@ -80,7 +80,7 @@ public interface RoleService {
      */
     List<Role> findRolesByName(String name);
 
-    Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit);
+    Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit);
 
     /**
      *  Find all roles by {@link RoleType}. If the role type is {@link RoleType#Admin}, the calling account must be a root admin, otherwise we return an empty list.
