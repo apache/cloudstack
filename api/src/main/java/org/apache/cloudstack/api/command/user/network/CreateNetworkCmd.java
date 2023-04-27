@@ -185,9 +185,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SOURCE_NAT_IP,
             type = CommandType.STRING,
-            description = "IPV4 address to be assigned to the public interface of the network router. This is a hint." +
-                    " If an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented," +
-                    " even if so requested.",
+            description = "IPV4 address to be assigned to the public interface of the network router. " +
+                    "This address will be used as source NAT address for the network. " +
+                    "\nIf an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,",
             since = "4.19")
     private String sourceNatIP;
 
