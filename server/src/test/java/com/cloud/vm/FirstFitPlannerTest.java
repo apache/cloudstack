@@ -37,6 +37,8 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -115,6 +117,10 @@ public class FirstFitPlannerTest {
     UserVmDetailsDao vmDetailsDao;
     @Inject
     ConfigurationDao configDao;
+    @Inject
+    ConfigurationGroupDao configGroupDao;
+    @Inject
+    ConfigurationSubGroupDao configSubGroupDao;
     @Inject
     CapacityDao capacityDao;
     @Inject
@@ -209,7 +215,7 @@ public class FirstFitPlannerTest {
         List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
 
         assertTrue("Reordered cluster list have clusters which has hosts with specified host tag on offering", (clusterList.containsAll(matchingClusters)));
-        assertTrue("Reordered cluster list does not have clusters which dont have hosts with matching host tag on offering", (!clusterList.contains(2L)));
+        assertTrue("Reordered cluster list does not have clusters which don't have hosts with matching host tag on offering", (!clusterList.contains(2L)));
     }
 
     private List<Long> initializeForClusterListBasedOnHostTag(ServiceOffering offering) {
@@ -429,6 +435,16 @@ public class FirstFitPlannerTest {
         @Bean
         public ConfigurationDao configurationDao() {
             return Mockito.mock(ConfigurationDao.class);
+        }
+
+        @Bean
+        public ConfigurationGroupDao configurationGroupDao() {
+            return Mockito.mock(ConfigurationGroupDao.class);
+        }
+
+        @Bean
+        public ConfigurationSubGroupDao configurationSubGroupDao() {
+            return Mockito.mock(ConfigurationSubGroupDao.class);
         }
 
         @Bean

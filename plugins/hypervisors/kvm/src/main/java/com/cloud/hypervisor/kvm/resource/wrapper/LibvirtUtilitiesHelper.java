@@ -131,7 +131,7 @@ public class LibvirtUtilitiesHelper {
             String exceptionMessage = ex.getMessage();
             s_logger.error(String.format("Unable to validate if the Libvirt's version is equal or higher than [%s] due to [%s]. Returning 'false' as default'.", version,
                     exceptionMessage), ex);
-            return new Pair<>(String.format("Unknow due to [%s]", exceptionMessage), false);
+            return new Pair<>(String.format("Unknown due to [%s]", exceptionMessage), false);
         }
     }
 

@@ -49,9 +49,9 @@
           v-model:value="hypervisor"
           @change="resetAllFields"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="hv in hypervisorsList"
@@ -69,12 +69,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
-            :key="pod.id">
+            :key="pod.id"
+            :label="pod.name">
             {{ pod.name }}
           </a-select-option>
         </a-select>
@@ -269,10 +270,12 @@ export default {
       this.addCluster()
     },
     addCluster () {
+      let clustername = this.clustername
+
       if (this.hypervisor === 'VMware') {
         const clusternameVal = this.clustername
         this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
-        this.clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
+        clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
       }
       this.loading = true
       this.parentToggleLoading()
@@ -281,7 +284,7 @@ export default {
         hypervisor: this.hypervisor,
         clustertype: this.clustertype,
         podId: this.podId,
-        clustername: this.clustername,
+        clustername: clustername,
         url: this.url
       }
       if (this.ovm3pool) {

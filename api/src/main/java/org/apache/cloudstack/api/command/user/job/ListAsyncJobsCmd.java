@@ -24,18 +24,21 @@ import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 
 @APICommand(name = "listAsyncJobs", description = "Lists all pending asynchronous jobs for the account.", responseObject = AsyncJobResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
-    private static final String s_name = "listasyncjobsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.TZDATE, description = "The start date of the async job (use format \"yyyy-MM-dd'T'HH:mm:ss'+'SSSS\")")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the async job (use format \"yyyy-MM-dd'T'HH:mm:ss'+'SSSS\")")
     private Date startDate;
+
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The id of the management server", since="4.19")
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -45,14 +48,13 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
         return startDate;
     }
 
+    public Long getManagementServerId() {
+        return managementServerId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public void execute() {
 

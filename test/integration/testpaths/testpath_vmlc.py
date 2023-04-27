@@ -276,13 +276,13 @@ class TestPathVMLC(cloudstackTestCase):
             cls.template.download(cls.apiclient)
 
             # Check that we are able to login to the created account
-            respose = User.login(
+            response = User.login(
                 cls.apiclient,
                 username=cls.account.name,
                 password=cls.testdata["account"]["password"]
             )
 
-            assert respose.sessionkey is not None,\
+            assert response.sessionkey is not None,\
                 "Login to the CloudStack should be successful\
                             response shall have non Null key"
 
@@ -339,7 +339,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 14. Verify VM accessibility on new host
         """
         if self.hypervisor.lower() in ['hyperv', 'lxc']  and value == VPC_NETWORK:
-            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
+            self.skipTest("can't be run for {} hypervisor".format(self.hypervisor))
 
         # List created service offering in setUpClass by name
         listServiceOfferings = ServiceOffering.list(
@@ -740,7 +740,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 5. Try to reboot the VM in destroyed state, operation should fail
         """
         if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
-            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
+            self.skipTest("can't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
 
@@ -839,7 +839,7 @@ class TestPathVMLC(cloudstackTestCase):
         """
 
         if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
-            self.skipTest("cann't be run for {} hypervisor".format(self.hypervisor))
+            self.skipTest("can't be run for {} hypervisor".format(self.hypervisor))
         network = CreateNetwork(self, value)
         networkid = network.id
 

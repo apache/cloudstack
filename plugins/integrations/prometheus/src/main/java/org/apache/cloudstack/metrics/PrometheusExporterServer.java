@@ -26,8 +26,11 @@ public interface PrometheusExporterServer extends Manager {
             "Enable the prometheus exporter plugin, management server restart needed.", false);
 
     ConfigKey<Integer> PrometheusExporterServerPort = new ConfigKey<>("Advanced", Integer.class, "prometheus.exporter.port", "9595",
-            "The prometheus exporter server port", true);
+            "The prometheus exporter server port", true, EnablePrometheusExporter.key());
 
     ConfigKey<String> PrometheusExporterAllowedAddresses = new ConfigKey<>("Advanced", String.class, "prometheus.exporter.allowed.ips", "127.0.0.1",
-            "List of comma separated prometheus server ips (with no spaces) that should be allowed to access the URLs", true);
+            "List of comma separated prometheus server ips (with no spaces) that should be allowed to access the URLs", true, EnablePrometheusExporter.key());
+
+    ConfigKey<Integer> PrometheusExporterOfferingCountLimit = new ConfigKey<>("Advanced", Integer.class, "prometheus.exporter.offering.output.limit", "-1",
+            "Limit the number of output for cloudstack_vms_total_by_size to the provided value. -1 for unlimited output.", true);
 }

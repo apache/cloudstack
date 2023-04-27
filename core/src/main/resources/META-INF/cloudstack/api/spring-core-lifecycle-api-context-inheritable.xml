@@ -32,7 +32,13 @@
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="userAuthenticatorsRegistry" />
         <property name="typeClass"
-            value="com.cloud.server.auth.UserAuthenticator" />
+            value="org.apache.cloudstack.auth.UserAuthenticator" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="userTwoFactorAuthenticatorsRegistry" />
+        <property name="typeClass"
+                  value="org.apache.cloudstack.auth.UserTwoFactorAuthenticator" />
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
@@ -64,7 +70,7 @@
         
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="userPasswordEncodersRegistry" />
-        <property name="typeClass" value="com.cloud.server.auth.UserAuthenticator" />
+        <property name="typeClass" value="org.apache.cloudstack.auth.UserAuthenticator" />
     </bean>
 
 </beans>

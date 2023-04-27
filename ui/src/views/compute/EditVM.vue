@@ -52,11 +52,11 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :loading="osTypes.loading"
           v-model:value="form.ostypeid">
-          <a-select-option v-for="(ostype) in osTypes.opts" :key="ostype.id">
+          <a-select-option v-for="(ostype) in osTypes.opts" :key="ostype.id" :label="ostype.description">
             {{ ostype.description }}
           </a-select-option>
         </a-select>
@@ -103,7 +103,7 @@
           }"
           :loading="securitygroups.loading"
           v-focus="true">
-          <a-select-option v-for="securitygroup in securitygroups.opts" :key="securitygroup.id" :label="securitygroup.name">
+          <a-select-option v-for="securitygroup in securitygroups.opts" :key="securitygroup.id" :label="securitygroup.name ||  securitygroup.id">
             <div>
               {{ securitygroup.name ||  securitygroup.id }}
             </div>
@@ -123,6 +123,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'EditVM',
@@ -176,7 +177,8 @@ export default {
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id)
+        securitygroupids: this.resource.securitygroup.map(x => x.id),
+        userdata: ''
       })
       this.rules = reactive({})
     },
@@ -188,6 +190,7 @@ export default {
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchDynamicScalingVmConfig()
+      this.fetchUserData()
     },
     fetchZoneDetails () {
       api('listZones', {
@@ -254,7 +257,7 @@ export default {
     fetchOsTypes () {
       this.osTypes.loading = true
       this.osTypes.opts = []
-      api('listOsTypes', { listAll: true }).then(json => {
+      api('listOsTypes').then(json => {
         this.osTypes.opts = json.listostypesresponse.ostype || []
       }).catch(error => {
         this.$notifyError(error)
@@ -281,13 +284,15 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
+    fetchUserData () {
+      const params = {
+        id: this.resource.id,
+        userdata: true
+      }
 
-      return reversedValue
+      api('listVirtualMachines', params).then(json => {
+        this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+      })
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -312,7 +317,7 @@ export default {
           params.group = values.group
         }
         if (values.userdata && values.userdata.length > 0) {
-          params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+          params.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
         }
         this.loading = true
 

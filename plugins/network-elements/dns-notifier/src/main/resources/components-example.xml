@@ -179,7 +179,7 @@ under the License.
         <dao name="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" singleton="false"/>
         <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>     
         <dao name="VlanDao" class="com.cloud.dc.dao.VlanDaoImpl" singleton="false"/>
-        <dao name="ResouceCountDao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" singleton="false"/>
+        <dao name="ResourceCountDao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" singleton="false"/>
         <dao name="AccountDao" class="com.cloud.user.dao.AccountDaoImpl" singleton="false"/>
         <dao name="UserDao" class="com.cloud.user.dao.UserDaoImpl" singleton="false"/>
         <dao name="NetworkOfferingServiceDao" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" singleton="false"/>

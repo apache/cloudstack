@@ -74,10 +74,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     protected final String TagsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_tags ON storage_pool.id = storage_pool_tags.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     protected final String TagsSqlSuffix = ") GROUP BY storage_pool_tags.pool_id HAVING COUNT(storage_pool_tags.tag) >= ?";
 
-    private static final String GET_STORAGE_POOLS_OF_VOLUMES_WITHOUT_OR_NOT_HAVING_TAGS = "select s.id " +
-            "from volumes vol " +
-            "join storage_pool s on vol.pool_id=s.id " +
-            "where vol.disk_offering_id= ? and vol.state not in (\"Destroy\", \"Error\", \"Expunging\") group by s.id";
+    private static final String GET_STORAGE_POOLS_OF_VOLUMES_WITHOUT_OR_NOT_HAVING_TAGS = "SELECT s.* " +
+            "FROM volumes vol " +
+            "JOIN storage_pool s ON vol.pool_id = s.id " +
+            "WHERE vol.disk_offering_id = ? AND vol.state NOT IN (\"Destroy\", \"Error\", \"Expunging\", \"Expunged\") GROUP BY s.id";
 
     /**
      * Used in method findPoolsByDetailsOrTagsInternal

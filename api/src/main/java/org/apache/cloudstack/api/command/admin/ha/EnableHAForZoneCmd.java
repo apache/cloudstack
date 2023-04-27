@@ -40,12 +40,11 @@ import org.apache.cloudstack.ha.HAConfigManager;
 
 import javax.inject.Inject;
 
-@APICommand(name = EnableHAForZoneCmd.APINAME, description = "Enables HA for a zone",
+@APICommand(name = "enableHAForZone", description = "Enables HA for a zone",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.11", authorized = {RoleType.Admin})
 public final class EnableHAForZoneCmd extends BaseAsyncCmd {
-    public static final String APINAME = "enableHAForZone";
 
     @Inject
     private HAConfigManager haConfigManager;
@@ -69,11 +68,6 @@ public final class EnableHAForZoneCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {

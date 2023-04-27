@@ -317,7 +317,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             while (authenticating); // wait for authentication request (if any) to complete (and to pick the new session key)
             final HttpPost request = new HttpPost(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
-            request.setHeader("Content-type", "application/json");
+            request.setHeader("content-type", "application/json");
             if (obj != null) {
                 if (obj instanceof String) {
                     request.setEntity(new StringEntity((String) obj));

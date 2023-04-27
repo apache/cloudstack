@@ -40,7 +40,6 @@ import com.cloud.utils.Pair;
 public class ListPhysicalNetworksCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPhysicalNetworksCmd.class.getName());
 
-    private static final String s_name = "listphysicalnetworksresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -74,11 +73,6 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

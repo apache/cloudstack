@@ -34,7 +34,6 @@ import com.cloud.network.security.SecurityGroup;
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 
-    private static final String s_name = "listsecuritygroupsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -70,11 +69,6 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

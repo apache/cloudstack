@@ -138,6 +138,10 @@ public class DataCenterVO implements DataCenter {
     @Column(name = "sort_key")
     int sortKey;
 
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
+    private DataCenter.Type type;
+
     @Override
     public String getDnsProvider() {
         return dnsProvider;
@@ -183,15 +187,15 @@ public class DataCenterVO implements DataCenter {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
             NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
+        this(name, description, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
+    public DataCenterVO(String name, String description, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
             NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
         this.name = name;
         this.description = description;
@@ -199,8 +203,8 @@ public class DataCenterVO implements DataCenter {
         this.dns2 = dns2;
         this.ip6Dns1 = ip6Dns1;
         this.ip6Dns2 = ip6Dns2;
-        this.internalDns1 = dns3;
-        this.internalDns2 = dns4;
+        this.internalDns1 = internalDns1;
+        this.internalDns2 = internalDns2;
         this.guestNetworkCidr = guestCidr;
         this.domain = domain;
         this.domainId = domainId;
@@ -470,6 +474,15 @@ public class DataCenterVO implements DataCenter {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Zone;
+    }
+
+    @Override
+    public DataCenter.Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

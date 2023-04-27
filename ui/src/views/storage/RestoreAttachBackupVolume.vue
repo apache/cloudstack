@@ -34,11 +34,12 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(opt) in volumeOptions.opts"
-            :key="opt.id">
+            :key="opt.id"
+            :label="opt.name">
             {{ opt.name }}
           </a-select-option>
         </a-select>
@@ -49,9 +50,9 @@
           v-model:value="form.virtualmachineid"
           :loading="virtualMachineOptions.loading"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(opt) in virtualMachineOptions.opts"
@@ -162,12 +163,10 @@ export default {
               jobId,
               title,
               description: values.volumeid,
-              successMethod: result => {
-                this.closeAction()
-              },
               loadingMessage: `${title} ${this.$t('label.in.progress.for')} ${this.resource.id}`,
               catchMessage: this.$t('error.fetching.async.job.result')
             })
+            this.closeAction()
           }
         }).catch(error => {
           this.$notifyError(error)

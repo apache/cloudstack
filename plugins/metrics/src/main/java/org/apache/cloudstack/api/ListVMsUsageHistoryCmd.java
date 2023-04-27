@@ -17,25 +17,17 @@
 
 package org.apache.cloudstack.api;
 
-import java.util.Date;
 import java.util.List;
-
-import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.metrics.MetricsService;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 
-@APICommand(name = ListVMsUsageHistoryCmd.APINAME, description = "Lists VM stats", responseObject = VmMetricsStatsResponse.class,
+@APICommand(name = "listVirtualMachinesUsageHistory", description = "Lists VM stats", responseObject = VmMetricsStatsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.17",
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListVMsUsageHistoryCmd extends BaseListCmd {
-    public static final String APINAME = "listVirtualMachinesUsageHistory";
-
-    @Inject
-    private MetricsService metricsService;
+public class ListVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -49,14 +41,6 @@ public class ListVMsUsageHistoryCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine (a substring match is made against the parameter value returning the data for all matching VMs).")
     private String name;
-
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date to filter VM stats."
-            + "Use format \"yyyy-MM-dd hh:mm:ss\")")
-    private Date startDate;
-
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date to filter VM stats."
-            + "Use format \"yyyy-MM-dd hh:mm:ss\")")
-    private Date endDate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -74,22 +58,9 @@ public class ListVMsUsageHistoryCmd extends BaseListCmd {
         return name;
     }
 
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

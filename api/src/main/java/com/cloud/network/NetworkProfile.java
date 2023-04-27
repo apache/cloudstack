@@ -22,8 +22,10 @@ import java.util.Date;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.log4j.Logger;
 
 public class NetworkProfile implements Network {
+    static final Logger s_logger = Logger.getLogger(NetworkProfile.class);
     private final long id;
     private final String uuid;
     private final long dataCenterId;
@@ -31,6 +33,8 @@ public class NetworkProfile implements Network {
     private final long domainId;
     private String dns1;
     private String dns2;
+    private String ip6Dns1;
+    private String ip6Dns2;
     private URI broadcastUri;
     private final State state;
     private boolean isRedundant;
@@ -98,10 +102,12 @@ public class NetworkProfile implements Network {
         externalId = network.getExternalId();
     }
 
+    @Override
     public String getDns1() {
         return dns1;
     }
 
+    @Override
     public String getDns2() {
         return dns2;
     }
@@ -112,6 +118,24 @@ public class NetworkProfile implements Network {
 
     public void setDns2(String dns2) {
         this.dns2 = dns2;
+    }
+
+    @Override
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    @Override
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
+
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
+
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
     }
 
     @Override
@@ -332,6 +356,16 @@ public class NetworkProfile implements Network {
 
     @Override
     public Date getCreated() {
+        return null;
+    }
+
+    @Override
+    public Integer getPublicMtu() {
+        return null;
+    }
+
+    @Override
+    public Integer getPrivateMtu() {
         return null;
     }
 

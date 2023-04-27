@@ -1082,6 +1082,3 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
 
         wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
         self.cleanup.append(aff_grp)
-
-
-

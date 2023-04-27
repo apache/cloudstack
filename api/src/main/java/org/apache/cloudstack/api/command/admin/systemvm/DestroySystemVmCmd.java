@@ -34,12 +34,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroySystemVm", responseObject = SystemVmResponse.class, description = "Destroyes a system virtual machine.", entityType = {VirtualMachine.class},
+@APICommand(name = "destroySystemVm", responseObject = SystemVmResponse.class, description = "Destroys a system virtual machine.", entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroySystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroySystemVmCmd.class.getName());
 
-    private static final String s_name = "destroysystemvmresponse";
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
@@ -51,11 +50,6 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     public static String getResultObjectName() {

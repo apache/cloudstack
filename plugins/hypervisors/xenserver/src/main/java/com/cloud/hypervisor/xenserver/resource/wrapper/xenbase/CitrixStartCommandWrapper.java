@@ -114,7 +114,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 // TODO(Salvatore-orlando): This code should go
                 for (final NicTO nic : vmSpec.getNics()) {
                     if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vswitch) {
-                        final HashMap<String, String> args = citrixResourceBase.parseDefaultOvsRuleComamnd(BroadcastDomainType.getValue(nic.getBroadcastUri()));
+                        final HashMap<String, String> args = citrixResourceBase.parseDefaultOvsRuleCommand(BroadcastDomainType.getValue(nic.getBroadcastUri()));
                         final OvsSetTagAndFlowCommand flowCmd = new OvsSetTagAndFlowCommand(args.get("vmName"), args.get("tag"), args.get("vlans"), args.get("seqno"),
                                 Long.parseLong(args.get("vmId")));
 

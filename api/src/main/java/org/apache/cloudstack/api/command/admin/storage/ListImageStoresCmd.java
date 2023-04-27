@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 public class ListImageStoresCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListImageStoresCmd.class.getName());
 
-    private static final String s_name = "listimagestoresresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -89,11 +88,6 @@ public class ListImageStoresCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

@@ -380,4 +380,3 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
                          "List remote VPNs should not return empty response"
                          )
         return
-

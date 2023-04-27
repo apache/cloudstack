@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -33,12 +32,11 @@ import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-@APICommand(name = PatchSystemVMCmd.APINAME, description = "Attempts to live patch systemVMs - CPVM, SSVM ",
+@APICommand(name = "patchSystemVm", description = "Attempts to live patch systemVMs - CPVM, SSVM ",
         responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false, authorized = { RoleType.Admin }, since = "4.17.0")
 public class PatchSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(PatchSystemVMCmd.class.getName());
-    public static final String APINAME = "patchSystemVm";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -77,11 +75,6 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return String.format("Attempting to live patch System VM with Id: %s ", this._uuidMgr.getUuid(VirtualMachine.class, getId()));
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -39,6 +39,7 @@ public abstract class NetworkElementCommand extends Command {
     public static final String VPC_PRIVATE_GATEWAY = "vpc.gateway.private";
     public static final String FIREWALL_EGRESS_DEFAULT = "firewall.egress.default";
     public static final String NETWORK_PUB_LAST_IP = "network.public.last.ip";
+    public static final String HYPERVISOR_HOST_PRIVATE_IP = "hypervisor.private.ip";
 
     private String routerAccessIp;
 
@@ -80,7 +81,7 @@ public abstract class NetworkElementCommand extends Command {
     }
 
     public int getAnswersCount() {
-        return 1;
+        return 2;
     }
 
     public boolean isQuery() {

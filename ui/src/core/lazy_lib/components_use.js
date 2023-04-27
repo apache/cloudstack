@@ -62,7 +62,8 @@ import {
   Calendar,
   Slider,
   AutoComplete,
-  Collapse
+  Collapse,
+  Space
 } from 'ant-design-vue'
 import VueClipboard from 'vue3-clipboard'
 import VueCropper from 'vue-cropper'
@@ -125,5 +126,6 @@ export default {
     app.use(AutoComplete)
     app.use(Collapse)
     app.use(Descriptions)
+    app.use(Space)
   }
 }

@@ -16,6 +16,13 @@
 // under the License.
 
 <template>
+  <a-alert type="error" v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'hostcontrolstate' in resource && resource.hostcontrolstate !== 'Enabled'">
+    <template #message>
+      <div class="title">
+        {{ $t('message.host.controlstate') }} {{ resource.hostcontrolstate }}. {{ $t('message.host.controlstate.retry') }}
+      </div>
+    </template>
+  </a-alert>
   <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
     <template #description>
       <p v-html="ip6routes" />
@@ -51,6 +58,9 @@
           <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
+          <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
+            <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
+          </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
           </div>
@@ -69,6 +79,13 @@
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
           <div>{{ ipV6Address }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="(item === 'privatemtu' && !['L2', 'Shared'].includes(dataResource['type'])) || (item === 'publicmtu' && dataResource['type'] !== 'L2')">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
     </template>
@@ -95,9 +112,21 @@ export default {
       type: Object,
       required: true
     },
+    items: {
+      type: Object,
+      default: () => {}
+    },
     loading: {
       type: Boolean,
       default: false
+    },
+    bordered: {
+      type: Boolean,
+      default: false
+    },
+    tab: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -113,7 +142,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      return ['ip6routes']
+      return ['ip6routes', 'privatemtu', 'publicmtu']
     },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {
@@ -154,6 +183,10 @@ export default {
     }
   },
   methods: {
+    decodeUserData (userdata) {
+      const decodedData = Buffer.from(userdata, 'base64')
+      return decodedData.toString('utf-8')
+    },
     fetchProjectAdmins () {
       if (!this.dataResource.owner) {
         return false

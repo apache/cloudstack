@@ -29,19 +29,13 @@ import org.apache.cloudstack.response.HostMetricsResponse;
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = ListHostsMetricsCmd.APINAME, description = "Lists hosts metrics", responseObject = HostMetricsResponse.class,
+@APICommand(name = "listHostsMetrics", description = "Lists hosts metrics", responseObject = HostMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin})
 public class ListHostsMetricsCmd extends ListHostsCmd {
-    public static final String APINAME = "listHostsMetrics";
 
     @Inject
     private MetricsService metricsService;
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public void execute() {

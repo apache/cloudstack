@@ -38,6 +38,8 @@ public class GuestNetwork extends ConfigBase {
     private String routerIp6Gateway;
     private String routerIp6Cidr;
 
+    private Integer mtu;
+
     public GuestNetwork() {
         super(ConfigBase.GUEST_NETWORK);
     }
@@ -191,5 +193,13 @@ public class GuestNetwork extends ConfigBase {
 
     public void setRouterIp6Cidr(String routerIp6Cidr) {
         this.routerIp6Cidr = routerIp6Cidr;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
+    }
+
+    public Integer getMtu() {
+        return mtu;
     }
 }

@@ -270,31 +270,6 @@ class netscaler(object):
         return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
                                                for r in req])
 
-
-class srx(object):
-
-    def __init__(self, hostname=None, username='root', password='admin'):
-        self.hostname = hostname
-        self.username = username
-        self.password = password
-        self.networkdevicetype = 'JuniperSRXFirewall'
-        self.publicinterface = '1/1'
-        self.privateinterface = '1/1'
-        self.numretries = '2'
-        self.fwdevicededicated = 'false'
-        self.timeout = '300'
-        self.publicnetwork = 'untrusted'
-        self.privatenetwork = 'trusted'
-
-    def getUrl(self):
-        return repr(self)
-
-    def __repr__(self):
-        req = list(zip(list(self.__dict__.keys()), list(self.__dict__.values())))
-        return self.hostname + "?" + "&".join(["=".join([r[0], r[1]])
-                                               for r in req])
-
-
 class bigip(object):
 
     def __init__(self, hostname=None, username='root', password='default'):
@@ -701,13 +676,7 @@ def descSetupInAdvancedMode():
         nsprovider = provider('Netscaler')
         nsprovider.devices.append(netscaler(hostname='10.147.40.100'))
 
-        srxprovider = provider('JuniperSRX')
-        srxprovider.devices.append(srx(hostname='10.147.40.3'))
-
-        f5provider = provider('F5BigIp')
-        f5provider.devices.append(bigip(hostname='10.147.40.3'))
-
-        pn.providers.extend([vpcprovider, nsprovider, srxprovider, f5provider])
+        pn.providers.extend([vpcprovider, nsprovider])
         z.physical_networks.append(pn)
 
         '''create 10 pods'''

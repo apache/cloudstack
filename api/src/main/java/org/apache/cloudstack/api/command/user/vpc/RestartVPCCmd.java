@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RestartVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartVPCCmd.class.getName());
-    private static final String s_name = "restartvpcresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -81,11 +80,6 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public long getEntityOwnerId() {
         final Vpc vpc = _entityMgr.findById(Vpc.class, getId());

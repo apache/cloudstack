@@ -22,17 +22,19 @@ package org.apache.cloudstack.engine.provisioning.test;
 import java.util.HashMap;
 import java.util.UUID;
 
-import javax.inject.Inject;
-
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceManager;
+import org.apache.cloudstack.engine.service.api.ProvisioningServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
@@ -51,46 +53,49 @@ import org.apache.cloudstack.engine.service.api.ProvisioningService;
 
 import com.cloud.dc.DataCenter.NetworkType;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/resource/provisioningContext.xml")
+import static org.mockito.ArgumentMatchers.any;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ProvisioningTest extends TestCase {
 
-    @Inject
-    ProvisioningService service;
+    @Spy
+    @InjectMocks
+    ProvisioningService service = new ProvisioningServiceImpl();
 
-    @Inject
+    @Mock
+    DataCenterResourceManager dataCenterResourceManager;
+
+    @Mock
     EngineDataCenterDao dcDao;
 
-    @Inject
+    @Mock
     EngineHostPodDao _podDao;
 
-    @Inject
+    @Mock
     EngineClusterDao _clusterDao;
 
-    @Inject
+    @Mock
     EngineHostDao _hostDao;
+
+    @Mock
+    EngineDataCenterVO dataCenterVO;
+
+    @Mock
+    EngineHostPodVO podVO;
+
+    @Mock
+    EngineClusterVO clusterVO;
+
+    @Mock
+    EngineHostVO hostVO;
 
     @Override
     @Before
     public void setUp() {
-        EngineDataCenterVO dc =
-            new EngineDataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null,
-                true, true, null, null);
-        Mockito.when(dcDao.findByUuid(Matchers.anyString())).thenReturn(dc);
-        Mockito.when(dcDao.persist((EngineDataCenterVO)Matchers.anyObject())).thenReturn(dc);
-
-        EngineHostPodVO pod = new EngineHostPodVO("lab", 123, "10.0.0.1", "10.0.0.1", 24, "test");
-        Mockito.when(_podDao.findByUuid(Matchers.anyString())).thenReturn(pod);
-        Mockito.when(_podDao.persist((EngineHostPodVO)Matchers.anyObject())).thenReturn(pod);
-
-        EngineClusterVO cluster = new EngineClusterVO();
-        Mockito.when(_clusterDao.findByUuid(Matchers.anyString())).thenReturn(cluster);
-        Mockito.when(_clusterDao.persist((EngineClusterVO)Matchers.anyObject())).thenReturn(cluster);
-
-        EngineHostVO host = new EngineHostVO("68765876598");
-        Mockito.when(_hostDao.findByUuid(Matchers.anyString())).thenReturn(host);
-        Mockito.when(_hostDao.persist((EngineHostVO)Matchers.anyObject())).thenReturn(host);
-
+        Mockito.when(dataCenterResourceManager.loadDataCenter(any())).thenReturn(dataCenterVO);
+        Mockito.when(dataCenterResourceManager.loadPod(any())).thenReturn(podVO);
+        Mockito.when(dataCenterResourceManager.loadCluster(any())).thenReturn(clusterVO);
+        Mockito.when(dataCenterResourceManager.loadHost(any())).thenReturn(hostVO);
     }
 
     private void registerAndEnableZone() {

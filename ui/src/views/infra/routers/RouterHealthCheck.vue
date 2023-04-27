@@ -33,8 +33,10 @@
         :pagination="false"
         :rowKey="record => record.checkname"
         size="large">
-        <template #status="{record}">
-          <status class="status" :text="record.success === true ? 'True' : 'False'" displayText />
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'status'">
+            <status class="status" :text="record.success === true ? 'True' : 'False'" displayText />
+          </template>
         </template>
       </a-table>
 
@@ -110,8 +112,8 @@ export default {
           dataIndex: 'checktype'
         },
         {
-          title: this.$t('label.router.health.check.success'),
-          slots: { customRender: 'status' }
+          key: 'status',
+          title: this.$t('label.router.health.check.success')
         },
         {
           title: this.$t('label.router.health.check.last.updated'),

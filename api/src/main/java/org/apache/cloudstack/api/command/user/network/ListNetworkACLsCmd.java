@@ -38,7 +38,6 @@ import com.cloud.utils.Pair;
 public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
 
-    private static final String s_name = "listnetworkaclsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -104,11 +103,6 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

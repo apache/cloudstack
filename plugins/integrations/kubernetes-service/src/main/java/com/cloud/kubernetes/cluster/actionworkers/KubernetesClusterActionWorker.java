@@ -37,6 +37,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.projects.ProjectService;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
@@ -137,6 +138,8 @@ public class KubernetesClusterActionWorker {
     protected VirtualMachineManager itMgr;
     @Inject
     protected LaunchPermissionDao launchPermissionDao;
+    @Inject
+    public ProjectService projectService;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -469,13 +472,17 @@ public class KubernetesClusterActionWorker {
     protected boolean createCloudStackSecret(String[] keys) {
         File pkFile = getManagementServerSshPublicKeyFile();
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
-        List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
 
         try {
-            final String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
+            String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
                 scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
+            Account account = accountDao.findById(kubernetesCluster.getAccountId());
+            if (account != null && account.getType() == Account.Type.PROJECT) {
+                String projectId = projectService.findByProjectAccountId(account.getId()).getUuid();
+                command = String.format("%s -p '%s'", command, projectId);
+            }
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                 pkFile, null, command, 10000, 10000, 60000);
             return result.first();

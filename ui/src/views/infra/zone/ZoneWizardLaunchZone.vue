@@ -161,6 +161,9 @@ export default {
     sgEnabled () {
       return this.prefillContent?.securityGroupsEnabled || false
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
     havingNetscaler () {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
@@ -175,6 +178,14 @@ export default {
     },
     selectedBaremetalProviders () {
       return this.prefillContent?.networkOfferingSelected?.selectedBaremetalProviders || []
+    },
+    physicalNetworks () {
+      const tungstenNetworks = this.prefillContent.physicalNetworks.filter(network => network.isolationMethod === 'TF')
+      if (tungstenNetworks && tungstenNetworks.length > 0) {
+        return tungstenNetworks
+      }
+
+      return this.prefillContent.physicalNetworks
     }
   },
   mounted () {
@@ -189,7 +200,8 @@ export default {
         this.stepData.tasks = []
         this.stepData.stepMove = this.stepData.stepMove.filter(item => item.indexOf('createStorageNetworkIpRange') === -1)
       }
-      this.handleSubmit()
+      console.log('step-data', this.stepData)
+      // this.handleSubmit()
     }
   },
   methods: {
@@ -248,7 +260,7 @@ export default {
             if (trafficLabel.length > 0) {
               trafficLabel += ','
             }
-            trafficLabel += trafficConfig.vlanId
+            trafficLabel += trafficConfig.vlanId || ''
           }
           if ('vSwitchType' in trafficConfig) {
             if (trafficLabel.length > 0) {
@@ -333,6 +345,7 @@ export default {
       params.internaldns1 = this.prefillContent?.internalDns1 || null
       params.internaldns2 = this.prefillContent?.internalDns2 || null
       params.domain = this.prefillContent?.networkDomain || null
+      params.isedge = this.prefillContent?.zoneSuperType === 'Edge' || false
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {
@@ -461,6 +474,12 @@ export default {
               this.stepData.physicalNetworkReturned = physicalNetworkReturned
               this.stepData.physicalNetworkItem['createPhysicalNetwork' + index] = physicalNetworkReturned
               this.stepData.stepMove.push('createPhysicalNetwork' + index)
+
+              if (physicalNetwork.isolationMethod === 'TF' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public') > -1) {
+                this.stepData.isTungstenZone = true
+                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
             }
@@ -617,11 +636,11 @@ export default {
 
           try {
             // Advanced SG-disabled zone
-            if (!this.sgEnabled) {
+            if (!this.sgEnabled && !this.isEdgeZone) {
               // ***** VPC Virtual Router ***** (begin) *****
               await this.configVpcVirtualRouter(physicalNetwork)
               // ***** VPC Virtual Router ***** (end) *****
-            } else {
+            } else if (this.sgEnabled && !this.isEdgeZone) {
               this.stepData.physicalNetworkReturned = physicalNetwork
               await this.stepEnableSecurityGroupProvider()
             }
@@ -643,7 +662,7 @@ export default {
       }
     },
     async configOvs (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
+      if (this.isEdgeZone || this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
         return
       }
 
@@ -663,7 +682,7 @@ export default {
       this.stepData.stepMove.push('configOvs' + physicalNetwork.id)
     },
     async configInternalLBVM (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
+      if (this.isEdgeZone || this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
         return
       }
 
@@ -816,7 +835,7 @@ export default {
 
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
-      params.name = this.prefillContent?.podName || null
+      params.name = this.prefillContent?.podName || this.stepData.zoneReturned.type === 'Edge' ? 'Pod-' + this.stepData.zoneReturned.name : null
       params.gateway = this.prefillContent?.podReservedGateway || null
       params.netmask = this.prefillContent?.podReservedNetmask || null
       params.startIp = this.prefillContent?.podReservedStartIp || null
@@ -869,7 +888,7 @@ export default {
       if (
         (this.isBasicZone &&
           (this.havingSG && this.havingEIP && this.havingELB)) ||
-        (this.isAdvancedZone && !this.sgEnabled)) {
+        (this.isAdvancedZone && !this.sgEnabled && !this.isEdgeZone)) {
         this.setStepStatus(STATUS_FINISH)
         this.currentStep++
         this.addStep('message.configuring.public.traffic', 'publicTraffic')
@@ -938,9 +957,17 @@ export default {
           return
         }
 
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenFabricPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else if (this.isAdvancedZone && this.sgEnabled) {
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenFabricPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else {
         if (this.prefillContent.physicalNetworks) {
           const storageExists = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
@@ -950,6 +977,56 @@ export default {
             await this.stepConfigureGuestTraffic()
           }
         }
+      }
+    },
+    async stepCreateTungstenFabricPublicNetwork () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.create.tungsten.public.network', 'tungsten')
+      if (this.stepData.stepMove.includes('tungsten')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('createTungstenFabricProvider')) {
+          const providerParams = {}
+          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname || ''
+          providerParams.name = this.prefillContent?.tungstenName || ''
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort || ''
+          providerParams.tungstengateway = this.prefillContent?.tungstenGateway || ''
+          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter || ''
+          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort || ''
+          await this.createTungstenFabricProvider(providerParams)
+          this.stepData.stepMove.push('createTungstenFabricProvider')
+        }
+        if (!this.stepData.stepMove.includes('configTungstenFabricService')) {
+          const configParams = {}
+          configParams.zoneid = this.stepData.zoneReturned.id
+          configParams.physicalnetworkid = this.stepData.tungstenPhysicalNetworkId
+          await this.configTungstenFabricService(configParams)
+          this.stepData.stepMove.push('configTungstenFabricService')
+        }
+        if (!this.stepData.stepMove.includes('createTungstenFabricManagementNetwork')) {
+          const networkParams = {}
+          networkParams.podId = this.stepData.podReturned.id
+          await this.createTungstenFabricManagementNetwork(networkParams)
+          this.stepData.stepMove.push('createTungstenFabricManagementNetwork')
+        }
+        if (!this.sgEnabled) {
+          if (!this.stepData.stepMove.includes('createTungstenFabricPublicNetwork')) {
+            const publicParams = {}
+            publicParams.zoneId = this.stepData.zoneReturned.id
+            await this.createTungstenFabricPublicNetwork(publicParams)
+            this.stepData.stepMove.push('createTungstenFabricPublicNetwork')
+          }
+        }
+        this.stepData.stepMove.push('tungsten')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
       }
     },
     async stepConfigureStorageTraffic () {
@@ -1141,7 +1218,7 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      let clusterName = this.prefillContent.clusterName
+      let clusterName = this.prefillContent.clusterName || this.stepData.zoneReturned.type === 'Edge' ? 'Cluster-' + this.stepData.zoneReturned.name : null
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
@@ -1277,6 +1354,7 @@ export default {
       params.clusterid = this.stepData.clusterReturned.id
       params.name = this.prefillContent?.primaryStorageName || null
       params.scope = this.prefillContent?.primaryStorageScope || null
+      params.provider = this.prefillContent.provider
 
       if (params.scope === 'zone') {
         const hypervisor = this.prefillContent.hypervisor
@@ -1325,6 +1403,7 @@ export default {
         }
         url = this.ocfs2URL(server, path)
       } else if (protocol === 'SharedMountPoint') {
+        server = 'localhost'
         let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
@@ -1358,7 +1437,7 @@ export default {
         if (protocol === 'datastorecluster') {
           url = this.datastoreclusterURL('dummy', path)
         }
-      } else {
+      } else if (protocol === 'iscsi') {
         let iqn = this.prefillContent?.primaryStorageTargetIQN || ''
         if (iqn.substring(0, 1) !== '/') {
           iqn = '/' + iqn
@@ -1368,6 +1447,27 @@ export default {
       }
 
       params.url = url
+      if (this.prefillContent.provider !== 'DefaultPrimary' && this.prefillContent.provider !== 'PowerFlex') {
+        if (this.prefillContent.managed) {
+          params.managed = true
+        } else {
+          params.managed = false
+        }
+        if (this.prefillContent.capacityBytes && this.prefillContent.capacityBytes.length > 0) {
+          params.capacityBytes = this.prefillContent.capacityBytes.split(',').join('')
+        }
+        if (this.prefillContent.capacityIops && this.prefillContent.capacityIops.length > 0) {
+          params.capacityIops = this.prefillContent.capacityIops.split(',').join('')
+        }
+        if (this.prefillContent.url && this.prefillContent.url.length > 0) {
+          params.url = this.prefillContent.url
+        }
+      }
+      if (this.prefillContent.provider === 'PowerFlex') {
+        params.url = this.powerflexURL(this.prefillContent.powerflexGateway, this.prefillContent.powerflexGatewayUsername,
+          this.prefillContent.powerflexGatewayPassword, this.prefillContent.powerflexStoragePool)
+      }
+
       params.tags = this.prefillContent?.primaryStorageTags || ''
 
       try {
@@ -1478,7 +1578,7 @@ export default {
         if (this.prefillContent.secondaryStoragePolicy &&
           this.prefillContent.secondaryStoragePolicy.value.length > 0) {
           params['details[' + index.toString() + '].key'] = 'storagepolicy'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy
           index++
         }
       }
@@ -2058,6 +2158,46 @@ export default {
         })
       })
     },
+    createTungstenFabricProvider (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricProvider', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    configTungstenFabricService (args) {
+      return new Promise((resolve, reject) => {
+        api('configTungstenFabricService', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenFabricManagementNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricManagementNetwork', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenFabricPublicNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricPublicNetwork', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
     nfsURL (server, path) {
       let url = null
       if (path.substring(0, 1) !== '/') {
@@ -2169,6 +2309,11 @@ export default {
       } else {
         url = server + iqn + '/' + lun
       }
+      return url
+    },
+    powerflexURL (gateway, username, password, pool) {
+      var url = 'powerflex://' + encodeURIComponent(username) + ':' + encodeURIComponent(password) + '@' +
+       gateway + '/' + encodeURIComponent(pool)
       return url
     }
   }

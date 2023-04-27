@@ -25,7 +25,7 @@ public class UdpAclRule extends AclRule {
     private int lastPort;
 
     public UdpAclRule() {
-        // Empty contructor for (de)serialization
+        // Empty constructor for (de)serialization
     }
 
     public UdpAclRule(String cidr, boolean allowed, int firstPort, int lastPort) {

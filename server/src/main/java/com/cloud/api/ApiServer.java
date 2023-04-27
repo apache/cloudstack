@@ -160,6 +160,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -186,6 +187,8 @@ import com.google.gson.reflect.TypeToken;
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
+
+    private static final String SANITIZATION_REGEX = "[\n\r]";
 
     private static boolean encodeApiResponse = false;
 
@@ -531,7 +534,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String key = (String)keysIter.next();
             final String[] value = (String[])params.get(key);
             // fail if parameter value contains ASCII control (non-printable) characters
-            if (value[0] != null) {
+            if (value[0] != null && !ApiConstants.ACTIVATION_RULE.equals(key)) {
                 final Pattern pattern = Pattern.compile(CONTROL_CHARACTERS);
                 final Matcher matcher = pattern.matcher(value[0]);
                 if (matcher.find()) {
@@ -918,7 +921,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request.");
                     return false;
                 }
 
@@ -931,7 +934,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                 final Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                    apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
+                    s_logger.debug(String.format("Request expired -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
                     return false;
                 }
             }
@@ -978,7 +983,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
 
             if (!equalSig) {
-                s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                s_logger.info(String.format("User signature [%s] is not equaled to computed signature [%s].", signature, computedSignature));
             } else {
                 CallContext.register(user, account);
             }
@@ -1069,6 +1075,18 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.SESSIONKEY.equalsIgnoreCase(attrName)) {
                     response.setSessionKey(attrObj.toString());
                 }
+                if (ApiConstants.IS_2FA_ENABLED.equalsIgnoreCase(attrName)) {
+                    response.set2FAenabled(attrObj.toString());
+                }
+                if (ApiConstants.IS_2FA_VERIFIED.equalsIgnoreCase(attrName)) {
+                    response.set2FAverfied(attrObj.toString());
+                }
+                if (ApiConstants.PROVIDER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setProviderFor2FA(attrObj.toString());
+                }
+                if (ApiConstants.ISSUER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setIssuerFor2FA(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1131,6 +1149,20 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezone", timezone);
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
+
+            boolean is2faEnabled = false;
+            if (userAcct.isUser2faEnabled() || (Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())))) {
+                is2faEnabled = true;
+            }
+            String issuerFor2FA = AccountManagerImpl.userTwoFactorAuthenticationIssuer.valueIn(userAcct.getDomainId());
+            session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(is2faEnabled));
+            if (!is2faEnabled) {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
+            } else {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
+            }
+            session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
+            session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back

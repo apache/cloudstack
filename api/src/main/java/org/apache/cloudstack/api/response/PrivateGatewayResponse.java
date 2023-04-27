@@ -94,7 +94,7 @@ public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork im
     private String state;
 
     @SerializedName(ApiConstants.SOURCE_NAT_SUPPORTED)
-    @Param(description = "Souce Nat enable status")
+    @Param(description = "Source Nat enable status")
     private Boolean sourceNat;
 
     @SerializedName(ApiConstants.ACL_ID)

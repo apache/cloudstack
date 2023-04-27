@@ -24,6 +24,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModelImpl;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
@@ -139,9 +140,13 @@ public class AssignLoadBalancerTest {
         LoadBalancerDao lbdao = Mockito.mock(LoadBalancerDao.class);
         _lbMgr._lbDao =  lbdao;
 
-        when(lbdao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
+        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
+        _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
 
-        _lbMgr.assignToLoadBalancer(1L, null, emptyMap);
+        when(lbdao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
+        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+
+        _lbMgr.assignToLoadBalancer(1L, null, emptyMap, false);
 
     }
 
@@ -156,8 +161,8 @@ public class AssignLoadBalancerTest {
         List<Long> vmIds = new ArrayList<Long>();
         vmIds.add(2L);
 
-        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
-        UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
+        UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", 1L, null, "test");
 
         LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
         LoadBalancerVMMapDao lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
@@ -165,6 +170,7 @@ public class AssignLoadBalancerTest {
         AccountDao accountDao = Mockito.mock(AccountDao.class);
         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
         AccountManager accountMgr = Mockito.mock(AccountManager.class);
+        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
 
         _lbMgr._lbDao = lbDao;
         _lbMgr._lb2VmMapDao = lb2VmMapDao;
@@ -175,14 +181,16 @@ public class AssignLoadBalancerTest {
         _lbvmMapList = new ArrayList<>();
         _lbMgr._rulesMgr = _rulesMgr;
         _lbMgr._networkModel = _networkModel;
+        _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
 
         when(lbDao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
         when(userVmDao.findById(anyLong())).thenReturn(vm);
         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
         Mockito.doNothing().when(accountMgr).checkAccess(any(Account.class), any(SecurityChecker.AccessType.class), any(Boolean.class), any(Network.class));
+        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, false);
     }
 
 
@@ -199,8 +207,8 @@ public class AssignLoadBalancerTest {
         List<Long> vmIds = new ArrayList<Long>();
         vmIds.add(2L);
 
-        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
-        UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
+        UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", 1L, null, "test");
 
         LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
         LoadBalancerVMMapDao lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
@@ -209,6 +217,7 @@ public class AssignLoadBalancerTest {
         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
         AccountManager accountMgr = Mockito.mock(AccountManager.class);
         NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
+        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
 
         _lbMgr._lbDao = lbDao;
         _lbMgr._lb2VmMapDao = lb2VmMapDao;
@@ -220,13 +229,15 @@ public class AssignLoadBalancerTest {
         _lbvmMapList = new ArrayList<>();
         _lbMgr._rulesMgr = _rulesMgr;
         _lbMgr._networkModel = _networkModel;
+        _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
 
         when(lbDao.findById(anyLong())).thenReturn(lbVO);
         when(userVmDao.findById(anyLong())).thenReturn(vm);
         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
+        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, false);
     }
 
 
@@ -244,8 +255,8 @@ public class AssignLoadBalancerTest {
         List<Long> vmIds = new ArrayList<Long>();
         vmIds.add(2L);
 
-        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
-        UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
+        UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", 1L, null, "test");
 
         LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
         LoadBalancerVMMapDao lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
@@ -255,6 +266,7 @@ public class AssignLoadBalancerTest {
         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
         NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
         LoadBalancerVMMapVO lbVmMapVO = new LoadBalancerVMMapVO(1L, 1L, "10.1.1.175", false);
+        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
 
         _lbMgr._lbDao = lbDao;
         _lbMgr._lb2VmMapDao = lb2VmMapDao;
@@ -267,13 +279,15 @@ public class AssignLoadBalancerTest {
         _lbvmMapList.add(lbVmMapVO);
         _lbMgr._rulesMgr = _rulesMgr;
         _lbMgr._networkModel = _networkModel;
+        _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
 
         when(lbDao.findById(anyLong())).thenReturn(lbVO);
         when(userVmDao.findById(anyLong())).thenReturn(vm);
         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
+        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, false);
     }
 
     @After

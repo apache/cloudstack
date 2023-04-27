@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -289,6 +290,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private static final String FILESYSTEM_WRITABLE_TEST = "filesystem.writable.test";
     private static final String READONLY_FILESYSTEM_ERROR = "Read-only file system";
     private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
+    /**
+     * Used regex to ensure that the value that will be passed to the VR is an acceptable value
+     */
+    public static final String LOGROTATE_REGEX = "((?i)(hourly)|(daily)|(monthly))|(\\*|\\d{2})\\:(\\*|\\d{2})\\:(\\*|\\d{2})";
 
     @Inject private EntityManager _entityMgr;
     @Inject private DataCenterDao _dcDao;
@@ -1857,10 +1862,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             s_logger.debug("Found " + routers.size() + " running routers. ");
             for (final DomainRouterVO router : routers) {
-                final String serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
+                final Boolean serviceMonitoringFlag = SetServiceMonitor.valueIn(router.getDataCenterId());
                 // Skip the routers in VPC network or skip the routers where
                 // Monitor service is not enabled in the corresponding Zone
-                if (!Boolean.parseBoolean(serviceMonitoringFlag)) {
+                if (serviceMonitoringFlag == null || !serviceMonitoringFlag) {
                     continue;
                 }
                 String controlIP = _routerControlHelper.getRouterControlIp(router.getId());
@@ -1984,8 +1989,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     buf.append(" gateway=").append(nic.getIPv4Gateway());
                 }
                 if (ipv6) {
-                    defaultIp6Dns1 = nic.getIPv6Dns1() != null? nic.getIPv6Dns1() : dc.getIp6Dns1();
-                    defaultIp6Dns2 = nic.getIPv6Dns2() != null? nic.getIPv6Dns2() : dc.getIp6Dns2();
+                    defaultIp6Dns1 = nic.getIPv6Dns1();
+                    defaultIp6Dns2 = nic.getIPv6Dns2();
                     buf.append(" ip6gateway=").append(nic.getIPv6Gateway());
                 }
                 defaultDns1 = nic.getIPv4Dns1();
@@ -2028,12 +2033,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 }
             } else if (nic.getTrafficType() == TrafficType.Guest) {
+                s_logger.info("Guest IP : " + nic.getIPv4Address());
                 dnsProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
                 dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
+                buf.append(" privateMtu=").append(nic.getMtu());
                 // build bootloader parameter for the guest
                 buf.append(createGuestBootLoadArgs(nic, defaultDns1, defaultDns2, router));
             } else if (nic.getTrafficType() == TrafficType.Public) {
+                s_logger.info("Public IP : " + nic.getIPv4Address());
                 publicNetwork = true;
+                buf.append(" publicMtu=").append(nic.getMtu());
             }
         }
 
@@ -2126,11 +2135,34 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
+        String routerLogrotateFrequency = RouterLogrotateFrequency.valueIn(router.getDataCenterId());
+        if (!checkLogrotateTimerPattern(routerLogrotateFrequency)) {
+            s_logger.debug(String.format("Setting [%s] with value [%s] do not match with the used regex [%s], or any acceptable value ('hourly', 'daily', 'monthly'); " +
+                            "therefore, we will use the default value [%s] to configure the logrotate service on the virtual router.",RouterLogrotateFrequency.key(),
+                    routerLogrotateFrequency, LOGROTATE_REGEX, RouterLogrotateFrequency.defaultValue()));
+            routerLogrotateFrequency = RouterLogrotateFrequency.defaultValue();
+        }
+        s_logger.debug(String.format("The setting [%s] with value [%s] for the zone with UUID [%s], will be used to configure the logrotate service frequency" +
+                " on the virtual router.", RouterLogrotateFrequency.key(), routerLogrotateFrequency, dc.getUuid()));
+        buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
 
         return true;
+    }
+
+    /**
+     * @param routerLogrotateFrequency The string to be checked if matches with any acceptable values.
+     * Checks if the value in the global configuration is an acceptable value to be informed to the Virtual Router.
+     * @return true if the passed value match with any acceptable value based on the regex ((?i)(hourly)|(daily)|(monthly))|(\*|\d{2})\:(\*|\d{2})\:(\*|\d{2})
+     */
+    protected boolean checkLogrotateTimerPattern(String routerLogrotateFrequency) {
+        if (Pattern.matches(LOGROTATE_REGEX, routerLogrotateFrequency)) {
+            return true;
+        }
+        return false;
     }
 
     protected StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
@@ -2276,6 +2308,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return true;
     }
 
+    private Provider getVrProvider(DomainRouterVO router) {
+        final VirtualRouterProvider vrProvider = _vrProviderDao.findById(router.getElementId());
+        if (vrProvider == null) {
+            throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
+        }
+        final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
+        if (provider == null) {
+            throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
+        }
+        return provider;
+    }
+
     @Override
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         final DomainRouterVO router = _routerDao.findById(profile.getId());
@@ -2295,14 +2339,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             reprogramGuestNtwks = false;
         }
 
-        final VirtualRouterProvider vrProvider = _vrProviderDao.findById(router.getElementId());
-        if (vrProvider == null) {
-            throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
-        }
-        final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
-        if (provider == null) {
-            throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
-        }
+        final Provider provider = getVrProvider(router);
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (final Long guestNetworkId : routerGuestNtwkIds) {
@@ -3283,6 +3320,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
+                RouterTemplateKvm,
+                RouterTemplateVmware,
+                RouterTemplateHyperV,
+                RouterTemplateLxc,
+                RouterTemplateOvm3,
                 UseExternalDnsServers,
                 RouterVersionCheckEnabled,
                 SetServiceMonitor,
@@ -3298,7 +3340,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
-                ExposeDnsAndBootpServer
+                ExposeDnsAndBootpServer,
+                RouterLogrotateFrequency
         };
     }
 

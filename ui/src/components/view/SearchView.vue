@@ -70,7 +70,7 @@
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
                       :value="opt.id"
-                      :label="$t(opt.name)">
+                      :label="$t(opt.path || opt.name)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -449,7 +449,7 @@ export default {
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
-        api('listZones', { listAll: true, showicon: true }).then(json => {
+        api('listZones', { showicon: true }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -475,7 +475,7 @@ export default {
     },
     fetchPods () {
       return new Promise((resolve, reject) => {
-        api('listPods', { listAll: true }).then(json => {
+        api('listPods').then(json => {
           const pods = json.listpodsresponse.pod
           resolve({
             type: 'podid',
@@ -488,7 +488,7 @@ export default {
     },
     fetchClusters () {
       return new Promise((resolve, reject) => {
-        api('listClusters', { listAll: true }).then(json => {
+        api('listClusters').then(json => {
           const clusters = json.listclustersresponse.cluster
           resolve({
             type: 'clusterid',
@@ -618,6 +618,7 @@ export default {
     },
     onClear () {
       this.formRef.value.resetFields()
+      this.form = reactive({})
       this.isFiltered = false
       this.inputKey = null
       this.inputValue = null
@@ -630,7 +631,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.isFiltered = true
-        console.log(values)
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {

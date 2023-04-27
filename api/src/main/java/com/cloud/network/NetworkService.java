@@ -34,12 +34,14 @@ import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -58,6 +60,23 @@ import com.cloud.vm.NicSecondaryIp;
  *
  */
 public interface NetworkService {
+
+    public static final Integer DEFAULT_MTU = 1500;
+    public static final Integer MINIMUM_MTU = 68;
+    public static final String MESSAGE_ASSIGN_NIC_SECONDARY_IP_EVENT = "Message.AssignNicSecondaryIp.Event";
+    public static final String MESSAGE_RELEASE_NIC_SECONDARY_IP_EVENT = "Message.ReleaseNicSecondaryIp.Event";
+
+    public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
+            "vr.public.interface.max.mtu", "1500", "The maximum value the MTU can have on the VR's public interfaces",
+            true, ConfigKey.Scope.Zone);
+
+    public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
+            "vr.private.interface.max.mtu", "1500", "The maximum value the MTU can have on the VR's private interfaces",
+            true, ConfigKey.Scope.Zone);
+
+    public static final ConfigKey<Boolean> AllowUsersToSpecifyVRMtu = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
+            true, ConfigKey.Scope.Zone);
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
@@ -225,4 +244,6 @@ public interface NetworkService {
     boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd);
 
     boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd);
+
+    void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) throws InvalidParameterValueException;
 }
