@@ -401,7 +401,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support userdata that is required for Kubernetes cluster", network.getUuid()));
         }
-        if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
+        if (network.getVpcId() == null && !networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support firewall that is required for Kubernetes cluster", network.getUuid()));
         }
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.PortForwarding)) {
