@@ -414,6 +414,7 @@ class VmwareVmImplementer {
             String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
             if (parentVersion != null) {
                 guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), parentVersion);
+                LOGGER.debug(String.format("Found guest os mappings for guest os \"%s\" on VMware %s: %s", guestOS.getDisplayName(), parentVersion, guestOsMapping));
             }
         }
         return guestOsMapping;

@@ -2626,7 +2626,23 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             //
             // Power-on VM
             //
-            if (!vmMo.powerOn()) {
+            int retry = 20;
+            boolean started = false;
+            while (retry-- > 0) {
+                try {
+                    started = vmMo.powerOn();
+                } catch (Exception e) {
+                    s_logger.info(String.format("Got exception while starting vm %s on host %s", vmInternalCSName, vmNameOnVcenter), e);
+                    if (e.getMessage() != null && e.getMessage().contains("File system specific implementation of Ioctl[file] failed")) {
+                        s_logger.debug(String.format("VM %s is not started successfully on host %s. Retrying", vmInternalCSName, vmNameOnVcenter));
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+            if (started) {
+                s_logger.debug(String.format("VM %s has been started successfully on host %s.", vmInternalCSName, vmNameOnVcenter));
+            } else {
                 throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
             }
 
