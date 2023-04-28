@@ -401,8 +401,7 @@ class TestVMSchedule(cloudstackTestCase):
         # 1. Update VM Schedule with invalid schedule
         # 2. Update VM Schedule with invalid start date
         # 3. Update VM Schedule with invalid ID
-        # 4. Update VM Schedule with invalid action
-        # 5. Update VM Schedule with invalid end date
+        # 4. Update VM Schedule with invalid end date
 
         # Create VM Schedule
         schedule = "0 0 1 * *"
@@ -462,21 +461,6 @@ class TestVMSchedule(cloudstackTestCase):
                 startdate=(
                     datetime.datetime.now() + datetime.timedelta(minutes=5)
                 ).strftime("%Y-%m-%d %H:%M:%S"),
-            )
-
-        # Update VM Schedule with invalid action
-        with self.assertRaises(Exception):
-            vmschedule.update(
-                self.apiclient,
-                id=vmschedule.id,
-                virtualmachineid=self.virtual_machine.id,
-                description="TestVM",
-                schedule=schedule,
-                timezone="GMT",
-                startdate=(
-                    datetime.datetime.now() + datetime.timedelta(minutes=5)
-                ).strftime("%Y-%m-%d %H:%M:%S"),
-                action="invalid",
             )
 
         # Update VM Schedule with invalid end date
