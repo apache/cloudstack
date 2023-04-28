@@ -31,7 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
-import org.apache.cloudstack.storage.object.ObjectStoreProviderManager;
+import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 

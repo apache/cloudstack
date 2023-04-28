@@ -16,23 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.object.datastore;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.object.ObjectStoreDriver;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 
 import java.util.List;
 
-public interface ObjectStoreDao extends GenericDao<ObjectStoreVO, Long> {
-    ObjectStoreVO findByName(String name);
+public interface ObjectStoreProviderManager {
+    ObjectStoreEntity getObjectStore(String uuid);
 
-    List<ObjectStoreVO> findByProvider(String provider);
+    List<DataStore> listObjectStores();
 
-    List<ObjectStoreVO> listObjectStores();
+    List<DataStore> listObjectStoreByProvider(String provider);
 
-    List<ObjectStoreVO> searchByIds(Long[] osIds);
+    ObjectStoreEntity getObjectStore(long objectStoreId);
 
-    ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store);
+    boolean registerDriver(String uuid, ObjectStoreDriver driver);
 
-    ObjectStoreResponse setObjectStoreResponse(ObjectStoreResponse storeData, ObjectStoreVO store);
 }

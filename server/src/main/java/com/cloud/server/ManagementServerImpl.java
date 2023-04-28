@@ -218,6 +218,7 @@ import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
@@ -3912,6 +3913,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         //object store APIs
         cmdList.add(AddObjectStoragePoolCmd.class);
+        cmdList.add(ListObjectStoragePoolsCmd.class);
         return cmdList;
     }
 

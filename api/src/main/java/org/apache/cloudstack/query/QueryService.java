@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
@@ -68,6 +69,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -190,4 +192,6 @@ public interface QueryService {
     ListResponse<SnapshotResponse> listSnapshots(ListSnapshotsCmd cmd);
 
     SnapshotResponse listSnapshot(CopySnapshotCmd cmd);
+
+    ListResponse<ObjectStoreResponse> searchForObjectStores(ListObjectStoragePoolsCmd listObjectStoragePoolsCmd);
 }

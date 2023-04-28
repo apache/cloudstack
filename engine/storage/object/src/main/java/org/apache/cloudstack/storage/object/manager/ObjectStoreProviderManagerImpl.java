@@ -27,7 +27,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
-import org.apache.cloudstack.storage.object.ObjectStoreProviderManager;
+import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.ObjectStoreImpl;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;

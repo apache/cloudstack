@@ -348,6 +348,9 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -481,6 +484,8 @@ public class ApiDBUtils {
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
+
+    static ObjectStoreDao s_objectStoreDao;
 
     @Inject
     private ManagementServer ms;
@@ -739,6 +744,7 @@ public class ApiDBUtils {
     private ResourceManagerUtil resourceManagerUtil;
     @Inject
     SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
+    private ObjectStoreDao objectStoreDao;
 
     @PostConstruct
     void init() {
@@ -871,6 +877,7 @@ public class ApiDBUtils {
         s_backupOfferingDao = backupOfferingDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
+        s_objectStoreDao = objectStoreDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2207,5 +2214,13 @@ public class ApiDBUtils {
 
     public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store) {
+        return s_objectStoreDao.newObjectStoreResponse(store);
+    }
+
+    public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
+        return s_objectStoreDao.setObjectStoreResponse(storeData, store);
     }
 }

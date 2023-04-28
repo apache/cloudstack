@@ -83,6 +83,7 @@ import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResult
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
@@ -126,6 +127,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -156,6 +158,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -542,6 +546,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private SnapshotJoinDao snapshotJoinDao;
+
+    private ObjectStoreDao objectStoreDao;
 
     @Inject
     EntityManager entityManager;
@@ -5028,6 +5034,73 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return new Pair<>(snapshots, count);
+    }
+
+    public ListResponse<ObjectStoreResponse> searchForObjectStores(ListObjectStoragePoolsCmd cmd) {
+        Pair<List<ObjectStoreVO>, Integer> result = searchForObjectStoresInternal(cmd);
+        ListResponse<ObjectStoreResponse> response = new ListResponse<ObjectStoreResponse>();
+
+        List<ObjectStoreResponse> poolResponses = ViewResponseHelper.createObjectStoreResponse(result.first().toArray(new ObjectStoreVO[result.first().size()]));
+        response.setResponses(poolResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<ObjectStoreVO>, Integer> searchForObjectStoresInternal(ListObjectStoragePoolsCmd cmd) {
+
+        Object id = cmd.getId();
+        Object name = cmd.getStoreName();
+        String provider = cmd.getProvider();
+        String protocol = cmd.getProtocol();
+        Object keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        Filter searchFilter = new Filter(ObjectStoreVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<ObjectStoreVO> sb = objectStoreDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
+        sb.and("provider", sb.entity().getProviderName(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<ObjectStoreVO> sc = sb.create();
+        sc.setParameters("role", DataStoreRole.Object);
+
+        if (keyword != null) {
+            SearchCriteria<ObjectStoreVO> ssc = objectStoreDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("providerName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (provider != null) {
+            sc.setParameters("provider", provider);
+        }
+        if (protocol != null) {
+            sc.setParameters("protocol", protocol);
+        }
+
+        // search Store details by ids
+        Pair<List<ObjectStoreVO>, Integer> uniqueStorePair = objectStoreDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueStorePair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueStorePair;
+        }
+        List<ObjectStoreVO> uniqueStores = uniqueStorePair.first();
+        Long[] osIds = new Long[uniqueStores.size()];
+        int i = 0;
+        for (ObjectStoreVO v : uniqueStores) {
+            osIds[i++] = v.getId();
+        }
+        List<ObjectStoreVO> objectStores = objectStoreDao.searchByIds(osIds);
+        return new Pair<List<ObjectStoreVO>, Integer>(objectStores, count);
     }
 
     @Override

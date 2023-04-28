@@ -21,9 +21,13 @@ package org.apache.cloudstack.storage.datastore.db;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,10 +35,16 @@ import java.util.Map;
 public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> implements ObjectStoreDao {
     private SearchBuilder<ObjectStoreVO> nameSearch;
     private SearchBuilder<ObjectStoreVO> providerSearch;
+    @Inject
+    private ConfigurationDao _configDao;
+    private final SearchBuilder<ObjectStoreVO> osSearch;
 
-    public ObjectStoreDaoImpl() {
-        super();
+    protected ObjectStoreDaoImpl() {
+        osSearch = createSearchBuilder();
+        osSearch.and("idIN", osSearch.entity().getId(), SearchCriteria.Op.IN);
+        osSearch.done();
     }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
@@ -68,5 +78,67 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
     public List<ObjectStoreVO> listObjectStores() {
         SearchCriteria<ObjectStoreVO> sc = createSearchCriteria();
         return listBy(sc);
+    }
+
+    @Override
+    public List<ObjectStoreVO> searchByIds(Long[] osIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+        // query details by batches
+        List<ObjectStoreVO> osList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (osIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= osIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = osIds[j];
+                }
+                SearchCriteria<ObjectStoreVO> sc = osSearch.create();
+                sc.setParameters("idIN", ids);
+                List<ObjectStoreVO> stores = searchIncludingRemoved(sc, null, null, false);
+                if (stores != null) {
+                    osList.addAll(stores);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < osIds.length) {
+            int batch_size = (osIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = osIds[j];
+            }
+            SearchCriteria<ObjectStoreVO> sc = osSearch.create();
+            sc.setParameters("idIN", ids);
+            List<ObjectStoreVO> stores = searchIncludingRemoved(sc, null, null, false);
+            if (stores != null) {
+                osList.addAll(stores);
+            }
+        }
+        return osList;
+    }
+
+    @Override
+    public ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store) {
+        ObjectStoreResponse osResponse = new ObjectStoreResponse();
+        osResponse.setId(store.getUuid());
+        osResponse.setName(store.getName());
+        osResponse.setProviderName(store.getProviderName());
+        osResponse.setProtocol(store.getProtocol());
+        String url = store.getUrl();
+        osResponse.setUrl(url);
+        osResponse.setObjectName("objectstore");
+        return osResponse;
+    }
+
+    @Override
+    public ObjectStoreResponse setObjectStoreResponse(ObjectStoreResponse storeData, ObjectStoreVO store) {
+        return storeData;
     }
 }

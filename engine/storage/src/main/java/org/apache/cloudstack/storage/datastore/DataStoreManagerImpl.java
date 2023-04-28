@@ -26,7 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.storage.object.ObjectStoreProviderManager;
+import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
@@ -53,6 +53,8 @@ public class DataStoreManagerImpl implements DataStoreManager {
                 return imageDataStoreMgr.getImageStore(storeId);
             } else if (role == DataStoreRole.ImageCache) {
                 return imageDataStoreMgr.getImageStore(storeId);
+            } else if (role == DataStoreRole.Object) {
+                return objectStoreProviderMgr.getObjectStore(storeId);
             }
         } catch (CloudRuntimeException e) {
             throw e;

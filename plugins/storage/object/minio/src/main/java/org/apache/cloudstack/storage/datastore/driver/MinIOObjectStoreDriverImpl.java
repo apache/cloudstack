@@ -16,21 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.object;
+package org.apache.cloudstack.storage.datastore.driver;
 
+import com.cloud.agent.api.to.DataStoreTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
+import org.apache.log4j.Logger;
 
-import java.util.List;
+import javax.inject.Inject;
 
-public interface ObjectStoreProviderManager {
-    ObjectStoreEntity getObjectStore(String uuid);
+public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
+    private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreDriverImpl.class);
 
-    List<DataStore> listObjectStores();
+    @Inject
+    ConfigurationDao _configDao;
 
-    List<DataStore> listObjectStoreByProvider(String provider);
-
-    ObjectStoreEntity getObjectStore(long objectStoreId);
-
-    boolean registerDriver(String uuid, ObjectStoreDriver driver);
-
+    @Override
+    public DataStoreTO getStoreTO(DataStore store) {
+        return null;
+    }
 }

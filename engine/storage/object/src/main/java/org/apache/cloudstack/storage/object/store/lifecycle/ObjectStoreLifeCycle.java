@@ -16,23 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.datastore.db;
+package org.apache.cloudstack.storage.object.store.lifecycle;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 
-import java.util.List;
-
-public interface ObjectStoreDao extends GenericDao<ObjectStoreVO, Long> {
-    ObjectStoreVO findByName(String name);
-
-    List<ObjectStoreVO> findByProvider(String provider);
-
-    List<ObjectStoreVO> listObjectStores();
-
-    List<ObjectStoreVO> searchByIds(Long[] osIds);
-
-    ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store);
-
-    ObjectStoreResponse setObjectStoreResponse(ObjectStoreResponse storeData, ObjectStoreVO store);
+public interface ObjectStoreLifeCycle extends DataStoreLifeCycle {
 }

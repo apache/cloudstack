@@ -248,3 +248,14 @@ CREATE TABLE `cloud`.`object_store` (
   `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`object_store_details`;
+CREATE TABLE `cloud`.`object_store_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_object_store_details__store_id` FOREIGN KEY `fk_object_store__store_id`(`store_id`) REFERENCES `object_store`(`id`) ON DELETE CASCADE,
+  INDEX `i_object_store__name__value`(`name`(128), `value`(128))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
