@@ -574,7 +574,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 "trafficType", NetworkACLItem.TrafficType.Ingress.toString(),
                 "networkId", network.getId(),
                 "aclId", network.getNetworkACLId(),
-                "action", NetworkACLItem.Action.Allow
+                "action", NetworkACLItem.Action.Allow.toString()
         );
 
         for (Map.Entry<String, Object> entry : fieldValues.entrySet()) {

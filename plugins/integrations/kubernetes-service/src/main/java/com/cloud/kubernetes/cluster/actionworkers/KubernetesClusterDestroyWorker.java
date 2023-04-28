@@ -166,7 +166,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
     protected void deleteKubernetesClusterVpcTierRules(Network network, List<Long> removedVmIds) throws ManagementServerException {
         IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
         if (publicIp == null) {
-            throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s", network.getName()));
+            return;
         }
         removeVpcTierAclRules(network);
         try {
@@ -232,10 +232,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (address == null) {
             return;
         }
+        networkService.releaseIpAddress(address.getId());
         taggedResourceService.deleteTags(List.of(address.getUuid()),
                 ResourceTag.ResourceObjectType.PublicIpAddress,
                 Map.of(KubernetesCluster.class.getSimpleName().toLowerCase(), kubernetesCluster.getUuid()));
-        networkService.releaseIpAddress(address.getId());
     }
 
     public boolean destroy() throws CloudRuntimeException {

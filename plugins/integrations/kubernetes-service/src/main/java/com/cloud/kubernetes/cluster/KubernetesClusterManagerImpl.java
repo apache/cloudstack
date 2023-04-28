@@ -352,48 +352,48 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return  template;
     }
 
-    private boolean validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
-        if (Network.GuestType.Isolated.equals(network.getGuestType())) {
-            if (Network.State.Allocated.equals(network.getState())) { // Allocated networks won't have IP and rules
-                return true;
+    private void validateIsolatedNetwork(Network network, int clusterTotalNodeCount) {
+        if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
+            return;
+        }
+        if (Network.State.Allocated.equals(network.getState())) { // Allocated networks won't have IP and rules
+            return;
+        }
+        IpAddress sourceNatIp = getSourceNatIp(network);
+        if (sourceNatIp == null) {
+            throw new InvalidParameterValueException(String.format("Network ID: %s does not have a source NAT IP associated with it. To provision a Kubernetes Cluster, source NAT IP is required", network.getUuid()));
+        }
+        List<FirewallRuleVO> rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(sourceNatIp.getId(), FirewallRule.Purpose.Firewall);
+        for (FirewallRuleVO rule : rules) {
+            Integer startPort = rule.getSourcePortStart();
+            Integer endPort = rule.getSourcePortEnd();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Network rule : " + startPort + " " + endPort);
             }
-            IpAddress sourceNatIp = getSourceNatIp(network);
-            if (sourceNatIp == null) {
-                throw new InvalidParameterValueException(String.format("Network ID: %s does not have a source NAT IP associated with it. To provision a Kubernetes Cluster, source NAT IP is required", network.getUuid()));
+            if (startPort <= KubernetesClusterActionWorker.CLUSTER_API_PORT && KubernetesClusterActionWorker.CLUSTER_API_PORT <= endPort) {
+                throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting firewall rules to provision Kubernetes cluster for API access", network.getUuid()));
             }
-            List<FirewallRuleVO> rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(sourceNatIp.getId(), FirewallRule.Purpose.Firewall);
-            for (FirewallRuleVO rule : rules) {
-                Integer startPort = rule.getSourcePortStart();
-                Integer endPort = rule.getSourcePortEnd();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Network rule : " + startPort + " " + endPort);
-                }
-                if (startPort <= KubernetesClusterActionWorker.CLUSTER_API_PORT && KubernetesClusterActionWorker.CLUSTER_API_PORT <= endPort) {
-                    throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting firewall rules to provision Kubernetes cluster for API access", network.getUuid()));
-                }
-                if (startPort <= KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT && KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterTotalNodeCount <= endPort) {
-                    throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting firewall rules to provision Kubernetes cluster for node VM SSH access", network.getUuid()));
-                }
-            }
-            rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(sourceNatIp.getId(), FirewallRule.Purpose.PortForwarding);
-            for (FirewallRuleVO rule : rules) {
-                Integer startPort = rule.getSourcePortStart();
-                Integer endPort = rule.getSourcePortEnd();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Network rule : " + startPort + " " + endPort);
-                }
-                if (startPort <= KubernetesClusterActionWorker.CLUSTER_API_PORT && KubernetesClusterActionWorker.CLUSTER_API_PORT <= endPort) {
-                    throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting port forwarding rules to provision Kubernetes cluster for API access", network.getUuid()));
-                }
-                if (startPort <= KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT && KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterTotalNodeCount <= endPort) {
-                    throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting port forwarding rules to provision Kubernetes cluster for node VM SSH access", network.getUuid()));
-                }
+            if (startPort <= KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT && KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterTotalNodeCount <= endPort) {
+                throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting firewall rules to provision Kubernetes cluster for node VM SSH access", network.getUuid()));
             }
         }
-        return true;
+        rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(sourceNatIp.getId(), FirewallRule.Purpose.PortForwarding);
+        for (FirewallRuleVO rule : rules) {
+            Integer startPort = rule.getSourcePortStart();
+            Integer endPort = rule.getSourcePortEnd();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Network rule : " + startPort + " " + endPort);
+            }
+            if (startPort <= KubernetesClusterActionWorker.CLUSTER_API_PORT && KubernetesClusterActionWorker.CLUSTER_API_PORT <= endPort) {
+                throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting port forwarding rules to provision Kubernetes cluster for API access", network.getUuid()));
+            }
+            if (startPort <= KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT && KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterTotalNodeCount <= endPort) {
+                throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting port forwarding rules to provision Kubernetes cluster for node VM SSH access", network.getUuid()));
+            }
+        }
     }
 
-    private boolean validateNetwork(Network network, int clusterTotalNodeCount) {
+    private void validateNetwork(Network network, int clusterTotalNodeCount) {
         NetworkOffering networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
         if (networkOffering.isSystemOnly()) {
             throw new InvalidParameterValueException(String.format("Network ID: %s is for system use only", network.getUuid()));
@@ -401,7 +401,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support userdata that is required for Kubernetes cluster", network.getUuid()));
         }
-        if (network.getVpcId() == null && !networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
+        Long vpcId = network.getVpcId();
+        if (vpcId == null && !networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support firewall that is required for Kubernetes cluster", network.getUuid()));
         }
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.PortForwarding)) {
@@ -410,8 +411,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support DHCP that is required for Kubernetes cluster", network.getUuid()));
         }
+        if (network.getVpcId() != null) {
+            return;
+        }
         validateIsolatedNetwork(network, clusterTotalNodeCount);
-        return true;
     }
 
     private boolean validateServiceOffering(final ServiceOffering serviceOffering, final KubernetesSupportedVersion version) {
@@ -736,9 +739,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             network = networkDao.findById(networkId);
             if (Network.GuestType.Isolated.equals(network.getGuestType())) {
                 if (kubernetesClusterDao.listByNetworkId(network.getId()).isEmpty()) {
-                    if (!validateNetwork(network, controlNodesCount + nodesCount)) {
-                        throw new InvalidParameterValueException(String.format("Network ID: %s is not suitable for Kubernetes cluster", network.getUuid()));
-                    }
+                    validateNetwork(network, controlNodesCount + nodesCount);
                     networkModel.checkNetworkPermissions(owner, network);
                 } else {
                     throw new InvalidParameterValueException(String.format("Network ID: %s is already under use by another Kubernetes cluster", network.getUuid()));

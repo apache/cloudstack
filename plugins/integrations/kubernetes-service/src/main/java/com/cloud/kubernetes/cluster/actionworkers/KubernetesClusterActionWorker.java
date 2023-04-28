@@ -66,6 +66,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.projects.ProjectService;
@@ -123,6 +124,8 @@ public class KubernetesClusterActionWorker {
     protected AccountDao accountDao;
     @Inject
     protected IpAddressManager ipAddressManager;
+    @Inject
+    protected IPAddressDao ipAddressDao;
     @Inject
     protected NetworkOrchestrationService networkMgr;
     @Inject
@@ -356,10 +359,12 @@ public class KubernetesClusterActionWorker {
     }
 
     protected IpAddress getVpcTierKubernetesPublicIp(Network network) {
-        List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), false);
+        List<? extends IpAddress> addresses = ipAddressDao.listByAssociatedVpc(network.getVpcId(), false);
         for (IpAddress address : addresses) {
-            List <? extends ResourceTag> tags = taggedResourceService.listByResourceTypeAndId(ResourceTag.ResourceObjectType.PublicIpAddress, address.getId());
-            if (tags.stream().anyMatch(x -> (x.getKey().equalsIgnoreCase(KubernetesCluster.class.getSimpleName())) && kubernetesCluster.getUuid().equals(x.getValue()))) {
+            List <? extends ResourceTag> tags = taggedResourceService.listByResourceTypeAndId(
+                    ResourceTag.ResourceObjectType.PublicIpAddress, address.getId());
+            if (tags.stream().anyMatch(x -> (x.getKey().equalsIgnoreCase(KubernetesCluster.class.getSimpleName())) &&
+                    kubernetesCluster.getUuid().equals(x.getValue()))) {
                 return address;
             }
         }
@@ -371,6 +376,7 @@ public class KubernetesClusterActionWorker {
         IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
         if (ip != null) {
             ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
+            ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
             if (ip != null) {
                 taggedResourceService.createTags(List.of(ip.getUuid()),
                         ResourceTag.ResourceObjectType.PublicIpAddress,
