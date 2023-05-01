@@ -111,8 +111,6 @@ public interface VpcService {
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call
-     *
-     * TODO phase out to replace with the one with the cmd as parameter object
      */
     Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
                                                 String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
