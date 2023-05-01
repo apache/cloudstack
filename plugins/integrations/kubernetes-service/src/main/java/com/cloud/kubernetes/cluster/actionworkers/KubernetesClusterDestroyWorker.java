@@ -146,7 +146,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         try {
             removeLoadBalancingRule(publicIp, network, owner);
         } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to KubernetesCluster load balancing rule for network : %s", network.getName()));
+            throw new ManagementServerException(String.format("Failed to KubernetesCluster load balancing rule for network : %s", network.getName()), e);
         }
         FirewallRule firewallRule = removeApiFirewallRule(publicIp);
         if (firewallRule == null) {
@@ -159,7 +159,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         try {
             removePortForwardingRules(publicIp, network, owner, removedVmIds);
         } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to KubernetesCluster port forwarding rules for network : %s", network.getName()));
+            throw new ManagementServerException(String.format("Failed to KubernetesCluster port forwarding rules for network : %s", network.getName()), e);
         }
     }
 
