@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.BlockingQueue;
@@ -48,6 +50,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.LoadBalancerConfigDao;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -66,6 +69,8 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
@@ -225,7 +230,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -299,10 +303,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private DataCenterDao _dcDao;
     @Inject protected VlanDao _vlanDao;
     @Inject private FirewallRulesDao _rulesDao;
+    @Inject private LoadBalancerConfigDao _lbConfigDao;
     @Inject private LoadBalancerDao _loadBalancerDao;
     @Inject private LoadBalancerVMMapDao _loadBalancerVMMapDao;
     @Inject protected IPAddressDao _ipAddressDao;
-    @Inject private VMTemplateDao _templateDao;
     @Inject protected DomainRouterDao _routerDao;
     @Inject private UserDao _userDao;
     @Inject protected UserStatisticsDao _userStatsDao;
@@ -1738,27 +1742,89 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private void updateWithLbRules(final DomainRouterJoinVO routerJoinVO, final StringBuilder loadBalancingData) {
+        List<? extends LoadBalancerConfig> networkLbConfigs = null;
+        if (routerJoinVO.getNetworkId() == 0) {
+            return;
+        } else {
+            Network network = _networkDao.findById(routerJoinVO.getNetworkId());
+            if (network.getTrafficType() != TrafficType.Guest) {
+                return;
+            }
+        }
+        if (routerJoinVO.getVpcId() != 0) {
+            networkLbConfigs = _lbConfigDao.listByVpcId(routerJoinVO.getVpcId());
+        } else {
+            networkLbConfigs = _lbConfigDao.listByNetworkId(routerJoinVO.getNetworkId());
+        }
+        HashMap<String, String> networkLbConfigsMap = new HashMap<String, String>();
+        if (networkLbConfigs != null) {
+            for (LoadBalancerConfig networkLbConfig: networkLbConfigs) {
+                networkLbConfigsMap.put(networkLbConfig.getName(), networkLbConfig.getValue());
+            }
+        }
+        Optional<String> lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxConn.key()));
+        String globalMaxConn = lbConfig.orElse(null);
+        lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.GlobalMaxPipes.key()));
+        String globalMaxPipes = lbConfig.orElse(null);
+
+        final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
         List<? extends FirewallRuleVO> loadBalancerVOs = this.getLBRules(routerJoinVO);
+        if (loadBalancerVOs.size() > 0) {
+            String globalMaxConnFinal;
+            if (globalMaxConn != null) {
+                globalMaxConnFinal = globalMaxConn;
+            } else if (offering.getConcurrentConnections() == null) {
+                globalMaxConnFinal = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            } else {
+                globalMaxConnFinal = offering.getConcurrentConnections().toString();
+            }
+            loadBalancingData.append("global.maxconn=").append(globalMaxConnFinal);
+            String globalMaxPipesFinal;
+            globalMaxPipesFinal = Objects.requireNonNullElseGet(globalMaxPipes,
+                    () -> Long.toString(Long.parseLong(globalMaxConnFinal) / 4));
+            loadBalancingData.append(",global.maxpipes=").append(globalMaxPipesFinal);
+            lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutConnect.key()));
+            loadBalancingData.append(",default.timeout.connect=").append(lbConfig.orElse(LoadBalancerConfigKey.LbTimeoutConnect.defaultValue()));
+            lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutServer.key()));
+            loadBalancingData.append(",default.timeout.server=").append(lbConfig.orElse(LoadBalancerConfigKey.LbTimeoutServer.defaultValue()));
+            lbConfig = Optional.ofNullable(networkLbConfigsMap.get(LoadBalancerConfigKey.LbTimeoutClient.key()));
+            loadBalancingData.append(",default.timeout.client=").append(lbConfig.orElse(LoadBalancerConfigKey.LbTimeoutClient.defaultValue()));
+            loadBalancingData.append(";");
+        }
         for (FirewallRuleVO firewallRuleVO : loadBalancerVOs) {
+            List<? extends LoadBalancerConfig> lbConfigs = _lbConfigDao.listByLoadBalancerId(firewallRuleVO.getId());
+            final HashMap<String, String> lbConfigsMap = new HashMap<String, String>();
+            if (lbConfigs != null) {
+                for (LoadBalancerConfig config: lbConfigs) {
+                    lbConfigsMap.put(config.getName(), config.getValue());
+                }
+            }
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbTransparent.key()));
+            String isTransparent = lbConfig.orElse(null);
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttp.key()));
+            String isHttp = lbConfig.orElse(null);
+            lbConfig = Optional.ofNullable(lbConfigsMap.get(LoadBalancerConfigKey.LbHttpKeepalive.key()));
+            String isHttpKeepalive = lbConfig.orElse(null);
             List<LoadBalancerVMMapVO> vmMapVOs = _loadBalancerVMMapDao.listByLoadBalancerId(firewallRuleVO.getId(), false);
             if (vmMapVOs.size() > 0) {
-
-                final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
-                if (offering.getConcurrentConnections() == null) {
-                    loadBalancingData.append("maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
-                } else {
-                    loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections().toString());
-                }
-
-                loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
+                loadBalancingData.append("sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                    String sourceIp = _ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString();
+                    loadBalancingData.append(",sourceIp=").append(sourceIp)
+                            .append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
+                    if (loadBalancerVO.getLbProtocol() != null && loadBalancerVO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+                        final LbSslCert sslCert = _lbMgr.getLbSslCert(firewallRuleVO.getId());
+                        if (sslCert != null && ! sslCert.isRevoked()) {
+                            loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                                    .append(loadBalancerVO.getSourcePortStart()).append(".pem");
+                        }
+                    }
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
@@ -1768,13 +1834,61 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             .append(",protocol=").append(appLoadBalancerVO.getLbProtocol());
                 }
                 loadBalancingData.append(",stickiness=").append(getStickinessPolicies(firewallRuleVO.getId()));
-                loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled()).append(",vmIps=");
+                if (isHttp != null) {
+                    loadBalancingData.append(",http=").append(isHttp);
+                } else if (firewallRuleVO.getSourcePortStart() == NetUtils.HTTP_PORT) {
+                    loadBalancingData.append(",http=").append(true);
+                }
+                if (isHttpKeepalive != null) {
+                    loadBalancingData.append(",keepAliveEnabled=").append(isHttpKeepalive);
+                } else {
+                    loadBalancingData.append(",keepAliveEnabled=").append(offering.isKeepAliveEnabled());
+                }
+                if (isTransparent != null) {
+                    loadBalancingData.append(",transparent=").append(isTransparent);
+                }
+                updateLbValues(lbConfigsMap, loadBalancingData);
+
+                loadBalancingData.append(",vmIps=");
                 for (LoadBalancerVMMapVO vmMapVO : vmMapVOs) {
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
             }
         }
+    }
+
+    private String generateKeyValuePairOrEmptyString(String key, String value){
+        if (value == null)
+            return "";
+
+        return String.format(",%s=%s", key, value);
+    }
+
+    private void updateLbValues(final HashMap<String, String> lbConfigsMap, StringBuilder loadBalancingData) {
+        String lbMaxConn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbMaxConn.key(), null);
+        String lbFullConn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbFullConn.key(), null);
+        String lbTimeoutConnect = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbTimeoutConnect.key(), null);
+        String lbTimeoutServer = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbTimeoutServer.key(), null);
+        String lbTimeoutClient = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbTimeoutClient.key(), null);
+        String lbBackendHttps = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbBackendHttps.key(), null);
+        String lbHttp2 = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbHttp2.key(), null);
+
+        // Process lb.server values
+        String serverMaxconn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMaxConn.key(), null);
+        String serverMinconn = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMinConn.key(), null);
+        String serverMaxqueue = lbConfigsMap.getOrDefault(LoadBalancerConfigKey.LbServerMaxQueue.key(), null);
+
+        loadBalancingData.append(generateKeyValuePairOrEmptyString("lb.maxconn", lbMaxConn))
+                .append(generateKeyValuePairOrEmptyString("lb.fullconn", lbFullConn))
+                .append(generateKeyValuePairOrEmptyString("lb.timeout.connect", lbTimeoutConnect))
+                .append(generateKeyValuePairOrEmptyString("lb.timeout.server", lbTimeoutServer))
+                .append(generateKeyValuePairOrEmptyString("lb.timeout.client", lbTimeoutClient))
+                .append(generateKeyValuePairOrEmptyString("lb.backend.https", lbBackendHttps))
+                .append(generateKeyValuePairOrEmptyString("http2", lbHttp2))
+                .append(generateKeyValuePairOrEmptyString("server.maxconn", serverMaxconn))
+                .append(generateKeyValuePairOrEmptyString("server.minconn", serverMinconn))
+                .append(generateKeyValuePairOrEmptyString("server.maxqueue", serverMaxqueue));
     }
 
     private Map<String, String> getRouterHealthChecksConfig(final DomainRouterVO router) {

@@ -107,6 +107,8 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigManager;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig.SSLConfiguration;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -1146,6 +1148,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
             s_logger.error(errMsg);
             return errMsg;
+        }
+
+        if (LoadBalancerConfigManager.DefaultLbSSLConfiguration.key().equalsIgnoreCase(name)) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(value) || ! SSLConfiguration.validate(value.toLowerCase())) {
+                final String msg = "Please enter valid value in " + String.join(",", SSLConfiguration.getValues());
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
         }
 
         if (value == null) {

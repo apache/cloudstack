@@ -534,6 +534,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp, tcp-proxy");
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
+        // Supports SSL offloading
+        lbCapabilities.put(Capability.SslTermination, "true");
 
         // specifies that LB rules can support autoscaling and the list of
         // counters it supports

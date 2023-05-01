@@ -106,7 +106,7 @@ public interface LoadBalancingRulesService {
 
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 
-    boolean assignCertToLoadBalancer(long lbRuleId, Long certId);
+    boolean assignCertToLoadBalancer(long lbRuleId, Long certId, boolean forced);
 
     boolean removeCertFromLoadBalancer(long lbRuleId);
 

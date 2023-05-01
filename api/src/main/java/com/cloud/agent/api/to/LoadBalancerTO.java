@@ -31,6 +31,9 @@ import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.utils.Pair;
 
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.springframework.util.CollectionUtils;
+
 public class LoadBalancerTO {
     String uuid;
     String srcIp;
@@ -46,6 +49,7 @@ public class LoadBalancerTO {
     String srcIpNetmask;
     Long networkId;
     DestinationTO[] destinations;
+    private LoadBalancerConfigTO[] lbConfigs;
     private StickinessPolicyTO[] stickinessPolicies;
     private HealthCheckPolicyTO[] healthCheckPolicies;
     private LbSslCert sslCert; /* XXX: Should this be SslCertTO?  */
@@ -177,6 +181,22 @@ public class LoadBalancerTO {
         return inline;
     }
 
+    public LoadBalancerConfigTO[] getLbConfigs() {
+        return this.lbConfigs;
+    }
+
+    public void setLbConfigs(List<? extends LoadBalancerConfig> lbConfigs) {
+        if (CollectionUtils.isEmpty(lbConfigs)) {
+            this.lbConfigs = new LoadBalancerConfigTO[0];
+            return;
+        }
+        this.lbConfigs = new LoadBalancerConfigTO[lbConfigs.size()];
+        int i = 0;
+        for (LoadBalancerConfig lbConfig : lbConfigs) {
+            this.lbConfigs[i++] = new LoadBalancerConfigTO(lbConfig);
+        }
+    }
+
     public StickinessPolicyTO[] getStickinessPolicies() {
         return stickinessPolicies;
     }
@@ -203,6 +223,10 @@ public class LoadBalancerTO {
 
     public LbSslCert getSslCert() {
         return this.sslCert;
+    }
+
+    public void setLbSslCert(LbSslCert sslCert) {
+        this.sslCert = sslCert;
     }
 
     public String getSrcIpVlan() {

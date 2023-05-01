@@ -94,6 +94,7 @@ public class ApiConstants {
     public static final String CLUSTER_TYPE = "clustertype";
     public static final String CN = "cn";
     public static final String COMMAND = "command";
+    public static final String CONFIG = "config";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
     public static final String COMPONENT = "component";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
@@ -619,6 +620,7 @@ public class ApiConstants {
     public static final String LOAD_BALANCER_DEVICE_STATE = "lbdevicestate";
     public static final String LOAD_BALANCER_DEVICE_CAPACITY = "lbdevicecapacity";
     public static final String LOAD_BALANCER_DEVICE_DEDICATED = "lbdevicededicated";
+    public static final String LOAD_BALANCER_ID = "loadbalancerid";
     public static final String LOAD_BALANCER_RULE = "loadbalancerrule";
     public static final String LOAD_BALANCER_RULE_LIST = "loadbalancerrulelist";
     public static final String FIREWALL_DEVICE_ID = "fwdeviceid";

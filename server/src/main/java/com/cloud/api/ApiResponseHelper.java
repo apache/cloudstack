@@ -104,6 +104,7 @@ import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.LoadBalancerConfigResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
@@ -188,6 +189,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.cloudstack.network.lb.LoadBalancerConfig;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
@@ -1144,6 +1147,78 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
+    }
+
+    @Override
+    public LoadBalancerConfigResponse createLoadBalancerConfigResponse(LoadBalancerConfig config) {
+        Network network = null;
+        Vpc vpc = null;
+        LoadBalancer lb = null;
+        if (config.getNetworkId() != null) {
+            network = ApiDBUtils.findNetworkById(config.getNetworkId());
+        }
+        if (config.getVpcId() != null) {
+            vpc = ApiDBUtils.findVpcById(config.getVpcId());
+        }
+        if (config.getLoadBalancerId() != null) {
+            lb = ApiDBUtils.findLoadBalancerById(config.getLoadBalancerId());
+        }
+        return setLoadBalancerConfigResponse(network, vpc, lb, config);
+    }
+
+    @Override
+    public List<LoadBalancerConfigResponse> createLoadBalancerConfigResponse(List<? extends LoadBalancerConfig> configs) {
+        List<LoadBalancerConfigResponse> lbConfigResponses = new ArrayList<>();
+        if (CollectionUtils.isEmpty(configs)) {
+            return lbConfigResponses;
+        }
+        LoadBalancerConfig config = configs.get(0);
+        Network network = null;
+        Vpc vpc = null;
+        LoadBalancer lb = null;
+        if (config.getNetworkId() != null) {
+            network = ApiDBUtils.findNetworkById(config.getNetworkId());
+        }
+        if (config.getVpcId() != null) {
+            vpc = ApiDBUtils.findVpcById(config.getVpcId());
+        }
+        if (config.getLoadBalancerId() != null) {
+            lb = ApiDBUtils.findLoadBalancerById(config.getLoadBalancerId());
+        }
+        for (LoadBalancerConfig lbConfig : configs) {
+            LoadBalancerConfigResponse lbConfigResponse = setLoadBalancerConfigResponse(network, vpc, lb, lbConfig);
+            lbConfigResponses.add(lbConfigResponse);
+        }
+        return lbConfigResponses;
+    }
+
+    private LoadBalancerConfigResponse setLoadBalancerConfigResponse(Network network, Vpc vpc, LoadBalancer lb, LoadBalancerConfig config) {
+        LoadBalancerConfigResponse response = new LoadBalancerConfigResponse();
+        if (config.getUuid() != null) {
+            response.setId(config.getUuid());
+        }
+        response.setName(config.getName());
+        response.setValue(config.getValue());
+        response.setScope(String.valueOf(config.getScope()));
+        if (network != null) {
+            response.setNetworkId(network.getUuid());
+        }
+        if (vpc != null) {
+            response.setVpcId(vpc.getUuid());
+        }
+        if (lb != null) {
+            response.setLoadBalancerId(lb.getUuid());
+        }
+        response.setCreated(config.getCreated());
+        LoadBalancerConfigKey configKey = LoadBalancerConfigKey.getConfigsByScopeAndName(config.getScope(), config.getName());
+        if (configKey == null) {
+            s_logger.warn(String.format("Unable to determine the load balancer config for scope %s and name %s", config.getScope(), config.getName()));
+        } else {
+            response.setDescription(configKey.displayText());
+            response.setDefaultValue(configKey.defaultValue());
+        }
+        response.setObjectName("loadbalancerconfig");
+        return response;
     }
 
     @Override

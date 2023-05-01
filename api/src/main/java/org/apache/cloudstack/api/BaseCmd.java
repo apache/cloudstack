@@ -39,6 +39,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.usage.UsageService;
@@ -152,6 +153,8 @@ public abstract class BaseCmd {
     public AutoScaleService _autoScaleService;
     @Inject
     public LoadBalancingRulesService _lbService;
+    @Inject
+    public LoadBalancerConfigService _lbConfigService;
     @Inject
     public RemoteAccessVpnService _ravService;
     @Inject

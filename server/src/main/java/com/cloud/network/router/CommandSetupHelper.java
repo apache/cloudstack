@@ -30,6 +30,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigKey;
+import org.apache.cloudstack.network.lb.LoadBalancerConfigManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -61,6 +63,7 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.LoadBalancerConfigTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -212,6 +215,9 @@ public class CommandSetupHelper {
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
 
+    @Inject
+    private LoadBalancerConfigManager _lbConfigMgr;
+
     public void createVmDataCommand(final VirtualRouter router, final UserVm vm, final NicVO nic, final String publicKey, final Commands cmds) {
         if (vm != null && router != null && nic != null) {
             final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
@@ -345,8 +351,10 @@ public class CommandSetupHelper {
             final List<LbDestination> destinations = rule.getDestinations();
             final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
             final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
+            lb.setLbSslCert(rule.getLbSslCert());
             lb.setCidrList(rule.getCidrList());
             lb.setLbProtocol(lb_protocol);
+            lb.setLbConfigs(_lbConfigMgr.getRuleLbConfigs(rule.getId()));
             lbs[i++] = lb;
         }
         String routerPublicIp = null;
@@ -374,10 +382,31 @@ public class CommandSetupHelper {
         final LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, routerPublicIp, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()),
                 router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
+        boolean isTransparent = false;
+        for (final LoadBalancerTO lbTO : lbs) {
+            final LoadBalancerConfigTO[] lbConfigs = lbTO.getLbConfigs();
+            for (LoadBalancerConfigTO lbConfig: lbConfigs) {
+                if (lbConfig.getName().equals(LoadBalancerConfigKey.LbTransparent.key())) {
+                    isTransparent = "true".equalsIgnoreCase(lbConfig.getValue());
+                    break;
+                }
+            }
+            if (isTransparent) {
+                break;
+            }
+        }
+        cmd.setIsTransparent(isTransparent);
+        cmd.setNetworkCidr(guestNetwork.getCidr());
+        if (router.getVpcId() != null) {
+            cmd.setNetworkLbConfigs(_lbConfigMgr.getVpcLbConfigs(router.getVpcId()));
+        } else {
+            cmd.setNetworkLbConfigs(_lbConfigMgr.getNetworkLbConfigs(guestNetworkId));
+        }
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
         cmd.lbStatsAuth = _configDao.getValue(Config.NetworkLBHaproxyStatsAuth.key());
         cmd.lbStatsPort = _configDao.getValue(Config.NetworkLBHaproxyStatsPort.key());
+        cmd.lbSslConfiguration = _configDao.getValue("default.lb.ssl.configuration");
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));

@@ -6,7 +6,7 @@
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -67,6 +67,7 @@
             <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="ssl" :label="$t('label.ssl')">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
@@ -84,6 +85,12 @@
             <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
           </a-select>
         </div>
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.sslcertificates') }}</div>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddSslCertModal(null)">
+            {{ $t('label.sslcertificate') }}
+          </a-button>
+        </div>
         <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no' || ('vpcid' in this.resource && !('associatednetworkid' in this.resource))">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
@@ -98,7 +105,6 @@
         </div>
       </div>
     </div>
-
     <a-divider />
     <a-button
       v-if="(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedItems.length > 0)"
@@ -131,6 +137,16 @@
         <template v-if="column.key === 'stickiness'">
           <a-button @click="() => openStickinessModal(record.id)">
             {{ returnStickinessLabel(record.id) }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'configuration'">
+          <a-button @click="() => { selectedRule = record; handleOpenAddConfiguration() }">
+            {{ $t('label.configure') }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'sslcert'">
+          <a-button :disabled="record.protocol !== 'ssl'" @click="() => { selectedRule = record; handleOpenAddSslCertModal() }">
+            {{ $t('label.add.ssl.cert') }}
           </a-button>
         </template>
         <template v-if="column.key === 'autoscale'">
@@ -409,6 +425,7 @@
             <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="ssl" :label="$t('label.ssl')">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
         </div>
         <div :span="24" class="action-button">
@@ -620,6 +637,148 @@
       @group-action="deleteRules"
       @handle-cancel="handleCancel"
       @close-modal="closeModal" />
+
+    <a-modal
+      :title="$t('label.add.load.balancer.config')"
+      v-if="addLbConfigVisible"
+      :visible="addLbConfigVisible"
+      class="vm-modal"
+      width="85vw"
+      @ok="closeModal"
+      @cancel="closeModal"
+    >
+      <div>
+        <div class="form" style="margin-right: 0 !important;">
+          <div class="form__item">
+            <div class="form__label">{{ $t('label.lb.config.name') }}</div>
+            <br>
+            <a-select v-model:value="lbConfig.name" style="width: 80%;" @change="populateValues">
+              <a-select-option
+                v-for="config in lbConfigs"
+                :key="config.name">{{ config.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div class="form__item">
+            <div class="form__label">{{ $t('label.description') }}</div>
+            <br>
+            {{ lbConfig.description }}
+          </div>
+          <div class="form__item">
+            <div class="form__label">{{ $t('label.lb.config.default.value') }}</div>
+            <br>
+            {{ lbConfig.defaultvalue }}
+          </div>
+          <div class="form__item" ref="lbconfigValue">
+            <div class="form__label"><span class="form__required">*</span>{{ $t('label.lb.config.value') }}</div>
+            <br>
+            <a-input v-model:value="lbConfig.value"></a-input>
+            <span class="error-text">Required</span>
+          </div>
+          <div>
+            <div class="form__label">{{ $t('label.action') }}</div>
+            <br>
+            <a-button :disabled="!('createLoadBalancerConfig' in $store.getters.apis)" shape="circle" type="primary" @click="handleAddNewLbConfig">
+              <template #icon><plus-outlined /></template>
+            </a-button>
+          </div>
+        </div>
+
+        <a-divider/>
+
+        <a-table
+          size="small"
+          class="list-view"
+          :loading="addLbConfigModalLoading"
+          :columns="lbconfigColumns"
+          :dataSource="savedLbConfigs"
+          :pagination="false"
+          :rowKey="record => record.id">
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'actions'">
+              <div class="actions">
+                <a-popconfirm
+                  :title="$t('label.delete') + '?'"
+                  @confirm="handleDeleteLoadBalancerConfig(record)"
+                  :okText="$t('label.yes')"
+                  :cancelText="$t('label.no')"
+                >
+                  <tooltip-button
+                    :tooltip="$t('label.delete')"
+                    :disabled="!('deleteLoadBalancerConfig' in $store.getters.apis)"
+                    type="primary"
+                    :danger="true"
+                    icon="delete-outlined" />
+                </a-popconfirm>
+              </div>
+            </template>
+          </template>
+        </a-table>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="totalCountLbConfig"
+          :showTotal="total => `Total ${total} items`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="handleChangePage"
+          @showSizeChange="handleChangePageSize"
+          showSizeChanger/>
+      </div>
+
+    </a-modal>
+
+    <a-modal
+      :title="$t('label.add.ssl.cert')"
+      v-if="addSslCertModalVisible"
+      :visible="addSslCertModalVisible"
+      class="vm-modal"
+      width="50vw"
+      @ok="closeModal"
+      @cancel="closeModal"
+    >
+      <div>
+        <div class="form">
+          <div class="form__item">
+            <div class="form__label">{{ $t('label.sslcertificates') }}</div>
+            <br>
+            <a-select v-model:value="selectedSsl.name" style="width: 80%;" @change="selectssl">
+              <a-select-option
+                v-for="sslcert in sslcerts.data"
+                :key="sslcert.id">{{ sslcert.name }}
+              </a-select-option>
+            </a-select>
+          </div>
+          <div v-show="showAssignedSsl" class="form__item">
+            <div class="form__label">{{ $t('label.currentsslcert') }}</div>
+            <br>
+            {{ assignedSslCert }}
+          </div>
+        </div>
+      </div>
+      <br>
+      <div>
+        <div>
+          <a-button v-show="buttonVisible" :disabled="!('deleteLoadBalancerConfig' in $store.getters.apis) || !deleteSslButtonVisible" type="danger" @click="removeSslFromLbRule()">
+            <template #icon><delete-outlined /></template>
+            Delete
+          </a-button>
+          <a-button v-show="buttonVisible" :disabled="!('deleteLoadBalancerConfig' in $store.getters.apis) || !addSslButtonVisible" type="primary" @click="addSslTolbRule()">
+            <template #icon><plus-outlined /></template>
+            Add
+          </a-button>
+        </div>
+      </div>
+
+      <template #actions="{record}">
+        <a-button
+          shape="circle"
+          type="danger"
+          icon="delete"
+          @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
+      </template>
+    </a-modal>
   </div>
 </template>
 
@@ -662,6 +821,7 @@ export default {
         confirmMessage: this.$t('label.confirm.delete.loadbalancer.rules')
       },
       loading: true,
+      visible: true,
       lbRules: [],
       tagsModalVisible: false,
       tagsModalLoading: false,
@@ -688,6 +848,7 @@ export default {
         protocol: 'tcp',
         virtualmachineid: [],
         vmguestip: [],
+        sslcert: '',
         cidrlist: ''
       },
       addVmModalVisible: false,
@@ -698,18 +859,49 @@ export default {
       totalCount: 0,
       page: 1,
       pageSize: 10,
+      lbConfigs: [],
+      savedLbConfigs: [],
+      totalCountLbConfig: 0,
+      sslcerts: {
+        loading: false,
+        data: []
+      },
+      selectedSsl: {
+        name: '',
+        id: null
+      },
+      addSslCertModalVisible: false,
+      showAssignedSsl: false,
+      addLbConfigVisible: false,
+      addLbConfigModalLoading: false,
+      currentAccountId: null,
+      assignedSslCert: 'None',
+      buttonVisible: false,
+      deleteSslButtonVisible: true,
+      addSslButtonVisible: true,
+      lbConfig: {
+        scope: 'LoadBalancerRule',
+        name: '',
+        description: null,
+        defaultvalue: null,
+        value: null,
+        forced: 'true'
+      },
       columns: [
         {
-          title: this.$t('label.name'),
-          dataIndex: 'name'
+          key: 'name',
+          dataIndex: 'name',
+          title: this.$t('label.name')
         },
         {
-          title: this.$t('label.publicport'),
-          dataIndex: 'publicport'
+          key: 'publicport',
+          dataIndex: 'publicport',
+          title: this.$t('label.publicport')
         },
         {
-          title: this.$t('label.privateport'),
-          dataIndex: 'privateport'
+          key: 'privateport',
+          dataIndex: 'privateport',
+          title: this.$t('label.privateport')
         },
         {
           key: 'algorithm',
@@ -717,19 +909,30 @@ export default {
         },
         {
           key: 'cidrlist',
+          dataIndex: 'cidrlist',
           title: this.$t('label.cidrlist')
         },
         {
           key: 'protocol',
+          dataIndex: 'protocol',
           title: this.$t('label.protocol')
         },
         {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
+          key: 'state',
+          dataIndex: 'state',
+          title: this.$t('label.state')
         },
         {
           key: 'stickiness',
           title: this.$t('label.action.configure.stickiness')
+        },
+        {
+          key: 'configuration',
+          title: this.$t('label.lb.configuration')
+        },
+        {
+          key: 'sslcert',
+          title: this.$t('label.sslcertificates')
         },
         {
           key: 'add',
@@ -737,11 +940,34 @@ export default {
         },
         {
           key: 'autoscale',
+          dataIndex: 'autoscale',
           title: this.$t('label.autoscale')
         },
         {
           key: 'actions',
           title: this.$t('label.actions')
+        }
+      ],
+      lbconfigColumns: [
+        {
+          key: 'name',
+          dataIndex: 'name',
+          title: this.$t('label.lb.config.name')
+        }, {
+          key: 'description',
+          dataIndex: 'description',
+          title: this.$t('label.description')
+        }, {
+          key: 'defaultvalue',
+          dataIndex: 'defaultvalue',
+          title: this.$t('label.lb.config.default.value')
+        }, {
+          key: 'value',
+          dataIndex: 'value',
+          title: this.$t('label.lb.config.value')
+        }, {
+          key: 'actions',
+          title: this.$t('label.action')
         }
       ],
       tiers: {
@@ -943,6 +1169,242 @@ export default {
           this.loading = false
         })
       })
+    },
+    fetchSslCerts () {
+      this.sslcerts.loading = true
+      this.sslcerts.data = []
+      // Firt get the account id
+      api('listAccounts', {
+        name: this.resource.account,
+        domainid: this.resource.domainid
+      }).then(json => {
+        const accounts = json.listaccountsresponse.account || []
+        if (accounts.length > 0) {
+          // Now fetch all the ssl certs for this account
+          this.currentAccountId = accounts[0].id
+          api('listSslCerts', {
+            accountid: this.currentAccountId
+          }).then(json => {
+            if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0) {
+              this.selectedSsl.name = json.listsslcertsresponse.sslcert[0].name
+              this.selectedSsl.id = json.listsslcertsresponse.sslcert[0].id
+              json.listsslcertsresponse.sslcert.forEach(entry => this.sslcerts.data.push(entry))
+            }
+          }).catch(error => {
+            this.$notifyError(error)
+          })
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.sslcerts.loading = false
+      })
+      if (this.selectedRule !== null) {
+        this.getCurrentlyAssignedSslCert()
+      }
+    },
+    getCurrentlyAssignedSslCert () {
+      api('listSslCerts', {
+        accountid: this.currentAccountId,
+        lbruleid: this.selectedRule.id
+      }).then(json => {
+        if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0) {
+          this.assignedSslCert = json.listsslcertsresponse.sslcert[0].name
+          this.deleteSslButtonVisible = true
+        } else {
+          this.assignedSslCert = 'None'
+          this.deleteSslButtonVisible = false
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    selectssl (e) {
+      this.selectedSsl.id = e
+    },
+    handleAddSslCert (data) {
+      this.addSslCert(data, this.selectedSsl.id)
+    },
+    addSslTolbRule () {
+      this.visible = false
+      this.addSslCert(this.selectedRule.id, this.selectedSsl.id)
+    },
+    addSslCert (lbRuleId, certId) {
+      this.disableSslAddDeleteButtons()
+      api('assignCertToLoadBalancer', {
+        lbruleid: lbRuleId,
+        certid: certId,
+        forced: true
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.assigncerttoloadbalancerresponse.jobid,
+          successMessage: `Successfully assigned Ssl certificate`,
+          successMethod: () => {
+            if (this.selectedRule !== null) {
+              this.getCurrentlyAssignedSslCert()
+            }
+            this.enableSslAddDeleteButtons()
+          },
+          errorMessage: 'Failed to assign ssl certificate',
+          errorMethod: () => {
+          },
+          loadingMessage: `Assigning ssl certificate...`,
+          catchMessage: 'Error encountered while fetching async job result addSslTolbRule',
+          catchMethod: (e) => {
+            this.closeModal()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+      })
+    },
+    removeSslFromLbRule () {
+      this.disableSslAddDeleteButtons()
+      api('removeCertFromLoadBalancer', {
+        lbruleid: this.selectedRule.id
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.removecertfromloadbalancerresponse.jobid,
+          successMessage: `Successfully removed Ssl certificate`,
+          successMethod: () => {
+            this.visible = true
+            this.getCurrentlyAssignedSslCert()
+            this.enableSslAddDeleteButtons()
+          },
+          errorMessage: 'Failed to remove ssl certificate',
+          errorMethod: () => {
+            this.visible = true
+          },
+          loadingMessage: `Removing ssl certificate...`,
+          catchMessage: 'Error encountered while fetching async job result',
+          catchMethod: () => {
+            this.closeModal()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+      })
+    },
+    populateValues () {
+      for (let i = 0; i < this.lbConfigs.length; i++) {
+        if (this.lbConfig.name === this.lbConfigs[i].name) {
+          this.lbConfig.description = this.lbConfigs[i].description
+          this.lbConfig.defaultvalue = this.lbConfigs[i].defaultvalue
+        }
+      }
+    },
+    enableSslAddDeleteButtons () {
+      this.deleteSslButtonVisible = true
+      this.addSslButtonVisible = true
+    },
+    disableSslAddDeleteButtons () {
+      this.addSslButtonVisible = false
+      this.deleteSslButtonVisible = false
+    },
+    handleDeleteLoadBalancerConfig (rule) {
+      this.addLbConfigModalLoading = true
+      api('deleteLoadBalancerConfig', {
+        id: rule.id
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.deleteloadbalancerconfigresponse.jobid,
+          successMessage: `Successfully removed load balancer config`,
+          successMethod: () => {
+            this.fetchSavedLbConfigs()
+          },
+          errorMessage: 'Failed to remove load balancer config',
+          errorMethod: () => {
+            this.fetchSavedLbConfigs()
+          },
+          loadingMessage: `Removing load balancer config...`,
+          catchMessage: 'Error encountered while fetching async job result',
+          catchMethod: () => {
+            this.fetchSavedLbConfigs()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.fetchSavedLbConfigs()
+      })
+    },
+    handleOpenAddConfiguration () {
+      api('listLoadBalancerConfigs', {
+        listAll: true,
+        scope: 'LoadBalancerRule',
+        loadbalancerid: this.selectedRule.id
+      }).then(response => {
+        this.lbConfigs = response.listloadbalancerconfigsresponse.loadbalancerconfig
+        this.addLbConfigVisible = true
+        const tempLbConfig = response.listloadbalancerconfigsresponse.loadbalancerconfig[0]
+        this.lbConfig.name = tempLbConfig.name
+        this.lbConfig.description = tempLbConfig.description
+        this.lbConfig.defaultvalue = tempLbConfig.defaultvalue
+      }).catch(error => {
+        this.$notifyError(error)
+        this.closeModal()
+      })
+      this.fetchSavedLbConfigs()
+    },
+    handleAddNewLbConfig () {
+      if (!this.lbConfig.value) {
+        this.$refs.lbconfigValue.classList.add('error')
+        return
+      } else {
+        this.$refs.lbconfigValue.classList.remove('error')
+      }
+      this.addLbConfigModalLoading = true
+      api('createLoadBalancerConfig', {
+        scope: 'LoadBalancerRule',
+        name: this.lbConfig.name,
+        value: this.lbConfig.value,
+        forced: 'true',
+        loadbalancerid: this.selectedRule.id
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.createloadbalancerconfigresponse.jobid,
+          successMessage: this.$t('message.success.create.lbconfig'),
+          successMethod: () => {
+            this.fetchSavedLbConfigs()
+          },
+          errorMessage: this.$t('message.failed.to.remove.lbconfig'),
+          errorMethod: () => {
+            this.fetchSavedLbConfigs()
+          },
+          loadingMessage: this.$t('message.add.lbconfig.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchSavedLbConfigs()
+          }
+        })
+        this.addLbConfigModalLoading = true
+      }).catch(error => {
+        this.$notifyError(error)
+        this.fetchSavedLbConfigs()
+      })
+      this.lbConfig.value = null
+    },
+    fetchSavedLbConfigs () {
+      api('listLoadBalancerConfigs', {
+        scope: 'LoadBalancerRule',
+        loadbalancerid: this.selectedRule.id
+      }).then(response => {
+        this.savedLbConfigs = response.listloadbalancerconfigsresponse.loadbalancerconfig
+        this.totalCountLbConfig = response.listloadbalancerconfigsresponse.count || 0
+      }).catch(error => {
+        this.$notifyError(error)
+        this.loading = false
+      })
+      this.addLbConfigModalLoading = false
+    },
+    handleOpenAddSslCertModal () {
+      this.addSslCertModalVisible = true
+      if (this.selectedRule) {
+        this.showAssignedSsl = true
+        this.buttonVisible = true
+      }
+      this.fetchSslCerts()
     },
     returnAlgorithmName (name) {
       switch (name) {
@@ -1510,6 +1972,9 @@ export default {
           successMessage: this.$t('message.success.assign.vm'),
           successMethod: () => {
             this.parentToggleLoading()
+            if (this.selectedSsl.id !== null) {
+              this.handleAddSslCert(data)
+            }
             this.fetchData()
             this.closeModal()
           },
@@ -1560,8 +2025,6 @@ export default {
         this.$notifyError(error)
         this.loading = false
       })
-
-      // assigntoloadbalancerruleresponse.jobid
     },
     closeModal () {
       this.selectedRule = null
@@ -1579,10 +2042,14 @@ export default {
       this.nics = []
       this.addVmModalVisible = false
       this.newRule.virtualmachineid = []
+      this.addLbConfigVisible = false
+      this.addSslCertModalVisible = false
+      this.showAssignedSsl = false
+      this.buttonVisible = false
+      this.savedLbConfigs = []
     },
     handleChangePage (page, pageSize) {
       this.page = page
-      this.pageSize = pageSize
       this.fetchData()
     },
     handleChangePageSize (currentPage, pageSize) {

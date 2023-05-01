@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,26 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-
-package com.cloud.network;
+package org.apache.cloudstack.network.lb;
 
 import java.util.List;
 
-import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule.SslCertEntry;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public interface LoadBalancerConfigurator {
-    public final static int ADD = 0;
-    public final static int REMOVE = 1;
-    public final static int STATS = 2;
+public interface LoadBalancerConfigManager extends Configurable {
 
-    public String[] generateConfiguration(List<PortForwardingRuleTO> fwRules);
+    static final String DefaultLbSSLConfigurationCK = "default.lb.ssl.configuration";
 
-    public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd);
+    static final ConfigKey<String> DefaultLbSSLConfiguration = new ConfigKey<>("Advanced", String.class,
+            DefaultLbSSLConfigurationCK, "none",
+            "Default value of load balancer ssl configuration, could be 'none', 'old' or 'intermediate'",
+            true, ConfigKey.Scope.Global);
 
-    public String[][] generateFwRules(LoadBalancerConfigCommand lbCmd);
+    List<? extends LoadBalancerConfig> getNetworkLbConfigs(Long networkId);
 
-    public SslCertEntry[] generateSslCertEntries(LoadBalancerConfigCommand lbCmd);
+    List<? extends LoadBalancerConfig> getVpcLbConfigs(Long vpcId);
+
+    List<? extends LoadBalancerConfig> getRuleLbConfigs(Long ruleId);
 }

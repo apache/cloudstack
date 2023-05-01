@@ -80,11 +80,11 @@ public class HAProxyConfiguratorTest {
         HAProxyConfigurator hpg = new HAProxyConfigurator();
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "12", false);
         String result = genConfig(hpg, cmd);
-        assertTrue("keepalive disabled should result in 'mode http' in the resulting haproxy config", result.contains("mode http"));
+        assertTrue("keepalive disabled should result in 'option httpclose' in the resulting haproxy config", result.contains("option httpclose"));
 
         cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true);
         result = genConfig(hpg, cmd);
-        assertTrue("keepalive enabled should not result in 'mode http' in the resulting haproxy config", !result.contains("mode http"));
+        assertTrue("keepalive enabled should not result in 'option httpclose' in the resulting haproxy config", result.contains("no option httpclose"));
         // TODO
         // create lb command
         // setup tests for

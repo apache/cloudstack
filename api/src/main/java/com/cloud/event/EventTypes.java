@@ -214,6 +214,10 @@ public class EventTypes {
     public static final String EVENT_LB_CERT_DELETE = "LB.CERT.DELETE";
     public static final String EVENT_LB_CERT_ASSIGN = "LB.CERT.ASSIGN";
     public static final String EVENT_LB_CERT_REMOVE = "LB.CERT.REMOVE";
+    public static final String EVENT_LOAD_BALANCER_CONFIG_CREATE = "LB.CONFIG.CREATE";
+    public static final String EVENT_LOAD_BALANCER_CONFIG_DELETE = "LB.CONFIG.DELETE";
+    public static final String EVENT_LOAD_BALANCER_CONFIG_REPLACE = "LB.CONFIG.REPLACE";
+    public static final String EVENT_LOAD_BALANCER_CONFIG_UPDATE = "LB.CONFIG.UPDATE";
 
     // Global Load Balancer rules
     public static final String EVENT_ASSIGN_TO_GLOBAL_LOAD_BALANCER_RULE = "GLOBAL.LB.ASSIGN";
