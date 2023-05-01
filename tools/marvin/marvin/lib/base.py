@@ -3481,7 +3481,8 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None,
+               sourcenatipaddress=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3563,6 +3564,8 @@ class Network:
             cmd.publicmtu = publicmtu
         if privatemtu:
             cmd.privatemtu = privatemtu
+        if sourcenatipaddress:
+            cmd.sourcenatipaddress = sourcenatipaddress
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
