@@ -84,6 +84,14 @@
           <template #label>
             <tooltip-label :title="$t('label.sourcenatipaddress')" :tooltip="apiParams.sourcenatipaddress.description"/>
           </template>
+          <span v-if="sourcenatipaddress">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="$t('message.sourcenatip.change.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
           <a-input
             v-model:value="form.sourcenatipaddress"
             :placeholder="apiParams.sourcenatipaddress.description"
