@@ -168,7 +168,7 @@
     </a-modal>
     <a-modal
       v-if="changeSourceNat"
-      :title="$t('label.action.set.as.source.nat.ip')"
+      :title="$t('message.sourcenatip.change.warning')"
       :visible="changeSourceNat"
       :closable="true"
       :footer="null"

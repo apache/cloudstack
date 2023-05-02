@@ -80,8 +80,6 @@ public interface VpcService {
     boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     */
-    /**
      * Persists VPC record in the database
      *
      * @param cmd the command with specification data for updating the vpc

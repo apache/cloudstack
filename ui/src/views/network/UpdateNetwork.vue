@@ -84,7 +84,7 @@
           <template #label>
             <tooltip-label :title="$t('label.sourcenatipaddress')" :tooltip="apiParams.sourcenatipaddress.description"/>
           </template>
-          <span v-if="sourcenatipaddress">
+          <span v-if="sourcenatchange">
             <a-alert type="warning">
               <template #message>
                 <span v-html="$t('message.sourcenatip.change.warning')" />
@@ -95,7 +95,8 @@
           <a-input
             v-model:value="form.sourcenatipaddress"
             :placeholder="apiParams.sourcenatipaddress.description"
-            v-focus="true" />
+            v-focus="true"
+            @change="sourcenatchange = form.sourcenatipaddress.length > 0"/>
         </a-form-item>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
@@ -255,7 +256,8 @@ export default {
       minMTU: 68,
       errorPrivateMtu: '',
       errorPublicMtu: '',
-      setMTU: false
+      setMTU: false,
+      sourcenatchange: false
     }
   },
   beforeCreate () {

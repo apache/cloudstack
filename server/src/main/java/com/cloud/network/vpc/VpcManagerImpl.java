@@ -1304,6 +1304,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpcDao.update(vpcId, vpc)) {
             s_logger.debug("Updated VPC id=" + vpcId);
             if (restartRequired) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("restating vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
+                }
                 final User callingUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
                 restartVpc(vpcId, true, false, false, callingUser);
             }
