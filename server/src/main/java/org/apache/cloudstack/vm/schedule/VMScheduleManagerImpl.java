@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.scheduling.support.CronExpression;
@@ -92,16 +93,28 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
 
-        Date startDate = cmd.getStartDate();
-        Date endDate = cmd.getEndDate();
-
-        validateStartDateEndDate(startDate, endDate);
-
-        CronExpression cronExpression = DateUtil.parseSchedule(cmd.getSchedule());
-
+        Date cmdStartDate = cmd.getStartDate();
+        Date cmdEndDate = cmd.getEndDate();
         String cmdTimeZone = cmd.getTimeZone();
         TimeZone timeZone = TimeZone.getTimeZone(cmdTimeZone);
         String timeZoneId = timeZone.getID();
+
+        Date startDate;
+        int offset;
+        if (cmdStartDate != null) {
+            offset = TimeZone.getDefault().getOffset(cmdStartDate.getTime()) - timeZone.getOffset(cmdStartDate.getTime());
+            startDate = DateUtils.addMilliseconds(cmdStartDate, offset);
+        } else startDate = DateUtils.addMinutes(new Date(), 1);
+
+        Date endDate;
+        if (cmdEndDate != null) {
+            offset = TimeZone.getDefault().getOffset(cmdEndDate.getTime()) - timeZone.getOffset(cmdEndDate.getTime());
+            endDate = DateUtils.addMilliseconds(cmdEndDate, offset);
+        } else endDate = null;
+
+        CronExpression cronExpression = DateUtil.parseSchedule(cmd.getSchedule());
+
+        validateStartDateEndDate(startDate, endDate);
 
         String description = null;
         if (StringUtils.isBlank(cmd.getDescription())) {
@@ -112,6 +125,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         String finalDescription = description;
         VMSchedule.Action finalAction = action;
+
         return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
             VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, startDate, endDate, cmd.getEnabled()));
             vmScheduler.scheduleNextJob(vmSchedule);
@@ -190,19 +204,40 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (description == null && vmSchedule.getDescription() == null) {
             description = String.format("%s - %s", vmSchedule.getAction(), DateUtil.getHumanReadableSchedule(cronExpression));
         }
-
         String cmdTimeZone = cmd.getTimeZone();
+        Date cmdStartDate = cmd.getStartDate();
+        Date cmdEndDate = cmd.getEndDate();
+        Boolean enabled = cmd.getEnabled();
 
-        Date startDate = Objects.requireNonNullElse(cmd.getStartDate(), vmSchedule.getStartDate());
+        TimeZone timeZone;
+        String timeZoneId;
+        if (cmdTimeZone != null) {
+            timeZone = TimeZone.getTimeZone(cmdTimeZone);
+            timeZoneId = timeZone.getID();
+            if (!timeZoneId.equals(cmdTimeZone)) {
+                LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM %s, as an equivalent of [%s].",
+                        timeZoneId, vmSchedule.getSchedule(), vmSchedule.getVmId(), cmdTimeZone));
+            }
+            vmSchedule.setTimeZone(timeZoneId);
+        } else {
+            timeZoneId = vmSchedule.getTimeZone();
+            timeZone = TimeZone.getTimeZone(timeZoneId);
+        }
+        Date startDate = null;
+        if (cmdStartDate != null) {
+            int offset = TimeZone.getDefault().getOffset(cmdStartDate.getTime()) - timeZone.getOffset(cmdStartDate.getTime());
+            startDate = DateUtils.addMilliseconds(cmdStartDate, offset);
+        }
 
-        Date endDate = cmd.getEndDate();
-        if (endDate == null && vmSchedule.getEndDate() != null) {
+        Date endDate = null;
+        if (cmdEndDate != null) {
+            int offset = timeZone.getOffset(cmdEndDate.getTime()) + TimeZone.getDefault().getOffset(cmdEndDate.getTime());
+            endDate = DateUtils.addMilliseconds(cmdEndDate, offset);
+        } else {
             endDate = vmSchedule.getEndDate();
         }
 
-        validateStartDateEndDate(startDate, endDate);
-
-        Boolean enabled = cmd.getEnabled();
+        validateStartDateEndDate(Objects.requireNonNullElse(startDate, DateUtils.addMinutes(new Date(), 1)), endDate);
 
         if (enabled != null) {
             vmSchedule.setEnabled(enabled);
@@ -213,16 +248,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (endDate != null) {
             vmSchedule.setEndDate(endDate);
         }
-
-        vmSchedule.setStartDate(startDate);
-        if (cmdTimeZone != null) {
-            TimeZone timeZone = TimeZone.getTimeZone(cmdTimeZone);
-            String timeZoneId = timeZone.getID();
-            if (!timeZoneId.equals(cmdTimeZone)) {
-                LOGGER.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM %s, as an equivalent of [%s].",
-                        timeZoneId, vmSchedule.getSchedule(), vmSchedule.getVmId(), cmdTimeZone));
-            }
-            vmSchedule.setTimeZone(timeZoneId);
+        if (startDate != null) {
+            vmSchedule.setStartDate(startDate);
         }
         vmSchedule.setSchedule(cronExpression.toString());
 

@@ -169,7 +169,6 @@ import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { mixinForm } from '@/utils/mixin'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
-import moment from 'moment'
 import cronstrue from 'cronstrue/i18n'
 
 export default {
@@ -216,7 +215,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('updateVMSchedule')
+    this.apiParams = this.$getApiParams('createVMSchedule')
   },
   computed: {
     pageSizeOptions () {
@@ -250,12 +249,12 @@ export default {
       this.form = reactive({
         action: 'START',
         schedule: '* * * * *',
+        description: '',
         timezone: 'UTC',
         enabled: true,
         useCronFormat: false
       })
       this.rules = reactive({
-        name: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
         schedule: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
         action: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
@@ -270,7 +269,7 @@ export default {
         id: schedule.id,
         virtualmachineid: this.virtualmachine.id
       }).then(() => {
-        const message = `${this.$t('label.removing')} ${schedule.name}`
+        const message = `${this.$t('label.removing')} ${schedule.description}`
         this.$message.success(message)
       }).catch(error => {
         console.error(error)
@@ -299,13 +298,11 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         var params = {
-          name: values.name,
           description: values.description,
           schedule: values.schedule,
           timezone: values.timezone,
           action: values.action,
           virtualmachineid: this.virtualmachine.id,
-          startDate: moment(new Date()).add(1, 'm').format(),
           enabled: values.enabled
         }
         let command = null
@@ -336,7 +333,9 @@ export default {
     },
     resetForm () {
       this.isEdit = false
-      this.formRef.value.resetFields()
+      if (this.formRef.value) {
+        this.formRef.value.resetFields()
+      }
     },
     fetchTimeZone (value) {
       this.timeZoneMap = []

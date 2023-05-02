@@ -445,7 +445,7 @@ class TestVMSchedule(cloudstackTestCase):
                 schedule=schedule,
                 timezone="GMT",
                 startdate=(
-                    datetime.datetime.now() - datetime.timedelta(minutes=5)
+                    datetime.datetime.now() - datetime.timedelta(days=1)
                 ).strftime("%Y-%m-%d %H:%M:%S"),
             )
 
@@ -501,7 +501,7 @@ class TestVMSchedule(cloudstackTestCase):
             self.virtual_machine.id,
             "start",
             start_schedule,
-            "GMT",
+            datetime.datetime.now().astimezone().tzinfo,
             # Current date minutes in format "2014-01-01 00:00:00"
             (datetime.datetime.now() + datetime.timedelta(seconds=5)).strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -518,7 +518,7 @@ class TestVMSchedule(cloudstackTestCase):
             self.virtual_machine.id,
             "stop",
             stop_schedule,
-            "GMT",
+            datetime.datetime.now().astimezone().tzinfo,
             # Current date minutes in format "2014-01-01 00:00:00"
             (datetime.datetime.now() + datetime.timedelta(seconds=5)).strftime(
                 "%Y-%m-%d %H:%M:%S"

@@ -71,8 +71,8 @@ public class CreateVMScheduleCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.START_DATE,
             type = CommandType.DATE,
-            required = true,
-            description = "start date from which the schedule becomes active"
+            required = false,
+            description = "start date from which the schedule becomes active. Defaults to current date plus 1 minute."
                     + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
