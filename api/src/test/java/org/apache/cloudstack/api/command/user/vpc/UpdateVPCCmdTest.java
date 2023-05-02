@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.vpc;
 
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
 import junit.framework.TestCase;
@@ -72,7 +74,7 @@ public class UpdateVPCCmdTest extends TestCase {
         Assert.assertEquals(cmd.getPublicMtu(), publicMtu);
     }
 
-    public void testExecute() {
+    public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {
         ReflectionTestUtils.setField(cmd, "id", 1L);
         ReflectionTestUtils.setField(cmd, "vpcName", "updatedVpcName");
         ReflectionTestUtils.setField(cmd, "displayText", "Updated VPC Name");

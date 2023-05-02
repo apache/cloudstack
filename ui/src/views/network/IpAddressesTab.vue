@@ -84,7 +84,7 @@
                 :danger="false"
                 icon="aim-outlined"
                 :disabled="!('updateNetwork' in $store.getters.apis)"
-                @onClick="setSourceNatIp(record)" />
+                @onClick="showChangeSourceNat(record)" />
             </template>
           </template>
 
@@ -165,6 +165,24 @@
           </div>
         </a-form>
       </a-spin>
+    </a-modal>
+    <a-modal
+      v-if="changeSourceNat"
+      :title="$t('label.action.set.as.source.nat.ip')"
+      :visible="changeSourceNat"
+      :closable="true"
+      :footer="null"
+      @cancel="cancelChangeSourceNat"
+      centered
+      :disabled="!('updateNetwork' in $store.getters.apis)"
+      width="450px">
+      <template>
+        <a-alert :message="$t('message.sourcenatip.change.warning')" type="warning" />
+      </template>
+      <div :span="24" class="action-button">
+        <a-button @click="cancelChangeSourceNat">{{ $t('label.cancel') }}</a-button>
+        <a-button ref="submit" type="primary" @click="setSourceNatIp(record)">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
     <bulk-action-view
       v-if="showConfirmationAction || showGroupActionModal"
@@ -259,7 +277,8 @@ export default {
       showAcquireIp: false,
       acquireLoading: false,
       acquireIp: null,
-      listPublicIpAddress: []
+      listPublicIpAddress: [],
+      changeSourceNat: false
     }
   },
   created () {
@@ -334,37 +353,47 @@ export default {
     },
     setSourceNatIp (ipaddress) {
       if (this.settingsourcenat) return
-      const params = {}
-      params.sourcenatipaddress = ipaddress.ipaddress
       if (this.$route.path.startsWith('/vpc')) {
-        params.id = this.resource.id
-        this.settingsourcenat = true
-        api('updateVPC', params).then(response => {
-          this.fetchData()
-        }).catch(error => {
-          this.$notification.error({
-            message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.updatevpcresponse.errortext || error.response.data.errorresponse.errortext,
-            duration: 0
-          })
-        }).finally(() => {
-          this.settingsourcenat = false
-        })
+        this.updateVpc(ipaddress)
       } else {
-        params.id = this.resource.id
-        this.settingsourcenat = true
-        api('updateNetwork', params).then(response => {
-          this.fetchData()
-        }).catch(error => {
-          this.$notification.error({
-            message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.updatenetworkresponse.errortext || error.response.data.errorresponse.errortext,
-            duration: 0
-          })
-        }).finally(() => {
-          this.settingsourcenat = false
-        })
+        this.updateNetwork(ipaddress)
       }
+    },
+    updateNetwork (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      api('updateNetwork', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatenetworkresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
+    },
+    updateVpc (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      api('updateVPC', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatevpcresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
     },
     resetSelection () {
       this.setSelection([])
@@ -525,6 +554,13 @@ export default {
     },
     closeModal () {
       this.showConfirmationAction = false
+    },
+    showChangeSourceNat (ipaddress) {
+      this.changeSourceNat = true
+      this.sourceNatIp = ipaddress
+    },
+    cancelChangeSourceNat () {
+      this.changeSourceNat = false
     }
   }
 }

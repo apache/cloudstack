@@ -80,12 +80,16 @@ public interface VpcService {
     boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
+     */
+    /**
      * Persists VPC record in the database
      *
      * @param cmd the command with specification data for updating the vpc
      * @return a data object describing the new vpc state
+     * @throws ResourceUnavailableException if during restart some resources may not be available
+     * @throws InsufficientCapacityException if for instance no address space, compute or storage is sufficiently available
      */
-    Vpc updateVpc(UpdateVPCCmd cmd);
+    Vpc updateVpc(UpdateVPCCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Updates VPC with new name/displayText
@@ -98,8 +102,10 @@ public interface VpcService {
      * @param mtu what maximal transfer unit to us in this VPCs networks
      * @param sourceNatIp the source NAT address to use for this VPC (must already be associated with the VPC)
      * @return an object describing the current state of the VPC
+     * @throws ResourceUnavailableException if during restart some resources may not be available
+     * @throws InsufficientCapacityException if for instance no address space, compute or storage is sufficiently available
      */
-    Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc, Integer mtu, String sourceNatIp);
+    Vpc updateVpc(long vpcId, String vpcName, String displayText, String customId, Boolean displayVpc, Integer mtu, String sourceNatIp) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Lists VPC(s) based on the parameters passed to the API call

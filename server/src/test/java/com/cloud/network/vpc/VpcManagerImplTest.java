@@ -359,7 +359,7 @@ public class VpcManagerImplTest {
     }
 
     @Test
-    public void testUpdateVpcNetwork() throws ResourceUnavailableException {
+    public void testUpdateVpcNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
         long vpcId = 1L;
         Integer publicMtu = 1450;
         String sourceNatIp = "1.2.3.4";

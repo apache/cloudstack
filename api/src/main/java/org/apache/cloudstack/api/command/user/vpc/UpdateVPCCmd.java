@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
@@ -117,13 +119,22 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Override
     public void execute() {
-        Vpc result = _vpcService.updateVpc(this);
-        if (result != null) {
-            VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VPC");
+        try {
+            Vpc result = _vpcService.updateVpc(this);
+            if (result != null) {
+                VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VPC");
+            }
+        } catch (final ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (final InsufficientCapacityException ex) {
+            s_logger.info(ex);
+            s_logger.trace(ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
 
