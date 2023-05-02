@@ -878,10 +878,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         if (newParentDomain.getPath().startsWith(domainToBeMoved.getPath())) {
-            throw new InvalidParameterValueException("The new parent domain of the domain cannot be one of its child.");
+            throw new InvalidParameterValueException("The new parent domain of the domain cannot be one of its children.");
         }
 
         validateUniqueDomainName(domainToBeMoved.getName(), idOfNewParentDomain);
+
+        validateNewParentDomainResourceLimits(domainToBeMoved, newParentDomain);
 
         String currentPathOfDomainToBeMoved = domainToBeMoved.getPath();
         String domainToBeMovedName = domainToBeMoved.getName().concat("/");
@@ -898,11 +900,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
                 updateDomainAndChildrenPathAndLevel(domainToBeMoved, newParentDomain, currentPathOfDomainToBeMoved, newPathOfDomainToBeMoved);
 
-                for (Resource.ResourceType resourceType : Resource.ResourceType.values()) {
-                    s_logger.debug(String.format("Recalculating the resource limit of the domain to be moved [%s] for the type [%s].", domainToBeMoved, resourceType));
-                    resourceLimitService.findCorrectResourceLimitForDomain(domainToBeMoved, resourceType);
-                }
-
                 updateResourceCounts(idOfCurrentParentOfDomainToBeMoved, idOfNewParentDomain);
 
                 updateChildCounts(parentOfDomainToBeMoved, newParentDomain);
@@ -910,6 +907,25 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         });
 
         return domainToBeMoved;
+    }
+
+    protected void validateNewParentDomainResourceLimits(DomainVO domainToBeMoved, DomainVO newParentDomain) throws ResourceAllocationException {
+        long domainToBeMovedId = domainToBeMoved.getId();
+        long newParentDomainId = newParentDomain.getId();
+        for (Resource.ResourceType resourceType : Resource.ResourceType.values()) {
+            long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainToBeMovedId, ResourceOwnerType.Domain, resourceType);
+            long newParentDomainResourceCount = _resourceCountDao.getResourceCount(newParentDomainId, ResourceOwnerType.Domain, resourceType);
+            long newParentDomainResourceLimit = resourceLimitService.findCorrectResourceLimitForDomain(newParentDomain, resourceType);
+
+            if (currentDomainResourceCount + newParentDomainResourceCount > newParentDomainResourceLimit) {
+                String message = String.format("Cannot move domain [%s] to parent domain [%s] as maximum domain resource limit of type [%s] would be exceeded. The current resource "
+                        + "count for domain [%s] is [%s], the resource count for the new parent domain [%s] is [%s], and the limit is [%s].", domainToBeMoved.getUuid(),
+                        newParentDomain.getUuid(), resourceType, domainToBeMoved.getUuid(), currentDomainResourceCount, newParentDomain.getUuid(), newParentDomainResourceCount,
+                        newParentDomainResourceLimit);
+                s_logger.error(message);
+                throw new ResourceAllocationException(message, resourceType);
+            }
+        }
     }
 
     protected void validateNewParentDomainCanAccessAllDomainToBeMovedResources(DomainVO domainToBeMoved, DomainVO newParentDomain, String currentPathOfDomainToBeMoved,
