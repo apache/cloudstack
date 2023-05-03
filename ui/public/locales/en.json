@@ -2867,7 +2867,7 @@
 "message.shared.network.offering.warning": "Domain admins and regular users can only create shared networks from network offering with the setting specifyvlan=false. Please contact an administrator to create a network offering if this list is empty.",
 "message.shutdown.triggered": "A shutdown has been triggered. CloudStack will not accept new jobs",
 "message.sourcenatip.change.warning": "WARNING: Changing the sourcenat IP address of the network will cause connectivity downtime for the VMs with NICs in the network.",
-"message.sourcenatip.change.inhibited": "Changing the sourcenat to this IP of the network to this address is inhibbited as firewall rules are defined for it. This can include port forwarding or load balancing rules.\n - If this is an isolated network, please use updateNetwork/click the edit button.\n - If this is a VPC, first clear all other rules for this address.",
+"message.sourcenatip.change.inhibited": "Changing the sourcenat to this IP of the network to this address is inhibited as firewall rules are defined for it. This can include port forwarding or load balancing rules.\n - If this is an isolated network, please use updateNetwork/click the edit button.\n - If this is a VPC, first clear all other rules for this address.",
 "message.specify.tag.key": "Please specify a tag key.",
 "message.specify.tag.value": "Please specify a tag value.",
 "message.step.2.continue": "Please select a service offering to continue.",
