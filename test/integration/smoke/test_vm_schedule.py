@@ -163,7 +163,7 @@ class TestVMSchedule(cloudstackTestCase):
             self.virtual_machine.id,
             "start",
             schedule,
-            "GMT",
+            datetime.datetime.now().astimezone().tzinfo,
             # Current date minutes in format "2014-01-01 00:00:00"
             (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -210,7 +210,7 @@ class TestVMSchedule(cloudstackTestCase):
 
         self.assertEqual(
             vmschedules[0].timezone,
-            "GMT",
+            str(datetime.datetime.now().astimezone().tzinfo),
             "Check VM Schedule timezone in list resources call",
         )
 
@@ -252,7 +252,7 @@ class TestVMSchedule(cloudstackTestCase):
                 "invalid",
                 "start",
                 "0 0 1 * *",
-                "GMT",
+                datetime.datetime.now().astimezone().tzinfo,
                 # Current date minutes in format "2014-01-01 00:00:00"
                 (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -266,7 +266,7 @@ class TestVMSchedule(cloudstackTestCase):
                 self.virtual_machine.id,
                 "start",
                 "invalid",
-                "GMT",
+                datetime.datetime.now().astimezone().tzinfo,
                 # Current date minutes in format "2014-01-01 00:00:00"
                 (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -280,7 +280,7 @@ class TestVMSchedule(cloudstackTestCase):
                 self.virtual_machine.id,
                 "start",
                 "0 0 1 * *",
-                "GMT",
+                datetime.datetime.now().astimezone().tzinfo,
                 # Current date minutes in format "2014-01-01 00:00:00"
                 "invalid",
             )
@@ -292,7 +292,7 @@ class TestVMSchedule(cloudstackTestCase):
                 self.virtual_machine.id,
                 "invalid",
                 "0 0 1 * *",
-                "GMT",
+                datetime.datetime.now().astimezone().tzinfo,
                 # Current date minutes in format "2014-01-01 00:00:00"
                 (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -306,7 +306,7 @@ class TestVMSchedule(cloudstackTestCase):
                 self.virtual_machine.id,
                 "start",
                 "0 0 1 * *",
-                "GMT",
+                datetime.datetime.now().astimezone().tzinfo,
                 # Current date minutes in format "2014-01-01 00:00:00"
                 (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -330,7 +330,7 @@ class TestVMSchedule(cloudstackTestCase):
             self.virtual_machine.id,
             "start",
             schedule,
-            "GMT",
+            datetime.datetime.now().astimezone().tzinfo,
             # Current date minutes in format "2014-01-01 00:00:00"
             (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -349,7 +349,7 @@ class TestVMSchedule(cloudstackTestCase):
             virtualmachineid=self.virtual_machine.id,
             description="TestVM",
             schedule=new_schedule,
-            timezone="IST",
+            timezone=datetime.datetime.now().astimezone().tzinfo,
             startdate=(
                 datetime.datetime.now() + datetime.timedelta(minutes=10)
             ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -410,7 +410,7 @@ class TestVMSchedule(cloudstackTestCase):
             self.virtual_machine.id,
             "start",
             schedule,
-            "GMT",
+            datetime.datetime.now().astimezone().tzinfo,
             # Current date minutes in format "2014-01-01 00:00:00"
             (datetime.datetime.now() + datetime.timedelta(minutes=5)).strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -429,7 +429,7 @@ class TestVMSchedule(cloudstackTestCase):
                 virtualmachineid=self.virtual_machine.id,
                 description="TestVM",
                 schedule="invalid",
-                timezone="GMT",
+                timezone=datetime.datetime.now().astimezone().tzinfo,
                 startdate=(
                     datetime.datetime.now() + datetime.timedelta(minutes=5)
                 ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -443,7 +443,7 @@ class TestVMSchedule(cloudstackTestCase):
                 virtualmachineid=self.virtual_machine.id,
                 description="TestVM",
                 schedule=schedule,
-                timezone="GMT",
+                timezone=datetime.datetime.now().astimezone().tzinfo,
                 startdate=(
                     datetime.datetime.now() - datetime.timedelta(days=1)
                 ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -457,7 +457,7 @@ class TestVMSchedule(cloudstackTestCase):
                 virtualmachineid=self.virtual_machine.id,
                 description="TestVM",
                 schedule=schedule,
-                timezone="GMT",
+                timezone=datetime.datetime.now().astimezone().tzinfo,
                 startdate=(
                     datetime.datetime.now() + datetime.timedelta(minutes=5)
                 ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -471,7 +471,7 @@ class TestVMSchedule(cloudstackTestCase):
                 virtualmachineid=self.virtual_machine.id,
                 description="TestVM",
                 schedule=schedule,
-                timezone="GMT",
+                timezone=datetime.datetime.now().astimezone().tzinfo,
                 startdate=(
                     datetime.datetime.now() + datetime.timedelta(minutes=5)
                 ).strftime("%Y-%m-%d %H:%M:%S"),

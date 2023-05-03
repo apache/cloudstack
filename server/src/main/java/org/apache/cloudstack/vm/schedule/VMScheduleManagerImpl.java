@@ -231,7 +231,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         Date endDate = null;
         if (cmdEndDate != null) {
-            int offset = timeZone.getOffset(cmdEndDate.getTime()) + TimeZone.getDefault().getOffset(cmdEndDate.getTime());
+            int offset = TimeZone.getDefault().getOffset(cmdEndDate.getTime()) - timeZone.getOffset(cmdEndDate.getTime());
             endDate = DateUtils.addMilliseconds(cmdEndDate, offset);
         } else {
             endDate = vmSchedule.getEndDate();
