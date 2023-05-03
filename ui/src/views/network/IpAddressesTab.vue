@@ -67,16 +67,15 @@
         :pagination="false" >
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'ipaddress'">
-            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }}&nbsp;</router-link>
             <div v-else>{{ text }}</div>
-            &nbsp;
             <template v-if="record.issourcenat === true">
               <a-tag>{{ $t('label.sourcenat') }}</a-tag>
             </template>
             <template v-else-if="record.isstaticnat === true">
               <a-tag>{{ $t('label.staticnat') }}</a-tag>
             </template>
-            <template v-else-if="record.isstaticnat === false">
+            <template v-else-if="record.hasrules === false">
               <tooltip-button
                 v-if="record.forvirtualnetwork === true"
                 :tooltip="$t('label.action.set.as.source.nat.ip')"
@@ -84,7 +83,12 @@
                 :danger="false"
                 icon="aim-outlined"
                 :disabled="!('updateNetwork' in $store.getters.apis)"
-                @onClick="showChangeSourceNat(record)" />
+                @onClick="showChangeSourceNat(record)"></tooltip-button>
+            </template>
+            <template v-else><!-- -if="record.hasrules === true" -->
+              <Tooltip placement="topLeft" :title="$t('message.sourcenatip.change.inhibited')" >
+                <a-tag>{{ $t('label.hasrules') }}</a-tag>
+              </Tooltip>
             </template>
           </template>
 
