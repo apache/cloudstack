@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVmsToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVmsFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
@@ -81,7 +83,9 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster findById(final Long id);
 
-    KubernetesCluster createKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
+    KubernetesCluster createUnmanagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException;
 
@@ -98,4 +102,8 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean addVmsToCluster(AddVmsToKubernetesClusterCmd cmd);
+
+    boolean removeVmsFromCluster(RemoveVmsFromKubernetesClusterCmd cmd);
 }

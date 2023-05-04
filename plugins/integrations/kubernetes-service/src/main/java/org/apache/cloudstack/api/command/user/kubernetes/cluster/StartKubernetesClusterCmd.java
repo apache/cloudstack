@@ -99,6 +99,9 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
         if (kubernetesCluster == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Given Kubernetes cluster was not found");
         }
+        if (!kubernetesCluster.getManaged()) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Given Kubernetes cluster is not managed by Apache CloudStack");
+        }
         return kubernetesCluster;
     }
 

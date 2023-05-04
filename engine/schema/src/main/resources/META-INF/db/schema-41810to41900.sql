@@ -138,6 +138,7 @@ ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime C
 
 -- create_public_parameter_on_roles. #6960
 ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
+<<<<<<< HEAD
 
 -- Add tables for VM Scheduler
 DROP TABLE IF EXISTS `cloud`.`vm_schedule`;
@@ -176,3 +177,6 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
   CONSTRAINT `fk_vm_scheduled_job__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vm_scheduled_job__vm_schedule_id` FOREIGN KEY (`vm_schedule_id`) REFERENCES `vm_schedule`(`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN is_managed tinyint(1) DEFAULT 1;
+ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL;

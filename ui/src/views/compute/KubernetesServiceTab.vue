@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="clusterConfig !== ''" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
