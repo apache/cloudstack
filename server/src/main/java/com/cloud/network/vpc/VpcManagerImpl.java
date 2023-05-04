@@ -1765,14 +1765,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
 
                     // 4) Vpc's account should be able to access network owner's account
-                    Account vpcaccount = _accountMgr.getAccount(vpc.getAccountId());
-                    try {
-                        _accountMgr.checkAccess(vpcaccount, null, false, networkOwner);
-                    }
-                    catch (PermissionDeniedException e) {
-                        s_logger.error(e.getMessage());
-                        throw new InvalidParameterValueException(String.format("VPC owner does not have access to account [%s].", networkOwner.getAccountName()));
-                    }
+                    CheckAccountsAccess(vpc, networkOwner);
 
                     // 5) network domain should be the same as VPC's
                     if (!networkDomain.equalsIgnoreCase(vpc.getNetworkDomain())) {
@@ -1789,6 +1782,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         });
+    }
+
+    private void CheckAccountsAccess(Vpc vpc, Account networkAccount) {
+        Account vpcaccount = _accountMgr.getAccount(vpc.getAccountId());
+        try {
+            _accountMgr.checkAccess(vpcaccount, null, false, networkAccount);
+        }
+        catch (PermissionDeniedException e) {
+            s_logger.error(e.getMessage());
+            throw new InvalidParameterValueException(String.format("VPC owner does not have access to account [%s].", networkAccount.getAccountName()));
+        }
     }
 
     public List<VpcProvider> getVpcElements() {
