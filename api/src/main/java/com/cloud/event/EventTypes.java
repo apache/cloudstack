@@ -714,6 +714,9 @@ public class EventTypes {
     // SystemVM
     public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
 
+    public static final String EVENT_BUCKET_CREATE = "BUCKET.CREATE";
+    public static final String EVENT_BUCKET_DELETE = "BUCKET.DELETE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

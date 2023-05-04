@@ -38,5 +38,10 @@
             <artifactId>cloud-engine-storage-object</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.2</version>
+        </dependency>
     </dependencies>
 </project>

@@ -20,6 +20,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
+import io.minio.MinioClient;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -78,6 +79,20 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
         objectStoreParameters.put("protocol", protocol);
         objectStoreParameters.put("providerName", providerName);
+
+        //check credentials
+        MinioClient minioClient =
+                MinioClient.builder()
+                        .endpoint("http://172.23.22.219:9000")
+                        .credentials("Gw0Ib6dqvFV4E755","B80AclQmt19XQ3LSES3jiZyWFogcpY4U")
+                        .build();
+        try {
+            // Test connection by listing buckets
+            minioClient.listBuckets();
+            s_logger.debug("Successfully connected to MinIO EndPoint: "+url);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         ObjectStoreVO ids = objectStoreHelper.createObjectStore(objectStoreParameters, details);
         return objectStoreMgr.getObjectStore(ids.getId());

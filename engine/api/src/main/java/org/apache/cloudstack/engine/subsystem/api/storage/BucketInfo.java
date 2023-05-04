@@ -16,12 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.object;
+package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.Bucket;
-import com.cloud.storage.ObjectStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
-public interface ObjectStoreEntity extends DataStore, ObjectStore {
-    Bucket createBucket(String bucketName);
+public interface BucketInfo extends DataObject, Bucket {
+
+    void addPayload(Object data);
+
+    Object getPayload();
+
+    Bucket getBucket();
 }

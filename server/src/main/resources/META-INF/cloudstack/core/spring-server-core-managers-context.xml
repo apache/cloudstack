@@ -352,6 +352,7 @@
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
     <bean id="resourceIconManager" class="com.cloud.resourceicon.ResourceIconManagerImpl" />
+    <bean id="bucketApiServiceImpl" class="com.cloud.storage.object.BucketApiServiceImpl" />
 
     <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
     <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">

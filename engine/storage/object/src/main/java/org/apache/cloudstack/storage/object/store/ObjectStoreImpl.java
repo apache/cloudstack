@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.object.store;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.storage.Bucket;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -97,7 +98,13 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
 
     @Override
     public DataObject create(DataObject obj) {
+        driver.createBucket("name", objectStoreVO.getId());
         return null;
+    }
+
+    @Override
+    public Bucket createBucket(String bucketName) {
+        return driver.createBucket(bucketName, objectStoreVO.getId());
     }
 
     @Override

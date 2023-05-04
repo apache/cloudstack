@@ -276,6 +276,7 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -294,6 +295,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -348,6 +350,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
@@ -484,8 +487,9 @@ public class ApiDBUtils {
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
-
     static ObjectStoreDao s_objectStoreDao;
+
+    static BucketDao s_bucketDao;
 
     @Inject
     private ManagementServer ms;
@@ -746,6 +750,9 @@ public class ApiDBUtils {
     SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
     private ObjectStoreDao objectStoreDao;
 
+    @Inject
+    private BucketDao bucketDao;
+
     @PostConstruct
     void init() {
         s_ms = ms;
@@ -878,6 +885,7 @@ public class ApiDBUtils {
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
         s_objectStoreDao = objectStoreDao;
+        s_bucketDao = bucketDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2222,5 +2230,9 @@ public class ApiDBUtils {
 
     public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
+    }
+
+    public static BucketResponse newBucketResponse(BucketVO bucket) {
+        return s_bucketDao.newBucketResponse(bucket);
     }
 }

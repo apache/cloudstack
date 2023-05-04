@@ -26,7 +26,9 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
+import javax.persistence.Transient;
 import java.util.Date;
+import java.util.Map;
 
 @Entity
 @Table(name = "object_store")
@@ -62,6 +64,9 @@ public class ObjectStoreVO implements ObjectStore {
 
     @Column(name = "used_bytes")
     private Long usedBytes;
+
+    @Transient
+    Map<String, String> details;
 
     @Override
     public long getId() {
@@ -142,5 +147,9 @@ public class ObjectStoreVO implements ObjectStore {
 
     public void setUsedBytes(Long usedBytes) {
         this.usedBytes = usedBytes;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

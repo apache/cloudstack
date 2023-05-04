@@ -31,6 +31,6 @@
         class="org.apache.cloudstack.storage.object.manager.ObjectStoreProviderManagerImpl" />
     <bean id="objectStoreHelper"
           class="org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper" />
-
+    <bean id="bucketDao" class="com.cloud.storage.dao.BucketDaoImpl" />
 
 </beans>

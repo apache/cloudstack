@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.object.BucketApiService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -216,6 +217,8 @@ public abstract class BaseCmd {
     public Ipv6Service ipv6Service;
     @Inject
     public VnfTemplateManager vnfTemplateManager;
+    @Inject
+    public BucketApiService _bucketService;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.storage.Bucket;
 import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -39,6 +40,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -538,4 +540,6 @@ public interface ResponseGenerator {
     IpQuarantineResponse createQuarantinedIpsResponse(PublicIpQuarantine publicIp);
 
     ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
+
+    BucketResponse createBucketResponse(ResponseView responseView, Bucket bucket);
 }

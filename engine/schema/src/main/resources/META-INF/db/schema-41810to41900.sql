@@ -259,3 +259,18 @@ CREATE TABLE `cloud`.`object_store_details` (
   CONSTRAINT `fk_object_store_details__store_id` FOREIGN KEY `fk_object_store__store_id`(`store_id`) REFERENCES `object_store`(`id`) ON DELETE CASCADE,
   INDEX `i_object_store__name__value`(`name`(128), `value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`bucket`;
+CREATE TABLE `cloud`.`bucket` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of bucket',
+  `object_store_id` varchar(255) NOT NULL COMMENT 'id of object_store',
+  `state` varchar(255) NOT NULL COMMENT 'state of the bucket',
+  `uuid` varchar(255) COMMENT 'uuid of bucket',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain the bucket belongs to',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+  `created` datetime COMMENT 'date the bucket was created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

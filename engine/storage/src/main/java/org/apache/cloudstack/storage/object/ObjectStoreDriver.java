@@ -18,7 +18,27 @@
  */
 package org.apache.cloudstack.storage.object;
 
+import com.amazonaws.services.s3.model.AccessControlList;
+import com.amazonaws.services.s3.model.BucketPolicy;
+import com.cloud.storage.Bucket;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 
+import java.util.List;
+
 public interface ObjectStoreDriver extends DataStoreDriver {
+    Bucket createBucket(String bucketName, long storeId);
+
+    List<Bucket> listBuckets(long storeId);
+
+    void deleteBucket(String bucketName,long storeId);
+
+    AccessControlList getBucketAcl(String bucketName, long storeId);
+
+    void setBucketAcl(String bucketName, AccessControlList acl, long storeId);
+
+    void setBucketPolicy(String bucketName, String policyText, long storeId);
+
+    BucketPolicy getBucketPolicy(String bucketName, long storeId);
+
+    void deleteBucketPolicy(String bucketName, long storeId);
 }

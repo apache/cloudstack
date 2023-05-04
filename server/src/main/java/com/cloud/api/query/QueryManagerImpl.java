@@ -265,6 +265,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
@@ -279,6 +280,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -314,6 +316,8 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
+import org.apache.cloudstack.api.response.BucketResponse;
 
 import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
@@ -548,6 +552,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private SnapshotJoinDao snapshotJoinDao;
 
     private ObjectStoreDao objectStoreDao;
+
+    @Inject
+    private BucketDao bucketDao;
 
     @Inject
     EntityManager entityManager;
@@ -5101,6 +5108,52 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         List<ObjectStoreVO> objectStores = objectStoreDao.searchByIds(osIds);
         return new Pair<List<ObjectStoreVO>, Integer>(objectStores, count);
+    }
+
+
+    @Override
+    public ListResponse<BucketResponse> searchForBuckets(ListBucketsCmd listBucketsCmd) {
+        List<BucketVO> result = searchForBucketsInternal(listBucketsCmd);
+        ListResponse<BucketResponse> response = new ListResponse<>();
+        List<BucketResponse> bucketResponses = ViewResponseHelper.createBucketResponse(result.toArray(new BucketVO[result.size()]));
+        response.setResponses(bucketResponses, bucketResponses.size());
+        return response;
+    }
+
+    private List<BucketVO> searchForBucketsInternal(ListBucketsCmd cmd) {
+
+        Object id = cmd.getId();
+        Object name = cmd.getBucketName();
+        Object storeId = cmd.getObjectStorageId();
+        Object keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        Filter searchFilter = new Filter(BucketVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<BucketVO> sb = bucketDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<BucketVO> sc = sb.create();
+
+        if (keyword != null) {
+            SearchCriteria<BucketVO> ssc = bucketDao.createSearchCriteria();
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        List<BucketVO> buckets = bucketDao.search(sc, searchFilter);
+        return buckets;
     }
 
     @Override

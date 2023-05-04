@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -89,6 +90,7 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.Domain;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeStats;
@@ -676,5 +678,13 @@ public class ViewResponseHelper {
             storeList.put(store.getId(), storeData);
         }
         return new ArrayList<>(storeList.values());
+    }
+
+    public static List<BucketResponse> createBucketResponse(BucketVO[] buckets) {
+        List<BucketResponse> bucketList = new ArrayList<>();
+        for (BucketVO bucket : buckets) {
+            bucketList.add(ApiDBUtils.newBucketResponse(bucket));
+        }
+        return bucketList;
     }
 }
