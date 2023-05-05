@@ -22,20 +22,21 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.Id;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
+import javax.persistence.Transient;
+
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "service_offering")
@@ -196,6 +197,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         vmType = offering.getSystemVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
+        diskOfferingStrictness = offering.diskOfferingStrictness;
     }
 
     @Override

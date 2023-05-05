@@ -387,7 +387,10 @@
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="zone && zone.networktype !== 'Basic'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected" style="margin-top: 5px">
+                    <div style="margin-bottom: 10px">
+                      {{ $t('message.network.selection') }}
+                    </div>
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
                       <instance-nics-network-select-list-view
                         :nics="templateNics"
