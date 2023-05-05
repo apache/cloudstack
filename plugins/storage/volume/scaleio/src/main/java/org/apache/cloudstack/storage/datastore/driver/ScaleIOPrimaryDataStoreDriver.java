@@ -470,6 +470,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId) {
+        return createVolume(volumeInfo, storagePoolId, false);
+    }
+
+    public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId, boolean migrationInvolved) {
         LOGGER.debug("Creating PowerFlex volume");
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
@@ -514,7 +518,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             CreateObjectAnswer answer = new CreateObjectAnswer(createdObject.getTO());
 
             // if volume needs to be set up with encryption, do it now if it's not a root disk (which gets done during template copy)
-            if (anyVolumeRequiresEncryption(volumeInfo) && !volumeInfo.getVolumeType().equals(Volume.Type.ROOT)) {
+            if (anyVolumeRequiresEncryption(volumeInfo) && (!volumeInfo.getVolumeType().equals(Volume.Type.ROOT) || migrationInvolved)) {
                 LOGGER.debug(String.format("Setting up encryption for volume %s", volumeInfo.getId()));
                 VolumeObjectTO prepVolume = (VolumeObjectTO) createdObject.getTO();
                 prepVolume.setPath(volumePath);
@@ -826,7 +830,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         Answer answer = null;
         try {
-            CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());
+            CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId(), true);
             destVolumePath = createAnswer.getData().getPath();
             destVolTO.setPath(destVolumePath);
 
