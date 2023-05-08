@@ -210,7 +210,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
 
         TemplateInfo directDownloadTemplateInfo = templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(srcVolumeInfo.getTemplateId(), destDataStore.getId(), destHost.getId());
         if (directDownloadTemplateInfo != null) {
-            LOGGER.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
+            logger.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
             return;
         }
 
