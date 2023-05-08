@@ -1301,17 +1301,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         boolean restartRequired = checkAndUpdateRouterSourceNatIp(vpcToUpdate, sourceNatIp);
 
-        if (vpcDao.update(vpcId, vpc)) {
+        if (vpcDao.update(vpcId, vpc) || restartRequired) { // Note that the update may fail because nothing has changed, other than the sourcenat ip
             s_logger.debug("Updated VPC id=" + vpcId);
             if (restartRequired) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("restating vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
+                    s_logger.debug(String.format("restarting vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
                 }
                 final User callingUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
                 restartVpc(vpcId, true, false, false, callingUser);
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("no restart needed.");
+                }
             }
             return vpcDao.findById(vpcId);
         } else {
+            s_logger.error(String.format("failed to update vpc %s/%s",vpc.getName(), vpc.getUuid()));
             return null;
         }
     }
@@ -1324,7 +1329,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (! userIps.isEmpty()) {
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
-            } catch (Exception e) { // pokemon execption from transaction
+            } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());
                 s_logger.error(msg);
