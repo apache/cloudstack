@@ -433,21 +433,30 @@ export default class RFB extends EventTargetMixin {
         this._resumeAuthentication();
     }
 
-    sendText(text) {
-        for (var i = 0; i < text.length; i++) {
-            const character = text.charAt(i);
-            var charCode = USKeyTable[character] || false;
-            if (charCode) {
-                this.sendKey(charCode, character, true);
-                this.sendKey(charCode, character, false);
-            } else {
-                charCode = text.charCodeAt(i)
-                this.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", true);
-                this.sendKey(charCode, character, true);
-                this.sendKey(charCode, character, false);
-                this.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", false);
+     sendText(text) {
+        const sleep = (time) => {
+            return new Promise(resolve => setTimeout(resolve, time))
+        }
+
+        const keyboardTypeText = async () => {
+            for (var i = 0; i < text.length; i++) {
+                const character = text.charAt(i);
+                var charCode = USKeyTable[character] || false;
+                if (charCode) {
+                    this.sendKey(charCode, character, true);
+                    this.sendKey(charCode, character, false);
+                } else {
+                    charCode = text.charCodeAt(i)
+                    this.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", true);
+                    this.sendKey(charCode, character, true);
+                    this.sendKey(charCode, character, false);
+                    this.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", false);
+                }
+                await sleep(25)
             }
         }
+
+        keyboardTypeText()
     }
 
     sendCtrlAltDel() {
