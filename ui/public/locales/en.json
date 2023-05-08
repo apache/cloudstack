@@ -593,6 +593,7 @@
 "label.delete.certificate": "Delete certificate",
 "label.delete.ciscoasa1000v": "Delete CiscoASA1000v",
 "label.delete.ciscovnmc.resource": "Delete CiscoVNMC resource",
+"label.delete.condition": "Delete condition",
 "label.delete.dedicated.vlan.range": "Deleted dedicated VLAN/VNI range.",
 "label.delete.domain": "Delete domain",
 "label.delete.events": "Delete events",
