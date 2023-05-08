@@ -147,9 +147,9 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      * Configures a {@link MigrateDiskInfo} object configured for migrating a File System volume and calls rootImageProvisioning.
      */
     @Override
-    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath) {
-        return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(), MigrateCommand.MigrateDiskInfo.DiskType.FILE, MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
-                MigrateCommand.MigrateDiskInfo.Source.FILE, destPath);
+    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath, String backingPath) {
+            return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(), MigrateCommand.MigrateDiskInfo.DiskType.FILE, MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
+                    MigrateCommand.MigrateDiskInfo.Source.FILE, destPath, backingPath);
     }
 
     /**
@@ -159,6 +159,15 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
         return new File(destStoragePool.getPath(), destVolumeInfo.getUuid()).getAbsolutePath();
+    }
+
+    @Override
+    protected String generateBackingPath(StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        String templateInstallPath = getVolumeBackingFile(destVolumeInfo);
+        if (templateInstallPath == null) {
+            return null;
+        }
+        return new File(destStoragePool.getPath(), templateInstallPath).getAbsolutePath();
     }
 
     /**
@@ -196,6 +205,12 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
             Host destHost) {
         if (srcVolumeInfo.getVolumeType() != Volume.Type.ROOT || srcVolumeInfo.getTemplateId() == null) {
+            return;
+        }
+
+        TemplateInfo directDownloadTemplateInfo = templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(srcVolumeInfo.getTemplateId(), destDataStore.getId(), destHost.getId());
+        if (directDownloadTemplateInfo != null) {
+            LOGGER.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
             return;
         }
 

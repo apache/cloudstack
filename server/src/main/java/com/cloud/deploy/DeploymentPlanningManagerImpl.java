@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.deploy;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,10 +25,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -56,6 +60,8 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -63,6 +69,9 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -94,6 +103,7 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -114,26 +124,32 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -142,8 +158,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
 StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
@@ -262,6 +276,35 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
         _affinityProcessors = affinityProcessors;
+    }
+
+    protected void avoidOtherClustersForDeploymentIfMigrationDisabled(VirtualMachine vm, Host lastHost, ExcludeList avoids) {
+        if (lastHost == null || lastHost.getClusterId() == null ||
+                ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId())) {
+            return;
+        }
+        List<VolumeVO> volumes = _volsDao.findUsableVolumesForInstance(vm.getId());
+        if (CollectionUtils.isEmpty(volumes)) {
+            return;
+        }
+        boolean storageMigrationNeededDuringClusterMigration = false;
+        for (Volume volume : volumes) {
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (List.of(ScopeType.HOST, ScopeType.CLUSTER).contains(pool.getScope())) {
+                storageMigrationNeededDuringClusterMigration = true;
+                break;
+            }
+        }
+        if (!storageMigrationNeededDuringClusterMigration) {
+            return;
+        }
+        final Long lastHostClusterId = lastHost.getClusterId();
+        s_logger.warn(String.format("VM last host ID: %d belongs to zone ID: %s for which config - %s is false and storage migration would be needed for inter-cluster migration, therefore, adding all other clusters except ID: %d from this zone to avoid list",
+                lastHost.getId(), vm.getDataCenterId(), ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.key(), lastHostClusterId));
+        List<Long> clusterIds = _clusterDao.listAllClusters(lastHost.getDataCenterId());
+        Set<Long> existingAvoidedClusters = avoids.getClustersToAvoid();
+        clusterIds = clusterIds.stream().filter(x -> !Objects.equals(x, lastHostClusterId) && (existingAvoidedClusters == null || !existingAvoidedClusters.contains(x))).collect(Collectors.toList());
+        avoids.addClusterList(clusterIds);
     }
 
     @Override
@@ -406,6 +449,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             planner = getDeploymentPlannerByName(plannerName);
         }
 
+        Host lastHost = null;
+
         String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
         boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
                 (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
@@ -413,6 +458,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
 
             HostVO host = _hostDao.findById(vm.getLastHostId());
+            lastHost = host;
             _hostDao.loadHostTags(host);
             _hostDao.loadDetails(host);
             ServiceOfferingDetailsVO offeringDetails = null;
@@ -516,6 +562,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
             logger.debug("Cannot choose the last host to deploy this VM ");
         }
+
+        avoidOtherClustersForDeploymentIfMigrationDisabled(vm, lastHost, avoids);
 
         DeployDestination dest = null;
         List<Long> clusterList = null;

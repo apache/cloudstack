@@ -47,7 +47,10 @@
       :key="actionIndex"
       arrowPointAtCenter
       placement="bottomRight">
-      <template #title>
+      <template v-if="action.hoverLabel" #title>
+        {{ $t(action.hoverLabel) }}
+      </template>
+      <template v-else #title>
         {{ $t(action.label) }}
       </template>
       <a-badge

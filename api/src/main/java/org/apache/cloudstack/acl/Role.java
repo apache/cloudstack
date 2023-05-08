@@ -23,4 +23,5 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface Role extends RoleEntity, InternalIdentity, Identity {
     RoleType getRoleType();
     boolean isDefault();
+    boolean isPublicRole();
 }
